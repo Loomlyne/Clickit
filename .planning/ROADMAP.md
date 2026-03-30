@@ -36,7 +36,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 Plans:
 - [x] 01-01-PLAN.md -- Scaffold Next.js project, configure design tokens, shadcn/ui, font loading, ESLint/Prettier
-- [ ] 01-02-PLAN.md -- Build design system test pages (/design-system/colors, typography, spacing, components)
+- [x] 01-02-PLAN.md -- Build design system test pages (/design-system/colors, typography, spacing, components)
 **UI hint**: yes
 
 ### Phase 2: App Shell & Navigation
