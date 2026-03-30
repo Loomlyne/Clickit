@@ -33,7 +33,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. CIT brand colors are defined as design tokens with WCAG AA-safe tints for text on dark backgrounds
   3. Typography scale is configured with Montreal (English) and fallback fonts, matching CIT hierarchy
   4. A test page renders sample components (headings, body text, color swatches, buttons) demonstrating the design system
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 01-01-PLAN.md -- Scaffold Next.js project, configure design tokens, shadcn/ui, font loading, ESLint/Prettier
+- [ ] 01-02-PLAN.md -- Build design system test pages (/design-system/colors, typography, spacing, components)
 **UI hint**: yes
 
 ### Phase 2: App Shell & Navigation
@@ -146,7 +149,7 @@ Note: Phase 6 depends only on Phase 1 and can run in parallel with Phases 2-5 if
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Project Scaffolding & Design System | 0/TBD | Not started | - |
+| 1. Project Scaffolding & Design System | 0/2 | Planned | - |
 | 2. App Shell & Navigation | 0/TBD | Not started | - |
 | 3. Home Page & Catalog UI | 0/TBD | Not started | - |
 | 4. Series Detail & Browse Pages | 0/TBD | Not started | - |
