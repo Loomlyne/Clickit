@@ -5,6 +5,7 @@ status: draft
 shadcn_initialized: false
 preset: none
 created: 2026-03-30
+revised: 2026-03-30
 ---
 
 # Phase 1 — UI Design Contract
@@ -53,12 +54,12 @@ Exceptions: 44px minimum touch target for interactive elements on mobile (WCAG 2
 |------|------|--------|-------------|------|
 | Body | 16px | 400 (Regular) | 1.5 | Montreal, system-ui, -apple-system, sans-serif |
 | Label | 14px | 400 (Regular) | 1.4 | Montreal, system-ui, -apple-system, sans-serif |
-| Heading | 24px | 600 (Semibold) | 1.2 | Montreal, system-ui, -apple-system, sans-serif |
+| Heading | 24px | 700 (Bold) | 1.2 | Montreal, system-ui, -apple-system, sans-serif |
 | Display | 48px | 700 (Bold) | 1.1 | Montreal, system-ui, -apple-system, sans-serif |
 
-**Rationale:** CIT brand hierarchy specifies Header 82pt ExtraBold, Sub Header 50pt Bold, Body 16pt Regular, CTA 26pt Regular. These are print-optimized sizes. The web scale preserves the visual hierarchy ratios (display is 3x body, heading is 1.5x body) while using screen-appropriate sizes. The brand's ExtraBold/Bold intent maps to 700/600 weights for screen rendering.
+**Rationale:** CIT brand hierarchy specifies Header 82pt ExtraBold, Sub Header 50pt Bold, Body 16pt Regular, CTA 26pt Regular. These are print-optimized sizes. The web scale preserves the visual hierarchy ratios (display is 3x body, heading is 1.5x body) while using screen-appropriate sizes. The brand's ExtraBold/Bold intent maps to weight 700 for screen rendering, maintaining strong visual contrast between Display/Heading and Body/Label. Heading vs Display differentiation is achieved through font size (24px vs 48px), not weight.
 
-**Weight constraint:** Only two weights are loaded to minimize font file size: Regular (400) and Bold (700). Semibold (600) is declared for headings -- if Montreal does not ship a 600 weight, the browser will synthesize from Bold (700), which is acceptable. If Montreal has a Medium (500) weight available, use 500 for headings and 700 for display instead.
+**Weight constraint:** Exactly two weights are loaded: Regular (400) and Bold (700). No other weights are declared or used. This minimizes font file requests and ensures the design system stays within the 2-weight maximum.
 
 **Arabic fonts (deferred):** Daken Black and Avenir Arabic are out of scope for Phase 1. Their licensing for web use requires confirmation (noted as blocker in STATE.md). The font stack includes `sans-serif` as ultimate fallback, which will render Arabic content acceptably until Phase 8+ i18n work.
 
@@ -158,6 +159,8 @@ Phase 1 produces a test page demonstrating the design system. The copywriting co
 4. Buttons: Primary (blue fill), Secondary (outline), Destructive (red fill), Ghost
 5. Badges: "Now Streaming" (green), "Coming Soon" (orange), "New" (yellow)
 6. Dark surfaces: stacked cards showing background, surface-1, surface-2, surface-3 layering
+
+**Visual focal point:** The Color Swatch Grid is the visual centerpiece of the test page. It spans full width and appears as the first content section below the page heading. This section anchors the page because it communicates the entire CIT brand palette at a glance -- the primary artifact stakeholders need to verify during Phase 1 review.
 
 ---
 
