@@ -1,7 +1,7 @@
 # Requirements: Clickit Story (CIT)
 
 **Defined:** 2026-03-30
-**Core Value:** Viewers enter, discover a show, pick an episode, watch immediately — premium streaming experience for CIT originals.
+**Core Value:** Viewers enter, discover a show, pick an episode, watch immediately -- premium streaming experience for CIT originals.
 
 ## v1 Requirements
 
@@ -33,7 +33,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **ADMN-07**: Admin can set broadcast schedule (day and time) for each show
 - [ ] **ADMN-08**: Admin can reorder episodes within a season
 - [ ] **ADMN-09**: YouTube video ID extracted automatically from pasted URL
-- [ ] **ADMN-10**: Admin dashboard protected — only accessible by admin user
+- [ ] **ADMN-10**: Admin dashboard protected -- only accessible by admin user
 
 ### Catalog & Browsing
 
@@ -55,7 +55,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **WTCH-02**: Watch page shows episode metadata (title, description, show name, season/episode number)
 - [ ] **WTCH-03**: Previous / next episode navigation buttons on watch page
 - [ ] **WTCH-04**: Autoplay next episode after current episode ends (with countdown)
-- [ ] **WTCH-05**: YouTube IFrame API compliance — no overlays on the player (YouTube ToS)
+- [ ] **WTCH-05**: YouTube IFrame API compliance -- no overlays on the player (YouTube ToS)
 - [ ] **WTCH-06**: Episode quick selector on watch page (season + episode picker without leaving player)
 
 ### User Features
@@ -77,8 +77,8 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Navigation & Layout
 
 - [ ] **NAVG-01**: Floating top nav bar with: Home, Series, Coming Soon, My List, Search, Profile
-- [ ] **NAVG-02**: Nav is clean, minimal — shows CIT logo (white variant on dark)
-- [ ] **NAVG-03**: Responsive layout — works on mobile, tablet, desktop
+- [ ] **NAVG-02**: Nav is clean, minimal -- shows CIT logo (white variant on dark)
+- [ ] **NAVG-03**: Responsive layout -- works on mobile, tablet, desktop
 - [ ] **NAVG-04**: Dark cinematic UI as default theme
 - [ ] **NAVG-05**: Login/signup accessible from nav (or profile dropdown when logged in)
 
@@ -144,22 +144,72 @@ Deferred to future release. Tracked but not in current roadmap.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | FOUN-01 | Phase 1 | Pending |
-| FOUN-02 | Phase 1 | Pending |
-| FOUN-03 | Phase 1 | Pending |
+| FOUN-02 | Phase 6 | Pending |
+| FOUN-03 | Phase 6 | Pending |
 | FOUN-04 | Phase 1 | Pending |
-| AUTH-01 | Phase 2 | Pending |
-| AUTH-02 | Phase 2 | Pending |
-| AUTH-03 | Phase 2 | Pending |
-| AUTH-04 | Phase 2 | Pending |
-| AUTH-05 | Phase 2 | Pending |
-
-*(Full traceability populated during roadmap creation)*
+| AUTH-01 | Phase 8 | Pending |
+| AUTH-02 | Phase 8 | Pending |
+| AUTH-03 | Phase 8 | Pending |
+| AUTH-04 | Phase 6 | Pending |
+| AUTH-05 | Phase 6 | Pending |
+| ADMN-01 | Phase 7 | Pending |
+| ADMN-02 | Phase 7 | Pending |
+| ADMN-03 | Phase 7 | Pending |
+| ADMN-04 | Phase 7 | Pending |
+| ADMN-05 | Phase 7 | Pending |
+| ADMN-06 | Phase 7 | Pending |
+| ADMN-07 | Phase 7 | Pending |
+| ADMN-08 | Phase 7 | Pending |
+| ADMN-09 | Phase 7 | Pending |
+| ADMN-10 | Phase 7 | Pending |
+| CATL-01 | Phase 3 | Pending |
+| CATL-02 | Phase 3 | Pending |
+| CATL-03 | Phase 4 | Pending |
+| CATL-04 | Phase 4 | Pending |
+| CATL-05 | Phase 4 | Pending |
+| CATL-06 | Phase 4 | Pending |
+| CATL-07 | Phase 4 | Pending |
+| CATL-08 | Phase 3 | Pending |
+| CATL-09 | Phase 3 | Pending |
+| CATL-10 | Phase 3 | Pending |
+| CATL-11 | Phase 4 | Pending |
+| WTCH-01 | Phase 5 | Pending |
+| WTCH-02 | Phase 5 | Pending |
+| WTCH-03 | Phase 5 | Pending |
+| WTCH-04 | Phase 9 | Pending |
+| WTCH-05 | Phase 5 | Pending |
+| WTCH-06 | Phase 5 | Pending |
+| USER-01 | Phase 9 | Pending |
+| USER-02 | Phase 9 | Pending |
+| USER-03 | Phase 9 | Pending |
+| USER-04 | Phase 9 | Pending |
+| USER-05 | Phase 9 | Pending |
+| USER-06 | Phase 9 | Pending |
+| USER-07 | Phase 9 | Pending |
+| SRCH-01 | Phase 8 | Pending |
+| SRCH-02 | Phase 8 | Pending |
+| SRCH-03 | Phase 8 | Pending |
+| NAVG-01 | Phase 2 | Pending |
+| NAVG-02 | Phase 2 | Pending |
+| NAVG-03 | Phase 2 | Pending |
+| NAVG-04 | Phase 2 | Pending |
+| NAVG-05 | Phase 2 | Pending |
+| DESG-01 | Phase 2 | Pending |
+| DESG-02 | Phase 3 | Pending |
+| DESG-03 | Phase 3 | Pending |
+| DESG-04 | Phase 3 | Pending |
+| DESG-05 | Phase 3 | Pending |
+| DESG-06 | Phase 2 | Pending |
+| DESG-07 | Phase 3 | Pending |
+| DESG-08 | Phase 3 | Pending |
+| DESG-09 | Phase 3 | Pending |
+| DESG-10 | Phase 2 | Pending |
 
 **Coverage:**
-- v1 requirements: 49 total
-- Mapped to phases: TBD (during roadmap)
-- Unmapped: TBD
+- v1 requirements: 61 total
+- Mapped to phases: 61
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-30*
-*Last updated: 2026-03-30 after initial definition*
+*Last updated: 2026-03-30 after roadmap creation (full traceability)*
