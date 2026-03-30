@@ -12,7 +12,7 @@ This roadmap follows a frontend-first approach: the cinematic dark UI is built f
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Project Scaffolding & Design System** - Next.js project init, CIT brand tokens, WCAG-safe color palette, typography setup
+- [x] **Phase 1: Project Scaffolding & Design System** - Next.js project init, CIT brand tokens, WCAG-safe color palette, typography setup
 - [ ] **Phase 2: App Shell & Navigation** - Dark cinematic layout shell, glass-effect nav bar, responsive structure, CIT logo
 - [ ] **Phase 3: Home Page & Catalog UI** - Cinematic hero banner, content rails, show cards with branded artwork, motion effects (mock data)
 - [ ] **Phase 4: Series Detail & Browse Pages** - Series detail page, season selector, episode cards, Coming Soon page, broadcast schedule (mock data)
@@ -49,7 +49,10 @@ Plans:
   3. The nav bar has a soft glass-effect (blur/translucency) that feels premium
   4. The layout is fully responsive -- nav collapses or adapts on mobile, tablet, and desktop
   5. Every page has a dark luxury background (black/near-black) as the default theme
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 02-01-PLAN.md -- Build glass-effect navbar, root layout shell, Playwright test infrastructure
+- [ ] 02-02-PLAN.md -- Create auth section (Sign In / avatar dropdown), wire into navbar, visual verification
 **UI hint**: yes
 
 ### Phase 3: Home Page & Catalog UI
@@ -149,8 +152,8 @@ Note: Phase 6 depends only on Phase 1 and can run in parallel with Phases 2-5 if
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Project Scaffolding & Design System | 1/2 | In Progress|  |
-| 2. App Shell & Navigation | 0/TBD | Not started | - |
+| 1. Project Scaffolding & Design System | 2/2 | Complete | 2026-03-30 |
+| 2. App Shell & Navigation | 0/2 | Planned | - |
 | 3. Home Page & Catalog UI | 0/TBD | Not started | - |
 | 4. Series Detail & Browse Pages | 0/TBD | Not started | - |
 | 5. Watch Page UI | 0/TBD | Not started | - |
