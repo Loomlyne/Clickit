@@ -9,10 +9,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Foundation
 
-- [ ] **FOUN-01**: Next.js project initialized with App Router, Tailwind CSS, and Supabase client
+- [x] **FOUN-01**: Next.js project initialized with App Router, Tailwind CSS, and Supabase client
 - [ ] **FOUN-02**: Supabase database schema created (series, seasons, episodes, users, watch_progress, watchlist)
 - [ ] **FOUN-03**: Row Level Security (RLS) enabled on all tables with appropriate policies
-- [ ] **FOUN-04**: Design system established with CIT brand colors (WCAG-safe tints for dark backgrounds), typography (Montreal/Avenir Arabic), and spacing tokens
+- [x] **FOUN-04**: Design system established with CIT brand colors (WCAG-safe tints for dark backgrounds), typography (Montreal/Avenir Arabic), and spacing tokens
 
 ### Authentication
 
@@ -143,10 +143,10 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUN-01 | Phase 1 | Pending |
+| FOUN-01 | Phase 1 | Complete |
 | FOUN-02 | Phase 6 | Pending |
 | FOUN-03 | Phase 6 | Pending |
-| FOUN-04 | Phase 1 | Pending |
+| FOUN-04 | Phase 1 | Complete |
 | AUTH-01 | Phase 8 | Pending |
 | AUTH-02 | Phase 8 | Pending |
 | AUTH-03 | Phase 8 | Pending |

@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. A test page renders sample components (headings, body text, color swatches, buttons) demonstrating the design system
 **Plans**: 2 plans
 Plans:
-- [ ] 01-01-PLAN.md -- Scaffold Next.js project, configure design tokens, shadcn/ui, font loading, ESLint/Prettier
+- [x] 01-01-PLAN.md -- Scaffold Next.js project, configure design tokens, shadcn/ui, font loading, ESLint/Prettier
 - [ ] 01-02-PLAN.md -- Build design system test pages (/design-system/colors, typography, spacing, components)
 **UI hint**: yes
 
@@ -149,7 +149,7 @@ Note: Phase 6 depends only on Phase 1 and can run in parallel with Phases 2-5 if
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Project Scaffolding & Design System | 0/2 | Planned | - |
+| 1. Project Scaffolding & Design System | 1/2 | In Progress|  |
 | 2. App Shell & Navigation | 0/TBD | Not started | - |
 | 3. Home Page & Catalog UI | 0/TBD | Not started | - |
 | 4. Series Detail & Browse Pages | 0/TBD | Not started | - |
