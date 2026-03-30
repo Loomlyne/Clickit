@@ -78,7 +78,7 @@ Inherited from Phase 1 without modification:
 | Sign In button text | 14px (Label) | 400 | Standard shadcn button text size |
 | Avatar letter | 14px | 700 (Bold) | Single uppercase letter, bold for legibility at small size |
 | Dropdown menu items | 14px (Label) | 400 | My List, Profile, Sign Out |
-| Dropdown menu separator labels | 12px | 400 | Email address display in dropdown header (uses text-muted) |
+| Dropdown menu separator labels | 14px (Label) | 400 | Email address display in dropdown header (uses `text-muted` color `#A1A1B5` / `text-secondary` to visually de-emphasize without introducing an extra size) |
 
 **Weight constraint maintained:** Only Regular (400) and Bold (700) are used. No new weights introduced.
 
@@ -95,7 +95,7 @@ Inherited from Phase 1. The 60/30/10 split is unchanged:
 | Accent (10%) | `#2C3569` / `oklch(0.30 0.08 260)` | Primary CTA buttons, active indicators |
 | Destructive | `#DB3F34` / `oklch(0.55 0.20 25)` | Destructive actions only (Sign Out confirmation if added) |
 
-Accent reserved for (Phase 2 scope): Sign In button default variant background (primary CTA), focus ring on interactive elements.
+Accent reserved for (Phase 2 scope): Focus ring on interactive nav elements, active navigation indicators in future phases.
 
 ### Phase 2 Color Specifics -- Glass Effect Nav Bar
 
@@ -188,7 +188,7 @@ Accent reserved for (Phase 2 scope): Sign In button default variant background (
 - **Position:** Aligned to end (right edge of avatar), offset 8px below nav.
 - **Width:** 200px fixed.
 - **Animation:** Fade in + slide down 4px over 150ms ease-out. Fade out 100ms. Standard shadcn/Radix animation.
-- **Header section:** User email in 12px muted text. Separated by a `<DropdownMenuSeparator>`.
+- **Header section:** User email in 14px (Label size) muted text (`text-muted` color `#A1A1B5`). Separated by a `<DropdownMenuSeparator>`.
 - **Menu items:**
   1. "My List" -- icon: `Bookmark` (lucide), standard item
   2. "Profile" -- icon: `User` (lucide), standard item
