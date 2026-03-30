@@ -1,0 +1,165 @@
+# Requirements: Clickit Story (CIT)
+
+**Defined:** 2026-03-30
+**Core Value:** Viewers enter, discover a show, pick an episode, watch immediately — premium streaming experience for CIT originals.
+
+## v1 Requirements
+
+Requirements for initial release. Each maps to roadmap phases.
+
+### Foundation
+
+- [ ] **FOUN-01**: Next.js project initialized with App Router, Tailwind CSS, and Supabase client
+- [ ] **FOUN-02**: Supabase database schema created (series, seasons, episodes, users, watch_progress, watchlist)
+- [ ] **FOUN-03**: Row Level Security (RLS) enabled on all tables with appropriate policies
+- [ ] **FOUN-04**: Design system established with CIT brand colors (WCAG-safe tints for dark backgrounds), typography (Montreal/Avenir Arabic), and spacing tokens
+
+### Authentication
+
+- [ ] **AUTH-01**: User can sign up with email and password via Supabase Auth
+- [ ] **AUTH-02**: User can log in and session persists across browser refresh
+- [ ] **AUTH-03**: User can log out from any page
+- [ ] **AUTH-04**: Unauthenticated users can browse and watch content (auth gates personalization, not access)
+- [ ] **AUTH-05**: Admin user identified by user ID check (single admin, no RBAC)
+
+### Admin Dashboard
+
+- [ ] **ADMN-01**: Admin can create, edit, and delete series (title, description, artwork, genre, status)
+- [ ] **ADMN-02**: Admin can create, edit, and delete seasons within a series
+- [ ] **ADMN-03**: Admin can create, edit, and delete episodes (title, description, YouTube URL, episode number, status)
+- [ ] **ADMN-04**: Admin can set show status: draft, coming soon, now streaming
+- [ ] **ADMN-05**: Admin can set episode status: draft, coming soon, published
+- [ ] **ADMN-06**: Admin can upload show artwork (poster, hero banner, logo) to Supabase Storage
+- [ ] **ADMN-07**: Admin can set broadcast schedule (day and time) for each show
+- [ ] **ADMN-08**: Admin can reorder episodes within a season
+- [ ] **ADMN-09**: YouTube video ID extracted automatically from pasted URL
+- [ ] **ADMN-10**: Admin dashboard protected — only accessible by admin user
+
+### Catalog & Browsing
+
+- [ ] **CATL-01**: Home page displays cinematic hero banner featuring a show
+- [ ] **CATL-02**: Home page displays horizontal content rails (Now Streaming, Coming Soon, by genre)
+- [ ] **CATL-03**: Series detail page shows full backdrop hero with show artwork and info
+- [ ] **CATL-04**: Series detail page has season selector (dropdown or tabs)
+- [ ] **CATL-05**: Series detail page shows horizontal episode cards with thumbnail, number, title, duration
+- [ ] **CATL-06**: Episode cards display status badges (published, coming soon, locked)
+- [ ] **CATL-07**: Coming Soon page shows unreleased shows and upcoming episodes
+- [ ] **CATL-08**: Series listing page shows all available shows in card grid
+- [ ] **CATL-09**: Show cards display per-show branded artwork and logo
+- [ ] **CATL-10**: Content rails and cards look intentional with few shows (empty-state design)
+- [ ] **CATL-11**: Broadcast schedule displayed showing day/time per show
+
+### Watch Experience
+
+- [ ] **WTCH-01**: Watch page displays embedded YouTube player (full IFrame API)
+- [ ] **WTCH-02**: Watch page shows episode metadata (title, description, show name, season/episode number)
+- [ ] **WTCH-03**: Previous / next episode navigation buttons on watch page
+- [ ] **WTCH-04**: Autoplay next episode after current episode ends (with countdown)
+- [ ] **WTCH-05**: YouTube IFrame API compliance — no overlays on the player (YouTube ToS)
+- [ ] **WTCH-06**: Episode quick selector on watch page (season + episode picker without leaving player)
+
+### User Features
+
+- [ ] **USER-01**: Authenticated user can add/remove shows from watchlist
+- [ ] **USER-02**: Watchlist button visible on show cards and series detail page
+- [ ] **USER-03**: My List page shows all watchlisted shows
+- [ ] **USER-04**: Continue watching tracks playback progress per episode (saves every 10-15 seconds)
+- [ ] **USER-05**: Continue watching rail on home page showing episodes in progress
+- [ ] **USER-06**: Resuming an episode starts from saved progress position
+- [ ] **USER-07**: User profile page showing watchlist and watch history
+
+### Search
+
+- [ ] **SRCH-01**: Search bar accessible from all pages (header)
+- [ ] **SRCH-02**: Search finds shows and episodes by title
+- [ ] **SRCH-03**: Search results display show cards and episode cards with thumbnails
+
+### Navigation & Layout
+
+- [ ] **NAVG-01**: Floating top nav bar with: Home, Series, Coming Soon, My List, Search, Profile
+- [ ] **NAVG-02**: Nav is clean, minimal — shows CIT logo (white variant on dark)
+- [ ] **NAVG-03**: Responsive layout — works on mobile, tablet, desktop
+- [ ] **NAVG-04**: Dark cinematic UI as default theme
+- [ ] **NAVG-05**: Login/signup accessible from nav (or profile dropdown when logged in)
+
+### Visual Design
+
+- [ ] **DESG-01**: Dark luxury background (black/near-black) across all pages
+- [ ] **DESG-02**: Large cinematic hero banners with show artwork
+- [ ] **DESG-03**: Horizontal episode cards with hover state (scale, overlay)
+- [ ] **DESG-04**: Clean white typography on dark backgrounds
+- [ ] **DESG-05**: CIT brand color accents on cards, badges, CTAs, category ribbons
+- [ ] **DESG-06**: Soft glass-effect top navigation bar
+- [ ] **DESG-07**: Subtle motion/transitions (page transitions, card hovers)
+- [ ] **DESG-08**: Per-show color ribbon using CIT brand pattern system (5 brand colors)
+- [ ] **DESG-09**: Small metadata chips (duration, episode count, genre, status)
+- [ ] **DESG-10**: CIT logo (SVG) displayed correctly following brand guidelines
+
+## v2 Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### Engagement
+
+- **ENGM-01**: Trailer preview on hover (auto-playing short clip)
+- **ENGM-02**: Notification system for new episodes/show releases
+- **ENGM-03**: Featured collections (curated playlists of episodes across shows)
+- **ENGM-04**: Teaser countdown timer for upcoming releases
+
+### Internationalization
+
+- **I18N-01**: Full Arabic RTL layout for entire UI
+- **I18N-02**: Language toggle switching all UI chrome to Arabic
+- **I18N-03**: Arabic search support with proper stemming
+
+### Analytics & Admin
+
+- **ANLT-01**: Admin analytics dashboard (views, watch time, popular shows)
+- **ANLT-02**: View count per episode
+- **ANLT-03**: Audience demographics
+
+### Platform
+
+- **PLAT-01**: Progressive Web App (PWA) for mobile home screen install
+- **PLAT-02**: Social sharing (share episode link with OG preview)
+- **PLAT-03**: Email newsletter integration
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Self-hosted video / uploads | YouTube handles all video hosting, transcoding, CDN |
+| Payment / subscription | All content free for v1, premature monetization |
+| Comments / chat | Moderation burden, YouTube has comments already |
+| Role-based admin | Single admin, building RBAC for one user is waste |
+| Mobile native app | Web-first, responsive design covers mobile |
+| AI recommendations | Only ~15 shows, not enough content for ML |
+| Download for offline | YouTube embed API doesn't support download |
+| Real-time WebSocket features | Content updates are infrequent, standard HTTP sufficient |
+| Multi-creator uploads | Only admin manages content |
+| Live streaming | Not part of v1 platform scope |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| FOUN-01 | Phase 1 | Pending |
+| FOUN-02 | Phase 1 | Pending |
+| FOUN-03 | Phase 1 | Pending |
+| FOUN-04 | Phase 1 | Pending |
+| AUTH-01 | Phase 2 | Pending |
+| AUTH-02 | Phase 2 | Pending |
+| AUTH-03 | Phase 2 | Pending |
+| AUTH-04 | Phase 2 | Pending |
+| AUTH-05 | Phase 2 | Pending |
+
+*(Full traceability populated during roadmap creation)*
+
+**Coverage:**
+- v1 requirements: 49 total
+- Mapped to phases: TBD (during roadmap)
+- Unmapped: TBD
+
+---
+*Requirements defined: 2026-03-30*
+*Last updated: 2026-03-30 after initial definition*
