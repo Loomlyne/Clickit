@@ -12,7 +12,9 @@ Viewers enter the platform, discover a show, pick an episode, and watch immediat
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Next.js project initialized with App Router, Tailwind CSS, Supabase client — Validated in Phase 1
+- [x] Design system with CIT brand colors (WCAG-safe tints), typography, spacing tokens — Validated in Phase 1
+- [x] Responsive cinematic dark UI following CIT brand guidelines — Foundation validated in Phase 1
 
 ### Active
 
