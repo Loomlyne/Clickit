@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Project Scaffolding & Design System** - Next.js project init, CIT brand tokens, WCAG-safe color palette, typography setup
 - [ ] **Phase 2: App Shell & Navigation** - Dark cinematic layout shell, glass-effect nav bar, responsive structure, CIT logo
 - [x] **Phase 3: Home Page & Catalog UI** - Cinematic hero banner, content rails, show cards with branded artwork, motion effects (mock data) (completed 2026-03-31)
-- [ ] **Phase 4: Series Detail & Browse Pages** - Series detail page, season selector, episode cards, Coming Soon page, broadcast schedule (mock data)
+- [ ] **Phase 4: Series Detail & Browse Pages** - Series detail page, season selector, episode cards, Coming Soon page (mock data). Note: broadcast schedule (CATL-11) reclassified to Phase 7.
 - [ ] **Phase 5: Watch Page UI** - YouTube embedded player, episode metadata, prev/next nav, episode quick selector (mock data)
 - [ ] **Phase 6: Backend Foundation** - Supabase schema, RLS policies, auth client setup, seed data
 - [ ] **Phase 7: Admin Dashboard** - Full admin CRUD for shows, seasons, episodes, artwork upload, status management
@@ -74,7 +74,7 @@ Plans:
 **UI hint**: yes
 
 ### Phase 4: Series Detail & Browse Pages
-**Goal**: Visitors can navigate from the catalog into a series detail page to browse episodes by season, and can explore Coming Soon content and broadcast schedules -- completing the full pre-watch browsing journey
+**Goal**: Visitors can navigate from the catalog into a series detail page to browse episodes by season, and can explore Coming Soon content -- completing the full pre-watch browsing journey
 **Depends on**: Phase 3
 **Requirements**: CATL-03, CATL-04, CATL-05, CATL-06, CATL-07, CATL-11
 **Success Criteria** (what must be TRUE):
@@ -82,8 +82,12 @@ Plans:
   2. Season selector (tabs or dropdown) switches the displayed episode list
   3. Episode cards display thumbnail, number, title, duration, and status badges (published, coming soon, locked)
   4. Coming Soon page shows unreleased shows and upcoming episodes with appropriate styling
-  5. Broadcast schedule page displays day/time per show in a clear weekly format
-**Plans**: TBD
+  5. CATL-11 (broadcast schedule) reclassified as admin feature -- moved to Phase 7 per D-15
+**Plans**: 3 plans
+Plans:
+- [ ] 04-01-PLAN.md -- Extend mock data with Season/Episode types, install shadcn Tabs/Select, build SeriesDetailHero and EpisodeRow
+- [ ] 04-02-PLAN.md -- Build SeasonSelector, EpisodeList, wire series detail page at /series/[slug], add E2E tests
+- [ ] 04-03-PLAN.md -- Build Coming Soon page at /coming-soon with ComingSoonShowCard, add E2E tests
 **UI hint**: yes
 
 ### Phase 5: Watch Page UI
@@ -159,7 +163,7 @@ Note: Phase 6 depends only on Phase 1 and can run in parallel with Phases 2-5 if
 | 1. Project Scaffolding & Design System | 2/2 | Complete | 2026-03-30 |
 | 2. App Shell & Navigation | 0/2 | Planned | - |
 | 3. Home Page & Catalog UI | 3/3 | Complete   | 2026-03-31 |
-| 4. Series Detail & Browse Pages | 0/TBD | Not started | - |
+| 4. Series Detail & Browse Pages | 0/3 | Planned | - |
 | 5. Watch Page UI | 0/TBD | Not started | - |
 | 6. Backend Foundation | 0/TBD | Not started | - |
 | 7. Admin Dashboard | 0/TBD | Not started | - |
