@@ -102,7 +102,7 @@ Plans:
   5. No UI elements overlay the YouTube player during playback (YouTube ToS compliance)
 **Plans**: 2 plans
 Plans:
-- [ ] 05-01-PLAN.md -- Build YouTube player component, watch page route, episode metadata, wire existing episode links
+- [x] 05-01-PLAN.md -- Build YouTube player component, watch page route, episode metadata, wire existing episode links
 - [ ] 05-02-PLAN.md -- Add prev/next episode navigation, episode quick-selector, E2E tests
 **UI hint**: yes
 

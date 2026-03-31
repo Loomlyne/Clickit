@@ -51,11 +51,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Watch Experience
 
-- [ ] **WTCH-01**: Watch page displays embedded YouTube player (full IFrame API)
-- [ ] **WTCH-02**: Watch page shows episode metadata (title, description, show name, season/episode number)
+- [x] **WTCH-01**: Watch page displays embedded YouTube player (full IFrame API)
+- [x] **WTCH-02**: Watch page shows episode metadata (title, description, show name, season/episode number)
 - [ ] **WTCH-03**: Previous / next episode navigation buttons on watch page
 - [ ] **WTCH-04**: Autoplay next episode after current episode ends (with countdown)
-- [ ] **WTCH-05**: YouTube IFrame API compliance -- no overlays on the player (YouTube ToS)
+- [x] **WTCH-05**: YouTube IFrame API compliance -- no overlays on the player (YouTube ToS)
 - [ ] **WTCH-06**: Episode quick selector on watch page (season + episode picker without leaving player)
 
 ### User Features
@@ -173,11 +173,11 @@ Deferred to future release. Tracked but not in current roadmap.
 | CATL-09 | Phase 3 | Complete |
 | CATL-10 | Phase 3 | Complete |
 | CATL-11 | Phase 4 | Complete |
-| WTCH-01 | Phase 5 | Pending |
-| WTCH-02 | Phase 5 | Pending |
+| WTCH-01 | Phase 5 | Complete |
+| WTCH-02 | Phase 5 | Complete |
 | WTCH-03 | Phase 5 | Pending |
 | WTCH-04 | Phase 9 | Pending |
-| WTCH-05 | Phase 5 | Pending |
+| WTCH-05 | Phase 5 | Complete |
 | WTCH-06 | Phase 5 | Pending |
 | USER-01 | Phase 9 | Pending |
 | USER-02 | Phase 9 | Pending |

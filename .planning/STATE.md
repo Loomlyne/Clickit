@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 5 UI-SPEC approved
-last_updated: "2026-03-31T21:48:14.425Z"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-31T22:13:03.121Z"
 last_activity: 2026-03-31
 progress:
   total_phases: 9
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
-  percent: 71
+  total_plans: 12
+  completed_plans: 11
+  percent: 92
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Viewers enter, discover a show, pick an episode, watch immediately -- premium streaming experience for CIT originals.
-**Current focus:** Phase 04 — series-detail-browse-pages
+**Current focus:** Phase 05 — watch-page-ui
 
 ## Current Position
 
 Phase: 5
-Plan: Not started
-Status: Ready to execute
+Plan: 1 of 2 complete
+Status: Executing
 Last activity: 2026-03-31
 
-Progress: [███████░░░] 71%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Progress: [███████░░░] 71%
 | Phase 04 P01 | 5min | 3 tasks | 5 files |
 | Phase 04 P02 | 24min | 2 tasks | 6 files |
 | Phase 04 P03 | 17min | 2 tasks | 3 files |
+| Phase 05 P01 | 6min | 1 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -90,6 +91,10 @@ Recent decisions affecting current work:
 - [Phase 04]: Adaptive component threshold pattern: seasons.length <= 5 renders Tabs, 6+ renders Select dropdown
 - [Phase 04]: Coming Soon page is server component -- no client state needed for synchronous mock data
 - [Phase 04]: ComingSoonShowCard wraps ShowCard with opacity overlay rather than modifying original component
+- [Phase 05]: YouTube IFrame API loaded via singleton pattern with module-level state to prevent duplicate script tags
+- [Phase 05]: Callback props stored in refs to avoid player destruction on parent re-renders
+- [Phase 05]: Non-published episodes show inline 'Episode Not Available' page instead of 404
+- [Phase 05]: Watch page server/client split: server page resolves episode context, client component manages player lifecycle
 
 ### Pending Todos
 
@@ -103,6 +108,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T21:48:14.421Z
-Stopped at: Phase 5 UI-SPEC approved
-Resume file: .planning/phases/05-watch-page-ui/05-UI-SPEC.md
+Last session: 2026-03-31T22:13:03.116Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: None
