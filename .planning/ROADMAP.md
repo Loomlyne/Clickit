@@ -103,7 +103,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 05-01-PLAN.md -- Build YouTube player component, watch page route, episode metadata, wire existing episode links
-- [ ] 05-02-PLAN.md -- Add prev/next episode navigation, episode quick-selector, E2E tests
+- [x] 05-02-PLAN.md -- Add prev/next episode navigation, episode quick-selector, E2E tests
 **UI hint**: yes
 
 ### Phase 6: Backend Foundation
