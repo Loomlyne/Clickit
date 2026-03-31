@@ -43,8 +43,9 @@ export default async function SeriesDetailPage({ params }: Props) {
     episodesBySeason[season.id] = getEpisodesBySeasonId(season.id)
   }
 
-  // Compute first episode label for hero CTA
+  // Compute first episode label and ID for hero CTA
   let firstEpisodeLabel: string | undefined
+  let firstEpisodeId: string | undefined
   if (seasons.length > 0) {
     const firstSeason = seasons[0]
     const firstSeasonEpisodes = episodesBySeason[firstSeason.id] ?? []
@@ -53,6 +54,7 @@ export default async function SeriesDetailPage({ params }: Props) {
     )
     if (firstPublished) {
       firstEpisodeLabel = `S${firstSeason.seasonNumber} E${firstPublished.episodeNumber}`
+      firstEpisodeId = firstPublished.id
     }
   }
 
@@ -63,7 +65,7 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   return (
     <div>
-      <SeriesDetailHero show={show} firstEpisodeLabel={firstEpisodeLabel} />
+      <SeriesDetailHero show={show} firstEpisodeLabel={firstEpisodeLabel} firstEpisodeId={firstEpisodeId} />
 
       <div className="px-6 md:px-12 mt-8">
         <SeriesDetailContent

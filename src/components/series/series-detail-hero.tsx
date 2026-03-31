@@ -15,6 +15,7 @@ import {
 interface SeriesDetailHeroProps {
   show: Show
   firstEpisodeLabel?: string // e.g. "S1 E1" for the CTA button
+  firstEpisodeId?: string // episode ID for watch page link
 }
 
 const CINEMA_EASE = [0.16, 1, 0.3, 1] as const
@@ -22,6 +23,7 @@ const CINEMA_EASE = [0.16, 1, 0.3, 1] as const
 export function SeriesDetailHero({
   show,
   firstEpisodeLabel,
+  firstEpisodeId,
 }: SeriesDetailHeroProps) {
   return (
     <MotionConfig reducedMotion="user">
@@ -148,14 +150,14 @@ export function SeriesDetailHero({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.8 }}
           >
-            {firstEpisodeLabel ? (
+            {firstEpisodeLabel && firstEpisodeId ? (
               <Button
                 variant="default"
                 size="lg"
                 className="px-10 py-5 text-base font-semibold shadow-lg shadow-black/40"
                 asChild
               >
-                <a href="#">Watch {firstEpisodeLabel}</a>
+                <Link href={`/watch/${firstEpisodeId}`}>Watch {firstEpisodeLabel}</Link>
               </Button>
             ) : (
               <Button

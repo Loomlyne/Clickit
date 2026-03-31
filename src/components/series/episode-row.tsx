@@ -108,7 +108,7 @@ export function EpisodeRow({ episode, showBrandColor }: EpisodeRowProps) {
   if (isPublished) {
     return (
       <Link
-        href="#"
+        href={`/watch/${episode.id}`}
         className="group flex items-start gap-4 rounded-lg p-3 transition-colors duration-200 hover:bg-surface-2/50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {rowContent}
