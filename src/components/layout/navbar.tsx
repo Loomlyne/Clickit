@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { AuthSection } from './auth-section'
 
 export function Navbar() {
   return (
@@ -14,8 +15,7 @@ export function Navbar() {
           className="h-8 w-auto"
         />
       </Link>
-      {/* AuthSection placeholder -- will be added in Plan 02 */}
-      <div aria-label="Auth placeholder" />
+      <AuthSection />
     </nav>
   )
 }
