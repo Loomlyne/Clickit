@@ -87,7 +87,7 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md -- Extend mock data with Season/Episode types, install shadcn Tabs/Select, build SeriesDetailHero and EpisodeRow
 - [ ] 04-02-PLAN.md -- Build SeasonSelector, EpisodeList, wire series detail page at /series/[slug], add E2E tests
-- [ ] 04-03-PLAN.md -- Build Coming Soon page at /coming-soon with ComingSoonShowCard, add E2E tests
+- [x] 04-03-PLAN.md -- Build Coming Soon page at /coming-soon with ComingSoonShowCard, add E2E tests
 **UI hint**: yes
 
 ### Phase 5: Watch Page UI
