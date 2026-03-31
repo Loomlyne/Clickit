@@ -40,9 +40,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **CATL-01**: Home page displays cinematic hero banner featuring a show
 - [x] **CATL-02**: Home page displays horizontal content rails (Now Streaming, Coming Soon, by genre)
 - [x] **CATL-03**: Series detail page shows full backdrop hero with show artwork and info
-- [ ] **CATL-04**: Series detail page has season selector (dropdown or tabs)
-- [ ] **CATL-05**: Series detail page shows horizontal episode cards with thumbnail, number, title, duration
-- [ ] **CATL-06**: Episode cards display status badges (published, coming soon, locked)
+- [x] **CATL-04**: Series detail page has season selector (dropdown or tabs)
+- [x] **CATL-05**: Series detail page shows horizontal episode cards with thumbnail, number, title, duration
+- [x] **CATL-06**: Episode cards display status badges (published, coming soon, locked)
 - [ ] **CATL-07**: Coming Soon page shows unreleased shows and upcoming episodes
 - [x] **CATL-08**: Series listing page shows all available shows in card grid
 - [x] **CATL-09**: Show cards display per-show branded artwork and logo
@@ -165,9 +165,9 @@ Deferred to future release. Tracked but not in current roadmap.
 | CATL-01 | Phase 3 | Complete |
 | CATL-02 | Phase 3 | Complete |
 | CATL-03 | Phase 4 | Complete |
-| CATL-04 | Phase 4 | Pending |
-| CATL-05 | Phase 4 | Pending |
-| CATL-06 | Phase 4 | Pending |
+| CATL-04 | Phase 4 | Complete |
+| CATL-05 | Phase 4 | Complete |
+| CATL-06 | Phase 4 | Complete |
 | CATL-07 | Phase 4 | Pending |
 | CATL-08 | Phase 3 | Complete |
 | CATL-09 | Phase 3 | Complete |
