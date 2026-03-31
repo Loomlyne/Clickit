@@ -100,7 +100,10 @@ Plans:
   3. Previous and next episode navigation buttons are visible and functional (navigate between mock episodes)
   4. An episode quick selector (season + episode picker) allows switching episodes without leaving the watch page
   5. No UI elements overlay the YouTube player during playback (YouTube ToS compliance)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 05-01-PLAN.md -- Build YouTube player component, watch page route, episode metadata, wire existing episode links
+- [ ] 05-02-PLAN.md -- Add prev/next episode navigation, episode quick-selector, E2E tests
 **UI hint**: yes
 
 ### Phase 6: Backend Foundation
@@ -164,7 +167,7 @@ Note: Phase 6 depends only on Phase 1 and can run in parallel with Phases 2-5 if
 | 2. App Shell & Navigation | 0/2 | Planned | - |
 | 3. Home Page & Catalog UI | 3/3 | Complete   | 2026-03-31 |
 | 4. Series Detail & Browse Pages | 0/3 | Planned | - |
-| 5. Watch Page UI | 0/TBD | Not started | - |
+| 5. Watch Page UI | 0/2 | Planned | - |
 | 6. Backend Foundation | 0/TBD | Not started | - |
 | 7. Admin Dashboard | 0/TBD | Not started | - |
 | 8. Data Integration, Auth & Search | 0/TBD | Not started | - |
