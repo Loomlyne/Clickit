@@ -23,7 +23,7 @@ export function SeriesDetailHero({
 }: SeriesDetailHeroProps) {
   return (
     <MotionConfig reducedMotion="user">
-      <div className="-mt-16 relative min-h-[50vh] lg:min-h-[45vh] lg:max-h-[55vh] w-full overflow-hidden">
+      <div className="-mt-16 relative min-h-[80vh] w-full overflow-hidden">
         {/* Background layer — brand color fill with ghost text */}
         <div
           className={`absolute inset-0 ${brandColorBgMap[show.brandColor]}`}
