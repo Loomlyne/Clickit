@@ -51,7 +51,7 @@ Plans:
   5. Every page has a dark luxury background (black/near-black) as the default theme
 **Plans**: 2 plans
 Plans:
-- [ ] 02-01-PLAN.md -- Build glass-effect navbar, root layout shell, Playwright test infrastructure
+- [x] 02-01-PLAN.md -- Build glass-effect navbar, root layout shell, Playwright test infrastructure
 - [ ] 02-02-PLAN.md -- Create auth section (Sign In / avatar dropdown), wire into navbar, visual verification
 **UI hint**: yes
 

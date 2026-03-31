@@ -76,24 +76,24 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Navigation & Layout
 
-- [ ] **NAVG-01**: Floating top nav bar with: Home, Series, Coming Soon, My List, Search, Profile
-- [ ] **NAVG-02**: Nav is clean, minimal -- shows CIT logo (white variant on dark)
-- [ ] **NAVG-03**: Responsive layout -- works on mobile, tablet, desktop
-- [ ] **NAVG-04**: Dark cinematic UI as default theme
+- [x] **NAVG-01**: Floating top nav bar with: Home, Series, Coming Soon, My List, Search, Profile
+- [x] **NAVG-02**: Nav is clean, minimal -- shows CIT logo (white variant on dark)
+- [x] **NAVG-03**: Responsive layout -- works on mobile, tablet, desktop
+- [x] **NAVG-04**: Dark cinematic UI as default theme
 - [ ] **NAVG-05**: Login/signup accessible from nav (or profile dropdown when logged in)
 
 ### Visual Design
 
-- [ ] **DESG-01**: Dark luxury background (black/near-black) across all pages
+- [x] **DESG-01**: Dark luxury background (black/near-black) across all pages
 - [ ] **DESG-02**: Large cinematic hero banners with show artwork
 - [ ] **DESG-03**: Horizontal episode cards with hover state (scale, overlay)
 - [ ] **DESG-04**: Clean white typography on dark backgrounds
 - [ ] **DESG-05**: CIT brand color accents on cards, badges, CTAs, category ribbons
-- [ ] **DESG-06**: Soft glass-effect top navigation bar
+- [x] **DESG-06**: Soft glass-effect top navigation bar
 - [ ] **DESG-07**: Subtle motion/transitions (page transitions, card hovers)
 - [ ] **DESG-08**: Per-show color ribbon using CIT brand pattern system (5 brand colors)
 - [ ] **DESG-09**: Small metadata chips (duration, episode count, genre, status)
-- [ ] **DESG-10**: CIT logo (SVG) displayed correctly following brand guidelines
+- [x] **DESG-10**: CIT logo (SVG) displayed correctly following brand guidelines
 
 ## v2 Requirements
 
@@ -189,21 +189,21 @@ Deferred to future release. Tracked but not in current roadmap.
 | SRCH-01 | Phase 8 | Pending |
 | SRCH-02 | Phase 8 | Pending |
 | SRCH-03 | Phase 8 | Pending |
-| NAVG-01 | Phase 2 | Pending |
-| NAVG-02 | Phase 2 | Pending |
-| NAVG-03 | Phase 2 | Pending |
-| NAVG-04 | Phase 2 | Pending |
+| NAVG-01 | Phase 2 | Complete |
+| NAVG-02 | Phase 2 | Complete |
+| NAVG-03 | Phase 2 | Complete |
+| NAVG-04 | Phase 2 | Complete |
 | NAVG-05 | Phase 2 | Pending |
-| DESG-01 | Phase 2 | Pending |
+| DESG-01 | Phase 2 | Complete |
 | DESG-02 | Phase 3 | Pending |
 | DESG-03 | Phase 3 | Pending |
 | DESG-04 | Phase 3 | Pending |
 | DESG-05 | Phase 3 | Pending |
-| DESG-06 | Phase 2 | Pending |
+| DESG-06 | Phase 2 | Complete |
 | DESG-07 | Phase 3 | Pending |
 | DESG-08 | Phase 3 | Pending |
 | DESG-09 | Phase 3 | Pending |
-| DESG-10 | Phase 2 | Pending |
+| DESG-10 | Phase 2 | Complete |
 
 **Coverage:**
 - v1 requirements: 61 total

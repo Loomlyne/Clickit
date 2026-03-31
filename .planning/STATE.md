@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-03-30T22:21:43.235Z"
-last_activity: 2026-03-30
+status: executing
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-31T00:26:00.866Z"
+last_activity: 2026-03-31
 progress:
   total_phases: 9
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 4
+  completed_plans: 3
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Viewers enter, discover a show, pick an episode, watch immediately -- premium streaming experience for CIT originals.
-**Current focus:** Phase 01 — Project Scaffolding & Design System
+**Current focus:** Phase 02 — app-shell-navigation
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
-Status: Phase 1 complete, ready for Phase 2
-Last activity: 2026-03-30
+Phase: 02 (app-shell-navigation) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-03-31
 
 Progress: [██████████] 100%
 
@@ -52,6 +52,7 @@ Progress: [██████████] 100%
 - Trend: Stable
 
 *Updated after each plan completion*
+| Phase 02 P01 | 36min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -63,6 +64,9 @@ Recent decisions affecting current work:
 - [Roadmap]: Frontend-first approach -- UI with mock data before backend, client validates look first
 - [Roadmap]: 9 phases at fine granularity -- Phases 1-5 visual, Phase 6-7 backend/admin, Phases 8-9 integration
 - [Phase 01]: Design system test pages use server components for pure rendering (colors, typography, spacing) and client component only for interactive demos (components)
+- [Phase 02]: Navbar is a server component -- auth section will be a separate client component in Plan 02
+- [Phase 02]: Glass effect pattern: bg-[rgba(10,10,15,0.75)] + backdrop-blur-lg + backdrop-saturate-[1.2] + WebkitBackdropFilter Safari fallback
+- [Phase 02]: Playwright with chromium-only project for fast E2E tests (~15s target)
 
 ### Pending Todos
 
@@ -76,6 +80,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T22:21:38.944Z
-Stopped at: Phase 2 UI-SPEC approved
-Resume file: .planning/phases/02-app-shell-navigation/02-UI-SPEC.md
+Last session: 2026-03-31T00:26:00.864Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None
