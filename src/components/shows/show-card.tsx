@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { motion } from 'motion/react'
 import { Play } from 'lucide-react'
 
@@ -14,11 +15,11 @@ interface ShowCardProps {
 
 export function ShowCard({ show }: ShowCardProps) {
   return (
+    <Link href={`/series/${show.slug}`} className="block">
     <motion.div
       whileHover={{ scale: 1.05 }}
       transition={{ duration: 0.25, ease: 'easeOut' }}
       className="group relative cursor-pointer overflow-hidden rounded-lg"
-      tabIndex={0}
     >
       {/* Brand ribbon - 4px solid color bar at top edge */}
       <div className={cn('h-1', brandColorBgMap[show.brandColor])} />
@@ -60,5 +61,6 @@ export function ShowCard({ show }: ShowCardProps) {
         </div>
       </div>
     </motion.div>
+    </Link>
   )
 }
