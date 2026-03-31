@@ -85,7 +85,7 @@ Plans:
   5. CATL-11 (broadcast schedule) reclassified as admin feature -- moved to Phase 7 per D-15
 **Plans**: 3 plans
 Plans:
-- [ ] 04-01-PLAN.md -- Extend mock data with Season/Episode types, install shadcn Tabs/Select, build SeriesDetailHero and EpisodeRow
+- [x] 04-01-PLAN.md -- Extend mock data with Season/Episode types, install shadcn Tabs/Select, build SeriesDetailHero and EpisodeRow
 - [ ] 04-02-PLAN.md -- Build SeasonSelector, EpisodeList, wire series detail page at /series/[slug], add E2E tests
 - [ ] 04-03-PLAN.md -- Build Coming Soon page at /coming-soon with ComingSoonShowCard, add E2E tests
 **UI hint**: yes

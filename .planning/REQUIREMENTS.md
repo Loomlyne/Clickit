@@ -39,7 +39,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **CATL-01**: Home page displays cinematic hero banner featuring a show
 - [x] **CATL-02**: Home page displays horizontal content rails (Now Streaming, Coming Soon, by genre)
-- [ ] **CATL-03**: Series detail page shows full backdrop hero with show artwork and info
+- [x] **CATL-03**: Series detail page shows full backdrop hero with show artwork and info
 - [ ] **CATL-04**: Series detail page has season selector (dropdown or tabs)
 - [ ] **CATL-05**: Series detail page shows horizontal episode cards with thumbnail, number, title, duration
 - [ ] **CATL-06**: Episode cards display status badges (published, coming soon, locked)
@@ -47,7 +47,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **CATL-08**: Series listing page shows all available shows in card grid
 - [x] **CATL-09**: Show cards display per-show branded artwork and logo
 - [x] **CATL-10**: Content rails and cards look intentional with few shows (empty-state design)
-- [ ] **CATL-11**: Broadcast schedule displayed showing day/time per show
+- [x] **CATL-11**: Broadcast schedule displayed showing day/time per show
 
 ### Watch Experience
 
@@ -164,7 +164,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | ADMN-10 | Phase 7 | Pending |
 | CATL-01 | Phase 3 | Complete |
 | CATL-02 | Phase 3 | Complete |
-| CATL-03 | Phase 4 | Pending |
+| CATL-03 | Phase 4 | Complete |
 | CATL-04 | Phase 4 | Pending |
 | CATL-05 | Phase 4 | Pending |
 | CATL-06 | Phase 4 | Pending |
@@ -172,7 +172,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | CATL-08 | Phase 3 | Complete |
 | CATL-09 | Phase 3 | Complete |
 | CATL-10 | Phase 3 | Complete |
-| CATL-11 | Phase 4 | Pending |
+| CATL-11 | Phase 4 | Complete |
 | WTCH-01 | Phase 5 | Pending |
 | WTCH-02 | Phase 5 | Pending |
 | WTCH-03 | Phase 5 | Pending |
