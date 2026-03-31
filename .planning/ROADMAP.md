@@ -66,7 +66,11 @@ Plans:
   4. Cards have hover effects (scale, overlay) and pages have subtle motion transitions
   5. A series listing page shows all available shows in a card grid with metadata chips (genre, episode count, status)
   6. The platform looks intentional and premium even with only 3-5 mock shows (empty-state design handled)
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 03-01-PLAN.md -- Install deps (motion, embla), add shadcn Card/Carousel, create mock data, build ShowCard and PlaceholderCard
+- [ ] 03-02-PLAN.md -- Build cinematic hero banner with auto-rotating crossfade, ambient glow, and progress indicator
+- [ ] 03-03-PLAN.md -- Build ContentRail carousel, wire home page, create /series catalog grid, add E2E tests
 **UI hint**: yes
 
 ### Phase 4: Series Detail & Browse Pages
@@ -154,7 +158,7 @@ Note: Phase 6 depends only on Phase 1 and can run in parallel with Phases 2-5 if
 |-------|----------------|--------|-----------|
 | 1. Project Scaffolding & Design System | 2/2 | Complete | 2026-03-30 |
 | 2. App Shell & Navigation | 0/2 | Planned | - |
-| 3. Home Page & Catalog UI | 0/TBD | Not started | - |
+| 3. Home Page & Catalog UI | 0/3 | Planned | - |
 | 4. Series Detail & Browse Pages | 0/TBD | Not started | - |
 | 5. Watch Page UI | 0/TBD | Not started | - |
 | 6. Backend Foundation | 0/TBD | Not started | - |
