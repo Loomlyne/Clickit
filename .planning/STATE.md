@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Viewers enter, discover a show, pick an episode, watch immediately -- premium streaming experience for CIT originals.
-**Current focus:** Phase 03 — home-page-catalog-ui
+**Current focus:** Phase 04 — series-detail-browse-pages
 
 ## Current Position
 
