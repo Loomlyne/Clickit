@@ -37,7 +37,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Catalog & Browsing
 
-- [ ] **CATL-01**: Home page displays cinematic hero banner featuring a show
+- [x] **CATL-01**: Home page displays cinematic hero banner featuring a show
 - [ ] **CATL-02**: Home page displays horizontal content rails (Now Streaming, Coming Soon, by genre)
 - [ ] **CATL-03**: Series detail page shows full backdrop hero with show artwork and info
 - [ ] **CATL-04**: Series detail page has season selector (dropdown or tabs)
@@ -85,12 +85,12 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Visual Design
 
 - [x] **DESG-01**: Dark luxury background (black/near-black) across all pages
-- [ ] **DESG-02**: Large cinematic hero banners with show artwork
+- [x] **DESG-02**: Large cinematic hero banners with show artwork
 - [x] **DESG-03**: Horizontal episode cards with hover state (scale, overlay)
 - [x] **DESG-04**: Clean white typography on dark backgrounds
 - [x] **DESG-05**: CIT brand color accents on cards, badges, CTAs, category ribbons
 - [x] **DESG-06**: Soft glass-effect top navigation bar
-- [ ] **DESG-07**: Subtle motion/transitions (page transitions, card hovers)
+- [x] **DESG-07**: Subtle motion/transitions (page transitions, card hovers)
 - [x] **DESG-08**: Per-show color ribbon using CIT brand pattern system (5 brand colors)
 - [x] **DESG-09**: Small metadata chips (duration, episode count, genre, status)
 - [x] **DESG-10**: CIT logo (SVG) displayed correctly following brand guidelines
@@ -162,7 +162,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | ADMN-08 | Phase 7 | Pending |
 | ADMN-09 | Phase 7 | Pending |
 | ADMN-10 | Phase 7 | Pending |
-| CATL-01 | Phase 3 | Pending |
+| CATL-01 | Phase 3 | Complete |
 | CATL-02 | Phase 3 | Pending |
 | CATL-03 | Phase 4 | Pending |
 | CATL-04 | Phase 4 | Pending |
@@ -195,12 +195,12 @@ Deferred to future release. Tracked but not in current roadmap.
 | NAVG-04 | Phase 2 | Complete |
 | NAVG-05 | Phase 2 | Complete |
 | DESG-01 | Phase 2 | Complete |
-| DESG-02 | Phase 3 | Pending |
+| DESG-02 | Phase 3 | Complete |
 | DESG-03 | Phase 3 | Complete |
 | DESG-04 | Phase 3 | Complete |
 | DESG-05 | Phase 3 | Complete |
 | DESG-06 | Phase 2 | Complete |
-| DESG-07 | Phase 3 | Pending |
+| DESG-07 | Phase 3 | Complete |
 | DESG-08 | Phase 3 | Complete |
 | DESG-09 | Phase 3 | Complete |
 | DESG-10 | Phase 2 | Complete |

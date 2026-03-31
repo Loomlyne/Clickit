@@ -69,7 +69,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 03-01-PLAN.md -- Install deps (motion, embla), add shadcn Card/Carousel, create mock data, build ShowCard and PlaceholderCard
-- [ ] 03-02-PLAN.md -- Build cinematic hero banner with auto-rotating crossfade, ambient glow, and progress indicator
+- [x] 03-02-PLAN.md -- Build cinematic hero banner with auto-rotating crossfade, ambient glow, and progress indicator
 - [ ] 03-03-PLAN.md -- Build ContentRail carousel, wire home page, create /series catalog grid, add E2E tests
 **UI hint**: yes
 

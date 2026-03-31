@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-03-31T07:39:15.045Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-03-31T09:27:52.155Z"
 last_activity: 2026-03-31
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
   percent: 71
 ---
 
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 ## Current Position
 
 Phase: 3
-Plan: 1 of 3 complete
-Status: Executing phase
+Plan: 2 of 3 complete
+Status: Ready to execute
 Last activity: 2026-03-31
 
 Progress: [███████░░░] 71%
@@ -55,6 +55,7 @@ Progress: [███████░░░] 71%
 | Phase 02 P01 | 36min | 2 tasks | 7 files |
 | Phase 02 P02 | 30min | 2 tasks | 4 files |
 | Phase 03 P01 | 3min | 3 tasks | 6 files |
+| Phase 03 P02 | 27min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Mock auth state (useState) resets on hard refresh -- accepted; real Supabase auth wired in Phase 8
 - [Phase 03]: Static brand color maps (brandColorBgMap/TextMap/HexMap) for Tailwind v4 compatibility -- never construct class names dynamically
 - [Phase 03]: ShowCard uses group-focus-within for keyboard-accessible hover overlay; PlaceholderCard is server component with aria-hidden
+- [Phase 03]: Hero title uses text-primary-foreground (white) not text-primary (brand blue) for readability on dark hero backgrounds
+- [Phase 03]: AnimatePresence mode='sync' for hero crossfade -- allows overlapping enter/exit for true crossfade effect
 
 ### Pending Todos
 
@@ -86,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T07:39:15.043Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-03-31T09:27:52.153Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
