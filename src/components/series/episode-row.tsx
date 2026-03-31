@@ -5,18 +5,29 @@ import { Play, Clock, Lock } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { type Episode, type Show, brandColorBgMap } from '@/lib/mock-data'
+import {
+  type Episode,
+  type Show,
+  brandColorBgMap,
+  brandColorHexMap,
+} from '@/lib/mock-data'
 
 interface EpisodeRowProps {
   episode: Episode
   showBrandColor: Show['brandColor']
+  currentEpisodeId?: string
 }
 
-export function EpisodeRow({ episode, showBrandColor }: EpisodeRowProps) {
+export function EpisodeRow({
+  episode,
+  showBrandColor,
+  currentEpisodeId,
+}: EpisodeRowProps) {
   const isPublished = episode.status === 'published'
   const isComingSoon = episode.status === 'coming-soon'
   const isLocked = episode.status === 'locked'
   const isDimmed = isComingSoon || isLocked
+  const isCurrentEpisode = currentEpisodeId === episode.id
 
   const rowContent = (
     <>
@@ -104,6 +115,18 @@ export function EpisodeRow({ episode, showBrandColor }: EpisodeRowProps) {
       </div>
     </>
   )
+
+  if (isPublished && isCurrentEpisode) {
+    return (
+      <div
+        aria-current="true"
+        className="group flex items-start gap-4 rounded-lg p-3 bg-surface-2 border-l-2 cursor-default"
+        style={{ borderLeftColor: brandColorHexMap[showBrandColor] }}
+      >
+        {rowContent}
+      </div>
+    )
+  }
 
   if (isPublished) {
     return (

@@ -11,9 +11,14 @@ const CHUNK_SIZE = 20
 interface EpisodeListProps {
   episodes: Episode[]
   showBrandColor: Show['brandColor']
+  currentEpisodeId?: string
 }
 
-export function EpisodeList({ episodes, showBrandColor }: EpisodeListProps) {
+export function EpisodeList({
+  episodes,
+  showBrandColor,
+  currentEpisodeId,
+}: EpisodeListProps) {
   const [visibleCount, setVisibleCount] = useState(CHUNK_SIZE)
   const visibleEpisodes = episodes.slice(0, visibleCount)
   const hasMore = visibleCount < episodes.length
@@ -37,6 +42,7 @@ export function EpisodeList({ episodes, showBrandColor }: EpisodeListProps) {
             key={ep.id}
             episode={ep}
             showBrandColor={showBrandColor}
+            currentEpisodeId={currentEpisodeId}
           />
         ))}
       </div>
