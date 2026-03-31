@@ -1,7 +1,8 @@
 ---
 phase: 3
 slug: home-page-catalog-ui
-status: draft
+status: approved
+reviewed_at: 2026-03-31
 shadcn_initialized: true
 preset: "new-york (neutral base, CSS variables, Radix UI)"
 created: 2026-03-31
