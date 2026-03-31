@@ -43,6 +43,7 @@ Declared values (inherited from Phase 1, multiples of 4):
 
 Exceptions:
 - 44px minimum touch target for episode row tap areas on mobile (WCAG 2.5.8)
+- 12px: mobile/tablet episode row gap and inner spacing -- sits between 8px (too tight for touch separation at 120-140px thumbnail scale) and 16px (wastes vertical space on small screens where episode rows must stay compact). Used for: mobile row gap between episodes, tablet/mobile text-to-thumbnail gap, and row vertical padding on desktop/tablet.
 - Episode thumbnail width: 200px desktop, 140px tablet, 120px mobile (not a spacing token -- component-specific dimension)
 
 ---
@@ -69,7 +70,7 @@ Additional typographic specifications for Phase 4:
 | Episode description | 14px | 400 | `text-muted-foreground` (#A1A1B5) | 1 line (truncate with ellipsis) |
 | Episode number prefix | 14px | 400 | `text-text-muted` (#6B6B80) | none |
 | Duration chip | 14px | 400 | `text-muted-foreground` (#A1A1B5) | none |
-| "Load More" button | 14px | 600 (Semibold) | `text-primary-foreground` (#FFFFFF) | none |
+| "Load More" button | 14px | 700 | `text-primary-foreground` (#FFFFFF) | none |
 | Coming Soon page title | 48px desktop / 36px mobile | 700 | `text-primary-foreground` (#FFFFFF) | none |
 | Coming Soon section headers | 24px | 700 | `text-primary` (#2C3569 via shadcn) | none |
 
