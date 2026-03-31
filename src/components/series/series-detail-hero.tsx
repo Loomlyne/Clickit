@@ -24,9 +24,12 @@ export function SeriesDetailHero({
   return (
     <MotionConfig reducedMotion="user">
       <div className="-mt-16 relative min-h-[80vh] w-full overflow-hidden">
-        {/* Background layer — brand color fill with ghost text */}
-        <div
+        {/* Background layer — Ken Burns slow zoom like home hero */}
+        <motion.div
           className={`absolute inset-0 ${brandColorBgMap[show.brandColor]}`}
+          initial={{ scale: 1 }}
+          animate={{ scale: 1.08 }}
+          transition={{ duration: 12, ease: 'linear', repeat: Infinity, repeatType: 'reverse' }}
         >
           <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none">
             <span
@@ -36,11 +39,14 @@ export function SeriesDetailHero({
               {show.title.split(' ')[0]}
             </span>
           </div>
-        </div>
+        </motion.div>
 
         {/* Ambient color glow — same radial-gradient as hero-slide.tsx */}
-        <div
+        <motion.div
           className="absolute inset-0 z-[1]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.5, delay: 0.2 }}
           style={{
             background: `radial-gradient(ellipse 80% 80% at 60% 40%, ${brandColorHexMap[show.brandColor]}55 0%, ${brandColorHexMap[show.brandColor]}22 40%, transparent 70%)`,
           }}
@@ -58,8 +64,8 @@ export function SeriesDetailHero({
           }}
         />
 
-        {/* Content layer — staggered reveal */}
-        <div className="absolute bottom-0 left-0 z-10 pb-12 px-6 md:px-12">
+        {/* Content layer — staggered reveal, same position as home hero */}
+        <div className="absolute bottom-[128px] left-0 z-10 px-6 md:px-12">
           {/* Genre label */}
           <motion.p
             className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/50"
