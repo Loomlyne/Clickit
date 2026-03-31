@@ -19,15 +19,15 @@ Viewers enter the platform, discover a show, pick an episode, and watch immediat
 ### Active
 
 - [ ] User authentication via Supabase Auth (sign up, login, logout)
-- [ ] Series catalog with cinematic hero banners and content rails
-- [ ] Series detail page with season selector and episode browser
+- [x] Series catalog with cinematic hero banners and content rails — Validated in Phase 3
+- [x] Series detail page with season selector and episode browser — Validated in Phase 4
 - [ ] Episode watch page with embedded YouTube player
 - [ ] Show statuses: draft, coming soon, now streaming
 - [ ] Episode statuses: draft, coming soon, published
 - [ ] Watchlist (add/remove shows)
 - [ ] Continue watching (track progress per episode)
 - [ ] Autoplay next episode
-- [ ] Coming Soon page showing unreleased shows and episodes
+- [x] Coming Soon page showing unreleased shows and episodes — Validated in Phase 4
 - [ ] Admin dashboard: manage shows, seasons, episodes, release state
 - [ ] Admin connects YouTube video URLs to episodes
 - [ ] Responsive cinematic dark UI following CIT brand guidelines
@@ -167,4 +167,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-30 after initialization*
+*Last updated: 2026-03-31 after Phase 4 completion — series detail and coming-soon pages built*
