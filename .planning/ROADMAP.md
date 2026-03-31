@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Project Scaffolding & Design System** - Next.js project init, CIT brand tokens, WCAG-safe color palette, typography setup
 - [ ] **Phase 2: App Shell & Navigation** - Dark cinematic layout shell, glass-effect nav bar, responsive structure, CIT logo
-- [ ] **Phase 3: Home Page & Catalog UI** - Cinematic hero banner, content rails, show cards with branded artwork, motion effects (mock data)
+- [x] **Phase 3: Home Page & Catalog UI** - Cinematic hero banner, content rails, show cards with branded artwork, motion effects (mock data) (completed 2026-03-31)
 - [ ] **Phase 4: Series Detail & Browse Pages** - Series detail page, season selector, episode cards, Coming Soon page, broadcast schedule (mock data)
 - [ ] **Phase 5: Watch Page UI** - YouTube embedded player, episode metadata, prev/next nav, episode quick selector (mock data)
 - [ ] **Phase 6: Backend Foundation** - Supabase schema, RLS policies, auth client setup, seed data
@@ -70,7 +70,7 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md -- Install deps (motion, embla), add shadcn Card/Carousel, create mock data, build ShowCard and PlaceholderCard
 - [x] 03-02-PLAN.md -- Build cinematic hero banner with auto-rotating crossfade, ambient glow, and progress indicator
-- [ ] 03-03-PLAN.md -- Build ContentRail carousel, wire home page, create /series catalog grid, add E2E tests
+- [x] 03-03-PLAN.md -- Build ContentRail carousel, wire home page, create /series catalog grid, add E2E tests
 **UI hint**: yes
 
 ### Phase 4: Series Detail & Browse Pages
@@ -158,7 +158,7 @@ Note: Phase 6 depends only on Phase 1 and can run in parallel with Phases 2-5 if
 |-------|----------------|--------|-----------|
 | 1. Project Scaffolding & Design System | 2/2 | Complete | 2026-03-30 |
 | 2. App Shell & Navigation | 0/2 | Planned | - |
-| 3. Home Page & Catalog UI | 0/3 | Planned | - |
+| 3. Home Page & Catalog UI | 3/3 | Complete   | 2026-03-31 |
 | 4. Series Detail & Browse Pages | 0/TBD | Not started | - |
 | 5. Watch Page UI | 0/TBD | Not started | - |
 | 6. Backend Foundation | 0/TBD | Not started | - |
