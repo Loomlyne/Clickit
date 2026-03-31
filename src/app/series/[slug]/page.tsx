@@ -75,7 +75,7 @@ export default async function SeriesDetailPage({ params }: Props) {
 
       {moreLikeThis.length > 0 && (
         <div className="mt-12 pb-16">
-          <ContentRail title="More Like This" shows={moreLikeThis} />
+          <ContentRail title={`More ${show.genre} Shows`} shows={moreLikeThis} />
         </div>
       )}
     </div>

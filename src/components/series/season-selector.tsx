@@ -40,7 +40,7 @@ export function SeasonSelector({
                 value={season.id}
                 className="text-muted-foreground data-[state=active]:text-foreground data-[state=active]:bg-surface-3"
               >
-                Season {season.seasonNumber}
+                Season {season.seasonNumber} ({season.episodeCount})
               </TabsTrigger>
             ))}
           </TabsList>
@@ -62,7 +62,7 @@ export function SeasonSelector({
         <SelectContent>
           {seasons.map((season) => (
             <SelectItem key={season.id} value={season.id}>
-              Season {season.seasonNumber}
+              Season {season.seasonNumber} ({season.episodeCount} episodes)
             </SelectItem>
           ))}
         </SelectContent>
