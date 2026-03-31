@@ -88,7 +88,7 @@ export function WatchPageContent({
         {/* Right column — episode sidebar */}
         <aside
           aria-label="Episode selector"
-          className="w-full lg:w-[380px] shrink-0 lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto border-t lg:border-t-0 lg:border-l border-border bg-card/50 pt-4 lg:pt-16 pb-8 px-4"
+          className="w-full lg:w-[380px] shrink-0 lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto scrollbar-none border-t lg:border-t-0 lg:border-l border-border bg-card/50 pt-4 lg:pt-16 pb-8 px-4"
         >
           <h2 className="text-lg font-bold text-foreground mb-3">Episodes</h2>
           <div className="sticky top-0 z-10 bg-card/50 pb-3">
