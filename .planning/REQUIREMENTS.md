@@ -80,7 +80,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **NAVG-02**: Nav is clean, minimal -- shows CIT logo (white variant on dark)
 - [x] **NAVG-03**: Responsive layout -- works on mobile, tablet, desktop
 - [x] **NAVG-04**: Dark cinematic UI as default theme
-- [ ] **NAVG-05**: Login/signup accessible from nav (or profile dropdown when logged in)
+- [x] **NAVG-05**: Login/signup accessible from nav (or profile dropdown when logged in)
 
 ### Visual Design
 
@@ -193,7 +193,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | NAVG-02 | Phase 2 | Complete |
 | NAVG-03 | Phase 2 | Complete |
 | NAVG-04 | Phase 2 | Complete |
-| NAVG-05 | Phase 2 | Pending |
+| NAVG-05 | Phase 2 | Complete |
 | DESG-01 | Phase 2 | Complete |
 | DESG-02 | Phase 3 | Pending |
 | DESG-03 | Phase 3 | Pending |

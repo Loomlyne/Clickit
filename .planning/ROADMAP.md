@@ -52,7 +52,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 02-01-PLAN.md -- Build glass-effect navbar, root layout shell, Playwright test infrastructure
-- [ ] 02-02-PLAN.md -- Create auth section (Sign In / avatar dropdown), wire into navbar, visual verification
+- [x] 02-02-PLAN.md -- Create auth section (Sign In / avatar dropdown), wire into navbar, visual verification
 **UI hint**: yes
 
 ### Phase 3: Home Page & Catalog UI
