@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { motion } from 'motion/react'
 
 import {
   Carousel,
@@ -30,7 +31,12 @@ export function ContentRail({
   const placeholderCount = Math.max(0, minCards - shows.length)
 
   return (
-    <section>
+    <motion.section
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+    >
       {/* Section header */}
       <div className="flex items-center justify-between px-6 md:px-12">
         <h2 className="text-2xl font-bold text-primary">{title}</h2>
@@ -76,6 +82,6 @@ export function ContentRail({
         <CarouselPrevious className="hidden h-10 w-10 rounded-full border-0 bg-surface-3/80 text-primary backdrop-blur-sm hover:bg-surface-3 md:-left-4 md:flex" />
         <CarouselNext className="hidden h-10 w-10 rounded-full border-0 bg-surface-3/80 text-primary backdrop-blur-sm hover:bg-surface-3 md:-right-4 md:flex" />
       </Carousel>
-    </section>
+    </motion.section>
   )
 }
