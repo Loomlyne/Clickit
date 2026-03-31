@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-31T02:03:47.589Z"
+status: executing
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-31T07:39:15.045Z"
 last_activity: 2026-03-31
 progress:
   total_phases: 9
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
-  percent: 100
+  total_plans: 7
+  completed_plans: 5
+  percent: 71
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Viewers enter, discover a show, pick an episode, watch immediately -- premium streaming experience for CIT originals.
-**Current focus:** Phase 02 — app-shell-navigation
+**Current focus:** Phase 03 — home-page-catalog-ui
 
 ## Current Position
 
 Phase: 3
-Plan: Not started
-Status: Phase complete — ready for verification
+Plan: 1 of 3 complete
+Status: Executing phase
 Last activity: 2026-03-31
 
-Progress: [██████████] 100%
+Progress: [███████░░░] 71%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [██████████] 100%
 *Updated after each plan completion*
 | Phase 02 P01 | 36min | 2 tasks | 7 files |
 | Phase 02 P02 | 30min | 2 tasks | 4 files |
+| Phase 03 P01 | 3min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Playwright with chromium-only project for fast E2E tests (~15s target)
 - [Phase 02]: AuthSection is a client island inside a server component Navbar -- keeps RSC boundary clean while enabling useState for mock auth toggle
 - [Phase 02]: Mock auth state (useState) resets on hard refresh -- accepted; real Supabase auth wired in Phase 8
+- [Phase 03]: Static brand color maps (brandColorBgMap/TextMap/HexMap) for Tailwind v4 compatibility -- never construct class names dynamically
+- [Phase 03]: ShowCard uses group-focus-within for keyboard-accessible hover overlay; PlaceholderCard is server component with aria-hidden
 
 ### Pending Todos
 
@@ -83,6 +86,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T02:00:11.834Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-03-31T07:39:15.043Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None

@@ -45,8 +45,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **CATL-06**: Episode cards display status badges (published, coming soon, locked)
 - [ ] **CATL-07**: Coming Soon page shows unreleased shows and upcoming episodes
 - [ ] **CATL-08**: Series listing page shows all available shows in card grid
-- [ ] **CATL-09**: Show cards display per-show branded artwork and logo
-- [ ] **CATL-10**: Content rails and cards look intentional with few shows (empty-state design)
+- [x] **CATL-09**: Show cards display per-show branded artwork and logo
+- [x] **CATL-10**: Content rails and cards look intentional with few shows (empty-state design)
 - [ ] **CATL-11**: Broadcast schedule displayed showing day/time per show
 
 ### Watch Experience
@@ -86,13 +86,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **DESG-01**: Dark luxury background (black/near-black) across all pages
 - [ ] **DESG-02**: Large cinematic hero banners with show artwork
-- [ ] **DESG-03**: Horizontal episode cards with hover state (scale, overlay)
-- [ ] **DESG-04**: Clean white typography on dark backgrounds
-- [ ] **DESG-05**: CIT brand color accents on cards, badges, CTAs, category ribbons
+- [x] **DESG-03**: Horizontal episode cards with hover state (scale, overlay)
+- [x] **DESG-04**: Clean white typography on dark backgrounds
+- [x] **DESG-05**: CIT brand color accents on cards, badges, CTAs, category ribbons
 - [x] **DESG-06**: Soft glass-effect top navigation bar
 - [ ] **DESG-07**: Subtle motion/transitions (page transitions, card hovers)
-- [ ] **DESG-08**: Per-show color ribbon using CIT brand pattern system (5 brand colors)
-- [ ] **DESG-09**: Small metadata chips (duration, episode count, genre, status)
+- [x] **DESG-08**: Per-show color ribbon using CIT brand pattern system (5 brand colors)
+- [x] **DESG-09**: Small metadata chips (duration, episode count, genre, status)
 - [x] **DESG-10**: CIT logo (SVG) displayed correctly following brand guidelines
 
 ## v2 Requirements
@@ -170,8 +170,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | CATL-06 | Phase 4 | Pending |
 | CATL-07 | Phase 4 | Pending |
 | CATL-08 | Phase 3 | Pending |
-| CATL-09 | Phase 3 | Pending |
-| CATL-10 | Phase 3 | Pending |
+| CATL-09 | Phase 3 | Complete |
+| CATL-10 | Phase 3 | Complete |
 | CATL-11 | Phase 4 | Pending |
 | WTCH-01 | Phase 5 | Pending |
 | WTCH-02 | Phase 5 | Pending |
@@ -196,13 +196,13 @@ Deferred to future release. Tracked but not in current roadmap.
 | NAVG-05 | Phase 2 | Complete |
 | DESG-01 | Phase 2 | Complete |
 | DESG-02 | Phase 3 | Pending |
-| DESG-03 | Phase 3 | Pending |
-| DESG-04 | Phase 3 | Pending |
-| DESG-05 | Phase 3 | Pending |
+| DESG-03 | Phase 3 | Complete |
+| DESG-04 | Phase 3 | Complete |
+| DESG-05 | Phase 3 | Complete |
 | DESG-06 | Phase 2 | Complete |
 | DESG-07 | Phase 3 | Pending |
-| DESG-08 | Phase 3 | Pending |
-| DESG-09 | Phase 3 | Pending |
+| DESG-08 | Phase 3 | Complete |
+| DESG-09 | Phase 3 | Complete |
 | DESG-10 | Phase 2 | Complete |
 
 **Coverage:**

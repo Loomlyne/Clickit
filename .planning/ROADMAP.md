@@ -68,7 +68,7 @@ Plans:
   6. The platform looks intentional and premium even with only 3-5 mock shows (empty-state design handled)
 **Plans**: 3 plans
 Plans:
-- [ ] 03-01-PLAN.md -- Install deps (motion, embla), add shadcn Card/Carousel, create mock data, build ShowCard and PlaceholderCard
+- [x] 03-01-PLAN.md -- Install deps (motion, embla), add shadcn Card/Carousel, create mock data, build ShowCard and PlaceholderCard
 - [ ] 03-02-PLAN.md -- Build cinematic hero banner with auto-rotating crossfade, ambient glow, and progress indicator
 - [ ] 03-03-PLAN.md -- Build ContentRail carousel, wire home page, create /series catalog grid, add E2E tests
 **UI hint**: yes
