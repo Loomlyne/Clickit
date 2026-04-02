@@ -6,7 +6,6 @@ import { motion } from 'motion/react'
 import { ArrowLeft } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
 import { YouTubePlayer } from '@/components/watch/youtube-player'
 import { EpisodeBreadcrumb } from '@/components/watch/episode-breadcrumb'
 import { EpisodeNav } from '@/components/watch/episode-nav'
@@ -58,40 +57,58 @@ export function WatchPageContent({
   }, [])
 
   return (
-    <div className="-mt-16">
-      {/* Sidebar layout: player+metadata left, episodes right */}
-      <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 max-w-[1400px] mx-auto">
-        {/* Left column — player + metadata + nav */}
-        <div className="flex-1 min-w-0">
-          {/* Player */}
-          <div onMouseMove={handleMouseMove} className="relative">
-            {/* Auto-hiding top bar */}
-            <div className={cn(
-              'absolute top-0 left-0 right-0 z-20 flex items-center gap-3 px-4 py-3',
-              'bg-gradient-to-b from-black/80 to-transparent transition-opacity duration-300',
-              barVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
-            )}>
-              <Link href={`/series/${show.slug}`} className="text-white/70 transition-colors hover:text-white">
-                <ArrowLeft className="size-5" />
-              </Link>
-              <span className="truncate text-sm text-white/80">
-                {show.title} &bull; S{season.seasonNumber}E{episode.episodeNumber}
-              </span>
-            </div>
+    <div className="min-h-screen bg-black text-white -mt-16">
+      {/* Auto-hide top bar — fixed overlay with gradient */}
+      <div
+        className={cn(
+          'fixed top-0 left-0 right-0 z-50 transition-opacity duration-300',
+          barVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        )}
+        onMouseMove={handleMouseMove}
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%)',
+            height: '120px',
+          }}
+        />
+        <div className="relative flex items-center justify-between px-6 py-4">
+          <Link
+            href={`/series/${show.slug}`}
+            className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="size-5" />
+            <span className="text-sm font-medium">
+              {show.title} &bull; S{season.seasonNumber}E{episode.episodeNumber}
+            </span>
+          </Link>
+        </div>
+      </div>
 
+      {/* Main layout: player+metadata left/top, sidebar right/bottom */}
+      <div
+        className="flex flex-col lg:flex-row min-h-screen"
+        onMouseMove={handleMouseMove}
+      >
+        {/* Player + metadata (left on desktop, top on mobile) */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Player — full width, zero padding */}
+          <div className="w-full bg-black" style={{ aspectRatio: '16/9', maxHeight: 'calc(100vh - 0px)' }}>
             <YouTubePlayer
               videoId={episode.youtubeId ?? ''}
               brandColor={brandColorBgMap[show.brandColor]}
             />
           </div>
 
-          {/* Metadata section */}
+          {/* Metadata below player */}
           <motion.div
-            className="px-4 md:px-6 pt-4"
+            className="px-6 py-6"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: CINEMA_EASE }}
           >
+            {/* Breadcrumb */}
             <EpisodeBreadcrumb
               showTitle={show.title}
               showSlug={show.slug}
@@ -99,39 +116,52 @@ export function WatchPageContent({
               episodeNumber={episode.episodeNumber}
             />
 
-            <h1 className="mt-3 text-[28px] font-bold leading-[1.2] text-foreground">
+            {/* Episode title — display font (Playfair Display) */}
+            <h1
+              className="font-display font-bold text-white mt-3 leading-tight"
+              style={{ fontSize: 'clamp(1.5rem, 3vw, 2rem)' }}
+            >
               {episode.title}
             </h1>
 
-            <Badge variant="secondary" className="mt-2 text-sm text-muted-foreground">
-              {episode.duration} min
-            </Badge>
+            {/* Duration badge */}
+            {episode.duration && (
+              <div className="mt-2">
+                <span className="text-xs bg-white/10 text-white/60 px-2.5 py-1 rounded-full">
+                  {episode.duration} min
+                </span>
+              </div>
+            )}
 
-            <p className="mt-3 text-base leading-relaxed text-muted-foreground line-clamp-3 md:line-clamp-none">
+            {/* Description */}
+            <p className="mt-3 text-white/60 text-sm leading-relaxed line-clamp-3 md:line-clamp-none max-w-2xl">
               {episode.description}
             </p>
-          </motion.div>
 
-          {/* Episode Navigation */}
-          <div className="px-4 md:px-6 pt-6">
-            <EpisodeNav prev={prevEpisode} next={nextEpisode} />
-          </div>
+            {/* Prev/Next nav */}
+            <div className="mt-6">
+              <EpisodeNav prev={prevEpisode} next={nextEpisode} />
+            </div>
+          </motion.div>
         </div>
 
-        {/* Right column — episode sidebar */}
+        {/* Sidebar — episode list (right on desktop, bottom on mobile) */}
         <aside
           aria-label="Episode selector"
-          className="w-full lg:w-[380px] shrink-0 border-t lg:border-t-0 lg:border-l border-border bg-card/50 pt-4 lg:pt-16 pb-8 px-4"
+          className="w-full lg:w-[360px] lg:flex-shrink-0 border-t border-white/[0.06] lg:border-t-0 lg:border-l lg:border-white/[0.06] bg-black lg:min-h-screen"
         >
-          <h2 className="text-lg font-bold text-foreground mb-3">Episodes</h2>
-          <div className="sticky top-0 z-10 bg-card/50 pb-3">
-            <SeasonSelector
-              seasons={seasons}
-              activeSeason={activeSeasonId}
-              onSeasonChange={setActiveSeasonId}
-            />
-          </div>
-          <div className="mt-2">
+          <div className="lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto scrollbar-hide">
+            <div className="px-4 py-4 border-b border-white/[0.06]">
+              <p className="text-white/40 text-xs uppercase tracking-wider mb-1">{show.title}</p>
+              <p className="text-white font-semibold">Episodes</p>
+              <div className="mt-3">
+                <SeasonSelector
+                  seasons={seasons}
+                  activeSeason={activeSeasonId}
+                  onSeasonChange={setActiveSeasonId}
+                />
+              </div>
+            </div>
             <EpisodeList
               episodes={currentEpisodes}
               showBrandColor={show.brandColor}
