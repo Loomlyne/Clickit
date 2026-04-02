@@ -6,6 +6,7 @@ import { SeasonSelector } from '@/components/series/season-selector'
 import { EpisodeList } from '@/components/series/episode-list'
 import { MetadataCard } from './metadata-card'
 import type { Season, Episode, Show } from '@/lib/mock-data'
+import { brandColorHexMap } from '@/lib/mock-data'
 
 interface SeriesDetailContentProps {
   seasons: Season[]
@@ -22,6 +23,7 @@ export function SeriesDetailContent({
 }: SeriesDetailContentProps) {
   const [activeSeasonId, setActiveSeasonId] = useState(seasons[0]?.id ?? '')
   const currentEpisodes = episodesBySeason[activeSeasonId] ?? []
+  const brandColorHex = brandColorHexMap[showBrandColor] ?? '#2C3569'
 
   return (
     <div className="flex flex-col gap-8 lg:flex-row">
@@ -31,6 +33,7 @@ export function SeriesDetailContent({
             seasons={seasons}
             activeSeason={activeSeasonId}
             onSeasonChange={setActiveSeasonId}
+            brandColorHex={brandColorHex}
           />
         )}
         <div className="mt-6">
