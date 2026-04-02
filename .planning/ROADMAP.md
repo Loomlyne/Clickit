@@ -117,7 +117,7 @@ Plans:
   4. A single admin user can be identified by user ID check in the application
 **Plans**: 2 plans
 Plans:
-- [ ] 06-01-PLAN.md -- Supabase init, schema migration (6 tables), RLS policies, storage bucket, seed data (15 CIT programs)
+- [x] 06-01-PLAN.md -- Supabase init, schema migration (6 tables), RLS policies, storage bucket, seed data (15 CIT programs)
 - [ ] 06-02-PLAN.md -- Supabase client utilities (server, browser, admin), middleware for token refresh, TypeScript type generation
 
 ### Phase 7: Admin Dashboard

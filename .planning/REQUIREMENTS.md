@@ -10,8 +10,8 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Foundation
 
 - [x] **FOUN-01**: Next.js project initialized with App Router, Tailwind CSS, and Supabase client
-- [ ] **FOUN-02**: Supabase database schema created (series, seasons, episodes, users, watch_progress, watchlist)
-- [ ] **FOUN-03**: Row Level Security (RLS) enabled on all tables with appropriate policies
+- [x] **FOUN-02**: Supabase database schema created (series, seasons, episodes, users, watch_progress, watchlist)
+- [x] **FOUN-03**: Row Level Security (RLS) enabled on all tables with appropriate policies
 - [x] **FOUN-04**: Design system established with CIT brand colors (WCAG-safe tints for dark backgrounds), typography (Montreal/Avenir Arabic), and spacing tokens
 
 ### Authentication
@@ -19,8 +19,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **AUTH-01**: User can sign up with email and password via Supabase Auth
 - [ ] **AUTH-02**: User can log in and session persists across browser refresh
 - [ ] **AUTH-03**: User can log out from any page
-- [ ] **AUTH-04**: Unauthenticated users can browse and watch content (auth gates personalization, not access)
-- [ ] **AUTH-05**: Admin user identified by user ID check (single admin, no RBAC)
+- [x] **AUTH-04**: Unauthenticated users can browse and watch content (auth gates personalization, not access)
+- [x] **AUTH-05**: Admin user identified by user ID check (single admin, no RBAC)
 
 ### Admin Dashboard
 
@@ -144,14 +144,14 @@ Deferred to future release. Tracked but not in current roadmap.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | FOUN-01 | Phase 1 | Complete |
-| FOUN-02 | Phase 6 | Pending |
-| FOUN-03 | Phase 6 | Pending |
+| FOUN-02 | Phase 6 | Complete |
+| FOUN-03 | Phase 6 | Complete |
 | FOUN-04 | Phase 1 | Complete |
 | AUTH-01 | Phase 8 | Pending |
 | AUTH-02 | Phase 8 | Pending |
 | AUTH-03 | Phase 8 | Pending |
-| AUTH-04 | Phase 6 | Pending |
-| AUTH-05 | Phase 6 | Pending |
+| AUTH-04 | Phase 6 | Complete |
+| AUTH-05 | Phase 6 | Complete |
 | ADMN-01 | Phase 7 | Pending |
 | ADMN-02 | Phase 7 | Pending |
 | ADMN-03 | Phase 7 | Pending |
