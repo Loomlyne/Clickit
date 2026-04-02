@@ -5,10 +5,10 @@ import { Play, Clock, Lock } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import { ShowArt } from '@/components/primitives/show-art'
 import {
   type Episode,
   type Show,
-  brandColorBgMap,
   brandColorHexMap,
 } from '@/lib/mock-data'
 
@@ -28,27 +28,32 @@ export function EpisodeRow({
   const isLocked = episode.status === 'locked'
   const isDimmed = isComingSoon || isLocked
   const isCurrentEpisode = currentEpisodeId === episode.id
+  const brandColorHex = brandColorHexMap[showBrandColor] ?? '#2C3569'
 
   const rowContent = (
     <>
-      {/* Thumbnail area — 16:9, responsive widths */}
+      {/* Thumbnail area — wider: 160px mobile, 180px md+ */}
       <div
         className={cn(
-          'relative aspect-video w-[120px] sm:w-[140px] lg:w-[200px] flex-shrink-0 rounded-md overflow-hidden',
+          'relative aspect-video w-[160px] md:w-[180px] flex-shrink-0 rounded-md overflow-hidden',
           isDimmed && 'opacity-45'
         )}
       >
-        {/* Brand color placeholder fill */}
-        <div
-          className={cn(
-            'flex h-full w-full items-center justify-center',
-            brandColorBgMap[showBrandColor]
-          )}
+        <ShowArt
+          brandColor={brandColorHex}
+          title={episode.title}
+          className="h-full w-full"
         >
-          <span className="text-2xl font-bold text-white/30">
-            E{episode.episodeNumber}
-          </span>
-        </div>
+          {/* Episode number watermark-style label */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span
+              className="text-2xl font-black text-white/40"
+              style={{ textShadow: `0 0 20px ${brandColorHex}60` }}
+            >
+              E{episode.episodeNumber}
+            </span>
+          </div>
+        </ShowArt>
 
         {/* Published hover: play overlay */}
         {isPublished && (
@@ -78,7 +83,10 @@ export function EpisodeRow({
       <div className="flex flex-col justify-center min-w-0 flex-1">
         {/* Row 1: episode number + title */}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-text-muted flex-shrink-0">
+          <span
+            className="text-sm flex-shrink-0 font-semibold"
+            style={{ color: isCurrentEpisode ? brandColorHex : undefined }}
+          >
             E{episode.episodeNumber}
           </span>
           <span className="text-base font-bold text-foreground truncate">
@@ -120,8 +128,12 @@ export function EpisodeRow({
     return (
       <div
         aria-current="true"
-        className="group flex items-start gap-4 rounded-lg p-3 bg-surface-2 border-l-2 cursor-default"
-        style={{ borderLeftColor: brandColorHexMap[showBrandColor] }}
+        className="group flex items-start gap-4 rounded-lg p-3 cursor-default"
+        style={{
+          borderLeft: `3px solid ${brandColorHex}`,
+          boxShadow: `inset 4px 0 12px ${brandColorHex}30`,
+          background: 'rgba(255,255,255,0.03)',
+        }}
       >
         {rowContent}
       </div>
