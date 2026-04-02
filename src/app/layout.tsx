@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Playfair_Display } from 'next/font/google'
 
 import '@/styles/globals.css'
 import { Toaster } from 'sonner'
@@ -9,6 +9,14 @@ import { Navbar } from '@/components/layout/navbar'
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
+  display: 'swap',
+})
+
+const playfairDisplay = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-playfair',
   display: 'swap',
 })
 
@@ -23,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`dark ${inter.variable}`}>
+    <html lang="en" className={`dark ${inter.variable} ${playfairDisplay.variable}`}>
       <body className="bg-background text-foreground font-sans antialiased">
         <a
           href="#main"

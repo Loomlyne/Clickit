@@ -79,6 +79,7 @@
 
 @theme inline {
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-playfair, 'Playfair Display', Georgia, serif);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -148,6 +149,15 @@
   --color-text-muted: #6B6B80;
 }
 
+:root {
+  /* Cinematic gradient helpers */
+  --gradient-cinema: linear-gradient(to top, #000000 0%, rgba(0,0,0,0.8) 40%, transparent 70%);
+  --gradient-left-vignette: linear-gradient(to right, #000000 0%, rgba(0,0,0,0.7) 30%, transparent 60%);
+
+  /* Color bloom opacity */
+  --bloom-opacity: 0.35;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -155,4 +165,26 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px var(--glow-color, #ffffff40), 0 0 16px var(--glow-color, #ffffff20); }
+  50% { box-shadow: 0 0 12px var(--glow-color, #ffffff60), 0 0 24px var(--glow-color, #ffffff30); }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
