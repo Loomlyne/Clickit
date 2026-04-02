@@ -23,10 +23,10 @@ export function NavLinks() {
               key={href}
               href={href}
               className={cn(
-                'whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition-colors',
+                'whitespace-nowrap text-sm transition-colors',
                 isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-surface-2 text-muted-foreground hover:bg-surface-3 hover:text-foreground'
+                  ? 'text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               {label}
