@@ -1,0 +1,33 @@
+interface GlowBadgeProps {
+  label: string;
+  color: string;
+  pulse?: boolean;
+  className?: string;
+}
+
+export function GlowBadge({
+  label,
+  color,
+  pulse = false,
+  className,
+}: GlowBadgeProps) {
+  // Build hex opacity variants from the full-opacity hex color
+  // color is expected as a 6-char hex like "#2C3569"
+  const bg = `${color}20`;
+  const border = `${color}40`;
+  const shadowBase = `0 0 8px ${color}40, 0 0 16px ${color}20`;
+
+  return (
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold${pulse ? ' animate-glow-pulse' : ''}${className ? ` ${className}` : ''}`}
+      style={{
+        background: bg,
+        color: color,
+        border: `1px solid ${border}`,
+        boxShadow: shadowBase,
+      }}
+    >
+      {label}
+    </span>
+  );
+}
