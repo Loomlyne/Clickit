@@ -23,10 +23,10 @@ export function NavLinks() {
               key={href}
               href={href}
               className={cn(
-                'whitespace-nowrap text-sm font-medium tracking-wide transition-colors',
+                'relative whitespace-nowrap text-sm font-medium tracking-wide transition-colors pb-0.5',
                 isActive
-                  ? 'text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'text-white after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-[#5B7FFF]'
+                  : 'text-white/60 hover:text-white'
               )}
             >
               {label}

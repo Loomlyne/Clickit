@@ -1,14 +1,31 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { cn } from '@/lib/utils'
 import { AuthSection } from './auth-section'
 import { NavLinks } from './nav-links'
 
 export function Navbar() {
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', handler, { passive: true })
+    return () => window.removeEventListener('scroll', handler)
+  }, [])
+
   return (
     <nav
       aria-label="Main navigation"
-      className="fixed top-0 right-0 left-0 z-50 flex h-16 items-center justify-between border-b border-white/[0.06] bg-[rgba(10,10,15,0.75)] px-6 backdrop-blur-lg backdrop-saturate-[1.2] md:px-12"
-      style={{ WebkitBackdropFilter: 'blur(16px) saturate(1.2)' }}
+      className={cn(
+        'fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 md:px-12 transition-all duration-300',
+        scrolled
+          ? 'bg-[rgba(0,0,0,0.85)] backdrop-blur-xl border-b border-white/[0.06]'
+          : 'bg-transparent'
+      )}
+      style={scrolled ? { WebkitBackdropFilter: 'blur(24px)' } : undefined}
     >
       <Link href="/" aria-label="Clickit Story home">
         <Image

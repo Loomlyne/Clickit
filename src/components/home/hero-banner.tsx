@@ -9,6 +9,7 @@ import {
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import type { Show } from '@/lib/mock-data'
+import { brandColorHexMap } from '@/lib/mock-data'
 import { HeroSlide } from '@/components/home/hero-slide'
 import { RotationIndicator } from '@/components/home/rotation-indicator'
 
@@ -74,6 +75,7 @@ export function HeroBanner({ shows }: HeroBannerProps) {
           activeIndex={activeIndex}
           total={shows.length}
           progress={progress}
+          activeColor={brandColorHexMap[shows[activeIndex].show.brandColor]}
         />
       </MotionConfig>
 

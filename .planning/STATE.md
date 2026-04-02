@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06.1-04-PLAN.md
-last_updated: "2026-04-02T23:36:09.031Z"
+stopped_at: Completed 06.1-03-PLAN.md
+last_updated: "2026-04-02T23:39:35.887Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 9
@@ -66,7 +66,7 @@ Progress: [█████████░] 92%
 | Phase 06 P02 | 280s | 2 tasks | 7 files |
 | Phase 06.1-ui-cinematic-redesign P01 | 3min | 6 tasks | 7 files |
 | Phase 06.1 P02 | 2min | 4 tasks | 4 files |
-| Phase 06.1 P04 | 10min | 4 tasks | 6 files |
+| Phase 06.1 P03 | 25min | 8 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -111,8 +111,8 @@ Recent decisions affecting current work:
 - [Phase 06.1-ui-cinematic-redesign]: CinematicBackdrop and ScrollReveal are client components -- motion.div and animation require client runtime
 - [Phase 06.1-ui-cinematic-redesign]: Hex alpha suffix pattern for brand color opacity variants (color + 2-char hex) rather than rgba()
 - [Phase 06.1]: ShowCard/PortraitShowCard rebuilt with ShowArt primitive — brand hex glow via inline styles, unified group-hover pattern
-- [Phase 06.1]: Show status check uses 'streaming' not 'now-streaming' — matches Show type definition in mock-data.ts
-- [Phase 06.1]: SeasonSelector rebuilt as uniform pill buttons for all season counts — removed adaptive Tabs/Select threshold
+- [Phase 06.1]: Inline SVG social icons instead of lucide-react for YouTube/Instagram/X — lucide-react lacks Youtube export in project version
+- [Phase 06.1]: RotationIndicator receives activeColor prop from HeroBanner — avoids Show coupling inside indicator component
 
 ### Pending Todos
 
@@ -132,6 +132,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T23:36:09.029Z
-Stopped at: Completed 06.1-04-PLAN.md
+Last session: 2026-04-02T23:39:35.885Z
+Stopped at: Completed 06.1-03-PLAN.md
 Resume file: None
