@@ -115,7 +115,10 @@ Plans:
   2. Row Level Security is enabled on every table with policies that allow public read of published content and restrict writes to admin
   3. Unauthenticated users can query published content through the Supabase client (no auth gate on browsing)
   4. A single admin user can be identified by user ID check in the application
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 06-01-PLAN.md -- Supabase init, schema migration (6 tables), RLS policies, storage bucket, seed data (15 CIT programs)
+- [ ] 06-02-PLAN.md -- Supabase client utilities (server, browser, admin), middleware for token refresh, TypeScript type generation
 
 ### Phase 7: Admin Dashboard
 **Goal**: The admin can populate and manage all platform content -- creating shows, seasons, and episodes with artwork, YouTube links, and release statuses -- through a protected dashboard
@@ -168,7 +171,7 @@ Note: Phase 6 depends only on Phase 1 and can run in parallel with Phases 2-5 if
 | 3. Home Page & Catalog UI | 3/3 | Complete   | 2026-03-31 |
 | 4. Series Detail & Browse Pages | 0/3 | Planned | - |
 | 5. Watch Page UI | 0/2 | Planned | - |
-| 6. Backend Foundation | 0/TBD | Not started | - |
+| 6. Backend Foundation | 0/2 | Planned | - |
 | 7. Admin Dashboard | 0/TBD | Not started | - |
 | 8. Data Integration, Auth & Search | 0/TBD | Not started | - |
 | 9. Personalization & Watch Features | 0/TBD | Not started | - |
