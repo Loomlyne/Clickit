@@ -1,185 +1,219 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { motion, MotionConfig } from 'motion/react'
-import { ArrowLeft, Heart, ThumbsUp, Volume2 } from 'lucide-react'
+import { motion, AnimatePresence, MotionConfig } from 'motion/react'
+import { Heart, ThumbsUp, ChevronDown } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import {
-  type Show,
-  brandColorBgMap,
-  brandColorHexMap,
-} from '@/lib/mock-data'
-import { CINEMATIC_GRADIENT, CINEMA_EASE } from '@/lib/cinema'
+import { CinematicBackdrop } from '@/components/primitives/cinematic-backdrop'
+import { GlowBadge } from '@/components/primitives/glow-badge'
+import { type Show, type Season, brandColorHexMap } from '@/lib/mock-data'
+import { CINEMA_EASE } from '@/lib/cinema'
 
 interface SeriesDetailHeroProps {
   show: Show
+  seasons: Season[]
   firstEpisodeLabel?: string // e.g. "S1 E1" for the CTA button
   firstEpisodeId?: string // episode ID for watch page link
 }
 
 export function SeriesDetailHero({
   show,
+  seasons,
   firstEpisodeLabel,
   firstEpisodeId,
 }: SeriesDetailHeroProps) {
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > window.innerHeight * 0.7)
+    window.addEventListener('scroll', handler, { passive: true })
+    return () => window.removeEventListener('scroll', handler)
+  }, [])
+
+  const brandColorHex = brandColorHexMap[show.brandColor] ?? '#2C3569'
+
   return (
     <MotionConfig reducedMotion="user">
-      <div className="-mt-16 relative min-h-[80vh] w-full overflow-hidden">
-        {/* Background layer — Ken Burns slow zoom like home hero */}
-        <motion.div
-          className={`absolute inset-0 ${brandColorBgMap[show.brandColor]}`}
-          initial={{ scale: 1 }}
-          animate={{ scale: 1.08 }}
-          transition={{ duration: 12, ease: 'linear', repeat: Infinity, repeatType: 'reverse' }}
-        >
-          <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none">
-            <span
-              className="text-[20vw] font-black tracking-tighter leading-none text-white/10"
-              style={{ fontStretch: 'condensed' }}
-            >
-              {show.title.split(' ')[0]}
-            </span>
-          </div>
-        </motion.div>
-
-        {/* Ambient color glow — same radial-gradient as hero-slide.tsx */}
-        <motion.div
-          className="absolute inset-0 z-[1]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.5, delay: 0.2 }}
-          style={{
-            background: `radial-gradient(ellipse 80% 80% at 60% 40%, ${brandColorHexMap[show.brandColor]}55 0%, ${brandColorHexMap[show.brandColor]}22 40%, transparent 70%)`,
-          }}
-        />
-
-        {/* Deep cinematic gradient — exact match to hero-slide.tsx */}
-        <div
-          className="absolute inset-0 z-[2]"
-          style={{ background: CINEMATIC_GRADIENT }}
-        />
-
-        {/* Back navigation */}
-        <motion.div
-          className="absolute top-20 left-0 z-10 px-6 md:px-12"
-          initial={{ opacity: 0, x: -12 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.2 }}
-        >
-          <Link
-            href="/series"
-            className="inline-flex items-center gap-2 text-sm text-white/50 transition-colors hover:text-white"
-          >
-            <ArrowLeft className="size-4" />
-            All Shows
-          </Link>
-        </motion.div>
-
-        {/* Content layer — staggered reveal, same position as home hero */}
-        <div className="absolute bottom-[128px] left-0 z-10 px-6 md:px-12 max-w-2xl">
-          {/* Status badge + Genre label */}
+      {/* Sticky mini-header — appears when scrolled past hero */}
+      <AnimatePresence>
+        {scrolled && (
           <motion.div
-            className="mb-3 flex items-center gap-3"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.3 }}
+            initial={{ y: -64, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -64, opacity: 0 }}
+            transition={{ duration: 0.3, ease: CINEMA_EASE }}
+            className="fixed top-16 left-0 right-0 z-40 bg-black/90 backdrop-blur-xl border-b border-white/[0.06] px-6 md:px-12 py-3 flex items-center justify-between"
           >
-            <Badge
-              className={
-                show.status === 'streaming'
-                  ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                  : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-              }
+            <span className="text-white font-semibold">{show.title}</span>
+            {firstEpisodeId && (
+              <Link href={`/watch/${firstEpisodeId}`}>
+                <Button
+                  size="sm"
+                  className="bg-white text-black hover:bg-white/90 text-xs"
+                >
+                  ▶ Watch Now
+                </Button>
+              </Link>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main 100vh hero */}
+      <div className="relative min-h-screen overflow-hidden -mt-16">
+        <CinematicBackdrop
+          brandColor={brandColorHex}
+          intensity="high"
+          watermarkText={show.title.split(' ')[0]}
+        />
+
+        {/* Ken Burns subtle zoom */}
+        <motion.div
+          className="absolute inset-0"
+          animate={{ scale: 1.04 }}
+          transition={{ duration: 10, ease: 'linear', repeat: Infinity, repeatType: 'reverse' }}
+        />
+
+        {/* Gradients */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" />
+
+        {/* Content — bottom-third, left-aligned */}
+        <div className="absolute bottom-0 left-0 px-6 md:px-12 pb-16 md:pb-20 max-w-3xl z-10">
+          {/* Back link */}
+          <motion.div
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.15 }}
+          >
+            <Link
+              href="/series"
+              className="inline-flex items-center text-white/50 hover:text-white text-sm mb-6 transition-colors"
             >
-              {show.status === 'streaming' ? 'Now Streaming' : 'Coming Soon'}
-            </Badge>
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-              {show.genre}
-            </span>
+              ← All Shows
+            </Link>
           </motion.div>
 
-          {/* Show title — slides in from left */}
+          {/* Status badge */}
+          <motion.div
+            className="mb-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.25 }}
+          >
+            <GlowBadge
+              label={show.status === 'streaming' ? 'Now Streaming' : 'Coming Soon'}
+              color={show.status === 'streaming' ? '#50A258' : '#EA8C2E'}
+            />
+          </motion.div>
+
+          {/* Genre label */}
+          <motion.p
+            className="text-white/50 text-xs tracking-[0.3em] uppercase mb-3"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.35 }}
+          >
+            {show.genre}
+          </motion.p>
+
+          {/* Show title — display font */}
           <motion.h1
-            className="text-4xl font-black leading-tight tracking-tight text-white drop-shadow-2xl md:text-5xl lg:text-6xl"
+            className="font-display font-bold text-white leading-none mb-5 drop-shadow-2xl"
+            style={{ fontSize: 'clamp(3rem, 7vw, 6rem)' }}
             initial={{ opacity: 0, x: -24, y: 8 }}
             animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.85, ease: CINEMA_EASE, delay: 0.45 }}
+            transition={{ duration: 0.85, ease: CINEMA_EASE, delay: 0.4 }}
           >
             {show.title}
           </motion.h1>
 
-          {/* Description — full synopsis */}
+          {/* Description */}
           <motion.p
-            className="mt-4 text-sm leading-relaxed text-white/70 md:text-base"
+            className="text-white/70 text-base md:text-lg leading-relaxed mb-6 max-w-xl line-clamp-3"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: CINEMA_EASE, delay: 0.6 }}
+            transition={{ duration: 0.7, ease: CINEMA_EASE, delay: 0.55 }}
           >
             {show.description}
           </motion.p>
 
-          {/* Metadata chips */}
+          {/* Metadata row */}
           <motion.div
-            className="mt-4 flex gap-2"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.7 }}
-          >
-            <Badge variant="secondary">{show.genre}</Badge>
-            <Badge variant="secondary" className="text-muted-foreground text-xs">
-              {show.seasonCount} Season{show.seasonCount > 1 ? 's' : ''}
-            </Badge>
-            <Badge variant="secondary" className="text-muted-foreground text-xs">
-              {show.episodeCount} Episodes
-            </Badge>
-          </motion.div>
-
-          {/* CTA button */}
-          <motion.div
-            className="mt-6"
+            className="flex items-center gap-4 mb-7 text-sm text-white/50 flex-wrap"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.8 }}
+            transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.65 }}
           >
-            {firstEpisodeLabel && firstEpisodeId ? (
-              <Button
-                variant="default"
-                size="lg"
-                className="px-10 py-5 text-base font-semibold shadow-lg shadow-black/40"
-                asChild
-              >
-                <Link href={`/watch/${firstEpisodeId}`}>Watch {firstEpisodeLabel}</Link>
-              </Button>
+            <span>{show.genre}</span>
+            <span>·</span>
+            <span>
+              {seasons.length} Season{seasons.length !== 1 ? 's' : ''}
+            </span>
+            <span>·</span>
+            <span>{show.episodeCount} Episodes</span>
+            {show.imdbRating && (
+              <>
+                <span>·</span>
+                <span>★ {show.imdbRating} IMDb</span>
+              </>
+            )}
+          </motion.div>
+
+          {/* CTA buttons */}
+          <motion.div
+            className="flex items-center gap-3 flex-wrap"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.75 }}
+          >
+            {firstEpisodeId && show.status === 'streaming' ? (
+              <Link href={`/watch/${firstEpisodeId}`}>
+                <Button
+                  size="lg"
+                  className="bg-white text-black hover:bg-white/90 font-semibold"
+                >
+                  ▶ {firstEpisodeLabel ? `Watch ${firstEpisodeLabel}` : 'Watch Now'}
+                </Button>
+              </Link>
             ) : (
               <Button
-                variant="default"
                 size="lg"
-                className="px-10 py-5 text-base font-semibold shadow-lg shadow-black/40"
                 disabled
+                className="bg-white/10 text-white/40"
               >
                 Coming Soon
               </Button>
             )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white/70 hover:text-white rounded-full border border-white/20 w-11 h-11"
+              aria-label="Add to watchlist"
+            >
+              <Heart className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white/70 hover:text-white rounded-full border border-white/20 w-11 h-11"
+              aria-label="Like"
+            >
+              <ThumbsUp className="w-5 h-5" />
+            </Button>
           </motion.div>
+        </div>
 
-          {/* Action buttons — like, favorite, audio */}
+        {/* Scroll indicator */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
           <motion.div
-            className="mt-4 flex items-center gap-3"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.9 }}
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            className="text-white/30 flex flex-col items-center gap-1"
           >
-            <Button variant="ghost" size="icon" className="text-white/50 hover:text-white" aria-label="Add to list">
-              <Heart className="size-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="text-white/50 hover:text-white" aria-label="Like">
-              <ThumbsUp className="size-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="text-white/50 hover:text-white" aria-label="Audio options">
-              <Volume2 className="size-5" />
-            </Button>
+            <ChevronDown className="w-5 h-5" />
           </motion.div>
         </div>
       </div>

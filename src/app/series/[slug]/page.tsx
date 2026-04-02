@@ -69,7 +69,7 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   return (
     <div>
-      <SeriesDetailHero show={show} firstEpisodeLabel={firstEpisodeLabel} firstEpisodeId={firstEpisodeId} />
+      <SeriesDetailHero show={show} seasons={seasons} firstEpisodeLabel={firstEpisodeLabel} firstEpisodeId={firstEpisodeId} />
 
       <div className="px-6 md:px-12 mt-8">
         <SeriesDetailContent
