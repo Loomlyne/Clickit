@@ -118,7 +118,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 06-01-PLAN.md -- Supabase init, schema migration (6 tables), RLS policies, storage bucket, seed data (15 CIT programs)
-- [ ] 06-02-PLAN.md -- Supabase client utilities (server, browser, admin), middleware for token refresh, TypeScript type generation
+- [x] 06-02-PLAN.md -- Supabase client utilities (server, browser, admin), middleware for token refresh, TypeScript type generation
 
 ### Phase 7: Admin Dashboard
 **Goal**: The admin can populate and manage all platform content -- creating shows, seasons, and episodes with artwork, YouTube links, and release statuses -- through a protected dashboard
