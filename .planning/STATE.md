@@ -109,6 +109,12 @@ Recent decisions affecting current work:
 
 None yet.
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260403-388 | Commit all changes, deploy to Vercel preview then production, visual QA all 8 pages, fix issues | 2026-04-02 | f1812ec | [260403-388-commit-all-changes-deploy-to-vercel-prev](./quick/260403-388-commit-all-changes-deploy-to-vercel-prev/) |
+
 ### Blockers/Concerns
 
 - ~~CIT brand colors (#2C3569, #9F54A0, #DB3F34) fail WCAG AA on dark backgrounds~~ -- RESOLVED: WCAG AA-safe tints created and validated in design system
