@@ -15,6 +15,9 @@ Viewers enter the platform, discover a show, pick an episode, and watch immediat
 - [x] Next.js project initialized with App Router, Tailwind CSS, Supabase client — Validated in Phase 1
 - [x] Design system with CIT brand colors (WCAG-safe tints), typography, spacing tokens — Validated in Phase 1
 - [x] Responsive cinematic dark UI following CIT brand guidelines — Foundation validated in Phase 1
+- [x] Supabase database schema (shows, seasons, episodes, profiles, watch_progress, watchlist) with relationships — Validated in Phase 6
+- [x] Row Level Security on all tables (public read of published content, admin-only writes) — Validated in Phase 6
+- [x] Supabase auth client setup (server + browser + admin + middleware) — Validated in Phase 6
 
 ### Active
 
@@ -167,4 +170,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-31 after Phase 4 completion — series detail and coming-soon pages built*
+*Last updated: 2026-04-02 after Phase 6 completion — Supabase backend foundation (schema, RLS, auth clients, storage, seed data)*
