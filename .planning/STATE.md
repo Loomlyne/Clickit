@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed quick-260403-388 (commit + deploy + QA)
-last_updated: "2026-04-02T22:35:53.698Z"
+status: executing
+stopped_at: Completed 06.1-01-PLAN.md
+last_updated: "2026-04-02T23:26:16.872Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 9
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Viewers enter, discover a show, pick an episode, watch immediately -- premium streaming experience for CIT originals.
-**Current focus:** Phase 06 — backend-foundation
+**Current focus:** Phase 06.1 — ui-cinematic-redesign
 
 ## Current Position
 
-Phase: 7
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 06.1 (ui-cinematic-redesign) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
 Last activity: 2026-04-02
 
 Progress: [█████████░] 92%
@@ -64,6 +64,7 @@ Progress: [█████████░] 92%
 | Phase 05 P02 | 3min | 2 tasks | 5 files |
 | Phase 06 P01 | 9min | 2 tasks | 8 files |
 | Phase 06 P02 | 280s | 2 tasks | 7 files |
+| Phase 06.1-ui-cinematic-redesign P01 | 3min | 6 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -104,6 +105,9 @@ Recent decisions affecting current work:
 - [Phase 06]: Used middleware.ts (not proxy.ts) for Supabase auth refresh -- standard pattern, backward compatible in Next.js 16
 - [Phase 06]: Supabase client pattern: server.ts (RSC+Server Actions), client.ts (browser), admin.ts (service_role bypass RLS), middleware.ts (token refresh)
 - [Phase quick]: Supabase middleware guard: skip session refresh when env vars missing (graceful degradation for deployments without Supabase configured)
+- [Phase 06.1-ui-cinematic-redesign]: ShowArt/SectionHeader/GlowBadge are server components -- dynamic colors via inline styles, no hooks needed
+- [Phase 06.1-ui-cinematic-redesign]: CinematicBackdrop and ScrollReveal are client components -- motion.div and animation require client runtime
+- [Phase 06.1-ui-cinematic-redesign]: Hex alpha suffix pattern for brand color opacity variants (color + 2-char hex) rather than rgba()
 
 ### Pending Todos
 
@@ -123,6 +127,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T22:35:48.209Z
-Stopped at: Completed quick-260403-388 (commit + deploy + QA)
+Last session: 2026-04-02T23:26:16.870Z
+Stopped at: Completed 06.1-01-PLAN.md
 Resume file: None
