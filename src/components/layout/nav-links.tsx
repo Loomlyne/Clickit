@@ -15,7 +15,7 @@ export function NavLinks() {
 
   return (
     <nav aria-label="Site navigation">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-8">
         {NAV_LINKS.map(({ label, href }) => {
           const isActive = pathname.startsWith(href)
           return (
@@ -23,7 +23,7 @@ export function NavLinks() {
               key={href}
               href={href}
               className={cn(
-                'whitespace-nowrap text-sm transition-colors',
+                'whitespace-nowrap text-sm font-medium tracking-wide transition-colors',
                 isActive
                   ? 'text-foreground'
                   : 'text-muted-foreground hover:text-foreground'
