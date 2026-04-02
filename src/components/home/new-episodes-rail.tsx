@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Star } from 'lucide-react'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
 import { Badge } from '@/components/ui/badge'
+import { PlayOverlay } from '@/components/ui/play-overlay'
 import { brandColorBgMap, getNewEpisodes } from '@/lib/mock-data'
 
 export function NewEpisodesRail() {
@@ -29,6 +30,7 @@ export function NewEpisodesRail() {
                       <p className="truncate text-sm font-medium text-white">{ep.title}</p>
                       <p className="truncate text-xs text-white/60">{ep.showTitle}</p>
                     </div>
+                    <PlayOverlay />
                   </div>
                   <div className="flex items-center gap-2 bg-card p-3">
                     <div className="flex items-center gap-1">

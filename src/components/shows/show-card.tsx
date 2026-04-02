@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { Play, Star } from 'lucide-react'
+import { Star } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import { PlayOverlay } from '@/components/ui/play-overlay'
 import { type Show, brandColorBgMap } from '@/lib/mock-data'
 
 interface ShowCardProps {
@@ -36,12 +37,7 @@ export function ShowCard({ show }: ShowCardProps) {
             <p className="truncate text-xs text-white/60">{show.genre}</p>
           </div>
 
-          {/* Hover play overlay */}
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60">
-              <Play className="size-5 fill-white text-white" />
-            </div>
-          </div>
+          <PlayOverlay />
         </motion.div>
 
         {/* Footer bar */}

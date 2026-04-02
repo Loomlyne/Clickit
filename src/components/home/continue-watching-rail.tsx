@@ -1,6 +1,7 @@
 'use client'
 
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
+import { PlayOverlay } from '@/components/ui/play-overlay'
 import { brandColorBgMap, type Show } from '@/lib/mock-data'
 
 const MOCK_PROGRESS = [
@@ -29,6 +30,7 @@ export function ContinueWatchingRail() {
                     <p className="truncate text-sm font-medium text-white">{item.episodeTitle}</p>
                     <p className="text-xs text-white/60">{item.minutesLeft} min left</p>
                   </div>
+                  <PlayOverlay />
                 </div>
                 <div className="absolute inset-x-0 bottom-0 h-1 bg-white/20">
                   <div className="h-full bg-brand-red" style={{ width: `${item.progress}%` }} />
