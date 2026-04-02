@@ -43,8 +43,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# claude worktrees
-.claude/worktrees/
+# claude local config
+.claude/
 
 # editor settings
 .obsidian/

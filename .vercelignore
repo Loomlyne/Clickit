@@ -1,0 +1,21 @@
+# Claude worktrees and local config
+.claude/
+_claude
+_claude 2
+
+# Duplicate planning directories
+_planning
+_planning 2
+
+# Editor settings
+.obsidian/
+.planning/.obsidian/
+
+# Test artifacts
+test-results/
+
+# Junk files
+Untitled*.base
+
+# Supabase local
+.supabase/
