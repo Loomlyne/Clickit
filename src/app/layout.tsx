@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 
 import '@/styles/globals.css'
+import { Toaster } from 'sonner'
+import { Footer } from '@/components/layout/footer'
 import { Navbar } from '@/components/layout/navbar'
 
 const inter = Inter({
@@ -33,6 +35,8 @@ export default function RootLayout({
         <main id="main" className="pt-16">
           {children}
         </main>
+        <Footer />
+        <Toaster theme="dark" />
       </body>
     </html>
   )

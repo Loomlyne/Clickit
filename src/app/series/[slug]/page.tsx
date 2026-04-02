@@ -4,12 +4,16 @@ import { notFound } from 'next/navigation'
 import { SeriesDetailHero } from '@/components/series/series-detail-hero'
 import { SeriesDetailContent } from '@/components/series/series-detail-content'
 import { ContentRail } from '@/components/home/content-rail'
+import { CastRow } from '@/components/series/cast-row'
+import { ReviewsSection } from '@/components/series/reviews-section'
+import { CtaBanner } from '@/components/home/cta-banner'
 import {
   type Episode,
   MOCK_SHOWS,
   getShowBySlug,
   getSeasonsByShowId,
   getEpisodesBySeasonId,
+  getShowReviews,
 } from '@/lib/mock-data'
 
 interface Props {
@@ -72,14 +76,23 @@ export default async function SeriesDetailPage({ params }: Props) {
           seasons={seasons}
           episodesBySeason={episodesBySeason}
           showBrandColor={show.brandColor}
+          show={show}
         />
       </div>
+
+      {show.cast && show.cast.length > 0 && <CastRow cast={show.cast} />}
+
+      <ReviewsSection reviews={getShowReviews(show.id)} />
 
       {moreLikeThis.length > 0 && (
         <div className="mt-12 pb-16">
           <ContentRail title={`More ${show.genre} Shows`} shows={moreLikeThis} />
         </div>
       )}
+
+      <div className="mt-12 pb-8">
+        <CtaBanner />
+      </div>
     </div>
   )
 }

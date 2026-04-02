@@ -1,6 +1,8 @@
 'use client'
 
 import { motion } from 'motion/react'
+import Link from 'next/link'
+import { Heart, ThumbsUp, Volume2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -8,15 +10,15 @@ import {
   brandColorBgMap,
   brandColorHexMap,
 } from '@/lib/mock-data'
+import { CINEMATIC_GRADIENT, CINEMA_EASE } from '@/lib/cinema'
 
 interface HeroSlideProps {
   show: Show
   isActive: boolean
+  firstEpisodeId?: string
 }
 
-const CINEMA_EASE = [0.16, 1, 0.3, 1] as const
-
-export function HeroSlide({ show, isActive }: HeroSlideProps) {
+export function HeroSlide({ show, isActive, firstEpisodeId }: HeroSlideProps) {
   return (
     <motion.div
       className="absolute inset-0"
@@ -56,13 +58,7 @@ export function HeroSlide({ show, isActive }: HeroSlideProps) {
       {/* Deep cinematic gradient — strong left vignette + heavy bottom fade */}
       <div
         className="absolute inset-0 z-[2]"
-        style={{
-          background: [
-            'linear-gradient(to right, rgba(8,8,12,0.96) 0%, rgba(8,8,12,0.72) 35%, rgba(8,8,12,0.25) 65%, rgba(8,8,12,0) 100%)',
-            'linear-gradient(to top, rgba(8,8,12,1) 0%, rgba(8,8,12,0.85) 18%, rgba(8,8,12,0.3) 40%, rgba(8,8,12,0) 65%)',
-            'linear-gradient(to bottom, rgba(8,8,12,0.4) 0%, transparent 15%)',
-          ].join(', '),
-        }}
+        style={{ background: CINEMATIC_GRADIENT }}
       />
 
       {/* Content — staggered reveal: genre label → title → tagline → button */}
@@ -98,6 +94,16 @@ export function HeroSlide({ show, isActive }: HeroSlideProps) {
           {show.tagline}
         </motion.p>
 
+        {/* Description */}
+        <motion.p
+          className="mt-2 max-w-[480px] text-sm leading-relaxed text-white/55 line-clamp-2"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.75 }}
+        >
+          {show.description}
+        </motion.p>
+
         {/* CTA button */}
         <motion.div
           className="mt-7"
@@ -109,8 +115,29 @@ export function HeroSlide({ show, isActive }: HeroSlideProps) {
             variant="default"
             size="lg"
             className="px-10 py-5 text-base font-semibold shadow-lg shadow-black/40"
+            asChild
           >
-            Watch Now
+            <Link href={firstEpisodeId ? `/watch/${firstEpisodeId}` : `/series/${show.slug}`}>
+              {firstEpisodeId ? 'Watch Now' : 'View Show'}
+            </Link>
+          </Button>
+        </motion.div>
+
+        {/* Action buttons */}
+        <motion.div
+          className="mt-4 flex items-center gap-3"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.95 }}
+        >
+          <Button variant="ghost" size="icon" className="text-white/50 hover:text-white" aria-label="Add to list">
+            <Heart className="size-5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="text-white/50 hover:text-white" aria-label="Like">
+            <ThumbsUp className="size-5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="text-white/50 hover:text-white" aria-label="Audio options">
+            <Volume2 className="size-5" />
           </Button>
         </motion.div>
       </div>

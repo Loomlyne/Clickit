@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion, MotionConfig } from 'motion/react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Heart, ThumbsUp, Volume2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -11,14 +11,13 @@ import {
   brandColorBgMap,
   brandColorHexMap,
 } from '@/lib/mock-data'
+import { CINEMATIC_GRADIENT, CINEMA_EASE } from '@/lib/cinema'
 
 interface SeriesDetailHeroProps {
   show: Show
   firstEpisodeLabel?: string // e.g. "S1 E1" for the CTA button
   firstEpisodeId?: string // episode ID for watch page link
 }
-
-const CINEMA_EASE = [0.16, 1, 0.3, 1] as const
 
 export function SeriesDetailHero({
   show,
@@ -59,13 +58,7 @@ export function SeriesDetailHero({
         {/* Deep cinematic gradient — exact match to hero-slide.tsx */}
         <div
           className="absolute inset-0 z-[2]"
-          style={{
-            background: [
-              'linear-gradient(to right, rgba(8,8,12,0.96) 0%, rgba(8,8,12,0.72) 35%, rgba(8,8,12,0.25) 65%, rgba(8,8,12,0) 100%)',
-              'linear-gradient(to top, rgba(8,8,12,1) 0%, rgba(8,8,12,0.85) 18%, rgba(8,8,12,0.3) 40%, rgba(8,8,12,0) 65%)',
-              'linear-gradient(to bottom, rgba(8,8,12,0.4) 0%, transparent 15%)',
-            ].join(', '),
-          }}
+          style={{ background: CINEMATIC_GRADIENT }}
         />
 
         {/* Back navigation */}
@@ -169,6 +162,24 @@ export function SeriesDetailHero({
                 Coming Soon
               </Button>
             )}
+          </motion.div>
+
+          {/* Action buttons — like, favorite, audio */}
+          <motion.div
+            className="mt-4 flex items-center gap-3"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.9 }}
+          >
+            <Button variant="ghost" size="icon" className="text-white/50 hover:text-white" aria-label="Add to list">
+              <Heart className="size-5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="text-white/50 hover:text-white" aria-label="Like">
+              <ThumbsUp className="size-5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="text-white/50 hover:text-white" aria-label="Audio options">
+              <Volume2 className="size-5" />
+            </Button>
           </motion.div>
         </div>
       </div>

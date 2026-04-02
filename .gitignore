@@ -42,3 +42,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude worktrees
+.claude/worktrees/
+
+# editor settings
+.obsidian/
+.planning/.obsidian/
+
+# test artifacts
+test-results/
+
+# junk files
+Untitled*.base
+_claude*
+_planning*

@@ -1,5 +1,9 @@
 import Link from 'next/link'
+import Image from 'next/image'
+import { Search, Bell } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { AuthSection } from './auth-section'
+import { NavLinks } from './nav-links'
 
 export function Navbar() {
   return (
@@ -9,12 +13,24 @@ export function Navbar() {
       style={{ WebkitBackdropFilter: 'blur(16px) saturate(1.2)' }}
     >
       <Link href="/" aria-label="Clickit Story home">
-        <img
+        <Image
           src="/brand/Clickit_final_logo.svg"
           alt="Clickit Story"
+          width={120}
+          height={32}
+          priority
           className="h-8 w-auto"
         />
       </Link>
+      <NavLinks />
+      <div className="flex items-center gap-1">
+        <Button variant="ghost" size="icon" aria-label="Search" className="text-muted-foreground hover:text-foreground">
+          <Search className="size-5" />
+        </Button>
+        <Button variant="ghost" size="icon" aria-label="Notifications" className="text-muted-foreground hover:text-foreground">
+          <Bell className="size-5" />
+        </Button>
+      </div>
       <AuthSection />
     </nav>
   )

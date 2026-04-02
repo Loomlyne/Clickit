@@ -37,7 +37,7 @@ export default function ComingSoonPage() {
   return (
     <div className="px-6 pt-12 pb-16 md:px-12">
       {/* Page header */}
-      <h1 className="text-4xl font-bold text-primary-foreground lg:text-5xl">
+      <h1 className="text-4xl font-bold text-foreground lg:text-5xl">
         Coming Soon
       </h1>
       <p className="mt-3 text-base text-muted-foreground">
@@ -47,7 +47,7 @@ export default function ComingSoonPage() {
       {/* Section 1: Upcoming Shows */}
       {comingSoonShows.length > 0 ? (
         <section className="mt-10">
-          <h2 className="text-2xl font-bold text-primary">Upcoming Shows</h2>
+          <h2 className="text-2xl font-bold text-foreground">Upcoming Shows</h2>
           <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {comingSoonShows.map((show) => (
               <ComingSoonShowCard key={show.id} show={show} />
@@ -56,7 +56,7 @@ export default function ComingSoonPage() {
         </section>
       ) : (
         <section className="mt-10">
-          <h2 className="text-2xl font-bold text-primary">Upcoming Shows</h2>
+          <h2 className="text-2xl font-bold text-foreground">Upcoming Shows</h2>
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <h3 className="text-xl font-bold text-foreground">All Caught Up</h3>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -72,7 +72,7 @@ export default function ComingSoonPage() {
       {/* Section 2: New Episodes Dropping Soon */}
       {Object.keys(episodesByShow).length > 0 ? (
         <section className="mt-12">
-          <h2 className="text-2xl font-bold text-primary">
+          <h2 className="text-2xl font-bold text-foreground">
             New Episodes Dropping Soon
           </h2>
           <div className="mt-6 space-y-8">
@@ -98,7 +98,7 @@ export default function ComingSoonPage() {
         </section>
       ) : (
         <section className="mt-12">
-          <h2 className="text-2xl font-bold text-primary">
+          <h2 className="text-2xl font-bold text-foreground">
             New Episodes Dropping Soon
           </h2>
           <div className="flex flex-col items-center justify-center py-16 text-center">
