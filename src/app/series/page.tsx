@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { MOCK_SHOWS, FEATURED_SHOWS, brandColorBgMap, brandColorHexMap } from '@/lib/mock-data'
 import { CINEMATIC_GRADIENT } from '@/lib/cinema'
-import { PortraitShowCard } from '@/components/shows/portrait-show-card'
+import { ShowsCarousel } from '@/components/series/shows-carousel'
 
 export const metadata: Metadata = {
   title: 'All Series | Clickit Story',
@@ -61,18 +61,13 @@ export default async function SeriesPage({ searchParams }: Props) {
           </div>
         </div>
 
-        {/* Show grid */}
         {filteredShows.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <h2 className="text-2xl font-bold text-foreground">No Shows Found</h2>
             <p className="mt-4 max-w-md text-text-secondary">No shows match this genre filter.</p>
           </div>
         ) : (
-          <div className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
-            {filteredShows.map((show) => (
-              <PortraitShowCard key={show.id} show={show} />
-            ))}
-          </div>
+          <ShowsCarousel shows={filteredShows} />
         )}
       </div>
     </div>
