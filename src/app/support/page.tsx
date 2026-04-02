@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
 import { ContactForm } from '@/components/support/contact-form'
@@ -33,11 +34,25 @@ export default function SupportPage() {
           <p className="mt-4 max-w-md text-base text-muted-foreground">
             Have a question, feedback, or need help? We&apos;d love to hear from you. Our team is based in Abu Dhabi and responds within 24 hours.
           </p>
-          {/* Decorative poster mosaic */}
-          <div className="mt-8 grid grid-cols-3 gap-2" aria-hidden="true">
-            {['bg-brand-blue', 'bg-brand-purple', 'bg-brand-green', 'bg-brand-red', 'bg-brand-orange', 'bg-brand-yellow', 'bg-brand-blue', 'bg-brand-purple', 'bg-brand-green'].map((c, i) => (
-              <div key={i} className={`aspect-video rounded-md ${c} opacity-30`} />
-            ))}
+          {/* Brand identity element */}
+          <div className="mt-8" aria-hidden="true">
+            <Image
+              src="/brand/Clickit_final_logo.svg"
+              alt=""
+              width={100}
+              height={28}
+              className="h-7 w-auto brightness-0 invert opacity-40 mb-4"
+            />
+            {/* 6-color brand strip */}
+            <div className="flex gap-1.5">
+              {['#2C3569', '#9F54A0', '#50A258', '#DB3F34', '#EA8C2E', '#F8C623'].map((color, i) => (
+                <div
+                  key={i}
+                  className="h-1 rounded-full"
+                  style={{ background: color, width: '2rem' }}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
@@ -54,7 +69,7 @@ export default function SupportPage() {
           <Accordion type="single" collapsible>
             {leftFaq.map((item, i) => (
               <AccordionItem key={i} value={`left-${i}`}>
-                <AccordionTrigger className="text-sm text-foreground">{item.q}</AccordionTrigger>
+                <AccordionTrigger className="text-sm text-foreground data-[state=open]:text-[var(--color-brand-blue-safe)]">{item.q}</AccordionTrigger>
                 <AccordionContent className="text-sm text-muted-foreground">{item.a}</AccordionContent>
               </AccordionItem>
             ))}
@@ -62,13 +77,18 @@ export default function SupportPage() {
           <Accordion type="single" collapsible>
             {rightFaq.map((item, i) => (
               <AccordionItem key={i} value={`right-${i}`}>
-                <AccordionTrigger className="text-sm text-foreground">{item.q}</AccordionTrigger>
+                <AccordionTrigger className="text-sm text-foreground data-[state=open]:text-[var(--color-brand-blue-safe)]">{item.q}</AccordionTrigger>
                 <AccordionContent className="text-sm text-muted-foreground">{item.a}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
         </div>
-        <Button variant="secondary" className="mt-8" asChild>
+        <Button
+          variant="default"
+          className="mt-8 border-0 text-white"
+          style={{ background: 'linear-gradient(135deg, #2C3569, #9F54A0)' }}
+          asChild
+        >
           <a href="#top">Ask a Question</a>
         </Button>
       </section>
