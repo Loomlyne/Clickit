@@ -6,7 +6,6 @@ import {
   MotionConfig,
   useReducedMotion,
 } from 'motion/react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import type { Show } from '@/lib/mock-data'
 import { brandColorHexMap } from '@/lib/mock-data'
@@ -78,21 +77,6 @@ export function HeroBanner({ shows }: HeroBannerProps) {
           activeColor={brandColorHexMap[shows[activeIndex].show.brandColor]}
         />
       </MotionConfig>
-
-      <button
-        onClick={() => setActiveIndex((i) => (i - 1 + shows.length) % shows.length)}
-        className="absolute left-4 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white/70 backdrop-blur-sm transition-colors hover:bg-black/60 hover:text-white"
-        aria-label="Previous show"
-      >
-        <ChevronLeft className="size-5" />
-      </button>
-      <button
-        onClick={() => setActiveIndex((i) => (i + 1) % shows.length)}
-        className="absolute right-4 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white/70 backdrop-blur-sm transition-colors hover:bg-black/60 hover:text-white"
-        aria-label="Next show"
-      >
-        <ChevronRight className="size-5" />
-      </button>
 
       {/* Screen reader announcement for slide changes */}
       <div className="sr-only" aria-live="polite">

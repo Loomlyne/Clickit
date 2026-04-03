@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { UserAvatar } from './user-avatar'
 import { UserDropdown } from './user-dropdown'
@@ -13,9 +14,9 @@ export function AuthSection() {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => setIsAuthenticated(true)}
+        asChild
       >
-        Sign In
+        <Link href="/auth">Sign In</Link>
       </Button>
     )
   }
