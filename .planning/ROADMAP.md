@@ -130,7 +130,12 @@ Plans:
   3. Admin can upload show artwork (poster, hero banner, logo) to Supabase Storage and see it reflected on the platform
   4. YouTube video ID is automatically extracted from pasted URLs (multiple URL formats supported)
   5. Admin dashboard is protected and only accessible by the designated admin user
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 07-01-PLAN.md -- Foundation: route group restructure, shadcn install, DB migration, utilities, admin layout shell, shared components
+- [ ] 07-02-PLAN.md -- Show CRUD: Server Actions, ShowsTable, ShowFormDrawer with ArtworkUploadZone
+- [ ] 07-03-PLAN.md -- Show detail: SeasonTabs, EpisodesTable with reorder, SeasonFormDrawer, EpisodeFormDrawer, YouTubeUrlInput
+- [ ] 07-04-PLAN.md -- Archive section, permanent delete, admin nav link, Vercel deploy checkpoint
 **UI hint**: yes
 
 ### Phase 8: Data Integration, Auth & Search
@@ -173,7 +178,7 @@ Note: Phase 6 depends only on Phase 1 and can run in parallel with Phases 2-5 if
 | 5. Watch Page UI | 2/2 | Complete | 2026-04-01 |
 | 6. Backend Foundation | 2/2 | Complete | 2026-04-02 |
 | 6.1 UI Cinematic Redesign | 5/5 | Complete | 2026-04-03 |
-| 7. Admin Dashboard | 0/TBD | Not started | - |
+| 7. Admin Dashboard | 0/4 | Not started | - |
 | 8. Data Integration, Auth & Search | 0/TBD | Not started | - |
 | 9. Personalization & Watch Features | 0/TBD | Not started | - |
 
