@@ -1,0 +1,495 @@
+'use server'
+
+import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type ActionResult<T = unknown> = {
+  success: boolean
+  error?: string
+  data?: T
+}
+
+// ---------------------------------------------------------------------------
+// Auth helper: defense-in-depth (D-12) — every action verifies admin
+// ---------------------------------------------------------------------------
+
+async function assertAdmin() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { data: config } = await supabase
+    .from('app_config')
+    .select('admin_user_id')
+    .single()
+
+  if (config?.admin_user_id !== user.id) throw new Error('Unauthorized')
+  return user
+}
+
+// ---------------------------------------------------------------------------
+// Zod Schemas
+// ---------------------------------------------------------------------------
+
+const showSchema = z.object({
+  id: z.string().uuid().optional(),
+  title: z.string().min(1, 'Title is required'),
+  title_ar: z.string().optional().nullable(),
+  slug: z.string().min(1, 'Slug is required'),
+  description: z.string().min(1, 'Description is required'),
+  description_ar: z.string().optional().nullable(),
+  tagline: z.string().optional().nullable(),
+  tagline_ar: z.string().optional().nullable(),
+  genre: z.string().min(1, 'Genre is required'),
+  brand_color: z.enum(['brand-blue', 'brand-purple', 'brand-green', 'brand-red', 'brand-orange']),
+  status: z.enum(['draft', 'coming-soon', 'now-streaming']),
+  broadcast_day: z.string().optional().nullable(),
+  broadcast_time: z.string().optional().nullable(),
+  poster_url: z.string().optional().nullable(),
+  hero_url: z.string().optional().nullable(),
+  logo_url: z.string().optional().nullable(),
+})
+
+const seasonSchema = z.object({
+  show_id: z.string().uuid(),
+  title: z.string().min(1, 'Title is required'),
+  title_ar: z.string().optional().nullable(),
+  season_number: z.number().int().positive(),
+})
+
+const episodeSchema = z.object({
+  show_id: z.string().uuid(),
+  season_id: z.string().uuid(),
+  title: z.string().min(1, 'Title is required'),
+  title_ar: z.string().optional().nullable(),
+  description: z.string().min(1, 'Description is required'),
+  description_ar: z.string().optional().nullable(),
+  episode_number: z.number().int().positive(),
+  youtube_video_id: z.string().optional().nullable(),
+  duration: z.number().int().positive().optional().nullable(),
+  status: z.enum(['draft', 'coming-soon', 'published']),
+})
+
+// ---------------------------------------------------------------------------
+// Show Actions
+// ---------------------------------------------------------------------------
+
+export async function createShow(
+  data: z.input<typeof showSchema>,
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const parsed = showSchema.parse(data)
+    const admin = createAdminClient()
+
+    const { id, ...rest } = parsed
+    const insertData = id ? { id, ...rest } : rest
+
+    const { data: show, error } = await admin
+      .from('shows')
+      .insert(insertData)
+      .select()
+      .single()
+
+    if (error) return { success: false, error: error.message }
+
+    revalidatePath('/admin')
+    return { success: true, data: show }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to create show' }
+  }
+}
+
+export async function updateShow(
+  id: string,
+  data: z.input<typeof showSchema>,
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const parsed = showSchema.parse(data)
+    const admin = createAdminClient()
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _parsedId, ...updateData } = parsed
+
+    const { data: show, error } = await admin
+      .from('shows')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) return { success: false, error: error.message }
+
+    revalidatePath('/admin')
+    revalidatePath(`/admin/shows/${id}`)
+    return { success: true, data: show }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to update show' }
+  }
+}
+
+export async function archiveShow(id: string): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    const { error: showError } = await admin
+      .from('shows')
+      .update({ archived: true })
+      .eq('id', id)
+
+    if (showError) return { success: false, error: showError.message }
+
+    // Also archive all episodes for this show
+    await admin
+      .from('episodes')
+      .update({ archived: true })
+      .eq('show_id', id)
+
+    revalidatePath('/admin')
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to archive show' }
+  }
+}
+
+export async function restoreShow(id: string): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    const { error: showError } = await admin
+      .from('shows')
+      .update({ archived: false })
+      .eq('id', id)
+
+    if (showError) return { success: false, error: showError.message }
+
+    // Also restore all episodes for this show
+    await admin
+      .from('episodes')
+      .update({ archived: false })
+      .eq('show_id', id)
+
+    revalidatePath('/admin')
+    revalidatePath('/admin/archive')
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to restore show' }
+  }
+}
+
+export async function deleteShowPermanently(id: string): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    // First delete storage files
+    await admin.storage
+      .from('show-artwork')
+      .remove([
+        `shows/${id}/poster.webp`,
+        `shows/${id}/hero.webp`,
+        `shows/${id}/logo.png`,
+      ])
+
+    // Then delete DB record — CASCADE handles seasons/episodes
+    const { error } = await admin
+      .from('shows')
+      .delete()
+      .eq('id', id)
+
+    if (error) return { success: false, error: error.message }
+
+    revalidatePath('/admin/archive')
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to delete show' }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Season Actions
+// ---------------------------------------------------------------------------
+
+export async function createSeason(
+  data: z.input<typeof seasonSchema>,
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const parsed = seasonSchema.parse(data)
+    const admin = createAdminClient()
+
+    const { data: season, error } = await admin
+      .from('seasons')
+      .insert(parsed)
+      .select()
+      .single()
+
+    if (error) return { success: false, error: error.message }
+
+    // Update show season_count
+    const { count } = await admin
+      .from('seasons')
+      .select('*', { count: 'exact', head: true })
+      .eq('show_id', parsed.show_id)
+
+    await admin
+      .from('shows')
+      .update({ season_count: count ?? 0 })
+      .eq('id', parsed.show_id)
+
+    revalidatePath(`/admin/shows/${parsed.show_id}`)
+    return { success: true, data: season }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to create season' }
+  }
+}
+
+export async function updateSeason(
+  id: string,
+  data: Partial<z.input<typeof seasonSchema>>,
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    const { data: season, error } = await admin
+      .from('seasons')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) return { success: false, error: error.message }
+
+    if (season) {
+      revalidatePath(`/admin/shows/${season.show_id}`)
+    }
+    return { success: true, data: season }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to update season' }
+  }
+}
+
+export async function deleteSeason(
+  id: string,
+  showId: string,
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    // Delete season — CASCADE deletes episodes
+    const { error } = await admin
+      .from('seasons')
+      .delete()
+      .eq('id', id)
+
+    if (error) return { success: false, error: error.message }
+
+    // Update show season_count
+    const { count } = await admin
+      .from('seasons')
+      .select('*', { count: 'exact', head: true })
+      .eq('show_id', showId)
+
+    await admin
+      .from('shows')
+      .update({ season_count: count ?? 0 })
+      .eq('id', showId)
+
+    // Update show episode_count
+    const { count: epCount } = await admin
+      .from('episodes')
+      .select('*', { count: 'exact', head: true })
+      .eq('show_id', showId)
+
+    await admin
+      .from('shows')
+      .update({ episode_count: epCount ?? 0 })
+      .eq('id', showId)
+
+    revalidatePath(`/admin/shows/${showId}`)
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to delete season' }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Episode Actions
+// ---------------------------------------------------------------------------
+
+export async function createEpisode(
+  data: z.input<typeof episodeSchema>,
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const parsed = episodeSchema.parse(data)
+    const admin = createAdminClient()
+
+    const { data: episode, error } = await admin
+      .from('episodes')
+      .insert(parsed)
+      .select()
+      .single()
+
+    if (error) return { success: false, error: error.message }
+
+    // Update season episode_count
+    const { count: seasonEpCount } = await admin
+      .from('episodes')
+      .select('*', { count: 'exact', head: true })
+      .eq('season_id', parsed.season_id)
+
+    await admin
+      .from('seasons')
+      .update({ episode_count: seasonEpCount ?? 0 })
+      .eq('id', parsed.season_id)
+
+    // Update show episode_count
+    const { count: showEpCount } = await admin
+      .from('episodes')
+      .select('*', { count: 'exact', head: true })
+      .eq('show_id', parsed.show_id)
+
+    await admin
+      .from('shows')
+      .update({ episode_count: showEpCount ?? 0 })
+      .eq('id', parsed.show_id)
+
+    revalidatePath(`/admin/shows/${parsed.show_id}`)
+    return { success: true, data: episode }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to create episode' }
+  }
+}
+
+export async function updateEpisode(
+  id: string,
+  data: Partial<z.input<typeof episodeSchema>>,
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    const { data: episode, error } = await admin
+      .from('episodes')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) return { success: false, error: error.message }
+
+    if (episode) {
+      revalidatePath(`/admin/shows/${episode.show_id}`)
+    }
+    return { success: true, data: episode }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to update episode' }
+  }
+}
+
+export async function archiveEpisode(
+  id: string,
+  showId: string,
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    const { error } = await admin
+      .from('episodes')
+      .update({ archived: true })
+      .eq('id', id)
+
+    if (error) return { success: false, error: error.message }
+
+    // Update show episode_count (count non-archived episodes)
+    const { count } = await admin
+      .from('episodes')
+      .select('*', { count: 'exact', head: true })
+      .eq('show_id', showId)
+      .eq('archived', false)
+
+    await admin
+      .from('shows')
+      .update({ episode_count: count ?? 0 })
+      .eq('id', showId)
+
+    revalidatePath(`/admin/shows/${showId}`)
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to archive episode' }
+  }
+}
+
+export async function reorderEpisode(
+  episodeId: string,
+  direction: 'up' | 'down',
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    // Get current episode
+    const { data: current, error: fetchError } = await admin
+      .from('episodes')
+      .select('id, episode_number, season_id, show_id')
+      .eq('id', episodeId)
+      .single()
+
+    if (fetchError || !current) {
+      return { success: false, error: 'Episode not found' }
+    }
+
+    // Find adjacent episode
+    const adjacentNumber = direction === 'up'
+      ? current.episode_number - 1
+      : current.episode_number + 1
+
+    const { data: adjacent, error: adjError } = await admin
+      .from('episodes')
+      .select('id, episode_number')
+      .eq('season_id', current.season_id)
+      .eq('episode_number', adjacentNumber)
+      .single()
+
+    if (adjError || !adjacent) {
+      return { success: false, error: 'No adjacent episode to swap with' }
+    }
+
+    // Three-step swap to avoid unique constraint violation
+    // Step 1: Set current episode_number to temporary value (-1)
+    await admin
+      .from('episodes')
+      .update({ episode_number: -1 })
+      .eq('id', current.id)
+
+    // Step 2: Set adjacent to current's number
+    await admin
+      .from('episodes')
+      .update({ episode_number: current.episode_number })
+      .eq('id', adjacent.id)
+
+    // Step 3: Set current to adjacent's number
+    await admin
+      .from('episodes')
+      .update({ episode_number: adjacent.episode_number })
+      .eq('id', current.id)
+
+    revalidatePath(`/admin/shows/${current.show_id}`)
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to reorder episode' }
+  }
+}
