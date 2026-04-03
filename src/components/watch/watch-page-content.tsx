@@ -93,8 +93,8 @@ export function WatchPageContent({
       >
         {/* Player + metadata (left on desktop, top on mobile) */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Player — full width, zero padding */}
-          <div className="w-full bg-black" style={{ aspectRatio: '16/9', maxHeight: 'calc(100vh - 0px)' }}>
+          {/* Player — full width, capped so metadata stays visible */}
+          <div className="w-full bg-black" style={{ aspectRatio: '16/9', maxHeight: '70vh' }}>
             <YouTubePlayer
               videoId={episode.youtubeId ?? ''}
               brandColor={brandColorBgMap[show.brandColor]}
