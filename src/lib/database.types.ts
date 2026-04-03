@@ -91,6 +91,7 @@ export type Database = {
       }
       episodes: {
         Row: {
+          archived: boolean
           created_at: string
           description: string
           description_ar: string | null
@@ -107,6 +108,7 @@ export type Database = {
           youtube_video_id: string | null
         }
         Insert: {
+          archived?: boolean
           created_at?: string
           description?: string
           description_ar?: string | null
@@ -123,6 +125,7 @@ export type Database = {
           youtube_video_id?: string | null
         }
         Update: {
+          archived?: boolean
           created_at?: string
           description?: string
           description_ar?: string | null
@@ -245,6 +248,7 @@ export type Database = {
       }
       shows: {
         Row: {
+          archived: boolean
           brand_color: string
           broadcast_day: string | null
           broadcast_time: string | null
@@ -268,6 +272,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived?: boolean
           brand_color?: string
           broadcast_day?: string | null
           broadcast_time?: string | null
@@ -291,6 +296,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived?: boolean
           brand_color?: string
           broadcast_day?: string | null
           broadcast_time?: string | null

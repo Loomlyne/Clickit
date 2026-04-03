@@ -3,8 +3,6 @@ import { Inter, Playfair_Display } from 'next/font/google'
 
 import '@/styles/globals.css'
 import { Toaster } from 'sonner'
-import { Footer } from '@/components/layout/footer'
-import { Navbar } from '@/components/layout/navbar'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -39,11 +37,9 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <Navbar />
-        <main id="main" className="pt-16">
+        <main id="main">
           {children}
         </main>
-        <Footer />
         <Toaster theme="dark" />
       </body>
     </html>
