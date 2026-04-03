@@ -21,7 +21,7 @@ export function AuthSection() {
   }
 
   return (
-    <UserDropdown onSignOut={() => setIsAuthenticated(false)}>
+    <UserDropdown onSignOut={() => setIsAuthenticated(false)} isAdmin={false}>
       <UserAvatar name="Demo User" />
     </UserDropdown>
   )

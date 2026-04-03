@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,14 +9,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Bookmark, User, LogOut } from 'lucide-react'
+import { Bookmark, User, LogOut, Shield } from 'lucide-react'
 
 interface UserDropdownProps {
   children: React.ReactNode
   onSignOut: () => void
+  isAdmin?: boolean
 }
 
-export function UserDropdown({ children, onSignOut }: UserDropdownProps) {
+export function UserDropdown({ children, onSignOut, isAdmin = false }: UserDropdownProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -34,6 +36,17 @@ export function UserDropdown({ children, onSignOut }: UserDropdownProps) {
           <User className="mr-2 size-4" />
           Profile
         </DropdownMenuItem>
+        {isAdmin && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/admin">
+                <Shield className="mr-2 size-4" />
+                Admin
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-brand-red-safe focus:text-brand-red-safe"
