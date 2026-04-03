@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-04-03T22:00:31.886Z"
+stopped_at: Completed 07-03-PLAN.md
+last_updated: "2026-04-03T22:08:40.980Z"
 last_activity: 2026-04-03
 progress:
   total_phases: 10
   completed_phases: 6
   total_plans: 18
-  completed_plans: 16
+  completed_plans: 17
   percent: 92
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 ## Current Position
 
 Phase: 07 (admin-dashboard) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-04-03
 
@@ -68,6 +68,7 @@ Progress: [█████████░] 92%
 | Phase 06.1 P02 | 2min | 4 tasks | 4 files |
 | Phase 06.1 P05 | 3min | 4 tasks | 5 files |
 | Phase 07 P02 | 6min | 2 tasks | 5 files |
+| Phase 07 P03 | 4min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -118,6 +119,9 @@ Recent decisions affecting current work:
 - [Phase 07]: Single actions.ts file for all 12 Server Actions — single source of truth for admin mutations
 - [Phase 07]: Pre-generated UUID via crypto.randomUUID() for create mode so artwork uploads know storage path before form save
 - [Phase 07]: Three-step swap for episode reordering avoids unique constraint violation (set -1, swap, set final)
+- [Phase 07]: Used z.number() with register valueAsNumber instead of z.coerce.number() to avoid Zod v4 input type mismatch with zodResolver
+- [Phase 07]: SeasonTabs uses router.refresh() after mutations for server data revalidation
+- [Phase 07]: EpisodesTable uses useTransition for reorder to disable buttons during pending state
 
 ### Roadmap Evolution
 
@@ -141,6 +145,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T22:00:31.883Z
-Stopped at: Completed 07-02-PLAN.md
+Last session: 2026-04-03T22:08:40.977Z
+Stopped at: Completed 07-03-PLAN.md
 Resume file: None

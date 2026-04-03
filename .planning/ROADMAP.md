@@ -134,7 +134,7 @@ Plans:
 Plans:
 - [x] 07-01-PLAN.md -- Foundation: route group restructure, shadcn install, DB migration, utilities, admin layout shell, shared components
 - [x] 07-02-PLAN.md -- Show CRUD: Server Actions, ShowsTable, ShowFormDrawer with ArtworkUploadZone
-- [ ] 07-03-PLAN.md -- Show detail: SeasonTabs, EpisodesTable with reorder, SeasonFormDrawer, EpisodeFormDrawer, YouTubeUrlInput
+- [x] 07-03-PLAN.md -- Show detail: SeasonTabs, EpisodesTable with reorder, SeasonFormDrawer, EpisodeFormDrawer, YouTubeUrlInput
 - [ ] 07-04-PLAN.md -- Archive section, permanent delete, admin nav link, Vercel deploy checkpoint
 **UI hint**: yes
 
