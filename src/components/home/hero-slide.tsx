@@ -3,7 +3,6 @@
 import { motion } from 'motion/react'
 import Link from 'next/link'
 
-import { Button } from '@/components/ui/button'
 import { CinematicBackdrop } from '@/components/primitives/cinematic-backdrop'
 import { GlowBadge } from '@/components/primitives/glow-badge'
 import { type Show, brandColorHexMap } from '@/lib/mock-data'
@@ -103,7 +102,7 @@ export function HeroSlide({ show, isActive, firstEpisodeId }: HeroSlideProps) {
             label={show.status === 'streaming' ? 'Now Streaming' : 'Coming Soon'}
             color={show.status === 'streaming' ? '#50A258' : '#EA8C2E'}
           />
-          <span className="text-white/40 text-sm">{show.episodeCount} Episodes</span>
+          <span className="text-white/40 text-sm">{show.seasonCount} Season{show.seasonCount !== 1 ? 's' : ''}</span>
           {show.imdbRating && (
             <span className="text-white/40 text-sm">&#9733; {show.imdbRating}</span>
           )}
@@ -117,30 +116,23 @@ export function HeroSlide({ show, isActive, firstEpisodeId }: HeroSlideProps) {
           transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.55 }}
         >
           {firstEpisodeId && show.status === 'streaming' ? (
-            <Button
-              size="lg"
-              className="bg-white text-black hover:bg-white/90 font-semibold"
-              asChild
+            <Link
+              href={`/watch/${firstEpisodeId}`}
+              className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-black transition-colors hover:bg-white/90"
             >
-              <Link href={`/watch/${firstEpisodeId}`}>&#9654; Watch S1 E1</Link>
-            </Button>
+              &#9654; Watch S1 E1
+            </Link>
           ) : (
-            <Button
-              size="lg"
-              disabled
-              className="bg-white/10 text-white/50 cursor-not-allowed"
-            >
+            <span className="inline-flex items-center rounded-full bg-white/10 px-7 py-3 text-sm font-medium text-white/50 cursor-not-allowed">
               Coming Soon
-            </Button>
+            </span>
           )}
-          <Button
-            variant="outline"
-            size="lg"
-            className="border-white/30 text-white hover:bg-white/10"
-            asChild
+          <Link
+            href={`/series/${show.slug}`}
+            className="inline-flex items-center rounded-full border border-white/25 bg-white/5 px-7 py-3 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/10"
           >
-            <Link href={`/series/${show.slug}`}>More Info</Link>
-          </Button>
+            More Info
+          </Link>
         </motion.div>
       </div>
     </motion.div>

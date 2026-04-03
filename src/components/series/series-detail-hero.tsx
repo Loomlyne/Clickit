@@ -89,10 +89,10 @@ export function SeriesDetailHero({
             transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.15 }}
           >
             <Link
-              href="/series"
+              href="/"
               className="inline-flex items-center text-white/50 hover:text-white text-sm mb-6 transition-colors"
             >
-              ← All Shows
+              ← Home
             </Link>
           </motion.div>
 

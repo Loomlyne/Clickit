@@ -1,50 +1,84 @@
 'use client'
 
 import Link from 'next/link'
-import { motion } from 'motion/react'
+import { Heart, Bookmark, Share2 } from 'lucide-react'
 
 import { ShowArt } from '@/components/primitives/show-art'
-import { PlayOverlay } from '@/components/ui/play-overlay'
 import { type Show, brandColorHexMap } from '@/lib/mock-data'
 
 interface PortraitShowCardProps {
   show: Show
 }
 
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
+  return String(n)
+}
+
 export function PortraitShowCard({ show }: PortraitShowCardProps) {
   const brandColorHex = brandColorHexMap[show.brandColor]
+  const likeCount = show.viewCount ?? 0
+  const handle = show.instagramHandle ?? '@clickitstory'
+  const instagramUrl = show.instagramUrl ?? 'https://www.instagram.com/clickitstory'
 
   return (
-    <Link href={`/series/${show.slug}`} className="group block cursor-pointer">
-      <motion.div
-        whileHover={{ scale: 1.03 }}
-        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-        className="relative overflow-hidden rounded-xl"
-      >
-        <ShowArt
-          brandColor={brandColorHex}
-          title={show.title}
-          aspectRatio="2/3"
+    <div className="group cursor-pointer">
+      {/* Card art */}
+      <div className="relative overflow-hidden rounded-xl">
+
+        {/* Show detail navigation wraps the art */}
+        <Link href={`/series/${show.slug}`} className="block">
+          <ShowArt brandColor={brandColorHex} title={show.title} aspectRatio="2/3">
+
+            {/* Bottom gradient overlay — info + action bar */}
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent px-3 pb-3 pt-16">
+              <p className="truncate font-bold text-sm leading-tight text-white">{show.title}</p>
+              <p className="mt-0.5 text-xs text-white/50">{show.genre}</p>
+
+              {/* Action bar — inside the card on the gradient */}
+              <div className="mt-2.5 flex items-center gap-3">
+                <span className="flex items-center gap-1.5 text-white/60">
+                  <Heart className="size-4" />
+                  <span className="text-xs">{formatCount(likeCount)}</span>
+                </span>
+                <span className="text-white/60">
+                  <Bookmark className="size-4" />
+                </span>
+                <span className="ml-auto text-white/60">
+                  <Share2 className="size-4" />
+                </span>
+              </div>
+            </div>
+          </ShowArt>
+        </Link>
+
+        {/* Instagram handle badge — sits above the Link, clicks go to Instagram */}
+        <a
+          href={instagramUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute left-0 right-0 top-0 z-10 flex items-center gap-1.5 bg-gradient-to-b from-black/60 to-transparent px-3 py-3"
+          aria-label={`Open ${handle} on Instagram`}
         >
-          <PlayOverlay />
+          {/* Instagram icon */}
+          <svg className="h-3.5 w-3.5 shrink-0 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+            <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+          </svg>
+          <span className="text-xs font-medium text-white/80 hover:text-white transition-colors truncate">
+            {handle}
+          </span>
+        </a>
 
-          {/* Bottom gradient info area */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/60 to-transparent p-4">
-            {/* Genre badge */}
-            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-white/10 text-white/80 mb-2">
-              {show.genre}
-            </span>
-            <p className="text-white font-bold text-base leading-tight truncate">{show.title}</p>
-            <p className="text-white/50 text-xs mt-1">{show.episodeCount} episodes</p>
-          </div>
-        </ShowArt>
-
-        {/* Brand color bottom glow on hover */}
+        {/* Brand color glow — on group hover */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          style={{ background: brandColorHex, boxShadow: `0 -4px 20px ${brandColorHex}80` }}
+          className="absolute inset-x-0 bottom-0 h-0.5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          style={{ background: brandColorHex, boxShadow: `0 -8px 20px ${brandColorHex}60` }}
         />
-      </motion.div>
-    </Link>
+      </div>
+
+    </div>
   )
 }

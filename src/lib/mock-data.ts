@@ -18,6 +18,8 @@ export interface Show {
   director?: string
   cast?: Array<{ name: string; role: string; avatarUrl?: string }>
   viewCount?: number
+  instagramHandle?: string
+  instagramUrl?: string
 }
 
 export const MOCK_SHOWS: Show[] = [
@@ -43,6 +45,8 @@ export const MOCK_SHOWS: Show[] = [
       { name: 'Ahmed Bukhatir', role: 'Field Reporter' },
     ],
     viewCount: 45200,
+    instagramHandle: '@lastcall.uae',
+    instagramUrl: 'https://www.instagram.com/lastcall.uae',
     posterUrl: '/images/shows/last-call-poster.jpg',
     heroImageUrl: '/images/shows/last-call-hero.jpg',
   },
@@ -68,6 +72,8 @@ export const MOCK_SHOWS: Show[] = [
       { name: 'Dr. Saeed Al Ghandi', role: 'Historian' },
     ],
     viewCount: 32100,
+    instagramHandle: '@reviewdoc.ae',
+    instagramUrl: 'https://www.instagram.com/reviewdoc.ae',
     posterUrl: '/images/shows/review-documentary-poster.jpg',
     heroImageUrl: '/images/shows/review-documentary-hero.jpg',
   },
@@ -94,6 +100,8 @@ export const MOCK_SHOWS: Show[] = [
       { name: 'Dr. Rashid Khalfan', role: 'Psychiatrist' },
     ],
     viewCount: 28500,
+    instagramHandle: '@doctorcare.ae',
+    instagramUrl: 'https://www.instagram.com/doctorcare.ae',
     posterUrl: '/images/shows/doctor-care-poster.jpg',
     heroImageUrl: '/images/shows/doctor-care-hero.jpg',
   },
@@ -119,6 +127,8 @@ export const MOCK_SHOWS: Show[] = [
       { name: 'Mohammed Al Shamsi', role: 'Guest Curator' },
     ],
     viewCount: 51800,
+    instagramHandle: '@saturnpodcast',
+    instagramUrl: 'https://www.instagram.com/saturnpodcast',
     posterUrl: '/images/shows/saturn-podcast-poster.jpg',
     heroImageUrl: '/images/shows/saturn-podcast-hero.jpg',
   },
@@ -144,6 +154,8 @@ export const MOCK_SHOWS: Show[] = [
       { name: 'Nabati Al Dhaheri', role: 'Host' },
     ],
     viewCount: 8900,
+    instagramHandle: '@poetsplatform.ae',
+    instagramUrl: 'https://www.instagram.com/poetsplatform.ae',
     posterUrl: '/images/shows/poets-platform-poster.jpg',
     heroImageUrl: '/images/shows/poets-platform-hero.jpg',
   },

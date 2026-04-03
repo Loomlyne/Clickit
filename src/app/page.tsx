@@ -5,6 +5,8 @@ import { NewEpisodesRail } from '@/components/home/new-episodes-rail'
 import { GenresGrid } from '@/components/home/genres-grid'
 import { CtaBanner } from '@/components/home/cta-banner'
 import { ReelCard } from '@/components/shows/reel-card'
+import { SectionHeader } from '@/components/primitives/section-header'
+import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 import {
   Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 } from '@/components/ui/carousel'
@@ -30,26 +32,26 @@ export default function HomePage() {
         <ContinueWatchingRail />
         <NewEpisodesRail />
 
-        <ContentRail title="Now Streaming" shows={NOW_STREAMING} seeAllHref="/series" />
-        <ContentRail title="Coming Soon" shows={COMING_SOON_SHOWS} seeAllHref="/coming-soon" />
+        <ContentRail title="Now Streaming" shows={NOW_STREAMING} />
+        <ContentRail title="Coming Soon" shows={COMING_SOON_SHOWS} />
 
         {/* Reels section */}
-        <section>
-          <div className="px-6 md:px-12">
-            <h2 className="text-2xl font-bold text-foreground">Reels</h2>
-          </div>
-          <Carousel opts={{ align: 'start', containScroll: 'trimSnaps', slidesToScroll: 1 }} className="mt-4">
-            <CarouselContent className="-ml-4 px-6 md:px-12">
-              {MOCK_REELS.map((reel) => (
-                <CarouselItem key={reel.id} className="basis-1/3 pl-4 sm:basis-1/4 lg:basis-1/5 xl:basis-1/6">
-                  <ReelCard reel={reel} />
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="hidden h-10 w-10 rounded-full border-0 bg-surface-3/80 text-primary backdrop-blur-sm hover:bg-surface-3 md:-left-4 md:flex" />
-            <CarouselNext className="hidden h-10 w-10 rounded-full border-0 bg-surface-3/80 text-primary backdrop-blur-sm hover:bg-surface-3 md:-right-4 md:flex" />
-          </Carousel>
-        </section>
+        <ScrollReveal>
+          <section>
+            <SectionHeader title="Reels" />
+            <Carousel opts={{ align: 'start', containScroll: 'trimSnaps', slidesToScroll: 1 }}>
+              <CarouselContent className="-ml-4 px-6 md:px-12">
+                {MOCK_REELS.map((reel) => (
+                  <CarouselItem key={reel.id} className="basis-1/3 pl-4 sm:basis-1/4 lg:basis-1/5 xl:basis-1/6">
+                    <ReelCard reel={reel} />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden h-12 w-12 rounded-full border border-white/10 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white md:-left-4 md:flex" />
+              <CarouselNext className="hidden h-12 w-12 rounded-full border border-white/10 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white md:-right-4 md:flex" />
+            </Carousel>
+          </section>
+        </ScrollReveal>
 
         <GenresGrid />
         <CtaBanner />

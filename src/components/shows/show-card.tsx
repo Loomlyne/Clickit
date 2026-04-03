@@ -2,10 +2,9 @@
 
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { Star } from 'lucide-react'
+import { Play } from 'lucide-react'
 
 import { ShowArt } from '@/components/primitives/show-art'
-import { PlayOverlay } from '@/components/ui/play-overlay'
 import { type Show, brandColorHexMap } from '@/lib/mock-data'
 
 interface ShowCardProps {
@@ -13,45 +12,47 @@ interface ShowCardProps {
 }
 
 export function ShowCard({ show }: ShowCardProps) {
-  const rating = show.platformRating ?? show.imdbRating ?? 4.5
+  const rating = show.platformRating ?? show.imdbRating ?? null
   const brandColorHex = brandColorHexMap[show.brandColor]
 
   return (
     <Link href={`/series/${show.slug}`} className="group block cursor-pointer">
       <motion.div
         whileHover={{ scale: 1.04 }}
-        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         className="relative overflow-hidden rounded-lg"
+        style={{ willChange: 'transform' }}
       >
-        <ShowArt
-          brandColor={brandColorHex}
-          title={show.title}
-          aspectRatio="16/9"
-        >
-          <PlayOverlay />
+        <ShowArt brandColor={brandColorHex} title={show.title} aspectRatio="16/9">
 
-          {/* Bottom info overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-            <p className="text-white text-sm font-semibold truncate drop-shadow-lg">{show.title}</p>
-            <p className="text-white/60 text-xs truncate mt-0.5">{show.genre}</p>
+          {/* Glass play button — fades in on hover */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm ring-1 ring-white/25 transition-transform duration-300 group-hover:scale-110">
+              <Play className="size-5 fill-white text-white translate-x-0.5" />
+            </div>
+          </div>
+
+          {/* Info overlay — slides up + fades in on hover */}
+          <div
+            className="absolute inset-x-0 bottom-0 translate-y-2 px-3 pb-3 pt-10 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100"
+            style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%)' }}
+          >
+            <p className="text-sm font-semibold text-white truncate">{show.title}</p>
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-white/55">
+              <span>{show.genre}</span>
+              <span>·</span>
+              <span>{show.seasonCount} Season{show.seasonCount !== 1 ? 's' : ''}</span>
+              {rating !== null && <><span>·</span><span>★ {rating}</span></>}
+            </div>
           </div>
         </ShowArt>
 
-        {/* Brand color bottom glow — appears on hover */}
+        {/* Brand color glow strip — appears on hover */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          style={{ background: brandColorHex, boxShadow: `0 0 20px ${brandColorHex}` }}
+          className="absolute inset-x-0 bottom-0 h-0.5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          style={{ background: brandColorHex, boxShadow: `0 0 20px 2px ${brandColorHex}70` }}
         />
       </motion.div>
-
-      {/* Card footer below the art */}
-      <div className="bg-[var(--color-surface-2)] px-3 py-2 flex items-center justify-between">
-        <span className="text-xs text-[var(--color-text-muted)] flex items-center gap-1">
-          <Star className="size-3 fill-current" />
-          {rating}
-        </span>
-        <span className="text-xs text-[var(--color-text-muted)]">{show.episodeCount} ep</span>
-      </div>
     </Link>
   )
 }

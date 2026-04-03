@@ -88,8 +88,8 @@ export default function ComingSoonPage() {
             <p className="mt-2 text-sm text-white/50">
               No upcoming shows right now. Browse what&apos;s streaming.
             </p>
-            <Link href="/series" className="mt-4">
-              <Button variant="default">Browse Series</Button>
+            <Link href="/" className="mt-4">
+              <Button variant="default">Browse Shows</Button>
             </Link>
           </div>
         </section>
