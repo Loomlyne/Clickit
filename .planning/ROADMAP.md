@@ -167,11 +167,22 @@ Note: Phase 6 depends only on Phase 1 and can run in parallel with Phases 2-5 if
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Project Scaffolding & Design System | 2/2 | Complete | 2026-03-30 |
-| 2. App Shell & Navigation | 0/2 | Planned | - |
-| 3. Home Page & Catalog UI | 3/3 | Complete   | 2026-03-31 |
-| 4. Series Detail & Browse Pages | 0/3 | Planned | - |
-| 5. Watch Page UI | 0/2 | Planned | - |
-| 6. Backend Foundation | 0/2 | Planned | - |
+| 2. App Shell & Navigation | 2/2 | Complete | 2026-03-31 |
+| 3. Home Page & Catalog UI | 3/3 | Complete | 2026-03-31 |
+| 4. Series Detail & Browse Pages | 3/3 | Complete | 2026-04-01 |
+| 5. Watch Page UI | 2/2 | Complete | 2026-04-01 |
+| 6. Backend Foundation | 2/2 | Complete | 2026-04-02 |
+| 6.1 UI Cinematic Redesign | 5/5 | Complete | 2026-04-03 |
 | 7. Admin Dashboard | 0/TBD | Not started | - |
 | 8. Data Integration, Auth & Search | 0/TBD | Not started | - |
 | 9. Personalization & Watch Features | 0/TBD | Not started | - |
+
+### Phase 10: Connect frontend to Supabase backend — wire auth, replace mock data with real queries, session management
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 9
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 10 to break down)

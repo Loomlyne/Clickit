@@ -115,6 +115,10 @@ Recent decisions affecting current work:
 - [Phase 06.1]: Watch page auto-hide bar uses fixed z-50 positioning (not absolute) to cover full viewport including sidebar
 - [Phase 06.1]: FAQ accordion brand color active state via data-[state=open] Tailwind modifier (no globals.css changes needed)
 
+### Roadmap Evolution
+
+- Phase 10 added: Connect frontend to Supabase backend — wire auth, replace mock data with real queries, session management
+
 ### Pending Todos
 
 None yet.
