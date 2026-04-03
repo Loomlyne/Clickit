@@ -83,7 +83,7 @@ Exceptions: none. Admin dashboard uses the compact end of the scale (xs through 
 | Element | Color | Form |
 |---------|-------|------|
 | "Create Show" button | `var(--primary)` / `#2C3569` fill | Solid button, white text |
-| "Save" button in drawers | `var(--primary)` / `#2C3569` fill | Solid button, white text |
+| "Save Show" / "Save Season" / "Save Episode" buttons in drawer footers | `var(--primary)` / `#2C3569` fill | Solid button, white text |
 | Active nav tab ("Shows" vs "Archive") | `var(--primary)` / `#2C3569` | Underline indicator |
 | Focus ring on form inputs | `var(--ring)` / `#7C82A2` | 2px ring |
 | Status badge: "Now Streaming" | `#50A258` (brand-green) | Small pill badge |
@@ -121,6 +121,7 @@ Exceptions: none. Admin dashboard uses the compact end of the scale (xs through 
 - **No sidebar.** Admin has a simple top nav with two tabs: "Shows" and "Archive". The main CIT viewer navbar is hidden on `/admin` routes (admin layout replaces it).
 - **Admin header:** Left-aligned "CIT Admin" text (20px, semibold). Right-aligned: admin avatar from existing auth. Below: horizontal tab nav for Shows | Archive.
 - **Full-width content area.** Tables use the full viewport width with `max-w-7xl mx-auto` constraint and `px-4 md:px-8` horizontal padding.
+- **Primary visual anchor:** The "Create Show" button at top-right of the show list page -- the only filled accent-color element on an otherwise functional, neutral-toned page. On first load, this is the focal point that draws the admin's eye and communicates the primary action.
 
 ### Route Structure
 
@@ -208,7 +209,7 @@ Same structure as Show List Table but with different action columns:
 **Drawer sections (top to bottom):**
 1. **Header:** Title ("Create Show" / "Edit Show" / "Create Episode" / etc.) at 20px semibold
 2. **Body:** Scrollable form fields with 24px vertical gaps between field groups
-3. **Footer:** Sticky bottom bar with Cancel (ghost button) + Save (primary button)
+3. **Footer:** Sticky bottom bar with Discard Changes (ghost button) + entity-specific save (primary button: "Save Show", "Save Season", or "Save Episode")
 
 **After save:** Drawer closes. Sonner toast appears at bottom-right. Table refreshes with updated data.
 
@@ -293,7 +294,7 @@ Three upload zones inside the show drawer, stacked vertically:
 2. Confirmation dialog appears (shadcn Dialog):
    - Title: "Archive Show"
    - Body: "This will hide [Show Name] from all viewers. You can restore it from the Archive section."
-   - Actions: Cancel (outline) | Archive (destructive variant)
+   - Actions: Cancel (outline) | Archive Show (destructive variant)
 3. On confirm: server action sets `archived = true`, row disappears from show list, toast: "Show archived"
 
 ### Permanent Delete Flow (D-19)
@@ -319,8 +320,10 @@ Three upload zones inside the show drawer, stacked vertically:
 |---------|------|
 | Primary CTA | "Create Show" (button on show list page) |
 | Secondary CTAs | "Add Season", "Add Episode" (on show detail page) |
-| Save action | "Save" (all drawer footers) |
-| Cancel action | "Cancel" (all drawer footers) |
+| Save action (show drawer) | "Save Show" (show create/edit drawer footer) |
+| Save action (season drawer) | "Save Season" (season create/edit drawer footer) |
+| Save action (episode drawer) | "Save Episode" (episode create/edit drawer footer) |
+| Discard action (all drawers) | "Discard Changes" (all drawer footers, ghost button) |
 | Empty state heading (shows) | "No Shows Yet" |
 | Empty state body (shows) | "Create your first show to get started." |
 | Empty state heading (episodes) | "No Episodes" |
@@ -332,7 +335,7 @@ Three upload zones inside the show drawer, stacked vertically:
 | Error state (delete) | "Failed to delete. Try again or refresh the page." |
 | Archive confirmation title | "Archive Show" |
 | Archive confirmation body | "This will hide [Show Name] from all viewers. You can restore it from the Archive section." |
-| Archive confirmation button | "Archive" |
+| Archive confirmation button | "Archive Show" |
 | Permanent delete title | "Permanently Delete Show" |
 | Permanent delete body | "This will permanently delete [Show Name] and all its seasons and episodes. This action cannot be undone." |
 | Permanent delete button | "Delete Permanently" |
