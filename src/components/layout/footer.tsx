@@ -73,10 +73,10 @@ export function Footer() {
             <div>
               <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/55">Shows</h4>
               <ul className="space-y-3">
-                <li><Link href="/series?genre=Entertainment" className="text-sm text-white/40 transition-colors hover:text-white">Entertainment</Link></li>
-                <li><Link href="/series?genre=Documentary" className="text-sm text-white/40 transition-colors hover:text-white">Documentary</Link></li>
-                <li><Link href="/series?genre=Health" className="text-sm text-white/40 transition-colors hover:text-white">Health</Link></li>
-                <li><Link href="/series?genre=Tech" className="text-sm text-white/40 transition-colors hover:text-white">Tech</Link></li>
+                <li><Link href="/" className="text-sm text-white/40 transition-colors hover:text-white">Entertainment</Link></li>
+                <li><Link href="/" className="text-sm text-white/40 transition-colors hover:text-white">Documentary</Link></li>
+                <li><Link href="/" className="text-sm text-white/40 transition-colors hover:text-white">Health</Link></li>
+                <li><Link href="/" className="text-sm text-white/40 transition-colors hover:text-white">Tech</Link></li>
               </ul>
             </div>
             <div>

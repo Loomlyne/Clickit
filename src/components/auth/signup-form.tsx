@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -81,9 +80,13 @@ export function SignupForm() {
       </div>
       {errors.terms && <p className="text-xs text-brand-red-safe">{errors.terms.message}</p>}
 
-      <Button type="submit" disabled={isSubmitting} className="w-full">
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full rounded-full bg-white px-7 py-3 text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
         {isSubmitting ? 'Creating account...' : 'Create Account'}
-      </Button>
+      </button>
     </form>
   )
 }

@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
@@ -48,24 +47,36 @@ export function LoginForm() {
         <a href="#" className="text-sm text-brand-blue-safe hover:underline">Forgot Password?</a>
       </div>
 
-      <Button type="submit" disabled={isSubmitting} className="w-full">
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full rounded-full bg-white px-7 py-3 text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
         {isSubmitting ? 'Signing in...' : 'Sign In'}
-      </Button>
+      </button>
 
       <div className="relative my-4">
         <Separator />
-        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs text-text-muted">
+        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#111116] px-3 text-xs text-white/40">
           or continue with
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Button variant="outline" type="button" onClick={() => toast.info('Google SSO coming soon')}>
+        <button
+          type="button"
+          onClick={() => toast.info('Google SSO coming soon')}
+          className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/5 px-5 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/10"
+        >
           Google
-        </Button>
-        <Button variant="outline" type="button" onClick={() => toast.info('Apple SSO coming soon')}>
+        </button>
+        <button
+          type="button"
+          onClick={() => toast.info('Apple SSO coming soon')}
+          className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/5 px-5 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/10"
+        >
           Apple
-        </Button>
+        </button>
       </div>
     </form>
   )

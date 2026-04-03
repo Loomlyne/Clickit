@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { motion, AnimatePresence, MotionConfig } from 'motion/react'
 import { Heart, ThumbsUp, ChevronDown } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
 import { CinematicBackdrop } from '@/components/primitives/cinematic-backdrop'
 import { GlowBadge } from '@/components/primitives/glow-badge'
 import { type Show, type Season, brandColorHexMap } from '@/lib/mock-data'
@@ -48,13 +47,11 @@ export function SeriesDetailHero({
           >
             <span className="text-white font-semibold">{show.title}</span>
             {firstEpisodeId && (
-              <Link href={`/watch/${firstEpisodeId}`}>
-                <Button
-                  size="sm"
-                  className="bg-white text-black hover:bg-white/90 text-xs"
-                >
-                  ▶ Watch Now
-                </Button>
+              <Link
+                href={`/watch/${firstEpisodeId}`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-white px-5 py-2 text-xs font-semibold text-black transition-colors hover:bg-white/90"
+              >
+                &#9654; Watch Now
               </Link>
             )}
           </motion.div>
@@ -162,7 +159,7 @@ export function SeriesDetailHero({
             )}
           </motion.div>
 
-          {/* CTA buttons */}
+          {/* CTA buttons — hero pill style */}
           <motion.div
             className="flex items-center gap-3 flex-wrap"
             initial={{ opacity: 0, y: 8 }}
@@ -170,39 +167,29 @@ export function SeriesDetailHero({
             transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.75 }}
           >
             {firstEpisodeId && show.status === 'streaming' ? (
-              <Link href={`/watch/${firstEpisodeId}`}>
-                <Button
-                  size="lg"
-                  className="bg-white text-black hover:bg-white/90 font-semibold"
-                >
-                  ▶ {firstEpisodeLabel ? `Watch ${firstEpisodeLabel}` : 'Watch Now'}
-                </Button>
+              <Link
+                href={`/watch/${firstEpisodeId}`}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-black transition-colors hover:bg-white/90"
+              >
+                &#9654; {firstEpisodeLabel ? `Watch ${firstEpisodeLabel}` : 'Watch Now'}
               </Link>
             ) : (
-              <Button
-                size="lg"
-                disabled
-                className="bg-white/10 text-white/40"
-              >
+              <span className="inline-flex items-center rounded-full bg-white/10 px-7 py-3 text-sm font-medium text-white/50 cursor-not-allowed">
                 Coming Soon
-              </Button>
+              </span>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white/70 hover:text-white rounded-full border border-white/20 w-11 h-11"
+            <button
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white"
               aria-label="Add to watchlist"
             >
               <Heart className="w-5 h-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white/70 hover:text-white rounded-full border border-white/20 w-11 h-11"
+            </button>
+            <button
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white"
               aria-label="Like"
             >
               <ThumbsUp className="w-5 h-5" />
-            </Button>
+            </button>
           </motion.div>
         </div>
 
