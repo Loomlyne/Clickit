@@ -24,13 +24,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Admin Dashboard
 
-- [ ] **ADMN-01**: Admin can create, edit, and delete series (title, description, artwork, genre, status)
+- [x] **ADMN-01**: Admin can create, edit, and delete series (title, description, artwork, genre, status)
 - [ ] **ADMN-02**: Admin can create, edit, and delete seasons within a series
 - [ ] **ADMN-03**: Admin can create, edit, and delete episodes (title, description, YouTube URL, episode number, status)
 - [x] **ADMN-04**: Admin can set show status: draft, coming soon, now streaming
 - [x] **ADMN-05**: Admin can set episode status: draft, coming soon, published
-- [ ] **ADMN-06**: Admin can upload show artwork (poster, hero banner, logo) to Supabase Storage
-- [ ] **ADMN-07**: Admin can set broadcast schedule (day and time) for each show
+- [x] **ADMN-06**: Admin can upload show artwork (poster, hero banner, logo) to Supabase Storage
+- [x] **ADMN-07**: Admin can set broadcast schedule (day and time) for each show
 - [ ] **ADMN-08**: Admin can reorder episodes within a season
 - [x] **ADMN-09**: YouTube video ID extracted automatically from pasted URL
 - [x] **ADMN-10**: Admin dashboard protected -- only accessible by admin user
@@ -152,13 +152,13 @@ Deferred to future release. Tracked but not in current roadmap.
 | AUTH-03 | Phase 8 | Pending |
 | AUTH-04 | Phase 6 | Complete |
 | AUTH-05 | Phase 6 | Complete |
-| ADMN-01 | Phase 7 | Pending |
+| ADMN-01 | Phase 7 | Complete |
 | ADMN-02 | Phase 7 | Pending |
 | ADMN-03 | Phase 7 | Pending |
 | ADMN-04 | Phase 7 | Complete |
 | ADMN-05 | Phase 7 | Complete |
-| ADMN-06 | Phase 7 | Pending |
-| ADMN-07 | Phase 7 | Pending |
+| ADMN-06 | Phase 7 | Complete |
+| ADMN-07 | Phase 7 | Complete |
 | ADMN-08 | Phase 7 | Pending |
 | ADMN-09 | Phase 7 | Complete |
 | ADMN-10 | Phase 7 | Complete |

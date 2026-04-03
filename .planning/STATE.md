@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 07 planning complete — 4 plans verified
-last_updated: "2026-04-03T21:40:13.878Z"
-last_activity: 2026-04-03 -- Phase 07 execution started
+stopped_at: Completed 07-02-PLAN.md
+last_updated: "2026-04-03T22:00:31.886Z"
+last_activity: 2026-04-03
 progress:
   total_phases: 10
   completed_phases: 6
   total_plans: 18
-  completed_plans: 14
+  completed_plans: 16
   percent: 92
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 ## Current Position
 
 Phase: 07 (admin-dashboard) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 07
-Last activity: 2026-04-03 -- Phase 07 execution started
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-04-03
 
 Progress: [█████████░] 92%
 
@@ -67,6 +67,7 @@ Progress: [█████████░] 92%
 | Phase 06.1-ui-cinematic-redesign P01 | 3min | 6 tasks | 7 files |
 | Phase 06.1 P02 | 2min | 4 tasks | 4 files |
 | Phase 06.1 P05 | 3min | 4 tasks | 5 files |
+| Phase 07 P02 | 6min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -114,6 +115,9 @@ Recent decisions affecting current work:
 - [Phase 06.1]: ShowCollage extracted as client component so auth page (server) can use motion.div while importing MOCK_SHOWS directly
 - [Phase 06.1]: Watch page auto-hide bar uses fixed z-50 positioning (not absolute) to cover full viewport including sidebar
 - [Phase 06.1]: FAQ accordion brand color active state via data-[state=open] Tailwind modifier (no globals.css changes needed)
+- [Phase 07]: Single actions.ts file for all 12 Server Actions — single source of truth for admin mutations
+- [Phase 07]: Pre-generated UUID via crypto.randomUUID() for create mode so artwork uploads know storage path before form save
+- [Phase 07]: Three-step swap for episode reordering avoids unique constraint violation (set -1, swap, set final)
 
 ### Roadmap Evolution
 
@@ -137,6 +141,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T21:30:48.455Z
-Stopped at: Phase 07 planning complete — 4 plans verified
-Resume file: .planning/phases/07-admin-dashboard/07-01-PLAN.md
+Last session: 2026-04-03T22:00:31.883Z
+Stopped at: Completed 07-02-PLAN.md
+Resume file: None
