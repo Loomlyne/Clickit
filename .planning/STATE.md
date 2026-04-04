@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-04-03T22:08:40.980Z"
-last_activity: 2026-04-03
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-04-04T16:16:05.263Z"
+last_activity: 2026-04-04
 progress:
   total_phases: 10
-  completed_phases: 6
-  total_plans: 18
-  completed_plans: 17
-  percent: 92
+  completed_phases: 7
+  total_plans: 21
+  completed_plans: 19
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Viewers enter, discover a show, pick an episode, watch immediately -- premium streaming experience for CIT originals.
-**Current focus:** Phase 07 — admin-dashboard
+**Current focus:** Phase 08 — data-integration-auth-search
 
 ## Current Position
 
-Phase: 07 (admin-dashboard) — EXECUTING
-Plan: 3 of 4
+Phase: 08 (data-integration-auth-search) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-04-03
+Last activity: 2026-04-04
 
-Progress: [█████████░] 92%
+Progress: [██████████] 100% (Phases 1-7 complete)
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ Progress: [█████████░] 92%
 | Phase 06.1 P05 | 3min | 4 tasks | 5 files |
 | Phase 07 P02 | 6min | 2 tasks | 5 files |
 | Phase 07 P03 | 4min | 2 tasks | 6 files |
+| Phase 08 P01 | 10min | 2 tasks | 26 files |
 
 ## Accumulated Context
 
@@ -122,6 +123,8 @@ Recent decisions affecting current work:
 - [Phase 07]: Used z.number() with register valueAsNumber instead of z.coerce.number() to avoid Zod v4 input type mismatch with zodResolver
 - [Phase 07]: SeasonTabs uses router.refresh() after mutations for server data revalidation
 - [Phase 07]: EpisodesTable uses useTransition for reorder to disable buttons during pending state
+- [Phase 08]: ViewEpisode status uses draft not locked -- aligns with DB schema (draft/coming-soon/published)
+- [Phase 08]: Import ViewShow/ViewEpisode/ViewSeason from @/lib/queries, BRAND_COLOR_HEX/BG/TEXT from @/lib/brand-colors for all viewer components
 
 ### Roadmap Evolution
 
@@ -145,6 +148,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T22:08:40.977Z
-Stopped at: Completed 07-03-PLAN.md
+Last session: 2026-04-04T16:16:05.261Z
+Stopped at: Completed 08-01-PLAN.md
 Resume file: None

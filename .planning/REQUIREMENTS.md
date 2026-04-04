@@ -16,8 +16,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can sign up with email and password via Supabase Auth
-- [ ] **AUTH-02**: User can log in and session persists across browser refresh
+- [x] **AUTH-01**: User can sign up with email and password via Supabase Auth
+- [x] **AUTH-02**: User can log in and session persists across browser refresh
 - [ ] **AUTH-03**: User can log out from any page
 - [x] **AUTH-04**: Unauthenticated users can browse and watch content (auth gates personalization, not access)
 - [x] **AUTH-05**: Admin user identified by user ID check (single admin, no RBAC)
@@ -71,7 +71,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Search
 
 - [ ] **SRCH-01**: Search bar accessible from all pages (header)
-- [ ] **SRCH-02**: Search finds shows and episodes by title
+- [x] **SRCH-02**: Search finds shows and episodes by title
 - [ ] **SRCH-03**: Search results display show cards and episode cards with thumbnails
 
 ### Navigation & Layout
@@ -147,8 +147,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | FOUN-02 | Phase 6 | Complete |
 | FOUN-03 | Phase 6 | Complete |
 | FOUN-04 | Phase 1 | Complete |
-| AUTH-01 | Phase 8 | Pending |
-| AUTH-02 | Phase 8 | Pending |
+| AUTH-01 | Phase 8 | Complete |
+| AUTH-02 | Phase 8 | Complete |
 | AUTH-03 | Phase 8 | Pending |
 | AUTH-04 | Phase 6 | Complete |
 | AUTH-05 | Phase 6 | Complete |
@@ -187,7 +187,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | USER-06 | Phase 9 | Pending |
 | USER-07 | Phase 9 | Pending |
 | SRCH-01 | Phase 8 | Pending |
-| SRCH-02 | Phase 8 | Pending |
+| SRCH-02 | Phase 8 | Complete |
 | SRCH-03 | Phase 8 | Pending |
 | NAVG-01 | Phase 2 | Complete |
 | NAVG-02 | Phase 2 | Complete |

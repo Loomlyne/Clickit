@@ -149,7 +149,7 @@ Plans:
   4. Search bar is accessible from all pages and finds shows and episodes by title with card results
 **Plans**: 3 plans
 Plans:
-- [ ] 08-01-PLAN.md -- Type foundation: extract brand-colors.ts, auth-errors.ts, expand queries.ts with ViewEpisode/ViewSeason types and query functions, migrate all 23 component files off mock-data
+- [x] 08-01-PLAN.md -- Type foundation: extract brand-colors.ts, auth-errors.ts, expand queries.ts with ViewEpisode/ViewSeason types and query functions, migrate all 23 component files off mock-data
 - [ ] 08-02-PLAN.md -- Page wiring: rewrite /series, /coming-soon, create /schedule, clean home page, server user hydration, auth error mapping, delete mock-data.ts
 - [ ] 08-03-PLAN.md -- Search: build NavbarSearch component, /search page with Postgres FTS, Vercel deploy verification checkpoint
 **UI hint**: yes
