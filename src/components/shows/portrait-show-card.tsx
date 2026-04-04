@@ -43,7 +43,7 @@ export function PortraitShowCard({ show, initialSaved, userId }: PortraitShowCar
 
         {/* Show detail navigation wraps the art */}
         <Link href={`/series/${show.slug}`} className="block">
-          <ShowArt brandColor={brandColorHex} title={show.title} aspectRatio="2/3">
+          <ShowArt brandColor={brandColorHex} title={show.title} aspectRatio="2/3" imageUrl={show.posterUrl}>
 
             {/* Bottom gradient overlay — info + action bar */}
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent px-3 pb-3 pt-16">

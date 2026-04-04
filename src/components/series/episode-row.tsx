@@ -30,6 +30,9 @@ export function EpisodeRow({
   const isDimmed = isComingSoon || isDraft
   const isCurrentEpisode = currentEpisodeId === episode.id
   const brandColorHex = BRAND_COLOR_HEX[showBrandColor] ?? '#2C3569'
+  const thumbnailUrl = episode.youtubeId
+    ? `https://img.youtube.com/vi/${episode.youtubeId}/hqdefault.jpg`
+    : undefined
 
   const rowContent = (
     <>
@@ -44,6 +47,7 @@ export function EpisodeRow({
           brandColor={brandColorHex}
           title={episode.title}
           className="h-full w-full"
+          imageUrl={thumbnailUrl}
         >
           {/* Episode number watermark-style label */}
           <div className="absolute inset-0 flex items-center justify-center">

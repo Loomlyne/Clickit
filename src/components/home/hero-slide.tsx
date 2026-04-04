@@ -32,6 +32,7 @@ export function HeroSlide({ show, isActive, firstEpisodeId }: HeroSlideProps) {
         intensity="high"
         watermarkText={show.title.split(' ')[0]}
         className="absolute inset-0"
+        imageUrl={show.heroImageUrl}
       />
 
       {/* Ken Burns zoom */}

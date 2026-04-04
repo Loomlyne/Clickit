@@ -1,10 +1,13 @@
 "use client";
 
+import Image from 'next/image'
+
 interface CinematicBackdropProps {
   brandColor: string;
   intensity?: 'low' | 'medium' | 'high';
   watermarkText?: string;
   className?: string;
+  imageUrl?: string;
 }
 
 export function CinematicBackdrop({
@@ -12,6 +15,7 @@ export function CinematicBackdrop({
   intensity = 'medium',
   watermarkText,
   className,
+  imageUrl,
 }: CinematicBackdropProps) {
   const bloomAlpha = intensity === 'low' ? '40' : intensity === 'high' ? '80' : '55';
 
@@ -20,7 +24,20 @@ export function CinematicBackdrop({
       {/* Layer 1: solid black base */}
       <div className="absolute inset-0 bg-black" />
 
-      {/* Layer 2: radial gradient bloom using brand color */}
+      {/* Layer 2: hero image when available */}
+      {imageUrl && (
+        <Image
+          src={imageUrl}
+          alt=""
+          fill
+          className="object-cover opacity-40"
+          sizes="100vw"
+          priority
+          aria-hidden
+        />
+      )}
+
+      {/* Layer 3: radial gradient bloom using brand color */}
       <div
         className="absolute inset-0"
         style={{
@@ -28,8 +45,8 @@ export function CinematicBackdrop({
         }}
       />
 
-      {/* Layer 3: watermark text (optional) */}
-      {watermarkText && (
+      {/* Layer 4: watermark text (optional, only when no image) */}
+      {watermarkText && !imageUrl && (
         <div
           className="absolute inset-0 flex items-center justify-center overflow-hidden"
           aria-hidden="true"
@@ -52,7 +69,7 @@ export function CinematicBackdrop({
         </div>
       )}
 
-      {/* Layer 4: subtle noise texture */}
+      {/* Layer 5: subtle noise texture */}
       <div
         className="absolute inset-0"
         aria-hidden="true"

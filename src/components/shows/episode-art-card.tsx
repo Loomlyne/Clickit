@@ -19,11 +19,15 @@ interface EpisodeArtCardProps {
     showSlug: string
     brandColor: ViewShow['brandColor']
     watchProgress?: number // 0-100, for progress bar
+    youtubeId?: string | null
   }
 }
 
 export function EpisodeArtCard({ episode }: EpisodeArtCardProps) {
   const brandColorHex = BRAND_COLOR_HEX[episode.brandColor]
+  const thumbnailUrl = episode.youtubeId
+    ? `https://img.youtube.com/vi/${episode.youtubeId}/hqdefault.jpg`
+    : undefined
 
   return (
     <Link href={`/watch/${episode.id}`} className="group block cursor-pointer flex-shrink-0 w-[320px]">
@@ -31,7 +35,7 @@ export function EpisodeArtCard({ episode }: EpisodeArtCardProps) {
         whileHover={{ scale: 1.03 }}
         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
       >
-        <ShowArt brandColor={brandColorHex} title={episode.showTitle} aspectRatio="16/9">
+        <ShowArt brandColor={brandColorHex} title={episode.showTitle} aspectRatio="16/9" imageUrl={thumbnailUrl}>
           <PlayOverlay />
 
           {/* Episode number watermark */}

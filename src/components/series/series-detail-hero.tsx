@@ -70,6 +70,7 @@ export function SeriesDetailHero({
           brandColor={brandColorHex}
           intensity="high"
           watermarkText={show.title.split(' ')[0]}
+          imageUrl={show.heroImageUrl}
         />
 
         {/* Ken Burns subtle zoom */}
