@@ -8,32 +8,46 @@ import { UserAvatar } from './user-avatar'
 import { UserDropdown } from './user-dropdown'
 import { createClient } from '@/lib/supabase/client'
 
+interface UserState {
+  email: string
+  id: string
+  displayName: string | null
+  avatarUrl: string | null
+}
+
 export function AuthSection() {
   const router = useRouter()
-  const [user, setUser] = useState<{ email: string; id: string } | null>(null)
+  const [user, setUser] = useState<UserState | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
 
+    async function loadUser(userId: string, email: string) {
+      // Fetch profile + admin check in parallel
+      const [profileRes, configRes] = await Promise.all([
+        supabase.from('profiles').select('display_name, avatar_url').eq('id', userId).single(),
+        supabase.from('app_config').select('admin_user_id').single(),
+      ])
+
+      setUser({
+        id: userId,
+        email,
+        displayName: profileRes.data?.display_name ?? null,
+        avatarUrl: profileRes.data?.avatar_url ?? null,
+      })
+      setIsAdmin(configRes.data?.admin_user_id === userId)
+    }
+
     // Get initial session
     supabase.auth.getUser().then(({ data: { user: u } }) => {
-      if (u) {
-        setUser({ email: u.email ?? '', id: u.id })
-        // Check if admin
-        supabase.from('app_config').select('admin_user_id').single().then(({ data }) => {
-          setIsAdmin(data?.admin_user_id === u.id)
-        })
-      }
+      if (u) loadUser(u.id, u.email ?? '')
     })
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        setUser({ email: session.user.email ?? '', id: session.user.id })
-        supabase.from('app_config').select('admin_user_id').single().then(({ data }) => {
-          setIsAdmin(data?.admin_user_id === session.user.id)
-        })
+        loadUser(session.user.id, session.user.email ?? '')
       } else {
         setUser(null)
         setIsAdmin(false)
@@ -54,6 +68,7 @@ export function AuthSection() {
   return (
     <UserDropdown
       email={user.email}
+      isAdmin={isAdmin}
       onSignOut={async () => {
         const supabase = createClient()
         await supabase.auth.signOut()
@@ -62,9 +77,11 @@ export function AuthSection() {
         router.push('/')
         router.refresh()
       }}
-      isAdmin={isAdmin}
     >
-      <UserAvatar name={user.email} />
+      <UserAvatar
+        name={user.displayName || user.email}
+        avatarUrl={user.avatarUrl}
+      />
     </UserDropdown>
   )
 }

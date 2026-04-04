@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Bookmark, User, LogOut, Shield } from 'lucide-react'
+import { User, LogOut, Shield } from 'lucide-react'
 
 interface UserDropdownProps {
   children: React.ReactNode
@@ -29,13 +29,11 @@ export function UserDropdown({ children, onSignOut, isAdmin = false, email }: Us
           {email ?? 'Account'}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <Bookmark className="mr-2 size-4" />
-          My List
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <User className="mr-2 size-4" />
-          Profile
+        <DropdownMenuItem asChild>
+          <Link href="/profile">
+            <User className="mr-2 size-4" />
+            Profile
+          </Link>
         </DropdownMenuItem>
         {isAdmin && (
           <>
