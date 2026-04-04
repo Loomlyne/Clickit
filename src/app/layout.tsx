@@ -1,4 +1,6 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Inter, Playfair_Display } from 'next/font/google'
 
 import '@/styles/globals.css'
@@ -17,6 +19,12 @@ const playfairDisplay = Playfair_Display({
   variable: '--font-playfair',
   display: 'swap',
 })
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
 
 export const metadata: Metadata = {
   title: 'Clickit Story',
@@ -41,6 +49,8 @@ export default function RootLayout({
           {children}
         </main>
         <Toaster theme="dark" />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )

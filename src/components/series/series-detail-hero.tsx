@@ -65,7 +65,7 @@ export function SeriesDetailHero({
       </AnimatePresence>
 
       {/* Main 100vh hero */}
-      <div className="relative min-h-screen overflow-hidden -mt-16">
+      <div className="relative min-h-dvh overflow-hidden -mt-16">
         <CinematicBackdrop
           brandColor={brandColorHex}
           intensity="high"

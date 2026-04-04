@@ -49,7 +49,7 @@ export function HeroBanner({ shows }: HeroBannerProps) {
 
   return (
     <div
-      className="-mt-16 relative h-screen w-full overflow-hidden"
+      className="-mt-16 relative h-dvh w-full overflow-hidden"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocus={() => setIsPaused(true)}

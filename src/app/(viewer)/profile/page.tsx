@@ -44,7 +44,7 @@ export default async function ProfilePage() {
   const email = user.email ?? ''
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-dvh">
       {/* Subtle gradient at top — not heavy cinematic */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-white/[0.02] to-transparent" />
 

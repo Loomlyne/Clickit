@@ -13,7 +13,7 @@ const BRAND_COLORS = ['#2C3569', '#9F54A0', '#50A258', '#DB3F34', '#EA8C2E', '#F
 
 export default function AuthPage() {
   return (
-    <div className="-mt-16 relative min-h-screen flex items-center justify-center overflow-hidden">
+    <div className="-mt-16 relative min-h-dvh flex items-center justify-center overflow-hidden">
       {/* Cinematic background — same treatment as hero */}
       <CinematicBackdrop
         brandColor="#2C3569"
