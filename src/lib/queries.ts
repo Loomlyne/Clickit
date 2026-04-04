@@ -80,6 +80,20 @@ export function mapEpisode(db: DbEpisode): ViewEpisode {
   }
 }
 
+export type ContinueWatchingItem = {
+  episodeId: string
+  episodeTitle: string
+  episodeNumber: number
+  seasonNumber: number
+  showId: string
+  showTitle: string
+  showSlug: string
+  showBrandColor: ViewShow['brandColor']
+  progressSeconds: number
+  durationSeconds: number
+  progressPercent: number
+}
+
 export function mapSeason(db: DbSeason): ViewSeason {
   return {
     id: db.id,
@@ -247,50 +261,89 @@ export async function getEpisodeById(episodeId: string) {
     episodesBySeason[s.id] = await getEpisodesBySeasonId(s.id)
   }
 
-  // Find prev/next episodes
-  const currentSeasonEps = episodesBySeason[season.id] ?? []
-  const currentIdx = currentSeasonEps.findIndex((e) => e.id === episodeId)
-  const prev = currentIdx > 0 ? currentSeasonEps[currentIdx - 1] : null
-  const next = currentIdx < currentSeasonEps.length - 1 ? currentSeasonEps[currentIdx + 1] : null
+  // Flatten all published episodes across all seasons for cross-season navigation
+  const allEpisodes: DbEpisode[] = []
+  for (const s of seasons) {
+    const eps = episodesBySeason[s.id] ?? []
+    allEpisodes.push(...eps.filter(e => e.status === 'published'))
+  }
+
+  // Sort by (season_number, episode_number)
+  const seasonNumberMap = new Map(seasons.map(s => [s.id, s.season_number]))
+  allEpisodes.sort((a, b) => {
+    const aSeason = seasonNumberMap.get(a.season_id) ?? 0
+    const bSeason = seasonNumberMap.get(b.season_id) ?? 0
+    if (aSeason !== bSeason) return aSeason - bSeason
+    return a.episode_number - b.episode_number
+  })
+
+  const currentIdx = allEpisodes.findIndex(e => e.id === episodeId)
+  const prev = currentIdx > 0 ? allEpisodes[currentIdx - 1] : null
+  const next = currentIdx < allEpisodes.length - 1 ? allEpisodes[currentIdx + 1] : null
 
   return { episode, show, season, seasons, episodesBySeason, prev, next }
+}
+
+// ---------------------------------------------------------------------------
+// Episode progress query
+// ---------------------------------------------------------------------------
+
+export async function getEpisodeProgress(
+  userId: string,
+  episodeId: string
+): Promise<{ progressSeconds: number; durationSeconds: number; completed: boolean } | null> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('watch_progress')
+    .select('progress_seconds, duration_seconds, completed')
+    .eq('user_id', userId)
+    .eq('episode_id', episodeId)
+    .maybeSingle()
+
+  if (!data) return null
+  return {
+    progressSeconds: data.progress_seconds,
+    durationSeconds: data.duration_seconds ?? 0,
+    completed: data.completed,
+  }
 }
 
 // ---------------------------------------------------------------------------
 // Continue watching
 // ---------------------------------------------------------------------------
 
-export async function getContinueWatching() {
+export async function getContinueWatchingEpisodes(
+  userId: string
+): Promise<ContinueWatchingItem[]> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) return []
-
   const { data } = await supabase
     .from('watch_progress')
-    .select('*, episodes(*), episodes!inner(shows(*))')
-    .eq('user_id', user.id)
+    .select('progress_seconds, duration_seconds, episode_id, episodes!inner(id, title, episode_number, show_id, season_id, seasons!inner(season_number), shows!inner(id, title, slug, brand_color))')
+    .eq('user_id', userId)
     .eq('completed', false)
+    .gt('progress_seconds', 0)
     .order('updated_at', { ascending: false })
-    .limit(6)
+    .limit(10)
 
-  // Simplified: just return show data from the episodes
-  if (!data || data.length === 0) return []
+  if (!data) return []
 
-  // Get unique show IDs from watch progress
-  const showIds = [...new Set(
-    data.map((wp: any) => (wp.episodes as any)?.show_id).filter(Boolean)
-  )]
-
-  if (showIds.length === 0) return []
-
-  const { data: shows } = await supabase
-    .from('shows')
-    .select('*')
-    .in('id', showIds)
-    .eq('archived', false)
-
-  return (shows ?? []).map(mapShow)
+  return data.map((row: any) => {
+    const ep = row.episodes
+    const dur = row.duration_seconds || 1
+    return {
+      episodeId: ep.id,
+      episodeTitle: ep.title,
+      episodeNumber: ep.episode_number,
+      seasonNumber: ep.seasons.season_number,
+      showId: ep.shows.id,
+      showTitle: ep.shows.title,
+      showSlug: ep.shows.slug,
+      showBrandColor: (ep.shows.brand_color || 'brand-blue') as ViewShow['brandColor'],
+      progressSeconds: row.progress_seconds,
+      durationSeconds: dur,
+      progressPercent: Math.min(Math.round((row.progress_seconds / dur) * 100), 99),
+    }
+  })
 }
 
 // ---------------------------------------------------------------------------
