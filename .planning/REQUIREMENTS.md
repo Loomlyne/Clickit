@@ -66,7 +66,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **USER-04**: Continue watching tracks playback progress per episode (saves every 10-15 seconds)
 - [x] **USER-05**: Continue watching rail on home page showing episodes in progress
 - [x] **USER-06**: Resuming an episode starts from saved progress position
-- [ ] **USER-07**: User profile page showing watchlist and watch history
+- [x] **USER-07**: User profile page showing watchlist and watch history
 
 ### Search
 
@@ -185,7 +185,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | USER-04 | Phase 9 | Complete |
 | USER-05 | Phase 9 | Complete |
 | USER-06 | Phase 9 | Complete |
-| USER-07 | Phase 9 | Pending |
+| USER-07 | Phase 9 | Complete |
 | SRCH-01 | Phase 8 | Complete |
 | SRCH-02 | Phase 8 | Complete |
 | SRCH-03 | Phase 8 | Complete |

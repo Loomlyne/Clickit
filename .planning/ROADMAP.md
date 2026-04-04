@@ -20,7 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 6: Backend Foundation** - Supabase schema, RLS policies, auth client setup, seed data
 - [x] **Phase 7: Admin Dashboard** - Full admin CRUD for shows, seasons, episodes, artwork upload, status management
 - [ ] **Phase 8: Data Integration, Auth & Search** - Replace mock data with Supabase, wire auth flows, implement search
-- [ ] **Phase 9: Personalization & Watch Features** - Watchlist, continue watching, autoplay next episode, user profile
+- [x] **Phase 9: Personalization & Watch Features** - Watchlist, continue watching, autoplay next episode, user profile (completed 2026-04-04)
 
 ## Phase Details
 
@@ -168,7 +168,7 @@ Plans:
 Plans:
 - [x] 09-01-PLAN.md -- Watchlist: queries, useWatchlist hook, WatchlistToggleButton, wire into cards/hero, My List page
 - [x] 09-02-PLAN.md -- Progress tracking, resume playback, continue watching rail rewrite, autoplay countdown overlay
-- [ ] 09-03-PLAN.md -- Profile page expansion (My List preview + Recently Watched), episode progress indicators, Vercel deploy
+- [x] 09-03-PLAN.md -- Profile page expansion (My List preview + Recently Watched), episode progress indicators, Vercel deploy
 **UI hint**: yes
 
 ## Progress
@@ -188,14 +188,14 @@ Note: Phase 6 depends only on Phase 1 and can run in parallel with Phases 2-5 if
 | 6.1 UI Cinematic Redesign | 5/5 | Complete | 2026-04-03 |
 | 7. Admin Dashboard | 4/4 | Complete | 2026-04-04 |
 | 8. Data Integration, Auth & Search | 3/3 | Complete | 2026-04-04 |
-| 9. Personalization & Watch Features | 0/3 | Not started | - |
+| 9. Personalization & Watch Features | 3/3 | Complete   | 2026-04-04 |
 
 ### Phase 10: Connect frontend to Supabase backend — wire auth, replace mock data with real queries, session management
 
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 9
-**Plans:** 0 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 10 to break down)
