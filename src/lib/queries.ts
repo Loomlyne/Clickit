@@ -412,3 +412,46 @@ export async function searchEpisodes(
     showBrandColor: e.shows.brand_color as ViewShow['brandColor'],
   }))
 }
+
+// ---------------------------------------------------------------------------
+// Watchlist queries
+// ---------------------------------------------------------------------------
+
+export async function getWatchlistShows(userId: string): Promise<ViewShow[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('watchlist')
+    .select('show_id, created_at, shows(*)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (!data) return []
+  return data
+    .map((row: any) => row.shows)
+    .filter(Boolean)
+    .map(mapShow)
+}
+
+export async function getShowWatchlistState(userId: string, showId: string): Promise<boolean> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('watchlist')
+    .select('show_id')
+    .eq('user_id', userId)
+    .eq('show_id', showId)
+    .maybeSingle()
+
+  return !!data
+}
+
+export async function getShowsWatchlistState(userId: string, showIds: string[]): Promise<Set<string>> {
+  if (showIds.length === 0) return new Set()
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('watchlist')
+    .select('show_id')
+    .eq('user_id', userId)
+    .in('show_id', showIds)
+
+  return new Set((data ?? []).map((row) => row.show_id))
+}
