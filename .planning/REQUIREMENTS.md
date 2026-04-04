@@ -70,9 +70,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Search
 
-- [ ] **SRCH-01**: Search bar accessible from all pages (header)
+- [x] **SRCH-01**: Search bar accessible from all pages (header)
 - [x] **SRCH-02**: Search finds shows and episodes by title
-- [ ] **SRCH-03**: Search results display show cards and episode cards with thumbnails
+- [x] **SRCH-03**: Search results display show cards and episode cards with thumbnails
 
 ### Navigation & Layout
 
@@ -186,9 +186,9 @@ Deferred to future release. Tracked but not in current roadmap.
 | USER-05 | Phase 9 | Pending |
 | USER-06 | Phase 9 | Pending |
 | USER-07 | Phase 9 | Pending |
-| SRCH-01 | Phase 8 | Pending |
+| SRCH-01 | Phase 8 | Complete |
 | SRCH-02 | Phase 8 | Complete |
-| SRCH-03 | Phase 8 | Pending |
+| SRCH-03 | Phase 8 | Complete |
 | NAVG-01 | Phase 2 | Complete |
 | NAVG-02 | Phase 2 | Complete |
 | NAVG-03 | Phase 2 | Complete |
