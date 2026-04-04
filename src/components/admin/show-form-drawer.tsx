@@ -160,7 +160,7 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
       toast.success(isEdit ? `"${data.title}" saved` : `"${data.title}" created`)
       onOpenChange(false)
     } else {
-      toast.error('Failed to save. Check your connection and try again.')
+      toast.error(result.error || 'Failed to save. Check your connection and try again.')
     }
   }
 
