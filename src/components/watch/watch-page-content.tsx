@@ -1,11 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { ArrowLeft } from 'lucide-react'
-
-import { cn } from '@/lib/utils'
 import { YouTubePlayer } from '@/components/watch/youtube-player'
 import { EpisodeBreadcrumb } from '@/components/watch/episode-breadcrumb'
 import { EpisodeNav } from '@/components/watch/episode-nav'
@@ -41,60 +39,28 @@ export function WatchPageContent({
   const [activeSeasonId, setActiveSeasonId] = useState(season.id)
   const currentEpisodes = episodesBySeason[activeSeasonId] ?? []
 
-  const [barVisible, setBarVisible] = useState(true)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const handleMouseMove = useCallback(() => {
-    setBarVisible(true)
-    if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => setBarVisible(false), 3000)
-  }, [])
-
-  // Start the auto-hide timer on mount
-  useEffect(() => {
-    timerRef.current = setTimeout(() => setBarVisible(false), 3000)
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [])
 
   return (
-    <div className="min-h-screen bg-black text-white -mt-16 relative z-30">
-      {/* Auto-hide top bar — fixed overlay with gradient */}
-      <div
-        className={cn(
-          'fixed top-0 left-0 right-0 z-50 transition-opacity duration-300',
-          barVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        )}
-        onMouseMove={handleMouseMove}
-      >
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: 'linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%)',
-            height: '120px',
-          }}
-        />
-        <div className="relative flex items-center justify-between px-6 py-4">
-          <Link
-            href={`/series/${show.slug}`}
-            className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="size-5" />
-            <span className="text-sm font-medium">
-              {show.title} &bull; S{season.seasonNumber}E{episode.episodeNumber}
-            </span>
-          </Link>
-        </div>
+    <div className="bg-black text-white -mt-16 pt-16 relative z-30">
+      {/* Back bar — static, always visible */}
+      <div className="flex items-center justify-between px-6 py-3 border-b border-white/[0.06]">
+        <Link
+          href={`/series/${show.slug}`}
+          className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="size-5" />
+          <span className="text-sm font-medium">
+            {show.title} &bull; S{season.seasonNumber}E{episode.episodeNumber}
+          </span>
+        </Link>
       </div>
 
       {/* Main layout: player+metadata left/top, sidebar right/bottom */}
-      <div
-        className="flex flex-col lg:flex-row"
-        onMouseMove={handleMouseMove}
-      >
+      <div className="flex flex-col lg:flex-row min-h-[calc(100vh-7rem)]">
         {/* Player + metadata (left on desktop, top on mobile) */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Player — full width, capped so metadata stays visible */}
-          <div className="w-full bg-black" style={{ aspectRatio: '16/9', maxHeight: '70vh' }}>
+          {/* Player — capped height so metadata is visible without scrolling */}
+          <div className="w-full bg-black" style={{ aspectRatio: '16/9', maxHeight: '50vh' }}>
             <YouTubePlayer
               videoId={episode.youtubeId ?? ''}
               brandColor={brandColorBgMap[show.brandColor]}
