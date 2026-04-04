@@ -164,7 +164,11 @@ Plans:
   3. Continue watching tracks playback progress per episode (saving every 10-15 seconds) and a continue watching rail appears on the home page
   4. Resuming an episode starts from the saved progress position
   5. After an episode ends, the next episode autoplays with a visible countdown
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 09-01-PLAN.md -- Watchlist: queries, useWatchlist hook, WatchlistToggleButton, wire into cards/hero, My List page
+- [ ] 09-02-PLAN.md -- Progress tracking, resume playback, continue watching rail rewrite, autoplay countdown overlay
+- [ ] 09-03-PLAN.md -- Profile page expansion (My List preview + Recently Watched), episode progress indicators, Vercel deploy
 **UI hint**: yes
 
 ## Progress
@@ -183,8 +187,8 @@ Note: Phase 6 depends only on Phase 1 and can run in parallel with Phases 2-5 if
 | 6. Backend Foundation | 2/2 | Complete | 2026-04-02 |
 | 6.1 UI Cinematic Redesign | 5/5 | Complete | 2026-04-03 |
 | 7. Admin Dashboard | 4/4 | Complete | 2026-04-04 |
-| 8. Data Integration, Auth & Search | 0/3 | Not started | - |
-| 9. Personalization & Watch Features | 0/TBD | Not started | - |
+| 8. Data Integration, Auth & Search | 3/3 | Complete | 2026-04-04 |
+| 9. Personalization & Watch Features | 0/3 | Not started | - |
 
 ### Phase 10: Connect frontend to Supabase backend — wire auth, replace mock data with real queries, session management
 
