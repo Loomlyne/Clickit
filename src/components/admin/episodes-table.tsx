@@ -13,6 +13,12 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { EmptyState } from '@/components/admin/empty-state'
@@ -52,7 +58,7 @@ export function EpisodesTable({ episodes, showId, seasonId }: EpisodesTableProps
     const result = await archiveEpisode(archiveTarget.id, showId)
     setArchiveLoading(false)
     if (result.success) {
-      toast.success('Episode archived')
+      toast.success(`"${archiveTarget.title}" archived`)
       setArchiveTarget(null)
     } else {
       toast.error(result.error || 'Failed to archive episode')
@@ -64,84 +70,100 @@ export function EpisodesTable({ episodes, showId, seasonId }: EpisodesTableProps
   }
 
   return (
-    <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-12">#</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead className="w-20">Duration</TableHead>
-            <TableHead className="w-20">YouTube</TableHead>
-            <TableHead className="w-[100px]">Status</TableHead>
-            <TableHead className="w-40">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {episodes.map((episode, index) => (
-            <TableRow key={episode.id}>
-              <TableCell className="font-mono text-muted-foreground">
-                {episode.episode_number}
-              </TableCell>
-              <TableCell className="font-medium">{episode.title}</TableCell>
-              <TableCell className="text-muted-foreground">
-                {episode.duration ? `${episode.duration}m` : '---'}
-              </TableCell>
-              <TableCell>
-                {episode.youtube_video_id ? (
-                  <span className="inline-block max-w-[72px] truncate rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
-                    {episode.youtube_video_id}
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">---</span>
-                )}
-              </TableCell>
-              <TableCell>
-                <StatusBadge status={episode.status} />
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={() => handleEdit(episode)}
-                    aria-label="Edit episode"
-                  >
-                    <Pencil />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={() => handleReorder(episode.id, 'up')}
-                    disabled={isPending || index === 0}
-                    aria-label="Move episode up"
-                  >
-                    <ChevronUp />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={() => handleReorder(episode.id, 'down')}
-                    disabled={isPending || index === episodes.length - 1}
-                    aria-label="Move episode down"
-                  >
-                    <ChevronDown />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={() => setArchiveTarget(episode)}
-                    aria-label="Archive episode"
-                  >
-                    <Archive />
-                  </Button>
-                </div>
-              </TableCell>
+    <TooltipProvider delayDuration={300}>
+      <div className="rounded-lg border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-[var(--card)]">
+              <TableHead className="w-12">#</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead className="w-20 hidden sm:table-cell">Duration</TableHead>
+              <TableHead className="w-24 hidden md:table-cell">YouTube</TableHead>
+              <TableHead className="w-[100px]">Status</TableHead>
+              <TableHead className="w-32 text-right">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {episodes.map((episode, index) => (
+              <TableRow key={episode.id} className="group hover:bg-white/[0.02] transition-colors">
+                <TableCell className="font-mono text-muted-foreground text-xs">
+                  #{episode.episode_number}
+                </TableCell>
+                <TableCell>
+                  <span className="font-medium">{episode.title}</span>
+                  <span className="block text-xs text-muted-foreground sm:hidden mt-0.5">
+                    {episode.duration ? `${episode.duration} min` : ''}
+                  </span>
+                </TableCell>
+                <TableCell className="text-muted-foreground hidden sm:table-cell">
+                  {episode.duration ? `${episode.duration} min` : '---'}
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {episode.youtube_video_id ? (
+                    <span className="inline-block max-w-[80px] truncate rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
+                      {episode.youtube_video_id}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">No video</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <StatusBadge status={episode.status} />
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center justify-end gap-0.5">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon-xs" onClick={() => handleEdit(episode)} aria-label={`Edit ${episode.title}`}>
+                          <Pencil />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Edit</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => handleReorder(episode.id, 'up')}
+                          disabled={isPending || index === 0}
+                          aria-label="Move up"
+                        >
+                          <ChevronUp />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Move up</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => handleReorder(episode.id, 'down')}
+                          disabled={isPending || index === episodes.length - 1}
+                          aria-label="Move down"
+                        >
+                          <ChevronDown />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Move down</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon-xs" onClick={() => setArchiveTarget(episode)} aria-label={`Archive ${episode.title}`}>
+                          <Archive />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Archive</TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
-      {/* Edit Episode Drawer */}
       <EpisodeFormDrawer
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
@@ -151,25 +173,20 @@ export function EpisodesTable({ episodes, showId, seasonId }: EpisodesTableProps
         nextEpisodeNumber={episodes.length + 1}
         onSave={async (data) => {
           if (!editEpisode) return { success: false, error: 'No episode selected' }
-          return updateEpisode(editEpisode.id, {
-            ...data,
-            show_id: showId,
-            season_id: seasonId,
-          })
+          return updateEpisode(editEpisode.id, { ...data, show_id: showId, season_id: seasonId })
         }}
       />
 
-      {/* Archive Confirm Dialog */}
       <ConfirmDialog
         open={!!archiveTarget}
         onOpenChange={(open) => { if (!open) setArchiveTarget(null) }}
         title="Archive Episode"
-        description="This will hide this episode from viewers."
+        description={`This will hide "${archiveTarget?.title ?? 'this episode'}" from viewers.`}
         confirmLabel="Archive Episode"
         onConfirm={handleArchiveConfirm}
         destructive
         loading={archiveLoading}
       />
-    </>
+    </TooltipProvider>
   )
 }

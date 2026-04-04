@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
+import { StatusBadge } from '@/components/admin/status-badge'
 import { SeasonTabs } from '@/components/admin/season-tabs'
 import type { Database } from '@/lib/database.types'
 
@@ -14,7 +16,6 @@ export default async function ShowDetailPage({
   const { id } = await params
   const supabase = await createClient()
 
-  // Fetch show
   const { data: show } = await supabase
     .from('shows')
     .select('*')
@@ -23,14 +24,12 @@ export default async function ShowDetailPage({
 
   if (!show) notFound()
 
-  // Fetch seasons ordered by season_number
   const { data: seasons } = await supabase
     .from('seasons')
     .select('*')
     .eq('show_id', id)
     .order('season_number', { ascending: true })
 
-  // Fetch all non-archived episodes for this show, ordered by episode_number
   const { data: episodes } = await supabase
     .from('episodes')
     .select('*')
@@ -38,7 +37,6 @@ export default async function ShowDetailPage({
     .eq('archived', false)
     .order('episode_number', { ascending: true })
 
-  // Group episodes by season_id
   const episodesBySeason: Record<string, Episode[]> = {}
   for (const ep of episodes ?? []) {
     if (!episodesBySeason[ep.season_id]) {
@@ -49,18 +47,36 @@ export default async function ShowDetailPage({
 
   return (
     <div>
-      {/* Breadcrumb */}
-      <nav className="text-sm text-muted-foreground mb-4">
-        <Link href="/admin" className="hover:text-foreground transition-colors">
-          Shows
-        </Link>
-        <span className="mx-2">&gt;</span>
-        <span className="text-foreground">{show.title}</span>
-      </nav>
+      {/* Back link */}
+      <Link
+        href="/admin"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+      >
+        <ArrowLeft className="size-4" />
+        All Shows
+      </Link>
 
-      {/* Page header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold">{show.title}</h1>
+      {/* Show info card */}
+      <div className="rounded-lg border border-border bg-[var(--card)] p-5 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold">{show.title}</h1>
+            <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+              <span>{show.genre}</span>
+              <span>·</span>
+              <span>{show.episode_count} episodes</span>
+              <span>·</span>
+              <span>{(seasons ?? []).length} season{(seasons ?? []).length !== 1 ? 's' : ''}</span>
+              {show.broadcast_day && (
+                <>
+                  <span>·</span>
+                  <span>{show.broadcast_day} {show.broadcast_time}</span>
+                </>
+              )}
+            </div>
+          </div>
+          <StatusBadge status={show.status} />
+        </div>
       </div>
 
       {/* Season tabs with episodes */}

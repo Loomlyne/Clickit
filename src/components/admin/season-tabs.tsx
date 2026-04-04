@@ -6,6 +6,12 @@ import { useRouter } from 'next/navigation'
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { EpisodesTable } from '@/components/admin/episodes-table'
 import { SeasonFormDrawer } from '@/components/admin/season-form-drawer'
 import { EpisodeFormDrawer } from '@/components/admin/episode-form-drawer'
@@ -28,12 +34,8 @@ interface SeasonTabsProps {
 
 export function SeasonTabs({ seasons, episodesBySeason, showId }: SeasonTabsProps) {
   const router = useRouter()
-
-  // Season drawer state
   const [seasonDrawerOpen, setSeasonDrawerOpen] = useState(false)
   const [editSeason, setEditSeason] = useState<Season | null>(null)
-
-  // Episode drawer state
   const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false)
   const [activeSeasonIdForEpisode, setActiveSeasonIdForEpisode] = useState<string | null>(null)
 
@@ -60,7 +62,7 @@ export function SeasonTabs({ seasons, episodesBySeason, showId }: SeasonTabsProp
           body="Create a season to start adding episodes."
           action={
             <Button onClick={handleAddSeason}>
-              <Plus className="mr-2 size-4" />
+              <Plus className="mr-1.5 size-4" />
               Add Season
             </Button>
           }
@@ -72,10 +74,7 @@ export function SeasonTabs({ seasons, episodesBySeason, showId }: SeasonTabsProp
           showId={showId}
           nextSeasonNumber={1}
           onSave={async (data) => {
-            const result = await createSeason({
-              ...data,
-              show_id: showId,
-            })
+            const result = await createSeason({ ...data, show_id: showId })
             if (result.success) router.refresh()
             return result
           }}
@@ -87,34 +86,51 @@ export function SeasonTabs({ seasons, episodesBySeason, showId }: SeasonTabsProp
   const defaultTab = seasons[0].id
 
   return (
-    <div>
+    <TooltipProvider delayDuration={300}>
       <Tabs defaultValue={defaultTab}>
-        <div className="flex items-center gap-2 mb-4">
+        {/* Tabs row with Add Season button inline */}
+        <div className="flex items-center gap-3 mb-4">
           <TabsList>
-            {seasons.map((season) => (
-              <TabsTrigger key={season.id} value={season.id} className="gap-1.5">
-                {season.title}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleEditSeason(season)
-                  }}
-                  className="ml-1 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-accent"
-                  aria-label={`Edit ${season.title}`}
-                >
-                  <Pencil className="size-3" />
-                </button>
-              </TabsTrigger>
-            ))}
+            {seasons.map((season) => {
+              const epCount = episodesBySeason[season.id]?.length ?? 0
+              return (
+                <TabsTrigger key={season.id} value={season.id} className="gap-1.5">
+                  {season.title}
+                  <span className="text-xs text-muted-foreground">({epCount})</span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEditSeason(season)
+                        }}
+                        className="ml-0.5 rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                        aria-label={`Edit ${season.title}`}
+                      >
+                        <Pencil className="size-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Edit season</TooltipContent>
+                  </Tooltip>
+                </TabsTrigger>
+              )
+            })}
           </TabsList>
+          <Button variant="outline" size="sm" onClick={handleAddSeason}>
+            <Plus className="mr-1 size-4" />
+            Add Season
+          </Button>
         </div>
 
         {seasons.map((season) => {
           const seasonEpisodes = episodesBySeason[season.id] ?? []
           return (
             <TabsContent key={season.id} value={season.id}>
-              <div className="flex items-center justify-end mb-4">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-muted-foreground">
+                  {seasonEpisodes.length} episode{seasonEpisodes.length !== 1 ? 's' : ''}
+                </p>
                 <Button size="sm" onClick={() => handleAddEpisode(season.id)}>
                   <Plus className="mr-1 size-4" />
                   Add Episode
@@ -130,14 +146,6 @@ export function SeasonTabs({ seasons, episodesBySeason, showId }: SeasonTabsProp
         })}
       </Tabs>
 
-      {/* Add Season button below tabs */}
-      <div className="mt-6">
-        <Button variant="outline" onClick={handleAddSeason}>
-          <Plus className="mr-1 size-4" />
-          Add Season
-        </Button>
-      </div>
-
       {/* Season Form Drawer */}
       <SeasonFormDrawer
         open={seasonDrawerOpen}
@@ -147,23 +155,16 @@ export function SeasonTabs({ seasons, episodesBySeason, showId }: SeasonTabsProp
         nextSeasonNumber={seasons.length + 1}
         onSave={async (data) => {
           if (editSeason) {
-            const result = await updateSeason(editSeason.id, {
-              ...data,
-              show_id: showId,
-            })
+            const result = await updateSeason(editSeason.id, { ...data, show_id: showId })
             if (result.success) router.refresh()
             return result
           }
-          const result = await createSeason({
-            ...data,
-            show_id: showId,
-          })
+          const result = await createSeason({ ...data, show_id: showId })
           if (result.success) router.refresh()
           return result
         }}
       />
 
-      {/* Episode Form Drawer (for Add Episode) */}
       {activeSeasonIdForEpisode && (
         <EpisodeFormDrawer
           open={episodeDrawerOpen}
@@ -183,6 +184,6 @@ export function SeasonTabs({ seasons, episodesBySeason, showId }: SeasonTabsProp
           }}
         />
       )}
-    </div>
+    </TooltipProvider>
   )
 }
