@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { getVideoDuration } from '@/lib/youtube'
 
 import {
   Sheet,
@@ -105,6 +106,26 @@ export function EpisodeFormDrawer({
       }
     }
   }, [open, episode, nextEpisodeNumber, form])
+
+  // Auto-detect duration from YouTube video
+  const lastDetectedId = useRef<string | null>(null)
+  const watchedVideoId = form.watch('youtube_video_id')
+  useEffect(() => {
+    const videoId = watchedVideoId?.trim()
+    if (!videoId || videoId.length !== 11 || videoId === lastDetectedId.current) return
+    // Only auto-fill if duration is empty
+    const currentDuration = form.getValues('duration')
+    if (currentDuration) return
+
+    lastDetectedId.current = videoId
+    getVideoDuration(videoId).then((seconds) => {
+      if (seconds && seconds > 0) {
+        const minutes = Math.round(seconds / 60)
+        form.setValue('duration', minutes, { shouldDirty: true })
+        toast.success(`Duration auto-detected: ${minutes} min`)
+      }
+    })
+  }, [watchedVideoId, form])
 
   async function onSubmit(data: EpisodeFormData) {
     const normalized = {

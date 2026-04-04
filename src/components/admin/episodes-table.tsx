@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useOptimistic } from 'react'
 import { Pencil, ChevronUp, ChevronDown, Archive } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -41,9 +41,29 @@ export function EpisodesTable({ episodes, showId, seasonId }: EpisodesTableProps
   const [archiveTarget, setArchiveTarget] = useState<Episode | null>(null)
   const [archiveLoading, setArchiveLoading] = useState(false)
 
+  // Optimistic episode list for instant reorder feedback
+  const [optimisticEpisodes, setOptimisticEpisodes] = useOptimistic(
+    episodes,
+    (state: Episode[], { episodeId, direction }: { episodeId: string; direction: 'up' | 'down' }) => {
+      const idx = state.findIndex((e) => e.id === episodeId)
+      if (idx === -1) return state
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+      if (swapIdx < 0 || swapIdx >= state.length) return state
+      const next = [...state]
+      const aNum = next[idx].episode_number
+      const bNum = next[swapIdx].episode_number
+      next[idx] = { ...next[idx], episode_number: bNum }
+      next[swapIdx] = { ...next[swapIdx], episode_number: aNum }
+      next.sort((a, b) => a.episode_number - b.episode_number)
+      return next
+    },
+  )
+
   function handleReorder(episodeId: string, direction: 'up' | 'down') {
     startTransition(async () => {
-      await reorderEpisode(episodeId, direction)
+      setOptimisticEpisodes({ episodeId, direction })
+      const result = await reorderEpisode(episodeId, direction)
+      if (!result.success) toast.error(result.error || 'Reorder failed')
     })
   }
 
@@ -84,7 +104,7 @@ export function EpisodesTable({ episodes, showId, seasonId }: EpisodesTableProps
             </TableRow>
           </TableHeader>
           <TableBody>
-            {episodes.map((episode, index) => (
+            {optimisticEpisodes.map((episode, index) => (
               <TableRow key={episode.id} className="group hover:bg-white/[0.02] transition-colors">
                 <TableCell className="font-mono text-muted-foreground text-xs">
                   #{episode.episode_number}
@@ -140,7 +160,7 @@ export function EpisodesTable({ episodes, showId, seasonId }: EpisodesTableProps
                           variant="ghost"
                           size="icon-xs"
                           onClick={() => handleReorder(episode.id, 'down')}
-                          disabled={isPending || index === episodes.length - 1}
+                          disabled={isPending || index === optimisticEpisodes.length - 1}
                           aria-label="Move down"
                         >
                           <ChevronDown />

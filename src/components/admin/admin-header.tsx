@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -26,9 +27,13 @@ export function AdminHeader() {
             <span className="hidden sm:inline">Back to Site</span>
           </Link>
 
-          <span className="text-lg font-semibold text-foreground">
-            CIT Admin
-          </span>
+          <Image
+            src="/brand/Clickit_final_logo.svg"
+            alt="Clickit Story Admin"
+            width={100}
+            height={28}
+            className="h-7 w-auto"
+          />
 
           <Link
             href="/profile"
