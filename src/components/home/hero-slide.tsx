@@ -5,17 +5,18 @@ import Link from 'next/link'
 
 import { CinematicBackdrop } from '@/components/primitives/cinematic-backdrop'
 import { GlowBadge } from '@/components/primitives/glow-badge'
-import { type Show, brandColorHexMap } from '@/lib/mock-data'
+import type { ViewShow } from '@/lib/queries'
+import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 import { CINEMA_EASE } from '@/lib/cinema'
 
 interface HeroSlideProps {
-  show: Show
+  show: ViewShow
   isActive: boolean
   firstEpisodeId?: string
 }
 
 export function HeroSlide({ show, isActive, firstEpisodeId }: HeroSlideProps) {
-  const brandColorHex = brandColorHexMap[show.brandColor]
+  const brandColorHex = BRAND_COLOR_HEX[show.brandColor]
 
   return (
     <motion.div

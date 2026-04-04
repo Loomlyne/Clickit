@@ -3,10 +3,11 @@
 import { motion } from 'motion/react'
 
 import { ShowArt } from '@/components/primitives/show-art'
-import { type Show, brandColorHexMap } from '@/lib/mock-data'
+import type { ViewShow } from '@/lib/queries'
+import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 
 interface ShowCollageProps {
-  shows: Show[]
+  shows: ViewShow[]
 }
 
 export function ShowCollage({ shows }: ShowCollageProps) {
@@ -41,7 +42,7 @@ export function ShowCollage({ shows }: ShowCollageProps) {
               style={{ opacity: 0.8 }}
             >
               <ShowArt
-                brandColor={brandColorHexMap[show.brandColor]}
+                brandColor={BRAND_COLOR_HEX[show.brandColor]}
                 title={show.title}
                 aspectRatio="2/3"
               >
@@ -62,7 +63,7 @@ export function ShowCollage({ shows }: ShowCollageProps) {
               style={{ opacity: 0.7 }}
             >
               <ShowArt
-                brandColor={brandColorHexMap[show.brandColor]}
+                brandColor={BRAND_COLOR_HEX[show.brandColor]}
                 title={show.title}
                 aspectRatio="2/3"
               >

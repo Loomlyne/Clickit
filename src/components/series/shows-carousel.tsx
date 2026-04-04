@@ -8,10 +8,10 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel'
 import { PortraitShowCard } from '@/components/shows/portrait-show-card'
-import type { Show } from '@/lib/mock-data'
+import type { ViewShow } from '@/lib/queries'
 
 interface ShowsCarouselProps {
-  shows: Show[]
+  shows: ViewShow[]
 }
 
 export function ShowsCarousel({ shows }: ShowsCarouselProps) {

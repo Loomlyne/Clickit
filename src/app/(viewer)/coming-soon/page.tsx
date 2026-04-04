@@ -7,20 +7,22 @@ import { EpisodeRow } from '@/components/series/episode-row'
 import { SectionHeader } from '@/components/primitives/section-header'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 import {
-  COMING_SOON_SHOWS,
-  getComingSoonEpisodesFromStreamingShows,
-  brandColorHexMap,
-  type Show,
-} from '@/lib/mock-data'
+  getComingSoonShows,
+  getComingSoonEpisodes,
+  type ViewShow,
+} from '@/lib/queries'
+import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 
 export const metadata: Metadata = {
   title: 'Coming Soon | Clickit Story',
   description: 'Upcoming shows and new episodes coming to Clickit Story',
 }
 
-export default function ComingSoonPage() {
-  const comingSoonShows = COMING_SOON_SHOWS
-  const upcomingEpisodes = getComingSoonEpisodesFromStreamingShows()
+export default async function ComingSoonPage() {
+  const [comingSoonShows, upcomingEpisodes] = await Promise.all([
+    getComingSoonShows(),
+    getComingSoonEpisodes(),
+  ])
 
   // Group upcoming episodes by show for section 2 display
   const episodesByShow = upcomingEpisodes.reduce(
@@ -33,7 +35,7 @@ export default function ComingSoonPage() {
     },
     {} as Record<
       string,
-      { brandColor: Show['brandColor']; episodes: typeof upcomingEpisodes }
+      { brandColor: ViewShow['brandColor']; episodes: typeof upcomingEpisodes }
     >
   )
 
@@ -107,7 +109,7 @@ export default function ComingSoonPage() {
                     <h3 className="mb-3 text-sm font-medium text-white/60 flex items-center gap-2">
                       <div
                         className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                        style={{ background: brandColorHexMap[brandColor] }}
+                        style={{ background: BRAND_COLOR_HEX[brandColor] }}
                       />
                       {showTitle}
                     </h3>

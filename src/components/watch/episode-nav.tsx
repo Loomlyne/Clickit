@@ -4,11 +4,11 @@ import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
-import type { Episode } from '@/lib/mock-data'
+import type { ViewEpisode } from '@/lib/queries'
 
 interface EpisodeNavProps {
-  prev: Episode | null
-  next: Episode | null
+  prev: ViewEpisode | null
+  next: ViewEpisode | null
 }
 
 const baseClasses =

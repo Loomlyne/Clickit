@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 import { WatchPageContent } from '@/components/watch/watch-page-content'
-import { getEpisodeById, mapShow } from '@/lib/queries'
+import { getEpisodeById, mapShow, mapEpisode, mapSeason } from '@/lib/queries'
 
 interface Props {
   params: Promise<{ episodeId: string }>
@@ -26,64 +26,28 @@ export default async function WatchPage({ params }: Props) {
 
   const { episode, show, season, seasons, episodesBySeason, prev, next } = data
 
-  // Map to shapes the watch page components expect
-  const viewEpisode = {
-    id: episode.id,
-    showId: episode.show_id,
-    seasonId: episode.season_id,
-    episodeNumber: episode.episode_number,
-    title: episode.title,
-    description: episode.description,
-    duration: episode.duration,
-    status: episode.status,
-    youtubeId: episode.youtube_video_id,
-  }
-
+  const viewEpisode = mapEpisode(episode)
   const viewShow = mapShow(show)
+  const viewSeason = mapSeason(season)
+  const viewSeasons = seasons.map(mapSeason)
 
-  const viewSeason = {
-    id: season.id,
-    showId: season.show_id,
-    seasonNumber: season.season_number,
-    title: season.title,
-    episodeCount: season.episode_count,
+  const viewEpisodesBySeason: Record<string, ReturnType<typeof mapEpisode>[]> = {}
+  for (const [sid, eps] of Object.entries(episodesBySeason)) {
+    viewEpisodesBySeason[sid] = eps.map(mapEpisode)
   }
 
-  const viewSeasons = seasons.map((s) => ({
-    id: s.id,
-    showId: s.show_id,
-    seasonNumber: s.season_number,
-    title: s.title,
-    episodeCount: s.episode_count,
-  }))
-
-  const viewEpisodesBySeason: Record<string, any[]> = {}
-  for (const [seasonId, eps] of Object.entries(episodesBySeason)) {
-    viewEpisodesBySeason[seasonId] = eps.map((e) => ({
-      id: e.id,
-      showId: e.show_id,
-      seasonId: e.season_id,
-      episodeNumber: e.episode_number,
-      title: e.title,
-      description: e.description,
-      duration: e.duration,
-      status: e.status,
-      youtubeId: e.youtube_video_id,
-    }))
-  }
-
-  const viewPrev = prev ? { id: prev.id, title: prev.title, episodeNumber: prev.episode_number } : null
-  const viewNext = next ? { id: next.id, title: next.title, episodeNumber: next.episode_number } : null
+  const viewPrev = prev ? mapEpisode(prev) : null
+  const viewNext = next ? mapEpisode(next) : null
 
   return (
     <WatchPageContent
-      episode={viewEpisode as any}
-      show={viewShow as any}
-      season={viewSeason as any}
-      seasons={viewSeasons as any}
+      episode={viewEpisode}
+      show={viewShow}
+      season={viewSeason}
+      seasons={viewSeasons}
       episodesBySeason={viewEpisodesBySeason}
-      prevEpisode={viewPrev as any}
-      nextEpisode={viewNext as any}
+      prevEpisode={viewPrev}
+      nextEpisode={viewNext}
     />
   )
 }

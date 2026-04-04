@@ -9,22 +9,18 @@ import { EpisodeBreadcrumb } from '@/components/watch/episode-breadcrumb'
 import { EpisodeNav } from '@/components/watch/episode-nav'
 import { SeasonSelector } from '@/components/series/season-selector'
 import { EpisodeList } from '@/components/series/episode-list'
-import {
-  type Episode,
-  type Show,
-  type Season,
-  brandColorBgMap,
-} from '@/lib/mock-data'
+import type { ViewEpisode, ViewShow, ViewSeason } from '@/lib/queries'
+import { BRAND_COLOR_BG } from '@/lib/brand-colors'
 import { CINEMA_EASE } from '@/lib/cinema'
 
 interface WatchPageContentProps {
-  episode: Episode
-  show: Show
-  season: Season
-  seasons: Season[]
-  episodesBySeason: Record<string, Episode[]>
-  prevEpisode: Episode | null
-  nextEpisode: Episode | null
+  episode: ViewEpisode
+  show: ViewShow
+  season: ViewSeason
+  seasons: ViewSeason[]
+  episodesBySeason: Record<string, ViewEpisode[]>
+  prevEpisode: ViewEpisode | null
+  nextEpisode: ViewEpisode | null
 }
 
 export function WatchPageContent({
@@ -49,7 +45,7 @@ export function WatchPageContent({
           <div className="w-full aspect-video bg-[#111]">
             <YouTubePlayer
               videoId={episode.youtubeId ?? ''}
-              brandColor={brandColorBgMap[show.brandColor]}
+              brandColor={BRAND_COLOR_BG[show.brandColor]}
             />
           </div>
 

@@ -1,20 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { Play, Clock, Lock } from 'lucide-react'
+import { Play, Clock, EyeOff } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { ShowArt } from '@/components/primitives/show-art'
-import {
-  type Episode,
-  type Show,
-  brandColorHexMap,
-} from '@/lib/mock-data'
+import type { ViewEpisode, ViewShow } from '@/lib/queries'
+import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 
 interface EpisodeRowProps {
-  episode: Episode
-  showBrandColor: Show['brandColor']
+  episode: ViewEpisode
+  showBrandColor: ViewShow['brandColor']
   currentEpisodeId?: string
 }
 
@@ -25,10 +22,10 @@ export function EpisodeRow({
 }: EpisodeRowProps) {
   const isPublished = episode.status === 'published'
   const isComingSoon = episode.status === 'coming-soon'
-  const isLocked = episode.status === 'locked'
-  const isDimmed = isComingSoon || isLocked
+  const isDraft = episode.status === 'draft'
+  const isDimmed = isComingSoon || isDraft
   const isCurrentEpisode = currentEpisodeId === episode.id
-  const brandColorHex = brandColorHexMap[showBrandColor] ?? '#2C3569'
+  const brandColorHex = BRAND_COLOR_HEX[showBrandColor] ?? '#2C3569'
 
   const rowContent = (
     <>
@@ -71,10 +68,10 @@ export function EpisodeRow({
           </div>
         )}
 
-        {/* Locked overlay: lock icon */}
-        {isLocked && (
+        {/* Draft overlay: eye-off icon */}
+        {isDraft && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <Lock className="size-6 text-white/70" aria-hidden="true" />
+            <EyeOff className="size-6 text-white/70" aria-hidden="true" />
           </div>
         )}
       </div>
@@ -114,9 +111,9 @@ export function EpisodeRow({
             </Badge>
           )}
 
-          {isLocked && (
+          {isDraft && (
             <Badge className="bg-surface-3 text-foreground text-xs">
-              Locked
+              Draft
             </Badge>
           )}
         </div>

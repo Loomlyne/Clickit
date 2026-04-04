@@ -4,13 +4,13 @@ import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { EpisodeRow } from '@/components/series/episode-row'
-import type { Episode, Show } from '@/lib/mock-data'
+import type { ViewEpisode, ViewShow } from '@/lib/queries'
 
 const CHUNK_SIZE = 20
 
 interface EpisodeListProps {
-  episodes: Episode[]
-  showBrandColor: Show['brandColor']
+  episodes: ViewEpisode[]
+  showBrandColor: ViewShow['brandColor']
   currentEpisodeId?: string
 }
 

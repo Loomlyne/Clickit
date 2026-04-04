@@ -4,10 +4,11 @@ import Link from 'next/link'
 import { Heart, Bookmark, Share2 } from 'lucide-react'
 
 import { ShowArt } from '@/components/primitives/show-art'
-import { type Show, brandColorHexMap } from '@/lib/mock-data'
+import type { ViewShow } from '@/lib/queries'
+import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 
 interface PortraitShowCardProps {
-  show: Show
+  show: ViewShow
 }
 
 function formatCount(n: number): string {
@@ -17,10 +18,10 @@ function formatCount(n: number): string {
 }
 
 export function PortraitShowCard({ show }: PortraitShowCardProps) {
-  const brandColorHex = brandColorHexMap[show.brandColor]
-  const likeCount = show.viewCount ?? 0
-  const handle = show.instagramHandle ?? '@clickitstory'
-  const instagramUrl = show.instagramUrl ?? 'https://www.instagram.com/clickitstory'
+  const brandColorHex = BRAND_COLOR_HEX[show.brandColor]
+  const likeCount = 0
+  const handle = '@clickitstory'
+  const instagramUrl = 'https://www.instagram.com/clickitstory'
 
   return (
     <div className="group cursor-pointer">

@@ -2,14 +2,15 @@
 
 import { PortraitShowCard } from '@/components/shows/portrait-show-card'
 import { GlowBadge } from '@/components/primitives/glow-badge'
-import { type Show, brandColorHexMap } from '@/lib/mock-data'
+import type { ViewShow } from '@/lib/queries'
+import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 
 interface ComingSoonShowCardProps {
-  show: Show
+  show: ViewShow
 }
 
 export function ComingSoonShowCard({ show }: ComingSoonShowCardProps) {
-  const brandColorHex = brandColorHexMap[show.brandColor]
+  const brandColorHex = BRAND_COLOR_HEX[show.brandColor]
 
   return (
     <div className="relative opacity-85">

@@ -1,10 +1,10 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import type { Season } from '@/lib/mock-data'
+import type { ViewSeason } from '@/lib/queries'
 
 interface SeasonSelectorProps {
-  seasons: Season[]
+  seasons: ViewSeason[]
   activeSeason: string // season.id
   onSeasonChange: (seasonId: string) => void
   brandColorHex?: string

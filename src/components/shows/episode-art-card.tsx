@@ -5,7 +5,8 @@ import { motion } from 'motion/react'
 
 import { ShowArt } from '@/components/primitives/show-art'
 import { PlayOverlay } from '@/components/ui/play-overlay'
-import { brandColorHexMap, type Show } from '@/lib/mock-data'
+import type { ViewShow } from '@/lib/queries'
+import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 
 interface EpisodeArtCardProps {
   episode: {
@@ -16,13 +17,13 @@ interface EpisodeArtCardProps {
     duration?: number
     showTitle: string
     showSlug: string
-    brandColor: Show['brandColor']
+    brandColor: ViewShow['brandColor']
     watchProgress?: number // 0-100, for progress bar
   }
 }
 
 export function EpisodeArtCard({ episode }: EpisodeArtCardProps) {
-  const brandColorHex = brandColorHexMap[episode.brandColor]
+  const brandColorHex = BRAND_COLOR_HEX[episode.brandColor]
 
   return (
     <Link href={`/watch/${episode.id}`} className="group block cursor-pointer flex-shrink-0 w-[320px]">

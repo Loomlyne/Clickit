@@ -1,7 +1,14 @@
 import { Star } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import type { ShowReview } from '@/lib/mock-data'
+export interface ShowReview {
+  id: string
+  showId: string
+  authorName: string
+  rating: number
+  text: string
+  date: string
+}
 
 interface ReviewsSectionProps {
   reviews: ShowReview[]

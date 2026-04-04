@@ -11,7 +11,9 @@ import {
   getEpisodesBySeasonId,
   getStreamingShows,
   mapShow,
-  type DbEpisode,
+  mapSeason,
+  mapEpisode,
+  type ViewEpisode,
 } from '@/lib/queries'
 
 interface Props {
@@ -36,36 +38,13 @@ export default async function SeriesDetailPage({ params }: Props) {
   const show = mapShow(dbShow)
   const seasons = await getSeasonsByShowId(dbShow.id)
 
-  // Map seasons to the shape components expect
-  const viewSeasons = seasons.map((s) => ({
-    id: s.id,
-    showId: s.show_id,
-    seasonNumber: s.season_number,
-    title: s.title,
-    episodeCount: s.episode_count,
-  }))
+  const viewSeasons = seasons.map(mapSeason)
 
   // Pre-compute all episodes by season
-  const episodesBySeason: Record<string, DbEpisode[]> = {}
+  const viewEpisodesBySeason: Record<string, ViewEpisode[]> = {}
   for (const season of seasons) {
-    episodesBySeason[season.id] = await getEpisodesBySeasonId(season.id)
-  }
-
-  // Map episodes to the shape components expect
-  const viewEpisodesBySeason: Record<string, any[]> = {}
-  for (const [seasonId, eps] of Object.entries(episodesBySeason)) {
-    viewEpisodesBySeason[seasonId] = eps.map((e) => ({
-      id: e.id,
-      showId: e.show_id,
-      seasonId: e.season_id,
-      episodeNumber: e.episode_number,
-      title: e.title,
-      description: e.description,
-      duration: e.duration,
-      status: e.status === 'published' ? 'published' : e.status,
-      youtubeId: e.youtube_video_id,
-      publishedAt: e.created_at,
-    }))
+    const eps = await getEpisodesBySeasonId(season.id)
+    viewEpisodesBySeason[season.id] = eps.map(mapEpisode)
   }
 
   // First episode for hero CTA
@@ -74,7 +53,7 @@ export default async function SeriesDetailPage({ params }: Props) {
   if (viewSeasons.length > 0) {
     const firstSeason = viewSeasons[0]
     const firstSeasonEpisodes = viewEpisodesBySeason[firstSeason.id] ?? []
-    const firstPublished = firstSeasonEpisodes.find((ep: any) => ep.status === 'published')
+    const firstPublished = firstSeasonEpisodes.find((ep) => ep.status === 'published')
     if (firstPublished) {
       firstEpisodeLabel = `S${firstSeason.seasonNumber} E${firstPublished.episodeNumber}`
       firstEpisodeId = firstPublished.id

@@ -7,12 +7,13 @@ import { Heart, ThumbsUp, ChevronDown } from 'lucide-react'
 
 import { CinematicBackdrop } from '@/components/primitives/cinematic-backdrop'
 import { GlowBadge } from '@/components/primitives/glow-badge'
-import { type Show, type Season, brandColorHexMap } from '@/lib/mock-data'
+import type { ViewShow, ViewSeason } from '@/lib/queries'
+import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 import { CINEMA_EASE } from '@/lib/cinema'
 
 interface SeriesDetailHeroProps {
-  show: Show
-  seasons: Season[]
+  show: ViewShow
+  seasons: ViewSeason[]
   firstEpisodeLabel?: string // e.g. "S1 E1" for the CTA button
   firstEpisodeId?: string // episode ID for watch page link
 }
@@ -31,7 +32,7 @@ export function SeriesDetailHero({
     return () => window.removeEventListener('scroll', handler)
   }, [])
 
-  const brandColorHex = brandColorHexMap[show.brandColor] ?? '#2C3569'
+  const brandColorHex = BRAND_COLOR_HEX[show.brandColor] ?? '#2C3569'
 
   return (
     <MotionConfig reducedMotion="user">

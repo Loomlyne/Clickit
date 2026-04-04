@@ -11,11 +11,12 @@ import { ShowCard } from '@/components/shows/show-card'
 import { PlaceholderCard } from '@/components/shows/placeholder-card'
 import { SectionHeader } from '@/components/primitives/section-header'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
-import { type Show, brandColorHexMap } from '@/lib/mock-data'
+import type { ViewShow } from '@/lib/queries'
+import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 
 interface ContentRailProps {
   title: string
-  shows: Show[]
+  shows: ViewShow[]
   seeAllHref?: string
   /** Minimum total cards (real + placeholder) for visual density. Defaults to 6. */
   minCards?: number
@@ -28,7 +29,7 @@ export function ContentRail({
   minCards = 6,
 }: ContentRailProps) {
   const placeholderCount = Math.max(0, minCards - shows.length)
-  const accentColor = shows[0] ? brandColorHexMap[shows[0].brandColor] : undefined
+  const accentColor = shows[0] ? BRAND_COLOR_HEX[shows[0].brandColor] : undefined
 
   return (
     <ScrollReveal>

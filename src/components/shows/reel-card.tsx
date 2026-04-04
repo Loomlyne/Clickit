@@ -2,22 +2,39 @@
 
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
-import { type Reel, type Show, MOCK_SHOWS, brandColorBgMap, isReelFresh } from '@/lib/mock-data'
+import type { ViewShow } from '@/lib/queries'
+import { BRAND_COLOR_BG } from '@/lib/brand-colors'
+
+export interface Reel {
+  id: string
+  showId: string
+  title: string
+  thumbnailUrl?: string
+  duration: number
+  postedAt: string
+}
+
+export function isReelFresh(reel: Reel): boolean {
+  const posted = new Date(reel.postedAt)
+  const now = new Date()
+  const diffMs = now.getTime() - posted.getTime()
+  return diffMs < 24 * 60 * 60 * 1000
+}
 
 interface ReelCardProps {
   reel: Reel
+  showSlug: string
+  showTitle: string
+  showBrandColor: ViewShow['brandColor']
 }
 
-export function ReelCard({ reel }: ReelCardProps) {
-  const show = MOCK_SHOWS.find((s) => s.id === reel.showId)
-  if (!show) return null
-
+export function ReelCard({ reel, showSlug, showTitle, showBrandColor }: ReelCardProps) {
   return (
-    <Link href={`/series/${show.slug}`} className="block">
+    <Link href={`/series/${showSlug}`} className="block">
       <div className="group relative cursor-pointer overflow-hidden rounded-lg aspect-[9/16]">
-        <div className={`h-full w-full ${brandColorBgMap[show.brandColor]}`}>
+        <div className={`h-full w-full ${BRAND_COLOR_BG[showBrandColor]}`}>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-4xl font-black text-white/10">{show.title.split(' ')[0]}</span>
+            <span className="text-4xl font-black text-white/10">{showTitle.split(' ')[0]}</span>
           </div>
         </div>
         {isReelFresh(reel) && (

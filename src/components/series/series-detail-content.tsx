@@ -5,14 +5,14 @@ import { useState } from 'react'
 import { SeasonSelector } from '@/components/series/season-selector'
 import { EpisodeList } from '@/components/series/episode-list'
 import { MetadataCard } from './metadata-card'
-import type { Season, Episode, Show } from '@/lib/mock-data'
-import { brandColorHexMap } from '@/lib/mock-data'
+import type { ViewSeason, ViewEpisode, ViewShow } from '@/lib/queries'
+import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 
 interface SeriesDetailContentProps {
-  seasons: Season[]
-  episodesBySeason: Record<string, Episode[]>
-  showBrandColor: Show['brandColor']
-  show: Show
+  seasons: ViewSeason[]
+  episodesBySeason: Record<string, ViewEpisode[]>
+  showBrandColor: ViewShow['brandColor']
+  show: ViewShow
 }
 
 export function SeriesDetailContent({
@@ -23,7 +23,7 @@ export function SeriesDetailContent({
 }: SeriesDetailContentProps) {
   const [activeSeasonId, setActiveSeasonId] = useState(seasons[0]?.id ?? '')
   const currentEpisodes = episodesBySeason[activeSeasonId] ?? []
-  const brandColorHex = brandColorHexMap[showBrandColor] ?? '#2C3569'
+  const brandColorHex = BRAND_COLOR_HEX[showBrandColor] ?? '#2C3569'
 
   return (
     <div className="flex flex-col gap-8 lg:flex-row">

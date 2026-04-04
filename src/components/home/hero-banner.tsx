@@ -7,13 +7,13 @@ import {
   useReducedMotion,
 } from 'motion/react'
 
-import type { Show } from '@/lib/mock-data'
-import { brandColorHexMap } from '@/lib/mock-data'
+import type { ViewShow } from '@/lib/queries'
+import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 import { HeroSlide } from '@/components/home/hero-slide'
 import { RotationIndicator } from '@/components/home/rotation-indicator'
 
 interface HeroBannerProps {
-  shows: Array<{ show: Show; firstEpisodeId?: string }>
+  shows: Array<{ show: ViewShow; firstEpisodeId?: string }>
 }
 
 export function HeroBanner({ shows }: HeroBannerProps) {
@@ -74,7 +74,7 @@ export function HeroBanner({ shows }: HeroBannerProps) {
           activeIndex={activeIndex}
           total={shows.length}
           progress={progress}
-          activeColor={brandColorHexMap[shows[activeIndex].show.brandColor]}
+          activeColor={BRAND_COLOR_HEX[shows[activeIndex].show.brandColor]}
         />
       </MotionConfig>
 

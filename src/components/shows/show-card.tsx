@@ -5,15 +5,16 @@ import { motion } from 'motion/react'
 import { Play } from 'lucide-react'
 
 import { ShowArt } from '@/components/primitives/show-art'
-import { type Show, brandColorHexMap } from '@/lib/mock-data'
+import type { ViewShow } from '@/lib/queries'
+import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 
 interface ShowCardProps {
-  show: Show
+  show: ViewShow
 }
 
 export function ShowCard({ show }: ShowCardProps) {
   const rating = show.platformRating ?? show.imdbRating ?? null
-  const brandColorHex = brandColorHexMap[show.brandColor]
+  const brandColorHex = BRAND_COLOR_HEX[show.brandColor]
 
   return (
     <Link href={`/series/${show.slug}`} className="group block cursor-pointer">
