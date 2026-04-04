@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
+import { createClient } from '@/lib/supabase/server'
 import { WatchPageContent } from '@/components/watch/watch-page-content'
-import { getEpisodeById, mapShow, mapEpisode, mapSeason } from '@/lib/queries'
+import { getEpisodeById, getEpisodeProgress, mapShow, mapEpisode, mapSeason } from '@/lib/queries'
 
 interface Props {
   params: Promise<{ episodeId: string }>
@@ -39,6 +40,18 @@ export default async function WatchPage({ params }: Props) {
   const viewPrev = prev ? mapEpisode(prev) : null
   const viewNext = next ? mapEpisode(next) : null
 
+  // Fetch user and saved progress for resume
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  let initialProgressSeconds = 0
+  if (user) {
+    const progress = await getEpisodeProgress(user.id, episodeId)
+    if (progress && !progress.completed) {
+      initialProgressSeconds = progress.progressSeconds
+    }
+  }
+
   return (
     <WatchPageContent
       episode={viewEpisode}
@@ -48,6 +61,8 @@ export default async function WatchPage({ params }: Props) {
       episodesBySeason={viewEpisodesBySeason}
       prevEpisode={viewPrev}
       nextEpisode={viewNext}
+      initialProgressSeconds={initialProgressSeconds}
+      userId={user?.id ?? null}
     />
   )
 }

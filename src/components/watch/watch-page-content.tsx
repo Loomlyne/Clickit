@@ -2,13 +2,16 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion } from 'motion/react'
 import { ArrowLeft } from 'lucide-react'
 import { YouTubePlayer } from '@/components/watch/youtube-player'
+import { AutoplayOverlay } from '@/components/watch/autoplay-overlay'
 import { EpisodeBreadcrumb } from '@/components/watch/episode-breadcrumb'
 import { EpisodeNav } from '@/components/watch/episode-nav'
 import { SeasonSelector } from '@/components/series/season-selector'
 import { EpisodeList } from '@/components/series/episode-list'
+import { useProgressTracker } from '@/hooks/use-progress-tracker'
 import type { ViewEpisode, ViewShow, ViewSeason } from '@/lib/queries'
 import { BRAND_COLOR_BG } from '@/lib/brand-colors'
 import { CINEMA_EASE } from '@/lib/cinema'
@@ -21,6 +24,8 @@ interface WatchPageContentProps {
   episodesBySeason: Record<string, ViewEpisode[]>
   prevEpisode: ViewEpisode | null
   nextEpisode: ViewEpisode | null
+  initialProgressSeconds?: number
+  userId?: string | null
 }
 
 export function WatchPageContent({
@@ -31,9 +36,17 @@ export function WatchPageContent({
   episodesBySeason,
   prevEpisode,
   nextEpisode,
+  initialProgressSeconds,
+  userId,
 }: WatchPageContentProps) {
   const [activeSeasonId, setActiveSeasonId] = useState(season.id)
   const currentEpisodes = episodesBySeason[activeSeasonId] ?? []
+  const [playerInstance, setPlayerInstance] = useState<YT.Player | null>(null)
+  const [showAutoplay, setShowAutoplay] = useState(false)
+  const router = useRouter()
+
+  // Progress tracking
+  const { forceFlush } = useProgressTracker(playerInstance, episode.id, userId ?? null)
 
   return (
     <div className="bg-black text-white -mt-16 pt-16">
@@ -42,11 +55,45 @@ export function WatchPageContent({
         {/* Left column: player + metadata */}
         <div className="flex-1 min-w-0">
           {/* Player */}
-          <div className="w-full aspect-video bg-[#111]">
+          <div className="relative w-full aspect-video bg-[#111]">
             <YouTubePlayer
               videoId={episode.youtubeId ?? ''}
               brandColor={BRAND_COLOR_BG[show.brandColor]}
+              onReady={(player) => {
+                setPlayerInstance(player)
+                if (initialProgressSeconds && initialProgressSeconds > 0) {
+                  player.seekTo(initialProgressSeconds, true)
+                }
+              }}
+              onStateChange={(state) => {
+                // YT.PlayerState.ENDED === 0
+                if (state === 0) {
+                  forceFlush()
+                  if (nextEpisode) {
+                    setShowAutoplay(true)
+                  }
+                }
+                // YT.PlayerState.PAUSED === 2
+                if (state === 2) {
+                  forceFlush()
+                }
+              }}
             />
+            {showAutoplay && nextEpisode && (
+              <AutoplayOverlay
+                nextEpisode={{
+                  id: nextEpisode.id,
+                  title: nextEpisode.title,
+                  seasonNumber: seasons.find(s => s.id === nextEpisode.seasonId)?.seasonNumber ?? 1,
+                  episodeNumber: nextEpisode.episodeNumber,
+                }}
+                onPlayNow={() => {
+                  setShowAutoplay(false)
+                  router.push(`/watch/${nextEpisode.id}`)
+                }}
+                onCancel={() => setShowAutoplay(false)}
+              />
+            )}
           </div>
 
           {/* Metadata below player */}
