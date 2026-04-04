@@ -18,7 +18,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **AUTH-01**: User can sign up with email and password via Supabase Auth
 - [x] **AUTH-02**: User can log in and session persists across browser refresh
-- [ ] **AUTH-03**: User can log out from any page
+- [x] **AUTH-03**: User can log out from any page
 - [x] **AUTH-04**: Unauthenticated users can browse and watch content (auth gates personalization, not access)
 - [x] **AUTH-05**: Admin user identified by user ID check (single admin, no RBAC)
 
@@ -149,7 +149,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | FOUN-04 | Phase 1 | Complete |
 | AUTH-01 | Phase 8 | Complete |
 | AUTH-02 | Phase 8 | Complete |
-| AUTH-03 | Phase 8 | Pending |
+| AUTH-03 | Phase 8 | Complete |
 | AUTH-04 | Phase 6 | Complete |
 | AUTH-05 | Phase 6 | Complete |
 | ADMN-01 | Phase 7 | Complete |

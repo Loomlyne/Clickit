@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-04-04T16:16:05.263Z"
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-04-04T16:25:15.043Z"
 last_activity: 2026-04-04
 progress:
   total_phases: 10
   completed_phases: 7
   total_plans: 21
-  completed_plans: 19
+  completed_plans: 20
   percent: 100
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 ## Current Position
 
 Phase: 08 (data-integration-auth-search) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-04
 
@@ -70,6 +70,7 @@ Progress: [██████████] 100% (Phases 1-7 complete)
 | Phase 07 P02 | 6min | 2 tasks | 5 files |
 | Phase 07 P03 | 4min | 2 tasks | 6 files |
 | Phase 08 P01 | 10min | 2 tasks | 26 files |
+| Phase 08 P02 | 5min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -125,6 +126,9 @@ Recent decisions affecting current work:
 - [Phase 07]: EpisodesTable uses useTransition for reorder to disable buttons during pending state
 - [Phase 08]: ViewEpisode status uses draft not locked -- aligns with DB schema (draft/coming-soon/published)
 - [Phase 08]: Import ViewShow/ViewEpisode/ViewSeason from @/lib/queries, BRAND_COLOR_HEX/BG/TEXT from @/lib/brand-colors for all viewer components
+- [Phase 08]: Server user hydration in viewer layout: fetch user in async layout, pass initialUser to Navbar/AuthSection to prevent Sign In flash
+- [Phase 08]: GenresGrid converted from client to server component: replaced motion.div with CSS transitions for zero-JS genre browsing
+- [Phase 08]: Reels section removed from home: no reels table in DB, mock-data.ts deleted entirely
 
 ### Roadmap Evolution
 
@@ -148,6 +152,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-04T16:16:05.261Z
-Stopped at: Completed 08-01-PLAN.md
+Last session: 2026-04-04T16:25:15.038Z
+Stopped at: Completed 08-02-PLAN.md
 Resume file: None
