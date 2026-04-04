@@ -162,9 +162,21 @@
   * {
     @apply border-border;
   }
+  html,
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
   }
+}
+
+/* Hide all scrollbars globally — content still scrolls vertically */
+html {
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* IE/Edge */
+}
+
+html::-webkit-scrollbar {
+  display: none;                  /* Chrome/Safari/Opera */
 }
 
 .font-display {

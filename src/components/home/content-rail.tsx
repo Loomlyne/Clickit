@@ -41,36 +41,38 @@ export function ContentRail({
         />
 
         {/* Horizontal carousel */}
-        <Carousel
-          opts={{
-            align: 'start',
-            containScroll: 'trimSnaps',
-            dragFree: false,
-            loop: false,
-            slidesToScroll: 1,
-          }}
-        >
-          <CarouselContent className="-ml-4 px-6 md:px-12">
-            {shows.map((show) => (
-              <CarouselItem
-                key={show.id}
-                className="pl-4 basis-[280px] flex-shrink-0"
-              >
-                <ShowCard show={show} />
-              </CarouselItem>
-            ))}
-            {Array.from({ length: placeholderCount }).map((_, i) => (
-              <CarouselItem
-                key={`placeholder-${i}`}
-                className="pl-4 basis-[280px] flex-shrink-0"
-              >
-                <PlaceholderCard />
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious className="hidden h-12 w-12 rounded-full border border-white/10 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white md:-left-4 md:flex" />
-          <CarouselNext className="hidden h-12 w-12 rounded-full border border-white/10 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white md:-right-4 md:flex" />
-        </Carousel>
+        <div className="px-6 md:px-12 overflow-hidden">
+          <Carousel
+            opts={{
+              align: 'start',
+              containScroll: 'trimSnaps',
+              dragFree: false,
+              loop: false,
+              slidesToScroll: 1,
+            }}
+          >
+            <CarouselContent className="-ml-4">
+              {shows.map((show) => (
+                <CarouselItem
+                  key={show.id}
+                  className="pl-4 basis-[280px] flex-shrink-0"
+                >
+                  <ShowCard show={show} />
+                </CarouselItem>
+              ))}
+              {Array.from({ length: placeholderCount }).map((_, i) => (
+                <CarouselItem
+                  key={`placeholder-${i}`}
+                  className="pl-4 basis-[280px] flex-shrink-0"
+                >
+                  <PlaceholderCard />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="hidden h-12 w-12 rounded-full border border-white/10 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white md:-left-4 md:flex" />
+            <CarouselNext className="hidden h-12 w-12 rounded-full border border-white/10 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white md:-right-4 md:flex" />
+          </Carousel>
+        </div>
       </section>
     </ScrollReveal>
   )

@@ -16,7 +16,7 @@ export async function ContinueWatchingRail() {
 
   return (
     <ScrollReveal>
-      <section>
+      <section className="overflow-hidden">
         <SectionHeader title="Continue Watching" />
         <div className="scrollbar-hide flex gap-4 overflow-x-auto px-6 pb-4 md:px-12">
           {items.map((item) => (

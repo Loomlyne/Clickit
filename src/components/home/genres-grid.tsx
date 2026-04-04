@@ -29,7 +29,7 @@ export async function GenresGrid() {
 
   return (
     <ScrollReveal>
-      <section>
+      <section className="overflow-hidden">
         <SectionHeader title="Browse by Genre" />
         <div className="flex gap-3 overflow-x-auto px-6 md:px-12 pb-2 scrollbar-hide">
           {genres.map((genre) => {
