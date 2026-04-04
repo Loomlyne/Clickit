@@ -89,6 +89,7 @@ export type ContinueWatchingItem = {
   showTitle: string
   showSlug: string
   showBrandColor: ViewShow['brandColor']
+  youtubeVideoId: string | null
   progressSeconds: number
   durationSeconds: number
   progressPercent: number
@@ -318,7 +319,7 @@ export async function getContinueWatchingEpisodes(
   const supabase = await createClient()
   const { data } = await supabase
     .from('watch_progress')
-    .select('progress_seconds, duration_seconds, episode_id, episodes!inner(id, title, episode_number, show_id, season_id, seasons!inner(season_number), shows!inner(id, title, slug, brand_color))')
+    .select('progress_seconds, duration_seconds, episode_id, episodes!inner(id, title, episode_number, youtube_video_id, show_id, season_id, seasons!inner(season_number), shows!inner(id, title, slug, brand_color))')
     .eq('user_id', userId)
     .eq('completed', false)
     .gt('progress_seconds', 0)
@@ -339,6 +340,7 @@ export async function getContinueWatchingEpisodes(
       showTitle: ep.shows.title,
       showSlug: ep.shows.slug,
       showBrandColor: (ep.shows.brand_color || 'brand-blue') as ViewShow['brandColor'],
+      youtubeVideoId: ep.youtube_video_id ?? null,
       progressSeconds: row.progress_seconds,
       durationSeconds: dur,
       progressPercent: Math.min(Math.round((row.progress_seconds / dur) * 100), 99),

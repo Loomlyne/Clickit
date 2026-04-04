@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
+import { Play } from 'lucide-react'
 import { ShowArt } from '@/components/primitives/show-art'
 import type { ContinueWatchingItem } from '@/lib/queries'
 import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
@@ -11,56 +13,62 @@ interface ContinueWatchingCardProps {
 
 export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
   const brandHex = BRAND_COLOR_HEX[item.showBrandColor] ?? '#2C3569'
+  const thumbnailUrl = item.youtubeVideoId
+    ? `https://img.youtube.com/vi/${item.youtubeVideoId}/hqdefault.jpg`
+    : null
 
   return (
     <Link href={`/watch/${item.episodeId}`} className="group block basis-[320px] flex-shrink-0">
       {/* Thumbnail */}
       <div className="relative aspect-video w-full overflow-hidden rounded-xl">
-        <ShowArt brandColor={brandHex} title={item.episodeTitle} aspectRatio="16/9">
-          {/* Episode number watermark */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span
-              className="text-3xl font-black text-white/30"
-              style={{ textShadow: `0 0 24px ${brandHex}60` }}
-            >
-              E{item.episodeNumber}
-            </span>
+        {thumbnailUrl ? (
+          <Image
+            src={thumbnailUrl}
+            alt={item.episodeTitle}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="320px"
+          />
+        ) : (
+          <ShowArt brandColor={brandHex} title={item.episodeTitle} aspectRatio="16/9">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span
+                className="text-3xl font-black text-white/30"
+                style={{ textShadow: `0 0 24px ${brandHex}60` }}
+              >
+                E{item.episodeNumber}
+              </span>
+            </div>
+          </ShowArt>
+        )}
+
+        {/* Hover play icon — glass-morph circle */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          <div className="flex size-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-md">
+            <Play className="size-5 fill-white text-white" />
           </div>
-        </ShowArt>
+        </div>
 
-        {/* Progress percent badge - bottom left */}
-        <span className="absolute bottom-2 left-2 text-[11px] text-white/60">
-          {item.progressPercent}%
-        </span>
-
-        {/* Resume CTA pill - bottom right, on hover */}
-        <span className="absolute bottom-2 right-2 rounded-full bg-white px-4 py-2 text-xs font-semibold text-black opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-          Resume
-        </span>
+        {/* Progress bar — thin, at very bottom of thumbnail, no gap */}
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/40">
+          <div
+            className="h-full transition-all duration-300"
+            style={{
+              width: `${item.progressPercent}%`,
+              backgroundColor: brandHex,
+            }}
+          />
+        </div>
       </div>
 
-      {/* Metadata */}
-      <div className="mt-3 flex flex-col gap-1">
-        <span className="text-xs font-medium uppercase tracking-wide text-white/50">
-          {item.showTitle}
+      {/* Metadata — tighter */}
+      <div className="mt-2 flex flex-col gap-0.5">
+        <span className="text-xs text-white/50">
+          {item.showTitle} &middot; S{item.seasonNumber} E{item.episodeNumber}
         </span>
-        <span className="text-sm font-semibold text-white">
-          S{item.seasonNumber} E{item.episodeNumber}
-        </span>
-        <span className="truncate text-sm text-white/70">
+        <span className="truncate text-sm font-semibold text-white">
           {item.episodeTitle}
         </span>
-      </div>
-
-      {/* Progress bar */}
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
-        <div
-          className="h-full rounded-full transition-all duration-300"
-          style={{
-            width: `${item.progressPercent}%`,
-            backgroundColor: brandHex,
-          }}
-        />
       </div>
     </Link>
   )
