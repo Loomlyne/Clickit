@@ -12,6 +12,7 @@ import {
   getEpisodesBySeasonId,
   getStreamingShows,
   getShowWatchlistState,
+  getEpisodesProgress,
   mapShow,
   mapSeason,
   mapEpisode,
@@ -62,10 +63,17 @@ export default async function SeriesDetailPage({ params }: Props) {
     }
   }
 
-  // User watchlist state
+  // User watchlist state + episode progress
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const inWatchlist = user ? await getShowWatchlistState(user.id, dbShow.id) : false
+
+  // Batch-fetch episode progress for logged-in user
+  let episodesProgressMap: Record<string, { progressPercent: number; completed: boolean }> = {}
+  if (user) {
+    const allEpisodeIds = Object.values(viewEpisodesBySeason).flat().map(e => e.id)
+    episodesProgressMap = await getEpisodesProgress(user.id, allEpisodeIds)
+  }
 
   // More like this — same genre shows
   const allStreaming = await getStreamingShows()
@@ -81,6 +89,7 @@ export default async function SeriesDetailPage({ params }: Props) {
           episodesBySeason={viewEpisodesBySeason}
           showBrandColor={show.brandColor}
           show={show}
+          progressMap={episodesProgressMap}
         />
       </div>
 

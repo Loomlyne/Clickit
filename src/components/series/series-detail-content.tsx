@@ -13,6 +13,7 @@ interface SeriesDetailContentProps {
   episodesBySeason: Record<string, ViewEpisode[]>
   showBrandColor: ViewShow['brandColor']
   show: ViewShow
+  progressMap?: Record<string, { progressPercent: number; completed: boolean }>
 }
 
 export function SeriesDetailContent({
@@ -20,6 +21,7 @@ export function SeriesDetailContent({
   episodesBySeason,
   showBrandColor,
   show,
+  progressMap,
 }: SeriesDetailContentProps) {
   const [activeSeasonId, setActiveSeasonId] = useState(seasons[0]?.id ?? '')
   const currentEpisodes = episodesBySeason[activeSeasonId] ?? []
@@ -40,6 +42,7 @@ export function SeriesDetailContent({
           <EpisodeList
             episodes={currentEpisodes}
             showBrandColor={showBrandColor}
+            progressMap={progressMap}
           />
         </div>
       </div>

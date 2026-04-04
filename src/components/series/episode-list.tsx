@@ -12,12 +12,14 @@ interface EpisodeListProps {
   episodes: ViewEpisode[]
   showBrandColor: ViewShow['brandColor']
   currentEpisodeId?: string
+  progressMap?: Record<string, { progressPercent: number; completed: boolean }>
 }
 
 export function EpisodeList({
   episodes,
   showBrandColor,
   currentEpisodeId,
+  progressMap,
 }: EpisodeListProps) {
   const [visibleCount, setVisibleCount] = useState(CHUNK_SIZE)
   const visibleEpisodes = episodes.slice(0, visibleCount)
@@ -37,14 +39,19 @@ export function EpisodeList({
   return (
     <section aria-label="Episodes">
       <div className="space-y-3 md:space-y-4">
-        {visibleEpisodes.map((ep) => (
-          <EpisodeRow
-            key={ep.id}
-            episode={ep}
-            showBrandColor={showBrandColor}
-            currentEpisodeId={currentEpisodeId}
-          />
-        ))}
+        {visibleEpisodes.map((ep) => {
+          const progress = progressMap?.[ep.id]
+          return (
+            <EpisodeRow
+              key={ep.id}
+              episode={ep}
+              showBrandColor={showBrandColor}
+              currentEpisodeId={currentEpisodeId}
+              resumePercent={progress?.progressPercent}
+              isCompleted={progress?.completed}
+            />
+          )
+        })}
       </div>
 
       {hasMore && (

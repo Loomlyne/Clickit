@@ -485,6 +485,78 @@ export async function getWatchlistShows(userId: string): Promise<ViewShow[]> {
     .map(mapShow)
 }
 
+// ---------------------------------------------------------------------------
+// Recently watched + batch episode progress
+// ---------------------------------------------------------------------------
+
+export type RecentlyWatchedItem = {
+  episodeId: string
+  episodeTitle: string
+  episodeNumber: number
+  seasonNumber: number
+  showTitle: string
+  showSlug: string
+  showBrandColor: ViewShow['brandColor']
+  progressSeconds: number
+  durationSeconds: number
+  completed: boolean
+  updatedAt: string
+}
+
+export async function getRecentlyWatched(userId: string): Promise<RecentlyWatchedItem[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('watch_progress')
+    .select('progress_seconds, duration_seconds, completed, updated_at, episode_id, episodes!inner(id, title, episode_number, season_id, show_id, seasons!inner(season_number), shows!inner(title, slug, brand_color))')
+    .eq('user_id', userId)
+    .order('updated_at', { ascending: false })
+    .limit(10)
+
+  if (!data) return []
+
+  return data.map((row: any) => {
+    const ep = row.episodes
+    return {
+      episodeId: ep.id,
+      episodeTitle: ep.title,
+      episodeNumber: ep.episode_number,
+      seasonNumber: ep.seasons.season_number,
+      showTitle: ep.shows.title,
+      showSlug: ep.shows.slug,
+      showBrandColor: (ep.shows.brand_color || 'brand-blue') as ViewShow['brandColor'],
+      progressSeconds: row.progress_seconds,
+      durationSeconds: row.duration_seconds ?? 0,
+      completed: row.completed,
+      updatedAt: row.updated_at,
+    }
+  })
+}
+
+export async function getEpisodesProgress(
+  userId: string,
+  episodeIds: string[]
+): Promise<Record<string, { progressPercent: number; completed: boolean }>> {
+  if (episodeIds.length === 0) return {}
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('watch_progress')
+    .select('episode_id, progress_seconds, duration_seconds, completed')
+    .eq('user_id', userId)
+    .in('episode_id', episodeIds)
+
+  if (!data) return {}
+
+  const result: Record<string, { progressPercent: number; completed: boolean }> = {}
+  for (const row of data) {
+    const dur = row.duration_seconds || 1
+    result[row.episode_id] = {
+      progressPercent: Math.min(Math.round((row.progress_seconds / dur) * 100), 100),
+      completed: row.completed,
+    }
+  }
+  return result
+}
+
 export async function getShowWatchlistState(userId: string, showId: string): Promise<boolean> {
   const supabase = await createClient()
   const { data } = await supabase

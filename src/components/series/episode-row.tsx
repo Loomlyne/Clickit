@@ -13,12 +13,16 @@ interface EpisodeRowProps {
   episode: ViewEpisode
   showBrandColor: ViewShow['brandColor']
   currentEpisodeId?: string
+  resumePercent?: number
+  isCompleted?: boolean
 }
 
 export function EpisodeRow({
   episode,
   showBrandColor,
   currentEpisodeId,
+  resumePercent,
+  isCompleted,
 }: EpisodeRowProps) {
   const isPublished = episode.status === 'published'
   const isComingSoon = episode.status === 'coming-soon'
@@ -117,6 +121,23 @@ export function EpisodeRow({
             </Badge>
           )}
         </div>
+
+        {/* Resume progress indicator */}
+        {isCompleted && (
+          <div className="mt-2">
+            <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] text-white/50">
+              Completed
+            </span>
+          </div>
+        )}
+        {!isCompleted && resumePercent != null && resumePercent > 0 && (
+          <div className="mt-2 h-1 rounded-full bg-white/10 overflow-hidden max-w-[200px]">
+            <div
+              className="h-full rounded-full transition-all duration-300"
+              style={{ width: `${resumePercent}%`, backgroundColor: brandColorHex }}
+            />
+          </div>
+        )}
       </div>
     </>
   )
