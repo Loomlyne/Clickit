@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4: Series Detail & Browse Pages** - Series detail page, season selector, episode cards, Coming Soon page (mock data). Note: broadcast schedule (CATL-11) reclassified to Phase 7.
 - [ ] **Phase 5: Watch Page UI** - YouTube embedded player, episode metadata, prev/next nav, episode quick selector (mock data)
 - [ ] **Phase 6: Backend Foundation** - Supabase schema, RLS policies, auth client setup, seed data
-- [ ] **Phase 7: Admin Dashboard** - Full admin CRUD for shows, seasons, episodes, artwork upload, status management
+- [x] **Phase 7: Admin Dashboard** - Full admin CRUD for shows, seasons, episodes, artwork upload, status management
 - [ ] **Phase 8: Data Integration, Auth & Search** - Replace mock data with Supabase, wire auth flows, implement search
 - [ ] **Phase 9: Personalization & Watch Features** - Watchlist, continue watching, autoplay next episode, user profile
 
@@ -147,7 +147,11 @@ Plans:
   2. User can sign up with email/password and log in with session persisting across browser refresh
   3. User can log out from any page via the nav profile dropdown
   4. Search bar is accessible from all pages and finds shows and episodes by title with card results
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 08-01-PLAN.md -- Type foundation: extract brand-colors.ts, auth-errors.ts, expand queries.ts with ViewEpisode/ViewSeason types and query functions, migrate all 23 component files off mock-data
+- [ ] 08-02-PLAN.md -- Page wiring: rewrite /series, /coming-soon, create /schedule, clean home page, server user hydration, auth error mapping, delete mock-data.ts
+- [ ] 08-03-PLAN.md -- Search: build NavbarSearch component, /search page with Postgres FTS, Vercel deploy verification checkpoint
 **UI hint**: yes
 
 ### Phase 9: Personalization & Watch Features
@@ -178,8 +182,8 @@ Note: Phase 6 depends only on Phase 1 and can run in parallel with Phases 2-5 if
 | 5. Watch Page UI | 2/2 | Complete | 2026-04-01 |
 | 6. Backend Foundation | 2/2 | Complete | 2026-04-02 |
 | 6.1 UI Cinematic Redesign | 5/5 | Complete | 2026-04-03 |
-| 7. Admin Dashboard | 0/4 | Not started | - |
-| 8. Data Integration, Auth & Search | 0/TBD | Not started | - |
+| 7. Admin Dashboard | 4/4 | Complete | 2026-04-04 |
+| 8. Data Integration, Auth & Search | 0/3 | Not started | - |
 | 9. Personalization & Watch Features | 0/TBD | Not started | - |
 
 ### Phase 10: Connect frontend to Supabase backend — wire auth, replace mock data with real queries, session management
