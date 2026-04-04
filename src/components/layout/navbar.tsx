@@ -7,7 +7,11 @@ import { cn } from '@/lib/utils'
 import { AuthSection } from './auth-section'
 import { NavLinks } from './nav-links'
 
-export function Navbar() {
+interface NavbarProps {
+  initialUser?: { id: string; email: string } | null
+}
+
+export function Navbar({ initialUser }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -38,7 +42,7 @@ export function Navbar() {
         />
       </Link>
       <NavLinks />
-      <AuthSection />
+      <AuthSection initialUser={initialUser} />
     </nav>
   )
 }

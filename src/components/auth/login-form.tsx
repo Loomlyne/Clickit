@@ -9,7 +9,9 @@ import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { AlertCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { mapAuthError } from '@/lib/auth-errors'
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -40,7 +42,7 @@ export function LoginForm() {
     })
 
     if (error) {
-      setServerError(error.message)
+      setServerError(mapAuthError(error.message))
       return
     }
 
@@ -60,8 +62,11 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {serverError && (
-        <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
-          {serverError}
+        <div className="rounded-lg px-4 py-3 text-sm bg-[#DB3F34]/10 border border-[#DB3F34]/25 text-red-300">
+          <div className="flex gap-2.5 items-start">
+            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+            <span>{serverError}</span>
+          </div>
         </div>
       )}
 

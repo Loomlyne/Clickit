@@ -15,9 +15,17 @@ interface UserState {
   avatarUrl: string | null
 }
 
-export function AuthSection() {
+interface AuthSectionProps {
+  initialUser?: { id: string; email: string } | null
+}
+
+export function AuthSection({ initialUser }: AuthSectionProps) {
   const router = useRouter()
-  const [user, setUser] = useState<UserState | null>(null)
+  const [user, setUser] = useState<UserState | null>(
+    initialUser
+      ? { id: initialUser.id, email: initialUser.email, displayName: null, avatarUrl: null }
+      : null
+  )
   const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {

@@ -3,13 +3,6 @@ import { ContentRail } from '@/components/home/content-rail'
 import { ContinueWatchingRail } from '@/components/home/continue-watching-rail'
 import { GenresGrid } from '@/components/home/genres-grid'
 import { CtaBanner } from '@/components/home/cta-banner'
-import { ReelCard } from '@/components/shows/reel-card'
-import { SectionHeader } from '@/components/primitives/section-header'
-import { ScrollReveal } from '@/components/primitives/scroll-reveal'
-import {
-  Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
-} from '@/components/ui/carousel'
-import { MOCK_REELS, MOCK_SHOWS } from '@/lib/mock-data'
 import {
   getFeaturedShows,
   getStreamingShows,
@@ -60,33 +53,6 @@ export default async function HomePage() {
         {comingSoon.length > 0 && (
           <ContentRail title="Coming Soon" shows={comingSoon} />
         )}
-
-        {/* Reels section — still mock (no reels table) */}
-        <ScrollReveal>
-          <section>
-            <SectionHeader title="Reels" />
-            <Carousel opts={{ align: 'start', containScroll: 'trimSnaps', slidesToScroll: 1 }}>
-              <CarouselContent className="-ml-4 px-6 md:px-12">
-                {MOCK_REELS.map((reel) => {
-                  const show = MOCK_SHOWS.find((s) => s.id === reel.showId)
-                  if (!show) return null
-                  return (
-                    <CarouselItem key={reel.id} className="basis-1/3 pl-4 sm:basis-1/4 lg:basis-1/5 xl:basis-1/6">
-                      <ReelCard
-                        reel={reel}
-                        showSlug={show.slug}
-                        showTitle={show.title}
-                        showBrandColor={show.brandColor}
-                      />
-                    </CarouselItem>
-                  )
-                })}
-              </CarouselContent>
-              <CarouselPrevious className="hidden h-12 w-12 rounded-full border border-white/10 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white md:-left-4 md:flex" />
-              <CarouselNext className="hidden h-12 w-12 rounded-full border border-white/10 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white md:-right-4 md:flex" />
-            </Carousel>
-          </section>
-        </ScrollReveal>
 
         <GenresGrid />
         <CtaBanner />

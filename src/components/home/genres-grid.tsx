@@ -1,8 +1,5 @@
-'use client'
-
 import Link from 'next/link'
-import { motion } from 'motion/react'
-import { MOCK_SHOWS } from '@/lib/mock-data'
+import { getDistinctGenres } from '@/lib/queries'
 import { SectionHeader } from '@/components/primitives/section-header'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 
@@ -18,10 +15,17 @@ const GENRE_COLORS: Record<string, string> = {
   Travel: '#50A258',
   Poetry: '#9F54A0',
   Cinema: '#DB3F34',
+  Drama: '#9F54A0',
+  Talk: '#2C3569',
+  Business: '#50A258',
+  Quiz: '#F8C623',
+  Podcast: '#9F54A0',
 }
 
-export function GenresGrid() {
-  const genres = [...new Set(MOCK_SHOWS.map((s) => s.genre))]
+export async function GenresGrid() {
+  const genres = await getDistinctGenres()
+
+  if (genres.length === 0) return null
 
   return (
     <ScrollReveal>
@@ -36,10 +40,8 @@ export function GenresGrid() {
                 href={`/series?genre=${encodeURIComponent(genre)}`}
                 className="group flex-shrink-0"
               >
-                <motion.div
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center justify-center rounded-xl px-6 py-4 min-w-[140px] cursor-pointer transition-colors"
+                <div
+                  className="flex items-center justify-center rounded-xl px-6 py-4 min-w-[140px] cursor-pointer transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5"
                   style={{
                     background: `${color}20`,
                     border: `1px solid ${color}40`,
@@ -51,7 +53,7 @@ export function GenresGrid() {
                   >
                     {genre}
                   </span>
-                </motion.div>
+                </div>
               </Link>
             )
           })}
