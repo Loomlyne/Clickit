@@ -54,7 +54,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **WTCH-01**: Watch page displays embedded YouTube player (full IFrame API)
 - [x] **WTCH-02**: Watch page shows episode metadata (title, description, show name, season/episode number)
 - [x] **WTCH-03**: Previous / next episode navigation buttons on watch page
-- [ ] **WTCH-04**: Autoplay next episode after current episode ends (with countdown)
+- [x] **WTCH-04**: Autoplay next episode after current episode ends (with countdown)
 - [x] **WTCH-05**: YouTube IFrame API compliance -- no overlays on the player (YouTube ToS)
 - [x] **WTCH-06**: Episode quick selector on watch page (season + episode picker without leaving player)
 
@@ -63,9 +63,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **USER-01**: Authenticated user can add/remove shows from watchlist
 - [x] **USER-02**: Watchlist button visible on show cards and series detail page
 - [x] **USER-03**: My List page shows all watchlisted shows
-- [ ] **USER-04**: Continue watching tracks playback progress per episode (saves every 10-15 seconds)
-- [ ] **USER-05**: Continue watching rail on home page showing episodes in progress
-- [ ] **USER-06**: Resuming an episode starts from saved progress position
+- [x] **USER-04**: Continue watching tracks playback progress per episode (saves every 10-15 seconds)
+- [x] **USER-05**: Continue watching rail on home page showing episodes in progress
+- [x] **USER-06**: Resuming an episode starts from saved progress position
 - [ ] **USER-07**: User profile page showing watchlist and watch history
 
 ### Search
@@ -176,15 +176,15 @@ Deferred to future release. Tracked but not in current roadmap.
 | WTCH-01 | Phase 5 | Complete |
 | WTCH-02 | Phase 5 | Complete |
 | WTCH-03 | Phase 5 | Complete |
-| WTCH-04 | Phase 9 | Pending |
+| WTCH-04 | Phase 9 | Complete |
 | WTCH-05 | Phase 5 | Complete |
 | WTCH-06 | Phase 5 | Complete |
 | USER-01 | Phase 9 | Complete |
 | USER-02 | Phase 9 | Complete |
 | USER-03 | Phase 9 | Complete |
-| USER-04 | Phase 9 | Pending |
-| USER-05 | Phase 9 | Pending |
-| USER-06 | Phase 9 | Pending |
+| USER-04 | Phase 9 | Complete |
+| USER-05 | Phase 9 | Complete |
+| USER-06 | Phase 9 | Complete |
 | USER-07 | Phase 9 | Pending |
 | SRCH-01 | Phase 8 | Complete |
 | SRCH-02 | Phase 8 | Complete |

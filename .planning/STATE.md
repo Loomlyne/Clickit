@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 09-01-PLAN.md
-last_updated: "2026-04-04T18:30:47.051Z"
+stopped_at: Completed 09-02-PLAN.md
+last_updated: "2026-04-04T18:38:24.381Z"
 last_activity: 2026-04-04
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 24
-  completed_plans: 22
+  completed_plans: 23
   percent: 100
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 ## Current Position
 
 Phase: 09 (personalization-watch-features) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-04
 
@@ -73,6 +73,7 @@ Progress: [██████████] 100% (Phases 1-7 complete)
 | Phase 08 P02 | 5min | 2 tasks | 11 files |
 | Phase 08 P03 | 8min | 2 tasks | 4 files |
 | Phase 09 P01 | 4min | 2 tasks | 7 files |
+| Phase 09 P02 | 5min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -135,6 +136,9 @@ Recent decisions affecting current work:
 - [Phase 09]: useWatchlist hook uses local useState instead of Zustand store -- sufficient for per-component toggle state
 - [Phase 09]: WatchlistToggleButton replaces static Heart/Bookmark icons -- single source of truth for watchlist interaction
 - [Phase 09]: userId prop uses undefined vs null distinction: undefined hides button, null shows button with auth redirect on click
+- [Phase 09]: Progress flush on pause (YT state 2) and ended (YT state 0) per CONTEXT.md decision
+- [Phase 09]: Cross-season navigation flattens all published episodes sorted by (season_number, episode_number)
+- [Phase 09]: Replaced getContinueWatching with episode-centric getContinueWatchingEpisodes returning ContinueWatchingItem[]
 
 ### Roadmap Evolution
 
@@ -158,6 +162,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-04T18:30:47.048Z
-Stopped at: Completed 09-01-PLAN.md
+Last session: 2026-04-04T18:38:24.377Z
+Stopped at: Completed 09-02-PLAN.md
 Resume file: None
