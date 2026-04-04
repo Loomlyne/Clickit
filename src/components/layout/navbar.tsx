@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { AuthSection } from './auth-section'
 import { NavLinks } from './nav-links'
+import { NavbarSearch } from './navbar-search'
 
 interface NavbarProps {
   initialUser?: { id: string; email: string } | null
@@ -42,7 +43,10 @@ export function Navbar({ initialUser }: NavbarProps) {
         />
       </Link>
       <NavLinks />
-      <AuthSection initialUser={initialUser} />
+      <div className="flex items-center gap-4">
+        <NavbarSearch />
+        <AuthSection initialUser={initialUser} />
+      </div>
     </nav>
   )
 }
