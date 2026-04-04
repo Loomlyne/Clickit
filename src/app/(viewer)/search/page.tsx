@@ -64,10 +64,10 @@ export default async function SearchPage({ searchParams }: Props) {
               Clear search
             </Link>
             <Link
-              href="/series"
+              href="/"
               className="text-sm text-white/60 underline hover:text-white"
             >
-              Browse all series
+              Browse all shows
             </Link>
           </div>
         </div>

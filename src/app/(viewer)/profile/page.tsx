@@ -102,7 +102,7 @@ export default async function ProfilePage() {
             ) : (
               <p className="text-sm text-white/40 text-center py-8">
                 No saved shows yet.{' '}
-                <Link href="/series" className="text-white/60 hover:text-white underline">
+                <Link href="/" className="text-white/60 hover:text-white underline">
                   Browse shows
                 </Link>
               </p>

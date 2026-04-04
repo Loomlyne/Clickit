@@ -66,7 +66,7 @@ export default async function MyListPage() {
           <h3 className="text-xl font-semibold text-white">Your list is empty</h3>
           <p className="text-sm text-white/50">Save shows to watch them later.</p>
           <Link
-            href="/series"
+            href="/"
             className="rounded-full border border-white/20 text-white/70 px-6 py-2 text-sm hover:border-white/40 hover:text-white transition-all duration-200"
           >
             Browse Shows
