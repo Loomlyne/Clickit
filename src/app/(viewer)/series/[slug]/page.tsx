@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
+import { createClient } from '@/lib/supabase/server'
 import { SeriesDetailHero } from '@/components/series/series-detail-hero'
 import { SeriesDetailContent } from '@/components/series/series-detail-content'
 import { ContentRail } from '@/components/home/content-rail'
@@ -10,6 +11,7 @@ import {
   getSeasonsByShowId,
   getEpisodesBySeasonId,
   getStreamingShows,
+  getShowWatchlistState,
   mapShow,
   mapSeason,
   mapEpisode,
@@ -60,13 +62,18 @@ export default async function SeriesDetailPage({ params }: Props) {
     }
   }
 
+  // User watchlist state
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const inWatchlist = user ? await getShowWatchlistState(user.id, dbShow.id) : false
+
   // More like this — same genre shows
   const allStreaming = await getStreamingShows()
   const moreLikeThis = allStreaming.filter((s) => s.genre === show.genre && s.id !== show.id)
 
   return (
     <div>
-      <SeriesDetailHero show={show} seasons={viewSeasons} firstEpisodeLabel={firstEpisodeLabel} firstEpisodeId={firstEpisodeId} />
+      <SeriesDetailHero show={show} seasons={viewSeasons} firstEpisodeLabel={firstEpisodeLabel} firstEpisodeId={firstEpisodeId} initialSaved={inWatchlist} userId={user?.id ?? null} />
 
       <div className="px-6 md:px-12 mt-8">
         <SeriesDetailContent

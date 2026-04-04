@@ -1,14 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { Heart, Bookmark, Share2 } from 'lucide-react'
+import { Heart, Share2 } from 'lucide-react'
 
 import { ShowArt } from '@/components/primitives/show-art'
+import { WatchlistToggleButton } from '@/components/watchlist/watchlist-toggle-button'
 import type { ViewShow } from '@/lib/queries'
 import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 
 interface PortraitShowCardProps {
   show: ViewShow
+  initialSaved?: boolean
+  userId?: string | null
 }
 
 function formatCount(n: number): string {
@@ -17,7 +20,7 @@ function formatCount(n: number): string {
   return String(n)
 }
 
-export function PortraitShowCard({ show }: PortraitShowCardProps) {
+export function PortraitShowCard({ show, initialSaved, userId }: PortraitShowCardProps) {
   const brandColorHex = BRAND_COLOR_HEX[show.brandColor]
   const likeCount = 0
   const handle = '@clickitstory'
@@ -27,6 +30,16 @@ export function PortraitShowCard({ show }: PortraitShowCardProps) {
     <div className="group cursor-pointer">
       {/* Card art */}
       <div className="relative overflow-hidden rounded-xl">
+
+        {/* Watchlist toggle — card overlay */}
+        {userId !== undefined && (
+          <WatchlistToggleButton
+            showId={show.id}
+            variant="card"
+            initialSaved={initialSaved}
+            userId={userId ?? null}
+          />
+        )}
 
         {/* Show detail navigation wraps the art */}
         <Link href={`/series/${show.slug}`} className="block">
@@ -42,9 +55,6 @@ export function PortraitShowCard({ show }: PortraitShowCardProps) {
                 <span className="flex items-center gap-1.5 text-white/60">
                   <Heart className="size-4" />
                   <span className="text-xs">{formatCount(likeCount)}</span>
-                </span>
-                <span className="text-white/60">
-                  <Bookmark className="size-4" />
                 </span>
                 <span className="ml-auto text-white/60">
                   <Share2 className="size-4" />

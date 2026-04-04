@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence, MotionConfig } from 'motion/react'
-import { Heart, ThumbsUp, ChevronDown } from 'lucide-react'
+import { ThumbsUp, ChevronDown } from 'lucide-react'
 
 import { CinematicBackdrop } from '@/components/primitives/cinematic-backdrop'
 import { GlowBadge } from '@/components/primitives/glow-badge'
+import { WatchlistToggleButton } from '@/components/watchlist/watchlist-toggle-button'
 import type { ViewShow, ViewSeason } from '@/lib/queries'
 import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 import { CINEMA_EASE } from '@/lib/cinema'
@@ -16,6 +17,8 @@ interface SeriesDetailHeroProps {
   seasons: ViewSeason[]
   firstEpisodeLabel?: string // e.g. "S1 E1" for the CTA button
   firstEpisodeId?: string // episode ID for watch page link
+  initialSaved?: boolean
+  userId?: string | null
 }
 
 export function SeriesDetailHero({
@@ -23,6 +26,8 @@ export function SeriesDetailHero({
   seasons,
   firstEpisodeLabel,
   firstEpisodeId,
+  initialSaved,
+  userId,
 }: SeriesDetailHeroProps) {
   const [scrolled, setScrolled] = useState(false)
 
@@ -179,12 +184,14 @@ export function SeriesDetailHero({
                 Coming Soon
               </span>
             )}
-            <button
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white"
-              aria-label="Add to watchlist"
-            >
-              <Heart className="w-5 h-5" />
-            </button>
+            {userId !== undefined && (
+              <WatchlistToggleButton
+                showId={show.id}
+                variant="hero"
+                initialSaved={initialSaved}
+                userId={userId ?? null}
+              />
+            )}
             <button
               className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white"
               aria-label="Like"
