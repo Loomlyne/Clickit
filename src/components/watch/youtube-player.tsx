@@ -132,13 +132,13 @@ export function YouTubePlayer({
     <div
       role="region"
       aria-label="Video player"
-      className="w-full aspect-video min-h-[200px] bg-black"
+      className="relative w-full aspect-video min-h-[200px] bg-black"
     >
-      {/* Loading state */}
+      {/* Loading state — absolute overlay */}
       {!isReady && !errorCode && (
         <div
           className={cn(
-            'flex h-full w-full items-center justify-center',
+            'absolute inset-0 z-10 flex items-center justify-center',
             brandColor ?? 'bg-surface-2'
           )}
         >
@@ -146,10 +146,10 @@ export function YouTubePlayer({
         </div>
       )}
 
-      {/* Error state */}
+      {/* Error state — absolute overlay */}
       {errorCode !== null && (
         <div
-          className="flex h-full w-full items-center justify-center bg-surface-2 px-6"
+          className="absolute inset-0 z-10 flex items-center justify-center bg-surface-2 px-6"
           role="alert"
         >
           <p className="text-center text-sm text-muted-foreground">
@@ -158,10 +158,10 @@ export function YouTubePlayer({
         </div>
       )}
 
-      {/* Player container -- always mounted so iframe initializes in the background */}
+      {/* Player container — always visible with full dimensions so iframe can initialize */}
       <div
         ref={containerRef}
-        className={cn('w-full h-full', !isReady && 'hidden')}
+        className="absolute inset-0 w-full h-full"
       />
     </div>
   )
