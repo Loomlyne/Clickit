@@ -5,15 +5,14 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { ChevronDown, Lock } from 'lucide-react'
 
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetFooter,
 } from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -27,10 +26,6 @@ import {
 import { ArtworkUploadZone } from '@/components/admin/artwork-upload-zone'
 import { generateSlug } from '@/lib/slug'
 import type { Database } from '@/lib/database.types'
-
-// ---------------------------------------------------------------------------
-// Schema (client-side, mirrors server schema for form validation)
-// ---------------------------------------------------------------------------
 
 const showFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -52,10 +47,6 @@ const showFormSchema = z.object({
 
 type ShowFormData = z.infer<typeof showFormSchema>
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 const GENRES = [
   'Travel', 'Health', 'Music', 'Comedy', 'Cooking',
   'Kids', 'Poetry', 'Cinema', 'Tech', 'Entertainment', 'Culture',
@@ -69,14 +60,33 @@ const BRAND_COLORS: { value: string; label: string; hex: string }[] = [
   { value: 'brand-orange', label: 'Orange', hex: '#EA8C2E' },
 ]
 
-const DAYS = [
-  'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-  'Friday', 'Saturday', 'Sunday',
-]
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
+// Section wrapper with label
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
+        {title}
+      </h3>
+      {children}
+    </div>
+  )
+}
+
+// Field wrapper
+function Field({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-sm">
+        {label}
+        {required && <span className="text-destructive ml-0.5">*</span>}
+      </Label>
+      {children}
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  )
+}
 
 interface ShowFormDrawerProps {
   open: boolean
@@ -85,19 +95,9 @@ interface ShowFormDrawerProps {
   onSave: (data: ShowFormData & { id?: string }) => Promise<{ success: boolean; error?: string }>
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
-export function ShowFormDrawer({
-  open,
-  onOpenChange,
-  show,
-  onSave,
-}: ShowFormDrawerProps) {
+export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDrawerProps) {
   const isEdit = !!show
 
-  // Pre-generate UUID for create mode so artwork uploads know the path
   const generatedId = useMemo(() => {
     if (!isEdit) return crypto.randomUUID()
     return show.id
@@ -106,68 +106,37 @@ export function ShowFormDrawer({
   const form = useForm<ShowFormData>({
     resolver: zodResolver(showFormSchema),
     defaultValues: {
-      title: '',
-      title_ar: '',
-      slug: '',
-      description: '',
-      description_ar: '',
-      tagline: '',
-      tagline_ar: '',
-      genre: '',
-      brand_color: 'brand-blue',
-      status: 'draft',
-      broadcast_day: '',
-      broadcast_time: '',
-      poster_url: '',
-      hero_url: '',
-      logo_url: '',
+      title: '', title_ar: '', slug: '', description: '', description_ar: '',
+      tagline: '', tagline_ar: '', genre: '', brand_color: 'brand-blue',
+      status: 'draft', broadcast_day: '', broadcast_time: '',
+      poster_url: '', hero_url: '', logo_url: '',
     },
   })
 
-  // Reset form when show data changes or drawer opens
   useEffect(() => {
     if (open) {
       if (show) {
         form.reset({
-          title: show.title,
-          title_ar: show.title_ar ?? '',
-          slug: show.slug,
-          description: show.description,
-          description_ar: show.description_ar ?? '',
-          tagline: show.tagline ?? '',
-          tagline_ar: show.tagline_ar ?? '',
-          genre: show.genre,
-          brand_color: show.brand_color as ShowFormData['brand_color'],
+          title: show.title, title_ar: show.title_ar ?? '', slug: show.slug,
+          description: show.description, description_ar: show.description_ar ?? '',
+          tagline: show.tagline ?? '', tagline_ar: show.tagline_ar ?? '',
+          genre: show.genre, brand_color: show.brand_color as ShowFormData['brand_color'],
           status: show.status as ShowFormData['status'],
-          broadcast_day: show.broadcast_day ?? '',
-          broadcast_time: show.broadcast_time ?? '',
-          poster_url: show.poster_url ?? '',
-          hero_url: show.hero_url ?? '',
+          broadcast_day: show.broadcast_day ?? '', broadcast_time: show.broadcast_time ?? '',
+          poster_url: show.poster_url ?? '', hero_url: show.hero_url ?? '',
           logo_url: show.logo_url ?? '',
         })
       } else {
         form.reset({
-          title: '',
-          title_ar: '',
-          slug: '',
-          description: '',
-          description_ar: '',
-          tagline: '',
-          tagline_ar: '',
-          genre: '',
-          brand_color: 'brand-blue',
-          status: 'draft',
-          broadcast_day: '',
-          broadcast_time: '',
-          poster_url: '',
-          hero_url: '',
-          logo_url: '',
+          title: '', title_ar: '', slug: '', description: '', description_ar: '',
+          tagline: '', tagline_ar: '', genre: '', brand_color: 'brand-blue',
+          status: 'draft', broadcast_day: '', broadcast_time: '',
+          poster_url: '', hero_url: '', logo_url: '',
         })
       }
     }
   }, [open, show, form])
 
-  // Auto-generate slug from title in create mode
   const watchedTitle = form.watch('title')
   useEffect(() => {
     if (!isEdit && watchedTitle) {
@@ -176,268 +145,194 @@ export function ShowFormDrawer({
   }, [watchedTitle, isEdit, form])
 
   async function onSubmit(data: ShowFormData) {
-    // Normalize empty strings to null for optional fields
     const normalized: ShowFormData & { id?: string } = {
       ...data,
-      title_ar: data.title_ar || null,
-      description_ar: data.description_ar || null,
-      tagline: data.tagline || null,
-      tagline_ar: data.tagline_ar || null,
-      broadcast_day: data.broadcast_day || null,
-      broadcast_time: data.broadcast_time || null,
-      poster_url: data.poster_url || null,
-      hero_url: data.hero_url || null,
+      title_ar: data.title_ar || null, description_ar: data.description_ar || null,
+      tagline: data.tagline || null, tagline_ar: data.tagline_ar || null,
+      broadcast_day: data.broadcast_day || null, broadcast_time: data.broadcast_time || null,
+      poster_url: data.poster_url || null, hero_url: data.hero_url || null,
       logo_url: data.logo_url || null,
     }
-
-    // For create mode, include the pre-generated ID
-    if (!isEdit) {
-      normalized.id = generatedId
-    }
+    if (!isEdit) normalized.id = generatedId
 
     const result = await onSave(normalized)
-
     if (result.success) {
-      toast.success(isEdit ? 'Show saved' : 'Show created')
+      toast.success(isEdit ? `"${data.title}" saved` : `"${data.title}" created`)
       onOpenChange(false)
     } else {
       toast.error('Failed to save. Check your connection and try again.')
     }
   }
 
+  const errors = form.formState.errors
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="sm:max-w-lg overflow-y-auto"
-      >
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex h-full flex-col">
-          <SheetHeader>
-            <SheetTitle>{isEdit ? 'Edit Show' : 'Create Show'}</SheetTitle>
-          </SheetHeader>
+      <SheetContent side="right" className="sm:max-w-xl w-full p-0 flex flex-col">
+        <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+          <SheetTitle className="text-lg">{isEdit ? 'Edit Show' : 'Create Show'}</SheetTitle>
+          <p className="text-sm text-muted-foreground">
+            {isEdit ? `Editing "${show.title}"` : 'Fill in the details to create a new show'}
+          </p>
+        </SheetHeader>
 
-          <div className="flex-1 space-y-6 px-4 pb-4">
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                {...form.register('title')}
-                aria-invalid={!!form.formState.errors.title}
-              />
-              {form.formState.errors.title && (
-                <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
-              )}
-            </div>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-8">
 
-            {/* Title Arabic */}
-            <div className="space-y-2">
-              <Label htmlFor="title_ar">Title (Arabic)</Label>
-              <Input
-                id="title_ar"
-                dir="rtl"
-                {...form.register('title_ar')}
-              />
-            </div>
+            {/* BASIC INFO */}
+            <Section title="Basic Info">
+              <Field label="Title" required error={errors.title?.message}>
+                <Input {...form.register('title')} placeholder="e.g., Last Call" />
+              </Field>
 
-            {/* Slug */}
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug *</Label>
-              <Input
-                id="slug"
-                {...form.register('slug')}
-                aria-invalid={!!form.formState.errors.slug}
-              />
-              {form.formState.errors.slug && (
-                <p className="text-sm text-destructive">{form.formState.errors.slug.message}</p>
-              )}
-            </div>
+              <Field label="Title (Arabic)">
+                <Input dir="rtl" {...form.register('title_ar')} />
+              </Field>
 
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
-              <Textarea
-                id="description"
-                rows={4}
-                {...form.register('description')}
-                aria-invalid={!!form.formState.errors.description}
-              />
-              {form.formState.errors.description && (
-                <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
-              )}
-            </div>
+              <Field label="Slug" required error={errors.slug?.message}>
+                <div className="relative">
+                  <Input
+                    {...form.register('slug')}
+                    disabled={isEdit}
+                    className={isEdit ? 'pr-8 opacity-70' : ''}
+                  />
+                  {isEdit && <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />}
+                </div>
+                {!isEdit && <p className="text-xs text-muted-foreground">Auto-generated from title</p>}
+              </Field>
 
-            {/* Description Arabic */}
-            <div className="space-y-2">
-              <Label htmlFor="description_ar">Description (Arabic)</Label>
-              <Textarea
-                id="description_ar"
-                rows={4}
-                dir="rtl"
-                {...form.register('description_ar')}
-              />
-            </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Genre" required error={errors.genre?.message}>
+                  <Select
+                    value={form.watch('genre')}
+                    onValueChange={(val) => form.setValue('genre', val, { shouldValidate: true })}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      {GENRES.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </Field>
 
-            {/* Tagline */}
-            <div className="space-y-2">
-              <Label htmlFor="tagline">Tagline</Label>
-              <Input
-                id="tagline"
-                {...form.register('tagline')}
-              />
-            </div>
+                <Field label="Status" required>
+                  <Select
+                    value={form.watch('status')}
+                    onValueChange={(val) => form.setValue('status', val as ShowFormData['status'], { shouldValidate: true })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="coming-soon">Coming Soon</SelectItem>
+                      <SelectItem value="now-streaming">Now Streaming</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+            </Section>
 
-            {/* Tagline Arabic */}
-            <div className="space-y-2">
-              <Label htmlFor="tagline_ar">Tagline (Arabic)</Label>
-              <Input
-                id="tagline_ar"
-                dir="rtl"
-                {...form.register('tagline_ar')}
-              />
-            </div>
+            {/* DESCRIPTION */}
+            <Section title="Description">
+              <Field label="Description" required error={errors.description?.message}>
+                <Textarea rows={4} {...form.register('description')} placeholder="What is this show about?" />
+              </Field>
 
-            {/* Genre */}
-            <div className="space-y-2">
-              <Label>Genre *</Label>
-              <Select
-                value={form.watch('genre')}
-                onValueChange={(val) => form.setValue('genre', val, { shouldValidate: true })}
-              >
-                <SelectTrigger className="w-full" aria-invalid={!!form.formState.errors.genre}>
-                  <SelectValue placeholder="Select genre" />
-                </SelectTrigger>
-                <SelectContent>
-                  {GENRES.map((g) => (
-                    <SelectItem key={g} value={g}>{g}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.formState.errors.genre && (
-                <p className="text-sm text-destructive">{form.formState.errors.genre.message}</p>
-              )}
-            </div>
+              <Field label="Description (Arabic)">
+                <Textarea rows={4} dir="rtl" {...form.register('description_ar')} />
+              </Field>
 
-            {/* Brand Color */}
-            <div className="space-y-2">
-              <Label>Brand Color *</Label>
-              <Select
-                value={form.watch('brand_color')}
-                onValueChange={(val) =>
-                  form.setValue('brand_color', val as ShowFormData['brand_color'], { shouldValidate: true })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select brand color" />
-                </SelectTrigger>
-                <SelectContent>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Tagline">
+                  <Input {...form.register('tagline')} placeholder="Short hook" />
+                </Field>
+                <Field label="Tagline (Arabic)">
+                  <Input dir="rtl" {...form.register('tagline_ar')} />
+                </Field>
+              </div>
+            </Section>
+
+            {/* BRANDING */}
+            <Section title="Branding">
+              <Field label="Brand Color">
+                <div className="flex gap-2">
                   {BRAND_COLORS.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      <span className="flex items-center gap-2">
-                        <span
-                          className="inline-block size-3 rounded-full"
-                          style={{ backgroundColor: c.hex }}
-                        />
-                        {c.label}
-                      </span>
-                    </SelectItem>
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => form.setValue('brand_color', c.value as ShowFormData['brand_color'])}
+                      className={`flex flex-col items-center gap-1 rounded-lg p-2 transition-all ${
+                        form.watch('brand_color') === c.value
+                          ? 'ring-2 ring-white bg-white/10'
+                          : 'hover:bg-white/5'
+                      }`}
+                    >
+                      <span className="size-8 rounded-full" style={{ backgroundColor: c.hex }} />
+                      <span className="text-[10px] text-muted-foreground">{c.label}</span>
+                    </button>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
+                </div>
+              </Field>
 
-            {/* Status */}
-            <div className="space-y-2">
-              <Label>Status *</Label>
-              <Select
-                value={form.watch('status')}
-                onValueChange={(val) =>
-                  form.setValue('status', val as ShowFormData['status'], { shouldValidate: true })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="coming-soon">Coming Soon</SelectItem>
-                  <SelectItem value="now-streaming">Now Streaming</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="grid grid-cols-3 gap-3">
+                <ArtworkUploadZone
+                  showId={generatedId} slot="poster"
+                  currentUrl={show?.poster_url ?? null}
+                  onUploadComplete={(url) => form.setValue('poster_url', url)}
+                  label="Poster" aspectHint="2:3"
+                />
+                <ArtworkUploadZone
+                  showId={generatedId} slot="hero"
+                  currentUrl={show?.hero_url ?? null}
+                  onUploadComplete={(url) => form.setValue('hero_url', url)}
+                  label="Hero" aspectHint="16:9"
+                />
+                <ArtworkUploadZone
+                  showId={generatedId} slot="logo"
+                  currentUrl={show?.logo_url ?? null}
+                  onUploadComplete={(url) => form.setValue('logo_url', url)}
+                  label="Logo" aspectHint="PNG"
+                />
+              </div>
+            </Section>
 
-            {/* Broadcast Day */}
-            <div className="space-y-2">
-              <Label>Broadcast Day</Label>
-              <Select
-                value={form.watch('broadcast_day') ?? ''}
-                onValueChange={(val) => form.setValue('broadcast_day', val || null)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select day" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DAYS.map((d) => (
-                    <SelectItem key={d} value={d}>{d}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* SCHEDULE */}
+            <Section title="Schedule">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Broadcast Day">
+                  <Select
+                    value={form.watch('broadcast_day') ?? ''}
+                    onValueChange={(val) => form.setValue('broadcast_day', val || null)}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Select day" /></SelectTrigger>
+                    <SelectContent>
+                      {DAYS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </Field>
 
-            {/* Broadcast Time */}
-            <div className="space-y-2">
-              <Label htmlFor="broadcast_time">Broadcast Time</Label>
-              <Input
-                id="broadcast_time"
-                placeholder="HH:MM"
-                {...form.register('broadcast_time')}
-              />
-            </div>
-
-            {/* Artwork Upload Zones */}
-            <ArtworkUploadZone
-              showId={generatedId}
-              slot="poster"
-              currentUrl={show?.poster_url ?? null}
-              onUploadComplete={(url) => form.setValue('poster_url', url)}
-              label="Poster Image"
-              aspectHint="2:3 portrait"
-            />
-
-            <ArtworkUploadZone
-              showId={generatedId}
-              slot="hero"
-              currentUrl={show?.hero_url ?? null}
-              onUploadComplete={(url) => form.setValue('hero_url', url)}
-              label="Hero Banner"
-              aspectHint="16:9 landscape"
-            />
-
-            <ArtworkUploadZone
-              showId={generatedId}
-              slot="logo"
-              currentUrl={show?.logo_url ?? null}
-              onUploadComplete={(url) => form.setValue('logo_url', url)}
-              label="Show Logo"
-              aspectHint="Free-form (PNG with transparency)"
-            />
+                <Field label="Broadcast Time">
+                  <Input type="time" {...form.register('broadcast_time')} />
+                </Field>
+              </div>
+            </Section>
           </div>
 
-          <SheetFooter className="sticky bottom-0 border-t border-border bg-background">
-            <Button
+          {/* Sticky footer */}
+          <div className="shrink-0 border-t border-border bg-[var(--card)] px-6 py-4 flex items-center justify-end gap-3">
+            <button
               type="button"
-              variant="ghost"
               onClick={() => onOpenChange(false)}
+              className="rounded-full border border-white/20 bg-transparent px-5 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5"
             >
               Discard Changes
-            </Button>
-            <Button
+            </button>
+            <button
               type="submit"
               disabled={form.formState.isSubmitting}
+              className="rounded-full bg-white px-6 py-2 text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:opacity-50"
             >
-              {form.formState.isSubmitting ? 'Saving...' : 'Save Show'}
-            </Button>
-          </SheetFooter>
+              {form.formState.isSubmitting ? 'Saving...' : isEdit ? 'Save Show' : 'Create Show'}
+            </button>
+          </div>
         </form>
       </SheetContent>
     </Sheet>

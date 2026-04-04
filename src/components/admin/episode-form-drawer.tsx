@@ -11,25 +11,12 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetFooter,
 } from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { YouTubeUrlInput } from '@/components/admin/youtube-url-input'
 import type { Database } from '@/lib/database.types'
-
-// ---------------------------------------------------------------------------
-// Schema
-// ---------------------------------------------------------------------------
 
 const episodeFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -44,9 +31,35 @@ const episodeFormSchema = z.object({
 
 type EpisodeFormData = z.infer<typeof episodeFormSchema>
 
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
+const STATUS_OPTIONS = [
+  { value: 'draft', label: 'Draft', desc: 'Not visible to viewers' },
+  { value: 'coming-soon', label: 'Coming Soon', desc: 'Visible but not playable' },
+  { value: 'published', label: 'Published', desc: 'Live and playable' },
+] as const
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
+        {title}
+      </h3>
+      {children}
+    </div>
+  )
+}
+
+function Field({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-sm">
+        {label}
+        {required && <span className="text-destructive ml-0.5">*</span>}
+      </Label>
+      {children}
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  )
+}
 
 interface EpisodeFormDrawerProps {
   open: boolean
@@ -58,44 +71,26 @@ interface EpisodeFormDrawerProps {
   onSave: (data: EpisodeFormData) => Promise<{ success: boolean; error?: string }>
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
 export function EpisodeFormDrawer({
-  open,
-  onOpenChange,
-  episode,
-  showId,
-  seasonId,
-  nextEpisodeNumber,
-  onSave,
+  open, onOpenChange, episode, showId, seasonId, nextEpisodeNumber, onSave,
 }: EpisodeFormDrawerProps) {
   const isEdit = !!episode
 
   const form = useForm<EpisodeFormData>({
     resolver: zodResolver(episodeFormSchema),
     defaultValues: {
-      title: '',
-      title_ar: '',
-      description: '',
-      description_ar: '',
-      episode_number: nextEpisodeNumber,
-      youtube_video_id: '',
-      duration: null,
-      status: 'draft',
+      title: '', title_ar: '', description: '', description_ar: '',
+      episode_number: nextEpisodeNumber, youtube_video_id: '',
+      duration: null, status: 'draft',
     },
   })
 
-  // Reset form when episode data changes or drawer opens
   useEffect(() => {
     if (open) {
       if (episode) {
         form.reset({
-          title: episode.title,
-          title_ar: episode.title_ar ?? '',
-          description: episode.description,
-          description_ar: episode.description_ar ?? '',
+          title: episode.title, title_ar: episode.title_ar ?? '',
+          description: episode.description, description_ar: episode.description_ar ?? '',
           episode_number: episode.episode_number,
           youtube_video_id: episode.youtube_video_id ?? '',
           duration: episode.duration ?? null,
@@ -103,14 +98,9 @@ export function EpisodeFormDrawer({
         })
       } else {
         form.reset({
-          title: '',
-          title_ar: '',
-          description: '',
-          description_ar: '',
-          episode_number: nextEpisodeNumber,
-          youtube_video_id: '',
-          duration: null,
-          status: 'draft',
+          title: '', title_ar: '', description: '', description_ar: '',
+          episode_number: nextEpisodeNumber, youtube_video_id: '',
+          duration: null, status: 'draft',
         })
       }
     }
@@ -119,164 +109,128 @@ export function EpisodeFormDrawer({
   async function onSubmit(data: EpisodeFormData) {
     const normalized = {
       ...data,
-      title_ar: data.title_ar || null,
-      description_ar: data.description_ar || null,
-      youtube_video_id: data.youtube_video_id || null,
-      duration: data.duration || null,
+      title_ar: data.title_ar || null, description_ar: data.description_ar || null,
+      youtube_video_id: data.youtube_video_id || null, duration: data.duration || null,
     }
-
     const result = await onSave(normalized)
-
     if (result.success) {
-      toast.success(isEdit ? 'Episode saved' : 'Episode created')
+      toast.success(isEdit ? `"${data.title}" saved` : `"${data.title}" created`)
       onOpenChange(false)
     } else {
       toast.error(result.error || 'Failed to save episode')
     }
   }
 
-  // Suppress unused variable warnings — passed for context, used by parent
   void showId
   void seasonId
 
+  const errors = form.formState.errors
+  const currentStatus = form.watch('status')
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="sm:max-w-lg overflow-y-auto">
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex h-full flex-col">
-          <SheetHeader>
-            <SheetTitle>{isEdit ? 'Edit Episode' : 'Create Episode'}</SheetTitle>
-          </SheetHeader>
+      <SheetContent side="right" className="sm:max-w-xl w-full p-0 flex flex-col">
+        <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+          <SheetTitle className="text-lg">{isEdit ? 'Edit Episode' : 'Create Episode'}</SheetTitle>
+          <p className="text-sm text-muted-foreground">
+            {isEdit ? `Editing "${episode.title}"` : `Episode #${nextEpisodeNumber}`}
+          </p>
+        </SheetHeader>
 
-          <div className="flex-1 space-y-6 px-4 pb-4">
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="ep-title">Title *</Label>
-              <Input
-                id="ep-title"
-                {...form.register('title')}
-                aria-invalid={!!form.formState.errors.title}
-              />
-              {form.formState.errors.title && (
-                <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
-              )}
-            </div>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-8">
 
-            {/* Title Arabic */}
-            <div className="space-y-2">
-              <Label htmlFor="ep-title-ar">Title (Arabic)</Label>
-              <Input
-                id="ep-title-ar"
-                dir="rtl"
-                {...form.register('title_ar')}
-              />
-            </div>
+            {/* EPISODE INFO */}
+            <Section title="Episode Info">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <Field label="Title" required error={errors.title?.message}>
+                    <Input {...form.register('title')} placeholder="Episode title" />
+                  </Field>
+                </div>
+                <Field label="Episode #" required error={errors.episode_number?.message}>
+                  <Input type="number" min={1} {...form.register('episode_number', { valueAsNumber: true })} />
+                </Field>
+              </div>
 
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="ep-description">Description *</Label>
-              <Textarea
-                id="ep-description"
-                rows={3}
-                {...form.register('description')}
-                aria-invalid={!!form.formState.errors.description}
-              />
-              {form.formState.errors.description && (
-                <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
-              )}
-            </div>
+              <Field label="Title (Arabic)">
+                <Input dir="rtl" {...form.register('title_ar')} />
+              </Field>
 
-            {/* Description Arabic */}
-            <div className="space-y-2">
-              <Label htmlFor="ep-description-ar">Description (Arabic)</Label>
-              <Textarea
-                id="ep-description-ar"
-                rows={3}
-                dir="rtl"
-                {...form.register('description_ar')}
-              />
-            </div>
+              {/* Status — radio buttons */}
+              <div className="space-y-1.5">
+                <Label className="text-sm">Status<span className="text-destructive ml-0.5">*</span></Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {STATUS_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => form.setValue('status', opt.value, { shouldValidate: true })}
+                      className={`rounded-lg border p-3 text-left transition-all ${
+                        currentStatus === opt.value
+                          ? 'border-white/30 bg-white/10 ring-1 ring-white/20'
+                          : 'border-border hover:border-white/15 hover:bg-white/[0.03]'
+                      }`}
+                    >
+                      <span className="text-sm font-medium text-foreground">{opt.label}</span>
+                      <span className="block text-[10px] text-muted-foreground mt-0.5">{opt.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-            {/* Episode Number */}
-            <div className="space-y-2">
-              <Label htmlFor="ep-number">Episode Number *</Label>
-              <Input
-                id="ep-number"
-                type="number"
-                min={1}
-                {...form.register('episode_number', { valueAsNumber: true })}
-                aria-invalid={!!form.formState.errors.episode_number}
-              />
-              {form.formState.errors.episode_number && (
-                <p className="text-sm text-destructive">{form.formState.errors.episode_number.message}</p>
-              )}
-            </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Duration" error={errors.duration?.message}>
+                  <div className="relative">
+                    <Input type="number" min={1} placeholder="25" {...form.register('duration', { valueAsNumber: true })} className="pr-10" />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">min</span>
+                  </div>
+                </Field>
+              </div>
+            </Section>
 
-            {/* YouTube URL */}
-            <div className="space-y-2">
-              <Label>YouTube URL</Label>
-              <Controller
-                name="youtube_video_id"
-                control={form.control}
-                render={({ field }) => (
-                  <YouTubeUrlInput
-                    value={field.value ?? ''}
-                    onChange={(videoId) => field.onChange(videoId ?? '')}
-                  />
-                )}
-              />
-            </div>
+            {/* CONTENT */}
+            <Section title="Content">
+              <Field label="YouTube URL">
+                <Controller
+                  name="youtube_video_id"
+                  control={form.control}
+                  render={({ field }) => (
+                    <YouTubeUrlInput
+                      value={field.value ?? ''}
+                      onChange={(videoId) => field.onChange(videoId ?? '')}
+                    />
+                  )}
+                />
+              </Field>
 
-            {/* Duration */}
-            <div className="space-y-2">
-              <Label htmlFor="ep-duration">Duration (minutes)</Label>
-              <Input
-                id="ep-duration"
-                type="number"
-                min={1}
-                placeholder="e.g., 25"
-                {...form.register('duration', { valueAsNumber: true })}
-              />
-              {form.formState.errors.duration && (
-                <p className="text-sm text-destructive">{form.formState.errors.duration.message}</p>
-              )}
-            </div>
+              <Field label="Description" required error={errors.description?.message}>
+                <Textarea rows={5} {...form.register('description')} placeholder="What happens in this episode?" />
+              </Field>
 
-            {/* Status */}
-            <div className="space-y-2">
-              <Label>Status *</Label>
-              <Select
-                value={form.watch('status')}
-                onValueChange={(val) =>
-                  form.setValue('status', val as EpisodeFormData['status'], { shouldValidate: true })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="coming-soon">Coming Soon</SelectItem>
-                  <SelectItem value="published">Published</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <Field label="Description (Arabic)">
+                <Textarea rows={5} dir="rtl" {...form.register('description_ar')} />
+              </Field>
+            </Section>
           </div>
 
-          <SheetFooter className="sticky bottom-0 border-t border-border bg-background">
-            <Button
+          {/* Sticky footer */}
+          <div className="shrink-0 border-t border-border bg-[var(--card)] px-6 py-4 flex items-center justify-end gap-3">
+            <button
               type="button"
-              variant="ghost"
               onClick={() => onOpenChange(false)}
+              className="rounded-full border border-white/20 bg-transparent px-5 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5"
             >
               Discard Changes
-            </Button>
-            <Button
+            </button>
+            <button
               type="submit"
               disabled={form.formState.isSubmitting}
+              className="rounded-full bg-white px-6 py-2 text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:opacity-50"
             >
-              {form.formState.isSubmitting ? 'Saving...' : 'Save Episode'}
-            </Button>
-          </SheetFooter>
+              {form.formState.isSubmitting ? 'Saving...' : isEdit ? 'Save Episode' : 'Create Episode'}
+            </button>
+          </div>
         </form>
       </SheetContent>
     </Sheet>

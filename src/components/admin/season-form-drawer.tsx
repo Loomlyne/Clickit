@@ -11,16 +11,10 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetFooter,
 } from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { Database } from '@/lib/database.types'
-
-// ---------------------------------------------------------------------------
-// Schema
-// ---------------------------------------------------------------------------
 
 const seasonFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -29,10 +23,6 @@ const seasonFormSchema = z.object({
 })
 
 type SeasonFormData = z.infer<typeof seasonFormSchema>
-
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
 
 interface SeasonFormDrawerProps {
   open: boolean
@@ -43,131 +33,86 @@ interface SeasonFormDrawerProps {
   onSave: (data: SeasonFormData) => Promise<{ success: boolean; error?: string }>
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
 export function SeasonFormDrawer({
-  open,
-  onOpenChange,
-  season,
-  showId,
-  nextSeasonNumber,
-  onSave,
+  open, onOpenChange, season, showId, nextSeasonNumber, onSave,
 }: SeasonFormDrawerProps) {
   const isEdit = !!season
 
   const form = useForm<SeasonFormData>({
     resolver: zodResolver(seasonFormSchema),
-    defaultValues: {
-      title: '',
-      title_ar: '',
-      season_number: nextSeasonNumber,
-    },
+    defaultValues: { title: '', title_ar: '', season_number: nextSeasonNumber },
   })
 
-  // Reset form when season data changes or drawer opens
   useEffect(() => {
     if (open) {
       if (season) {
-        form.reset({
-          title: season.title,
-          title_ar: season.title_ar ?? '',
-          season_number: season.season_number,
-        })
+        form.reset({ title: season.title, title_ar: season.title_ar ?? '', season_number: season.season_number })
       } else {
-        form.reset({
-          title: '',
-          title_ar: '',
-          season_number: nextSeasonNumber,
-        })
+        form.reset({ title: '', title_ar: '', season_number: nextSeasonNumber })
       }
     }
   }, [open, season, nextSeasonNumber, form])
 
   async function onSubmit(data: SeasonFormData) {
-    const normalized = {
-      ...data,
-      title_ar: data.title_ar || null,
-    }
-
+    const normalized = { ...data, title_ar: data.title_ar || null }
     const result = await onSave(normalized)
-
     if (result.success) {
-      toast.success(isEdit ? 'Season saved' : 'Season created')
+      toast.success(isEdit ? `"${data.title}" saved` : `"${data.title}" created`)
       onOpenChange(false)
     } else {
       toast.error(result.error || 'Failed to save season')
     }
   }
 
-  // Suppress unused variable warning — showId is passed for context but used by parent
   void showId
+  const errors = form.formState.errors
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="sm:max-w-lg overflow-y-auto">
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex h-full flex-col">
-          <SheetHeader>
-            <SheetTitle>{isEdit ? 'Edit Season' : 'Create Season'}</SheetTitle>
-          </SheetHeader>
+      <SheetContent side="right" className="sm:max-w-md w-full p-0 flex flex-col">
+        <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+          <SheetTitle className="text-lg">{isEdit ? 'Edit Season' : 'Add Season'}</SheetTitle>
+          <p className="text-sm text-muted-foreground">
+            {isEdit ? `Editing "${season.title}"` : `Season #${nextSeasonNumber}`}
+          </p>
+        </SheetHeader>
 
-          <div className="flex-1 space-y-6 px-4 pb-4">
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="season-title">Title *</Label>
-              <Input
-                id="season-title"
-                placeholder="e.g., Season 1"
-                {...form.register('title')}
-                aria-invalid={!!form.formState.errors.title}
-              />
-              {form.formState.errors.title && (
-                <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
-              )}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+            <div className="space-y-1.5">
+              <Label className="text-sm">Title<span className="text-destructive ml-0.5">*</span></Label>
+              <Input {...form.register('title')} placeholder="e.g., Season 1" />
+              {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
             </div>
 
-            {/* Title Arabic */}
-            <div className="space-y-2">
-              <Label htmlFor="season-title-ar">Title (Arabic)</Label>
-              <Input
-                id="season-title-ar"
-                dir="rtl"
-                {...form.register('title_ar')}
-              />
+            <div className="space-y-1.5">
+              <Label className="text-sm">Title (Arabic)</Label>
+              <Input dir="rtl" {...form.register('title_ar')} />
             </div>
 
-            {/* Season Number */}
-            <div className="space-y-2">
-              <Label htmlFor="season-number">Season Number *</Label>
-              <Input
-                id="season-number"
-                type="number"
-                min={1}
-                {...form.register('season_number', { valueAsNumber: true })}
-                aria-invalid={!!form.formState.errors.season_number}
-              />
-              {form.formState.errors.season_number && (
-                <p className="text-sm text-destructive">{form.formState.errors.season_number.message}</p>
-              )}
+            <div className="space-y-1.5">
+              <Label className="text-sm">Season Number<span className="text-destructive ml-0.5">*</span></Label>
+              <Input type="number" min={1} {...form.register('season_number', { valueAsNumber: true })} />
+              {errors.season_number && <p className="text-xs text-destructive">{errors.season_number.message}</p>}
             </div>
           </div>
 
-          <SheetFooter className="sticky bottom-0 border-t border-border bg-background">
-            <Button
+          <div className="shrink-0 border-t border-border bg-[var(--card)] px-6 py-4 flex items-center justify-end gap-3">
+            <button
               type="button"
-              variant="ghost"
               onClick={() => onOpenChange(false)}
+              className="rounded-full border border-white/20 bg-transparent px-5 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5"
             >
               Discard Changes
-            </Button>
-            <Button
+            </button>
+            <button
               type="submit"
               disabled={form.formState.isSubmitting}
+              className="rounded-full bg-white px-6 py-2 text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:opacity-50"
             >
-              {form.formState.isSubmitting ? 'Saving...' : 'Save Season'}
-            </Button>
-          </SheetFooter>
+              {form.formState.isSubmitting ? 'Saving...' : isEdit ? 'Save Season' : 'Add Season'}
+            </button>
+          </div>
         </form>
       </SheetContent>
     </Sheet>
