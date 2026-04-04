@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
   { label: 'Coming Soon', href: '/coming-soon' },
-  { label: 'Schedule', href: '/schedule' },
+  { label: 'Support', href: '/support' },
 ]
 
 export function NavLinks() {
