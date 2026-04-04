@@ -170,4 +170,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-02 after Phase 6 completion — Supabase backend foundation (schema, RLS, auth clients, storage, seed data)*
+*Last updated: 2026-04-04 after Phase 8 completion — Data integration (mock-data eliminated), auth flows (signup/login/logout with error mapping), search (Postgres FTS with navbar input + /search page), /series listing, /schedule page*
