@@ -34,7 +34,7 @@ export function LoginForm() {
     setServerError(null)
     const supabase = createClient()
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
     })
@@ -44,8 +44,16 @@ export function LoginForm() {
       return
     }
 
+    // Check if this user is admin — redirect to /admin if so
+    const { data: config } = await supabase
+      .from('app_config')
+      .select('admin_user_id')
+      .single()
+
+    const isAdmin = config?.admin_user_id === authData.user?.id
+
     toast.success('Signed in successfully!')
-    router.push('/')
+    router.push(isAdmin ? '/admin' : '/')
     router.refresh()
   }
 
