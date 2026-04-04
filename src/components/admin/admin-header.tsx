@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const tabs = [
@@ -15,19 +16,34 @@ export function AdminHeader() {
   return (
     <header className="bg-[var(--card)] border-b border-border">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
-        {/* Title row */}
-        <div className="pt-4 pb-3">
-          <span className="text-[20px] font-semibold text-foreground">
+        {/* Top bar: back link + branding + view site */}
+        <div className="flex items-center justify-between py-3">
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="size-4" />
+            <span className="hidden sm:inline">Back to Site</span>
+          </Link>
+
+          <span className="text-lg font-semibold text-foreground">
             CIT Admin
           </span>
+
+          <Link
+            href="/profile"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Account
+          </Link>
         </div>
 
         {/* Tab navigation */}
-        <nav className="flex gap-6 border-t border-border -mb-px">
+        <nav className="flex gap-6 -mb-px">
           {tabs.map((tab) => {
             const isActive =
               tab.href === '/admin'
-                ? pathname === '/admin'
+                ? pathname === '/admin' || pathname.startsWith('/admin/shows')
                 : pathname.startsWith(tab.href)
 
             return (
@@ -35,7 +51,7 @@ export function AdminHeader() {
                 key={tab.href}
                 href={tab.href}
                 className={cn(
-                  'relative py-3 text-sm font-medium transition-colors',
+                  'relative py-2.5 text-sm font-medium transition-colors',
                   isActive
                     ? 'text-foreground'
                     : 'text-muted-foreground hover:text-foreground'
@@ -43,7 +59,7 @@ export function AdminHeader() {
               >
                 {tab.label}
                 {isActive && (
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 bg-[var(--primary)]" />
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[var(--primary)]" />
                 )}
               </Link>
             )
