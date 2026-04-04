@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { CinematicBackdrop } from '@/components/primitives/cinematic-backdrop'
 import { ProfileForm } from '@/components/profile/profile-form'
+import { ProfileHeader } from '@/components/profile/profile-header'
 import { ProfileHistoryRow } from '@/components/profile/profile-history-row'
 import { PortraitShowCard } from '@/components/shows/portrait-show-card'
 import { getWatchlistShows, getRecentlyWatched } from '@/lib/queries'
@@ -40,90 +40,86 @@ export default async function ProfilePage() {
     getRecentlyWatched(user.id),
   ])
 
+  const displayName = profile?.display_name ?? ''
+  const email = user.email ?? ''
+
   return (
-    <div className="-mt-16 relative min-h-screen overflow-hidden">
-      <CinematicBackdrop
-        brandColor="#2C3569"
-        intensity="high"
-        watermarkText="CIT"
-        className="absolute inset-0"
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(0,0,0,0.8)_70%)] pointer-events-none" />
+    <div className="relative min-h-screen">
+      {/* Subtle gradient at top — not heavy cinematic */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-white/[0.02] to-transparent" />
 
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 md:px-12 py-24">
-        {/* Settings card */}
-        <div className="mx-auto max-w-[480px]">
-          <div
-            className="rounded-2xl p-8 backdrop-blur-xl"
-            style={{
-              background: 'rgba(17, 17, 22, 0.85)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 32px 64px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
-            }}
-          >
-            <h2
-              className="font-display font-semibold text-white text-center mb-1"
-              style={{ fontSize: '1.75rem' }}
-            >
-              Your Profile
-            </h2>
-            <p className="text-white/50 text-sm text-center mb-8">
-              Manage your account settings
-            </p>
+      <div className="relative z-10 mx-auto w-full max-w-5xl px-6 md:px-12 pt-24 md:pt-28 pb-16 space-y-8">
+        {/* Profile Header */}
+        <ProfileHeader
+          displayName={displayName}
+          email={email}
+          isAdmin={isAdmin}
+        />
 
-            <ProfileForm
-              email={user.email ?? ''}
-              displayName={profile?.display_name ?? ''}
-              avatarUrl={profile?.avatar_url ?? null}
-              isAdmin={isAdmin}
-            />
-          </div>
+        {/* Account Settings */}
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-6">
+          <h3 className="font-display text-lg font-semibold text-white mb-4">
+            Account Settings
+          </h3>
+          <ProfileForm
+            displayName={displayName}
+          />
         </div>
 
-        {/* Personalization sections */}
-        <div className="mt-12 space-y-12">
-          {/* My List preview */}
-          <div className="rounded-2xl border border-white/10 bg-[rgba(17,17,22,0.7)] backdrop-blur-xl p-6 md:p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-display text-xl font-semibold text-white">My List</h3>
+        {/* My List */}
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-display text-lg font-semibold text-white">
+              My List
               {watchlistShows.length > 0 && (
-                <Link href="/my-list" className="text-sm text-white/50 hover:text-white transition-colors">
-                  See all
-                </Link>
+                <span className="ml-2 text-sm font-normal text-white/40">
+                  {watchlistShows.length}
+                </span>
               )}
+            </h3>
+            {watchlistShows.length > 0 && (
+              <Link
+                href="/my-list"
+                className="text-sm text-white/50 hover:text-white transition-colors"
+              >
+                See all &rarr;
+              </Link>
+            )}
+          </div>
+          {watchlistShows.length > 0 ? (
+            <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-1">
+              {watchlistShows.slice(0, 8).map((show) => (
+                <div key={show.id} className="w-32 flex-shrink-0">
+                  <PortraitShowCard show={show} initialSaved userId={user.id} />
+                </div>
+              ))}
             </div>
-            {watchlistShows.length > 0 ? (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                {watchlistShows.slice(0, 6).map((show) => (
-                  <PortraitShowCard key={show.id} show={show} initialSaved userId={user.id} />
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-white/40 text-center py-8">
-                No saved shows yet.{' '}
-                <Link href="/" className="text-white/60 hover:text-white underline">
-                  Browse shows
-                </Link>
-              </p>
-            )}
-          </div>
+          ) : (
+            <p className="text-sm text-white/40 py-6 text-center">
+              No saved shows yet.{' '}
+              <Link href="/series" className="text-white/60 hover:text-white underline">
+                Browse shows
+              </Link>
+            </p>
+          )}
+        </div>
 
-          {/* Recently Watched */}
-          <div className="rounded-2xl border border-white/10 bg-[rgba(17,17,22,0.7)] backdrop-blur-xl p-6 md:p-8">
-            <h3 className="font-display text-xl font-semibold text-white mb-6">Recently Watched</h3>
-            {recentlyWatched.length > 0 ? (
-              <div>
-                {recentlyWatched.map((item) => (
-                  <ProfileHistoryRow key={item.episodeId} item={item} />
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-white/40 text-center py-8">
-                No watch history yet. Start watching to see your activity here.
-              </p>
-            )}
-          </div>
+        {/* Recently Watched */}
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-6">
+          <h3 className="font-display text-lg font-semibold text-white mb-4">
+            Recently Watched
+          </h3>
+          {recentlyWatched.length > 0 ? (
+            <div>
+              {recentlyWatched.map((item) => (
+                <ProfileHistoryRow key={item.episodeId} item={item} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-white/40 py-6 text-center">
+              No watch history yet.
+            </p>
+          )}
         </div>
       </div>
     </div>
