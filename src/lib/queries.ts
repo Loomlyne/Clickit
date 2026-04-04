@@ -41,6 +41,56 @@ export function mapShow(db: DbShow): ViewShow {
 }
 
 // ---------------------------------------------------------------------------
+// View types: Episode and Season
+// ---------------------------------------------------------------------------
+
+export type ViewEpisode = {
+  id: string
+  showId: string
+  seasonId: string
+  episodeNumber: number
+  title: string
+  description: string
+  duration: number | null
+  status: 'published' | 'coming-soon' | 'draft'
+  youtubeId: string | null
+  publishedAt?: string
+}
+
+export type ViewSeason = {
+  id: string
+  showId: string
+  seasonNumber: number
+  title: string
+  episodeCount: number
+}
+
+export function mapEpisode(db: DbEpisode): ViewEpisode {
+  return {
+    id: db.id,
+    showId: db.show_id,
+    seasonId: db.season_id,
+    episodeNumber: db.episode_number,
+    title: db.title,
+    description: db.description,
+    duration: db.duration,
+    status: db.status as ViewEpisode['status'],
+    youtubeId: db.youtube_video_id,
+    publishedAt: db.created_at,
+  }
+}
+
+export function mapSeason(db: DbSeason): ViewSeason {
+  return {
+    id: db.id,
+    showId: db.show_id,
+    seasonNumber: db.season_number,
+    title: db.title,
+    episodeCount: db.episode_count,
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Homepage queries
 // ---------------------------------------------------------------------------
 
@@ -154,7 +204,7 @@ export async function getEpisodesBySeasonId(seasonId: string): Promise<DbEpisode
     .select('*')
     .eq('season_id', seasonId)
     .eq('archived', false)
-    .eq('status', 'published')
+    .in('status', ['published', 'coming-soon'])
     .order('episode_number', { ascending: true })
 
   return data ?? []
@@ -241,4 +291,124 @@ export async function getContinueWatching() {
     .eq('archived', false)
 
   return (shows ?? []).map(mapShow)
+}
+
+// ---------------------------------------------------------------------------
+// Genre query
+// ---------------------------------------------------------------------------
+
+export async function getDistinctGenres(): Promise<string[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('shows')
+    .select('genre')
+    .eq('archived', false)
+    .in('status', ['now-streaming', 'coming-soon'])
+
+  if (!data) return []
+  return [...new Set(data.map((row) => row.genre))].sort()
+}
+
+// ---------------------------------------------------------------------------
+// Schedule query
+// ---------------------------------------------------------------------------
+
+export async function getScheduleShows(): Promise<
+  (ViewShow & { broadcastDay: string | null; broadcastTime: string | null })[]
+> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('shows')
+    .select('*')
+    .eq('archived', false)
+    .eq('status', 'now-streaming')
+    .not('broadcast_day', 'is', null)
+    .order('broadcast_day')
+
+  return (data ?? []).map((s) => ({
+    ...mapShow(s),
+    broadcastDay: s.broadcast_day,
+    broadcastTime: s.broadcast_time,
+  }))
+}
+
+// ---------------------------------------------------------------------------
+// Coming soon episodes query
+// ---------------------------------------------------------------------------
+
+export async function getComingSoonEpisodes(): Promise<
+  (ViewEpisode & { showTitle: string; showSlug: string; showBrandColor: ViewShow['brandColor'] })[]
+> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('episodes')
+    .select('*, shows!inner(title, slug, brand_color, status)')
+    .eq('status', 'coming-soon')
+    .eq('archived', false)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  return (data ?? []).map((e: any) => ({
+    ...mapEpisode(e),
+    showTitle: e.shows.title,
+    showSlug: e.shows.slug,
+    showBrandColor: e.shows.brand_color as ViewShow['brandColor'],
+  }))
+}
+
+// ---------------------------------------------------------------------------
+// All shows query (for /series listing)
+// ---------------------------------------------------------------------------
+
+export async function getAllShows(): Promise<ViewShow[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('shows')
+    .select('*')
+    .eq('archived', false)
+    .in('status', ['now-streaming', 'coming-soon'])
+    .order('title')
+
+  return (data ?? []).map(mapShow)
+}
+
+// ---------------------------------------------------------------------------
+// Search queries (Postgres FTS)
+// ---------------------------------------------------------------------------
+
+export async function searchShows(query: string): Promise<ViewShow[]> {
+  if (!query || query.trim().length < 2) return []
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('shows')
+    .select('*')
+    .eq('archived', false)
+    .in('status', ['now-streaming', 'coming-soon'])
+    .textSearch('fts', query, { type: 'websearch', config: 'english' })
+    .limit(20)
+
+  return (data ?? []).map(mapShow)
+}
+
+export async function searchEpisodes(
+  query: string
+): Promise<
+  (ViewEpisode & { showTitle: string; showSlug: string; showBrandColor: ViewShow['brandColor'] })[]
+> {
+  if (!query || query.trim().length < 2) return []
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('episodes')
+    .select('*, shows!inner(title, slug, brand_color, status)')
+    .eq('archived', false)
+    .eq('status', 'published')
+    .textSearch('fts', query, { type: 'websearch', config: 'english' })
+    .limit(30)
+
+  return (data ?? []).map((e: any) => ({
+    ...mapEpisode(e),
+    showTitle: e.shows.title,
+    showSlug: e.shows.slug,
+    showBrandColor: e.shows.brand_color as ViewShow['brandColor'],
+  }))
 }
