@@ -57,7 +57,7 @@ export function WatchPageContent({
   }, [])
 
   return (
-    <div className="min-h-screen bg-black text-white -mt-16">
+    <div className="min-h-screen bg-black text-white -mt-16 relative z-30">
       {/* Auto-hide top bar — fixed overlay with gradient */}
       <div
         className={cn(
@@ -88,7 +88,7 @@ export function WatchPageContent({
 
       {/* Main layout: player+metadata left/top, sidebar right/bottom */}
       <div
-        className="flex flex-col lg:flex-row min-h-screen"
+        className="flex flex-col lg:flex-row"
         onMouseMove={handleMouseMove}
       >
         {/* Player + metadata (left on desktop, top on mobile) */}
@@ -148,7 +148,7 @@ export function WatchPageContent({
         {/* Sidebar — episode list (right on desktop, bottom on mobile) */}
         <aside
           aria-label="Episode selector"
-          className="w-full lg:w-[360px] lg:flex-shrink-0 border-t border-white/[0.06] lg:border-t-0 lg:border-l lg:border-white/[0.06] bg-black lg:min-h-screen"
+          className="w-full lg:w-[360px] lg:flex-shrink-0 border-t border-white/[0.06] lg:border-t-0 lg:border-l lg:border-white/[0.06] bg-black"
         >
           <div className="lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto scrollbar-hide">
             <div className="px-4 py-4 border-b border-white/[0.06]">
