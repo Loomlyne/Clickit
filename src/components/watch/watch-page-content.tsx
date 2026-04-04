@@ -41,8 +41,8 @@ export function WatchPageContent({
 
   return (
     <div className="bg-black text-white -mt-16 pt-16 relative z-30">
-      {/* Player — full width, edge to edge */}
-      <div className="w-full aspect-video max-h-[65vh] bg-black">
+      {/* Player — full width, YouTube-style proportions */}
+      <div className="w-full aspect-video max-h-[56vh] bg-[#111]">
         <YouTubePlayer
           videoId={episode.youtubeId ?? ''}
           brandColor={brandColorBgMap[show.brandColor]}
