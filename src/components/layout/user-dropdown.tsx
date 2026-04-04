@@ -15,9 +15,10 @@ interface UserDropdownProps {
   children: React.ReactNode
   onSignOut: () => void
   isAdmin?: boolean
+  email?: string
 }
 
-export function UserDropdown({ children, onSignOut, isAdmin = false }: UserDropdownProps) {
+export function UserDropdown({ children, onSignOut, isAdmin = false, email }: UserDropdownProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -25,7 +26,7 @@ export function UserDropdown({ children, onSignOut, isAdmin = false }: UserDropd
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={8} className="w-[200px]">
         <DropdownMenuLabel className="font-normal text-muted-foreground">
-          viewer@example.com
+          {email ?? 'Account'}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem>

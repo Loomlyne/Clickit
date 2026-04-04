@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,6 +9,7 @@ import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { createClient } from '@/lib/supabase/client'
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -16,6 +19,9 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>
 
 export function LoginForm() {
+  const router = useRouter()
+  const [serverError, setServerError] = useState<string | null>(null)
+
   const {
     register,
     handleSubmit,
@@ -25,12 +31,32 @@ export function LoginForm() {
   })
 
   async function onSubmit(data: LoginFormData) {
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    setServerError(null)
+    const supabase = createClient()
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    })
+
+    if (error) {
+      setServerError(error.message)
+      return
+    }
+
     toast.success('Signed in successfully!')
+    router.push('/')
+    router.refresh()
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {serverError && (
+        <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
+          {serverError}
+        </div>
+      )}
+
       <div>
         <Label htmlFor="login-email">Email</Label>
         <Input id="login-email" type="email" placeholder="you@example.com" className="mt-1.5" {...register('email')} />
@@ -41,10 +67,6 @@ export function LoginForm() {
         <Label htmlFor="login-password">Password</Label>
         <Input id="login-password" type="password" placeholder="••••••••" className="mt-1.5" {...register('password')} />
         {errors.password && <p className="mt-1 text-xs text-brand-red-safe">{errors.password.message}</p>}
-      </div>
-
-      <div className="flex justify-end">
-        <a href="#" className="text-sm text-brand-blue-safe hover:underline">Forgot Password?</a>
       </div>
 
       <button
