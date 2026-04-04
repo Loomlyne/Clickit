@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 08-03-PLAN.md
-last_updated: "2026-04-04T17:45:47.204Z"
+status: executing
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-04-04T18:30:47.051Z"
 last_activity: 2026-04-04
 progress:
   total_phases: 10
   completed_phases: 8
-  total_plans: 21
-  completed_plans: 21
+  total_plans: 24
+  completed_plans: 22
   percent: 100
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Viewers enter, discover a show, pick an episode, watch immediately -- premium streaming experience for CIT originals.
-**Current focus:** Phase 08 — data-integration-auth-search
+**Current focus:** Phase 09 — personalization-watch-features
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 09 (personalization-watch-features) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-04-04
 
 Progress: [██████████] 100% (Phases 1-7 complete)
@@ -72,6 +72,7 @@ Progress: [██████████] 100% (Phases 1-7 complete)
 | Phase 08 P01 | 10min | 2 tasks | 26 files |
 | Phase 08 P02 | 5min | 2 tasks | 11 files |
 | Phase 08 P03 | 8min | 2 tasks | 4 files |
+| Phase 09 P01 | 4min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -131,6 +132,9 @@ Recent decisions affecting current work:
 - [Phase 08]: GenresGrid converted from client to server component: replaced motion.div with CSS transitions for zero-JS genre browsing
 - [Phase 08]: Reels section removed from home: no reels table in DB, mock-data.ts deleted entirely
 - [Phase 08]: Mobile search icon routes to /search page rather than overlay -- simpler v1, avoids complex mobile UI
+- [Phase 09]: useWatchlist hook uses local useState instead of Zustand store -- sufficient for per-component toggle state
+- [Phase 09]: WatchlistToggleButton replaces static Heart/Bookmark icons -- single source of truth for watchlist interaction
+- [Phase 09]: userId prop uses undefined vs null distinction: undefined hides button, null shows button with auth redirect on click
 
 ### Roadmap Evolution
 
@@ -154,6 +158,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-04T17:38:52.141Z
-Stopped at: Completed 08-03-PLAN.md
+Last session: 2026-04-04T18:30:47.048Z
+Stopped at: Completed 09-01-PLAN.md
 Resume file: None

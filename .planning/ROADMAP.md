@@ -166,7 +166,7 @@ Plans:
   5. After an episode ends, the next episode autoplays with a visible countdown
 **Plans**: 3 plans
 Plans:
-- [ ] 09-01-PLAN.md -- Watchlist: queries, useWatchlist hook, WatchlistToggleButton, wire into cards/hero, My List page
+- [x] 09-01-PLAN.md -- Watchlist: queries, useWatchlist hook, WatchlistToggleButton, wire into cards/hero, My List page
 - [ ] 09-02-PLAN.md -- Progress tracking, resume playback, continue watching rail rewrite, autoplay countdown overlay
 - [ ] 09-03-PLAN.md -- Profile page expansion (My List preview + Recently Watched), episode progress indicators, Vercel deploy
 **UI hint**: yes

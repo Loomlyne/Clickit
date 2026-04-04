@@ -60,9 +60,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### User Features
 
-- [ ] **USER-01**: Authenticated user can add/remove shows from watchlist
-- [ ] **USER-02**: Watchlist button visible on show cards and series detail page
-- [ ] **USER-03**: My List page shows all watchlisted shows
+- [x] **USER-01**: Authenticated user can add/remove shows from watchlist
+- [x] **USER-02**: Watchlist button visible on show cards and series detail page
+- [x] **USER-03**: My List page shows all watchlisted shows
 - [ ] **USER-04**: Continue watching tracks playback progress per episode (saves every 10-15 seconds)
 - [ ] **USER-05**: Continue watching rail on home page showing episodes in progress
 - [ ] **USER-06**: Resuming an episode starts from saved progress position
@@ -179,9 +179,9 @@ Deferred to future release. Tracked but not in current roadmap.
 | WTCH-04 | Phase 9 | Pending |
 | WTCH-05 | Phase 5 | Complete |
 | WTCH-06 | Phase 5 | Complete |
-| USER-01 | Phase 9 | Pending |
-| USER-02 | Phase 9 | Pending |
-| USER-03 | Phase 9 | Pending |
+| USER-01 | Phase 9 | Complete |
+| USER-02 | Phase 9 | Complete |
+| USER-03 | Phase 9 | Complete |
 | USER-04 | Phase 9 | Pending |
 | USER-05 | Phase 9 | Pending |
 | USER-06 | Phase 9 | Pending |
