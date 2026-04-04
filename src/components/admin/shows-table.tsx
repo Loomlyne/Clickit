@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Pencil, Archive, Plus, Search } from 'lucide-react'
+import { Pencil, Archive, Plus, Search, Star } from 'lucide-react'
 
 import {
   Table,
@@ -24,7 +24,7 @@ import { StatusBadge } from '@/components/admin/status-badge'
 import { EmptyState } from '@/components/admin/empty-state'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { ShowFormDrawer } from '@/components/admin/show-form-drawer'
-import { createShow, updateShow, archiveShow } from '@/app/admin/actions'
+import { createShow, updateShow, archiveShow, toggleFeatured } from '@/app/admin/actions'
 import { toast } from 'sonner'
 import type { Database } from '@/lib/database.types'
 
@@ -194,6 +194,26 @@ export function ShowsTable({ shows }: ShowsTableProps) {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-end gap-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={async () => {
+                            const result = await toggleFeatured(show.id)
+                            if (result.success) {
+                              toast.success(result.featured ? `"${show.title}" featured on hero` : `"${show.title}" removed from hero`)
+                            } else {
+                              toast.error(result.error ?? 'Failed to toggle featured')
+                            }
+                          }}
+                          aria-label={show.featured ? `Unfeature ${show.title}` : `Feature ${show.title}`}
+                        >
+                          <Star className={`size-4 ${show.featured ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{show.featured ? 'Remove from hero' : 'Feature on hero'}</TooltipContent>
+                    </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button

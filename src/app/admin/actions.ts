@@ -493,3 +493,51 @@ export async function reorderEpisode(
     return { success: false, error: err instanceof Error ? err.message : 'Failed to reorder episode' }
   }
 }
+
+// ---------------------------------------------------------------------------
+// FEATURED TOGGLE
+// ---------------------------------------------------------------------------
+
+export async function toggleFeatured(showId: string) {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    // Get current featured state
+    const { data: show, error: fetchErr } = await admin
+      .from('shows')
+      .select('featured')
+      .eq('id', showId)
+      .single()
+
+    if (fetchErr || !show) throw new Error('Show not found')
+
+    const newFeatured = !show.featured
+
+    // If featuring, check we don't exceed 5
+    if (newFeatured) {
+      const { count } = await admin
+        .from('shows')
+        .select('id', { count: 'exact', head: true })
+        .eq('featured', true)
+        .eq('archived', false)
+
+      if ((count ?? 0) >= 5) {
+        return { success: false, error: 'Maximum 5 featured shows allowed. Unfeature another show first.' }
+      }
+    }
+
+    const { error } = await admin
+      .from('shows')
+      .update({ featured: newFeatured })
+      .eq('id', showId)
+
+    if (error) throw error
+
+    revalidatePath('/admin')
+    revalidatePath('/')
+    return { success: true, featured: newFeatured }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to toggle featured' }
+  }
+}

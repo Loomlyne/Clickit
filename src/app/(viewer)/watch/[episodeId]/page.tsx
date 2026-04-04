@@ -1,14 +1,8 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-import { Button } from '@/components/ui/button'
 import { WatchPageContent } from '@/components/watch/watch-page-content'
-import {
-  MOCK_EPISODES,
-  getEpisodeById,
-  getEpisodeNavigation,
-} from '@/lib/mock-data'
+import { getEpisodeById, mapShow } from '@/lib/queries'
 
 interface Props {
   params: Promise<{ episodeId: string }>
@@ -16,7 +10,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { episodeId } = await params
-  const data = getEpisodeById(episodeId)
+  const data = await getEpisodeById(episodeId)
   if (!data) return { title: 'Episode Not Found | Clickit Story' }
   return {
     title: `${data.episode.title} | ${data.show.title} | Clickit Story`,
@@ -24,64 +18,72 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export function generateStaticParams() {
-  return MOCK_EPISODES.filter((ep) => ep.status === 'published').map((ep) => ({
-    episodeId: ep.id,
-  }))
-}
-
 export default async function WatchPage({ params }: Props) {
   const { episodeId } = await params
+  const data = await getEpisodeById(episodeId)
 
-  // Check if episode exists at all
-  const rawEpisode = MOCK_EPISODES.find((e) => e.id === episodeId)
-
-  if (!rawEpisode) {
-    notFound()
-  }
-
-  // Episode exists but is not published
-  if (rawEpisode.status !== 'published') {
-    const data = getEpisodeById(episodeId)
-    const showTitle = data?.show.title ?? 'this show'
-    const showSlug = data?.show.slug ?? ''
-
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center px-6">
-        <h1 className="text-4xl font-bold text-foreground">
-          Episode Not Available
-        </h1>
-        <p className="mt-4 max-w-md text-muted-foreground">
-          This episode isn&apos;t available for watching yet. Check back soon.
-        </p>
-        {showSlug && (
-          <Button variant="default" className="mt-8" asChild>
-            <Link href={`/series/${showSlug}`}>Back to {showTitle}</Link>
-          </Button>
-        )}
-      </div>
-    )
-  }
-
-  // Episode is published -- resolve full context
-  const data = getEpisodeById(episodeId)
   if (!data) notFound()
 
-  const { prev, next } = getEpisodeNavigation(
-    episodeId,
-    data.seasons,
-    data.episodesBySeason
-  )
+  const { episode, show, season, seasons, episodesBySeason, prev, next } = data
+
+  // Map to shapes the watch page components expect
+  const viewEpisode = {
+    id: episode.id,
+    showId: episode.show_id,
+    seasonId: episode.season_id,
+    episodeNumber: episode.episode_number,
+    title: episode.title,
+    description: episode.description,
+    duration: episode.duration,
+    status: episode.status,
+    youtubeId: episode.youtube_video_id,
+  }
+
+  const viewShow = mapShow(show)
+
+  const viewSeason = {
+    id: season.id,
+    showId: season.show_id,
+    seasonNumber: season.season_number,
+    title: season.title,
+    episodeCount: season.episode_count,
+  }
+
+  const viewSeasons = seasons.map((s) => ({
+    id: s.id,
+    showId: s.show_id,
+    seasonNumber: s.season_number,
+    title: s.title,
+    episodeCount: s.episode_count,
+  }))
+
+  const viewEpisodesBySeason: Record<string, any[]> = {}
+  for (const [seasonId, eps] of Object.entries(episodesBySeason)) {
+    viewEpisodesBySeason[seasonId] = eps.map((e) => ({
+      id: e.id,
+      showId: e.show_id,
+      seasonId: e.season_id,
+      episodeNumber: e.episode_number,
+      title: e.title,
+      description: e.description,
+      duration: e.duration,
+      status: e.status,
+      youtubeId: e.youtube_video_id,
+    }))
+  }
+
+  const viewPrev = prev ? { id: prev.id, title: prev.title, episodeNumber: prev.episode_number } : null
+  const viewNext = next ? { id: next.id, title: next.title, episodeNumber: next.episode_number } : null
 
   return (
     <WatchPageContent
-      episode={data.episode}
-      show={data.show}
-      season={data.season}
-      seasons={data.seasons}
-      episodesBySeason={data.episodesBySeason}
-      prevEpisode={prev}
-      nextEpisode={next}
+      episode={viewEpisode as any}
+      show={viewShow as any}
+      season={viewSeason as any}
+      seasons={viewSeasons as any}
+      episodesBySeason={viewEpisodesBySeason}
+      prevEpisode={viewPrev as any}
+      nextEpisode={viewNext as any}
     />
   )
 }

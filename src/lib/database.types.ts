@@ -256,6 +256,7 @@ export type Database = {
           description: string
           description_ar: string | null
           episode_count: number
+          featured: boolean
           fts: unknown
           genre: string
           hero_url: string | null
@@ -280,6 +281,7 @@ export type Database = {
           description?: string
           description_ar?: string | null
           episode_count?: number
+          featured?: boolean
           fts?: unknown
           genre: string
           hero_url?: string | null
@@ -304,6 +306,7 @@ export type Database = {
           description?: string
           description_ar?: string | null
           episode_count?: number
+          featured?: boolean
           fts?: unknown
           genre?: string
           hero_url?: string | null

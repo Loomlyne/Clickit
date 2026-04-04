@@ -1,7 +1,6 @@
 import { HeroBanner } from '@/components/home/hero-banner'
 import { ContentRail } from '@/components/home/content-rail'
 import { ContinueWatchingRail } from '@/components/home/continue-watching-rail'
-import { NewEpisodesRail } from '@/components/home/new-episodes-rail'
 import { GenresGrid } from '@/components/home/genres-grid'
 import { CtaBanner } from '@/components/home/cta-banner'
 import { ReelCard } from '@/components/shows/reel-card'
@@ -10,32 +9,59 @@ import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 import {
   Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 } from '@/components/ui/carousel'
+import { MOCK_REELS } from '@/lib/mock-data'
 import {
-  FEATURED_SHOWS, NOW_STREAMING, COMING_SOON_SHOWS, MOCK_REELS,
-  type Show, getSeasonsByShowId, getEpisodesBySeasonId,
-} from '@/lib/mock-data'
+  getFeaturedShows,
+  getStreamingShows,
+  getComingSoonShows,
+  getNewEpisodeShows,
+  getSeasonsByShowId,
+  getEpisodesBySeasonId,
+} from '@/lib/queries'
 
-const featuredWithEpisodes = FEATURED_SHOWS.map((show) => {
-  const seasons = getSeasonsByShowId(show.id)
-  const firstEpisodeId = seasons
-    .flatMap((s) => getEpisodesBySeasonId(s.id))
-    .find((ep) => ep.status === 'published')?.id
-  return { show, firstEpisodeId }
-})
+export default async function HomePage() {
+  // Fetch all data from Supabase in parallel
+  const [featured, streaming, comingSoon, newEpisodeShows] = await Promise.all([
+    getFeaturedShows(),
+    getStreamingShows(),
+    getComingSoonShows(),
+    getNewEpisodeShows(),
+  ])
 
-export default function HomePage() {
+  // Resolve first episode for each featured show (for "Watch S1 E1" button)
+  const featuredWithEpisodes = await Promise.all(
+    featured.map(async (show) => {
+      const seasons = await getSeasonsByShowId(show.id)
+      const firstSeason = seasons[0]
+      let firstEpisodeId: string | undefined
+      if (firstSeason) {
+        const eps = await getEpisodesBySeasonId(firstSeason.id)
+        firstEpisodeId = eps[0]?.id
+      }
+      return { show, firstEpisodeId }
+    })
+  )
+
   return (
     <div>
-      <HeroBanner shows={featuredWithEpisodes} />
+      {featuredWithEpisodes.length > 0 && (
+        <HeroBanner shows={featuredWithEpisodes} />
+      )}
 
       <div className="mt-16 space-y-10 pb-16">
         <ContinueWatchingRail />
-        <NewEpisodesRail />
+        {newEpisodeShows.length > 0 && (
+          <ContentRail title="New Episodes" shows={newEpisodeShows} />
+        )}
 
-        <ContentRail title="Now Streaming" shows={NOW_STREAMING} />
-        <ContentRail title="Coming Soon" shows={COMING_SOON_SHOWS} />
+        {streaming.length > 0 && (
+          <ContentRail title="Now Streaming" shows={streaming} />
+        )}
+        {comingSoon.length > 0 && (
+          <ContentRail title="Coming Soon" shows={comingSoon} />
+        )}
 
-        {/* Reels section */}
+        {/* Reels section — still mock (no reels table) */}
         <ScrollReveal>
           <section>
             <SectionHeader title="Reels" />

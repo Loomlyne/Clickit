@@ -4,17 +4,15 @@ import { notFound } from 'next/navigation'
 import { SeriesDetailHero } from '@/components/series/series-detail-hero'
 import { SeriesDetailContent } from '@/components/series/series-detail-content'
 import { ContentRail } from '@/components/home/content-rail'
-import { CastRow } from '@/components/series/cast-row'
-import { ReviewsSection } from '@/components/series/reviews-section'
 import { CtaBanner } from '@/components/home/cta-banner'
 import {
-  type Episode,
-  MOCK_SHOWS,
   getShowBySlug,
   getSeasonsByShowId,
   getEpisodesBySeasonId,
-  getShowReviews,
-} from '@/lib/mock-data'
+  getStreamingShows,
+  mapShow,
+  type DbEpisode,
+} from '@/lib/queries'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -22,7 +20,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const show = getShowBySlug(slug)
+  const show = await getShowBySlug(slug)
   if (!show) return { title: 'Show Not Found | Clickit Story' }
   return {
     title: `${show.title} | Clickit Story`,
@@ -30,59 +28,75 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export function generateStaticParams() {
-  return MOCK_SHOWS.map((show) => ({ slug: show.slug }))
-}
-
 export default async function SeriesDetailPage({ params }: Props) {
   const { slug } = await params
-  const show = getShowBySlug(slug)
-  if (!show) notFound()
+  const dbShow = await getShowBySlug(slug)
+  if (!dbShow) notFound()
 
-  const seasons = getSeasonsByShowId(show.id)
+  const show = mapShow(dbShow)
+  const seasons = await getSeasonsByShowId(dbShow.id)
 
-  // Pre-compute all episodes by season on the server (serializable prop)
-  const episodesBySeason: Record<string, Episode[]> = {}
+  // Map seasons to the shape components expect
+  const viewSeasons = seasons.map((s) => ({
+    id: s.id,
+    showId: s.show_id,
+    seasonNumber: s.season_number,
+    title: s.title,
+    episodeCount: s.episode_count,
+  }))
+
+  // Pre-compute all episodes by season
+  const episodesBySeason: Record<string, DbEpisode[]> = {}
   for (const season of seasons) {
-    episodesBySeason[season.id] = getEpisodesBySeasonId(season.id)
+    episodesBySeason[season.id] = await getEpisodesBySeasonId(season.id)
   }
 
-  // Compute first episode label and ID for hero CTA
+  // Map episodes to the shape components expect
+  const viewEpisodesBySeason: Record<string, any[]> = {}
+  for (const [seasonId, eps] of Object.entries(episodesBySeason)) {
+    viewEpisodesBySeason[seasonId] = eps.map((e) => ({
+      id: e.id,
+      showId: e.show_id,
+      seasonId: e.season_id,
+      episodeNumber: e.episode_number,
+      title: e.title,
+      description: e.description,
+      duration: e.duration,
+      status: e.status === 'published' ? 'published' : e.status,
+      youtubeId: e.youtube_video_id,
+      publishedAt: e.created_at,
+    }))
+  }
+
+  // First episode for hero CTA
   let firstEpisodeLabel: string | undefined
   let firstEpisodeId: string | undefined
-  if (seasons.length > 0) {
-    const firstSeason = seasons[0]
-    const firstSeasonEpisodes = episodesBySeason[firstSeason.id] ?? []
-    const firstPublished = firstSeasonEpisodes.find(
-      (ep) => ep.status === 'published'
-    )
+  if (viewSeasons.length > 0) {
+    const firstSeason = viewSeasons[0]
+    const firstSeasonEpisodes = viewEpisodesBySeason[firstSeason.id] ?? []
+    const firstPublished = firstSeasonEpisodes.find((ep: any) => ep.status === 'published')
     if (firstPublished) {
       firstEpisodeLabel = `S${firstSeason.seasonNumber} E${firstPublished.episodeNumber}`
       firstEpisodeId = firstPublished.id
     }
   }
 
-  // Compute "More Like This" — same genre, excluding current show
-  const moreLikeThis = MOCK_SHOWS.filter(
-    (s) => s.genre === show.genre && s.id !== show.id
-  )
+  // More like this — same genre shows
+  const allStreaming = await getStreamingShows()
+  const moreLikeThis = allStreaming.filter((s) => s.genre === show.genre && s.id !== show.id)
 
   return (
     <div>
-      <SeriesDetailHero show={show} seasons={seasons} firstEpisodeLabel={firstEpisodeLabel} firstEpisodeId={firstEpisodeId} />
+      <SeriesDetailHero show={show} seasons={viewSeasons} firstEpisodeLabel={firstEpisodeLabel} firstEpisodeId={firstEpisodeId} />
 
       <div className="px-6 md:px-12 mt-8">
         <SeriesDetailContent
-          seasons={seasons}
-          episodesBySeason={episodesBySeason}
+          seasons={viewSeasons}
+          episodesBySeason={viewEpisodesBySeason}
           showBrandColor={show.brandColor}
           show={show}
         />
       </div>
-
-      {show.cast && show.cast.length > 0 && <CastRow cast={show.cast} />}
-
-      <ReviewsSection reviews={getShowReviews(show.id)} />
 
       {moreLikeThis.length > 0 && (
         <div className="mt-12 pb-16">
