@@ -1,24 +1,25 @@
 import { HeroBanner } from '@/components/home/hero-banner'
 import { ContentRail } from '@/components/home/content-rail'
 import { ContinueWatchingRail } from '@/components/home/continue-watching-rail'
+import { NewEpisodesRail } from '@/components/home/new-episodes-rail'
 import { GenresGrid } from '@/components/home/genres-grid'
 import { CtaBanner } from '@/components/home/cta-banner'
 import {
   getFeaturedShows,
   getStreamingShows,
   getComingSoonShows,
-  getNewEpisodeShows,
+  getNewEpisodes,
   getSeasonsByShowId,
   getEpisodesBySeasonId,
 } from '@/lib/queries'
 
 export default async function HomePage() {
   // Fetch all data from Supabase in parallel
-  const [featured, streaming, comingSoon, newEpisodeShows] = await Promise.all([
+  const [featured, streaming, comingSoon, newEpisodes] = await Promise.all([
     getFeaturedShows(),
     getStreamingShows(),
     getComingSoonShows(),
-    getNewEpisodeShows(),
+    getNewEpisodes(),
   ])
 
   // Resolve first episode for each featured show (for "Watch S1 E1" button)
@@ -43,8 +44,8 @@ export default async function HomePage() {
 
       <div className="mt-20 space-y-14 pb-20">
         <ContinueWatchingRail />
-        {newEpisodeShows.length > 0 && (
-          <ContentRail title="New Episodes" shows={newEpisodeShows} />
+        {newEpisodes.length > 0 && (
+          <NewEpisodesRail episodes={newEpisodes} />
         )}
 
         {streaming.length > 0 && (

@@ -157,32 +157,34 @@ export async function getComingSoonShows(): Promise<ViewShow[]> {
   return (data ?? []).map(mapShow)
 }
 
-export async function getNewEpisodeShows(): Promise<ViewShow[]> {
+export type NewEpisodeItem = ViewEpisode & {
+  showTitle: string
+  showSlug: string
+  showBrandColor: ViewShow['brandColor']
+  showPosterUrl?: string
+}
+
+export async function getNewEpisodes(): Promise<NewEpisodeItem[]> {
   const supabase = await createClient()
-  // Get recently published episodes and map back to unique shows
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  const { data: episodes } = await supabase
+  const { data } = await supabase
     .from('episodes')
-    .select('show_id')
+    .select('*, shows!inner(title, slug, brand_color, poster_url, status)')
     .eq('status', 'published')
     .eq('archived', false)
     .gte('created_at', thirtyDaysAgo.toISOString())
     .order('created_at', { ascending: false })
+    .limit(20)
 
-  if (!episodes || episodes.length === 0) return []
-
-  // Get unique show IDs
-  const showIds = [...new Set(episodes.map((e) => e.show_id))]
-
-  const { data: shows } = await supabase
-    .from('shows')
-    .select('*')
-    .in('id', showIds)
-    .eq('archived', false)
-
-  return (shows ?? []).map(mapShow)
+  return (data ?? []).map((e: any) => ({
+    ...mapEpisode(e),
+    showTitle: e.shows.title,
+    showSlug: e.shows.slug,
+    showBrandColor: (e.shows.brand_color || 'brand-blue') as ViewShow['brandColor'],
+    showPosterUrl: e.shows.poster_url ?? undefined,
+  }))
 }
 
 // ---------------------------------------------------------------------------
