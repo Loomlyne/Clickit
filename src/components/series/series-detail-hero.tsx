@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion, AnimatePresence, MotionConfig } from 'motion/react'
 import { ThumbsUp, ChevronDown } from 'lucide-react'
 
-import { CinematicBackdrop } from '@/components/primitives/cinematic-backdrop'
 import { GlowBadge } from '@/components/primitives/glow-badge'
 import { WatchlistToggleButton } from '@/components/watchlist/watchlist-toggle-button'
 import type { ViewShow, ViewSeason } from '@/lib/queries'
-import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 import { CINEMA_EASE } from '@/lib/cinema'
 
 interface SeriesDetailHeroProps {
@@ -37,11 +36,8 @@ export function SeriesDetailHero({
     return () => window.removeEventListener('scroll', handler)
   }, [])
 
-  const brandColorHex = BRAND_COLOR_HEX[show.brandColor] ?? '#2C3569'
-
   return (
     <MotionConfig reducedMotion="user">
-      {/* Sticky mini-header — appears when scrolled past hero */}
       <AnimatePresence>
         {scrolled && (
           <motion.div
@@ -49,13 +45,13 @@ export function SeriesDetailHero({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -64, opacity: 0 }}
             transition={{ duration: 0.3, ease: CINEMA_EASE }}
-            className="fixed top-16 left-0 right-0 z-40 bg-black/90 backdrop-blur-xl border-b border-white/[0.06] px-6 md:px-12 py-3 flex items-center justify-between"
+            className="fixed left-4 right-4 top-24 z-40 mx-auto flex max-w-7xl items-center justify-between rounded-[20px] border border-white/10 bg-[rgba(10,13,19,0.88)] px-5 py-3 backdrop-blur-xl"
           >
             <span className="text-white font-semibold">{show.title}</span>
             {firstEpisodeId && (
               <Link
                 href={`/watch/${firstEpisodeId}`}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white px-5 py-2 text-xs font-semibold text-black transition-colors hover:bg-white/90"
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff]"
               >
                 &#9654; Watch Now
               </Link>
@@ -64,25 +60,22 @@ export function SeriesDetailHero({
         )}
       </AnimatePresence>
 
-      {/* Main 100vh hero */}
-      <div className="relative min-h-dvh overflow-hidden -mt-16">
-        <CinematicBackdrop
-          brandColor={brandColorHex}
-          intensity="high"
-          watermarkText={show.title.split(' ')[0]}
-          imageUrl={show.heroImageUrl}
-        />
+      <div className="relative -mt-24 min-h-dvh overflow-hidden">
+        <div className="absolute inset-0 bg-black" />
+        {show.heroImageUrl && (
+          <Image
+            src={show.heroImageUrl}
+            alt=""
+            fill
+            priority
+            aria-hidden
+            sizes="100vw"
+            className="object-cover object-center opacity-80"
+          />
+        )}
 
-        {/* Ken Burns subtle zoom */}
-        <motion.div
-          className="absolute inset-0"
-          animate={{ scale: 1.04 }}
-          transition={{ duration: 10, ease: 'linear', repeat: Infinity, repeatType: 'reverse' }}
-        />
-
-        {/* Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
 
         {/* Content — bottom-third, left-aligned */}
         <div className="absolute bottom-0 left-0 px-6 md:px-12 pb-16 md:pb-20 max-w-3xl z-10">
@@ -123,9 +116,8 @@ export function SeriesDetailHero({
             {show.genre}
           </motion.p>
 
-          {/* Show title — display font */}
           <motion.h1
-            className="font-display font-bold text-white leading-none mb-5 drop-shadow-2xl"
+            className="font-display mb-5 font-semibold leading-none text-white drop-shadow-2xl"
             style={{ fontSize: 'clamp(3rem, 7vw, 6rem)' }}
             initial={{ opacity: 0, x: -24, y: 8 }}
             animate={{ opacity: 1, x: 0, y: 0 }}
@@ -176,7 +168,7 @@ export function SeriesDetailHero({
             {firstEpisodeId && show.status === 'streaming' ? (
               <Link
                 href={`/watch/${firstEpisodeId}`}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-black transition-colors hover:bg-white/90"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff]"
               >
                 &#9654; {firstEpisodeLabel ? `Watch ${firstEpisodeLabel}` : 'Watch Now'}
               </Link>
