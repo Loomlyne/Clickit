@@ -30,7 +30,7 @@ export function CinematicBackdrop({
           src={imageUrl}
           alt=""
           fill
-          className="object-cover opacity-40"
+          className="object-cover opacity-60"
           sizes="100vw"
           priority
           aria-hidden
