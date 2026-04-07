@@ -115,23 +115,27 @@ export function HeroSlide({ show, isActive, firstEpisodeId }: HeroSlideProps) {
             transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.55 }}
           >
             {firstEpisodeId && show.status === 'streaming' ? (
-              <Link
-                href={`/watch/${firstEpisodeId}`}
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[0_16px_40px_rgba(96,115,255,0.28)] transition-colors hover:bg-[#7082ff]"
-              >
-                &#9654; Watch first episode
-              </Link>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
+                <Link
+                  href={`/watch/${firstEpisodeId}`}
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[0_16px_40px_rgba(96,115,255,0.28)] transition-colors hover:bg-[#7082ff]"
+                >
+                  &#9654; Watch first episode
+                </Link>
+              </motion.div>
             ) : (
               <span className="inline-flex cursor-not-allowed items-center rounded-full border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-medium text-white/50">
                 Coming Soon
               </span>
             )}
-            <Link
-              href={`/series/${show.slug}`}
-              className="inline-flex items-center rounded-full border border-white/14 bg-white/[0.04] px-6 py-3 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/[0.08]"
-            >
-              View details
-            </Link>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
+              <Link
+                href={`/series/${show.slug}`}
+                className="inline-flex items-center rounded-full border border-white/14 bg-white/[0.04] px-6 py-3 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/[0.08]"
+              >
+                View details
+              </Link>
+            </motion.div>
           </motion.div>
         </div>
       </div>

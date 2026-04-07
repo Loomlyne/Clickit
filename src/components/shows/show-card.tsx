@@ -20,6 +20,7 @@ export function ShowCard({ show }: ShowCardProps) {
     <Link href={`/series/${show.slug}`} className="group block cursor-pointer">
       <motion.div
         whileHover={{ y: -4 }}
+        whileTap={{ scale: 0.97, y: 0 }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.24)]"
         style={{ willChange: 'transform' }}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
@@ -18,30 +18,50 @@ export function useWatchlist(
 ): UseWatchlistReturn {
   const [isInList, setIsInList] = useState(initialSaved)
   const [isLoading, setIsLoading] = useState(false)
+  const busyRef = useRef(false)
   const router = useRouter()
 
-  const toggle = useCallback(() => {
-    if (!userId) {
-      router.push(`/auth?next=${encodeURIComponent(window.location.pathname)}`)
+  const toggle = useCallback(async () => {
+    if (!userId || busyRef.current) {
+      if (!userId) router.push(`/auth?next=${encodeURIComponent(window.location.pathname)}`)
       return
     }
 
+    busyRef.current = true
     const prev = isInList
     setIsInList(!prev)
     setIsLoading(true)
 
-    const supabase = createClient()
-    const mutation = prev
-      ? supabase.from('watchlist').delete().eq('user_id', userId).eq('show_id', showId)
-      : supabase.from('watchlist').insert({ user_id: userId, show_id: showId })
+    try {
+      const supabase = createClient()
 
-    mutation.then(({ error }) => {
+      // Verify session is still valid before mutating
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setIsInList(prev)
+        setIsLoading(false)
+        busyRef.current = false
+        router.push(`/auth?next=${encodeURIComponent(window.location.pathname)}`)
+        return
+      }
+
+      const { error } = prev
+        ? await supabase.from('watchlist').delete().eq('user_id', userId).eq('show_id', showId)
+        : await supabase.from('watchlist').insert({ user_id: userId, show_id: showId })
+
       if (error) {
+        console.error('Watchlist mutation error:', error.message, error.code)
         setIsInList(prev)
         toast.error(prev ? 'Failed to remove from list' : 'Failed to add to list')
       }
+    } catch (err) {
+      console.error('Watchlist network error:', err)
+      setIsInList(prev)
+      toast.error('Network error — please try again')
+    } finally {
       setIsLoading(false)
-    })
+      busyRef.current = false
+    }
   }, [showId, userId, isInList, router])
 
   return { isInList, toggle, isLoading }

@@ -169,12 +169,14 @@ export function SeriesDetailHero({
             transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.75 }}
           >
             {firstEpisodeId && show.status === 'streaming' ? (
-              <Link
-                href={`/watch/${firstEpisodeId}`}
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff]"
-              >
-                &#9654; {firstEpisodeLabel ? `Watch ${firstEpisodeLabel}` : 'Watch Now'}
-              </Link>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
+                <Link
+                  href={`/watch/${firstEpisodeId}`}
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff]"
+                >
+                  &#9654; {firstEpisodeLabel ? `Watch ${firstEpisodeLabel}` : 'Watch Now'}
+                </Link>
+              </motion.div>
             ) : (
               <span className="inline-flex items-center rounded-full bg-white/10 px-7 py-3 text-sm font-medium text-white/50 cursor-not-allowed">
                 Coming Soon

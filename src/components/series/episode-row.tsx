@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { motion } from 'motion/react'
 import { Play, Clock, EyeOff } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -163,12 +164,14 @@ export function EpisodeRow({
 
   if (isPublished) {
     return (
-      <Link
-        href={`/watch/${episode.id}`}
-        className="group flex cursor-pointer items-start gap-4 rounded-[20px] border border-transparent p-4 transition-colors duration-200 hover:border-white/8 hover:bg-surface-2/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        {rowContent}
-      </Link>
+      <motion.div whileTap={{ scale: 0.985 }} transition={{ duration: 0.15 }}>
+        <Link
+          href={`/watch/${episode.id}`}
+          className="group flex cursor-pointer items-start gap-4 rounded-[20px] border border-transparent p-4 transition-colors duration-200 hover:border-white/8 hover:bg-surface-2/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {rowContent}
+        </Link>
+      </motion.div>
     )
   }
 

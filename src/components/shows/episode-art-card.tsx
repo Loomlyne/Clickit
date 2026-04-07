@@ -33,6 +33,7 @@ export function EpisodeArtCard({ episode }: EpisodeArtCardProps) {
     <Link href={`/watch/${episode.id}`} className="group block cursor-pointer flex-shrink-0 w-[320px]">
       <motion.div
         whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
       >
         <ShowArt brandColor={brandColorHex} title={episode.showTitle} aspectRatio="16/9" imageUrl={thumbnailUrl}>

@@ -34,9 +34,11 @@ export function LikeButton({ showId, initialLiked = false, userId }: LikeButtonP
   }
 
   return (
-    <button
+    <motion.button
       onClick={handleClick}
       disabled={isLoading}
+      whileHover={{ scale: 1.08 }}
+      whileTap={{ scale: 0.9 }}
       aria-label={isLiked ? 'Unlike this show' : 'Like this show'}
       className={cn(
         'relative flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-sm transition-all duration-300',
@@ -106,6 +108,6 @@ export function LikeButton({ showId, initialLiked = false, userId }: LikeButtonP
           )}
         />
       </motion.span>
-    </button>
+    </motion.button>
   )
 }
