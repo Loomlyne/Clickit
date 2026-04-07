@@ -12,17 +12,17 @@ interface EpisodeNavProps {
 }
 
 const baseClasses =
-  'flex-1 min-h-[44px] rounded-lg border border-border p-4 transition-colors duration-200'
+  'flex-1 min-h-[44px] rounded-[18px] border border-white/10 bg-white/[0.03] p-4 transition-colors duration-200'
 
 const enabledClasses =
-  'group hover:bg-surface-2/50 hover:text-foreground text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+  'group text-muted-foreground hover:bg-surface-2/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 const disabledClasses =
   'opacity-50 pointer-events-none cursor-default text-text-muted border-border/50'
 
 export function EpisodeNav({ prev, next }: EpisodeNavProps) {
   return (
-    <div className="flex flex-col sm:flex-row gap-4">
+    <div className="flex flex-row gap-4">
       {/* Previous button */}
       {prev ? (
         <Link

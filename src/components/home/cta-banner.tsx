@@ -7,48 +7,44 @@ const BRAND_COLORS = ['#2C3569', '#9F54A0', '#50A258', '#DB3F34', '#EA8C2E', '#F
 export function CtaBanner() {
   return (
     <ScrollReveal>
-      <div className="relative bg-black overflow-hidden py-20 md:py-28 px-6 md:px-12">
-        {/* Brand color strip at top */}
-        <div className="absolute top-0 left-0 right-0 h-1 flex" aria-hidden="true">
-          {BRAND_COLORS.map((color) => (
-            <div key={color} className="flex-1" style={{ background: color }} />
-          ))}
-        </div>
+      <div className="px-6 md:px-12">
+        <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] px-6 py-16 shadow-[0_32px_90px_rgba(0,0,0,0.28)] md:px-10 md:py-20">
+          <div className="absolute left-10 top-8 flex h-1 w-40 overflow-hidden rounded-full" aria-hidden="true">
+            {BRAND_COLORS.map((color) => (
+              <div key={color} className="flex-1" style={{ background: color }} />
+            ))}
+          </div>
 
-        {/* Subtle radial glow */}
-        <div
-          className="absolute inset-0"
-          aria-hidden="true"
-          style={{
-            background: 'radial-gradient(ellipse 60% 50% at 50% 100%, rgba(44,53,105,0.3), transparent)',
-          }}
-        />
+          <div
+            className="absolute inset-0"
+            aria-hidden="true"
+            style={{
+              background: 'radial-gradient(circle at top center, rgba(96,115,255,0.24), transparent 38%)',
+            }}
+          />
 
-        <div className="relative text-center max-w-3xl mx-auto">
-          <h2
-            className="font-display font-bold text-white leading-tight mb-4"
-            style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}
-          >
-            Stream Original Content<br />from the UAE
-          </h2>
-          <p className="text-white/60 text-lg mb-8 max-w-xl mx-auto">
-            15 original programs. Travel, health, music, comedy, cooking, and more — produced from Abu Dhabi.
-          </p>
-          <Button
-            size="lg"
-            className="text-white font-semibold px-8 py-3 rounded-xl"
-            style={{ background: 'linear-gradient(135deg, #2C3569, #9F54A0)' }}
-            asChild
-          >
-            <Link href="/auth">Start Watching Free</Link>
-          </Button>
-        </div>
-
-        {/* Brand color strip at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-1 flex" aria-hidden="true">
-          {BRAND_COLORS.map((color) => (
-            <div key={color} className="flex-1" style={{ background: color }} />
-          ))}
+          <div className="relative mx-auto max-w-3xl text-center">
+            <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.28em] text-white/38">
+              Clickit membership
+            </p>
+            <h2
+              className="font-display mb-4 font-semibold leading-[0.96] text-white"
+              style={{ fontSize: 'clamp(2.4rem, 5vw, 4.4rem)' }}
+            >
+              Stream original programming with a calmer, premium viewing experience.
+            </h2>
+            <p className="mx-auto mb-8 max-w-2xl text-base leading-7 text-white/58 md:text-lg">
+              Discover travel, health, music, comedy, cooking, and more from Abu Dhabi in a product shell built to let the stories lead.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Button size="lg" className="px-8" asChild>
+                <Link href="/auth">Start Watching Free</Link>
+              </Button>
+              <Button size="lg" variant="outline" className="px-8" asChild>
+                <Link href="/coming-soon">Explore what’s next</Link>
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </ScrollReveal>

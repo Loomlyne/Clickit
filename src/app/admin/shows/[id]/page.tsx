@@ -46,22 +46,25 @@ export default async function ShowDetailPage({
   }
 
   return (
-    <div>
-      {/* Back link */}
+    <div className="space-y-6">
       <Link
         href="/admin"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+        className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="size-4" />
         All Shows
       </Link>
 
-      {/* Show info card */}
-      <div className="rounded-lg border border-border bg-[var(--card)] p-5 mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] md:p-8">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h1 className="text-xl font-semibold">{show.title}</h1>
-            <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+              Show Detail
+            </p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+              {show.title}
+            </h1>
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <span>{show.genre}</span>
               <span>·</span>
               <span>{show.episode_count} episodes</span>
@@ -74,12 +77,19 @@ export default async function ShowDetailPage({
                 </>
               )}
             </div>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-muted-foreground md:text-base">
+              {show.description}
+            </p>
           </div>
-          <StatusBadge status={show.status} />
+          <div className="flex flex-col items-start gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-4">
+            <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              Publishing state
+            </span>
+            <StatusBadge status={show.status} />
+          </div>
         </div>
       </div>
 
-      {/* Season tabs with episodes */}
       <SeasonTabs
         seasons={seasons ?? []}
         episodesBySeason={episodesBySeason}

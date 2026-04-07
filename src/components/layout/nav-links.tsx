@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
+  { label: 'Home', href: '/' },
   { label: 'Coming Soon', href: '/coming-soon' },
   { label: 'Support', href: '/support' },
 ]
@@ -14,18 +15,18 @@ export function NavLinks() {
 
   return (
     <nav aria-label="Site navigation">
-      <div className="flex items-center gap-8">
+      <div className="flex items-center gap-1 rounded-full border border-white/8 bg-white/[0.02] p-1.5">
         {NAV_LINKS.map(({ label, href }) => {
-          const isActive = pathname.startsWith(href)
+          const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
           return (
             <Link
               key={href}
               href={href}
               className={cn(
-                'relative whitespace-nowrap text-sm font-medium tracking-wide transition-colors pb-0.5',
+                'rounded-full px-3 py-2 whitespace-nowrap text-sm font-medium tracking-[-0.01em] transition-colors',
                 isActive
-                  ? 'text-white after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-[#5B7FFF]'
-                  : 'text-white/60 hover:text-white'
+                  ? 'bg-white/[0.08] text-white'
+                  : 'text-white/56 hover:text-white'
               )}
             >
               {label}

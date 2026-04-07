@@ -87,10 +87,25 @@ export function SeasonTabs({ seasons, episodesBySeason, showId }: SeasonTabsProp
 
   return (
     <TooltipProvider delayDuration={300}>
-      <Tabs defaultValue={defaultTab}>
-        {/* Tabs row with Add Season button inline */}
-        <div className="flex items-center gap-3 mb-4">
-          <TabsList>
+      <Tabs defaultValue={defaultTab} className="space-y-4">
+        <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+                Seasons
+              </p>
+              <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+                Episode management
+              </h2>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleAddSeason}>
+              <Plus className="mr-1 size-4" />
+              Add Season
+            </Button>
+          </div>
+
+          <div className="mt-5 overflow-x-auto">
+            <TabsList>
             {seasons.map((season) => {
               const epCount = episodesBySeason[season.id]?.length ?? 0
               return (
@@ -116,31 +131,30 @@ export function SeasonTabs({ seasons, episodesBySeason, showId }: SeasonTabsProp
                 </TabsTrigger>
               )
             })}
-          </TabsList>
-          <Button variant="outline" size="sm" onClick={handleAddSeason}>
-            <Plus className="mr-1 size-4" />
-            Add Season
-          </Button>
+            </TabsList>
+          </div>
         </div>
 
         {seasons.map((season) => {
           const seasonEpisodes = episodesBySeason[season.id] ?? []
           return (
             <TabsContent key={season.id} value={season.id}>
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-muted-foreground">
-                  {seasonEpisodes.length} episode{seasonEpisodes.length !== 1 ? 's' : ''}
-                </p>
-                <Button size="sm" onClick={() => handleAddEpisode(season.id)}>
-                  <Plus className="mr-1 size-4" />
-                  Add Episode
-                </Button>
+              <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    {seasonEpisodes.length} episode{seasonEpisodes.length !== 1 ? 's' : ''}
+                  </p>
+                  <Button size="sm" onClick={() => handleAddEpisode(season.id)}>
+                    <Plus className="mr-1 size-4" />
+                    Add Episode
+                  </Button>
+                </div>
+                <EpisodesTable
+                  episodes={seasonEpisodes}
+                  showId={showId}
+                  seasonId={season.id}
+                />
               </div>
-              <EpisodesTable
-                episodes={seasonEpisodes}
-                showId={showId}
-                seasonId={season.id}
-              />
             </TabsContent>
           )
         })}

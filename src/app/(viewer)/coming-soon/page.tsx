@@ -40,26 +40,17 @@ export default async function ComingSoonPage() {
   )
 
   return (
-    <div className="pb-16">
-      {/* Page header — anticipation design */}
-      <div className="relative py-20 px-6 md:px-12 text-center overflow-hidden">
-        {/* Subtle radial glow background */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'radial-gradient(ellipse 60% 80% at 50% 100%, rgba(159,84,160,0.15), transparent)',
-          }}
-        />
-        <div className="relative">
+    <div className="pb-20">
+      <div className="px-6 py-8 md:px-12">
+        <div className="mx-auto max-w-5xl rounded-[28px] border border-white/10 bg-white/[0.03] px-8 py-12 text-center shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
           <p
-            className="text-sm tracking-[0.3em] uppercase mb-4"
+            className="mb-4 text-[11px] tracking-[0.28em] uppercase"
             style={{ color: 'var(--color-brand-purple-safe)' }}
           >
             What&apos;s Next
           </p>
           <h1
-            className="font-display font-bold text-white leading-tight"
+            className="font-display font-semibold leading-tight text-white"
             style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}
           >
             What&apos;s Coming

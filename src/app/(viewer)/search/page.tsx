@@ -19,7 +19,8 @@ export default async function SearchPage({ searchParams }: Props) {
   if (!q || q.trim().length === 0) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
-        <h1 className="font-display text-3xl text-white">
+        <p className="mb-4 text-[11px] uppercase tracking-[0.28em] text-white/34">Search</p>
+        <h1 className="font-display text-4xl font-semibold tracking-[-0.04em] text-white">
           Search Clickit Story
         </h1>
         <p className="mt-3 max-w-sm text-white/50">
@@ -47,11 +48,11 @@ export default async function SearchPage({ searchParams }: Props) {
   // No results state
   if (shows.length === 0 && episodes.length === 0) {
     return (
-      <div className="px-6 pb-16 pt-24 md:px-12 md:pt-28">
-        <p className="text-sm uppercase tracking-[0.3em] text-white/40">
+      <div className="px-6 pb-16 pt-12 md:px-12">
+        <p className="text-[11px] uppercase tracking-[0.28em] text-white/34">
           Results for
         </p>
-        <h1 className="mt-1 font-display text-3xl">
+        <h1 className="mt-2 font-display text-4xl font-semibold tracking-[-0.04em]">
           &ldquo;{q}&rdquo;
         </h1>
         <div className="mt-16 flex flex-col items-center text-center">
@@ -77,7 +78,7 @@ export default async function SearchPage({ searchParams }: Props) {
 
   // Results state
   return (
-    <div className="px-6 pb-16 pt-24 md:px-12 md:pt-28">
+    <div className="px-6 pb-16 pt-12 md:px-12">
       <SearchResults query={q} shows={shows} episodes={episodes} />
     </div>
   )

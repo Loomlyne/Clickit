@@ -26,14 +26,14 @@ export function SeasonSelector({
             key={season.id}
             onClick={() => onSeasonChange(season.id)}
             className={cn(
-              'px-4 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer border',
+              'rounded-full border px-4 py-2 text-sm font-medium transition-all cursor-pointer',
               activeSeason === season.id
-                ? 'text-black border-transparent'
-                : 'bg-white/5 text-white/60 hover:text-white border-white/10'
+                ? 'text-white border-transparent'
+                : 'bg-white/[0.03] text-white/60 hover:text-white border-white/10'
             )}
             style={
               activeSeason === season.id
-                ? { background: brandColorHex, borderColor: 'transparent' }
+                ? { background: brandColorHex, borderColor: 'transparent', boxShadow: `0 16px 40px ${brandColorHex}30` }
                 : {}
             }
           >

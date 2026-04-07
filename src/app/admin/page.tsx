@@ -13,10 +13,7 @@ export default async function AdminPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold">Shows</h1>
-      </div>
+    <div className="space-y-6">
       <ShowsTable shows={shows ?? []} />
     </div>
   )

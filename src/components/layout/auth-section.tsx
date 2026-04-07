@@ -67,7 +67,11 @@ export function AuthSection({ initialUser }: AuthSectionProps) {
 
   if (!user) {
     return (
-      <Button variant="ghost" size="sm" asChild>
+      <Button
+        size="sm"
+        className="h-10 rounded-[16px] px-5 text-sm shadow-[0_14px_34px_rgba(96,115,255,0.22)]"
+        asChild
+      >
         <Link href="/auth">Sign In</Link>
       </Button>
     )

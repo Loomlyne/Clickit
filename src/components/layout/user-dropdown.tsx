@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,8 @@ interface UserDropdownProps {
 }
 
 export function UserDropdown({ children, onSignOut, isAdmin = false, email }: UserDropdownProps) {
+  const router = useRouter()
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -29,27 +31,23 @@ export function UserDropdown({ children, onSignOut, isAdmin = false, email }: Us
           {email ?? 'Account'}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/profile">
-            <User className="mr-2 size-4" />
-            Profile
-          </Link>
+        <DropdownMenuItem onSelect={() => router.push('/profile')}>
+          <User className="mr-2 size-4" />
+          Profile
         </DropdownMenuItem>
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/admin">
-                <Shield className="mr-2 size-4" />
-                Admin
-              </Link>
+            <DropdownMenuItem onSelect={() => router.push('/admin')}>
+              <Shield className="mr-2 size-4" />
+              Admin
             </DropdownMenuItem>
           </>
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-brand-red-safe focus:text-brand-red-safe"
-          onSelect={onSignOut}
+          onSelect={() => onSignOut()}
         >
           <LogOut className="mr-2 size-4" />
           Sign Out

@@ -31,81 +31,82 @@ function XIcon({ className }: { className?: string }) {
 
 export function Footer() {
   return (
-    <footer className="bg-black border-t border-white/[0.06]">
+    <footer className="relative mt-24 border-t border-white/[0.06] bg-[#07090d]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
       <div className="mx-auto max-w-7xl px-6 py-16 md:px-12">
-        <div className="flex flex-col gap-12 lg:flex-row lg:justify-between">
-
-          {/* Brand block */}
-          <div className="flex flex-col gap-6 lg:max-w-xs">
-            <Image
-              src="/brand/Clickit_final_logo.svg"
-              alt="Clickit Story"
-              width={140}
-              height={36}
-              className="h-9 w-auto"
-            />
-            <p className="text-sm text-white/45 leading-relaxed max-w-[220px]">
-              Original shows from the UAE.<br />
-              Produced by Spacelight Studios FZ LLC.
-            </p>
-            <div className="flex gap-3">
-              <a href="#" aria-label="YouTube" className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/10 text-white/40 transition-colors hover:border-white/30 hover:text-white">
-                <YouTubeIcon className="h-4 w-4" />
-              </a>
-              <a href="#" aria-label="Instagram" className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/10 text-white/40 transition-colors hover:border-white/30 hover:text-white">
-                <InstagramIcon className="h-4 w-4" />
-              </a>
-              <a href="#" aria-label="X (Twitter)" className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/10 text-white/40 transition-colors hover:border-white/30 hover:text-white">
-                <XIcon className="h-4 w-4" />
-              </a>
+        <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr]">
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-md">
+            <div className="flex flex-col gap-5">
+              <Image
+                src="/brand/Clickit_final_logo.svg"
+                alt="Clickit Story"
+                width={156}
+                height={36}
+                className="h-9 w-auto"
+              />
+              <p className="max-w-xl text-base leading-7 text-white/66">
+                Clickit brings original programs from Abu Dhabi into a premium streaming experience built around story, craft, and cultural range.
+              </p>
+              <div className="flex flex-wrap items-center gap-3 text-sm text-white/48">
+                <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">15 original programs</span>
+                <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">Produced by Spacelight Studios FZ LLC</span>
+              </div>
+              <div className="flex gap-3 pt-1">
+                <a href="#" aria-label="YouTube" className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/48 transition-colors hover:border-white/20 hover:text-white">
+                  <YouTubeIcon className="h-4 w-4" />
+                </a>
+                <a href="#" aria-label="Instagram" className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/48 transition-colors hover:border-white/20 hover:text-white">
+                  <InstagramIcon className="h-4 w-4" />
+                </a>
+                <a href="#" aria-label="X (Twitter)" className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/48 transition-colors hover:border-white/20 hover:text-white">
+                  <XIcon className="h-4 w-4" />
+                </a>
+              </div>
             </div>
           </div>
 
-          {/* Link columns */}
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 lg:grid-cols-2">
             <div>
-              <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/55">Navigate</h4>
+              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/42">Navigate</h4>
               <ul className="space-y-3">
-                <li><Link href="/" className="text-sm text-white/40 transition-colors hover:text-white">Home</Link></li>
-                <li><Link href="/coming-soon" className="text-sm text-white/40 transition-colors hover:text-white">Coming Soon</Link></li>
+                <li><Link href="/" className="text-sm text-white/56 transition-colors hover:text-white">Home</Link></li>
+                <li><Link href="/coming-soon" className="text-sm text-white/56 transition-colors hover:text-white">Coming Soon</Link></li>
+                <li><Link href="/support" className="text-sm text-white/56 transition-colors hover:text-white">Support</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/55">Shows</h4>
+              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/42">Highlights</h4>
               <ul className="space-y-3">
-                <li><Link href="/" className="text-sm text-white/40 transition-colors hover:text-white">Entertainment</Link></li>
-                <li><Link href="/" className="text-sm text-white/40 transition-colors hover:text-white">Documentary</Link></li>
-                <li><Link href="/" className="text-sm text-white/40 transition-colors hover:text-white">Health</Link></li>
-                <li><Link href="/" className="text-sm text-white/40 transition-colors hover:text-white">Tech</Link></li>
+                <li><span className="text-sm text-white/56">Travel</span></li>
+                <li><span className="text-sm text-white/56">Health</span></li>
+                <li><span className="text-sm text-white/56">Music</span></li>
+                <li><span className="text-sm text-white/56">Tech</span></li>
               </ul>
             </div>
             <div>
-              <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/55">Support</h4>
+              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/42">Account</h4>
               <ul className="space-y-3">
-                <li><Link href="/support" className="text-sm text-white/40 transition-colors hover:text-white">Contact Us</Link></li>
-                <li><Link href="/support#faq" className="text-sm text-white/40 transition-colors hover:text-white">FAQ</Link></li>
-                <li><Link href="/auth" className="text-sm text-white/40 transition-colors hover:text-white">Sign In</Link></li>
+                <li><Link href="/auth" className="text-sm text-white/56 transition-colors hover:text-white">Sign In</Link></li>
+                <li><Link href="/my-list" className="text-sm text-white/56 transition-colors hover:text-white">My List</Link></li>
+                <li><Link href="/profile" className="text-sm text-white/56 transition-colors hover:text-white">Profile</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/55">Legal</h4>
+              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/42">Legal</h4>
               <ul className="space-y-3">
-                <li><Link href="#" className="text-sm text-white/40 transition-colors hover:text-white">Privacy Policy</Link></li>
-                <li><Link href="#" className="text-sm text-white/40 transition-colors hover:text-white">Terms of Service</Link></li>
+                <li><Link href="#" className="text-sm text-white/56 transition-colors hover:text-white">Privacy Policy</Link></li>
+                <li><Link href="#" className="text-sm text-white/56 transition-colors hover:text-white">Terms of Service</Link></li>
               </ul>
             </div>
           </div>
         </div>
 
-        {/* Copyright */}
-        <div className="mt-12 border-t border-white/[0.06] pt-8">
-          <p className="text-xs text-white/25">
-            &copy; {new Date().getFullYear()} Clickit Story · All rights reserved
-          </p>
+        <div className="mt-12 flex flex-col gap-4 border-t border-white/[0.06] pt-8 text-xs text-white/28 md:flex-row md:items-center md:justify-between">
+          <p>&copy; {new Date().getFullYear()} Clickit Story. All rights reserved.</p>
+          <p>Previewing a redesigned product shell for viewer and admin surfaces.</p>
         </div>
       </div>
 
-      {/* Brand color strip */}
       <div className="flex h-1" aria-hidden="true">
         {BRAND_COLORS.map((color) => (
           <div key={color} className="flex-1" style={{ background: color }} />

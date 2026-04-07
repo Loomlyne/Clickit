@@ -18,57 +18,61 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
     : null
 
   return (
-    <Link href={`/watch/${item.episodeId}`} className="group block basis-[320px] flex-shrink-0">
-      {/* Thumbnail */}
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl">
-        {thumbnailUrl ? (
-          <Image
-            src={thumbnailUrl}
-            alt={item.episodeTitle}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            sizes="320px"
-          />
-        ) : (
-          <ShowArt brandColor={brandHex} title={item.episodeTitle} aspectRatio="16/9">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span
-                className="text-3xl font-black text-white/30"
-                style={{ textShadow: `0 0 24px ${brandHex}60` }}
-              >
-                E{item.episodeNumber}
-              </span>
-            </div>
-          </ShowArt>
-        )}
+    <Link href={`/watch/${item.episodeId}`} className="group block basis-[340px] flex-shrink-0">
+      <div className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+        <div className="relative aspect-video w-full overflow-hidden">
+          {thumbnailUrl ? (
+            <Image
+              src={thumbnailUrl}
+              alt={item.episodeTitle}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              sizes="340px"
+            />
+          ) : (
+            <ShowArt brandColor={brandHex} title={item.episodeTitle} aspectRatio="16/9">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span
+                  className="text-3xl font-black text-white/30"
+                  style={{ textShadow: `0 0 24px ${brandHex}60` }}
+                >
+                  E{item.episodeNumber}
+                </span>
+              </div>
+            </ShowArt>
+          )}
 
-        {/* Hover play icon — glass-morph circle */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-          <div className="flex size-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-md">
-            <Play className="size-5 fill-white text-white" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#06070a] via-[#06070a]/25 to-transparent" />
+
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <div className="flex size-12 items-center justify-center rounded-full border border-white/16 bg-[rgba(8,11,18,0.76)] backdrop-blur-md">
+              <Play className="size-5 fill-white text-white" />
+            </div>
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/40">
+            <div
+              className="h-full transition-all duration-300"
+              style={{
+                width: `${item.progressPercent}%`,
+                backgroundColor: brandHex,
+              }}
+            />
           </div>
         </div>
-
-        {/* Progress bar — thin, at very bottom of thumbnail, no gap */}
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/40">
-          <div
-            className="h-full transition-all duration-300"
-            style={{
-              width: `${item.progressPercent}%`,
-              backgroundColor: brandHex,
-            }}
-          />
+        <div className="space-y-2 px-4 py-4">
+          <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/36">
+            Continue watching
+          </span>
+          <div className="space-y-1">
+            <p className="truncate text-sm text-white/52">
+              {item.showTitle} · S{item.seasonNumber} E{item.episodeNumber}
+            </p>
+            <p className="truncate text-[17px] font-semibold tracking-[-0.02em] text-white">
+              {item.episodeTitle}
+            </p>
+          </div>
         </div>
-      </div>
-
-      {/* Metadata — tighter */}
-      <div className="mt-2 flex flex-col gap-0.5">
-        <span className="text-xs text-white/50">
-          {item.showTitle} &middot; S{item.seasonNumber} E{item.episodeNumber}
-        </span>
-        <span className="truncate text-sm font-semibold text-white">
-          {item.episodeTitle}
-        </span>
       </div>
     </Link>
   )

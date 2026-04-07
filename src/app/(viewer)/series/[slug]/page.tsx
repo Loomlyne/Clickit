@@ -12,6 +12,7 @@ import {
   getEpisodesBySeasonId,
   getStreamingShows,
   getShowWatchlistState,
+  getShowLikeState,
   getEpisodesProgress,
   mapShow,
   mapSeason,
@@ -66,7 +67,12 @@ export default async function SeriesDetailPage({ params }: Props) {
   // User watchlist state + episode progress
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const inWatchlist = user ? await getShowWatchlistState(user.id, dbShow.id) : false
+  const [inWatchlist, isLiked] = user
+    ? await Promise.all([
+        getShowWatchlistState(user.id, dbShow.id),
+        getShowLikeState(user.id, dbShow.id),
+      ])
+    : [false, false]
 
   // Batch-fetch episode progress for logged-in user
   let episodesProgressMap: Record<string, { progressPercent: number; completed: boolean }> = {}
@@ -81,16 +87,18 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   return (
     <div>
-      <SeriesDetailHero show={show} seasons={viewSeasons} firstEpisodeLabel={firstEpisodeLabel} firstEpisodeId={firstEpisodeId} initialSaved={inWatchlist} userId={user?.id ?? null} />
+      <SeriesDetailHero show={show} seasons={viewSeasons} firstEpisodeLabel={firstEpisodeLabel} firstEpisodeId={firstEpisodeId} initialSaved={inWatchlist} initialLiked={isLiked} userId={user?.id ?? null} />
 
-      <div className="px-6 md:px-12 mt-8">
-        <SeriesDetailContent
-          seasons={viewSeasons}
-          episodesBySeason={viewEpisodesBySeason}
-          showBrandColor={show.brandColor}
-          show={show}
-          progressMap={episodesProgressMap}
-        />
+      <div className="mt-8 px-6 md:px-12">
+        <div className="mx-auto max-w-7xl">
+          <SeriesDetailContent
+            seasons={viewSeasons}
+            episodesBySeason={viewEpisodesBySeason}
+            showBrandColor={show.brandColor}
+            show={show}
+            progressMap={episodesProgressMap}
+          />
+        </div>
       </div>
 
       {moreLikeThis.length > 0 && (

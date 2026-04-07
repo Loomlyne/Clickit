@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion, AnimatePresence, MotionConfig } from 'motion/react'
-import { ThumbsUp, ChevronDown } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 
 import { GlowBadge } from '@/components/primitives/glow-badge'
 import { WatchlistToggleButton } from '@/components/watchlist/watchlist-toggle-button'
+import { LikeButton } from '@/components/likes/like-button'
 import type { ViewShow, ViewSeason } from '@/lib/queries'
 import { CINEMA_EASE } from '@/lib/cinema'
 
@@ -17,6 +18,7 @@ interface SeriesDetailHeroProps {
   firstEpisodeLabel?: string // e.g. "S1 E1" for the CTA button
   firstEpisodeId?: string // episode ID for watch page link
   initialSaved?: boolean
+  initialLiked?: boolean
   userId?: string | null
 }
 
@@ -26,6 +28,7 @@ export function SeriesDetailHero({
   firstEpisodeLabel,
   firstEpisodeId,
   initialSaved,
+  initialLiked,
   userId,
 }: SeriesDetailHeroProps) {
   const [scrolled, setScrolled] = useState(false)
@@ -185,12 +188,11 @@ export function SeriesDetailHero({
                 userId={userId ?? null}
               />
             )}
-            <button
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white"
-              aria-label="Like"
-            >
-              <ThumbsUp className="w-5 h-5" />
-            </button>
+            <LikeButton
+              showId={show.id}
+              initialLiked={initialLiked}
+              userId={userId ?? null}
+            />
           </motion.div>
         </div>
 

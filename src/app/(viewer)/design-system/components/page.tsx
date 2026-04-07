@@ -2,73 +2,72 @@
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function ComponentsPage() {
   return (
-    <div className="space-y-12">
-      {/* Section A: Buttons */}
-      <section>
-        <h2 className="text-xl font-bold text-foreground">Buttons</h2>
-        <p className="mt-1 text-sm text-text-secondary">
-          Four button variants for different interaction contexts.
+    <div className="space-y-8">
+      <section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">Buttons</h2>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          Primary actions feel bright and decisive. Secondary actions recede into the dark shell. Ghost usage stays limited to local row actions and low-risk controls.
         </p>
-        <div className="mt-4 flex flex-wrap items-center gap-4">
-          <Button variant="default">Watch Now</Button>
-          <Button variant="outline">Browse Shows</Button>
+        <div className="mt-6 flex flex-wrap items-center gap-4">
+          <Button variant="default">Watch now</Button>
+          <Button variant="outline">Browse catalog</Button>
+          <Button variant="secondary">Secondary action</Button>
+          <Button variant="ghost">Row action</Button>
           <Button variant="destructive">Delete</Button>
-          <Button variant="ghost">Ghost Action</Button>
         </div>
       </section>
 
-      {/* Section B: Button States */}
-      <section>
-        <h2 className="text-xl font-bold text-foreground">Button States</h2>
-        <p className="mt-1 text-sm text-text-secondary">
-          Interactive state demonstration per D-11.
-        </p>
-        <div className="mt-4 flex flex-wrap items-center gap-4">
-          <Button>Default</Button>
-          <Button>Hover (hover me)</Button>
-          <Button>Focus (tab to me)</Button>
-          <Button disabled>Disabled</Button>
-        </div>
+      <section className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Form controls</CardTitle>
+            <CardDescription>
+              Inputs use the same rounded geometry and translucent borders as panels and dialogs.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Input placeholder="Search shows, genres, or creators" />
+            <Input value="viewer@clickit.app" readOnly />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Status badges</CardTitle>
+            <CardDescription>
+              Status colors are softened into tinted pills so dense admin tables stay readable.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-3">
+            <Badge className="rounded-full border-emerald-400/25 bg-emerald-500/14 px-2.5 py-1 text-[11px] text-emerald-200">Now Streaming</Badge>
+            <Badge className="rounded-full border-amber-400/25 bg-amber-500/14 px-2.5 py-1 text-[11px] text-amber-100">Coming Soon</Badge>
+            <Badge className="rounded-full border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] text-muted-foreground">Draft</Badge>
+          </CardContent>
+        </Card>
       </section>
 
-      {/* Section C: Status Badges */}
-      <section>
-        <h2 className="text-xl font-bold text-foreground">Status Badges</h2>
-        <p className="mt-1 text-sm text-text-secondary">
-          CIT show status indicators with brand colors.
-        </p>
-        <div className="mt-4 flex flex-wrap items-center gap-4">
-          <Badge className="border-0 bg-brand-green text-white">
-            Now Streaming
-          </Badge>
-          <Badge className="border-0 bg-brand-orange text-black">
-            Coming Soon
-          </Badge>
-          <Badge className="border-0 bg-brand-yellow text-black">New</Badge>
-        </div>
-      </section>
-
-      {/* Section D: Empty State */}
-      <section>
-        <h2 className="text-xl font-bold text-foreground">Empty State</h2>
-        <div className="mt-4 max-w-md rounded-lg border border-border bg-card p-8 text-center">
-          <p className="text-lg font-bold text-foreground">No Shows Yet</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Shows will appear here once content is added. Check back soon for
-            new releases.
+      <section className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+          <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Empty state</p>
+          <p className="mt-4 text-2xl font-semibold tracking-tight text-foreground">No saved shows yet</p>
+          <p className="mt-3 max-w-sm text-sm leading-7 text-muted-foreground">
+            Empty states stay calm, centered, and action-oriented. They explain what is missing and offer one obvious next step.
           </p>
+          <div className="mt-6">
+            <Button variant="outline">Browse shows</Button>
+          </div>
         </div>
-      </section>
 
-      {/* Section E: Error State */}
-      <section>
-        <h2 className="text-xl font-bold text-foreground">Error State</h2>
-        <div className="mt-4 max-w-md rounded-lg border border-destructive/30 bg-card p-8 text-center">
-          <p className="text-sm text-brand-red-safe">
-            Something went wrong. Refresh the page or try again in a moment.
+        <div className="rounded-[28px] border border-red-500/20 bg-red-500/6 p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+          <p className="text-xs uppercase tracking-[0.24em] text-red-100/80">Error state</p>
+          <p className="mt-4 text-2xl font-semibold tracking-tight text-red-50">Playback failed</p>
+          <p className="mt-3 max-w-sm text-sm leading-7 text-red-100/75">
+            Errors should stay compact and legible. Red is reserved for destructive actions and actual failures, not for general emphasis.
           </p>
         </div>
       </section>

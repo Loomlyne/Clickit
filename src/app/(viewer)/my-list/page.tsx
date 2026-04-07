@@ -21,27 +21,19 @@ export default async function MyListPage() {
   const shows = await getWatchlistShows(user.id)
 
   return (
-    <div className="pb-16">
-      {/* Page header */}
-      <div className="relative py-20 px-6 md:px-12 text-center overflow-hidden">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'radial-gradient(ellipse 60% 80% at 50% 100%, rgba(44,53,105,0.15), transparent)',
-          }}
-        />
-        <div className="relative">
+    <div className="pb-20">
+      <div className="relative overflow-hidden px-6 py-8 md:px-12">
+        <div className="relative mx-auto max-w-5xl rounded-[28px] border border-white/10 bg-white/[0.03] px-8 py-12 text-center shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
           <p
-            className="text-sm tracking-[0.3em] uppercase mb-4"
+            className="mb-4 text-[11px] uppercase tracking-[0.28em]"
             style={{ color: 'var(--color-brand-blue-safe)' }}
           >
             My List
           </p>
-          <h1 className="font-display font-bold text-3xl sm:text-4xl md:text-5xl text-white leading-tight">
+          <h1 className="font-display text-3xl font-semibold leading-tight tracking-[-0.04em] text-white sm:text-4xl md:text-5xl">
             Saved Shows
           </h1>
-          <p className="text-white/50 text-lg mt-3 max-w-md mx-auto">
+          <p className="mx-auto mt-3 max-w-md text-lg text-white/50">
             {shows.length > 0
               ? `${shows.length} show${shows.length !== 1 ? 's' : ''} in your list`
               : 'Save shows to watch them later.'}
@@ -62,13 +54,10 @@ export default async function MyListPage() {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center gap-4 py-32 text-center">
-          <h3 className="text-xl font-semibold text-white">Your list is empty</h3>
+        <div className="flex flex-col items-center justify-center gap-4 px-6 py-32 text-center">
+          <h3 className="text-2xl font-semibold tracking-[-0.03em] text-white">Your list is empty</h3>
           <p className="text-sm text-white/50">Save shows to watch them later.</p>
-          <Link
-            href="/"
-            className="rounded-full border border-white/20 text-white/70 px-6 py-2 text-sm hover:border-white/40 hover:text-white transition-all duration-200"
-          >
+          <Link href="/" className="rounded-full border border-white/14 bg-white/[0.03] px-6 py-3 text-sm text-white/70 transition-all duration-200 hover:border-white/24 hover:text-white">
             Browse Shows
           </Link>
         </div>

@@ -25,16 +25,16 @@ export default function SupportPage() {
   const rightFaq = FAQ_ITEMS.slice(4)
 
   return (
-    <div className="px-6 pt-12 pb-16 md:px-12">
-      {/* Hero + Contact Form */}
-      <div className="grid gap-12 lg:grid-cols-2">
-        {/* Left: heading + decoration */}
-        <div>
-          <h1 className="text-4xl font-bold text-foreground lg:text-5xl">Get in Touch</h1>
-          <p className="mt-4 max-w-md text-base text-muted-foreground">
+    <div className="px-6 pb-20 pt-8 md:px-12">
+      <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
+          <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.28em] text-white/34">Support</p>
+          <h1 className="font-display text-4xl font-semibold tracking-[-0.04em] text-foreground lg:text-5xl">
+            Get in touch
+          </h1>
+          <p className="mt-4 max-w-md text-base leading-7 text-muted-foreground">
             Have a question, feedback, or need help? We&apos;d love to hear from you. Our team is based in Abu Dhabi and responds within 24 hours.
           </p>
-          {/* Brand identity element */}
           <div className="mt-8" aria-hidden="true">
             <Image
               src="/brand/Clickit_final_logo.svg"
@@ -56,15 +56,13 @@ export default function SupportPage() {
           </div>
         </div>
 
-        {/* Right: contact form */}
-        <div>
+        <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
           <ContactForm />
         </div>
       </div>
 
-      {/* FAQ Section */}
       <section id="faq" className="mt-16">
-        <h2 className="text-2xl font-bold text-foreground">Frequently Asked Questions</h2>
+        <h2 className="text-3xl font-semibold tracking-[-0.03em] text-foreground">Frequently Asked Questions</h2>
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <Accordion type="single" collapsible>
             {leftFaq.map((item, i) => (
@@ -85,8 +83,7 @@ export default function SupportPage() {
         </div>
         <Button
           variant="default"
-          className="mt-8 border-0 text-white"
-          style={{ background: 'linear-gradient(135deg, #2C3569, #9F54A0)' }}
+          className="mt-8"
           asChild
         >
           <a href="#top">Ask a Question</a>

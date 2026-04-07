@@ -91,40 +91,40 @@ export function EpisodesTable({ episodes, showId, seasonId }: EpisodesTableProps
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="rounded-lg border border-border overflow-hidden">
+      <div className="overflow-hidden rounded-[24px] border border-white/10 bg-black/20">
         <Table>
           <TableHeader>
-            <TableRow className="bg-[var(--card)]">
+            <TableRow className="bg-transparent">
               <TableHead className="w-12">#</TableHead>
               <TableHead>Title</TableHead>
-              <TableHead className="w-20 hidden sm:table-cell">Duration</TableHead>
-              <TableHead className="w-24 hidden md:table-cell">YouTube</TableHead>
+              <TableHead className="hidden w-20 sm:table-cell">Duration</TableHead>
+              <TableHead className="hidden w-24 md:table-cell">YouTube</TableHead>
               <TableHead className="w-[100px]">Status</TableHead>
               <TableHead className="w-32 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {optimisticEpisodes.map((episode, index) => (
-              <TableRow key={episode.id} className="group hover:bg-white/[0.02] transition-colors">
-                <TableCell className="font-mono text-muted-foreground text-xs">
+              <TableRow key={episode.id} className="group transition-colors hover:bg-white/[0.02]">
+                <TableCell className="font-mono text-xs text-muted-foreground">
                   #{episode.episode_number}
                 </TableCell>
                 <TableCell>
                   <span className="font-medium">{episode.title}</span>
-                  <span className="block text-xs text-muted-foreground sm:hidden mt-0.5">
+                  <span className="mt-0.5 block text-xs text-muted-foreground sm:hidden">
                     {episode.duration ? `${episode.duration} min` : ''}
                   </span>
                 </TableCell>
-                <TableCell className="text-muted-foreground hidden sm:table-cell">
+                <TableCell className="hidden text-muted-foreground sm:table-cell">
                   {episode.duration ? `${episode.duration} min` : '---'}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {episode.youtube_video_id ? (
-                    <span className="inline-block max-w-[80px] truncate rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
+                    <span className="inline-block max-w-[80px] truncate rounded-full border border-white/10 bg-white/[0.06] px-2 py-1 text-xs font-mono">
                       {episode.youtube_video_id}
                     </span>
                   ) : (
-                    <span className="text-muted-foreground text-xs">No video</span>
+                    <span className="text-xs text-muted-foreground">No video</span>
                   )}
                 </TableCell>
                 <TableCell>

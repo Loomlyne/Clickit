@@ -33,7 +33,7 @@ export function ContentRail({
 
   return (
     <ScrollReveal>
-      <section>
+      <section className="space-y-4">
         <SectionHeader
           title={title}
           seeAllHref={seeAllHref}
@@ -55,7 +55,7 @@ export function ContentRail({
               {shows.map((show) => (
                 <CarouselItem
                   key={show.id}
-                  className="pl-4 basis-[280px] flex-shrink-0"
+                  className="basis-[300px] flex-shrink-0 pl-4"
                 >
                   <ShowCard show={show} />
                 </CarouselItem>
@@ -63,14 +63,14 @@ export function ContentRail({
               {Array.from({ length: placeholderCount }).map((_, i) => (
                 <CarouselItem
                   key={`placeholder-${i}`}
-                  className="pl-4 basis-[280px] flex-shrink-0"
+                  className="basis-[300px] flex-shrink-0 pl-4"
                 >
                   <PlaceholderCard />
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious className="hidden h-12 w-12 rounded-full border border-white/10 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white md:-left-4 md:flex" />
-            <CarouselNext className="hidden h-12 w-12 rounded-full border border-white/10 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white md:-right-4 md:flex" />
+            <CarouselPrevious className="hidden h-12 w-12 rounded-full border border-white/10 bg-[#0d1118]/88 text-white shadow-[0_18px_48px_rgba(0,0,0,0.32)] backdrop-blur-xl hover:bg-[#151b25] md:-left-2 md:flex" />
+            <CarouselNext className="hidden h-12 w-12 rounded-full border border-white/10 bg-[#0d1118]/88 text-white shadow-[0_18px_48px_rgba(0,0,0,0.32)] backdrop-blur-xl hover:bg-[#151b25] md:-right-2 md:flex" />
           </Carousel>
         </div>
       </section>

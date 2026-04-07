@@ -29,9 +29,9 @@ export async function GenresGrid() {
 
   return (
     <ScrollReveal>
-      <section className="overflow-hidden">
+      <section className="pt-1">
         <SectionHeader title="Browse by Genre" />
-        <div className="flex gap-3 overflow-x-auto px-6 md:px-12 pb-2 scrollbar-hide">
+        <div className="scrollbar-hide flex gap-3 overflow-x-auto px-6 py-2 md:px-12">
           {genres.map((genre) => {
             const color = GENRE_COLORS[genre] ?? '#2C3569'
             return (
@@ -41,14 +41,14 @@ export async function GenresGrid() {
                 className="group flex-shrink-0"
               >
                 <div
-                  className="flex items-center justify-center rounded-xl px-6 py-4 min-w-[140px] cursor-pointer transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5"
+                  className="flex min-w-[160px] cursor-pointer items-center justify-center rounded-full border bg-white/[0.03] px-6 py-3.5 transition-all duration-200 hover:-translate-y-0.5"
                   style={{
-                    background: `${color}20`,
-                    border: `1px solid ${color}40`,
+                    borderColor: `${color}35`,
+                    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03), 0 18px 40px rgba(0,0,0,0.12)`,
                   }}
                 >
                   <span
-                    className="font-semibold text-sm whitespace-nowrap"
+                    className="whitespace-nowrap text-sm font-medium"
                     style={{ color }}
                   >
                     {genre}

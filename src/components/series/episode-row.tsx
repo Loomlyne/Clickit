@@ -150,11 +150,10 @@ export function EpisodeRow({
     return (
       <div
         aria-current="true"
-        className="group flex items-start gap-4 rounded-lg p-3 cursor-default"
+        className="group flex cursor-default items-start gap-4 rounded-[20px] border border-white/10 bg-white/[0.04] p-4"
         style={{
           borderLeft: `3px solid ${brandColorHex}`,
           boxShadow: `inset 4px 0 12px ${brandColorHex}30`,
-          background: 'rgba(255,255,255,0.03)',
         }}
       >
         {rowContent}
@@ -166,7 +165,7 @@ export function EpisodeRow({
     return (
       <Link
         href={`/watch/${episode.id}`}
-        className="group flex items-start gap-4 rounded-lg p-3 transition-colors duration-200 hover:bg-surface-2/50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="group flex cursor-pointer items-start gap-4 rounded-[20px] border border-transparent p-4 transition-colors duration-200 hover:border-white/8 hover:bg-surface-2/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {rowContent}
       </Link>
@@ -176,7 +175,7 @@ export function EpisodeRow({
   return (
     <div
       aria-disabled="true"
-      className="flex items-start gap-4 rounded-lg p-3 cursor-default"
+      className="flex cursor-default items-start gap-4 rounded-[20px] p-4"
     >
       {rowContent}
     </div>

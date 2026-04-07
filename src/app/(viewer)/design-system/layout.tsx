@@ -19,31 +19,35 @@ export default function DesignSystemLayout({
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border px-8 py-6">
-        <h1 className="text-3xl font-bold text-foreground">
-          CIT Design System
-        </h1>
-        <p className="mt-2 text-text-secondary">
-          Color palette, typography scale, and component primitives for the
-          Clickit Story streaming platform.
-        </p>
-        <nav className="mt-4 flex gap-6">
-          {sections.map((section) => (
-            <Link
-              key={section.href}
-              href={section.href}
-              className={`text-sm transition-colors ${
-                pathname === section.href
-                  ? 'font-medium text-foreground'
-                  : 'text-brand-blue-safe hover:text-foreground'
-              }`}
-            >
-              {section.label}
-            </Link>
-          ))}
-        </nav>
-      </header>
-      <main className="px-8 py-8">{children}</main>
+      <div className="mx-auto max-w-7xl px-4 pb-20 pt-10 md:px-8">
+        <header className="rounded-[32px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_28px_100px_rgba(0,0,0,0.28)] md:p-8">
+          <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+            Clickit Design System
+          </p>
+          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-foreground">
+            Apple restraint. Linear precision.
+          </h1>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground md:text-base">
+            Internal reference for the redesign preview. These pages document the actual tokens, spacing rules, and primitives now used across viewer, admin, and shared shells.
+          </p>
+          <nav className="mt-6 flex flex-wrap gap-2">
+            {sections.map((section) => (
+              <Link
+                key={section.href}
+                href={section.href}
+                className={`rounded-full px-4 py-2 text-sm transition-all ${
+                  pathname === section.href
+                    ? 'bg-white text-black shadow-[0_10px_30px_rgba(255,255,255,0.18)]'
+                    : 'border border-white/10 bg-white/[0.03] text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {section.label}
+              </Link>
+            ))}
+          </nav>
+        </header>
+        <main className="pt-8">{children}</main>
+      </div>
     </div>
   )
 }

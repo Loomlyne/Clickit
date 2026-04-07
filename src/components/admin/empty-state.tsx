@@ -8,9 +8,16 @@ export function EmptyState({
   action?: React.ReactNode
 }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <h3 className="text-[20px] font-semibold text-foreground">{heading}</h3>
-      <p className="mt-2 text-[16px] text-muted-foreground max-w-sm">{body}</p>
+    <div className="flex flex-col items-center justify-center rounded-[28px] border border-white/10 bg-white/[0.04] px-6 py-16 text-center shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+      <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+        Empty State
+      </p>
+      <h3 className="mt-4 text-[22px] font-semibold tracking-tight text-foreground">
+        {heading}
+      </h3>
+      <p className="mt-3 max-w-md text-[15px] leading-7 text-muted-foreground">
+        {body}
+      </p>
       {action && <div className="mt-6">{action}</div>}
     </div>
   )

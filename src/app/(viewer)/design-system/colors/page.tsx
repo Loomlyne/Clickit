@@ -1,155 +1,109 @@
-const brandColors = [
-  { className: 'bg-brand-blue', name: 'Innovative Blue', hex: '#2C3569' },
-  { className: 'bg-brand-purple', name: 'Royal Purple', hex: '#9F54A0' },
-  { className: 'bg-brand-green', name: 'Oasis Green', hex: '#50A258' },
-  { className: 'bg-brand-red', name: 'Crimson Red', hex: '#DB3F34' },
-  { className: 'bg-brand-orange', name: 'Sunset Orange', hex: '#EA8C2E' },
-  {
-    className: 'bg-brand-yellow',
-    name: 'Desert Sand & Yellow',
-    hex: '#F8C623',
-  },
+const uiColors = [
+  { className: 'bg-background', name: 'Canvas', hex: '#05070C', note: 'Global page background' },
+  { className: 'bg-card', name: 'Surface', hex: '#121621', note: 'Default elevated panel' },
+  { className: 'bg-secondary', name: 'Subtle Surface', hex: '#1A2130', note: 'Nested cards and controls' },
+  { className: 'bg-primary', name: 'Primary Accent', hex: '#C7D2FE', note: 'Focused actions and active states' },
 ]
 
-const safeTints = [
-  {
-    className: 'text-brand-blue-safe',
-    name: 'Blue (text-safe)',
-    hex: '#7C82A2',
-    contrast: '5.24:1',
-  },
-  {
-    className: 'text-brand-purple-safe',
-    name: 'Purple (text-safe)',
-    hex: '#AC6CAD',
-    contrast: '5.18:1',
-  },
-  {
-    className: 'text-brand-green-safe',
-    name: 'Green (text-safe)',
-    hex: '#50A258',
-    contrast: '6.25:1',
-  },
-  {
-    className: 'text-brand-red-safe',
-    name: 'Red (text-safe)',
-    hex: '#DF544A',
-    contrast: '5.18:1',
-  },
-  {
-    className: 'text-brand-orange-safe',
-    name: 'Orange (text-safe)',
-    hex: '#EA8C2E',
-    contrast: '7.80:1',
-  },
-  {
-    className: 'text-brand-yellow-safe',
-    name: 'Yellow (text-safe)',
-    hex: '#F8C623',
-    contrast: '12.31:1',
-  },
+const textColors = [
+  { className: 'text-foreground', name: 'Primary Text', hex: '#F5F7FB', contrast: 'Passes body copy contrast' },
+  { className: 'text-muted-foreground', name: 'Secondary Text', hex: '#9EA7BB', contrast: 'Used for metadata and helper copy' },
+]
+
+const showColors = [
+  { className: 'bg-brand-blue', name: 'Blue Show Accent', hex: '#2C3569' },
+  { className: 'bg-brand-purple', name: 'Purple Show Accent', hex: '#9F54A0' },
+  { className: 'bg-brand-green', name: 'Green Show Accent', hex: '#50A258' },
+  { className: 'bg-brand-red', name: 'Red Show Accent', hex: '#DB3F34' },
+  { className: 'bg-brand-orange', name: 'Orange Show Accent', hex: '#EA8C2E' },
+  { className: 'bg-brand-yellow', name: 'Yellow Show Accent', hex: '#F8C623' },
 ]
 
 export default function ColorsPage() {
   return (
-    <div className="space-y-12">
-      {/* Section A: Brand Colors (Original) */}
-      <section>
-        <h2 className="text-xl font-bold text-foreground">
-          Brand Colors &mdash; Original
+    <div className="space-y-8">
+      <section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+          Core UI colors
         </h2>
-        <p className="mt-1 text-sm text-text-secondary">
-          Decorative use only. Background fills on buttons, badges, ribbons,
-          progress bars. Never as text on dark backgrounds.
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          The product shell stays near-black, with restrained indigo emphasis and minimal surface separation. This is the palette used for chrome, forms, dialogs, cards, and admin density.
         </p>
-        <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-          {brandColors.map((color) => (
-            <div key={color.hex}>
-              <div className={`${color.className} h-24 rounded-lg`} />
-              <p className="mt-2 text-sm font-medium text-foreground">
-                {color.name}
-              </p>
-              <p className="font-mono text-xs text-text-muted">{color.hex}</p>
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {uiColors.map((color) => (
+            <div key={color.hex} className="rounded-[24px] border border-white/10 bg-black/20 p-4">
+              <div className={`${color.className} h-28 rounded-[18px] border border-white/10`} />
+              <p className="mt-4 text-sm font-medium text-foreground">{color.name}</p>
+              <p className="mt-1 font-mono text-xs text-muted-foreground">{color.hex}</p>
+              <p className="mt-3 text-xs leading-6 text-muted-foreground">{color.note}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Section B: WCAG AA-Safe Tints */}
-      <section>
-        <h2 className="text-xl font-bold text-foreground">
-          Brand Colors &mdash; WCAG AA-Safe Tints
-        </h2>
-        <p className="mt-1 text-sm text-text-secondary">
-          Text-safe variants passing 4.5:1 contrast on all dark surfaces
-          (#000000 through #1A1A22).
-        </p>
-        <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-          {safeTints.map((tint) => (
-            <div key={tint.hex} className="rounded-lg bg-surface-2 p-6">
-              <p className={`${tint.className} text-sm font-medium`}>
-                {tint.name}
-              </p>
-              <p className="mt-1 font-mono text-xs text-text-muted">
-                {tint.hex}
-              </p>
-              <p className="font-mono text-xs text-text-muted">
-                {tint.contrast} on #0A0A0F
-              </p>
-            </div>
-          ))}
+      <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+            Text hierarchy
+          </h2>
+          <div className="mt-6 space-y-4">
+            {textColors.map((color) => (
+              <div key={color.hex} className="rounded-[22px] border border-white/10 bg-black/20 p-5">
+                <p className={`${color.className} text-lg`}>{color.name}</p>
+                <p className="mt-2 font-mono text-xs text-muted-foreground">{color.hex}</p>
+                <p className="mt-3 text-sm text-muted-foreground">{color.contrast}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </section>
 
-      {/* Section C: Dark Theme Surfaces */}
-      <section>
-        <h2 className="text-xl font-bold text-foreground">
-          Dark Theme Surfaces
-        </h2>
-        <div className="mt-4 rounded-lg border border-border bg-background p-6">
-          <p className="font-mono text-sm text-text-secondary">
-            Background #0A0A0F
-          </p>
-          <div className="mt-4 rounded-lg border border-border bg-surface-1 p-6">
-            <p className="font-mono text-sm text-text-secondary">
-              Surface-1 #111116
-            </p>
-            <div className="mt-4 rounded-lg border border-border bg-surface-2 p-6">
-              <p className="font-mono text-sm text-text-secondary">
-                Surface-2 #1A1A22
-              </p>
-              <div className="mt-4 rounded-lg border border-border bg-surface-3 p-6">
-                <p className="font-mono text-sm text-text-secondary">
-                  Surface-3 #242430
-                </p>
+        <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+            Surface stack
+          </h2>
+          <div className="mt-6 rounded-[24px] border border-white/10 bg-background p-5">
+            <div className="rounded-[20px] border border-white/10 bg-card p-5">
+              <div className="rounded-[16px] border border-white/10 bg-secondary p-5">
+                <p className="font-mono text-xs text-muted-foreground">Nested elevation stays subtle.</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Section D: Text Colors */}
-      <section>
-        <h2 className="text-xl font-bold text-foreground">Text Hierarchy</h2>
-        <div className="mt-4 space-y-4 rounded-lg border border-border bg-background p-6">
-          <div>
-            <p className="text-lg text-text-primary">Primary Text</p>
-            <p className="font-mono text-xs text-text-muted">
-              text-primary #FFFFFF &mdash; 19.75:1
+      <section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+          Content-only show accents
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          Legacy multi-color brand hues remain available for posters, hero artwork, and show identity. They should not become general UI chrome.
+        </p>
+        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+          {showColors.map((color) => (
+            <div key={color.hex} className="rounded-[24px] border border-white/10 bg-black/20 p-4">
+              <div className={`${color.className} h-24 rounded-[18px]`} />
+              <p className="mt-4 text-sm font-medium text-foreground">{color.name}</p>
+              <p className="mt-1 font-mono text-xs text-muted-foreground">{color.hex}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+          Usage rules
+        </h2>
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <div className="rounded-[22px] border border-white/10 bg-black/20 p-5">
+            <p className="text-sm font-medium text-foreground">Do</p>
+            <p className="mt-2 text-sm leading-7 text-muted-foreground">
+              Use the indigo accent for primary calls to action, focus rings, and selected states. Keep borders thin and translucent.
             </p>
           </div>
-          <div>
-            <p className="text-lg text-text-secondary">Secondary Text</p>
-            <p className="font-mono text-xs text-text-muted">
-              text-secondary #A1A1B5 &mdash; 7.09:1
-            </p>
-          </div>
-          <div>
-            <p className="text-lg text-text-muted">
-              Muted Text (large text only)
-            </p>
-            <p className="font-mono text-xs text-text-muted">
-              text-muted #6B6B80 &mdash; 3.52:1
+          <div className="rounded-[22px] border border-white/10 bg-black/20 p-5">
+            <p className="text-sm font-medium text-foreground">Avoid</p>
+            <p className="mt-2 text-sm leading-7 text-muted-foreground">
+              Avoid turning every component into a branded gradient. The shell stays quiet so artwork and titles carry the emotion.
             </p>
           </div>
         </div>

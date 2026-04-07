@@ -27,7 +27,7 @@ export function EpisodeList({
 
   if (episodes.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
         <h3 className="text-xl font-bold text-foreground">No Episodes Yet</h3>
         <p className="mt-2 text-sm text-muted-foreground">
           Episodes for this season haven&apos;t been added yet. Check back soon.
@@ -37,7 +37,7 @@ export function EpisodeList({
   }
 
   return (
-    <section aria-label="Episodes">
+    <section aria-label="Episodes" className="px-4">
       <div className="space-y-3 md:space-y-4">
         {visibleEpisodes.map((ep) => {
           const progress = progressMap?.[ep.id]

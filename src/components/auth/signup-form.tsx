@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { mapAuthError } from '@/lib/auth-errors'
 
@@ -29,6 +29,8 @@ type SignupFormData = z.infer<typeof signupSchema>
 export function SignupForm() {
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const {
     register,
@@ -95,13 +97,45 @@ export function SignupForm() {
 
       <div>
         <Label htmlFor="signup-password">Password</Label>
-        <Input id="signup-password" type="password" placeholder="••••••••" className="mt-1.5" {...register('password')} />
+        <div className="relative mt-1.5">
+          <Input
+            id="signup-password"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="••••••••"
+            className="pr-10"
+            {...register('password')}
+          />
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+          >
+            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
         {errors.password && <p className="mt-1 text-xs text-brand-red-safe">{errors.password.message}</p>}
       </div>
 
       <div>
         <Label htmlFor="signup-confirm">Confirm Password</Label>
-        <Input id="signup-confirm" type="password" placeholder="••••••••" className="mt-1.5" {...register('confirmPassword')} />
+        <div className="relative mt-1.5">
+          <Input
+            id="signup-confirm"
+            type={showConfirm ? 'text' : 'password'}
+            placeholder="••••••••"
+            className="pr-10"
+            {...register('confirmPassword')}
+          />
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setShowConfirm(!showConfirm)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+          >
+            {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
         {errors.confirmPassword && <p className="mt-1 text-xs text-brand-red-safe">{errors.confirmPassword.message}</p>}
       </div>
 

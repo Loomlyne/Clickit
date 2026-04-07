@@ -12,15 +12,32 @@ export default async function ArchivePage() {
     .order('updated_at', { ascending: false })
 
   return (
-    <div>
-      <h1 className="text-xl font-semibold mb-4">Archive</h1>
+    <div className="space-y-6">
+      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] md:p-8">
+        <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+          Admin Console
+        </p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+              Archive
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground md:text-base">
+              Hidden catalog entries live here until they are restored or removed permanently.
+            </p>
+          </div>
 
-      {/* Warning banner */}
-      <div className="flex items-start gap-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 px-4 py-3 mb-6">
-        <AlertTriangle className="size-5 text-yellow-500 shrink-0 mt-0.5" />
-        <div className="text-sm">
-          <p className="text-yellow-200 font-medium">Archived shows are hidden from viewers</p>
-          <p className="text-yellow-200/60 mt-0.5">Permanently deleted shows and all their seasons and episodes cannot be recovered.</p>
+          <div className="flex max-w-md items-start gap-3 rounded-2xl border border-yellow-500/20 bg-yellow-500/8 px-4 py-4">
+            <AlertTriangle className="mt-0.5 size-5 shrink-0 text-yellow-400" />
+            <div className="text-sm">
+              <p className="font-medium text-yellow-100">
+                Archived shows are hidden from viewers
+              </p>
+              <p className="mt-1 text-yellow-100/65">
+                Permanent deletion removes the show with all seasons and episodes.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -41,7 +41,7 @@ export default async function HomePage() {
         <HeroBanner shows={featuredWithEpisodes} />
       )}
 
-      <div className="mt-16 space-y-10 pb-16">
+      <div className="mt-20 space-y-14 pb-20">
         <ContinueWatchingRail />
         {newEpisodeShows.length > 0 && (
           <ContentRail title="New Episodes" shows={newEpisodeShows} />

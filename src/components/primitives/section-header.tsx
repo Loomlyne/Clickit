@@ -1,10 +1,11 @@
-import Link from 'next/link';
+import Link from 'next/link'
+import { ChevronRight } from 'lucide-react'
 
 interface SectionHeaderProps {
-  title: string;
-  seeAllHref?: string;
-  accentColor?: string;
-  className?: string;
+  title: string
+  seeAllHref?: string
+  accentColor?: string
+  className?: string
 }
 
 export function SectionHeader({
@@ -15,29 +16,35 @@ export function SectionHeader({
 }: SectionHeaderProps) {
   return (
     <div
-      className={`flex items-center justify-between mb-4 px-6 md:px-12${className ? ` ${className}` : ''}`}
+      className={`mb-5 flex items-center justify-between px-6 md:px-12${className ? ` ${className}` : ''}`}
     >
-      <div className="flex items-center">
+      <div className="flex items-center gap-3">
         {accentColor && (
           <div
-            className="w-1 h-6 rounded-full mr-3 flex-shrink-0"
-            style={{ background: accentColor }}
+            className="h-7 w-1 rounded-full flex-shrink-0"
+            style={{ background: accentColor, boxShadow: `0 0 24px ${accentColor}50` }}
             aria-hidden="true"
           />
         )}
-        <h2 className="text-xl md:text-2xl font-semibold text-white tracking-tight">
-          {title}
-        </h2>
+        <div>
+          <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.22em] text-white/34">
+            Curated by Clickit
+          </p>
+          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white md:text-[2rem]">
+            {title}
+          </h2>
+        </div>
       </div>
 
       {seeAllHref && (
         <Link
           href={seeAllHref}
-          className="text-sm text-[var(--color-brand-blue-safe)] hover:text-white transition-colors"
+          className="inline-flex items-center gap-1 text-sm text-primary transition-colors hover:text-white"
         >
-          See All →
+          See all
+          <ChevronRight className="size-4" />
         </Link>
       )}
     </div>
-  );
+  )
 }

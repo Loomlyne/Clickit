@@ -80,64 +80,69 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <p className="text-sm text-muted-foreground mb-4">{shows.length} archived show{shows.length !== 1 ? 's' : ''}</p>
+      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-6">
+        <div className="flex items-center justify-between pb-4 text-sm text-muted-foreground">
+          <span>{shows.length} archived show{shows.length !== 1 ? 's' : ''}</span>
+          <span>Newest changes first</span>
+        </div>
 
-      <div className="rounded-lg border border-border overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-[var(--card)]">
-              <TableHead>Show</TableHead>
-              <TableHead className="w-[100px] hidden sm:table-cell">Genre</TableHead>
-              <TableHead className="w-[130px] hidden md:table-cell">Archived</TableHead>
-              <TableHead className="w-[180px] text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {shows.map((show) => (
-              <TableRow key={show.id} className="group hover:bg-white/[0.02] transition-colors">
-                <TableCell>
-                  <span className="font-medium">{show.title}</span>
-                  <span className="block text-xs text-muted-foreground sm:hidden mt-0.5">{show.genre}</span>
-                </TableCell>
-                <TableCell className="text-muted-foreground hidden sm:table-cell">{show.genre}</TableCell>
-                <TableCell className="text-muted-foreground text-sm hidden md:table-cell">
-                  {formatDate(show.updated_at)}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center justify-end gap-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRestore(show)}
-                          disabled={restoring === show.id}
-                        >
-                          <RotateCcw className="mr-1 size-3.5" />
-                          {restoring === show.id ? 'Restoring...' : 'Restore'}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Restore show and all episodes</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDeleteClick(show)}
-                        >
-                          <Trash2 className="mr-1 size-3.5" />
-                          Delete
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Permanently delete — cannot be undone</TooltipContent>
-                    </Tooltip>
-                  </div>
-                </TableCell>
+        <div className="overflow-hidden rounded-[24px] border border-white/10 bg-black/20">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-transparent">
+                <TableHead>Show</TableHead>
+                <TableHead className="hidden w-[100px] sm:table-cell">Genre</TableHead>
+                <TableHead className="hidden w-[130px] md:table-cell">Archived</TableHead>
+                <TableHead className="w-[180px] text-right">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {shows.map((show) => (
+                <TableRow key={show.id} className="group transition-colors hover:bg-white/[0.02]">
+                  <TableCell>
+                    <span className="font-medium">{show.title}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground sm:hidden">{show.genre}</span>
+                  </TableCell>
+                  <TableCell className="hidden text-muted-foreground sm:table-cell">{show.genre}</TableCell>
+                  <TableCell className="hidden text-sm text-muted-foreground md:table-cell">
+                    {formatDate(show.updated_at)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRestore(show)}
+                            disabled={restoring === show.id}
+                          >
+                            <RotateCcw className="mr-1 size-3.5" />
+                            {restoring === show.id ? 'Restoring...' : 'Restore'}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Restore show and all episodes</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteClick(show)}
+                          >
+                            <Trash2 className="mr-1 size-3.5" />
+                            Delete
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Permanently delete - cannot be undone</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <ConfirmDialog

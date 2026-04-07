@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const tabs = [
@@ -15,36 +14,21 @@ export function AdminHeader() {
   const pathname = usePathname()
 
   return (
-    <header className="bg-[var(--card)] border-b border-border">
-      <div className="mx-auto max-w-7xl px-4 md:px-8">
-        {/* Top bar: back link + branding + view site */}
-        <div className="flex items-center justify-between py-3">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="size-4" />
-            <span className="hidden sm:inline">Back to Site</span>
-          </Link>
-
-          <Image
-            src="/brand/Clickit_final_logo.svg"
-            alt="Clickit Story Admin"
-            width={100}
-            height={28}
-            className="h-7 w-auto"
-          />
-
-          <Link
-            href="/profile"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Account
-          </Link>
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/8 bg-[rgba(5,7,12,0.76)] backdrop-blur-2xl">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 md:px-8">
+        <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-[rgba(241,246,252,0.3)] md:flex">
+            <Image
+              src="/brand/Clickit_final_logo.svg"
+              alt="Clickit Story Admin"
+              width={90}
+              height={24}
+              className="h-6 w-auto"
+            />
+          </div>
         </div>
 
-        {/* Tab navigation */}
-        <nav className="flex gap-6 -mb-px">
+        <nav className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] p-1.5">
           {tabs.map((tab) => {
             const isActive =
               tab.href === '/admin'
@@ -56,20 +40,24 @@ export function AdminHeader() {
                 key={tab.href}
                 href={tab.href}
                 className={cn(
-                  'relative py-2.5 text-sm font-medium transition-colors',
+                  'rounded-full px-4 py-2 text-sm font-medium transition-all',
                   isActive
-                    ? 'text-foreground'
+                    ? 'bg-white text-black shadow-[0_10px_30px_rgba(255,255,255,0.18)]'
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 {tab.label}
-                {isActive && (
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[var(--primary)]" />
-                )}
               </Link>
             )
           })}
         </nav>
+
+        <Link
+          href="/profile"
+          className="hidden rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
+        >
+          Account
+        </Link>
       </div>
     </header>
   )

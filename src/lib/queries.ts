@@ -582,3 +582,34 @@ export async function getShowsWatchlistState(userId: string, showIds: string[]):
 
   return new Set((data ?? []).map((row) => row.show_id))
 }
+
+// ---------------------------------------------------------------------------
+// Likes queries
+// ---------------------------------------------------------------------------
+
+export async function getLikedShows(userId: string): Promise<ViewShow[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('likes')
+    .select('show_id, created_at, shows(*)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (!data) return []
+  return data
+    .map((row: any) => row.shows)
+    .filter(Boolean)
+    .map(mapShow)
+}
+
+export async function getShowLikeState(userId: string, showId: string): Promise<boolean> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('likes')
+    .select('show_id')
+    .eq('user_id', userId)
+    .eq('show_id', showId)
+    .maybeSingle()
+
+  return !!data
+}

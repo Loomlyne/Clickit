@@ -6,7 +6,7 @@ import { ProfileForm } from '@/components/profile/profile-form'
 import { ProfileHeader } from '@/components/profile/profile-header'
 import { ProfileHistoryRow } from '@/components/profile/profile-history-row'
 import { PortraitShowCard } from '@/components/shows/portrait-show-card'
-import { getWatchlistShows, getRecentlyWatched } from '@/lib/queries'
+import { getWatchlistShows, getLikedShows, getRecentlyWatched } from '@/lib/queries'
 
 export const metadata: Metadata = {
   title: 'Profile | Clickit Story',
@@ -35,8 +35,9 @@ export default async function ProfilePage() {
   const isAdmin = config?.admin_user_id === user.id
 
   // Fetch personalization data
-  const [watchlistShows, recentlyWatched] = await Promise.all([
+  const [watchlistShows, likedShows, recentlyWatched] = await Promise.all([
     getWatchlistShows(user.id),
+    getLikedShows(user.id),
     getRecentlyWatched(user.id),
   ])
 
@@ -45,20 +46,15 @@ export default async function ProfilePage() {
 
   return (
     <div className="relative min-h-dvh">
-      {/* Subtle gradient at top — not heavy cinematic */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-white/[0.02] to-transparent" />
-
-      <div className="relative z-10 mx-auto w-full max-w-5xl px-6 md:px-12 pt-24 md:pt-28 pb-16 space-y-8">
-        {/* Profile Header */}
+      <div className="relative z-10 mx-auto w-full max-w-5xl space-y-8 px-6 pb-16 pt-8 md:px-12">
         <ProfileHeader
           displayName={displayName}
           email={email}
           isAdmin={isAdmin}
         />
 
-        {/* Account Settings */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-6">
-          <h3 className="font-display text-lg font-semibold text-white mb-4">
+        <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
+          <h3 className="font-display mb-4 text-lg font-semibold tracking-[-0.02em] text-white">
             Account Settings
           </h3>
           <ProfileForm
@@ -66,10 +62,9 @@ export default async function ProfilePage() {
           />
         </div>
 
-        {/* My List */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-display text-lg font-semibold text-white">
+        <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
               My List
               {watchlistShows.length > 0 && (
                 <span className="ml-2 text-sm font-normal text-white/40">
@@ -104,9 +99,34 @@ export default async function ProfilePage() {
           )}
         </div>
 
-        {/* Recently Watched */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-6">
-          <h3 className="font-display text-lg font-semibold text-white mb-4">
+        <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
+              Liked Shows
+              {likedShows.length > 0 && (
+                <span className="ml-2 text-sm font-normal text-white/40">
+                  {likedShows.length}
+                </span>
+              )}
+            </h3>
+          </div>
+          {likedShows.length > 0 ? (
+            <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-1">
+              {likedShows.slice(0, 8).map((show) => (
+                <div key={show.id} className="w-32 flex-shrink-0">
+                  <PortraitShowCard show={show} userId={user.id} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-white/40 py-6 text-center">
+              No liked shows yet. Hit the heart on any show to see it here.
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
+          <h3 className="font-display mb-4 text-lg font-semibold tracking-[-0.02em] text-white">
             Recently Watched
           </h3>
           {recentlyWatched.length > 0 ? (

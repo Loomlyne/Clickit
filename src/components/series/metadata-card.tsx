@@ -10,7 +10,7 @@ interface MetadataCardProps {
 
 export function MetadataCard({ show }: MetadataCardProps) {
   return (
-    <Card className="sticky top-20 bg-card border-border">
+    <Card className="sticky top-28 bg-card border-border">
       <CardContent className="p-5 space-y-4">
         <div className="space-y-2">
           {show.imdbRating && (

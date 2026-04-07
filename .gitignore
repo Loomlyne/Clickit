@@ -57,3 +57,5 @@ test-results/
 Untitled*.base
 _claude*
 _planning*
+.aidesigner/*
+!.aidesigner/.gitkeep
