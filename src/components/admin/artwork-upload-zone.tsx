@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react'
 import { Upload, Loader2, MoreVertical, Trash2, Replace } from 'lucide-react'
 import { toast } from 'sonner'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -11,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { uploadArtwork, deleteArtwork } from '@/app/admin/actions'
 
 interface ArtworkUploadZoneProps {
   showId: string
@@ -55,31 +55,20 @@ export function ArtworkUploadZone({
     setUploading(true)
 
     try {
-      const supabase = createClient()
-      const ext = slot === 'logo' ? 'png' : 'webp'
-      const path = `shows/${showId}/${slot}.${ext}`
+      const formData = new FormData()
+      formData.set('file', file)
+      formData.set('showId', showId)
+      formData.set('slot', slot)
 
-      const { error } = await supabase.storage
-        .from('show-artwork')
-        .upload(path, file, {
-          upsert: true,
-          contentType: file.type,
-          cacheControl: '3600',
-        })
+      const result = await uploadArtwork(formData)
 
-      if (error) {
-        toast.error(`Upload failed: ${error.message}`)
-        setUploading(false)
+      if (!result.success) {
+        toast.error(`Upload failed: ${result.error}`)
         return
       }
 
-      const { data: urlData } = supabase.storage
-        .from('show-artwork')
-        .getPublicUrl(path)
-
-      const publicUrl = urlData.publicUrl
-      setPreviewUrl(publicUrl)
-      onUploadComplete(publicUrl)
+      setPreviewUrl(result.data!)
+      onUploadComplete(result.data!)
     } catch {
       toast.error('Upload failed. Please try again.')
     } finally {
@@ -90,16 +79,10 @@ export function ArtworkUploadZone({
 
   async function handleDelete() {
     try {
-      const supabase = createClient()
-      const ext = slot === 'logo' ? 'png' : 'webp'
-      const path = `shows/${showId}/${slot}.${ext}`
+      const result = await deleteArtwork(showId, slot)
 
-      const { error } = await supabase.storage
-        .from('show-artwork')
-        .remove([path])
-
-      if (error) {
-        toast.error(`Delete failed: ${error.message}`)
+      if (!result.success) {
+        toast.error(`Delete failed: ${result.error}`)
         return
       }
 

@@ -495,6 +495,66 @@ export async function reorderEpisode(
 }
 
 // ---------------------------------------------------------------------------
+// Artwork Upload / Delete
+// ---------------------------------------------------------------------------
+
+export async function uploadArtwork(formData: FormData): Promise<ActionResult<string>> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    const file = formData.get('file') as File | null
+    const showId = formData.get('showId') as string | null
+    const slot = formData.get('slot') as string | null
+
+    if (!file || !showId || !slot) {
+      return { success: false, error: 'Missing file, showId, or slot' }
+    }
+
+    const ext = slot === 'logo' ? 'png' : 'webp'
+    const path = `shows/${showId}/${slot}.${ext}`
+
+    const { error } = await admin.storage
+      .from('show-artwork')
+      .upload(path, file, {
+        upsert: true,
+        contentType: file.type,
+        cacheControl: '3600',
+      })
+
+    if (error) return { success: false, error: error.message }
+
+    const { data: urlData } = admin.storage
+      .from('show-artwork')
+      .getPublicUrl(path)
+
+    return { success: true, data: urlData.publicUrl }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
+  }
+}
+
+export async function deleteArtwork(showId: string, slot: string): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    const ext = slot === 'logo' ? 'png' : 'webp'
+    const path = `shows/${showId}/${slot}.${ext}`
+
+    const { error } = await admin.storage
+      .from('show-artwork')
+      .remove([path])
+
+    if (error) return { success: false, error: error.message }
+
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Delete failed' }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // FEATURED TOGGLE
 // ---------------------------------------------------------------------------
 
