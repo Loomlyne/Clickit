@@ -53,7 +53,7 @@ export function WatchPageContent({
       {/* Side-by-side: player+metadata left, episodes right */}
       <div className="flex flex-col lg:flex-row">
         {/* Left column: player + metadata */}
-        <div className="flex-1 min-w-0">
+        <div className="w-full flex-1 min-w-0">
           {/* Player */}
           <div className="relative w-full aspect-video bg-[#111]">
             <YouTubePlayer
@@ -144,7 +144,7 @@ export function WatchPageContent({
         {/* Right column: episode list — sits beside the player on desktop */}
         <aside
           aria-label="Episode selector"
-          className="w-full px-[14px] lg:w-[340px] lg:flex-shrink-0 border-t border-white/[0.06] lg:border-t-0 lg:border-l lg:border-white/[0.06] bg-black"
+          className="w-full px-[14px] lg:w-[500px] lg:flex-shrink-0 border-t border-white/[0.06] lg:border-t-0 lg:border-l lg:border-white/[0.06] bg-black"
         >
           <div className="lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:overflow-y-auto scrollbar-hide">
             <div className="px-4 py-3 border-b border-white/[0.06]">
