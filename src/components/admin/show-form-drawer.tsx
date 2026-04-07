@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { ChevronDown, Lock } from 'lucide-react'
+import { Lock } from 'lucide-react'
 
 import {
   Sheet,
@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
 import { ArtworkUploadZone } from '@/components/admin/artwork-upload-zone'
 import { generateSlug } from '@/lib/slug'
 import type { Database } from '@/lib/database.types'
@@ -277,18 +278,21 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
                   showId={generatedId} slot="poster"
                   currentUrl={show?.poster_url ?? null}
                   onUploadComplete={(url) => form.setValue('poster_url', url)}
+                  onDelete={() => form.setValue('poster_url', '')}
                   label="Poster" aspectHint="2:3"
                 />
                 <ArtworkUploadZone
                   showId={generatedId} slot="hero"
                   currentUrl={show?.hero_url ?? null}
                   onUploadComplete={(url) => form.setValue('hero_url', url)}
+                  onDelete={() => form.setValue('hero_url', '')}
                   label="Hero" aspectHint="16:9"
                 />
                 <ArtworkUploadZone
                   showId={generatedId} slot="logo"
                   currentUrl={show?.logo_url ?? null}
                   onUploadComplete={(url) => form.setValue('logo_url', url)}
+                  onDelete={() => form.setValue('logo_url', '')}
                   label="Logo" aspectHint="PNG"
                 />
               </div>
@@ -318,20 +322,19 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
 
           {/* Sticky footer */}
           <div className="shrink-0 border-t border-border bg-[var(--card)] px-6 py-4 flex items-center justify-end gap-3">
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => onOpenChange(false)}
-              className="rounded-full border border-white/20 bg-transparent px-5 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5"
             >
               Discard Changes
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={form.formState.isSubmitting}
-              className="rounded-full bg-white px-6 py-2 text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:opacity-50"
             >
               {form.formState.isSubmitting ? 'Saving...' : isEdit ? 'Save Show' : 'Create Show'}
-            </button>
+            </Button>
           </div>
         </form>
       </SheetContent>
