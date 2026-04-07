@@ -60,7 +60,7 @@ export function SeriesDetailHero({
         )}
       </AnimatePresence>
 
-      <div className="relative -mt-24 min-h-dvh overflow-hidden">
+      <div className="relative -mt-24 md:-mt-28 min-h-dvh overflow-hidden">
         <div className="absolute inset-0 bg-black" />
         {show.heroImageUrl && (
           <Image

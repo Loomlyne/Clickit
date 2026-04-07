@@ -49,7 +49,7 @@ export function WatchPageContent({
   const { forceFlush } = useProgressTracker(playerInstance, episode.id, userId ?? null)
 
   return (
-    <div className="bg-black text-white -mt-16 pt-16">
+    <div className="-mt-24 md:-mt-28 bg-black pt-24 md:pt-28 text-white">
       {/* Side-by-side: player+metadata left, episodes right */}
       <div className="flex flex-col lg:flex-row">
         {/* Left column: player + metadata */}
@@ -98,7 +98,7 @@ export function WatchPageContent({
 
           {/* Metadata below player */}
           <motion.div
-            className="px-6 py-4"
+            className="px-6 py-5"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: CINEMA_EASE }}
@@ -121,7 +121,7 @@ export function WatchPageContent({
             </div>
 
             <h1
-              className="font-display font-bold text-white leading-tight"
+              className="font-display font-semibold leading-tight text-white"
               style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.75rem)' }}
             >
               {episode.title}
