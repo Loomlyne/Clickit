@@ -29,10 +29,11 @@ type Episode = Database['public']['Tables']['episodes']['Row']
 interface SeasonTabsProps {
   seasons: Season[]
   episodesBySeason: Record<string, Episode[]>
+  maxEpisodeNumberBySeason: Record<string, number>
   showId: string
 }
 
-export function SeasonTabs({ seasons, episodesBySeason, showId }: SeasonTabsProps) {
+export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason, showId }: SeasonTabsProps) {
   const router = useRouter()
   const [seasonDrawerOpen, setSeasonDrawerOpen] = useState(false)
   const [editSeason, setEditSeason] = useState<Season | null>(null)
@@ -153,6 +154,7 @@ export function SeasonTabs({ seasons, episodesBySeason, showId }: SeasonTabsProp
                   episodes={seasonEpisodes}
                   showId={showId}
                   seasonId={season.id}
+                  nextEpisodeNumber={(maxEpisodeNumberBySeason[season.id] ?? 0) + 1}
                 />
               </div>
             </TabsContent>
@@ -186,7 +188,7 @@ export function SeasonTabs({ seasons, episodesBySeason, showId }: SeasonTabsProp
           episode={null}
           showId={showId}
           seasonId={activeSeasonIdForEpisode}
-          nextEpisodeNumber={(episodesBySeason[activeSeasonIdForEpisode]?.length ?? 0) + 1}
+          nextEpisodeNumber={(maxEpisodeNumberBySeason[activeSeasonIdForEpisode] ?? 0) + 1}
           onSave={async (data) => {
             const result = await createEpisode({
               ...data,

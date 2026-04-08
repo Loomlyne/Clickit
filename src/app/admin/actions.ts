@@ -15,6 +15,19 @@ type ActionResult<T = unknown> = {
   data?: T
 }
 
+export type EpisodeConflict = {
+  episodeId: string
+  episodeTitle: string
+  episodeNumber: number
+  seasonId: string
+  seasonNumber: number
+  conflictingEpisodeTitle: string
+}
+
+export type RestoreResult = ActionResult & {
+  conflicts?: EpisodeConflict[]
+}
+
 // ---------------------------------------------------------------------------
 // Auth helper: defense-in-depth (D-12) — every action verifies admin
 // ---------------------------------------------------------------------------
@@ -160,11 +173,60 @@ export async function archiveShow(id: string): Promise<ActionResult> {
   }
 }
 
-export async function restoreShow(id: string): Promise<ActionResult> {
+export async function restoreShow(id: string): Promise<RestoreResult> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
 
+    // Check for episode number conflicts before restoring
+    const { data: archivedEpisodes } = await admin
+      .from('episodes')
+      .select('id, title, episode_number, season_id')
+      .eq('show_id', id)
+      .eq('archived', true)
+
+    if (archivedEpisodes && archivedEpisodes.length > 0) {
+      // Get seasons for this show to include season_number in conflict info
+      const { data: seasons } = await admin
+        .from('seasons')
+        .select('id, season_number')
+        .eq('show_id', id)
+
+      const seasonMap = new Map(seasons?.map(s => [s.id, s.season_number]) ?? [])
+
+      // Check each archived episode against existing visible episodes
+      const conflicts: EpisodeConflict[] = []
+      for (const ep of archivedEpisodes) {
+        const { data: existing } = await admin
+          .from('episodes')
+          .select('title')
+          .eq('season_id', ep.season_id)
+          .eq('episode_number', ep.episode_number)
+          .eq('archived', false)
+          .maybeSingle()
+
+        if (existing) {
+          conflicts.push({
+            episodeId: ep.id,
+            episodeTitle: ep.title,
+            episodeNumber: ep.episode_number,
+            seasonId: ep.season_id,
+            seasonNumber: seasonMap.get(ep.season_id) ?? 0,
+            conflictingEpisodeTitle: existing.title,
+          })
+        }
+      }
+
+      if (conflicts.length > 0) {
+        return {
+          success: false,
+          error: `${conflicts.length} episode(s) have number conflicts with existing episodes.`,
+          conflicts,
+        }
+      }
+    }
+
+    // No conflicts — proceed with restore
     const { error: showError } = await admin
       .from('shows')
       .update({ archived: false })
@@ -172,7 +234,6 @@ export async function restoreShow(id: string): Promise<ActionResult> {
 
     if (showError) return { success: false, error: showError.message }
 
-    // Also restore all episodes for this show
     await admin
       .from('episodes')
       .update({ archived: false })
@@ -183,6 +244,31 @@ export async function restoreShow(id: string): Promise<ActionResult> {
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to restore show' }
+  }
+}
+
+export async function resolveConflictsAndRestore(
+  showId: string,
+  fixes: { episodeId: string; newEpisodeNumber: number }[],
+): Promise<RestoreResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    // Apply the number fixes to archived episodes
+    for (const fix of fixes) {
+      const { error } = await admin
+        .from('episodes')
+        .update({ episode_number: fix.newEpisodeNumber })
+        .eq('id', fix.episodeId)
+
+      if (error) return { success: false, error: `Failed to update episode: ${error.message}` }
+    }
+
+    // Re-run restore with conflict check
+    return restoreShow(showId)
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to resolve conflicts' }
   }
 }
 
@@ -336,13 +422,56 @@ export async function createEpisode(
     const parsed = episodeSchema.parse(data)
     const admin = createAdminClient()
 
+    // If an archived episode occupies this number, bump it out of the way
+    const { data: archivedConflict } = await admin
+      .from('episodes')
+      .select('id')
+      .eq('season_id', parsed.season_id)
+      .eq('episode_number', parsed.episode_number)
+      .eq('archived', true)
+      .maybeSingle()
+
+    if (archivedConflict) {
+      // Find the max episode_number in this season across all episodes
+      const { data: maxRow } = await admin
+        .from('episodes')
+        .select('episode_number')
+        .eq('season_id', parsed.season_id)
+        .order('episode_number', { ascending: false })
+        .limit(1)
+        .single()
+
+      await admin
+        .from('episodes')
+        .update({ episode_number: (maxRow?.episode_number ?? 0) + 1 })
+        .eq('id', archivedConflict.id)
+    }
+
+    // Pre-check: reject if a non-archived episode already occupies this number
+    const { data: visibleConflict } = await admin
+      .from('episodes')
+      .select('id')
+      .eq('season_id', parsed.season_id)
+      .eq('episode_number', parsed.episode_number)
+      .eq('archived', false)
+      .maybeSingle()
+
+    if (visibleConflict) {
+      return { success: false, error: `Episode number ${parsed.episode_number} already exists in this season. Choose a different number.` }
+    }
+
     const { data: episode, error } = await admin
       .from('episodes')
       .insert(parsed)
       .select()
       .single()
 
-    if (error) return { success: false, error: error.message }
+    if (error) {
+      if (error.code === '23505') {
+        return { success: false, error: `Episode number ${parsed.episode_number} already exists in this season. Choose a different number.` }
+      }
+      return { success: false, error: error.message }
+    }
 
     // Update season episode_count
     const { count: seasonEpCount } = await admin
@@ -381,6 +510,29 @@ export async function updateEpisode(
     await assertAdmin()
     const admin = createAdminClient()
 
+    // Pre-check: if episode_number is changing, ensure no collision in the same season
+    if (data.episode_number !== undefined) {
+      const { data: current } = await admin
+        .from('episodes')
+        .select('season_id')
+        .eq('id', id)
+        .single()
+
+      if (current) {
+        const { data: existing } = await admin
+          .from('episodes')
+          .select('id')
+          .eq('season_id', current.season_id)
+          .eq('episode_number', data.episode_number)
+          .neq('id', id)
+          .maybeSingle()
+
+        if (existing) {
+          return { success: false, error: `Episode number ${data.episode_number} already exists in this season. Choose a different number.` }
+        }
+      }
+    }
+
     const { data: episode, error } = await admin
       .from('episodes')
       .update(data)
@@ -388,7 +540,12 @@ export async function updateEpisode(
       .select()
       .single()
 
-    if (error) return { success: false, error: error.message }
+    if (error) {
+      if (error.code === '23505') {
+        return { success: false, error: 'This episode number already exists in this season. Choose a different number.' }
+      }
+      return { success: false, error: error.message }
+    }
 
     if (episode) {
       revalidatePath(`/admin/shows/${episode.show_id}`)

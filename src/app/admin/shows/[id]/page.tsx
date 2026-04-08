@@ -37,12 +37,27 @@ export default async function ShowDetailPage({
     .eq('archived', false)
     .order('episode_number', { ascending: true })
 
+  // Fetch ALL episodes (including archived) to compute correct max episode_number per season
+  const { data: allEpisodes } = await supabase
+    .from('episodes')
+    .select('season_id, episode_number')
+    .eq('show_id', id)
+
   const episodesBySeason: Record<string, Episode[]> = {}
   for (const ep of episodes ?? []) {
     if (!episodesBySeason[ep.season_id]) {
       episodesBySeason[ep.season_id] = []
     }
     episodesBySeason[ep.season_id].push(ep)
+  }
+
+  // Compute max episode_number per season across ALL episodes (including archived)
+  const maxEpisodeNumberBySeason: Record<string, number> = {}
+  for (const ep of allEpisodes ?? []) {
+    const current = maxEpisodeNumberBySeason[ep.season_id] ?? 0
+    if (ep.episode_number > current) {
+      maxEpisodeNumberBySeason[ep.season_id] = ep.episode_number
+    }
   }
 
   return (
@@ -93,6 +108,7 @@ export default async function ShowDetailPage({
       <SeasonTabs
         seasons={seasons ?? []}
         episodesBySeason={episodesBySeason}
+        maxEpisodeNumberBySeason={maxEpisodeNumberBySeason}
         showId={id}
       />
     </div>

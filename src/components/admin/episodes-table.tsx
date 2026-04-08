@@ -32,9 +32,10 @@ interface EpisodesTableProps {
   episodes: Episode[]
   showId: string
   seasonId: string
+  nextEpisodeNumber: number
 }
 
-export function EpisodesTable({ episodes, showId, seasonId }: EpisodesTableProps) {
+export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }: EpisodesTableProps) {
   const [isPending, startTransition] = useTransition()
   const [editEpisode, setEditEpisode] = useState<Episode | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -190,7 +191,7 @@ export function EpisodesTable({ episodes, showId, seasonId }: EpisodesTableProps
         episode={editEpisode}
         showId={showId}
         seasonId={seasonId}
-        nextEpisodeNumber={episodes.length + 1}
+        nextEpisodeNumber={nextEpisodeNumber}
         onSave={async (data) => {
           if (!editEpisode) return { success: false, error: 'No episode selected' }
           return updateEpisode(editEpisode.id, { ...data, show_id: showId, season_id: seasonId })

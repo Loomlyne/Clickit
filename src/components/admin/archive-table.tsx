@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { RotateCcw, Trash2 } from 'lucide-react'
+import { RotateCcw, Trash2, AlertTriangle } from 'lucide-react'
 
 import {
   Table,
@@ -11,7 +11,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Tooltip,
   TooltipContent,
@@ -20,7 +29,8 @@ import {
 } from '@/components/ui/tooltip'
 import { EmptyState } from '@/components/admin/empty-state'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
-import { restoreShow, deleteShowPermanently } from '@/app/admin/actions'
+import { restoreShow, deleteShowPermanently, resolveConflictsAndRestore } from '@/app/admin/actions'
+import type { EpisodeConflict } from '@/app/admin/actions'
 import { toast } from 'sonner'
 import type { Database } from '@/lib/database.types'
 
@@ -44,6 +54,13 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
   const [deleting, setDeleting] = useState(false)
   const [restoring, setRestoring] = useState<string | null>(null)
 
+  // Conflict resolution state
+  const [conflictDialogOpen, setConflictDialogOpen] = useState(false)
+  const [conflictShow, setConflictShow] = useState<Show | null>(null)
+  const [conflicts, setConflicts] = useState<EpisodeConflict[]>([])
+  const [fixes, setFixes] = useState<Record<string, number>>({})
+  const [resolving, setResolving] = useState(false)
+
   function handleDeleteClick(show: Show) {
     setDeletingShow(show)
     setDeleteDialogOpen(true)
@@ -55,6 +72,45 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
     setRestoring(null)
     if (result.success) {
       toast.success(`"${show.title}" restored`)
+    } else if (result.conflicts && result.conflicts.length > 0) {
+      // Open conflict resolution dialog
+      setConflictShow(show)
+      setConflicts(result.conflicts)
+      // Pre-fill fixes with current numbers so user sees what needs changing
+      const initialFixes: Record<string, number> = {}
+      for (const c of result.conflicts) {
+        initialFixes[c.episodeId] = c.episodeNumber
+      }
+      setFixes(initialFixes)
+      setConflictDialogOpen(true)
+    } else {
+      toast.error(result.error ?? 'Failed to restore show')
+    }
+  }
+
+  async function handleResolveAndRestore() {
+    if (!conflictShow) return
+    setResolving(true)
+    const fixArray = Object.entries(fixes).map(([episodeId, newEpisodeNumber]) => ({
+      episodeId,
+      newEpisodeNumber,
+    }))
+    const result = await resolveConflictsAndRestore(conflictShow.id, fixArray)
+    setResolving(false)
+    if (result.success) {
+      setConflictDialogOpen(false)
+      setConflictShow(null)
+      setConflicts([])
+      toast.success(`"${conflictShow.title}" restored`)
+    } else if (result.conflicts && result.conflicts.length > 0) {
+      // Still conflicts after fix attempt — update the dialog
+      setConflicts(result.conflicts)
+      const newFixes: Record<string, number> = {}
+      for (const c of result.conflicts) {
+        newFixes[c.episodeId] = fixes[c.episodeId] ?? c.episodeNumber
+      }
+      setFixes(newFixes)
+      toast.error('Some conflicts remain — update the numbers and try again')
     } else {
       toast.error(result.error ?? 'Failed to restore show')
     }
@@ -155,6 +211,65 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
         destructive
         loading={deleting}
       />
+
+      {/* Conflict resolution dialog */}
+      <Dialog open={conflictDialogOpen} onOpenChange={setConflictDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="size-5 text-amber-500" />
+              Episode Number Conflicts
+            </DialogTitle>
+            <DialogDescription>
+              {`"${conflictShow?.title ?? ''}" has episodes whose numbers are already taken. Change the numbers below to resolve conflicts, then click Fix & Restore.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            {conflicts.map((c) => (
+              <div key={c.episodeId} className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
+                <div className="text-sm">
+                  <span className="font-medium text-foreground">S{c.seasonNumber} E{c.episodeNumber}</span>
+                  {' — '}
+                  <span className="text-muted-foreground">{c.episodeTitle}</span>
+                </div>
+                <div className="text-xs text-amber-400">
+                  Conflicts with existing episode: &quot;{c.conflictingEpisodeTitle}&quot;
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground shrink-0">New #:</span>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={fixes[c.episodeId] ?? c.episodeNumber}
+                    onChange={(e) => setFixes(prev => ({
+                      ...prev,
+                      [c.episodeId]: parseInt(e.target.value) || 1,
+                    }))}
+                    className="h-8 w-24"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConflictDialogOpen(false)}
+              disabled={resolving}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleResolveAndRestore}
+              disabled={resolving}
+            >
+              {resolving ? 'Fixing...' : 'Fix & Restore'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </TooltipProvider>
   )
 }
