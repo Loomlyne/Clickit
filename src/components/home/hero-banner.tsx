@@ -30,7 +30,7 @@ export function HeroBanner({ shows }: HeroBannerProps) {
       return
     }
 
-    const INTERVAL = 1500
+    const INTERVAL = 1000
     const TICK = 50
     let elapsed = 0
 
