@@ -9,7 +9,7 @@ import { CtaBanner } from '@/components/home/cta-banner'
 import {
   getShowBySlug,
   getSeasonsByShowId,
-  getEpisodesBySeasonId,
+  getEpisodesByShowId,
   getStreamingShows,
   getShowWatchlistState,
   getShowLikeState,
@@ -40,15 +40,21 @@ export default async function SeriesDetailPage({ params }: Props) {
   if (!dbShow) notFound()
 
   const show = mapShow(dbShow)
-  const seasons = await getSeasonsByShowId(dbShow.id)
+
+  // Fetch seasons + all episodes in parallel (2 queries, not N+1)
+  const [seasons, allEpisodes] = await Promise.all([
+    getSeasonsByShowId(dbShow.id),
+    getEpisodesByShowId(dbShow.id),
+  ])
 
   const viewSeasons = seasons.map(mapSeason)
 
-  // Pre-compute all episodes by season
+  // Group episodes by season (in-memory, no extra queries)
   const viewEpisodesBySeason: Record<string, ViewEpisode[]> = {}
   for (const season of seasons) {
-    const eps = await getEpisodesBySeasonId(season.id)
-    viewEpisodesBySeason[season.id] = eps.map(mapEpisode)
+    viewEpisodesBySeason[season.id] = allEpisodes
+      .filter(e => e.season_id === season.id)
+      .map(mapEpisode)
   }
 
   // First episode for hero CTA

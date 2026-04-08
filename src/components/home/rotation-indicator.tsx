@@ -3,7 +3,9 @@
 interface RotationIndicatorProps {
   activeIndex: number
   total: number
-  progress: number
+  /** Duration in ms for the progress fill animation */
+  intervalMs: number
+  isPaused: boolean
   /** Hex color of the active show's brand color for progress fill */
   activeColor?: string
 }
@@ -11,7 +13,8 @@ interface RotationIndicatorProps {
 export function RotationIndicator({
   activeIndex,
   total,
-  progress,
+  intervalMs,
+  isPaused,
   activeColor = '#ffffff',
 }: RotationIndicatorProps) {
   return (
@@ -30,11 +33,12 @@ export function RotationIndicator({
         >
           {index === activeIndex && (
             <div
-              className="absolute inset-y-0 left-0 rounded-full transition-none"
+              key={`progress-${activeIndex}`}
+              className="absolute inset-y-0 left-0 rounded-full"
               style={{
-                width: `${progress * 100}%`,
                 backgroundColor: activeColor,
-                transition: 'width 100ms linear',
+                animation: `progress-fill ${intervalMs}ms linear forwards`,
+                animationPlayState: isPaused ? 'paused' : 'running',
               }}
             />
           )}

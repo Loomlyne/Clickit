@@ -188,6 +188,54 @@ export async function getNewEpisodes(): Promise<NewEpisodeItem[]> {
 }
 
 // ---------------------------------------------------------------------------
+// Batch queries — eliminate N+1 on browse + series pages
+// ---------------------------------------------------------------------------
+
+/**
+ * For each show, returns the first published episode of season 1.
+ * One query instead of 2N (seasons + episodes per show).
+ */
+export async function getFirstEpisodesForShows(
+  showIds: string[]
+): Promise<Record<string, string>> {
+  if (showIds.length === 0) return {}
+  const supabase = await createClient()
+
+  // Join episodes → seasons, filter season_number=1, episode_number=1, published
+  const { data } = await supabase
+    .from('episodes')
+    .select('id, show_id, seasons!inner(season_number)')
+    .in('show_id', showIds)
+    .eq('archived', false)
+    .eq('status', 'published')
+    .eq('seasons.season_number', 1)
+    .eq('episode_number', 1)
+
+  const result: Record<string, string> = {}
+  for (const row of data ?? []) {
+    result[row.show_id] = row.id
+  }
+  return result
+}
+
+/**
+ * Fetch ALL episodes for a show across all seasons in one query.
+ * Caller groups by season_id as needed.
+ */
+export async function getEpisodesByShowId(showId: string): Promise<DbEpisode[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('episodes')
+    .select('*')
+    .eq('show_id', showId)
+    .eq('archived', false)
+    .in('status', ['published', 'coming-soon'])
+    .order('episode_number', { ascending: true })
+
+  return data ?? []
+}
+
+// ---------------------------------------------------------------------------
 // Series detail queries
 // ---------------------------------------------------------------------------
 
@@ -242,43 +290,36 @@ export async function getEpisodeById(episodeId: string) {
 
   if (!episode) return null
 
-  const { data: season } = await supabase
-    .from('seasons')
-    .select('*')
-    .eq('id', episode.season_id)
-    .single()
-
-  const { data: show } = await supabase
-    .from('shows')
-    .select('*')
-    .eq('id', episode.show_id)
-    .single()
+  // Fetch season, show, and all seasons in parallel
+  const [{ data: season }, { data: show }] = await Promise.all([
+    supabase.from('seasons').select('*').eq('id', episode.season_id).single(),
+    supabase.from('shows').select('*').eq('id', episode.show_id).single(),
+  ])
 
   if (!season || !show) return null
 
-  const seasons = await getSeasonsByShowId(show.id)
+  // Fetch seasons + ALL episodes for the show in parallel (2 queries, not 2N)
+  const [seasons, allShowEpisodes] = await Promise.all([
+    getSeasonsByShowId(show.id),
+    getEpisodesByShowId(show.id),
+  ])
 
-  // Get all episodes grouped by season for navigation
+  // Group episodes by season
   const episodesBySeason: Record<string, DbEpisode[]> = {}
   for (const s of seasons) {
-    episodesBySeason[s.id] = await getEpisodesBySeasonId(s.id)
+    episodesBySeason[s.id] = allShowEpisodes.filter(e => e.season_id === s.id)
   }
 
-  // Flatten all published episodes across all seasons for cross-season navigation
-  const allEpisodes: DbEpisode[] = []
-  for (const s of seasons) {
-    const eps = episodesBySeason[s.id] ?? []
-    allEpisodes.push(...eps.filter(e => e.status === 'published'))
-  }
-
-  // Sort by (season_number, episode_number)
+  // Flatten published episodes for cross-season navigation
   const seasonNumberMap = new Map(seasons.map(s => [s.id, s.season_number]))
-  allEpisodes.sort((a, b) => {
-    const aSeason = seasonNumberMap.get(a.season_id) ?? 0
-    const bSeason = seasonNumberMap.get(b.season_id) ?? 0
-    if (aSeason !== bSeason) return aSeason - bSeason
-    return a.episode_number - b.episode_number
-  })
+  const allEpisodes = allShowEpisodes
+    .filter(e => e.status === 'published')
+    .sort((a, b) => {
+      const aSeason = seasonNumberMap.get(a.season_id) ?? 0
+      const bSeason = seasonNumberMap.get(b.season_id) ?? 0
+      if (aSeason !== bSeason) return aSeason - bSeason
+      return a.episode_number - b.episode_number
+    })
 
   const currentIdx = allEpisodes.findIndex(e => e.id === episodeId)
   const prev = currentIdx > 0 ? allEpisodes[currentIdx - 1] : null

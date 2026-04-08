@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   AnimatePresence,
   MotionConfig,
@@ -12,6 +12,8 @@ import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 import { HeroSlide } from '@/components/home/hero-slide'
 import { RotationIndicator } from '@/components/home/rotation-indicator'
 
+const INTERVAL = 2500
+
 interface HeroBannerProps {
   shows: Array<{ show: ViewShow; firstEpisodeId?: string }>
 }
@@ -19,30 +21,25 @@ interface HeroBannerProps {
 export function HeroBanner({ shows }: HeroBannerProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
-  const [progress, setProgress] = useState(0)
 
   const shouldReduceMotion = useReducedMotion()
-  const elapsedRef = useRef(0)
 
-  // Auto-rotation timer — 1000ms per slide, persists elapsed across hover pause
+  // Single interval just advances the slide — progress bar is pure CSS
   useEffect(() => {
     if (isPaused || shouldReduceMotion) return
 
-    const INTERVAL = 2500
-    const TICK = 50
-
     const timer = setInterval(() => {
-      elapsedRef.current += TICK
-      setProgress(elapsedRef.current / INTERVAL)
-      if (elapsedRef.current >= INTERVAL) {
-        setActiveIndex((prev) => (prev + 1) % shows.length)
-        elapsedRef.current = 0
-        setProgress(0)
-      }
-    }, TICK)
+      setActiveIndex((prev) => (prev + 1) % shows.length)
+    }, INTERVAL)
 
     return () => clearInterval(timer)
   }, [isPaused, shouldReduceMotion, shows.length])
+
+  const handleBlur = useCallback((e: React.FocusEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsPaused(false)
+    }
+  }, [])
 
   return (
     <div
@@ -50,12 +47,7 @@ export function HeroBanner({ shows }: HeroBannerProps) {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocus={() => setIsPaused(true)}
-      onBlur={(e) => {
-        // Only unpause if focus leaves the hero entirely
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-          setIsPaused(false)
-        }
-      }}
+      onBlur={handleBlur}
     >
       <MotionConfig reducedMotion="user">
         <AnimatePresence mode="sync">
@@ -70,7 +62,8 @@ export function HeroBanner({ shows }: HeroBannerProps) {
         <RotationIndicator
           activeIndex={activeIndex}
           total={shows.length}
-          progress={progress}
+          intervalMs={INTERVAL}
+          isPaused={isPaused}
           activeColor={BRAND_COLOR_HEX[shows[activeIndex].show.brandColor]}
         />
       </MotionConfig>

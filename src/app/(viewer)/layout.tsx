@@ -3,8 +3,11 @@ import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 
 export default async function ViewerLayout({ children }: { children: React.ReactNode }) {
+  // Use getSession() instead of getUser() — middleware already validated the JWT
+  // and refreshed cookies. This avoids a redundant ~50-100ms server round-trip.
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user ?? null
 
   return (
     <>

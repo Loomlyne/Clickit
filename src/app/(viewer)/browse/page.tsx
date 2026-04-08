@@ -9,8 +9,7 @@ import {
   getStreamingShows,
   getComingSoonShows,
   getNewEpisodes,
-  getSeasonsByShowId,
-  getEpisodesBySeasonId,
+  getFirstEpisodesForShows,
 } from '@/lib/queries'
 
 export default async function BrowsePage() {
@@ -22,19 +21,12 @@ export default async function BrowsePage() {
     getNewEpisodes(),
   ])
 
-  // Resolve first episode for each featured show (for "Watch S1 E1" button)
-  const featuredWithEpisodes = await Promise.all(
-    featured.map(async (show) => {
-      const seasons = await getSeasonsByShowId(show.id)
-      const firstSeason = seasons[0]
-      let firstEpisodeId: string | undefined
-      if (firstSeason) {
-        const eps = await getEpisodesBySeasonId(firstSeason.id)
-        firstEpisodeId = eps[0]?.id
-      }
-      return { show, firstEpisodeId }
-    })
-  )
+  // Batch: one query for all featured shows' first episodes (was 2N queries)
+  const firstEpisodeMap = await getFirstEpisodesForShows(featured.map(s => s.id))
+  const featuredWithEpisodes = featured.map((show) => ({
+    show,
+    firstEpisodeId: firstEpisodeMap[show.id],
+  }))
 
   return (
     <div>

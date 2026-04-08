@@ -32,9 +32,20 @@ export function SeriesDetailHero({
   userId,
 }: SeriesDetailHeroProps) {
   const [scrolled, setScrolled] = useState(false)
+  const mobileBackdropUrl = show.posterUrl ?? show.heroImageUrl
+  const desktopBackdropUrl = show.heroImageUrl ?? show.posterUrl
 
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > window.innerHeight * 0.7)
+    let ticking = false
+    const handler = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setScrolled(window.scrollY > window.innerHeight * 0.7)
+          ticking = false
+        })
+        ticking = true
+      }
+    }
     window.addEventListener('scroll', handler, { passive: true })
     return () => window.removeEventListener('scroll', handler)
   }, [])
@@ -65,15 +76,26 @@ export function SeriesDetailHero({
 
       <div className="relative -mt-24 md:-mt-28 min-h-dvh overflow-hidden">
         <div className="absolute inset-0 bg-black" />
-        {show.heroImageUrl && (
+        {mobileBackdropUrl && (
           <Image
-            src={show.heroImageUrl}
+            src={mobileBackdropUrl}
             alt=""
             fill
             priority
             aria-hidden
             sizes="100vw"
-            className="object-cover object-center opacity-80"
+            className="object-cover object-center opacity-80 md:hidden"
+          />
+        )}
+        {desktopBackdropUrl && (
+          <Image
+            src={desktopBackdropUrl}
+            alt=""
+            fill
+            priority
+            aria-hidden
+            sizes="100vw"
+            className="hidden object-cover object-center opacity-80 md:block"
           />
         )}
 
