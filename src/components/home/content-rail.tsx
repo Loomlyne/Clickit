@@ -4,7 +4,6 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
 } from '@/components/ui/carousel'
 import { ShowCard } from '@/components/shows/show-card'
 import { PlaceholderCard } from '@/components/shows/placeholder-card'
@@ -68,7 +67,6 @@ export function ContentRail({
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselNext className="hidden h-12 w-12 rounded-full border border-white/10 bg-[#0d1118]/88 text-white shadow-[0_18px_48px_rgba(0,0,0,0.32)] backdrop-blur-xl hover:bg-[#151b25] md:-right-2 md:flex" />
           </Carousel>
         </div>
       </section>

@@ -4,8 +4,6 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
 } from '@/components/ui/carousel'
 import { EpisodeCard } from '@/components/shows/episode-card'
 import { PlaceholderCard } from '@/components/shows/placeholder-card'
@@ -56,8 +54,6 @@ export function NewEpisodesRail({ episodes, minCards = 6 }: NewEpisodesRailProps
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious className="hidden h-12 w-12 rounded-full border border-white/10 bg-[#0d1118]/88 text-white shadow-[0_18px_48px_rgba(0,0,0,0.32)] backdrop-blur-xl hover:bg-[#151b25] md:-left-2 md:flex" />
-            <CarouselNext className="hidden h-12 w-12 rounded-full border border-white/10 bg-[#0d1118]/88 text-white shadow-[0_18px_48px_rgba(0,0,0,0.32)] backdrop-blur-xl hover:bg-[#151b25] md:-right-2 md:flex" />
           </Carousel>
         </div>
       </section>
