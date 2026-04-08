@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-30)
 Phase: 10
 Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-04-04
+Last activity: 2026-04-08 - Completed quick task 260408-tlh: Fix episode insert collisions from stale nextEpisodeNumber
 
 Progress: [██████████] 100% (Phases 1-7 complete)
 
@@ -156,6 +156,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260403-388 | Commit all changes, deploy to Vercel preview then production, visual QA all 8 pages, fix issues | 2026-04-02 | f1812ec | [260403-388-commit-all-changes-deploy-to-vercel-prev](./quick/260403-388-commit-all-changes-deploy-to-vercel-prev/) |
+| 260408-tlh | Fix episode insert collisions from stale nextEpisodeNumber | 2026-04-08 | 426d32c | [260408-tlh-fix-episode-insert-collisions-from-stale](./quick/260408-tlh-fix-episode-insert-collisions-from-stale/) |
 
 ### Blockers/Concerns
 
