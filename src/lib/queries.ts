@@ -321,35 +321,36 @@ export async function getContinueWatchingEpisodes(
   const supabase = await createClient()
   const { data } = await supabase
     .from('watch_progress')
-    .select('progress_seconds, duration_seconds, episode_id, episodes!inner(id, title, episode_number, youtube_video_id, show_id, season_id, seasons!inner(season_number), shows!inner(id, title, slug, brand_color))')
+    .select('progress_seconds, duration_seconds, episode_id, episodes!inner(id, title, episode_number, status, youtube_video_id, show_id, season_id, seasons!inner(season_number), shows!inner(id, title, slug, brand_color, archived))')
     .eq('user_id', userId)
     .eq('completed', false)
     .gt('progress_seconds', 0)
-    .eq('episodes.shows.archived', false)
-    .eq('episodes.status', 'published')
     .order('updated_at', { ascending: false })
-    .limit(10)
+    .limit(20)
 
   if (!data) return []
 
-  return data.map((row: any) => {
-    const ep = row.episodes
-    const dur = row.duration_seconds || 1
-    return {
-      episodeId: ep.id,
-      episodeTitle: ep.title,
-      episodeNumber: ep.episode_number,
-      seasonNumber: ep.seasons.season_number,
-      showId: ep.shows.id,
-      showTitle: ep.shows.title,
-      showSlug: ep.shows.slug,
-      showBrandColor: (ep.shows.brand_color || 'brand-blue') as ViewShow['brandColor'],
-      youtubeVideoId: ep.youtube_video_id ?? null,
-      progressSeconds: row.progress_seconds,
-      durationSeconds: dur,
-      progressPercent: Math.min(Math.round((row.progress_seconds / dur) * 100), 99),
-    }
-  })
+  return data
+    .filter((row: any) => !row.episodes.shows.archived && row.episodes.status === 'published')
+    .slice(0, 10)
+    .map((row: any) => {
+      const ep = row.episodes
+      const dur = row.duration_seconds || 1
+      return {
+        episodeId: ep.id,
+        episodeTitle: ep.title,
+        episodeNumber: ep.episode_number,
+        seasonNumber: ep.seasons.season_number,
+        showId: ep.shows.id,
+        showTitle: ep.shows.title,
+        showSlug: ep.shows.slug,
+        showBrandColor: (ep.shows.brand_color || 'brand-blue') as ViewShow['brandColor'],
+        youtubeVideoId: ep.youtube_video_id ?? null,
+        progressSeconds: row.progress_seconds,
+        durationSeconds: dur,
+        progressPercent: Math.min(Math.round((row.progress_seconds / dur) * 100), 99),
+      }
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -513,31 +514,32 @@ export async function getRecentlyWatched(userId: string): Promise<RecentlyWatche
   const supabase = await createClient()
   const { data } = await supabase
     .from('watch_progress')
-    .select('progress_seconds, duration_seconds, completed, updated_at, episode_id, episodes!inner(id, title, episode_number, season_id, show_id, seasons!inner(season_number), shows!inner(title, slug, brand_color, archived))')
+    .select('progress_seconds, duration_seconds, completed, updated_at, episode_id, episodes!inner(id, title, episode_number, status, season_id, show_id, seasons!inner(season_number), shows!inner(title, slug, brand_color, archived))')
     .eq('user_id', userId)
-    .eq('episodes.shows.archived', false)
-    .eq('episodes.status', 'published')
     .order('updated_at', { ascending: false })
-    .limit(10)
+    .limit(20)
 
   if (!data) return []
 
-  return data.map((row: any) => {
-    const ep = row.episodes
-    return {
-      episodeId: ep.id,
-      episodeTitle: ep.title,
-      episodeNumber: ep.episode_number,
-      seasonNumber: ep.seasons.season_number,
-      showTitle: ep.shows.title,
-      showSlug: ep.shows.slug,
-      showBrandColor: (ep.shows.brand_color || 'brand-blue') as ViewShow['brandColor'],
-      progressSeconds: row.progress_seconds,
-      durationSeconds: row.duration_seconds ?? 0,
-      completed: row.completed,
-      updatedAt: row.updated_at,
-    }
-  })
+  return data
+    .filter((row: any) => !row.episodes.shows.archived && row.episodes.status === 'published')
+    .slice(0, 10)
+    .map((row: any) => {
+      const ep = row.episodes
+      return {
+        episodeId: ep.id,
+        episodeTitle: ep.title,
+        episodeNumber: ep.episode_number,
+        seasonNumber: ep.seasons.season_number,
+        showTitle: ep.shows.title,
+        showSlug: ep.shows.slug,
+        showBrandColor: (ep.shows.brand_color || 'brand-blue') as ViewShow['brandColor'],
+        progressSeconds: row.progress_seconds,
+        durationSeconds: row.duration_seconds ?? 0,
+        completed: row.completed,
+        updatedAt: row.updated_at,
+      }
+    })
 }
 
 export async function getEpisodesProgress(
