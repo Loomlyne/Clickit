@@ -28,7 +28,7 @@ export function HeroBanner({ shows }: HeroBannerProps) {
   useEffect(() => {
     if (isPaused || shouldReduceMotion) return
 
-    const INTERVAL = 1000
+    const INTERVAL = 2500
     const TICK = 50
 
     const timer = setInterval(() => {
