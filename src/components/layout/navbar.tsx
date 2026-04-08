@@ -49,9 +49,7 @@ export function Navbar({ initialUser }: NavbarProps) {
           />
         </Link>
 
-        <div className="flex shrink-0 items-center px-2">
-          <AuthSection initialUser={initialUser} />
-        </div>
+        <AuthSection initialUser={initialUser} />
       </div>
     </nav>
   )

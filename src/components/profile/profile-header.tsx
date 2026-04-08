@@ -5,14 +5,16 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Shield, LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { AvatarUpload } from './avatar-upload'
 
 interface ProfileHeaderProps {
   displayName: string
   email: string
+  avatarUrl: string | null
   isAdmin: boolean
 }
 
-export function ProfileHeader({ displayName, email, isAdmin }: ProfileHeaderProps) {
+export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: ProfileHeaderProps) {
   const router = useRouter()
   const [signingOut, setSigningOut] = useState(false)
 
@@ -28,12 +30,7 @@ export function ProfileHeader({ displayName, email, isAdmin }: ProfileHeaderProp
 
   return (
     <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-6">
-      <div
-        className="flex size-20 items-center justify-center rounded-full border border-white/10 text-3xl font-semibold text-white shadow-[0_18px_48px_rgba(0,0,0,0.28)]"
-        style={{ background: 'linear-gradient(135deg, rgba(96,115,255,0.85), rgba(46,57,121,0.92))' }}
-      >
-        {initial}
-      </div>
+      <AvatarUpload currentUrl={avatarUrl} fallbackInitial={initial} />
 
       <div className="flex flex-col items-center gap-1 sm:items-start sm:flex-1">
         <p className="text-[11px] uppercase tracking-[0.26em] text-white/34">Account</p>

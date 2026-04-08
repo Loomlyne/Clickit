@@ -50,6 +50,7 @@ export default async function ProfilePage() {
         <ProfileHeader
           displayName={displayName}
           email={email}
+          avatarUrl={profile?.avatar_url ?? null}
           isAdmin={isAdmin}
         />
 
