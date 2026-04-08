@@ -44,22 +44,20 @@ export function Footer() {
                 height={36}
                 className="h-9 w-auto"
               />
-              <p className="max-w-xl text-base leading-7 text-white/66">
+              <p className="text-base leading-7 text-white/66">
                 Clickit brings original programs from Abu Dhabi into a premium streaming experience built around story, craft, and cultural range.
               </p>
               <div className="flex flex-wrap items-center gap-3 text-sm text-white/48">
                 <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">15 original programs</span>
                 <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">Produced by Spacelight Studios FZ LLC</span>
-              </div>
-              <div className="flex gap-3 pt-1">
-                <a href="#" aria-label="YouTube" className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/48 transition-colors hover:border-white/20 hover:text-white">
-                  <YouTubeIcon className="h-4 w-4" />
-                </a>
                 <a href="#" aria-label="Instagram" className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/48 transition-colors hover:border-white/20 hover:text-white">
                   <InstagramIcon className="h-4 w-4" />
                 </a>
                 <a href="#" aria-label="X (Twitter)" className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/48 transition-colors hover:border-white/20 hover:text-white">
                   <XIcon className="h-4 w-4" />
+                </a>
+                <a href="#" aria-label="YouTube" className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/48 transition-colors hover:border-white/20 hover:text-white">
+                  <YouTubeIcon className="h-4 w-4" />
                 </a>
               </div>
             </div>
