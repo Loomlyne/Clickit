@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   AnimatePresence,
   MotionConfig,
@@ -22,24 +22,21 @@ export function HeroBanner({ shows }: HeroBannerProps) {
   const [progress, setProgress] = useState(0)
 
   const shouldReduceMotion = useReducedMotion()
+  const elapsedRef = useRef(0)
 
-  // Auto-rotation timer (6000ms interval per D-02)
+  // Auto-rotation timer — 1000ms per slide, persists elapsed across hover pause
   useEffect(() => {
-    if (isPaused || shouldReduceMotion) {
-      setProgress(0)
-      return
-    }
+    if (isPaused || shouldReduceMotion) return
 
-    const INTERVAL = 500
+    const INTERVAL = 1000
     const TICK = 50
-    let elapsed = 0
 
     const timer = setInterval(() => {
-      elapsed += TICK
-      setProgress(elapsed / INTERVAL)
-      if (elapsed >= INTERVAL) {
+      elapsedRef.current += TICK
+      setProgress(elapsedRef.current / INTERVAL)
+      if (elapsedRef.current >= INTERVAL) {
         setActiveIndex((prev) => (prev + 1) % shows.length)
-        elapsed = 0
+        elapsedRef.current = 0
         setProgress(0)
       }
     }, TICK)
