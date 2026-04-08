@@ -86,7 +86,7 @@ export function AuthSection({ initialUser }: AuthSectionProps) {
         await supabase.auth.signOut()
         setUser(null)
         setIsAdmin(false)
-        router.push('/')
+        router.push('/browse')
         router.refresh()
       }}
     >

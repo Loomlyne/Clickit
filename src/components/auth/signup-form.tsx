@@ -68,7 +68,7 @@ export function SignupForm() {
     }
 
     toast.success('Account created! Welcome to Clickit Story.')
-    router.push('/')
+    router.push('/browse')
     router.refresh()
   }
 

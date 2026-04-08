@@ -6,7 +6,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect('/')
+  if (!user) redirect('/browse')
 
   // Check if user is admin via app_config table lookup
   const { data: config } = await supabase
@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     .select('admin_user_id')
     .single()
 
-  if (config?.admin_user_id !== user.id) redirect('/')
+  if (config?.admin_user_id !== user.id) redirect('/browse')
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.14),transparent_28%),linear-gradient(180deg,#05070c_0%,#090c13_42%,#070910_100%)]">
