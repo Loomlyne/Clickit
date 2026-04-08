@@ -41,7 +41,7 @@ export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: Profil
       </div>
 
       {/* Action buttons */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-end">
         {isAdmin && (
           <Link
             href="/admin"

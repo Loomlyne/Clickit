@@ -22,7 +22,7 @@ const disabledClasses =
 
 export function EpisodeNav({ prev, next }: EpisodeNavProps) {
   return (
-    <div className="flex flex-row gap-4">
+    <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
       {/* Previous button */}
       {prev ? (
         <Link

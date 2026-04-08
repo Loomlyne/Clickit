@@ -18,7 +18,7 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
     : null
 
   return (
-    <Link href={`/watch/${item.episodeId}`} className="group block basis-[340px] flex-shrink-0">
+    <Link href={`/watch/${item.episodeId}`} className="group block basis-[85%] sm:basis-1/2 md:basis-[340px] flex-shrink-0">
       <div className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
         <div className="relative aspect-video w-full overflow-hidden">
           {thumbnailUrl ? (
@@ -27,7 +27,7 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
               alt={item.episodeTitle}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="340px"
+              sizes="(max-width: 639px) 85vw, (max-width: 767px) 50vw, 340px"
             />
           ) : (
             <ShowArt brandColor={brandHex} title={item.episodeTitle} aspectRatio="16/9">

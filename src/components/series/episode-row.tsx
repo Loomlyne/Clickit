@@ -40,7 +40,7 @@ export function EpisodeRow({
       {/* Thumbnail area — wider: 160px mobile, 180px md+ */}
       <div
         className={cn(
-          'relative aspect-video w-[160px] md:w-[180px] flex-shrink-0 rounded-md overflow-hidden',
+          'relative aspect-video w-[120px] sm:w-[160px] md:w-[180px] flex-shrink-0 rounded-md overflow-hidden',
           isDimmed && 'opacity-45'
         )}
       >

@@ -54,7 +54,7 @@ export function ContentRail({
               {shows.map((show) => (
                 <CarouselItem
                   key={show.id}
-                  className="basis-[300px] flex-shrink-0"
+                  className="basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 flex-shrink-0"
                 >
                   <ShowCard show={show} />
                 </CarouselItem>
@@ -62,7 +62,7 @@ export function ContentRail({
               {Array.from({ length: placeholderCount }).map((_, i) => (
                 <CarouselItem
                   key={`placeholder-${i}`}
-                  className="basis-[300px] flex-shrink-0"
+                  className="basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 flex-shrink-0"
                 >
                   <PlaceholderCard />
                 </CarouselItem>

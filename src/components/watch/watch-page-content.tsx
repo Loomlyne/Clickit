@@ -98,7 +98,7 @@ export function WatchPageContent({
 
           {/* Metadata below player */}
           <motion.div
-            className="px-4 py-5"
+            className="px-4 py-5 md:px-6"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: CINEMA_EASE }}
@@ -144,9 +144,9 @@ export function WatchPageContent({
         {/* Right column: episode list — sits beside the player on desktop */}
         <aside
           aria-label="Episode selector"
-          className="w-full px-[14px] lg:flex-shrink-0 border-t border-white/[0.06] lg:border-t-0 lg:border-l lg:border-white/[0.06] bg-black"
+          className="w-full lg:w-[380px] lg:flex-shrink-0 border-t border-white/[0.06] lg:border-t-0 lg:border-l lg:border-white/[0.06] bg-black"
         >
-          <div className="lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:overflow-y-auto scrollbar-hide">
+          <div className="lg:sticky lg:top-[72px] lg:h-[calc(100dvh-72px)] lg:overflow-y-auto scrollbar-hide">
             <div className="px-4 py-3 border-b border-white/[0.06]">
               <p className="text-white/40 text-xs uppercase tracking-wider mb-1">{show.title}</p>
               <p className="text-white font-semibold text-sm">Episodes</p>

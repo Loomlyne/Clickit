@@ -42,7 +42,7 @@ export function NewEpisodesRail({ episodes, minCards = 6 }: NewEpisodesRailProps
               {episodes.map((ep) => (
                 <CarouselItem
                   key={ep.id}
-                  className="basis-[300px] flex-shrink-0"
+                  className="basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 flex-shrink-0"
                 >
                   <EpisodeCard episode={ep} />
                 </CarouselItem>
@@ -50,7 +50,7 @@ export function NewEpisodesRail({ episodes, minCards = 6 }: NewEpisodesRailProps
               {Array.from({ length: placeholderCount }).map((_, i) => (
                 <CarouselItem
                   key={`placeholder-${i}`}
-                  className="basis-[300px] flex-shrink-0"
+                  className="basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 flex-shrink-0"
                 >
                   <PlaceholderCard />
                 </CarouselItem>

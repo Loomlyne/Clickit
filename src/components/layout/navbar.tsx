@@ -5,6 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { AuthSection } from './auth-section'
+import { NavLinks } from './nav-links'
+import { MobileNav } from './mobile-nav'
 
 interface NavbarProps {
   initialUser?: { id: string; email: string } | null
@@ -34,20 +36,27 @@ export function Navbar({ initialUser }: NavbarProps) {
         )}
         style={{ WebkitBackdropFilter: 'blur(28px)' }}
       >
-        <Link
-          href="/"
-          aria-label="Clickit Story home"
-          className="flex items-center px-3 md:px-4"
-        >
-          <Image
-            src="/brand/Clickit_final_logo.svg"
-            alt="Clickit Story"
-            width={124}
-            height={32}
-            priority
-            className="h-8 w-auto"
-          />
-        </Link>
+        <div className="flex items-center gap-2">
+          <MobileNav />
+          <Link
+            href="/"
+            aria-label="Clickit Story home"
+            className="flex items-center px-3 md:px-4"
+          >
+            <Image
+              src="/brand/Clickit_final_logo.svg"
+              alt="Clickit Story"
+              width={124}
+              height={32}
+              priority
+              className="h-8 w-auto"
+            />
+          </Link>
+        </div>
+
+        <div className="hidden md:flex">
+          <NavLinks />
+        </div>
 
         <AuthSection initialUser={initialUser} />
       </div>
