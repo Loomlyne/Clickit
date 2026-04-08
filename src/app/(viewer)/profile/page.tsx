@@ -86,7 +86,7 @@ export default async function ProfilePage() {
             <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-1">
               {watchlistShows.slice(0, 8).map((show) => (
                 <div key={show.id} className="w-32 flex-shrink-0">
-                  <PortraitShowCard show={show} initialSaved userId={user.id} />
+                  <PortraitShowCard show={show} />
                 </div>
               ))}
             </div>
@@ -115,7 +115,7 @@ export default async function ProfilePage() {
             <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-1">
               {likedShows.slice(0, 8).map((show) => (
                 <div key={show.id} className="w-32 flex-shrink-0">
-                  <PortraitShowCard show={show} userId={user.id} />
+                  <PortraitShowCard show={show} />
                 </div>
               ))}
             </div>

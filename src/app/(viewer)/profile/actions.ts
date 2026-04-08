@@ -10,11 +10,11 @@ export async function updateProfile(data: { display_name: string }) {
 
   const { error } = await supabase
     .from('profiles')
-    .upsert({
-      id: user.id,
+    .update({
       display_name: data.display_name,
       updated_at: new Date().toISOString(),
     })
+    .eq('id', user.id)
 
   if (error) throw new Error(error.message)
 
