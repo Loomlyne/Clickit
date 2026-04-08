@@ -50,11 +50,11 @@ export function ContentRail({
               slidesToScroll: 1,
             }}
           >
-            <CarouselContent className="ml-0">
+            <CarouselContent>
               {shows.map((show) => (
                 <CarouselItem
                   key={show.id}
-                  className="basis-[300px] flex-shrink-0 pl-0"
+                  className="basis-[300px] flex-shrink-0"
                 >
                   <ShowCard show={show} />
                 </CarouselItem>
@@ -62,7 +62,7 @@ export function ContentRail({
               {Array.from({ length: placeholderCount }).map((_, i) => (
                 <CarouselItem
                   key={`placeholder-${i}`}
-                  className="basis-[300px] flex-shrink-0 pl-0"
+                  className="basis-[300px] flex-shrink-0"
                 >
                   <PlaceholderCard />
                 </CarouselItem>

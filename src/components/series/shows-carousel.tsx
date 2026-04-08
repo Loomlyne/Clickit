@@ -20,9 +20,9 @@ export function ShowsCarousel({ shows }: ShowsCarouselProps) {
       opts={{ align: 'start', containScroll: 'trimSnaps', dragFree: false, loop: false, slidesToScroll: 1 }}
       className="mt-8"
     >
-      <CarouselContent className="-ml-4 px-0">
+      <CarouselContent>
         {shows.map((show) => (
-          <CarouselItem key={show.id} className="basis-1/2 pl-4 sm:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+          <CarouselItem key={show.id} className="basis-1/2 sm:basis-1/3 lg:basis-1/4 xl:basis-1/5">
             <PortraitShowCard show={show} />
           </CarouselItem>
         ))}
