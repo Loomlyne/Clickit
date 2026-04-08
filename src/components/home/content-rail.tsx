@@ -5,7 +5,6 @@ import {
   CarouselContent,
   CarouselItem,
   CarouselNext,
-  CarouselPrevious,
 } from '@/components/ui/carousel'
 import { ShowCard } from '@/components/shows/show-card'
 import { PlaceholderCard } from '@/components/shows/placeholder-card'
@@ -51,11 +50,11 @@ export function ContentRail({
               slidesToScroll: 1,
             }}
           >
-            <CarouselContent className="-ml-4">
+            <CarouselContent className="ml-0">
               {shows.map((show) => (
                 <CarouselItem
                   key={show.id}
-                  className="basis-[300px] flex-shrink-0 pl-4"
+                  className="basis-[300px] flex-shrink-0 pl-0"
                 >
                   <ShowCard show={show} />
                 </CarouselItem>
@@ -63,13 +62,12 @@ export function ContentRail({
               {Array.from({ length: placeholderCount }).map((_, i) => (
                 <CarouselItem
                   key={`placeholder-${i}`}
-                  className="basis-[300px] flex-shrink-0 pl-4"
+                  className="basis-[300px] flex-shrink-0 pl-0"
                 >
                   <PlaceholderCard />
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious className="hidden h-12 w-12 rounded-full border border-white/10 bg-[#0d1118]/88 text-white shadow-[0_18px_48px_rgba(0,0,0,0.32)] backdrop-blur-xl hover:bg-[#151b25] md:-left-2 md:flex" />
             <CarouselNext className="hidden h-12 w-12 rounded-full border border-white/10 bg-[#0d1118]/88 text-white shadow-[0_18px_48px_rgba(0,0,0,0.32)] backdrop-blur-xl hover:bg-[#151b25] md:-right-2 md:flex" />
           </Carousel>
         </div>

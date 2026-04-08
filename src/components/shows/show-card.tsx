@@ -25,7 +25,7 @@ export function ShowCard({ show }: ShowCardProps) {
         className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.24)]"
         style={{ willChange: 'transform' }}
       >
-        <ShowArt brandColor={brandColorHex} title={show.title} aspectRatio="16/9" className="rounded-none">
+        <ShowArt brandColor={brandColorHex} title={show.title} aspectRatio="16/9" className="rounded-none" imageUrl={show.heroImageUrl ?? show.posterUrl}>
           <div className="absolute inset-0 bg-gradient-to-t from-[#06070a] via-[#06070a]/32 to-transparent" />
           <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/16 bg-[rgba(8,11,18,0.76)] backdrop-blur-sm ring-1 ring-white/8 transition-transform duration-300 group-hover:scale-110">
