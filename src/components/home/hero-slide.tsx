@@ -25,7 +25,7 @@ export function HeroSlide({ show, isActive, firstEpisodeId }: HeroSlideProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: isActive ? 1 : 0 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 1.2, ease: 'easeInOut' }}
+      transition={{ duration: 0.4, ease: 'easeInOut' }}
     >
       {/* Cinematic backdrop with brand color bloom */}
       <CinematicBackdrop
