@@ -77,8 +77,8 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: var(--font-playfair), "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-jakarta), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: var(--font-jakarta), system-ui, sans-serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -195,7 +195,12 @@ html::-webkit-scrollbar {
 
 .font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.04em;
+  letter-spacing: -0.025em;
+}
+
+[dir="rtl"],
+[lang="ar"] {
+  font-family: var(--font-cairo), system-ui, sans-serif;
 }
 
 @keyframes glow-pulse {

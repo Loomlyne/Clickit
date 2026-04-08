@@ -1,22 +1,22 @@
 import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
-import { Inter, Playfair_Display } from 'next/font/google'
+import { Plus_Jakarta_Sans, Cairo } from 'next/font/google'
 
 import '@/styles/globals.css'
 import { Toaster } from 'sonner'
 
-const inter = Inter({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  variable: '--font-inter',
-  weight: ['400', '500', '600', '700'],
+  variable: '--font-jakarta',
+  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
 })
 
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  variable: '--font-playfair',
-  weight: ['400', '500', '600', '700'],
+const cairo = Cairo({
+  subsets: ['arabic', 'latin'],
+  variable: '--font-cairo',
+  weight: ['400', '500', '600', '700', '900'],
   display: 'swap',
 })
 
@@ -37,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`dark ${inter.variable} ${playfair.variable}`}>
+    <html lang="en" className={`dark ${jakarta.variable} ${cairo.variable}`}>
       <body className="bg-background text-foreground font-sans antialiased selection:bg-primary/70 selection:text-primary-foreground">
         <a
           href="#main"
