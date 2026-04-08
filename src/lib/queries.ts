@@ -325,6 +325,8 @@ export async function getContinueWatchingEpisodes(
     .eq('user_id', userId)
     .eq('completed', false)
     .gt('progress_seconds', 0)
+    .eq('episodes.shows.archived', false)
+    .eq('episodes.status', 'published')
     .order('updated_at', { ascending: false })
     .limit(10)
 
@@ -511,8 +513,10 @@ export async function getRecentlyWatched(userId: string): Promise<RecentlyWatche
   const supabase = await createClient()
   const { data } = await supabase
     .from('watch_progress')
-    .select('progress_seconds, duration_seconds, completed, updated_at, episode_id, episodes!inner(id, title, episode_number, season_id, show_id, seasons!inner(season_number), shows!inner(title, slug, brand_color))')
+    .select('progress_seconds, duration_seconds, completed, updated_at, episode_id, episodes!inner(id, title, episode_number, season_id, show_id, seasons!inner(season_number), shows!inner(title, slug, brand_color, archived))')
     .eq('user_id', userId)
+    .eq('episodes.shows.archived', false)
+    .eq('episodes.status', 'published')
     .order('updated_at', { ascending: false })
     .limit(10)
 
