@@ -36,9 +36,6 @@ export function ShowCard({ show }: ShowCardProps) {
         <div className="space-y-2 px-4 py-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-[11px] font-medium uppercase tracking-[0.2em] text-white/34">
-                {show.genre}
-              </p>
               <h3 className="mt-1 truncate text-[17px] font-semibold tracking-[-0.02em] text-white">
                 {show.title}
               </h3>
