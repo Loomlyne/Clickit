@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -113,6 +113,7 @@ export async function createShow(
     if (error) return { success: false, error: error.message }
 
     revalidatePath('/admin')
+    updateTag('shows')
     return { success: true, data: show }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to create show' }
@@ -142,6 +143,7 @@ export async function updateShow(
 
     revalidatePath('/admin')
     revalidatePath(`/admin/shows/${id}`)
+    updateTag('shows')
     return { success: true, data: show }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to update show' }
@@ -167,6 +169,8 @@ export async function archiveShow(id: string): Promise<ActionResult> {
       .eq('show_id', id)
 
     revalidatePath('/admin')
+    updateTag('shows')
+    updateTag('episodes')
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to archive show' }
@@ -241,6 +245,8 @@ export async function restoreShow(id: string): Promise<RestoreResult> {
 
     revalidatePath('/admin')
     revalidatePath('/admin/archive')
+    updateTag('shows')
+    updateTag('episodes')
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to restore show' }
@@ -295,6 +301,8 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
     if (error) return { success: false, error: error.message }
 
     revalidatePath('/admin/archive')
+    updateTag('shows')
+    updateTag('episodes')
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to delete show' }
@@ -333,6 +341,7 @@ export async function createSeason(
       .eq('id', parsed.show_id)
 
     revalidatePath(`/admin/shows/${parsed.show_id}`)
+    updateTag('shows')
     return { success: true, data: season }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to create season' }
@@ -358,6 +367,7 @@ export async function updateSeason(
 
     if (season) {
       revalidatePath(`/admin/shows/${season.show_id}`)
+      updateTag('shows')
     }
     return { success: true, data: season }
   } catch (err) {
@@ -404,6 +414,8 @@ export async function deleteSeason(
       .eq('id', showId)
 
     revalidatePath(`/admin/shows/${showId}`)
+    updateTag('shows')
+    updateTag('episodes')
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to delete season' }
@@ -496,6 +508,7 @@ export async function createEpisode(
       .eq('id', parsed.show_id)
 
     revalidatePath(`/admin/shows/${parsed.show_id}`)
+    updateTag('episodes')
     return { success: true, data: episode }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to create episode' }
@@ -549,6 +562,7 @@ export async function updateEpisode(
 
     if (episode) {
       revalidatePath(`/admin/shows/${episode.show_id}`)
+      updateTag('episodes')
     }
     return { success: true, data: episode }
   } catch (err) {
@@ -584,6 +598,7 @@ export async function archiveEpisode(
       .eq('id', showId)
 
     revalidatePath(`/admin/shows/${showId}`)
+    updateTag('episodes')
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to archive episode' }
@@ -645,6 +660,7 @@ export async function reorderEpisode(
       .eq('id', current.id)
 
     revalidatePath(`/admin/shows/${current.show_id}`)
+    updateTag('episodes')
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to reorder episode' }
@@ -753,6 +769,7 @@ export async function toggleFeatured(showId: string) {
 
     revalidatePath('/admin')
     revalidatePath('/')
+    updateTag('shows')
     return { success: true, featured: newFeatured }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to toggle featured' }

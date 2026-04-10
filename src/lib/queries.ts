@@ -1,4 +1,6 @@
+import { unstable_cache } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
 import type { Database } from '@/lib/database.types'
 
 export type DbShow = Database['public']['Tables']['shows']['Row']
@@ -109,53 +111,65 @@ export function mapSeason(db: DbSeason): ViewSeason {
 // Homepage queries
 // ---------------------------------------------------------------------------
 
-export async function getFeaturedShows(): Promise<ViewShow[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('shows')
-    .select('*')
-    .eq('featured', true)
-    .eq('archived', false)
-    .limit(5)
+export const getFeaturedShows = unstable_cache(
+  async (): Promise<ViewShow[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('shows')
+      .select('*')
+      .eq('featured', true)
+      .eq('archived', false)
+      .limit(5)
 
-  if (!data || data.length === 0) {
-    // Fallback: first 3 streaming shows if none featured
-    const { data: fallback } = await supabase
+    if (!data || data.length === 0) {
+      // Fallback: first 3 streaming shows if none featured
+      const { data: fallback } = await supabase
+        .from('shows')
+        .select('*')
+        .eq('status', 'now-streaming')
+        .eq('archived', false)
+        .order('created_at', { ascending: false })
+        .limit(3)
+      return (fallback ?? []).map(mapShow)
+    }
+
+    return data.map(mapShow)
+  },
+  ['featured-shows'],
+  { revalidate: 900, tags: ['shows'] } // 15 min — featured list changes occasionally
+)
+
+export const getStreamingShows = unstable_cache(
+  async (): Promise<ViewShow[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
       .from('shows')
       .select('*')
       .eq('status', 'now-streaming')
       .eq('archived', false)
       .order('created_at', { ascending: false })
-      .limit(3)
-    return (fallback ?? []).map(mapShow)
-  }
 
-  return data.map(mapShow)
-}
+    return (data ?? []).map(mapShow)
+  },
+  ['streaming-shows'],
+  { revalidate: 3600, tags: ['shows'] } // 1 hr — show status rarely changes
+)
 
-export async function getStreamingShows(): Promise<ViewShow[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('shows')
-    .select('*')
-    .eq('status', 'now-streaming')
-    .eq('archived', false)
-    .order('created_at', { ascending: false })
+export const getComingSoonShows = unstable_cache(
+  async (): Promise<ViewShow[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('shows')
+      .select('*')
+      .eq('status', 'coming-soon')
+      .eq('archived', false)
+      .order('created_at', { ascending: false })
 
-  return (data ?? []).map(mapShow)
-}
-
-export async function getComingSoonShows(): Promise<ViewShow[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('shows')
-    .select('*')
-    .eq('status', 'coming-soon')
-    .eq('archived', false)
-    .order('created_at', { ascending: false })
-
-  return (data ?? []).map(mapShow)
-}
+    return (data ?? []).map(mapShow)
+  },
+  ['coming-soon-shows'],
+  { revalidate: 3600, tags: ['shows'] } // 1 hr
+)
 
 export type NewEpisodeItem = ViewEpisode & {
   showTitle: string
@@ -164,28 +178,32 @@ export type NewEpisodeItem = ViewEpisode & {
   showPosterUrl?: string
 }
 
-export async function getNewEpisodes(): Promise<NewEpisodeItem[]> {
-  const supabase = await createClient()
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+export const getNewEpisodes = unstable_cache(
+  async (): Promise<NewEpisodeItem[]> => {
+    const supabase = createPublicClient()
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  const { data } = await supabase
-    .from('episodes')
-    .select('*, shows!inner(title, slug, brand_color, poster_url, status)')
-    .eq('status', 'published')
-    .eq('archived', false)
-    .gte('created_at', thirtyDaysAgo.toISOString())
-    .order('created_at', { ascending: false })
-    .limit(20)
+    const { data } = await supabase
+      .from('episodes')
+      .select('*, shows!inner(title, slug, brand_color, poster_url, status)')
+      .eq('status', 'published')
+      .eq('archived', false)
+      .gte('created_at', thirtyDaysAgo.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(20)
 
-  return (data ?? []).map((e: any) => ({
-    ...mapEpisode(e),
-    showTitle: e.shows.title,
-    showSlug: e.shows.slug,
-    showBrandColor: (e.shows.brand_color || 'brand-blue') as ViewShow['brandColor'],
-    showPosterUrl: e.shows.poster_url ?? undefined,
-  }))
-}
+    return (data ?? []).map((e: any) => ({
+      ...mapEpisode(e),
+      showTitle: e.shows.title,
+      showSlug: e.shows.slug,
+      showBrandColor: (e.shows.brand_color || 'brand-blue') as ViewShow['brandColor'],
+      showPosterUrl: e.shows.poster_url ?? undefined,
+    }))
+  },
+  ['new-episodes'],
+  { revalidate: 900, tags: ['episodes'] } // 15 min — new episodes added regularly
+)
 
 // ---------------------------------------------------------------------------
 // Batch queries — eliminate N+1 on browse + series pages
@@ -195,85 +213,103 @@ export async function getNewEpisodes(): Promise<NewEpisodeItem[]> {
  * For each show, returns the first published episode of season 1.
  * One query instead of 2N (seasons + episodes per show).
  */
-export async function getFirstEpisodesForShows(
-  showIds: string[]
-): Promise<Record<string, string>> {
-  if (showIds.length === 0) return {}
-  const supabase = await createClient()
+export const getFirstEpisodesForShows = unstable_cache(
+  async (showIds: string[]): Promise<Record<string, string>> => {
+    if (showIds.length === 0) return {}
+    const supabase = createPublicClient()
 
-  // Join episodes → seasons, filter season_number=1, episode_number=1, published
-  const { data } = await supabase
-    .from('episodes')
-    .select('id, show_id, seasons!inner(season_number)')
-    .in('show_id', showIds)
-    .eq('archived', false)
-    .eq('status', 'published')
-    .eq('seasons.season_number', 1)
-    .eq('episode_number', 1)
+    // Join episodes → seasons, filter season_number=1, episode_number=1, published
+    const { data } = await supabase
+      .from('episodes')
+      .select('id, show_id, seasons!inner(season_number)')
+      .in('show_id', showIds)
+      .eq('archived', false)
+      .eq('status', 'published')
+      .eq('seasons.season_number', 1)
+      .eq('episode_number', 1)
 
-  const result: Record<string, string> = {}
-  for (const row of data ?? []) {
-    result[row.show_id] = row.id
-  }
-  return result
-}
+    const result: Record<string, string> = {}
+    for (const row of data ?? []) {
+      result[row.show_id] = row.id
+    }
+    return result
+  },
+  ['first-episodes-for-shows'],
+  { revalidate: 1800, tags: ['episodes'] } // 30 min
+)
 
 /**
  * Fetch ALL episodes for a show across all seasons in one query.
  * Caller groups by season_id as needed.
  */
-export async function getEpisodesByShowId(showId: string): Promise<DbEpisode[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('episodes')
-    .select('*')
-    .eq('show_id', showId)
-    .eq('archived', false)
-    .in('status', ['published', 'coming-soon'])
-    .order('episode_number', { ascending: true })
+export const getEpisodesByShowId = unstable_cache(
+  async (showId: string): Promise<DbEpisode[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('episodes')
+      .select('*')
+      .eq('show_id', showId)
+      .eq('archived', false)
+      .in('status', ['published', 'coming-soon'])
+      .order('episode_number', { ascending: true })
 
-  return data ?? []
-}
+    return data ?? []
+  },
+  ['episodes-by-show'],
+  { revalidate: 1800, tags: ['episodes'] } // 30 min
+)
 
 // ---------------------------------------------------------------------------
 // Series detail queries
 // ---------------------------------------------------------------------------
 
-export async function getShowBySlug(slug: string): Promise<DbShow | null> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('shows')
-    .select('*')
-    .eq('slug', slug)
-    .eq('archived', false)
-    .single()
+export const getShowBySlug = unstable_cache(
+  async (slug: string): Promise<DbShow | null> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('shows')
+      .select('*')
+      .eq('slug', slug)
+      .eq('archived', false)
+      .single()
 
-  return data
-}
+    return data
+  },
+  ['show-by-slug'],
+  { revalidate: 1800, tags: ['shows'] } // 30 min — show metadata rarely changes
+)
 
-export async function getSeasonsByShowId(showId: string): Promise<DbSeason[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('seasons')
-    .select('*')
-    .eq('show_id', showId)
-    .order('season_number', { ascending: true })
+export const getSeasonsByShowId = unstable_cache(
+  async (showId: string): Promise<DbSeason[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('seasons')
+      .select('*')
+      .eq('show_id', showId)
+      .order('season_number', { ascending: true })
 
-  return data ?? []
-}
+    return data ?? []
+  },
+  ['seasons-by-show'],
+  { revalidate: 1800, tags: ['shows'] } // 30 min
+)
 
-export async function getEpisodesBySeasonId(seasonId: string): Promise<DbEpisode[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('episodes')
-    .select('*')
-    .eq('season_id', seasonId)
-    .eq('archived', false)
-    .in('status', ['published', 'coming-soon'])
-    .order('episode_number', { ascending: true })
+export const getEpisodesBySeasonId = unstable_cache(
+  async (seasonId: string): Promise<DbEpisode[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('episodes')
+      .select('*')
+      .eq('season_id', seasonId)
+      .eq('archived', false)
+      .in('status', ['published', 'coming-soon'])
+      .order('episode_number', { ascending: true })
 
-  return data ?? []
-}
+    return data ?? []
+  },
+  ['episodes-by-season'],
+  { revalidate: 1800, tags: ['episodes'] } // 30 min
+)
 
 // ---------------------------------------------------------------------------
 // Watch page queries
@@ -398,80 +434,96 @@ export async function getContinueWatchingEpisodes(
 // Genre query
 // ---------------------------------------------------------------------------
 
-export async function getDistinctGenres(): Promise<string[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('shows')
-    .select('genre')
-    .eq('archived', false)
-    .in('status', ['now-streaming', 'coming-soon'])
+export const getDistinctGenres = unstable_cache(
+  async (): Promise<string[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('shows')
+      .select('genre')
+      .eq('archived', false)
+      .in('status', ['now-streaming', 'coming-soon'])
 
-  if (!data) return []
-  return [...new Set(data.map((row) => row.genre))].sort()
-}
+    if (!data) return []
+    return [...new Set(data.map((row) => row.genre))].sort()
+  },
+  ['distinct-genres'],
+  { revalidate: 3600, tags: ['shows'] } // 1 hr
+)
 
 // ---------------------------------------------------------------------------
 // Schedule query
 // ---------------------------------------------------------------------------
 
-export async function getScheduleShows(): Promise<
-  (ViewShow & { broadcastDay: string | null; broadcastTime: string | null })[]
-> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('shows')
-    .select('*')
-    .eq('archived', false)
-    .eq('status', 'now-streaming')
-    .not('broadcast_day', 'is', null)
-    .order('broadcast_day')
+export const getScheduleShows = unstable_cache(
+  async (): Promise<
+    (ViewShow & { broadcastDay: string | null; broadcastTime: string | null })[]
+  > => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('shows')
+      .select('*')
+      .eq('archived', false)
+      .eq('status', 'now-streaming')
+      .not('broadcast_day', 'is', null)
+      .order('broadcast_day')
 
-  return (data ?? []).map((s) => ({
-    ...mapShow(s),
-    broadcastDay: s.broadcast_day,
-    broadcastTime: s.broadcast_time,
-  }))
-}
+    return (data ?? []).map((s) => ({
+      ...mapShow(s),
+      broadcastDay: s.broadcast_day,
+      broadcastTime: s.broadcast_time,
+    }))
+  },
+  ['schedule-shows'],
+  { revalidate: 3600, tags: ['shows'] } // 1 hr
+)
 
 // ---------------------------------------------------------------------------
 // Coming soon episodes query
 // ---------------------------------------------------------------------------
 
-export async function getComingSoonEpisodes(): Promise<
-  (ViewEpisode & { showTitle: string; showSlug: string; showBrandColor: ViewShow['brandColor'] })[]
-> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('episodes')
-    .select('*, shows!inner(title, slug, brand_color, status)')
-    .eq('status', 'coming-soon')
-    .eq('archived', false)
-    .order('created_at', { ascending: false })
-    .limit(20)
+export const getComingSoonEpisodes = unstable_cache(
+  async (): Promise<
+    (ViewEpisode & { showTitle: string; showSlug: string; showBrandColor: ViewShow['brandColor'] })[]
+  > => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('episodes')
+      .select('*, shows!inner(title, slug, brand_color, status)')
+      .eq('status', 'coming-soon')
+      .eq('archived', false)
+      .order('created_at', { ascending: false })
+      .limit(20)
 
-  return (data ?? []).map((e: any) => ({
-    ...mapEpisode(e),
-    showTitle: e.shows.title,
-    showSlug: e.shows.slug,
-    showBrandColor: e.shows.brand_color as ViewShow['brandColor'],
-  }))
-}
+    return (data ?? []).map((e: any) => ({
+      ...mapEpisode(e),
+      showTitle: e.shows.title,
+      showSlug: e.shows.slug,
+      showBrandColor: e.shows.brand_color as ViewShow['brandColor'],
+    }))
+  },
+  ['coming-soon-episodes'],
+  { revalidate: 900, tags: ['episodes'] } // 15 min
+)
 
 // ---------------------------------------------------------------------------
 // All shows query (for /series listing)
 // ---------------------------------------------------------------------------
 
-export async function getAllShows(): Promise<ViewShow[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('shows')
-    .select('*')
-    .eq('archived', false)
-    .in('status', ['now-streaming', 'coming-soon'])
-    .order('title')
+export const getAllShows = unstable_cache(
+  async (): Promise<ViewShow[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('shows')
+      .select('*')
+      .eq('archived', false)
+      .in('status', ['now-streaming', 'coming-soon'])
+      .order('title')
 
-  return (data ?? []).map(mapShow)
-}
+    return (data ?? []).map(mapShow)
+  },
+  ['all-shows'],
+  { revalidate: 3600, tags: ['shows'] } // 1 hr
+)
 
 // ---------------------------------------------------------------------------
 // Search queries (Postgres FTS)
