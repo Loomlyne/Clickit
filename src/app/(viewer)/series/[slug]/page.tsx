@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 
 import { createClient } from '@/lib/supabase/server'
 import { SeriesDetailHero } from '@/components/series/series-detail-hero'
@@ -97,13 +98,31 @@ export default async function SeriesDetailPage({ params }: Props) {
 
       <div className="mt-8 px-6 md:px-12">
         <div className="mx-auto max-w-7xl">
-          <SeriesDetailContent
-            seasons={viewSeasons}
-            episodesBySeason={viewEpisodesBySeason}
-            showBrandColor={show.brandColor}
-            show={show}
-            progressMap={episodesProgressMap}
-          />
+          {viewSeasons.length === 0 ? (
+            <div className="py-16">
+              <p className="text-[11px] font-normal uppercase tracking-[0.28em] text-white/38">
+                Seasons
+              </p>
+              <h2 className="font-display mt-2 text-3xl font-semibold text-white">
+                Episodes are being prepared.
+              </h2>
+              <p className="mt-2 text-white/50">Check back soon.</p>
+              <Link
+                href="/coming-soon"
+                className="mt-4 inline-flex items-center text-sm text-white/60 transition-colors hover:text-white"
+              >
+                See what&apos;s coming &rarr;
+              </Link>
+            </div>
+          ) : (
+            <SeriesDetailContent
+              seasons={viewSeasons}
+              episodesBySeason={viewEpisodesBySeason}
+              showBrandColor={show.brandColor}
+              show={show}
+              progressMap={episodesProgressMap}
+            />
+          )}
         </div>
       </div>
 
