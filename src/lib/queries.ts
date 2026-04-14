@@ -714,3 +714,30 @@ export async function getShowLikeState(userId: string, showId: string): Promise<
 
   return !!data
 }
+
+// ---------------------------------------------------------------------------
+// Catalog stage query
+// ---------------------------------------------------------------------------
+
+export type CatalogStage = 'zero' | 'growing' | 'full'
+
+export const getCatalogStage = unstable_cache(
+  async (): Promise<{ stage: CatalogStage; showCount: number }> => {
+    const supabase = createPublicClient()
+    const { count } = await supabase
+      .from('shows')
+      .select('*', { count: 'exact', head: true })
+      .eq('archived', false)
+      .in('status', ['now-streaming', 'coming-soon'])
+
+    const showCount = count ?? 0
+    const stage: CatalogStage =
+      showCount === 0 ? 'zero' :
+      showCount <= 5 ? 'growing' :
+      'full'
+
+    return { stage, showCount }
+  },
+  ['catalog-stage'],
+  { revalidate: 3600, tags: ['shows'] }
+)

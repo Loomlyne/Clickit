@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { HeroBanner } from '@/components/home/hero-banner'
 import { ContentRail } from '@/components/home/content-rail'
 import { ContinueWatchingRail } from '@/components/home/continue-watching-rail'
@@ -20,6 +21,11 @@ export default async function BrowsePage() {
     getComingSoonShows(),
     getNewEpisodes(),
   ])
+
+  // D-01: empty catalog redirects to marketing landing page
+  if (streaming.length === 0 && comingSoon.length === 0) {
+    redirect('/')
+  }
 
   // Batch: one query for all featured shows' first episodes (was 2N queries)
   const firstEpisodeMap = await getFirstEpisodesForShows(featured.map(s => s.id))
