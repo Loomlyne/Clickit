@@ -190,12 +190,12 @@ Note: Phase 6 depends only on Phase 1 and can run in parallel with Phases 2-5 if
 | 8. Data Integration, Auth & Search | 3/3 | Complete | 2026-04-04 |
 | 9. Personalization & Watch Features | 3/3 | Complete   | 2026-04-04 |
 
-### Phase 10: Connect frontend to Supabase backend — wire auth, replace mock data with real queries, session management
+### Phase 10: Empty State Polish
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** The platform communicates intentional "coming soon" states rather than appearing broken when the catalog is empty or a show has no episodes -- browse redirects to landing page, series detail shows a text-only empty state, and CtaBanner adapts copy to catalog size
+**Requirements**: D-01, D-02, D-03, D-04
 **Depends on:** Phase 9
-**Plans:** 3/3 plans complete
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 10 to break down)
+- [ ] 10-01-PLAN.md -- Add getCatalogStage() query, browse redirect guard, series empty state, catalog-aware CtaBanner
