@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 09-03-PLAN.md
-last_updated: "2026-04-04T19:41:31.575Z"
-last_activity: 2026-04-04
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-04-14T14:14:09.982Z"
+last_activity: 2026-04-14
 progress:
   total_phases: 10
-  completed_phases: 9
-  total_plans: 24
-  completed_plans: 24
+  completed_phases: 10
+  total_plans: 25
+  completed_plans: 25
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** Viewers enter, discover a show, pick an episode, watch immediately -- premium streaming experience for CIT originals.
-**Current focus:** Phase 09 — personalization-watch-features
+**Current focus:** Phase 10 — connect-frontend-to-supabase-backend-wire-auth-replace-mock-data-with-real-queries-session-management
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
+Phase: 10 (connect-frontend-to-supabase-backend-wire-auth-replace-mock-data-with-real-queries-session-management) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
-Last activity: 2026-04-08 - Completed quick task 260408-tlh: Fix episode insert collisions from stale nextEpisodeNumber
+Last activity: 2026-04-14
 
 Progress: [██████████] 100% (Phases 1-7 complete)
 
@@ -75,6 +75,7 @@ Progress: [██████████] 100% (Phases 1-7 complete)
 | Phase 09 P01 | 4min | 2 tasks | 7 files |
 | Phase 09 P02 | 5min | 2 tasks | 7 files |
 | Phase 09-personalization-watch-features P03 | 45min | 2 tasks | 7 files |
+| Phase 10 P01 | 5min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -142,6 +143,10 @@ Recent decisions affecting current work:
 - [Phase 09]: Replaced getContinueWatching with episode-centric getContinueWatchingEpisodes returning ContinueWatchingItem[]
 - [Phase 09]: getEpisodesProgress batch-fetches all episode progress in a single Supabase .in() query — no N+1 on series detail page
 - [Phase 09]: progressMap threaded as plain prop through SeriesDetailContent -> EpisodeList -> EpisodeRow (not context or Zustand) — server-side fetch, two levels only
+- [Phase 10]: getCatalogStage uses count-only query with createPublicClient for unstable_cache compatibility
+- [Phase 10]: CtaBanner fetches catalog stage internally as async server component, not prop-drilled
+- [Phase 10]: Series empty state uses text-only layout (no glass card) per no-decorative-boxes guideline
+- [Phase 10]: Browse redirect reuses already-fetched arrays, zero additional DB cost
 
 ### Roadmap Evolution
 
@@ -166,6 +171,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-04T19:36:09.957Z
-Stopped at: Completed 09-03-PLAN.md
+Last session: 2026-04-14T14:14:09.978Z
+Stopped at: Completed 10-01-PLAN.md
 Resume file: None

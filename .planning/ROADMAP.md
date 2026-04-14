@@ -195,7 +195,7 @@ Note: Phase 6 depends only on Phase 1 and can run in parallel with Phases 2-5 if
 **Goal:** The platform communicates intentional "coming soon" states rather than appearing broken when the catalog is empty or a show has no episodes -- browse redirects to landing page, series detail shows a text-only empty state, and CtaBanner adapts copy to catalog size
 **Requirements**: D-01, D-02, D-03, D-04
 **Depends on:** Phase 9
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 10-01-PLAN.md -- Add getCatalogStage() query, browse redirect guard, series empty state, catalog-aware CtaBanner
+- [x] 10-01-PLAN.md -- Add getCatalogStage() query, browse redirect guard, series empty state, catalog-aware CtaBanner
