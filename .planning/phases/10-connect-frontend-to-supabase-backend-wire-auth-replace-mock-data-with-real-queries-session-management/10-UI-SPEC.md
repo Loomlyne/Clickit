@@ -34,8 +34,8 @@ Declared values (must be multiples of 4):
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px | Icon gaps, inline padding |
-| sm | 8px | Compact element spacing |
-| md | 16px | Default element spacing, series empty state `mt-3` between label and heading |
+| sm | 8px | Compact element spacing, gap between small caps label and heading (`mt-2`) |
+| md | 16px | Default element spacing, gap between body and link CTA (`mt-4`) |
 | lg | 24px | Section padding, `px-6` container sides on mobile |
 | xl | 32px | Layout gaps |
 | 2xl | 48px | `px-12` container sides on desktop, series empty state `py-16` top/bottom |
@@ -52,13 +52,13 @@ This phase introduces no new type roles. All copy uses tokens already establishe
 | Role | Size | Weight | Line Height | Usage in This Phase |
 |------|------|--------|-------------|---------------------|
 | Body | 16px (text-base) | 400 (regular) | 1.5 (leading-relaxed) | CTA banner body copy, series empty state body |
-| Label | 11px (text-[11px]) | 500 (font-medium) | 1.4 | Small caps labels: "Seasons", "Coming soon", "Now streaming", "Clickit membership" |
+| Label | 11px (text-[11px]) | 400 (regular) | 1.4 | Small caps labels: "Seasons", "Coming soon", "Now streaming", "Clickit membership". Differentiated by size (11px), uppercase transform, and wide letter-spacing — weight 400 is sufficient. |
 | Heading | 30px (text-3xl) | 600 (font-semibold) | 1.2 | Series empty state headline ("Episodes are being prepared.") |
 | Display | clamp(2.4rem, 5vw, 4.4rem) | 600 (font-semibold) | 0.96 | CTA banner headline (all three stages) |
 
 Label styling pattern (reused from search, watch, hero):
 ```
-text-[11px] font-medium uppercase tracking-[0.28em] text-white/38
+text-[11px] font-normal uppercase tracking-[0.28em] text-white/38
 ```
 
 Display styling pattern (existing CTA banner):
@@ -182,19 +182,19 @@ This phase modifies 3 existing components/pages and adds 1 query function. No ne
 ### Series Empty State Layout Specification
 
 ```
-<div className="py-16">                                    ← 64px vertical padding
-  <p className="text-[11px] font-medium uppercase          ← Small caps label
+<div className="py-16">                                    <- 64px vertical padding
+  <p className="text-[11px] font-normal uppercase          <- Small caps label (400 weight)
      tracking-[0.28em] text-white/38">
     Seasons
   </p>
-  <h2 className="font-display mt-3 text-3xl               ← 12px gap, display heading
+  <h2 className="font-display mt-2 text-3xl               <- 8px gap, display heading
      font-semibold text-white">
     Episodes are being prepared.
   </h2>
-  <p className="mt-2 text-white/50">                       ← 8px gap, muted body
+  <p className="mt-2 text-white/50">                       <- 8px gap, muted body
     Check back soon.
   </p>
-  <Link href="/coming-soon"                                ← 16px gap, text link
+  <Link href="/coming-soon"                                <- 16px gap, text link
     className="mt-4 inline-flex items-center text-sm
     text-white/60 transition-colors hover:text-white">
     See what's coming &rarr;
