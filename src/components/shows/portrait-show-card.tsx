@@ -18,7 +18,7 @@ export function PortraitShowCard({ show, initialSaved, userId }: PortraitShowCar
 
   return (
     <div className="group">
-      <div className="overflow-hidden border border-[#1A1C23] bg-[#0F1115]">
+      <div className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
         {userId !== undefined && (
           <WatchlistToggleButton
             showId={show.id}
@@ -43,7 +43,7 @@ export function PortraitShowCard({ show, initialSaved, userId }: PortraitShowCar
               {show.seasonCount} Season{show.seasonCount !== 1 ? 's' : ''}
             </span>
             {show.platformRating && (
-              <span className="border border-[#1A1C23] bg-[#0F1115] px-2.5 py-1 text-[11px] text-white/50">
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/60">
                 CIT {show.platformRating}
               </span>
             )}

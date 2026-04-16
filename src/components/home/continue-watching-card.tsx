@@ -19,7 +19,7 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
 
   return (
     <Link href={`/watch/${item.episodeId}`} className="group block basis-[85%] sm:basis-1/2 md:basis-[340px] flex-shrink-0">
-      <div className="overflow-hidden border border-[#1A1C23] bg-[#0F1115]">
+      <div className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
         <div className="relative aspect-video w-full overflow-hidden">
           {thumbnailUrl ? (
             <Image
