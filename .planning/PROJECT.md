@@ -8,48 +8,61 @@ A Netflix-style cinematic streaming platform for Clickit Story — a UAE-based d
 
 Viewers enter the platform, discover a show, pick an episode, and watch immediately — a premium, immersive, zero-friction experience that makes CIT's original content feel like a real streaming service, not a YouTube channel.
 
+## Current State
+
+**Shipped:** v1.0 (2026-04-16)
+**Deployed:** Vercel production
+**Stack:** Next.js 16.2 + Supabase + Tailwind CSS v4 + shadcn/ui
+**LOC:** 13,259 TypeScript across 323 files
+
+The platform is live with the full viewer experience (cinematic home page, series browsing, watch page with autoplay, personalization) and admin dashboard (show/season/episode CRUD, artwork upload, archive management). All 15 CIT programs are seeded. Content is served from Supabase with Postgres FTS search and RLS security.
+
 ## Requirements
 
 ### Validated
 
-- [x] Next.js project initialized with App Router, Tailwind CSS, Supabase client — Validated in Phase 1
-- [x] Design system with CIT brand colors (WCAG-safe tints), typography, spacing tokens — Validated in Phase 1
-- [x] Responsive cinematic dark UI following CIT brand guidelines — Foundation validated in Phase 1
-- [x] Supabase database schema (shows, seasons, episodes, profiles, watch_progress, watchlist) with relationships — Validated in Phase 6
-- [x] Row Level Security on all tables (public read of published content, admin-only writes) — Validated in Phase 6
-- [x] Supabase auth client setup (server + browser + admin + middleware) — Validated in Phase 6
+- ✓ Next.js project with App Router, Tailwind CSS, Supabase client — v1.0
+- ✓ Design system with CIT brand colors (WCAG-safe tints), typography, spacing tokens — v1.0
+- ✓ Responsive cinematic dark UI following CIT brand guidelines — v1.0
+- ✓ Supabase schema (shows, seasons, episodes, profiles, watch_progress, watchlist) with RLS — v1.0
+- ✓ Supabase auth client setup (server/browser/admin/middleware) — v1.0
+- ✓ User authentication via Supabase Auth (sign up, login, logout) — v1.0
+- ✓ Series catalog with cinematic hero banners and content rails — v1.0
+- ✓ Series detail page with season selector and episode browser — v1.0
+- ✓ Episode watch page with embedded YouTube IFrame API player — v1.0
+- ✓ Show/episode status management (draft, coming soon, now streaming/published) — v1.0
+- ✓ Watchlist (add/remove shows) with My List page — v1.0
+- ✓ Continue watching with progress tracking (10s intervals) and resume — v1.0
+- ✓ Autoplay next episode with 8-second countdown and cross-season support — v1.0
+- ✓ Coming Soon page with unreleased shows and upcoming episodes — v1.0
+- ✓ Admin dashboard: full CRUD for shows, seasons, episodes, artwork upload — v1.0
+- ✓ YouTube URL extraction and video ID auto-detection — v1.0
+- ✓ Broadcast schedule display (day/time per show) — v1.0
+- ✓ Per-show branded artwork with brand color glow effects — v1.0
+- ✓ Postgres Full-Text Search across shows and episodes — v1.0
+- ✓ Catalog-aware empty states and browse redirect — v1.0
+- ✓ Profile page with watchlist preview and watch history — v1.0
 
 ### Active
 
-- [ ] User authentication via Supabase Auth (sign up, login, logout)
-- [x] Series catalog with cinematic hero banners and content rails — Validated in Phase 3
-- [x] Series detail page with season selector and episode browser — Validated in Phase 4
-- [ ] Episode watch page with embedded YouTube player
-- [ ] Show statuses: draft, coming soon, now streaming
-- [ ] Episode statuses: draft, coming soon, published
-- [ ] Watchlist (add/remove shows)
-- [ ] Continue watching (track progress per episode)
-- [ ] Autoplay next episode
-- [x] Coming Soon page showing unreleased shows and episodes — Validated in Phase 4
-- [ ] Admin dashboard: manage shows, seasons, episodes, release state
-- [ ] Admin connects YouTube video URLs to episodes
-- [ ] Responsive cinematic dark UI following CIT brand guidelines
-- [ ] Broadcast schedule display (day/time per show)
-- [ ] Per-show branded artwork and logo display
-- [ ] Search across shows and episodes
+(None — next milestone requirements TBD via `/gsd-new-milestone`)
 
 ### Out of Scope
 
-- Self-hosted video / video uploads — YouTube is the video host, always
-- Role-based admin — single admin only, no team permissions
-- Payments / subscriptions — all content is free for v1
-- Mobile native app — web-first, responsive only
-- Real-time chat / comments — not part of v1
-- Multi-creator upload — only admin manages content
-- Notifications system — deferred to v2
-- Trailer preview on hover — nice-to-have, deferred
-- Analytics dashboard — deferred to v2
-- Teaser countdown timers — deferred
+- Self-hosted video / uploads — YouTube handles all video hosting, transcoding, CDN
+- Payment / subscription — All content free for v1, premature monetization
+- Comments / chat — Moderation burden, YouTube has comments already
+- Role-based admin — Single admin, building RBAC for one user is waste
+- Mobile native app — Web-first, responsive design covers mobile
+- AI recommendations — Only ~15 shows, not enough content for ML
+- Download for offline — YouTube embed API doesn't support download
+- Real-time WebSocket features — Content updates are infrequent, standard HTTP sufficient
+- Multi-creator uploads — Only admin manages content
+- Live streaming — Not part of v1 platform scope
+- Trailer preview on hover — Nice-to-have, deferred to v2
+- Notifications system — Deferred to v2
+- Analytics dashboard — Deferred to v2
+- Teaser countdown timers — Deferred
 
 ## Context
 
@@ -90,7 +103,7 @@ Viewers enter the platform, discover a show, pick an episode, and watch immediat
 - **Admin**: Single admin user, no role-based access control
 - **Bilingual**: Arabic (RTL) and English content, but UI is English-first for v1
 - **Brand**: Must follow CIT Branding Guideline for colors, typography, logo usage, and patterns
-- **Content growth**: Slow — platform must look good with few shows initially, not feel empty (Phase 10 adds catalog-aware empty states)
+- **Content growth**: Slow — platform must look good with few shows initially, not feel empty (v1.0 ships with catalog-aware empty states)
 
 ## Design System
 
@@ -145,12 +158,17 @@ Each program gets a branded "ribbon" — a pattern + color combination from 5 br
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Supabase for auth + DB | Client preference, serverless Postgres, built-in auth | -- Pending |
-| YouTube embeds for video | No need for video infrastructure, client uploads to YouTube | -- Pending |
-| Dark cinematic UI | Netflix-style immersion for streaming content, white logo on dark | -- Pending |
-| Next.js + Vercel | SSR for SEO, App Router for modern patterns, Vercel for deployment | -- Pending |
-| Single admin (no RBAC) | Only one person manages content, keep it simple | -- Pending |
-| English-first UI | Arabic content supported but UI chrome is English for v1 | -- Pending |
+| Supabase for auth + DB | Client preference, serverless Postgres, built-in auth | ✓ Good — zero ops overhead, RLS works well |
+| YouTube embeds for video | No need for video infrastructure, client uploads to YouTube | ✓ Good — hybrid approach (lite for catalog, IFrame API for watch) |
+| Dark cinematic UI | Netflix-style immersion for streaming content, white logo on dark | ✓ Good — brand-color glow system adds premium feel |
+| Next.js + Vercel | SSR for SEO, App Router for modern patterns, Vercel for deployment | ✓ Good — unstable_cache + updateTag for ISR |
+| Single admin (no RBAC) | Only one person manages content, keep it simple | ✓ Good — app_config lookup is flexible enough |
+| English-first UI | Arabic content supported but UI chrome is English for v1 | -- Pending — RTL deferred to v2 |
+| Minimal navbar (logo + profile only) | Clean streaming aesthetic, content speaks for itself | ✓ Good — intentional design, not a gap |
+| Frontend-first approach | UI with mock data before backend, client validates look first | ✓ Good — visual sign-off before wiring |
+| Brand color static maps | Tailwind v4 compatibility, never construct class names dynamically | ✓ Good — type-safe, zero runtime cost |
+| Hybrid YouTube strategy | Lite embed for catalog thumbnails, IFrame API for watch page | ✓ Good — saves ~500KB per catalog page |
+| Postgres FTS over Algolia | 15 shows / 294 episodes trivial for built-in FTS | ✓ Good — zero cost, zero sync issues |
 
 ## Evolution
 
@@ -168,6 +186,7 @@ This document evolves at phase transitions and milestone boundaries.
 2. Core Value check — still the right priority?
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
+5. All milestone decisions added to Key Decisions
 
 ---
-*Last updated: 2026-04-14 after Phase 10 completion — Empty state polish: catalog-aware CtaBanner (zero/growing/full), browse redirect on empty catalog, series detail empty state, getCatalogStage() cached query*
+*Last updated: 2026-04-16 after v1.0 milestone completion*
