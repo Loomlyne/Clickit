@@ -65,7 +65,7 @@ export function Footer() {
 
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 lg:grid-cols-2">
             <div>
-              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/42">Navigate</h4>
+              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Navigate</h4>
               <ul className="space-y-3">
                 <li><Link href="/browse" className="text-sm text-white/56 transition-colors hover:text-white">Browse</Link></li>
                 <li><Link href="/coming-soon" className="text-sm text-white/56 transition-colors hover:text-white">Coming Soon</Link></li>
@@ -73,7 +73,7 @@ export function Footer() {
               </ul>
             </div>
             <div>
-              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/42">Highlights</h4>
+              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Highlights</h4>
               <ul className="space-y-3">
                 <li><span className="text-sm text-white/56">Travel</span></li>
                 <li><span className="text-sm text-white/56">Health</span></li>
@@ -82,7 +82,7 @@ export function Footer() {
               </ul>
             </div>
             <div>
-              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/42">Account</h4>
+              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Account</h4>
               <ul className="space-y-3">
                 <li><Link href="/auth" className="text-sm text-white/56 transition-colors hover:text-white">Sign In</Link></li>
                 <li><Link href="/my-list" className="text-sm text-white/56 transition-colors hover:text-white">My List</Link></li>
@@ -90,7 +90,7 @@ export function Footer() {
               </ul>
             </div>
             <div>
-              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/42">Legal</h4>
+              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Legal</h4>
               <ul className="space-y-3">
                 <li><Link href="#" className="text-sm text-white/56 transition-colors hover:text-white">Privacy Policy</Link></li>
                 <li><Link href="#" className="text-sm text-white/56 transition-colors hover:text-white">Terms of Service</Link></li>
@@ -99,7 +99,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-4 border-t border-white/[0.06] pt-8 text-xs text-white/28 md:flex-row md:items-center md:justify-between">
+        <div className="mt-12 flex flex-col gap-4 border-t border-white/[0.06] pt-8 text-xs text-white/50 md:flex-row md:items-center md:justify-between">
           <p>&copy; {new Date().getFullYear()} Clickit Story. All rights reserved.</p>
           <p>Previewing a redesigned product shell for viewer and admin surfaces.</p>
         </div>

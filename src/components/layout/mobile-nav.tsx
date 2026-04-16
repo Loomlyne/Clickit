@@ -25,7 +25,7 @@ export function MobileNav() {
   }, [pathname])
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={setOpen} modal={false}>
       <SheetTrigger
         aria-label="Open navigation menu"
         className="flex size-11 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white md:hidden"
