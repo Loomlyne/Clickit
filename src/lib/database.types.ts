@@ -18,18 +18,24 @@ export type Database = {
         Row: {
           admin_user_id: string | null
           created_at: string
+          hero_video_type: string | null
+          hero_video_url: string | null
           id: number
           updated_at: string
         }
         Insert: {
           admin_user_id?: string | null
           created_at?: string
+          hero_video_type?: string | null
+          hero_video_url?: string | null
           id?: number
           updated_at?: string
         }
         Update: {
           admin_user_id?: string | null
           created_at?: string
+          hero_video_type?: string | null
+          hero_video_url?: string | null
           id?: number
           updated_at?: string
         }

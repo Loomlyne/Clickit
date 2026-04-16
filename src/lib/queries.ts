@@ -108,6 +108,31 @@ export function mapSeason(db: DbSeason): ViewSeason {
 }
 
 // ---------------------------------------------------------------------------
+// Site config queries
+// ---------------------------------------------------------------------------
+
+export type HeroVideo = {
+  url: string
+  type: 'mp4' | 'youtube'
+}
+
+export const getHeroVideo = unstable_cache(
+  async (): Promise<HeroVideo | null> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('app_config')
+      .select('hero_video_url, hero_video_type')
+      .eq('id', 1)
+      .single()
+
+    if (!data?.hero_video_url || !data?.hero_video_type) return null
+    return { url: data.hero_video_url, type: data.hero_video_type as HeroVideo['type'] }
+  },
+  ['hero-video'],
+  { revalidate: 900, tags: ['site-config'] } // 15 min
+)
+
+// ---------------------------------------------------------------------------
 // Homepage queries
 // ---------------------------------------------------------------------------
 
