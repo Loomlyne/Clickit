@@ -3,8 +3,6 @@ import { Button } from '@/components/ui/button'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 import { getCatalogStage } from '@/lib/queries'
 
-const BRAND_COLORS = ['#2C3569', '#9F54A0', '#50A258', '#DB3F34', '#EA8C2E', '#F8C623']
-
 const CTA_COPY = {
   zero: {
     label: 'Coming soon',
@@ -28,8 +26,8 @@ const CTA_COPY = {
   },
   full: {
     label: 'Clickit membership',
-    headline: 'Stream original programming with a calmer,',
-    headlineAccent: 'premium experience.',
+    headline: 'Stream original programming with a',
+    headlineAccent: 'calmer, premium experience.',
     body: 'Discover travel, health, music, comedy, cooking, and more from Abu Dhabi — crafted to let the stories lead.',
     primaryLabel: 'Start Watching Free',
     primaryHref: '/auth',
@@ -44,63 +42,66 @@ export async function CtaBanner() {
 
   return (
     <ScrollReveal>
-      <div className="px-6 md:px-12">
-        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] px-6 py-16 shadow-[0_30px_60px_-12px_rgba(0,0,0,0.5)] backdrop-blur-2xl md:px-10 md:py-20">
-          {/* Radial glow */}
-          <div
-            className="pointer-events-none absolute inset-0"
-            aria-hidden="true"
-            style={{
-              background: 'radial-gradient(ellipse at bottom, rgba(96,115,255,0.15) 0%, transparent 70%)',
-            }}
-          />
-
-          {/* Noise texture */}
-          <div
-            className="pointer-events-none absolute inset-0 opacity-30"
-            aria-hidden="true"
-            style={{
-              backgroundImage:
-                "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E\")",
-              backgroundRepeat: 'repeat',
-              backgroundSize: '256px',
-              mixBlendMode: 'overlay',
-            }}
-          />
-
-          {/* Brand bar accent */}
-          <div className="absolute left-10 top-8 flex h-1 w-40 overflow-hidden rounded-full" aria-hidden="true">
-            {BRAND_COLORS.map((color) => (
-              <div key={color} className="flex-1" style={{ background: color }} />
-            ))}
-          </div>
-
-          <div className="relative mx-auto max-w-3xl text-center">
-            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.28em] text-white/40">
+      <div className="px-4 md:px-12">
+        <div
+          className="group relative overflow-hidden p-10 text-center md:p-24"
+          style={{
+            background: 'rgba(15,17,21,0.4)',
+            backdropFilter: 'blur(24px)',
+            border: '1px solid rgba(255,255,255,0.05)',
+          }}
+        >
+          <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center">
+            <span className="mb-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
               {copy.label}
-            </p>
+            </span>
             <h2
-              className="font-display mb-5 font-black text-white"
-              style={{ fontSize: 'clamp(2.2rem, 5vw, 4rem)', lineHeight: 0.96, letterSpacing: '-0.04em' }}
+              className="font-display mb-8 font-medium tracking-tighter text-white"
+              style={{
+                fontSize: 'clamp(1.8rem, 5vw, 3.5rem)',
+                lineHeight: 1.1,
+                textWrap: 'balance',
+              }}
             >
               {copy.headline}{' '}
-              <span className="text-white/30">{copy.headlineAccent}</span>
+              <span className="bg-gradient-to-r from-white to-white/40 bg-clip-text text-transparent">
+                {copy.headlineAccent}
+              </span>
             </h2>
-            <p className="mx-auto mb-10 max-w-2xl text-base leading-7 text-white/52 md:text-lg">
+            <p
+              className="mx-auto mb-12 max-w-xl text-base font-light leading-relaxed text-white/40"
+              style={{ textWrap: 'balance' }}
+            >
               {copy.body}
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-4">
+            <div className="flex flex-col items-center gap-4 sm:flex-row">
               <Button
                 size="lg"
-                className="rounded-full px-8 py-5 text-base font-bold shadow-[0_0_40px_-10px_rgba(255,255,255,0.4)]"
+                className="rounded-full px-8 py-4 text-sm font-medium transition-all hover:-translate-y-0.5"
                 asChild
               >
-                <Link href={copy.primaryHref}>{copy.primaryLabel}</Link>
+                <Link href={copy.primaryHref}>
+                  {copy.primaryLabel}
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="ml-2"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </Link>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="rounded-full border-white/20 px-8 py-5 text-base font-medium hover:border-white/40 hover:bg-white/[0.05]"
+                className="rounded-full border-[#1A1C23] bg-transparent px-8 py-4 text-sm font-medium transition-all hover:-translate-y-0.5 hover:border-white/30 hover:bg-[#0F1115]"
                 asChild
               >
                 <Link href={copy.secondaryHref}>{copy.secondaryLabel}</Link>

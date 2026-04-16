@@ -3,25 +3,6 @@ import { getDistinctGenres } from '@/lib/queries'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 import { GenrePill } from './genre-pill'
 
-const GENRE_COLORS: Record<string, string> = {
-  Entertainment: '#9F54A0',
-  Documentary: '#2C3569',
-  Health: '#50A258',
-  Tech: '#2C3569',
-  Kids: '#F8C623',
-  Music: '#9F54A0',
-  Comedy: '#EA8C2E',
-  Cooking: '#DB3F34',
-  Travel: '#50A258',
-  Poetry: '#9F54A0',
-  Cinema: '#DB3F34',
-  Drama: '#9F54A0',
-  Talk: '#2C3569',
-  Business: '#50A258',
-  Quiz: '#F8C623',
-  Podcast: '#9F54A0',
-}
-
 export async function GenrePills() {
   const genres = await getDistinctGenres()
 
@@ -29,40 +10,37 @@ export async function GenrePills() {
 
   return (
     <ScrollReveal>
-      <section className="flex flex-col gap-12 px-6 md:flex-row md:gap-16 md:px-12 lg:gap-24">
-        {/* Left: sticky intro */}
-        <div className="w-full md:sticky md:top-32 md:w-1/3" style={{ height: 'fit-content' }}>
-          <div className="mb-4 flex items-center gap-2">
-            <span className="h-px w-8 bg-brand-red" />
-            <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-white/48">
+      <section className="px-6 md:px-12">
+        <div className="grid grid-cols-1 items-start gap-16 lg:grid-cols-12 lg:gap-8">
+          {/* Left: sticky intro */}
+          <div className="pr-8 lg:sticky lg:top-32 lg:col-span-5">
+            <span className="mb-6 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
+              <span className="h-px w-8 bg-primary" />
               Exploration
             </span>
+            <h2
+              className="font-display mb-6 font-medium tracking-tighter text-white"
+              style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', lineHeight: 1.05, textWrap: 'balance' }}
+            >
+              Browse by<br />
+              <span className="text-white/40">Category.</span>
+            </h2>
+            <p className="max-w-md text-base font-light text-white/40">
+              From health and cooking to music and cinema — find the genre that matches your mood.
+            </p>
           </div>
-          <h2
-            className="font-display font-black leading-[0.92] text-white"
-            style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', letterSpacing: '-0.04em' }}
-          >
-            Browse by{' '}
-            <span className="text-white/30">Category.</span>
-          </h2>
-          <p className="mt-5 text-base leading-7 text-white/48">
-            From health and cooking to music and cinema — find the genre that matches your mood.
-          </p>
-        </div>
 
-        {/* Right: flowing pill grid */}
-        <div className="flex w-full flex-wrap content-start gap-3 pt-2 md:w-2/3 lg:gap-4">
-          {genres.map((genre) => {
-            const color = GENRE_COLORS[genre] ?? '#2C3569'
-            return (
+          {/* Right: rectangular pill flow */}
+          <div className="flex flex-wrap content-start gap-3 md:gap-4 lg:col-span-7">
+            {genres.map((genre) => (
               <Link
                 key={genre}
                 href={`/browse?genre=${encodeURIComponent(genre)}`}
               >
-                <GenrePill genre={genre} color={color} />
+                <GenrePill genre={genre} />
               </Link>
-            )
-          })}
+            ))}
+          </div>
         </div>
       </section>
     </ScrollReveal>
