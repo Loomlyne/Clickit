@@ -2,23 +2,23 @@
 
 import { useState } from 'react'
 
-export function GenrePill({ genre }: { genre: string }) {
+export function GenrePill({ genre, color }: { genre: string; color: string }) {
   const [hovered, setHovered] = useState(false)
 
   return (
     <div
-      className="relative flex cursor-pointer items-center gap-3 overflow-hidden border px-8 py-5 text-sm font-medium tracking-wide transition-all duration-300"
+      className="flex cursor-pointer items-center justify-center rounded-full border px-6 py-3.5 text-sm font-medium transition-all duration-300"
       style={{
-        borderColor: hovered ? 'rgba(109,112,241,0.5)' : 'rgba(26,28,35,1)',
-        background: hovered
-          ? 'linear-gradient(135deg, rgba(109,112,241,0.12) 0%, rgba(0,0,0,0) 100%)'
-          : '#0F1115',
-        color: hovered ? '#F7FCFF' : 'rgba(255,255,255,0.7)',
+        borderColor: hovered ? color : 'rgba(255,255,255,0.1)',
+        background: hovered ? `${color}18` : 'rgba(255,255,255,0.03)',
+        color: hovered ? color : 'rgba(255,255,255,0.7)',
+        boxShadow: hovered ? `0 0 24px -6px ${color}66` : 'none',
+        transform: hovered ? 'translateY(-3px) scale(1.02)' : 'none',
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <span className="relative z-10 whitespace-nowrap">{genre}</span>
+      <span className="whitespace-nowrap">{genre}</span>
     </div>
   )
 }
