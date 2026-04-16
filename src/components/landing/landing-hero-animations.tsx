@@ -8,7 +8,7 @@ export function LandingHeroAnimations({ children }: { children: React.ReactNode 
   return (
     <>
       <motion.p
-        className="mb-4 text-[11px] font-medium uppercase tracking-[0.28em] text-white/48"
+        className="mb-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.1 }}
@@ -17,6 +17,7 @@ export function LandingHeroAnimations({ children }: { children: React.ReactNode 
       </motion.p>
 
       <motion.div
+        className="mb-12"
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.25 }}
@@ -24,18 +25,19 @@ export function LandingHeroAnimations({ children }: { children: React.ReactNode 
         {children}
       </motion.div>
 
-      <motion.p
-        className="font-display mt-5 font-semibold leading-tight text-white/80"
-        style={{ fontSize: 'clamp(1.5rem, 4vw, 3rem)' }}
+      <motion.h1
+        className="font-display mb-6 font-medium leading-[1.1] tracking-tighter text-white"
+        style={{ fontSize: 'clamp(3rem, 8vw, 6rem)', textWrap: 'balance' }}
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.4 }}
       >
         Every Story Clicks.
-      </motion.p>
+      </motion.h1>
 
       <motion.p
-        className="mt-3 max-w-xl text-sm leading-7 text-white/52 md:text-base"
+        className="mx-auto mb-12 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-lg"
+        style={{ textWrap: 'balance' }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.5 }}
@@ -44,40 +46,45 @@ export function LandingHeroAnimations({ children }: { children: React.ReactNode 
       </motion.p>
 
       <motion.div
-        className="mt-7 flex flex-wrap items-center gap-3"
+        className="flex flex-col items-center gap-4 sm:flex-row"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.55 }}
       >
         <Link
           href="/browse"
-          className="inline-flex items-center rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-[0_16px_40px_rgba(96,115,255,0.28)] transition-colors hover:bg-[#7082ff]"
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-sm font-medium text-primary-foreground transition-all hover:bg-[#4E50AC] hover:-translate-y-0.5"
         >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
+          </svg>
           Browse Shows
         </Link>
         <Link
           href="/auth"
-          className="inline-flex items-center rounded-full border border-white/14 bg-white/[0.04] px-7 py-3 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/[0.08]"
+          className="inline-flex items-center rounded-full border border-white/10 bg-[#0F1115] px-8 py-4 text-sm font-medium text-white transition-all hover:border-white/30 hover:-translate-y-0.5"
         >
           Sign In
         </Link>
       </motion.div>
 
       <motion.div
-        className="mt-10 flex items-center gap-2 text-white/28"
+        className="absolute bottom-10 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        animate={{ opacity: 0.5 }}
         transition={{ duration: 0.5, delay: 0.9 }}
       >
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-white/40">
+          Scroll to explore
+        </span>
         <motion.span
           animate={{ y: [0, 5, 0] }}
           transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-          className="text-lg"
+          className="text-base text-white"
           aria-hidden="true"
         >
           ↓
         </motion.span>
-        <span className="text-[11px] uppercase tracking-[0.22em]">Scroll to explore</span>
       </motion.div>
     </>
   )
