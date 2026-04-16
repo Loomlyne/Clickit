@@ -728,6 +728,101 @@ export async function deleteArtwork(showId: string, slot: string): Promise<Actio
 }
 
 // ---------------------------------------------------------------------------
+// Hero Video Management
+// ---------------------------------------------------------------------------
+
+export async function uploadHeroVideo(formData: FormData): Promise<ActionResult<string>> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    const file = formData.get('file') as File | null
+    if (!file) return { success: false, error: 'No file provided' }
+
+    if (file.size > 50 * 1024 * 1024) {
+      return { success: false, error: 'Video must be under 50MB' }
+    }
+
+    const path = `hero/video.mp4`
+
+    const { error } = await admin.storage
+      .from('site-assets')
+      .upload(path, file, {
+        upsert: true,
+        contentType: 'video/mp4',
+        cacheControl: '3600',
+      })
+
+    if (error) return { success: false, error: error.message }
+
+    const { data: urlData } = admin.storage
+      .from('site-assets')
+      .getPublicUrl(path)
+
+    // Save URL + type to app_config
+    const { error: dbError } = await admin
+      .from('app_config')
+      .update({ hero_video_url: urlData.publicUrl, hero_video_type: 'mp4' })
+      .eq('id', 1)
+
+    if (dbError) return { success: false, error: dbError.message }
+
+    updateTag('site-config')
+    revalidatePath('/')
+    return { success: true, data: urlData.publicUrl }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
+  }
+}
+
+export async function setHeroVideoUrl(youtubeUrl: string): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    if (!youtubeUrl.trim()) return { success: false, error: 'URL is required' }
+
+    const { error } = await admin
+      .from('app_config')
+      .update({ hero_video_url: youtubeUrl.trim(), hero_video_type: 'youtube' })
+      .eq('id', 1)
+
+    if (error) return { success: false, error: error.message }
+
+    updateTag('site-config')
+    revalidatePath('/')
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to save URL' }
+  }
+}
+
+export async function removeHeroVideo(): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    // Try to remove MP4 from storage (ignore errors if not found)
+    await admin.storage
+      .from('site-assets')
+      .remove(['hero/video.mp4'])
+
+    const { error } = await admin
+      .from('app_config')
+      .update({ hero_video_url: null, hero_video_type: null })
+      .eq('id', 1)
+
+    if (error) return { success: false, error: error.message }
+
+    updateTag('site-config')
+    revalidatePath('/')
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to remove video' }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // FEATURED TOGGLE
 // ---------------------------------------------------------------------------
 

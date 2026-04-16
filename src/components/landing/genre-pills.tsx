@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { getDistinctGenres } from '@/lib/queries'
-import { SectionHeader } from '@/components/primitives/section-header'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
+import { GenrePill } from './genre-pill'
 
 const GENRE_COLORS: Record<string, string> = {
   Entertainment: '#9F54A0',
@@ -29,31 +29,37 @@ export async function GenrePills() {
 
   return (
     <ScrollReveal>
-      <section className="text-center">
-        <SectionHeader title="Browse by Category" />
-        <div className="flex flex-wrap justify-center gap-3 px-6 py-2 md:px-12">
+      <section className="flex flex-col gap-12 px-6 md:flex-row md:gap-16 md:px-12 lg:gap-24">
+        {/* Left: sticky intro */}
+        <div className="w-full md:sticky md:top-32 md:w-1/3" style={{ height: 'fit-content' }}>
+          <div className="mb-4 flex items-center gap-2">
+            <span className="h-px w-8 bg-brand-red" />
+            <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-white/48">
+              Exploration
+            </span>
+          </div>
+          <h2
+            className="font-display font-black leading-[0.92] text-white"
+            style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', letterSpacing: '-0.04em' }}
+          >
+            Browse by{' '}
+            <span className="text-white/30">Category.</span>
+          </h2>
+          <p className="mt-5 text-base leading-7 text-white/48">
+            From health and cooking to music and cinema — find the genre that matches your mood.
+          </p>
+        </div>
+
+        {/* Right: flowing pill grid */}
+        <div className="flex w-full flex-wrap content-start gap-3 pt-2 md:w-2/3 lg:gap-4">
           {genres.map((genre) => {
             const color = GENRE_COLORS[genre] ?? '#2C3569'
             return (
               <Link
                 key={genre}
                 href={`/browse?genre=${encodeURIComponent(genre)}`}
-                className="group flex-shrink-0"
               >
-                <div
-                  className="flex cursor-pointer items-center justify-center rounded-full border bg-white/[0.03] px-5 py-3 transition-all duration-200 hover:-translate-y-0.5"
-                  style={{
-                    borderColor: `${color}35`,
-                    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03), 0 18px 40px rgba(0,0,0,0.12)`,
-                  }}
-                >
-                  <span
-                    className="whitespace-nowrap text-sm font-medium"
-                    style={{ color }}
-                  >
-                    {genre}
-                  </span>
-                </div>
+                <GenrePill genre={genre} color={color} />
               </Link>
             )
           })}

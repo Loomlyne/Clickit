@@ -1,0 +1,214 @@
+'use client'
+
+import { useState, useRef } from 'react'
+import { Upload, Loader2, Trash2, Link as LinkIcon, Film } from 'lucide-react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { uploadHeroVideo, setHeroVideoUrl, removeHeroVideo } from '@/app/admin/actions'
+import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
+
+type VideoConfig = { url: string; type: 'mp4' | 'youtube' } | null
+
+export function HeroVideoManager({ currentVideo }: { currentVideo: VideoConfig }) {
+  const [video, setVideo] = useState<VideoConfig>(currentVideo)
+  const [mode, setMode] = useState<'mp4' | 'youtube'>(currentVideo?.type ?? 'mp4')
+  const [uploading, setUploading] = useState(false)
+  const [youtubeInput, setYoutubeInput] = useState(
+    currentVideo?.type === 'youtube' ? currentVideo.url : ''
+  )
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error('Video must be under 50MB')
+      return
+    }
+
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.set('file', file)
+      const result = await uploadHeroVideo(formData)
+      if (!result.success) {
+        toast.error(result.error ?? 'Upload failed')
+        return
+      }
+      setVideo({ url: result.data!, type: 'mp4' })
+      toast.success('Hero video uploaded')
+    } catch {
+      toast.error('Upload failed')
+    } finally {
+      setUploading(false)
+      if (inputRef.current) inputRef.current.value = ''
+    }
+  }
+
+  async function handleYoutubeSave() {
+    if (!youtubeInput.trim()) {
+      toast.error('Paste a YouTube URL')
+      return
+    }
+
+    const id = extractYouTubeId(youtubeInput)
+    if (!id) {
+      toast.error('Invalid YouTube URL')
+      return
+    }
+
+    setUploading(true)
+    try {
+      const result = await setHeroVideoUrl(youtubeInput.trim())
+      if (!result.success) {
+        toast.error(result.error ?? 'Failed to save')
+        return
+      }
+      setVideo({ url: youtubeInput.trim(), type: 'youtube' })
+      toast.success('Hero video URL saved')
+    } catch {
+      toast.error('Failed to save')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function handleRemove() {
+    setUploading(true)
+    try {
+      const result = await removeHeroVideo()
+      if (!result.success) {
+        toast.error(result.error ?? 'Failed to remove')
+        return
+      }
+      setVideo(null)
+      setYoutubeInput('')
+      toast.success('Hero video removed')
+    } catch {
+      toast.error('Failed to remove')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  // Current video preview
+  const preview = video ? (
+    <div className="mb-6 space-y-3">
+      <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/40">
+        Current: {video.type === 'mp4' ? 'MP4 File' : 'YouTube'}
+      </p>
+      <div className="relative overflow-hidden rounded-[16px] border border-white/10 bg-black">
+        {video.type === 'mp4' ? (
+          <video
+            src={video.url}
+            muted
+            autoPlay
+            loop
+            playsInline
+            className="h-48 w-full object-cover"
+          />
+        ) : (
+          (() => {
+            const ytId = extractYouTubeId(video.url)
+            return ytId ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={getYouTubeThumbnailUrl(ytId)}
+                alt="YouTube thumbnail"
+                className="h-48 w-full object-cover"
+              />
+            ) : null
+          })()
+        )}
+      </div>
+      <Button
+        variant="destructive"
+        size="sm"
+        onClick={handleRemove}
+        disabled={uploading}
+      >
+        <Trash2 className="mr-2 size-4" />
+        Remove Video
+      </Button>
+    </div>
+  ) : null
+
+  return (
+    <div>
+      {preview}
+
+      {/* Mode toggle */}
+      <div className="mb-4 flex gap-2">
+        <button
+          type="button"
+          onClick={() => setMode('mp4')}
+          className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+            mode === 'mp4'
+              ? 'bg-white text-black shadow-[0_10px_30px_rgba(255,255,255,0.18)]'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Film className="size-4" />
+          Upload MP4
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('youtube')}
+          className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+            mode === 'youtube'
+              ? 'bg-white text-black shadow-[0_10px_30px_rgba(255,255,255,0.18)]'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <LinkIcon className="size-4" />
+          YouTube URL
+        </button>
+      </div>
+
+      {/* MP4 upload */}
+      {mode === 'mp4' && (
+        <div>
+          {uploading ? (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-[24px] border border-dashed border-white/12 bg-black/20 p-8">
+              <Loader2 className="size-6 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Uploading video...</p>
+            </div>
+          ) : (
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[24px] border border-dashed border-white/12 bg-black/20 p-8 transition-colors hover:border-white/20">
+              <Upload className="size-6 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Click to upload MP4</p>
+              <p className="text-xs text-muted-foreground">Max 50MB · Plays muted as hero background</p>
+              <input
+                ref={inputRef}
+                type="file"
+                accept="video/mp4"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+            </label>
+          )}
+        </div>
+      )}
+
+      {/* YouTube URL input */}
+      {mode === 'youtube' && (
+        <div className="flex gap-3">
+          <input
+            type="url"
+            placeholder="https://www.youtube.com/watch?v=..."
+            value={youtubeInput}
+            onChange={(e) => setYoutubeInput(e.target.value)}
+            className="flex-1 rounded-[16px] border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-muted-foreground focus:border-white/20 focus:outline-none"
+          />
+          <Button
+            onClick={handleYoutubeSave}
+            disabled={uploading || !youtubeInput.trim()}
+          >
+            {uploading ? <Loader2 className="size-4 animate-spin" /> : 'Save'}
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}

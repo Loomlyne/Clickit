@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 const tabs = [
   { label: 'Shows', href: '/admin' },
   { label: 'Archive', href: '/admin/archive' },
+  { label: 'Settings', href: '/admin/settings' },
 ]
 
 export function AdminHeader() {
@@ -33,7 +34,7 @@ export function AdminHeader() {
             const isActive =
               tab.href === '/admin'
                 ? pathname === '/admin' || pathname.startsWith('/admin/shows')
-                : pathname.startsWith(tab.href)
+                : pathname === tab.href || pathname.startsWith(tab.href + '/')
 
             return (
               <Link

@@ -1,118 +1,118 @@
-'use client'
-
 import Image from 'next/image'
 import Link from 'next/link'
-import { motion } from 'motion/react'
-import { CinematicBackdrop } from '@/components/primitives/cinematic-backdrop'
-import { CINEMA_EASE } from '@/lib/cinema'
+import { getHeroVideo } from '@/lib/queries'
+import { extractYouTubeId } from '@/lib/youtube'
+import { LandingHeroAnimations } from './landing-hero-animations'
 
 const BRAND_COLORS = ['#2C3569', '#9F54A0', '#50A258', '#DB3F34', '#EA8C2E', '#F8C623']
 
-export function LandingHero() {
+export async function LandingHero() {
+  const heroVideo = await getHeroVideo()
+  const youtubeId = heroVideo?.type === 'youtube' ? extractYouTubeId(heroVideo.url) : null
+
   return (
     <section className="relative -mt-24 h-dvh overflow-hidden md:-mt-28">
-      {/* Cinematic backdrop: deep indigo bloom */}
-      <CinematicBackdrop
-        brandColor="#6073FF"
-        intensity="high"
-        watermarkText="CIT"
-      />
+      {/* Video / Fallback background */}
+      <div className="absolute inset-0">
+        {/* Layer 1: black base */}
+        <div className="absolute inset-0 bg-black" />
 
-      {/* Secondary ambient layers */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        aria-hidden="true"
-        style={{
-          background:
-            'radial-gradient(ellipse 60% 50% at 10% 20%, rgba(96,115,255,0.18) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 90% 80%, rgba(159,84,160,0.12) 0%, transparent 70%)',
-        }}
-      />
+        {/* Layer 2: video */}
+        {heroVideo?.type === 'mp4' && (
+          <video
+            src={heroVideo.url}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover opacity-60"
+          />
+        )}
+        {heroVideo?.type === 'youtube' && youtubeId && (
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <iframe
+              src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`}
+              allow="autoplay; encrypted-media"
+              className="absolute left-1/2 top-1/2 h-[120%] w-[120%] -translate-x-1/2 -translate-y-1/2 border-none"
+              style={{ aspectRatio: '16/9', opacity: 0.6 }}
+              title="Hero background video"
+            />
+          </div>
+        )}
 
-      {/* Bottom vignette */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#06070A] via-black/30 to-transparent" />
+        {/* Fallback: gradient bloom when no video */}
+        {!heroVideo && (
+          <>
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'radial-gradient(ellipse 80% 60% at 50% 120%, rgba(96,115,255,0.5) 0%, transparent 70%)',
+              }}
+            />
+            <div
+              className="absolute inset-0 flex items-center justify-center overflow-hidden"
+              aria-hidden="true"
+            >
+              <span
+                style={{
+                  fontSize: 'clamp(8rem, 20vw, 18rem)',
+                  fontWeight: 800,
+                  color: 'white',
+                  opacity: 0.03,
+                  userSelect: 'none',
+                  pointerEvents: 'none',
+                  textTransform: 'uppercase',
+                  lineHeight: 1,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                CIT
+              </span>
+            </div>
+          </>
+        )}
+
+        {/* Layer 3: cinematic overlays (always present) */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          aria-hidden="true"
+          style={{
+            background:
+              'radial-gradient(ellipse 60% 50% at 10% 20%, rgba(96,115,255,0.18) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 90% 80%, rgba(159,84,160,0.12) 0%, transparent 70%)',
+          }}
+        />
+
+        {/* Bottom vignette */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#06070A] via-black/30 to-transparent" />
+
+        {/* Noise texture */}
+        <div
+          className="absolute inset-0"
+          aria-hidden="true"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E\")",
+            backgroundRepeat: 'repeat',
+            backgroundSize: '256px',
+            opacity: 0.4,
+            mixBlendMode: 'overlay',
+          }}
+        />
+      </div>
 
       {/* Content */}
       <div className="absolute bottom-0 left-0 w-full px-6 pb-16 md:px-12 md:pb-20">
         <div className="max-w-[52rem]">
-          <motion.p
-            className="mb-4 text-[11px] font-medium uppercase tracking-[0.28em] text-white/48"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.1 }}
-          >
-            Spacelight Studios Presents
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.25 }}
-          >
+          <LandingHeroAnimations>
             <Image
               src="/brand/Clickit_final_logo.svg"
               alt="Clickit Story"
-              width={320}
-              height={80}
-              className="h-14 w-auto md:h-20"
+              width={480}
+              height={120}
+              className="h-[5.25rem] w-auto md:h-[7.5rem]"
               priority
             />
-          </motion.div>
-
-          <motion.p
-            className="font-display mt-5 font-semibold leading-tight text-white/80"
-            style={{ fontSize: 'clamp(1.5rem, 4vw, 3rem)' }}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.4 }}
-          >
-            15 Original Programs. One Platform.
-          </motion.p>
-
-          <motion.p
-            className="mt-3 max-w-xl text-sm leading-7 text-white/52 md:text-base"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-          >
-            Stream award-winning Arabic and English content from Abu Dhabi — travel, health, music, comedy, cooking, kids, and more.
-          </motion.p>
-
-          <motion.div
-            className="mt-7 flex flex-wrap items-center gap-3"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.55 }}
-          >
-            <Link
-              href="/browse"
-              className="inline-flex items-center rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-[0_16px_40px_rgba(96,115,255,0.28)] transition-colors hover:bg-[#7082ff]"
-            >
-              Browse Shows
-            </Link>
-            <Link
-              href="/auth"
-              className="inline-flex items-center rounded-full border border-white/14 bg-white/[0.04] px-7 py-3 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/[0.08]"
-            >
-              Sign In
-            </Link>
-          </motion.div>
-
-          <motion.div
-            className="mt-10 flex items-center gap-2 text-white/28"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.9 }}
-          >
-            <motion.span
-              animate={{ y: [0, 5, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-              className="text-lg"
-              aria-hidden="true"
-            >
-              ↓
-            </motion.span>
-            <span className="text-[11px] uppercase tracking-[0.22em]">Scroll to explore</span>
-          </motion.div>
+          </LandingHeroAnimations>
         </div>
       </div>
 
