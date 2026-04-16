@@ -46,7 +46,7 @@ export default function DesignSystemLayout({
             ))}
           </nav>
         </header>
-        <main className="pt-8">{children}</main>
+        <div className="pt-8">{children}</div>
       </div>
     </div>
   )

@@ -45,7 +45,7 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <main id="main">
+        <main id="main" tabIndex={-1}>
           {children}
         </main>
         <Toaster
