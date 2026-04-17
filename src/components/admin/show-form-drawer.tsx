@@ -45,6 +45,11 @@ const showFormSchema = z.object({
   poster_url: z.string().optional().nullable(),
   hero_url: z.string().optional().nullable(),
   logo_url: z.string().optional().nullable(),
+  hero_image_mobile_url: z.string().optional().nullable(),
+  hero_video_url: z.string().optional().nullable(),
+  hero_video_type: z.enum(['mp4', 'youtube']).optional().nullable(),
+  hero_video_mobile_url: z.string().optional().nullable(),
+  hero_video_mobile_type: z.enum(['mp4', 'youtube']).optional().nullable(),
 })
 
 type ShowFormData = z.infer<typeof showFormSchema>
@@ -112,6 +117,8 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
       tagline: '', tagline_ar: '', genre: '', brand_color: 'brand-blue',
       status: 'draft', broadcast_day: '', broadcast_time: '',
       poster_url: '', hero_url: '', logo_url: '',
+      hero_image_mobile_url: '', hero_video_url: '', hero_video_type: null,
+      hero_video_mobile_url: '', hero_video_mobile_type: null,
     },
   })
 
@@ -127,6 +134,11 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
           broadcast_day: show.broadcast_day ?? '', broadcast_time: show.broadcast_time ?? '',
           poster_url: show.poster_url ?? '', hero_url: show.hero_url ?? '',
           logo_url: show.logo_url ?? '',
+          hero_image_mobile_url: show.hero_image_mobile_url ?? '',
+          hero_video_url: show.hero_video_url ?? '',
+          hero_video_type: (show.hero_video_type as 'mp4' | 'youtube' | null) ?? null,
+          hero_video_mobile_url: show.hero_video_mobile_url ?? '',
+          hero_video_mobile_type: (show.hero_video_mobile_type as 'mp4' | 'youtube' | null) ?? null,
         })
       } else {
         form.reset({
@@ -134,6 +146,8 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
           tagline: '', tagline_ar: '', genre: '', brand_color: 'brand-blue',
           status: 'draft', broadcast_day: '', broadcast_time: '',
           poster_url: '', hero_url: '', logo_url: '',
+          hero_image_mobile_url: '', hero_video_url: '', hero_video_type: null,
+          hero_video_mobile_url: '', hero_video_mobile_type: null,
         })
       }
     }
@@ -154,6 +168,11 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
       broadcast_day: data.broadcast_day || null, broadcast_time: data.broadcast_time || null,
       poster_url: data.poster_url || null, hero_url: data.hero_url || null,
       logo_url: data.logo_url || null,
+      hero_image_mobile_url: data.hero_image_mobile_url || null,
+      hero_video_url: data.hero_video_url || null,
+      hero_video_type: data.hero_video_type || null,
+      hero_video_mobile_url: data.hero_video_mobile_url || null,
+      hero_video_mobile_type: data.hero_video_mobile_type || null,
     }
     if (!isEdit) normalized.id = generatedId
 
@@ -303,39 +322,41 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
             <Section title="Hero Media">
               <p className="text-xs text-muted-foreground -mt-2">
                 Responsive media shown in the browse hero. Desktop uses landscape, mobile uses portrait.
+                Uploads are saved to storage immediately but only persist when you save the show.
               </p>
               <ArtworkUploadZone
                 showId={generatedId} slot="hero-mobile"
-                currentUrl={show?.hero_image_mobile_url ?? null}
-                onUploadComplete={() => {}}
+                currentUrl={form.watch('hero_image_mobile_url') || null}
+                onUploadComplete={(url) => form.setValue('hero_image_mobile_url', url)}
+                onDelete={() => form.setValue('hero_image_mobile_url', '')}
                 label="Mobile Thumbnail" aspectHint="9:16 portrait · 1080×1920"
               />
-              {isEdit ? (
-                <div className="space-y-6">
-                  <ShowVideoManager
-                    showId={show.id}
-                    variant="desktop"
-                    currentVideo={
-                      show.hero_video_url && show.hero_video_type
-                        ? { url: show.hero_video_url, type: show.hero_video_type as 'mp4' | 'youtube' }
-                        : null
-                    }
-                  />
-                  <ShowVideoManager
-                    showId={show.id}
-                    variant="mobile"
-                    currentVideo={
-                      show.hero_video_mobile_url && show.hero_video_mobile_type
-                        ? { url: show.hero_video_mobile_url, type: show.hero_video_mobile_type as 'mp4' | 'youtube' }
-                        : null
-                    }
-                  />
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground rounded-[12px] border border-white/8 bg-white/[0.03] px-4 py-3">
-                  Save the show first, then re-open it to add hero videos.
-                </p>
-              )}
+              <ShowVideoManager
+                showId={generatedId}
+                variant="desktop"
+                currentVideo={
+                  form.watch('hero_video_url') && form.watch('hero_video_type')
+                    ? { url: form.watch('hero_video_url')!, type: form.watch('hero_video_type')! }
+                    : null
+                }
+                onChange={(video) => {
+                  form.setValue('hero_video_url', video?.url ?? '')
+                  form.setValue('hero_video_type', video?.type ?? null)
+                }}
+              />
+              <ShowVideoManager
+                showId={generatedId}
+                variant="mobile"
+                currentVideo={
+                  form.watch('hero_video_mobile_url') && form.watch('hero_video_mobile_type')
+                    ? { url: form.watch('hero_video_mobile_url')!, type: form.watch('hero_video_mobile_type')! }
+                    : null
+                }
+                onChange={(video) => {
+                  form.setValue('hero_video_mobile_url', video?.url ?? '')
+                  form.setValue('hero_video_mobile_type', video?.type ?? null)
+                }}
+              />
             </Section>
 
             {/* SCHEDULE */}

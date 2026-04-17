@@ -67,6 +67,11 @@ const showSchema = z.object({
   poster_url: z.string().optional().nullable(),
   hero_url: z.string().optional().nullable(),
   logo_url: z.string().optional().nullable(),
+  hero_image_mobile_url: z.string().optional().nullable(),
+  hero_video_url: z.string().optional().nullable(),
+  hero_video_type: z.enum(['mp4', 'youtube']).optional().nullable(),
+  hero_video_mobile_url: z.string().optional().nullable(),
+  hero_video_mobile_type: z.enum(['mp4', 'youtube']).optional().nullable(),
 })
 
 const seasonSchema = z.object({
@@ -826,7 +831,9 @@ export async function removeHeroVideo(): Promise<ActionResult> {
 // Per-Show Hero Video Management
 // ---------------------------------------------------------------------------
 
-export async function uploadShowVideo(formData: FormData): Promise<ActionResult<string>> {
+// Uploads MP4 to storage and returns the public URL. Does NOT write to DB —
+// the URL is persisted when the parent form is saved (same pattern as artwork).
+export async function uploadShowVideoFile(formData: FormData): Promise<ActionResult<string>> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
@@ -847,61 +854,18 @@ export async function uploadShowVideo(formData: FormData): Promise<ActionResult<
     if (uploadError) return { success: false, error: uploadError.message }
 
     const { data: urlData } = admin.storage.from('site-assets').getPublicUrl(path)
-
-    const col = variant === 'desktop'
-      ? { hero_video_url: urlData.publicUrl, hero_video_type: 'mp4' as const }
-      : { hero_video_mobile_url: urlData.publicUrl, hero_video_mobile_type: 'mp4' as const }
-
-    const { error: dbError } = await admin.from('shows').update(col).eq('id', showId)
-    if (dbError) return { success: false, error: dbError.message }
-
-    updateTag('shows')
-    revalidatePath('/browse')
     return { success: true, data: urlData.publicUrl }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
   }
 }
 
-export async function setShowVideoUrl(showId: string, url: string, variant: 'desktop' | 'mobile'): Promise<ActionResult> {
+// Removes the uploaded MP4 from storage. DB null-out happens on form save.
+export async function deleteShowVideoFile(showId: string, variant: 'desktop' | 'mobile'): Promise<ActionResult> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
-
-    if (!url.trim()) return { success: false, error: 'URL is required' }
-
-    const col = variant === 'desktop'
-      ? { hero_video_url: url.trim(), hero_video_type: 'youtube' as const }
-      : { hero_video_mobile_url: url.trim(), hero_video_mobile_type: 'youtube' as const }
-
-    const { error } = await admin.from('shows').update(col).eq('id', showId)
-    if (error) return { success: false, error: error.message }
-
-    updateTag('shows')
-    revalidatePath('/browse')
-    return { success: true }
-  } catch (err) {
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to save URL' }
-  }
-}
-
-export async function removeShowVideo(showId: string, variant: 'desktop' | 'mobile'): Promise<ActionResult> {
-  try {
-    await assertAdmin()
-    const admin = createAdminClient()
-
-    // Attempt to remove MP4 from storage (ignore if not found)
     await admin.storage.from('site-assets').remove([`shows/${showId}/hero-${variant}.mp4`])
-
-    const col = variant === 'desktop'
-      ? { hero_video_url: null, hero_video_type: null }
-      : { hero_video_mobile_url: null, hero_video_mobile_type: null }
-
-    const { error } = await admin.from('shows').update(col).eq('id', showId)
-    if (error) return { success: false, error: error.message }
-
-    updateTag('shows')
-    revalidatePath('/browse')
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to remove video' }
