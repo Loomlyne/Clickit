@@ -266,6 +266,11 @@ export type Database = {
           fts: unknown
           genre: string
           hero_url: string | null
+          hero_image_mobile_url: string | null
+          hero_video_url: string | null
+          hero_video_type: string | null
+          hero_video_mobile_url: string | null
+          hero_video_mobile_type: string | null
           id: string
           logo_url: string | null
           poster_url: string | null
@@ -291,6 +296,11 @@ export type Database = {
           fts?: unknown
           genre: string
           hero_url?: string | null
+          hero_image_mobile_url?: string | null
+          hero_video_url?: string | null
+          hero_video_type?: string | null
+          hero_video_mobile_url?: string | null
+          hero_video_mobile_type?: string | null
           id?: string
           logo_url?: string | null
           poster_url?: string | null
@@ -316,6 +326,11 @@ export type Database = {
           fts?: unknown
           genre?: string
           hero_url?: string | null
+          hero_image_mobile_url?: string | null
+          hero_video_url?: string | null
+          hero_video_type?: string | null
+          hero_video_mobile_url?: string | null
+          hero_video_mobile_type?: string | null
           id?: string
           logo_url?: string | null
           poster_url?: string | null

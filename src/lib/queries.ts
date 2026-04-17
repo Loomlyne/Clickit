@@ -21,6 +21,11 @@ export type ViewShow = {
   brandColor: 'brand-blue' | 'brand-purple' | 'brand-green' | 'brand-red' | 'brand-orange'
   posterUrl?: string
   heroImageUrl?: string
+  heroImageMobileUrl?: string
+  heroVideoUrl?: string
+  heroVideoType?: 'mp4' | 'youtube'
+  heroVideoMobileUrl?: string
+  heroVideoMobileType?: 'mp4' | 'youtube'
   imdbRating?: number
   platformRating?: number
 }
@@ -39,6 +44,11 @@ export function mapShow(db: DbShow): ViewShow {
     brandColor: (db.brand_color || 'brand-blue') as ViewShow['brandColor'],
     posterUrl: db.poster_url ?? undefined,
     heroImageUrl: db.hero_url ?? undefined,
+    heroImageMobileUrl: db.hero_image_mobile_url ?? undefined,
+    heroVideoUrl: db.hero_video_url ?? undefined,
+    heroVideoType: (db.hero_video_type as ViewShow['heroVideoType']) ?? undefined,
+    heroVideoMobileUrl: db.hero_video_mobile_url ?? undefined,
+    heroVideoMobileType: (db.hero_video_mobile_type as ViewShow['heroVideoMobileType']) ?? undefined,
   }
 }
 

@@ -823,6 +823,92 @@ export async function removeHeroVideo(): Promise<ActionResult> {
 }
 
 // ---------------------------------------------------------------------------
+// Per-Show Hero Video Management
+// ---------------------------------------------------------------------------
+
+export async function uploadShowVideo(formData: FormData): Promise<ActionResult<string>> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    const file = formData.get('file') as File | null
+    const showId = formData.get('showId') as string | null
+    const variant = formData.get('variant') as 'desktop' | 'mobile' | null
+
+    if (!file || !showId || !variant) return { success: false, error: 'Missing file, showId, or variant' }
+    if (file.size > 50 * 1024 * 1024) return { success: false, error: 'Video must be under 50MB' }
+
+    const path = `shows/${showId}/hero-${variant}.mp4`
+
+    const { error: uploadError } = await admin.storage
+      .from('site-assets')
+      .upload(path, file, { upsert: true, contentType: 'video/mp4', cacheControl: '3600' })
+
+    if (uploadError) return { success: false, error: uploadError.message }
+
+    const { data: urlData } = admin.storage.from('site-assets').getPublicUrl(path)
+
+    const col = variant === 'desktop'
+      ? { hero_video_url: urlData.publicUrl, hero_video_type: 'mp4' as const }
+      : { hero_video_mobile_url: urlData.publicUrl, hero_video_mobile_type: 'mp4' as const }
+
+    const { error: dbError } = await admin.from('shows').update(col).eq('id', showId)
+    if (dbError) return { success: false, error: dbError.message }
+
+    updateTag('shows')
+    revalidatePath('/browse')
+    return { success: true, data: urlData.publicUrl }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
+  }
+}
+
+export async function setShowVideoUrl(showId: string, url: string, variant: 'desktop' | 'mobile'): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    if (!url.trim()) return { success: false, error: 'URL is required' }
+
+    const col = variant === 'desktop'
+      ? { hero_video_url: url.trim(), hero_video_type: 'youtube' as const }
+      : { hero_video_mobile_url: url.trim(), hero_video_mobile_type: 'youtube' as const }
+
+    const { error } = await admin.from('shows').update(col).eq('id', showId)
+    if (error) return { success: false, error: error.message }
+
+    updateTag('shows')
+    revalidatePath('/browse')
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to save URL' }
+  }
+}
+
+export async function removeShowVideo(showId: string, variant: 'desktop' | 'mobile'): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    // Attempt to remove MP4 from storage (ignore if not found)
+    await admin.storage.from('site-assets').remove([`shows/${showId}/hero-${variant}.mp4`])
+
+    const col = variant === 'desktop'
+      ? { hero_video_url: null, hero_video_type: null }
+      : { hero_video_mobile_url: null, hero_video_mobile_type: null }
+
+    const { error } = await admin.from('shows').update(col).eq('id', showId)
+    if (error) return { success: false, error: error.message }
+
+    updateTag('shows')
+    revalidatePath('/browse')
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to remove video' }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // FEATURED TOGGLE
 // ---------------------------------------------------------------------------
 

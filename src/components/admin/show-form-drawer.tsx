@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { ArtworkUploadZone } from '@/components/admin/artwork-upload-zone'
+import { ShowVideoManager } from '@/components/admin/show-video-manager'
 import { generateSlug } from '@/lib/slug'
 import type { Database } from '@/lib/database.types'
 
@@ -296,6 +297,45 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
                   label="Logo" aspectHint="PNG"
                 />
               </div>
+            </Section>
+
+            {/* HERO MEDIA */}
+            <Section title="Hero Media">
+              <p className="text-xs text-muted-foreground -mt-2">
+                Responsive media shown in the browse hero. Desktop uses landscape, mobile uses portrait.
+              </p>
+              <ArtworkUploadZone
+                showId={generatedId} slot="hero-mobile"
+                currentUrl={show?.hero_image_mobile_url ?? null}
+                onUploadComplete={() => {}}
+                label="Mobile Thumbnail" aspectHint="9:16 portrait · 1080×1920"
+              />
+              {isEdit ? (
+                <div className="space-y-6">
+                  <ShowVideoManager
+                    showId={show.id}
+                    variant="desktop"
+                    currentVideo={
+                      show.hero_video_url && show.hero_video_type
+                        ? { url: show.hero_video_url, type: show.hero_video_type as 'mp4' | 'youtube' }
+                        : null
+                    }
+                  />
+                  <ShowVideoManager
+                    showId={show.id}
+                    variant="mobile"
+                    currentVideo={
+                      show.hero_video_mobile_url && show.hero_video_mobile_type
+                        ? { url: show.hero_video_mobile_url, type: show.hero_video_mobile_type as 'mp4' | 'youtube' }
+                        : null
+                    }
+                  />
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground rounded-[12px] border border-white/8 bg-white/[0.03] px-4 py-3">
+                  Save the show first, then re-open it to add hero videos.
+                </p>
+              )}
             </Section>
 
             {/* SCHEDULE */}
