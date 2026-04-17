@@ -3,22 +3,12 @@ import Image from 'next/image'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
 import { ContactForm } from '@/components/support/contact-form'
+import { FAQ_ITEMS } from '@/lib/faq-data'
 
 export const metadata: Metadata = {
   title: 'Support | Clickit Story',
   description: 'Get help with Clickit Story — contact us or browse FAQs',
 }
-
-const FAQ_ITEMS = [
-  { q: 'What is Clickit Story?', a: 'Clickit Story is a streaming platform featuring original shows produced by Spacelight Studios FZ LLC from Abu Dhabi, UAE. We offer content spanning travel, health, music, comedy, cooking, poetry, tech, and more.' },
-  { q: 'How do I watch shows?', a: 'Simply browse our catalog, pick a show, choose an episode, and press play. All content streams via our integrated video player — no downloads needed.' },
-  { q: 'Is Clickit Story free?', a: 'Yes! Clickit Story is currently free to watch. Create an account to save your progress and build your watchlist.' },
-  { q: 'What languages are available?', a: 'Most of our shows are available in Arabic and English. Some documentaries include French subtitles. Language availability is shown on each show detail page.' },
-  { q: 'How do I contact support?', a: 'Use the contact form on this page or email us directly. Our support team responds within 24 hours during business days (Sunday\u2013Thursday, GST).' },
-  { q: 'Can I download episodes?', a: 'Offline downloads are not currently available. All content is streamed online for the best viewing experience.' },
-  { q: 'What devices are supported?', a: 'Clickit Story works on any device with a modern web browser — desktop, tablet, and mobile. We recommend Chrome, Safari, or Firefox for the best experience.' },
-  { q: 'How do I report a problem?', a: 'If you encounter any issues, please use the contact form above or email our support team with a description of the problem and the device/browser you are using.' },
-]
 
 export default function SupportPage() {
   const leftFaq = FAQ_ITEMS.slice(0, 4)

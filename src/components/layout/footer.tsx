@@ -3,6 +3,14 @@ import Image from 'next/image'
 
 const BRAND_COLORS = ['#2C3569', '#9F54A0', '#50A258', '#DB3F34', '#EA8C2E', '#F8C623']
 
+const GENRE_LINKS = [
+  { label: 'Travel', href: '/browse?genre=Travel' },
+  { label: 'Health', href: '/browse?genre=Health' },
+  { label: 'Music', href: '/browse?genre=Music' },
+  { label: 'Comedy', href: '/browse?genre=Comedy' },
+  { label: 'Tech', href: '/browse?genre=Tech' },
+]
+
 function YouTubeIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -35,6 +43,7 @@ export function Footer() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
       <div className="mx-auto max-w-7xl px-6 py-16 md:px-12">
         <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr]">
+          {/* Brand panel */}
           <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-md">
             <div className="flex flex-col gap-5">
               <Image
@@ -49,7 +58,6 @@ export function Footer() {
               </p>
               <div className="flex flex-wrap items-center gap-3 text-sm text-white/48">
                 <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">15 original programs</span>
-                <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">Produced by Spacelight Studios FZ LLC</span>
                 <a href="#" aria-label="Instagram" className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/48 transition-colors hover:border-white/20 hover:text-white">
                   <InstagramIcon className="h-4 w-4" />
                 </a>
@@ -63,7 +71,8 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 lg:grid-cols-2">
+          {/* Nav columns */}
+          <div className="grid grid-cols-3 gap-8">
             <div>
               <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Navigate</h4>
               <ul className="space-y-3">
@@ -73,35 +82,38 @@ export function Footer() {
               </ul>
             </div>
             <div>
-              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Highlights</h4>
+              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Genres</h4>
               <ul className="space-y-3">
-                <li><span className="text-sm text-white/56">Travel</span></li>
-                <li><span className="text-sm text-white/56">Health</span></li>
-                <li><span className="text-sm text-white/56">Music</span></li>
-                <li><span className="text-sm text-white/56">Tech</span></li>
+                {GENRE_LINKS.map(({ label, href }) => (
+                  <li key={label}>
+                    <Link href={href} className="text-sm text-white/56 transition-colors hover:text-white">{label}</Link>
+                  </li>
+                ))}
               </ul>
             </div>
-            <div>
-              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Account</h4>
-              <ul className="space-y-3">
-                <li><Link href="/auth" className="text-sm text-white/56 transition-colors hover:text-white">Sign In</Link></li>
-                <li><Link href="/my-list" className="text-sm text-white/56 transition-colors hover:text-white">My List</Link></li>
-                <li><Link href="/profile" className="text-sm text-white/56 transition-colors hover:text-white">Profile</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Legal</h4>
-              <ul className="space-y-3">
-                <li><Link href="#" className="text-sm text-white/56 transition-colors hover:text-white">Privacy Policy</Link></li>
-                <li><Link href="#" className="text-sm text-white/56 transition-colors hover:text-white">Terms of Service</Link></li>
-              </ul>
+            <div className="space-y-8">
+              <div>
+                <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Account</h4>
+                <ul className="space-y-3">
+                  <li><Link href="/auth" className="text-sm text-white/56 transition-colors hover:text-white">Sign In</Link></li>
+                  <li><Link href="/my-list" className="text-sm text-white/56 transition-colors hover:text-white">My List</Link></li>
+                  <li><Link href="/profile" className="text-sm text-white/56 transition-colors hover:text-white">Profile</Link></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Legal</h4>
+                <ul className="space-y-3">
+                  <li><Link href="#" className="text-sm text-white/56 transition-colors hover:text-white">Privacy Policy</Link></li>
+                  <li><Link href="#" className="text-sm text-white/56 transition-colors hover:text-white">Terms of Service</Link></li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-4 border-t border-white/[0.06] pt-8 text-xs text-white/50 md:flex-row md:items-center md:justify-between">
+        <div className="mt-12 flex flex-col gap-2 border-t border-white/[0.06] pt-8 text-xs text-white/50 md:flex-row md:items-center md:justify-between">
           <p>&copy; {new Date().getFullYear()} Clickit Story. All rights reserved.</p>
-          <p>Previewing a redesigned product shell for viewer and admin surfaces.</p>
+          <p>A Spacelight Studios FZ LLC production · Abu Dhabi, UAE</p>
         </div>
       </div>
 
