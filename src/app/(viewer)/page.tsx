@@ -8,12 +8,12 @@ export default function LandingPage() {
   return (
     <div>
       <LandingHero />
-      <div className="mt-24 space-y-24 pb-20">
+      <div className="mt-28 space-y-28 pb-28">
         <BrandStats />
         <GenrePills />
         <LandingFaq />
-        <CtaBanner />
       </div>
+      <CtaBanner />
     </div>
   )
 }
