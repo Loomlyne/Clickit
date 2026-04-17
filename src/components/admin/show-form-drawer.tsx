@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { ArtworkUploadZone } from '@/components/admin/artwork-upload-zone'
-import { ShowVideoManager } from '@/components/admin/show-video-manager'
+import { HeroMediaPicker } from '@/components/admin/hero-media-picker'
 import { generateSlug } from '@/lib/slug'
 import type { Database } from '@/lib/database.types'
 
@@ -293,27 +293,20 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
                 </div>
               </Field>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <ArtworkUploadZone
                   showId={generatedId} slot="poster"
-                  currentUrl={show?.poster_url ?? null}
+                  currentUrl={form.watch('poster_url') || null}
                   onUploadComplete={(url) => form.setValue('poster_url', url)}
                   onDelete={() => form.setValue('poster_url', '')}
-                  label="Poster" aspectHint="2:3"
-                />
-                <ArtworkUploadZone
-                  showId={generatedId} slot="hero"
-                  currentUrl={show?.hero_url ?? null}
-                  onUploadComplete={(url) => form.setValue('hero_url', url)}
-                  onDelete={() => form.setValue('hero_url', '')}
-                  label="Hero" aspectHint="16:9"
+                  label="Poster" aspectHint="2:3 · card artwork"
                 />
                 <ArtworkUploadZone
                   showId={generatedId} slot="logo"
-                  currentUrl={show?.logo_url ?? null}
+                  currentUrl={form.watch('logo_url') || null}
                   onUploadComplete={(url) => form.setValue('logo_url', url)}
                   onDelete={() => form.setValue('logo_url', '')}
-                  label="Logo" aspectHint="PNG"
+                  label="Logo" aspectHint="PNG · transparent"
                 />
               </div>
             </Section>
@@ -321,38 +314,29 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
             {/* HERO MEDIA */}
             <Section title="Hero Media">
               <p className="text-xs text-muted-foreground -mt-2">
-                Responsive media shown in the browse hero. Desktop uses landscape, mobile uses portrait.
-                Uploads are saved to storage immediately but only persist when you save the show.
+                Media for the browse hero. Pick one source per screen size — image, MP4, or YouTube link.
+                Switching source clears the previous one.
               </p>
-              <ArtworkUploadZone
-                showId={generatedId} slot="hero-mobile"
-                currentUrl={form.watch('hero_image_mobile_url') || null}
-                onUploadComplete={(url) => form.setValue('hero_image_mobile_url', url)}
-                onDelete={() => form.setValue('hero_image_mobile_url', '')}
-                label="Mobile Thumbnail" aspectHint="9:16 portrait · 1080×1920"
-              />
-              <ShowVideoManager
+              <HeroMediaPicker
                 showId={generatedId}
                 variant="desktop"
-                currentVideo={
-                  form.watch('hero_video_url') && form.watch('hero_video_type')
-                    ? { url: form.watch('hero_video_url')!, type: form.watch('hero_video_type')! }
-                    : null
-                }
-                onChange={(video) => {
+                currentImageUrl={form.watch('hero_url') || null}
+                currentVideoUrl={form.watch('hero_video_url') || null}
+                currentVideoType={form.watch('hero_video_type') ?? null}
+                onImageChange={(url) => form.setValue('hero_url', url ?? '')}
+                onVideoChange={(video) => {
                   form.setValue('hero_video_url', video?.url ?? '')
                   form.setValue('hero_video_type', video?.type ?? null)
                 }}
               />
-              <ShowVideoManager
+              <HeroMediaPicker
                 showId={generatedId}
                 variant="mobile"
-                currentVideo={
-                  form.watch('hero_video_mobile_url') && form.watch('hero_video_mobile_type')
-                    ? { url: form.watch('hero_video_mobile_url')!, type: form.watch('hero_video_mobile_type')! }
-                    : null
-                }
-                onChange={(video) => {
+                currentImageUrl={form.watch('hero_image_mobile_url') || null}
+                currentVideoUrl={form.watch('hero_video_mobile_url') || null}
+                currentVideoType={form.watch('hero_video_mobile_type') ?? null}
+                onImageChange={(url) => form.setValue('hero_image_mobile_url', url ?? '')}
+                onVideoChange={(video) => {
                   form.setValue('hero_video_mobile_url', video?.url ?? '')
                   form.setValue('hero_video_mobile_type', video?.type ?? null)
                 }}

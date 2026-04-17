@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { SeasonTabs } from '@/components/admin/season-tabs'
+import { EditShowButton } from '@/components/admin/edit-show-button'
 import type { Database } from '@/lib/database.types'
 
 type Episode = Database['public']['Tables']['episodes']['Row']
@@ -101,6 +102,7 @@ export default async function ShowDetailPage({
               Publishing state
             </span>
             <StatusBadge status={show.status} />
+            <EditShowButton show={show} />
           </div>
         </div>
       </div>
