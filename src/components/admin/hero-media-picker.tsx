@@ -4,12 +4,7 @@ import { useState, useRef } from 'react'
 import { Upload, Loader2, Trash2, Link as LinkIcon, Film, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import {
-  uploadArtwork,
-  deleteArtwork,
-  uploadShowVideoFile,
-  deleteShowVideoFile,
-} from '@/app/admin/actions'
+import { uploadArtwork, uploadShowVideoFile } from '@/app/admin/actions'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
 
 type Mode = 'image' | 'mp4' | 'youtube'
@@ -102,24 +97,16 @@ export function HeroMediaPicker({
     toast.success(`${label} YouTube URL set`)
   }
 
-  async function handleRemove() {
-    setUploading(true)
-    try {
-      if (currentVideoType === 'mp4') {
-        await deleteShowVideoFile(showId, variant)
-      }
-      if (currentImageUrl) {
-        await deleteArtwork(showId, imageSlot)
-      }
-      onImageChange(null)
-      onVideoChange(null)
-      setYoutubeInput('')
-      toast.success(`${label} cleared`)
-    } catch {
-      toast.error('Failed to remove')
-    } finally {
-      setUploading(false)
-    }
+  // Clear nulls the form state only. We do NOT delete the storage file here — the
+  // file is referenced by the live DB URL until the parent form is saved with the
+  // nulled value. Clicking Cancel rolls back by keeping the DB URL pointing at the
+  // still-existing file. Orphaned files from saves are cleaned by the scheduled
+  // sweep (see TODOS.md).
+  function handleRemove() {
+    onImageChange(null)
+    onVideoChange(null)
+    setYoutubeInput('')
+    toast.success(`${label} cleared`)
   }
 
   const hasContent = !!(currentImageUrl || currentVideoUrl)

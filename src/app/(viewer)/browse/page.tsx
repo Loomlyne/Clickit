@@ -12,14 +12,16 @@ import {
   getNewEpisodes,
   getFirstEpisodesForShows,
 } from '@/lib/queries'
+import { getIsMobile } from '@/lib/device'
 
 export default async function BrowsePage() {
   // Fetch all data from Supabase in parallel
-  const [featured, streaming, comingSoon, newEpisodes] = await Promise.all([
+  const [featured, streaming, comingSoon, newEpisodes, isMobile] = await Promise.all([
     getFeaturedShows(),
     getStreamingShows(),
     getComingSoonShows(),
     getNewEpisodes(),
+    getIsMobile(),
   ])
 
   // D-01: empty catalog redirects to marketing landing page
@@ -37,7 +39,7 @@ export default async function BrowsePage() {
   return (
     <div>
       {featuredWithEpisodes.length > 0 && (
-        <HeroBanner shows={featuredWithEpisodes} />
+        <HeroBanner shows={featuredWithEpisodes} isMobile={isMobile} />
       )}
 
       <div className="mt-20 space-y-14 pb-20">

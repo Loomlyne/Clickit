@@ -95,10 +95,40 @@ function Field({ label, required, error, children }: { label: string; required?:
   )
 }
 
+type DbShow = Database['public']['Tables']['shows']['Row']
+
+function getFormDefaults(show: DbShow | null): ShowFormData {
+  if (!show) {
+    return {
+      title: '', title_ar: '', slug: '', description: '', description_ar: '',
+      tagline: '', tagline_ar: '', genre: '', brand_color: 'brand-blue',
+      status: 'draft', broadcast_day: '', broadcast_time: '',
+      poster_url: '', hero_url: '', logo_url: '',
+      hero_image_mobile_url: '', hero_video_url: '', hero_video_type: null,
+      hero_video_mobile_url: '', hero_video_mobile_type: null,
+    }
+  }
+  return {
+    title: show.title, title_ar: show.title_ar ?? '', slug: show.slug,
+    description: show.description, description_ar: show.description_ar ?? '',
+    tagline: show.tagline ?? '', tagline_ar: show.tagline_ar ?? '',
+    genre: show.genre, brand_color: show.brand_color as ShowFormData['brand_color'],
+    status: show.status as ShowFormData['status'],
+    broadcast_day: show.broadcast_day ?? '', broadcast_time: show.broadcast_time ?? '',
+    poster_url: show.poster_url ?? '', hero_url: show.hero_url ?? '',
+    logo_url: show.logo_url ?? '',
+    hero_image_mobile_url: show.hero_image_mobile_url ?? '',
+    hero_video_url: show.hero_video_url ?? '',
+    hero_video_type: (show.hero_video_type as 'mp4' | 'youtube' | null) ?? null,
+    hero_video_mobile_url: show.hero_video_mobile_url ?? '',
+    hero_video_mobile_type: (show.hero_video_mobile_type as 'mp4' | 'youtube' | null) ?? null,
+  }
+}
+
 interface ShowFormDrawerProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  show?: Database['public']['Tables']['shows']['Row'] | null
+  show?: DbShow | null
   onSave: (data: ShowFormData & { id?: string }) => Promise<{ success: boolean; error?: string }>
 }
 
@@ -112,44 +142,12 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
 
   const form = useForm<ShowFormData>({
     resolver: zodResolver(showFormSchema),
-    defaultValues: {
-      title: '', title_ar: '', slug: '', description: '', description_ar: '',
-      tagline: '', tagline_ar: '', genre: '', brand_color: 'brand-blue',
-      status: 'draft', broadcast_day: '', broadcast_time: '',
-      poster_url: '', hero_url: '', logo_url: '',
-      hero_image_mobile_url: '', hero_video_url: '', hero_video_type: null,
-      hero_video_mobile_url: '', hero_video_mobile_type: null,
-    },
+    defaultValues: getFormDefaults(null),
   })
 
   useEffect(() => {
     if (open) {
-      if (show) {
-        form.reset({
-          title: show.title, title_ar: show.title_ar ?? '', slug: show.slug,
-          description: show.description, description_ar: show.description_ar ?? '',
-          tagline: show.tagline ?? '', tagline_ar: show.tagline_ar ?? '',
-          genre: show.genre, brand_color: show.brand_color as ShowFormData['brand_color'],
-          status: show.status as ShowFormData['status'],
-          broadcast_day: show.broadcast_day ?? '', broadcast_time: show.broadcast_time ?? '',
-          poster_url: show.poster_url ?? '', hero_url: show.hero_url ?? '',
-          logo_url: show.logo_url ?? '',
-          hero_image_mobile_url: show.hero_image_mobile_url ?? '',
-          hero_video_url: show.hero_video_url ?? '',
-          hero_video_type: (show.hero_video_type as 'mp4' | 'youtube' | null) ?? null,
-          hero_video_mobile_url: show.hero_video_mobile_url ?? '',
-          hero_video_mobile_type: (show.hero_video_mobile_type as 'mp4' | 'youtube' | null) ?? null,
-        })
-      } else {
-        form.reset({
-          title: '', title_ar: '', slug: '', description: '', description_ar: '',
-          tagline: '', tagline_ar: '', genre: '', brand_color: 'brand-blue',
-          status: 'draft', broadcast_day: '', broadcast_time: '',
-          poster_url: '', hero_url: '', logo_url: '',
-          hero_image_mobile_url: '', hero_video_url: '', hero_video_type: null,
-          hero_video_mobile_url: '', hero_video_mobile_type: null,
-        })
-      }
+      form.reset(getFormDefaults(show ?? null))
     }
   }, [open, show, form])
 

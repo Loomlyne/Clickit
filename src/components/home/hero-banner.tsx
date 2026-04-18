@@ -16,9 +16,10 @@ const INTERVAL = 2500
 
 interface HeroBannerProps {
   shows: Array<{ show: ViewShow; firstEpisodeId?: string }>
+  isMobile?: boolean
 }
 
-export function HeroBanner({ shows }: HeroBannerProps) {
+export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
 
@@ -56,6 +57,7 @@ export function HeroBanner({ shows }: HeroBannerProps) {
             show={shows[activeIndex].show}
             firstEpisodeId={shows[activeIndex].firstEpisodeId}
             isActive={true}
+            isMobile={isMobile}
           />
         </AnimatePresence>
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath, updateTag } from 'next/cache'
 import { z } from 'zod'
+import sharp from 'sharp'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -50,29 +51,62 @@ async function assertAdmin() {
 // Zod Schemas
 // ---------------------------------------------------------------------------
 
-const showSchema = z.object({
-  id: z.string().uuid().optional(),
-  title: z.string().min(1, 'Title is required'),
-  title_ar: z.string().optional().nullable(),
-  slug: z.string().min(1, 'Slug is required'),
-  description: z.string().min(1, 'Description is required'),
-  description_ar: z.string().optional().nullable(),
-  tagline: z.string().optional().nullable(),
-  tagline_ar: z.string().optional().nullable(),
-  genre: z.string().min(1, 'Genre is required'),
-  brand_color: z.enum(['brand-blue', 'brand-purple', 'brand-green', 'brand-red', 'brand-orange']),
-  status: z.enum(['draft', 'coming-soon', 'now-streaming']),
-  broadcast_day: z.string().optional().nullable(),
-  broadcast_time: z.string().optional().nullable(),
-  poster_url: z.string().optional().nullable(),
-  hero_url: z.string().optional().nullable(),
-  logo_url: z.string().optional().nullable(),
-  hero_image_mobile_url: z.string().optional().nullable(),
-  hero_video_url: z.string().optional().nullable(),
-  hero_video_type: z.enum(['mp4', 'youtube']).optional().nullable(),
-  hero_video_mobile_url: z.string().optional().nullable(),
-  hero_video_mobile_type: z.enum(['mp4', 'youtube']).optional().nullable(),
-})
+// Accepts '', null, or a valid-looking URL. Matches http(s) + a host.
+const optionalUrl = z
+  .string()
+  .optional()
+  .nullable()
+  .refine((v) => !v || /^https?:\/\/\S+$/.test(v), 'Must be a valid URL')
+
+// Hero video fields must be set together or both absent. A url without a type, or a
+// type without a url, is an invalid state — the viewer's fallback chain breaks.
+function heroVideoInvariant(
+  urlKey: 'hero_video_url' | 'hero_video_mobile_url',
+  typeKey: 'hero_video_type' | 'hero_video_mobile_type',
+) {
+  return (data: Record<string, unknown>, ctx: z.RefinementCtx) => {
+    const url = data[urlKey]
+    const type = data[typeKey]
+    const hasUrl = !!url
+    const hasType = !!type
+    if (hasUrl !== hasType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [hasUrl ? typeKey : urlKey],
+        message: `${urlKey} and ${typeKey} must be set together or both empty`,
+      })
+    }
+  }
+}
+
+const showSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    title: z.string().min(1, 'Title is required'),
+    title_ar: z.string().optional().nullable(),
+    slug: z.string().min(1, 'Slug is required'),
+    description: z.string().min(1, 'Description is required'),
+    description_ar: z.string().optional().nullable(),
+    tagline: z.string().optional().nullable(),
+    tagline_ar: z.string().optional().nullable(),
+    genre: z.string().min(1, 'Genre is required'),
+    brand_color: z.enum(['brand-blue', 'brand-purple', 'brand-green', 'brand-red', 'brand-orange']),
+    status: z.enum(['draft', 'coming-soon', 'now-streaming']),
+    broadcast_day: z.string().optional().nullable(),
+    broadcast_time: z.string().optional().nullable(),
+    poster_url: optionalUrl,
+    hero_url: optionalUrl,
+    logo_url: optionalUrl,
+    hero_image_mobile_url: optionalUrl,
+    hero_video_url: optionalUrl,
+    hero_video_type: z.enum(['mp4', 'youtube']).optional().nullable(),
+    hero_video_mobile_url: optionalUrl,
+    hero_video_mobile_type: z.enum(['mp4', 'youtube']).optional().nullable(),
+  })
+  .superRefine((data, ctx) => {
+    heroVideoInvariant('hero_video_url', 'hero_video_type')(data, ctx)
+    heroVideoInvariant('hero_video_mobile_url', 'hero_video_mobile_type')(data, ctx)
+  })
 
 const seasonSchema = z.object({
   show_id: z.string().uuid(),
@@ -697,14 +731,38 @@ export async function uploadArtwork(formData: FormData): Promise<ActionResult<st
       return { success: false, error: 'Image must be under 10MB' }
     }
 
+    // Hero slots use versioned paths so uploads never overwrite the live DB-referenced
+    // asset in-place. Form state holds the new URL; DB commit happens on Save.
+    // Orphans from cancelled edits are cleaned up by the scheduled sweep (see TODOS.md).
+    const isHeroSlot = slot === 'hero' || slot === 'hero-mobile'
     const ext = slot === 'logo' ? 'png' : 'webp'
-    const path = `shows/${showId}/${slot}.${ext}`
+
+    // Transcode non-matching inputs to the storage format. For logo slot we keep PNG
+    // (preserves transparency and is the convention). For hero/poster slots we convert
+    // JPEG/PNG to WebP so the .webp extension accurately describes the bytes. If the
+    // upload is already in the target format we pass the bytes through unchanged.
+    let uploadBody: Buffer | File = file
+    let uploadContentType = file.type
+    const targetMime = ext === 'png' ? 'image/png' : 'image/webp'
+    if (file.type !== targetMime) {
+      const input = Buffer.from(await file.arrayBuffer())
+      const pipeline = sharp(input)
+      const transcoded = ext === 'png'
+        ? await pipeline.png().toBuffer()
+        : await pipeline.webp({ quality: 88 }).toBuffer()
+      uploadBody = transcoded
+      uploadContentType = targetMime
+    }
+
+    const path = isHeroSlot
+      ? `shows/${showId}/${slot}-${Date.now()}.${ext}`
+      : `shows/${showId}/${slot}.${ext}`
 
     const { error } = await admin.storage
       .from('show-artwork')
-      .upload(path, file, {
-        upsert: true,
-        contentType: file.type,
+      .upload(path, uploadBody, {
+        upsert: !isHeroSlot,
+        contentType: uploadContentType,
         cacheControl: '3600',
       })
 
@@ -852,13 +910,17 @@ export async function uploadShowVideoFile(formData: FormData): Promise<ActionRes
 
     if (!file || !showId || !variant) return { success: false, error: 'Missing file, showId, or variant' }
     if (variant !== 'desktop' && variant !== 'mobile') return { success: false, error: 'Invalid variant' }
+    if (file.type !== 'video/mp4') return { success: false, error: 'File must be an MP4 video' }
     if (file.size > 50 * 1024 * 1024) return { success: false, error: 'Video must be under 50MB' }
 
-    const path = `shows/${showId}/hero-${variant}.mp4`
+    // Versioned path: new uploads never overwrite the live DB-referenced asset in-place.
+    // Form state holds the new URL; DB commit happens on Save. Orphans are cleaned up
+    // by the scheduled sweep (see TODOS.md).
+    const path = `shows/${showId}/hero-${variant}-${Date.now()}.mp4`
 
     const { error: uploadError } = await admin.storage
       .from('site-assets')
-      .upload(path, file, { upsert: true, contentType: 'video/mp4', cacheControl: '3600' })
+      .upload(path, file, { upsert: false, contentType: 'video/mp4', cacheControl: '3600' })
 
     if (uploadError) return { success: false, error: uploadError.message }
 
