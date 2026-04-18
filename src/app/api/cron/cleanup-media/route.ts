@@ -59,7 +59,7 @@ export async function GET(req: Request) {
   // --- Step 1: gather all URLs currently referenced by the DB --------------
   const { data: shows, error: showsError } = await admin
     .from('shows')
-    .select('hero_url, hero_image_mobile_url, hero_video_url, hero_video_mobile_url')
+    .select('hero_url, hero_image_mobile_url, poster_url, logo_url, hero_video_url, hero_video_mobile_url')
 
   if (showsError) {
     return NextResponse.json({ error: 'Failed to load shows', details: showsError.message }, { status: 500 })
@@ -69,12 +69,18 @@ export async function GET(req: Request) {
   const referencedVideos = new Set<string>()
 
   for (const show of shows ?? []) {
+    // Artwork bucket: hero + hero-mobile + poster + logo all live here
     const heroPath = extractStoragePath(show.hero_url, SHOW_ARTWORK_BUCKET)
     const mobileHeroPath = extractStoragePath(show.hero_image_mobile_url, SHOW_ARTWORK_BUCKET)
-    const videoPath = extractStoragePath(show.hero_video_url, SITE_ASSETS_BUCKET)
-    const mobileVideoPath = extractStoragePath(show.hero_video_mobile_url, SITE_ASSETS_BUCKET)
+    const posterPath = extractStoragePath(show.poster_url, SHOW_ARTWORK_BUCKET)
+    const logoPath = extractStoragePath(show.logo_url, SHOW_ARTWORK_BUCKET)
     if (heroPath) referencedArtwork.add(heroPath)
     if (mobileHeroPath) referencedArtwork.add(mobileHeroPath)
+    if (posterPath) referencedArtwork.add(posterPath)
+    if (logoPath) referencedArtwork.add(logoPath)
+    // Video bucket: hero videos only
+    const videoPath = extractStoragePath(show.hero_video_url, SITE_ASSETS_BUCKET)
+    const mobileVideoPath = extractStoragePath(show.hero_video_mobile_url, SITE_ASSETS_BUCKET)
     if (videoPath) referencedVideos.add(videoPath)
     if (mobileVideoPath) referencedVideos.add(mobileVideoPath)
   }
@@ -120,10 +126,17 @@ export async function GET(req: Request) {
     }
   }
 
-  // Artwork bucket: hero*, hero-mobile*. We leave poster.webp and logo.png
-  // alone because those slots still use stable paths and aren't managed by
-  // the HeroMediaPicker versioned-path flow.
-  await scanBucket(SHOW_ARTWORK_BUCKET, referencedArtwork, /^hero(-mobile)?-\d+\.(webp|png|jpg|jpeg)$/, artworkOrphans)
+  // Artwork bucket: versioned filenames for hero, hero-mobile, poster, logo.
+  // All four slots now use the {slot}-{timestamp}.{ext} pattern after the
+  // poster/logo versioning fix. Stable-path legacy files (poster.webp,
+  // logo.png, hero.webp from pre-migration shows) won't match this regex
+  // and are left untouched — their DB URLs still point at them.
+  await scanBucket(
+    SHOW_ARTWORK_BUCKET,
+    referencedArtwork,
+    /^(hero(-mobile)?|poster|logo)-\d+\.(webp|png|jpg|jpeg)$/,
+    artworkOrphans,
+  )
   // Videos bucket: hero-desktop-*.mp4, hero-mobile-*.mp4
   await scanBucket(SITE_ASSETS_BUCKET, referencedVideos, /^hero-(desktop|mobile)-\d+\.mp4$/, videoOrphans)
 
