@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { extractYouTubeId } from '@/lib/youtube'
+import { resolveHeroMedia, type HeroMediaChoice } from '@/lib/hero-media'
 
 interface CinematicBackdropProps {
   brandColor: string;
@@ -20,16 +21,33 @@ interface CinematicBackdropProps {
    * branches mount, CSS hides one — used by auth pages which have no videos).
    */
   isMobile?: boolean;
+  /**
+   * When true, disables video autoplay (both <video> and YouTube iframe) in
+   * respect of the user's prefers-reduced-motion OS setting. The video still
+   * mounts but stays paused on its poster/first frame. YouTube iframes omit
+   * the autoplay flag so they load without animating.
+   */
+  reducedMotion?: boolean;
 }
 
-function VideoLayer({ url, type, className }: { url: string; type: 'mp4' | 'youtube'; className: string }) {
+function VideoLayer({
+  url,
+  type,
+  className,
+  reducedMotion,
+}: {
+  url: string
+  type: 'mp4' | 'youtube'
+  className: string
+  reducedMotion?: boolean
+}) {
   if (type === 'mp4') {
     return (
       <video
         src={url}
-        autoPlay
+        autoPlay={!reducedMotion}
         muted
-        loop
+        loop={!reducedMotion}
         playsInline
         className={className}
         aria-hidden
@@ -38,44 +56,22 @@ function VideoLayer({ url, type, className }: { url: string; type: 'mp4' | 'yout
   }
   const videoId = extractYouTubeId(url)
   if (!videoId) return null
+  const autoplayFlag = reducedMotion ? '0' : '1'
+  const loopFlag = reducedMotion ? '0' : '1'
   return (
     <iframe
-      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&rel=0&showinfo=0&iv_load_type=3&modestbranding=1`}
+      src={`https://www.youtube.com/embed/${videoId}?autoplay=${autoplayFlag}&mute=1&loop=${loopFlag}&playlist=${videoId}&controls=0&rel=0&showinfo=0&iv_load_type=3&modestbranding=1`}
       allow="autoplay"
+      title="Hero background"
       className={className}
       aria-hidden
     />
   )
 }
 
-type MediaChoice =
-  | { kind: 'video'; url: string; type: 'mp4' | 'youtube' }
-  | { kind: 'image'; url: string }
-  | null
-
-// Resolves the single best media to render for a given viewport.
-// Mobile priority: mobile video > desktop video > mobile image > desktop image.
-// Desktop priority: desktop video > desktop image.
-function resolveMedia(
-  isMobile: boolean,
-  videoUrl: string | undefined,
-  videoType: 'mp4' | 'youtube' | undefined,
-  mobileVideoUrl: string | undefined,
-  mobileVideoType: 'mp4' | 'youtube' | undefined,
-  imageUrl: string | undefined,
-  mobileImageUrl: string | undefined,
-): MediaChoice {
-  if (isMobile) {
-    if (mobileVideoUrl && mobileVideoType) return { kind: 'video', url: mobileVideoUrl, type: mobileVideoType }
-    if (videoUrl && videoType) return { kind: 'video', url: videoUrl, type: videoType }
-    if (mobileImageUrl) return { kind: 'image', url: mobileImageUrl }
-    if (imageUrl) return { kind: 'image', url: imageUrl }
-    return null
-  }
-  if (videoUrl && videoType) return { kind: 'video', url: videoUrl, type: videoType }
-  if (imageUrl) return { kind: 'image', url: imageUrl }
-  return null
-}
+// Resolution logic lives in src/lib/hero-media.ts so it's unit-testable without
+// React. Type alias re-exported here for local readability.
+type MediaChoice = HeroMediaChoice
 
 export function CinematicBackdrop({
   brandColor,
@@ -89,6 +85,7 @@ export function CinematicBackdrop({
   mobileVideoUrl,
   mobileVideoType,
   isMobile,
+  reducedMotion,
 }: CinematicBackdropProps) {
   const bloomAlpha = intensity === 'low' ? '40' : intensity === 'high' ? '80' : '55';
 
@@ -96,8 +93,15 @@ export function CinematicBackdrop({
   // render ONLY the matching variant. Prevents double-download of desktop +
   // mobile media on mobile devices.
   const useServerViewport = typeof isMobile === 'boolean'
-  const resolved = useServerViewport
-    ? resolveMedia(isMobile, videoUrl, videoType, mobileVideoUrl, mobileVideoType, imageUrl, mobileImageUrl)
+  const resolved: MediaChoice = useServerViewport
+    ? resolveHeroMedia(isMobile, {
+        videoUrl,
+        videoType,
+        mobileVideoUrl,
+        mobileVideoType,
+        imageUrl,
+        mobileImageUrl,
+      })
     : null
 
   // Fallback path (auth pages etc. — no isMobile threaded, no videos): keep
@@ -118,6 +122,7 @@ export function CinematicBackdrop({
             url={resolved.url}
             type={resolved.type}
             className="absolute inset-0 h-full w-full scale-110 object-cover opacity-80 pointer-events-none"
+            reducedMotion={reducedMotion}
           />
         ) : resolved?.kind === 'image' ? (
           <Image
@@ -138,6 +143,7 @@ export function CinematicBackdrop({
               url={videoUrl!}
               type={videoType!}
               className="absolute inset-0 hidden h-full w-full scale-110 object-cover opacity-80 pointer-events-none md:block"
+              reducedMotion={reducedMotion}
             />
           ) : imageUrl ? (
             <Image
@@ -157,12 +163,14 @@ export function CinematicBackdrop({
               url={mobileVideoUrl!}
               type={mobileVideoType!}
               className="absolute inset-0 block h-full w-full scale-110 object-cover opacity-80 pointer-events-none md:hidden"
+              reducedMotion={reducedMotion}
             />
           ) : mobileUsesDesktopVideo ? (
             <VideoLayer
               url={videoUrl!}
               type={videoType!}
               className="absolute inset-0 block h-full w-full scale-110 object-cover opacity-80 pointer-events-none md:hidden"
+              reducedMotion={reducedMotion}
             />
           ) : mobileImageUrl ? (
             <Image

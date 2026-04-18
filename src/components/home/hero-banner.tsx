@@ -58,6 +58,7 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
             firstEpisodeId={shows[activeIndex].firstEpisodeId}
             isActive={true}
             isMobile={isMobile}
+            reducedMotion={shouldReduceMotion ?? false}
           />
         </AnimatePresence>
 

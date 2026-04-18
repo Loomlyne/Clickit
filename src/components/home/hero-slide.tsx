@@ -15,9 +15,10 @@ interface HeroSlideProps {
   isActive: boolean
   firstEpisodeId?: string
   isMobile?: boolean
+  reducedMotion?: boolean
 }
 
-export function HeroSlide({ show, isActive, firstEpisodeId, isMobile }: HeroSlideProps) {
+export function HeroSlide({ show, isActive, firstEpisodeId, isMobile, reducedMotion }: HeroSlideProps) {
   const brandColorHex = BRAND_COLOR_HEX[show.brandColor]
 
   return (
@@ -41,6 +42,7 @@ export function HeroSlide({ show, isActive, firstEpisodeId, isMobile }: HeroSlid
         mobileVideoUrl={show.heroVideoMobileUrl}
         mobileVideoType={show.heroVideoMobileType}
         isMobile={isMobile}
+        reducedMotion={reducedMotion}
       />
 
       {/* Left vignette gradient — only covers bottom-left for text readability */}
