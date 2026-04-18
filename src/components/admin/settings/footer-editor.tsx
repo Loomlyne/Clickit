@@ -2,7 +2,10 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Loader2, Instagram, Youtube, Music2, Twitter } from 'lucide-react'
+// lucide-react 1.7.0 removed brand-specific icons (Instagram/Twitter/Youtube)
+// for licensing reasons. Use neutral icons for the editor labels — the actual
+// footer still renders custom brand SVG icons.
+import { Loader2, AtSign, PlaySquare, Music2, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -64,19 +67,19 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
           </legend>
           <div className="grid gap-3 md:grid-cols-2">
             <SocialInput
-              icon={<Instagram className="size-4" />}
+              icon={<Camera className="size-4" />}
               label="Instagram"
               value={v.social.instagram}
               onChange={(value) => setV({ ...v, social: { ...v.social, instagram: value } })}
             />
             <SocialInput
-              icon={<Twitter className="size-4" />}
+              icon={<AtSign className="size-4" />}
               label="X (Twitter)"
               value={v.social.x}
               onChange={(value) => setV({ ...v, social: { ...v.social, x: value } })}
             />
             <SocialInput
-              icon={<Youtube className="size-4" />}
+              icon={<PlaySquare className="size-4" />}
               label="YouTube"
               value={v.social.youtube}
               onChange={(value) => setV({ ...v, social: { ...v.social, youtube: value } })}
