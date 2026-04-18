@@ -720,14 +720,17 @@ export async function uploadArtwork(formData: FormData): Promise<ActionResult<st
     const slot = formData.get('slot') as string | null
 
     if (!file || !showId || !slot) {
+      console.warn('[uploadArtwork] missing args', { hasFile: !!file, showId, slot })
       return { success: false, error: 'Missing file, showId, or slot' }
     }
 
     const ALLOWED_MIME = ['image/webp', 'image/png', 'image/jpeg']
     if (!ALLOWED_MIME.includes(file.type)) {
+      console.warn('[uploadArtwork] bad mime rejected', { showId, slot, mime: file.type })
       return { success: false, error: 'File must be a WebP, PNG, or JPEG image' }
     }
     if (file.size > 10 * 1024 * 1024) {
+      console.warn('[uploadArtwork] oversize rejected', { showId, slot, sizeMB: Math.round(file.size / 1024 / 1024) })
       return { success: false, error: 'Image must be under 10MB' }
     }
 
@@ -774,6 +777,7 @@ export async function uploadArtwork(formData: FormData): Promise<ActionResult<st
 
     return { success: true, data: urlData.publicUrl }
   } catch (err) {
+    console.error('[uploadArtwork] failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
   }
 }
@@ -790,10 +794,14 @@ export async function deleteArtwork(showId: string, slot: string): Promise<Actio
       .from('show-artwork')
       .remove([path])
 
-    if (error) return { success: false, error: error.message }
+    if (error) {
+      console.error('[deleteArtwork] storage error', { showId, slot, path, error: error.message })
+      return { success: false, error: error.message }
+    }
 
     return { success: true }
   } catch (err) {
+    console.error('[deleteArtwork] failed', { showId, slot }, err)
     return { success: false, error: err instanceof Error ? err.message : 'Delete failed' }
   }
 }
@@ -908,10 +916,22 @@ export async function uploadShowVideoFile(formData: FormData): Promise<ActionRes
     const showId = formData.get('showId') as string | null
     const variant = formData.get('variant') as 'desktop' | 'mobile' | null
 
-    if (!file || !showId || !variant) return { success: false, error: 'Missing file, showId, or variant' }
-    if (variant !== 'desktop' && variant !== 'mobile') return { success: false, error: 'Invalid variant' }
-    if (file.type !== 'video/mp4') return { success: false, error: 'File must be an MP4 video' }
-    if (file.size > 50 * 1024 * 1024) return { success: false, error: 'Video must be under 50MB' }
+    if (!file || !showId || !variant) {
+      console.warn('[uploadShowVideoFile] missing args', { hasFile: !!file, showId, variant })
+      return { success: false, error: 'Missing file, showId, or variant' }
+    }
+    if (variant !== 'desktop' && variant !== 'mobile') {
+      console.warn('[uploadShowVideoFile] invalid variant', { showId, variant })
+      return { success: false, error: 'Invalid variant' }
+    }
+    if (file.type !== 'video/mp4') {
+      console.warn('[uploadShowVideoFile] non-mp4 rejected', { showId, variant, mime: file.type })
+      return { success: false, error: 'File must be an MP4 video' }
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      console.warn('[uploadShowVideoFile] oversize rejected', { showId, variant, sizeMB: Math.round(file.size / 1024 / 1024) })
+      return { success: false, error: 'Video must be under 50MB' }
+    }
 
     // Versioned path: new uploads never overwrite the live DB-referenced asset in-place.
     // Form state holds the new URL; DB commit happens on Save. Orphans are cleaned up
@@ -922,11 +942,15 @@ export async function uploadShowVideoFile(formData: FormData): Promise<ActionRes
       .from('site-assets')
       .upload(path, file, { upsert: false, contentType: 'video/mp4', cacheControl: '3600' })
 
-    if (uploadError) return { success: false, error: uploadError.message }
+    if (uploadError) {
+      console.error('[uploadShowVideoFile] storage error', { showId, variant, path, error: uploadError.message })
+      return { success: false, error: uploadError.message }
+    }
 
     const { data: urlData } = admin.storage.from('site-assets').getPublicUrl(path)
     return { success: true, data: urlData.publicUrl }
   } catch (err) {
+    console.error('[uploadShowVideoFile] failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
   }
 }
@@ -939,6 +963,7 @@ export async function deleteShowVideoFile(showId: string, variant: 'desktop' | '
     await admin.storage.from('site-assets').remove([`shows/${showId}/hero-${variant}.mp4`])
     return { success: true }
   } catch (err) {
+    console.error('[deleteShowVideoFile] failed', { showId, variant }, err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to remove video' }
   }
 }
