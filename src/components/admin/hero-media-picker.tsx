@@ -33,7 +33,7 @@ export function HeroMediaPicker({
   onImageChange,
   onVideoChange,
 }: HeroMediaPickerProps) {
-  const initialMode: Mode = currentVideoType ?? (currentImageUrl ? 'image' : 'image')
+  const initialMode: Mode = currentVideoType ?? 'image'
   const [mode, setMode] = useState<Mode>(initialMode)
   const [uploading, setUploading] = useState(false)
   const [youtubeInput, setYoutubeInput] = useState(

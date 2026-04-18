@@ -41,14 +41,6 @@ export function HeroSlide({ show, isActive, firstEpisodeId }: HeroSlideProps) {
         mobileVideoType={show.heroVideoMobileType}
       />
 
-      {/* Ken Burns zoom */}
-      <motion.div
-        className="absolute inset-0"
-        initial={{ scale: 1 }}
-        animate={isActive ? { scale: 1.06 } : { scale: 1 }}
-        transition={{ duration: 8, ease: 'linear' }}
-      />
-
       {/* Left vignette gradient — only covers bottom-left for text readability */}
       <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-transparent pointer-events-none" />
 

@@ -689,6 +689,14 @@ export async function uploadArtwork(formData: FormData): Promise<ActionResult<st
       return { success: false, error: 'Missing file, showId, or slot' }
     }
 
+    const ALLOWED_MIME = ['image/webp', 'image/png', 'image/jpeg']
+    if (!ALLOWED_MIME.includes(file.type)) {
+      return { success: false, error: 'File must be a WebP, PNG, or JPEG image' }
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      return { success: false, error: 'Image must be under 10MB' }
+    }
+
     const ext = slot === 'logo' ? 'png' : 'webp'
     const path = `shows/${showId}/${slot}.${ext}`
 
@@ -843,6 +851,7 @@ export async function uploadShowVideoFile(formData: FormData): Promise<ActionRes
     const variant = formData.get('variant') as 'desktop' | 'mobile' | null
 
     if (!file || !showId || !variant) return { success: false, error: 'Missing file, showId, or variant' }
+    if (variant !== 'desktop' && variant !== 'mobile') return { success: false, error: 'Invalid variant' }
     if (file.size > 50 * 1024 * 1024) return { success: false, error: 'Video must be under 50MB' }
 
     const path = `shows/${showId}/hero-${variant}.mp4`
@@ -918,5 +927,315 @@ export async function toggleFeatured(showId: string) {
     return { success: true, featured: newFeatured }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to toggle featured' }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Site Settings — admin-only edits of app_config
+//
+// All actions: assertAdmin() → validate (zod) → update app_config →
+// updateTag('site-config') → revalidatePath('/').
+// Mirrors the hero video action shape above.
+// ---------------------------------------------------------------------------
+
+const urlOrEmpty = z.string().trim().max(500).refine(
+  (v) => v === '' || /^https?:\/\//i.test(v),
+  'Must be empty or a valid URL (http/https)'
+)
+
+const siteMetadataSchema = z.object({
+  site_title: z.string().trim().min(1, 'Title is required').max(120),
+  site_description: z.string().trim().max(300).nullable(),
+  site_tagline: z.string().trim().min(1, 'Tagline is required').max(120),
+})
+
+const footerSchema = z.object({
+  tagline: z.string().max(300),
+  stat: z.string().max(80),
+  contactEmail: z.string().trim().max(120).refine(
+    (v) => v === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+    'Invalid email'
+  ),
+  social: z.object({
+    instagram: urlOrEmpty,
+    x: urlOrEmpty,
+    youtube: urlOrEmpty,
+    tiktok: urlOrEmpty,
+  }),
+  legal: z.object({
+    privacy: urlOrEmpty,
+    terms: urlOrEmpty,
+    cookies: urlOrEmpty,
+  }),
+})
+
+const hrefOrEmpty = z.string().trim().max(500).refine(
+  (v) => v === '' || v.startsWith('/') || /^https?:\/\//i.test(v),
+  'Must be empty, a path (/foo), or a URL'
+)
+
+const ctaStageSchema = z.object({
+  label: z.string().max(60),
+  headline: z.string().max(120),
+  headlineB: z.string().max(120),
+  body: z.string().max(300),
+  primaryLabel: z.string().max(60),
+  primaryHref: hrefOrEmpty,
+  secondaryLabel: z.string().max(60),
+  secondaryHref: hrefOrEmpty,
+})
+
+const ctaCopySchema = z.object({
+  zero: ctaStageSchema,
+  growing: ctaStageSchema,
+  full: ctaStageSchema,
+})
+
+const integrationsSchema = z.object({
+  google_analytics_id: z.string().trim().max(40).nullable(),
+  meta_pixel_id: z.string().trim().max(40).nullable(),
+  youtube_api_key: z.string().trim().max(100).nullable(),
+})
+
+const featureFlagsSchema = z.object({
+  showGenresGrid: z.boolean(),
+  showCtaBanner: z.boolean(),
+  showFaq: z.boolean(),
+  comingSoonMode: z.boolean(),
+})
+
+const genreConfigSchema = z.record(
+  z.string(),
+  z.object({
+    color: z.string().max(40).optional(),
+    order: z.number().int().optional(),
+    hidden: z.boolean().optional(),
+  })
+)
+
+// Shared post-update side effects
+function bumpSiteConfigCache() {
+  updateTag('site-config')
+  revalidatePath('/', 'layout')
+}
+
+export async function updateSiteMetadata(
+  input: z.input<typeof siteMetadataSchema>
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const parsed = siteMetadataSchema.parse(input)
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('app_config')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update(parsed as any)
+      .eq('id', 1)
+    if (error) return { success: false, error: error.message }
+    bumpSiteConfigCache()
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
+  }
+}
+
+export async function updateFooterContent(
+  input: z.input<typeof footerSchema>
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const parsed = footerSchema.parse(input)
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('app_config')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ footer_content: parsed } as any)
+      .eq('id', 1)
+    if (error) return { success: false, error: error.message }
+    bumpSiteConfigCache()
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
+  }
+}
+
+export async function updateCtaCopy(
+  input: z.input<typeof ctaCopySchema>
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const parsed = ctaCopySchema.parse(input)
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('app_config')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ cta_copy: parsed } as any)
+      .eq('id', 1)
+    if (error) return { success: false, error: error.message }
+    bumpSiteConfigCache()
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
+  }
+}
+
+export async function updateGenreConfig(
+  input: z.input<typeof genreConfigSchema>
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const parsed = genreConfigSchema.parse(input)
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('app_config')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ genre_config: parsed } as any)
+      .eq('id', 1)
+    if (error) return { success: false, error: error.message }
+    bumpSiteConfigCache()
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
+  }
+}
+
+export async function updateIntegrations(
+  input: z.input<typeof integrationsSchema>
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const parsed = integrationsSchema.parse(input)
+    // Empty strings from form inputs → null so DB stays clean
+    const cleaned = {
+      google_analytics_id: parsed.google_analytics_id?.trim() || null,
+      meta_pixel_id: parsed.meta_pixel_id?.trim() || null,
+      youtube_api_key: parsed.youtube_api_key?.trim() || null,
+    }
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('app_config')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update(cleaned as any)
+      .eq('id', 1)
+    if (error) return { success: false, error: error.message }
+    bumpSiteConfigCache()
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
+  }
+}
+
+export async function updateFeatureFlags(
+  input: z.input<typeof featureFlagsSchema>
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const parsed = featureFlagsSchema.parse(input)
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('app_config')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ feature_flags: parsed } as any)
+      .eq('id', 1)
+    if (error) return { success: false, error: error.message }
+    bumpSiteConfigCache()
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
+  }
+}
+
+// Upload OG image or favicon to site-assets bucket.
+// Returns the public URL and writes it to the matching app_config column.
+export async function uploadSiteImage(
+  formData: FormData
+): Promise<ActionResult<string>> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    const file = formData.get('file') as File | null
+    const kind = formData.get('kind') as 'og' | 'favicon' | null
+    if (!file) return { success: false, error: 'No file provided' }
+    if (!kind || !['og', 'favicon'].includes(kind)) {
+      return { success: false, error: 'Invalid kind' }
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      return { success: false, error: 'Image must be under 5MB' }
+    }
+
+    // Infer extension from mime type — favicons can be .ico or .png
+    const mime = file.type
+    const extMap: Record<string, string> = {
+      'image/png': 'png',
+      'image/jpeg': 'jpg',
+      'image/webp': 'webp',
+      'image/svg+xml': 'svg',
+      'image/x-icon': 'ico',
+    }
+    const ext = extMap[mime]
+    if (!ext) return { success: false, error: `Unsupported image type: ${mime}` }
+
+    const path = kind === 'og' ? `settings/og.${ext}` : `settings/favicon.${ext}`
+
+    const { error: uploadError } = await admin.storage
+      .from('site-assets')
+      .upload(path, file, { upsert: true, contentType: mime, cacheControl: '3600' })
+
+    if (uploadError) return { success: false, error: uploadError.message }
+
+    const { data: urlData } = admin.storage.from('site-assets').getPublicUrl(path)
+    // Cache-bust the URL so browsers always pick up the latest upload
+    const bustedUrl = `${urlData.publicUrl}?v=${Date.now()}`
+
+    const column = kind === 'og' ? 'og_image_url' : 'favicon_url'
+    const { error: dbError } = await admin
+      .from('app_config')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ [column]: bustedUrl } as any)
+      .eq('id', 1)
+
+    if (dbError) return { success: false, error: dbError.message }
+
+    bumpSiteConfigCache()
+    return { success: true, data: bustedUrl }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
+  }
+}
+
+export async function removeSiteImage(
+  kind: 'og' | 'favicon'
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+    const column = kind === 'og' ? 'og_image_url' : 'favicon_url'
+    const { error } = await admin
+      .from('app_config')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ [column]: null } as any)
+      .eq('id', 1)
+    if (error) return { success: false, error: error.message }
+    bumpSiteConfigCache()
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to remove' }
+  }
+}
+
+// Nuclear cache-bust button for the Advanced tab.
+// Invalidates all content tags so the landing and detail pages re-fetch fresh.
+export async function revalidateAllCache(): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    updateTag('shows')
+    updateTag('episodes')
+    updateTag('seasons')
+    updateTag('site-config')
+    revalidatePath('/', 'layout')
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to revalidate' }
   }
 }
