@@ -731,10 +731,12 @@ export async function uploadArtwork(formData: FormData): Promise<ActionResult<st
       return { success: false, error: 'Image must be under 10MB' }
     }
 
-    // Hero slots use versioned paths so uploads never overwrite the live DB-referenced
+    // All slots use versioned paths so uploads never overwrite the live DB-referenced
     // asset in-place. Form state holds the new URL; DB commit happens on Save.
-    // Orphans from cancelled edits are cleaned up by the scheduled sweep (see TODOS.md).
-    const isHeroSlot = slot === 'hero' || slot === 'hero-mobile'
+    // Clicking Cancel on the drawer keeps the DB pointing at the still-existing old
+    // file, so the live viewer is never shown a half-saved state. Orphans from saves
+    // (where the DB moves to the new URL and the old file is abandoned) are cleaned
+    // up by the scheduled sweep (see /api/cron/cleanup-media).
     const ext = slot === 'logo' ? 'png' : 'webp'
 
     // Transcode non-matching inputs to the storage format. For logo slot we keep PNG
@@ -754,14 +756,12 @@ export async function uploadArtwork(formData: FormData): Promise<ActionResult<st
       uploadContentType = targetMime
     }
 
-    const path = isHeroSlot
-      ? `shows/${showId}/${slot}-${Date.now()}.${ext}`
-      : `shows/${showId}/${slot}.${ext}`
+    const path = `shows/${showId}/${slot}-${Date.now()}.${ext}`
 
     const { error } = await admin.storage
       .from('show-artwork')
       .upload(path, uploadBody, {
-        upsert: !isHeroSlot,
+        upsert: false,
         contentType: uploadContentType,
         cacheControl: '3600',
       })

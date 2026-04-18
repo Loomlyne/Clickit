@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { uploadArtwork, deleteArtwork } from '@/app/admin/actions'
+import { uploadArtwork } from '@/app/admin/actions'
 
 interface ArtworkUploadZoneProps {
   showId: string
@@ -78,21 +78,17 @@ export function ArtworkUploadZone({
     }
   }
 
-  async function handleDelete() {
-    try {
-      const result = await deleteArtwork(showId, slot)
-
-      if (!result.success) {
-        toast.error(`Delete failed: ${result.error}`)
-        return
-      }
-
-      setPreviewUrl(null)
-      onDelete?.()
-      toast.success(`${label} deleted`)
-    } catch {
-      toast.error('Delete failed. Please try again.')
-    }
+  // Delete nulls the form state only. We do NOT delete the storage file here —
+  // the file is referenced by the live DB URL until the parent form is saved with
+  // the nulled value. Clicking Cancel rolls back by keeping the DB URL pointing
+  // at the still-existing file. Orphaned files from saves are cleaned by the
+  // scheduled sweep (see /api/cron/cleanup-media). This also eliminates the
+  // "delete lies on failure" pattern the previous implementation had, where a
+  // failing deleteArtwork() would leave local state cleared but toast success.
+  function handleDelete() {
+    setPreviewUrl(null)
+    onDelete?.()
+    toast.success(`${label} cleared`)
   }
 
   // Uploading state
