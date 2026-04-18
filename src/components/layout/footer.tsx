@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { getAppConfig } from '@/lib/config'
 
 const BRAND_COLORS = ['#2C3569', '#9F54A0', '#50A258', '#DB3F34', '#EA8C2E', '#F8C623']
 
@@ -10,6 +11,31 @@ const GENRE_LINKS = [
   { label: 'Comedy', href: '/browse?genre=Comedy' },
   { label: 'Tech', href: '/browse?genre=Tech' },
 ]
+
+// Renders a social icon link when a URL is set; returns null for empty slots
+// so the footer doesn't render dead href="#" placeholders.
+function SocialLink({
+  href,
+  label,
+  children,
+}: {
+  href: string
+  label: string
+  children: React.ReactNode
+}) {
+  if (!href) return null
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={label}
+      className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/48 transition-colors hover:border-white/20 hover:text-white"
+    >
+      {children}
+    </a>
+  )
+}
 
 function YouTubeIcon({ className }: { className?: string }) {
   return (
@@ -37,7 +63,9 @@ function XIcon({ className }: { className?: string }) {
   )
 }
 
-export function Footer() {
+export async function Footer() {
+  const { footer } = await getAppConfig()
+
   return (
     <footer className="relative mt-24 border-t border-white/[0.06] bg-[#07090d]">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
@@ -53,20 +81,30 @@ export function Footer() {
                 height={36}
                 className="h-9 w-auto"
               />
-              <p className="text-base leading-7 text-white/66">
-                Clickit brings original programs from Abu Dhabi into a premium streaming experience built around story, craft, and cultural range.
-              </p>
+              <p className="text-base leading-7 text-white/66">{footer.tagline}</p>
               <div className="flex flex-wrap items-center gap-3 text-sm text-white/48">
-                <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">15 original programs</span>
-                <a href="#" aria-label="Instagram" className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/48 transition-colors hover:border-white/20 hover:text-white">
+                {footer.stat && (
+                  <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
+                    {footer.stat}
+                  </span>
+                )}
+                <SocialLink href={footer.social.instagram} label="Instagram">
                   <InstagramIcon className="h-4 w-4" />
-                </a>
-                <a href="#" aria-label="X (Twitter)" className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/48 transition-colors hover:border-white/20 hover:text-white">
+                </SocialLink>
+                <SocialLink href={footer.social.x} label="X (Twitter)">
                   <XIcon className="h-4 w-4" />
-                </a>
-                <a href="#" aria-label="YouTube" className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/48 transition-colors hover:border-white/20 hover:text-white">
+                </SocialLink>
+                <SocialLink href={footer.social.youtube} label="YouTube">
                   <YouTubeIcon className="h-4 w-4" />
-                </a>
+                </SocialLink>
+                {footer.contactEmail && (
+                  <a
+                    href={`mailto:${footer.contactEmail}`}
+                    className="text-xs font-medium text-white/48 transition-colors hover:text-white"
+                  >
+                    {footer.contactEmail}
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -103,8 +141,36 @@ export function Footer() {
               <div>
                 <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Legal</h4>
                 <ul className="space-y-3">
-                  <li><Link href="#" className="text-sm text-white/56 transition-colors hover:text-white">Privacy Policy</Link></li>
-                  <li><Link href="#" className="text-sm text-white/56 transition-colors hover:text-white">Terms of Service</Link></li>
+                  {footer.legal.privacy && (
+                    <li>
+                      <Link
+                        href={footer.legal.privacy}
+                        className="text-sm text-white/56 transition-colors hover:text-white"
+                      >
+                        Privacy Policy
+                      </Link>
+                    </li>
+                  )}
+                  {footer.legal.terms && (
+                    <li>
+                      <Link
+                        href={footer.legal.terms}
+                        className="text-sm text-white/56 transition-colors hover:text-white"
+                      >
+                        Terms of Service
+                      </Link>
+                    </li>
+                  )}
+                  {footer.legal.cookies && (
+                    <li>
+                      <Link
+                        href={footer.legal.cookies}
+                        className="text-sm text-white/56 transition-colors hover:text-white"
+                      >
+                        Cookie Policy
+                      </Link>
+                    </li>
+                  )}
                 </ul>
               </div>
             </div>

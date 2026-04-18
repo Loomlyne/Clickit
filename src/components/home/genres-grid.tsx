@@ -1,8 +1,10 @@
 import Link from 'next/link'
 import { getDistinctGenres } from '@/lib/queries'
+import { getAppConfig } from '@/lib/config'
 import { SectionHeader } from '@/components/primitives/section-header'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 
+// Fallback palette — used when a genre has no admin override in genre_config.
 const GENRE_COLORS: Record<string, string> = {
   Entertainment: '#9F54A0',
   Documentary: '#2C3569',
@@ -23,17 +25,32 @@ const GENRE_COLORS: Record<string, string> = {
 }
 
 export async function GenresGrid() {
-  const genres = await getDistinctGenres()
+  const [genres, config] = await Promise.all([getDistinctGenres(), getAppConfig()])
 
+  // Honor admin feature flag.
+  if (!config.flags.showGenresGrid) return null
   if (genres.length === 0) return null
+
+  // Admin overrides take precedence; hidden genres are filtered out entirely.
+  const visibleGenres = genres.filter((g) => !config.genreConfig[g]?.hidden)
+
+  // Apply admin-configured ordering (undefined order = keep default position).
+  const orderedGenres = [...visibleGenres].sort((a, b) => {
+    const orderA = config.genreConfig[a]?.order ?? Number.POSITIVE_INFINITY
+    const orderB = config.genreConfig[b]?.order ?? Number.POSITIVE_INFINITY
+    return orderA - orderB
+  })
+
+  if (orderedGenres.length === 0) return null
 
   return (
     <ScrollReveal>
       <section className="pt-1">
         <SectionHeader title="Browse by Genre" />
         <div className="scrollbar-hide flex gap-3 overflow-x-auto px-6 py-2 md:px-12">
-          {genres.map((genre) => {
-            const color = GENRE_COLORS[genre] ?? '#2C3569'
+          {orderedGenres.map((genre) => {
+            const override = config.genreConfig[genre]?.color
+            const color = override ?? GENRE_COLORS[genre] ?? '#2C3569'
             return (
               <Link
                 key={genre}

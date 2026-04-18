@@ -1,0 +1,97 @@
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { getYouTubeApiKey } from '@/lib/config'
+import { extractYouTubeId } from '@/lib/youtube'
+
+/**
+ * GET /api/youtube-meta?url=<youtube-url>
+ *
+ * Admin-only endpoint. Given a YouTube URL, returns:
+ *   { title, thumbnail, durationSeconds, channelTitle, publishedAt }
+ *
+ * Reads the YouTube Data API v3 key from app_config — stored server-side only
+ * (column-level REVOKE on anon/authenticated). Returns 503 when no key is set
+ * so the client can hide the "Fetch" button.
+ */
+export async function GET(request: Request) {
+  // Auth: must be signed-in admin.
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { data: config } = await supabase
+    .from('app_config')
+    .select('admin_user_id')
+    .eq('id', 1)
+    .single()
+  if (config?.admin_user_id !== user.id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const url = new URL(request.url).searchParams.get('url')
+  if (!url) {
+    return NextResponse.json({ error: 'Missing url param' }, { status: 400 })
+  }
+  const videoId = extractYouTubeId(url)
+  if (!videoId) {
+    return NextResponse.json({ error: 'Invalid YouTube URL' }, { status: 400 })
+  }
+
+  const apiKey = await getYouTubeApiKey()
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: 'No YouTube API key configured' },
+      { status: 503 }
+    )
+  }
+
+  const params = new URLSearchParams({
+    part: 'snippet,contentDetails',
+    id: videoId,
+    key: apiKey,
+  })
+  const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params}`, {
+    // YouTube metadata rarely changes; cache for a day.
+    next: { revalidate: 86400 },
+  })
+  if (!res.ok) {
+    return NextResponse.json(
+      { error: `YouTube API error: ${res.status}` },
+      { status: 502 }
+    )
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const body: any = await res.json()
+  const item = body?.items?.[0]
+  if (!item) {
+    return NextResponse.json({ error: 'Video not found' }, { status: 404 })
+  }
+
+  return NextResponse.json({
+    videoId,
+    title: item.snippet?.title ?? '',
+    description: item.snippet?.description ?? '',
+    channelTitle: item.snippet?.channelTitle ?? '',
+    publishedAt: item.snippet?.publishedAt ?? null,
+    thumbnail:
+      item.snippet?.thumbnails?.maxres?.url ??
+      item.snippet?.thumbnails?.high?.url ??
+      item.snippet?.thumbnails?.default?.url ??
+      null,
+    durationSeconds: parseIsoDuration(item.contentDetails?.duration ?? 'PT0S'),
+  })
+}
+
+/**
+ * Parses ISO 8601 duration (e.g. "PT4M13S") into total seconds.
+ * YouTube API returns contentDetails.duration in this format.
+ */
+function parseIsoDuration(iso: string): number {
+  const match = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso)
+  if (!match) return 0
+  const [, h, m, s] = match
+  return (Number(h) || 0) * 3600 + (Number(m) || 0) * 60 + (Number(s) || 0)
+}

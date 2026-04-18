@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Plus_Jakarta_Sans, Cairo } from 'next/font/google'
 
 import '@/styles/globals.css'
 import { Toaster } from 'sonner'
+import { getAppConfig } from '@/lib/config'
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -26,16 +28,35 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 }
 
-export const metadata: Metadata = {
-  title: 'Clickit Story',
-  description: 'Original shows from the UAE - streaming now',
+// Dynamic metadata — reads admin-controlled title/description/OG image from
+// app_config via the same unstable_cache-backed helper. Any save in the
+// Branding or General tab triggers updateTag('site-config') which invalidates
+// this and the next request picks up the new values.
+export async function generateMetadata(): Promise<Metadata> {
+  const config = await getAppConfig()
+  return {
+    title: config.siteTitle,
+    description: config.siteDescription ?? 'Original shows from the UAE - streaming now',
+    icons: config.faviconUrl
+      ? { icon: config.faviconUrl }
+      : undefined,
+    openGraph: config.ogImageUrl
+      ? {
+          title: config.siteTitle,
+          description: config.siteDescription ?? undefined,
+          images: [{ url: config.ogImageUrl }],
+        }
+      : undefined,
+  }
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const { googleAnalyticsId, metaPixelId } = await getAppConfig()
+
   return (
     <html lang="en" className={`dark ${jakarta.variable} ${cairo.variable}`}>
       <body className="bg-background text-foreground font-sans antialiased selection:bg-primary/70 selection:text-primary-foreground">
@@ -61,6 +82,41 @@ export default function RootLayout({
         />
         <Analytics />
         <SpeedInsights />
+
+        {/* Admin-configured analytics — only rendered when an ID is saved. */}
+        {googleAnalyticsId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="gtag-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${googleAnalyticsId}');
+              `}
+            </Script>
+          </>
+        )}
+
+        {metaPixelId && (
+          <Script id="meta-pixel" strategy="afterInteractive">
+            {`
+              !function(f,b,e,v,n,t,s)
+              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+              n.queue=[];t=b.createElement(e);t.async=!0;
+              t.src=v;s=b.getElementsByTagName(e)[0];
+              s.parentNode.insertBefore(t,s)}(window, document,'script',
+              'https://connect.facebook.net/en_US/fbevents.js');
+              fbq('init', '${metaPixelId}');
+              fbq('track', 'PageView');
+            `}
+          </Script>
+        )}
       </body>
     </html>
   )

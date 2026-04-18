@@ -2,45 +2,16 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 import { getCatalogStage } from '@/lib/queries'
+import { getAppConfig } from '@/lib/config'
 
 const BRAND_COLORS = ['#2C3569', '#9F54A0', '#50A258', '#DB3F34', '#EA8C2E', '#F8C623']
 
-const CTA_COPY = {
-  zero: {
-    label: 'Coming soon',
-    headline: 'Be there',
-    headlineB: 'when CIT premieres.',
-    body: 'Original series are arriving soon. Create your account now and be first to watch.',
-    primaryLabel: 'Create Free Account',
-    primaryHref: '/auth',
-    secondaryLabel: "See what's coming →",
-    secondaryHref: '/coming-soon',
-  },
-  growing: {
-    label: 'Now streaming',
-    headline: 'The catalog',
-    headlineB: 'has begun.',
-    body: 'Watch the first stories on CIT and save your favorites for later.',
-    primaryLabel: 'Start Watching',
-    primaryHref: '/browse',
-    secondaryLabel: "See what's coming →",
-    secondaryHref: '/coming-soon',
-  },
-  full: {
-    label: 'Free · No subscription',
-    headline: 'Original stories',
-    headlineB: 'from Abu Dhabi.',
-    body: 'Travel, health, music, comedy, cooking, and more — crafted to let the stories lead.',
-    primaryLabel: 'Start Watching Free',
-    primaryHref: '/browse',
-    secondaryLabel: "What's coming next →",
-    secondaryHref: '/coming-soon',
-  },
-} as const
-
 export async function CtaBanner() {
-  const { stage } = await getCatalogStage()
-  const copy = CTA_COPY[stage]
+  const [{ stage }, config] = await Promise.all([getCatalogStage(), getAppConfig()])
+  const copy = config.ctaCopy[stage]
+
+  // Feature flag — admin can hide the banner entirely from the Advanced tab.
+  if (!config.flags.showCtaBanner) return null
 
   return (
     <ScrollReveal>

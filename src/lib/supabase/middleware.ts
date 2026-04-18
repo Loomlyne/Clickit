@@ -1,7 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function updateSession(request: NextRequest) {
+export type SessionResult = {
+  response: NextResponse
+  userId: string | null
+  isAdmin: boolean
+}
+
+export async function updateSession(request: NextRequest): Promise<SessionResult> {
   let supabaseResponse = NextResponse.next({ request })
 
   // Gracefully skip session refresh when Supabase env vars are not configured
@@ -9,7 +15,7 @@ export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!supabaseUrl || !supabaseAnonKey) {
-    return supabaseResponse
+    return { response: supabaseResponse, userId: null, isAdmin: false }
   }
 
   const supabase = createServerClient(
@@ -36,7 +42,17 @@ export async function updateSession(request: NextRequest) {
   // IMPORTANT: DO NOT use getSession() here.
   // getUser() validates the JWT against Supabase's signing keys.
   // getSession() does NOT validate the JWT and can return stale/tampered data.
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  return supabaseResponse
+  let isAdmin = false
+  if (user) {
+    const { data: config } = await supabase
+      .from('app_config')
+      .select('admin_user_id')
+      .eq('id', 1)
+      .single()
+    isAdmin = config?.admin_user_id === user.id
+  }
+
+  return { response: supabaseResponse, userId: user?.id ?? null, isAdmin }
 }

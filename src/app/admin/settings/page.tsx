@@ -1,34 +1,45 @@
+import { getAppConfig } from '@/lib/config'
 import { createClient } from '@/lib/supabase/server'
-import { HeroVideoManager } from '@/components/admin/hero-video-manager'
+import { SettingsTabs } from '@/components/admin/settings/settings-tabs'
 
+/**
+ * Admin settings — site-wide control center.
+ *
+ * Server component: fetches the full app_config (cached) and hands it to the
+ * client tabs component. The cached read is tagged 'site-config' so any
+ * server-action save (updateSiteMetadata, updateFooterContent, etc.) refreshes
+ * this page via updateTag('site-config') + revalidatePath('/', 'layout').
+ *
+ * Intentionally does NOT read youtube_api_key (column-level REVOKE on
+ * anon/authenticated). The Integrations tab only needs to know whether a key
+ * is set; the has-key status is fetched via the admin client below.
+ */
 export default async function AdminSettingsPage() {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('app_config')
-    .select('hero_video_url, hero_video_type')
-    .eq('id', 1)
-    .single()
+  const config = await getAppConfig()
 
-  const currentVideo = data?.hero_video_url
-    ? { url: data.hero_video_url, type: data.hero_video_type as 'mp4' | 'youtube' }
-    : null
+  // Admin-only: detect whether a YouTube key is already saved. We don't send
+  // the key to the client — only a boolean so the masked field can show
+  // "••••••••" vs a blank state.
+  const supabase = await createClient()
+  const { data: adminRow } = await supabase
+    .from('app_config')
+    // @ts-expect-error youtube_api_key not yet in generated types (new migration)
+    .select('youtube_api_key')
+    .eq('id', 1)
+    .single<{ youtube_api_key: string | null }>()
+
+  const hasYouTubeKey = Boolean(adminRow?.youtube_api_key)
 
   return (
-    <div className="space-y-8">
-      <div>
+    <div className="space-y-6">
+      <header>
         <h1 className="text-2xl font-semibold tracking-[-0.03em] text-white">Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage site-wide configuration for the landing page.
+          Control what visitors see and connect external services — no code required.
         </p>
-      </div>
+      </header>
 
-      <section className="rounded-[24px] border border-white/10 bg-white/[0.03] p-6 md:p-8">
-        <h2 className="mb-1 text-lg font-semibold text-white">Hero Video</h2>
-        <p className="mb-6 text-sm text-muted-foreground">
-          Upload an MP4 or paste a YouTube URL. This video plays as the background on the landing page hero.
-        </p>
-        <HeroVideoManager currentVideo={currentVideo} />
-      </section>
+      <SettingsTabs config={config} hasYouTubeKey={hasYouTubeKey} />
     </div>
   )
 }

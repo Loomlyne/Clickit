@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { Loader2, Sparkles } from 'lucide-react'
 import { getVideoDuration } from '@/lib/youtube'
 
 import {
@@ -224,6 +225,32 @@ export function EpisodeFormDrawer({
                     />
                   )}
                 />
+                {watchedVideoId && watchedVideoId.length === 11 && (
+                  <YouTubeFetchButton
+                    videoId={watchedVideoId}
+                    onFetched={(meta) => {
+                      // Only fill fields that are currently empty — never overwrite
+                      // what the admin has already typed.
+                      if (!form.getValues('title') && meta.title) {
+                        form.setValue('title', meta.title, { shouldDirty: true })
+                      }
+                      if (!form.getValues('description') && meta.description) {
+                        // YouTube descriptions are long; cap at 1000 chars to keep
+                        // our DB row sane and the UI clean.
+                        form.setValue(
+                          'description',
+                          meta.description.slice(0, 1000),
+                          { shouldDirty: true }
+                        )
+                      }
+                      if (!form.getValues('duration') && meta.durationSeconds > 0) {
+                        form.setValue('duration', Math.round(meta.durationSeconds / 60), {
+                          shouldDirty: true,
+                        })
+                      }
+                    }}
+                  />
+                )}
               </Field>
 
               <Field label="Description" required error={errors.description?.message}>
@@ -255,5 +282,70 @@ export function EpisodeFormDrawer({
         </form>
       </SheetContent>
     </Sheet>
+  )
+}
+
+/**
+ * Small button below the YouTube URL field. When clicked, calls
+ * /api/youtube-meta to fetch title / description / duration from the
+ * YouTube Data API and passes them back to the parent form.
+ *
+ * Admin-only endpoint on the server side. If no API key is configured
+ * (503 response) the button shows an actionable toast pointing to settings.
+ */
+type YouTubeMeta = {
+  title: string
+  description: string
+  durationSeconds: number
+  thumbnail: string | null
+}
+
+function YouTubeFetchButton({
+  videoId,
+  onFetched,
+}: {
+  videoId: string
+  onFetched: (meta: YouTubeMeta) => void
+}) {
+  const [loading, setLoading] = useState(false)
+
+  async function onClick() {
+    setLoading(true)
+    try {
+      const url = `https://www.youtube.com/watch?v=${videoId}`
+      const res = await fetch(`/api/youtube-meta?url=${encodeURIComponent(url)}`)
+      if (res.status === 503) {
+        toast.error('No YouTube API key configured', {
+          description: 'Add one under Settings → Integrations to enable auto-fill.',
+        })
+        return
+      }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        toast.error(body.error ?? 'Failed to fetch from YouTube')
+        return
+      }
+      const meta: YouTubeMeta = await res.json()
+      onFetched(meta)
+      toast.success('Fetched title, description, and duration from YouTube')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={loading}
+      className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/80 transition-colors hover:border-white/25 hover:text-white disabled:opacity-50"
+    >
+      {loading ? (
+        <Loader2 className="size-3 animate-spin" />
+      ) : (
+        <Sparkles className="size-3" />
+      )}
+      Fetch title & description from YouTube
+    </button>
   )
 }
