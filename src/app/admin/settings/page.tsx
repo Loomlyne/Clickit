@@ -23,7 +23,6 @@ export default async function AdminSettingsPage() {
   const supabase = await createClient()
   const { data: adminRow } = await supabase
     .from('app_config')
-    // @ts-expect-error youtube_api_key not yet in generated types (new migration)
     .select('youtube_api_key')
     .eq('id', 1)
     .single<{ youtube_api_key: string | null }>()
