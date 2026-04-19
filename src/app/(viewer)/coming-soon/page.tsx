@@ -12,6 +12,9 @@ import {
   type ViewShow,
 } from '@/lib/queries'
 import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
+import { isEditorial } from '@/lib/design'
+import { EditorialComingSoon } from '@/components/editorial/screens'
+import { adaptShow } from '@/lib/editorial/adapter'
 
 export const metadata: Metadata = {
   title: 'Coming Soon | Clickit Story',
@@ -23,6 +26,14 @@ export default async function ComingSoonPage() {
     getComingSoonShows(),
     getComingSoonEpisodes(),
   ])
+
+  if (isEditorial) {
+    return (
+      <EditorialComingSoon
+        comingSoon={comingSoonShows.map((s) => adaptShow(s))}
+      />
+    )
+  }
 
   // Group upcoming episodes by show for section 2 display
   const episodesByShow = upcomingEpisodes.reduce(

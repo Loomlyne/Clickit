@@ -6,6 +6,9 @@ import { getWatchlistShows } from '@/lib/queries'
 import { PortraitShowCard } from '@/components/shows/portrait-show-card'
 import { SectionHeader } from '@/components/primitives/section-header'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
+import { isEditorial } from '@/lib/design'
+import { EditorialMyList } from '@/components/editorial/screens'
+import { adaptShow } from '@/lib/editorial/adapter'
 
 export const metadata: Metadata = {
   title: 'My List | Clickit Story',
@@ -19,6 +22,15 @@ export default async function MyListPage() {
   if (!user) redirect('/auth?next=/my-list')
 
   const shows = await getWatchlistShows(user.id)
+
+  if (isEditorial) {
+    return (
+      <EditorialMyList
+        shows={shows.map((s) => adaptShow(s))}
+        myList={shows.map((s) => s.id)}
+      />
+    )
+  }
 
   return (
     <div className="pb-20">

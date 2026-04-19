@@ -1,8 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
+import { isEditorial } from '@/lib/design'
 
 export default async function ViewerLayout({ children }: { children: React.ReactNode }) {
+  // Editorial renders its own header/footer inside each page, so this layout
+  // passes children through untouched in that variant.
+  if (isEditorial) {
+    return <>{children}</>
+  }
+
   // Use getSession() instead of getUser() — middleware already validated the JWT
   // and refreshed cookies. This avoids a redundant ~50-100ms server round-trip.
   const supabase = await createClient()

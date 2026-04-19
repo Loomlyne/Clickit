@@ -7,6 +7,8 @@ import { ProfileHeader } from '@/components/profile/profile-header'
 import { ProfileHistoryRow } from '@/components/profile/profile-history-row'
 import { PortraitShowCard } from '@/components/shows/portrait-show-card'
 import { getWatchlistShows, getLikedShows, getRecentlyWatched } from '@/lib/queries'
+import { isEditorial } from '@/lib/design'
+import { EditorialProfile } from '@/components/editorial/screens'
 
 export const metadata: Metadata = {
   title: 'Profile | Clickit Story',
@@ -43,6 +45,10 @@ export default async function ProfilePage() {
 
   const displayName = profile?.display_name ?? ''
   const email = user.email ?? ''
+
+  if (isEditorial) {
+    return <EditorialProfile email={email} displayName={displayName || email.split('@')[0]} />
+  }
 
   return (
     <div className="relative min-h-dvh">

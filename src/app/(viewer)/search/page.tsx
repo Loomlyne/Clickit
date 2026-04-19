@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { searchShows, searchEpisodes } from '@/lib/queries'
+import { searchShows, searchEpisodes, getAllShows } from '@/lib/queries'
 import { SearchResults } from '@/components/search/search-results'
+import { isEditorial } from '@/lib/design'
+import { EditorialSearch } from '@/components/editorial/screens'
+import { adaptShow } from '@/lib/editorial/adapter'
 
 export const metadata: Metadata = {
   title: 'Search | Clickit Story',
@@ -14,6 +17,16 @@ interface Props {
 
 export default async function SearchPage({ searchParams }: Props) {
   const { q } = await searchParams
+
+  if (isEditorial) {
+    const allShows = await getAllShows()
+    return (
+      <EditorialSearch
+        allShows={allShows.map((s) => adaptShow(s))}
+        initialQuery={q ?? ''}
+      />
+    )
+  }
 
   // Empty/no query state
   if (!q || q.trim().length === 0) {

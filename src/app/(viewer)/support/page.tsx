@@ -4,6 +4,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Button } from '@/components/ui/button'
 import { ContactForm } from '@/components/support/contact-form'
 import { FAQ_ITEMS } from '@/lib/faq-data'
+import { isEditorial } from '@/lib/design'
+import { EditorialSupport } from '@/components/editorial/screens'
 
 export const metadata: Metadata = {
   title: 'Support | Clickit Story',
@@ -11,6 +13,10 @@ export const metadata: Metadata = {
 }
 
 export default function SupportPage() {
+  if (isEditorial) {
+    return <EditorialSupport />
+  }
+
   const leftFaq = FAQ_ITEMS.slice(0, 4)
   const rightFaq = FAQ_ITEMS.slice(4)
 

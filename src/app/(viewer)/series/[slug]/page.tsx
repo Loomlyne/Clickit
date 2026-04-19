@@ -20,6 +20,9 @@ import {
   mapEpisode,
   type ViewEpisode,
 } from '@/lib/queries'
+import { isEditorial } from '@/lib/design'
+import { EditorialSeries } from '@/components/editorial/series'
+import { adaptShow } from '@/lib/editorial/adapter'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -91,6 +94,26 @@ export default async function SeriesDetailPage({ params }: Props) {
   // More like this — same genre shows
   const allStreaming = await getStreamingShows()
   const moreLikeThis = allStreaming.filter((s) => s.genre === show.genre && s.id !== show.id)
+
+  if (isEditorial) {
+    // Build progress map for episodes using existing data
+    const progressMap: Record<string, number> = {}
+    for (const [epId, p] of Object.entries(episodesProgressMap)) {
+      progressMap[epId] = p.progressPercent / 100
+    }
+    const allEpisodesView = Object.values(viewEpisodesBySeason).flat()
+    const editorialShow = {
+      ...adaptShow(show, { episodes: allEpisodesView, progressMap }),
+      featured: false,
+    }
+    return (
+      <EditorialSeries
+        show={editorialShow}
+        more={moreLikeThis.slice(0, 8).map((s) => adaptShow(s))}
+        seasonCount={viewSeasons.length || 1}
+      />
+    )
+  }
 
   return (
     <div>

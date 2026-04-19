@@ -13,6 +13,9 @@ import {
   getFirstEpisodesForShows,
 } from '@/lib/queries'
 import { getIsMobile } from '@/lib/device'
+import { isEditorial } from '@/lib/design'
+import { EditorialBrowse } from '@/components/editorial/browse'
+import { adaptShow } from '@/lib/editorial/adapter'
 
 export default async function BrowsePage() {
   // Fetch all data from Supabase in parallel
@@ -27,6 +30,17 @@ export default async function BrowsePage() {
   // D-01: empty catalog redirects to marketing landing page
   if (streaming.length === 0 && comingSoon.length === 0) {
     redirect('/')
+  }
+
+  if (isEditorial) {
+    return (
+      <EditorialBrowse
+        featuredShows={featured.map((s) => ({ ...adaptShow(s), featured: true }))}
+        continueWatching={[]}
+        streamingShows={streaming.map((s) => adaptShow(s))}
+        comingSoonShows={comingSoon.map((s) => adaptShow(s))}
+      />
+    )
   }
 
   // Batch: one query for all featured shows' first episodes (was 2N queries)
