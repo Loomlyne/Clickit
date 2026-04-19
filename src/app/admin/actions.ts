@@ -343,14 +343,27 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
     await assertAdmin()
     const admin = createAdminClient()
 
-    // First delete storage files
-    await admin.storage
-      .from('show-artwork')
-      .remove([
-        `shows/${id}/poster.webp`,
-        `shows/${id}/hero.webp`,
-        `shows/${id}/logo.png`,
-      ])
+    // List and delete every file under shows/{id}/ in both buckets.
+    // Before versioning landed the stable paths were predictable
+    // (shows/{id}/poster.webp etc.) so hard-coded removes worked. After the
+    // versioning migration (hero-{timestamp}.webp) the hard-coded list stopped
+    // matching real filenames and permanent delete became a silent no-op. The
+    // listing approach works for both legacy stable-path rows and versioned
+    // rows — whatever is in the folder gets deleted.
+    async function purgeShowFolder(bucket: string) {
+      const { data: files } = await admin.storage.from(bucket).list(`shows/${id}`, { limit: 1000 })
+      if (!files || files.length === 0) return
+      const paths = files
+        .filter((f) => f.name && !f.id) // defensive: skip folder entries
+        .map((f) => `shows/${id}/${f.name}`)
+      if (paths.length > 0) {
+        await admin.storage.from(bucket).remove(paths)
+      }
+    }
+    await Promise.all([
+      purgeShowFolder('show-artwork'),  // poster, hero, hero-mobile, logo
+      purgeShowFolder('site-assets'),   // hero videos
+    ])
 
     // Then delete DB record — CASCADE handles seasons/episodes
     const { error } = await admin
@@ -811,29 +824,12 @@ export async function uploadArtwork(formData: FormData): Promise<ActionResult<st
   }
 }
 
-export async function deleteArtwork(showId: string, slot: string): Promise<ActionResult> {
-  try {
-    await assertAdmin()
-    const admin = createAdminClient()
-
-    const ext = slot === 'logo' ? 'png' : 'webp'
-    const path = `shows/${showId}/${slot}.${ext}`
-
-    const { error } = await admin.storage
-      .from('show-artwork')
-      .remove([path])
-
-    if (error) {
-      console.error('[deleteArtwork] storage error', { showId, slot, path, error: error.message })
-      return { success: false, error: error.message }
-    }
-
-    return { success: true }
-  } catch (err) {
-    console.error('[deleteArtwork] failed', { showId, slot }, err)
-    return { success: false, error: err instanceof Error ? err.message : 'Delete failed' }
-  }
-}
+// Note: an earlier deleteArtwork() server action was removed here. Post-versioning
+// the UI uses form-state clearing (null-out the URL on Save) instead of an
+// imperative storage delete — the orphaned versioned files are collected by the
+// /api/cron/cleanup-media sweep. The old deleteArtwork built a stable path
+// (shows/{id}/{slot}.{ext}) which stopped matching real filenames after the
+// versioning migration, so keeping it around was a silent-failure trap.
 
 // ---------------------------------------------------------------------------
 // Hero Video Management
@@ -1004,18 +1000,11 @@ export async function uploadShowVideoFile(formData: FormData): Promise<ActionRes
   }
 }
 
-// Removes the uploaded MP4 from storage. DB null-out happens on form save.
-export async function deleteShowVideoFile(showId: string, variant: 'desktop' | 'mobile'): Promise<ActionResult> {
-  try {
-    await assertAdmin()
-    const admin = createAdminClient()
-    await admin.storage.from('site-assets').remove([`shows/${showId}/hero-${variant}.mp4`])
-    return { success: true }
-  } catch (err) {
-    console.error('[deleteShowVideoFile] failed', { showId, variant }, err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to remove video' }
-  }
-}
+// Note: an earlier deleteShowVideoFile() server action was removed here. Same
+// reasoning as deleteArtwork — post-versioning the UI uses form-state clearing
+// and the cron sweep collects orphaned MP4s. The old implementation built the
+// pre-versioning path (shows/{id}/hero-{variant}.mp4) which no longer matches
+// real uploads (hero-{variant}-{timestamp}.mp4), so it silently did nothing.
 
 // ---------------------------------------------------------------------------
 // FEATURED TOGGLE
