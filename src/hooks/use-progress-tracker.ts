@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export function useProgressTracker(
@@ -11,17 +11,24 @@ export function useProgressTracker(
   const lastSavedRef = useRef<number>(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const flush = useCallback(() => {
+  // One Supabase client per mount, not one per save. Previously flush() and
+  // forceFlush() each called createClient() inside the callback, so a 60-minute
+  // viewing session was instantiating the client 360+ times.
+  const supabase = useMemo(() => createClient(), [])
+
+  // Single save path; pass `force: true` to bypass the 10-second delta check
+  // (used for visibility change + unmount). Merges two near-identical ~20-line
+  // closures that were drifting apart.
+  const save = useCallback((opts: { force?: boolean } = {}) => {
     if (!player || !userId) return
     try {
       const currentTime = Math.floor(player.getCurrentTime())
       const duration = Math.floor(player.getDuration())
       // Skip saves below 2 seconds to avoid overwriting with post-seek 0 values
       if (currentTime < 2 && lastSavedRef.current > 2) return
-      if (Math.abs(currentTime - lastSavedRef.current) < 10) return
+      if (!opts.force && Math.abs(currentTime - lastSavedRef.current) < 10) return
 
       const completed = currentTime / duration >= 0.95
-      const supabase = createClient()
       supabase
         .from('watch_progress')
         .upsert(
@@ -40,37 +47,10 @@ export function useProgressTracker(
     } catch {
       // Player may be destroyed; swallow error
     }
-  }, [player, episodeId, userId])
+  }, [player, episodeId, userId, supabase])
 
-  // Force flush (used for ended/pause events) - bypasses the 10-second delta check
-  const forceFlush = useCallback(() => {
-    if (!player || !userId) return
-    try {
-      const currentTime = Math.floor(player.getCurrentTime())
-      const duration = Math.floor(player.getDuration())
-      if (currentTime < 2 && lastSavedRef.current > 2) return
-
-      const completed = currentTime / duration >= 0.95
-      const supabase = createClient()
-      supabase
-        .from('watch_progress')
-        .upsert(
-          {
-            user_id: userId,
-            episode_id: episodeId,
-            progress_seconds: currentTime,
-            duration_seconds: duration,
-            completed,
-          },
-          { onConflict: 'user_id,episode_id' }
-        )
-        .then(() => {
-          lastSavedRef.current = currentTime
-        })
-    } catch {
-      // Swallow
-    }
-  }, [player, episodeId, userId])
+  const flush = useCallback(() => save(), [save])
+  const forceFlush = useCallback(() => save({ force: true }), [save])
 
   // Start 10-second interval
   useEffect(() => {

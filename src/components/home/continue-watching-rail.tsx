@@ -1,16 +1,20 @@
-import { createClient } from '@/lib/supabase/server'
 import { getContinueWatchingEpisodes } from '@/lib/queries'
 import { SectionHeader } from '@/components/primitives/section-header'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 import { ContinueWatchingCard } from '@/components/home/continue-watching-card'
 
-export async function ContinueWatchingRail() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+interface ContinueWatchingRailProps {
+  userId: string | null
+}
 
-  if (!user) return null
+// Caller (browse page) passes userId from its own getUser() result so this
+// component doesn't run a separate getUser() call. Middleware already validated
+// the session once, and the browse page Server Component resolves the same
+// user — this component just consumes the value.
+export async function ContinueWatchingRail({ userId }: ContinueWatchingRailProps) {
+  if (!userId) return null
 
-  const items = await getContinueWatchingEpisodes(user.id)
+  const items = await getContinueWatchingEpisodes(userId)
 
   if (items.length === 0) return null
 

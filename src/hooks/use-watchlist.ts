@@ -35,16 +35,10 @@ export function useWatchlist(
     try {
       const supabase = createClient()
 
-      // Verify session is still valid before mutating
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setIsInList(prev)
-        setIsLoading(false)
-        busyRef.current = false
-        router.push(`/auth?next=${encodeURIComponent(window.location.pathname)}`)
-        return
-      }
-
+      // No getUser() preflight. The session was already validated server-side
+      // when the page loaded; if it expired mid-session the RLS-backed mutation
+      // below will fail with a clear auth error. The preflight was adding
+      // ~50-100ms to every toggle click for a safety net RLS already provides.
       const { error } = prev
         ? await supabase.from('watchlist').delete().eq('user_id', userId).eq('show_id', showId)
         : await supabase.from('watchlist').insert({ user_id: userId, show_id: showId })
@@ -52,6 +46,13 @@ export function useWatchlist(
       if (error) {
         console.error('Watchlist mutation error:', error.message, error.code)
         setIsInList(prev)
+        // Auth errors (RLS reject after session expiry) land here too. Common
+        // Postgrest codes for unauthorized writes: 42501 (permission denied),
+        // PGRST301 (JWT expired). Redirect to auth in those cases.
+        if (error.code === '42501' || error.code === 'PGRST301') {
+          router.push(`/auth?next=${encodeURIComponent(window.location.pathname)}`)
+          return
+        }
         toast.error(prev ? 'Failed to remove from list' : 'Failed to add to list')
       }
     } catch (err) {

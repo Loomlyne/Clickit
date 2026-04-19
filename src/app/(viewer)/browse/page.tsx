@@ -5,6 +5,7 @@ import { ContinueWatchingRail } from '@/components/home/continue-watching-rail'
 import { NewEpisodesRail } from '@/components/home/new-episodes-rail'
 import { GenresGrid } from '@/components/home/genres-grid'
 import { CtaBanner } from '@/components/home/cta-banner'
+import { createClient } from '@/lib/supabase/server'
 import {
   getFeaturedShows,
   getStreamingShows,
@@ -15,6 +16,13 @@ import {
 import { getIsMobile } from '@/lib/device'
 
 export default async function BrowsePage() {
+  // Resolve user once at the page level and pass it down. Previously the
+  // ContinueWatchingRail called getUser() independently, giving this request
+  // three auth touch-points (middleware + page + rail). Now it's two.
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const userId = user?.id ?? null
+
   // Fetch all data from Supabase in parallel
   const [featured, streaming, comingSoon, newEpisodes, isMobile] = await Promise.all([
     getFeaturedShows(),
@@ -43,7 +51,7 @@ export default async function BrowsePage() {
       )}
 
       <div className="mt-20 space-y-14 pb-20">
-        <ContinueWatchingRail />
+        <ContinueWatchingRail userId={userId} />
         {newEpisodes.length > 0 && (
           <NewEpisodesRail episodes={newEpisodes} />
         )}

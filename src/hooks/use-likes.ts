@@ -35,16 +35,9 @@ export function useLikes(
     try {
       const supabase = createClient()
 
-      // Verify session is still valid before mutating
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setIsLiked(prev)
-        setIsLoading(false)
-        busyRef.current = false
-        router.push(`/auth?next=${encodeURIComponent(window.location.pathname)}`)
-        return
-      }
-
+      // See use-watchlist for why we don't run a getUser() preflight here —
+      // RLS rejects expired sessions, and we redirect on the specific error
+      // codes rather than paying the latency tax on every healthy click.
       const { error } = prev
         ? await supabase.from('likes').delete().eq('user_id', userId).eq('show_id', showId)
         : await supabase.from('likes').insert({ user_id: userId, show_id: showId })
@@ -52,6 +45,10 @@ export function useLikes(
       if (error) {
         console.error('Like mutation error:', error.message, error.code)
         setIsLiked(prev)
+        if (error.code === '42501' || error.code === 'PGRST301') {
+          router.push(`/auth?next=${encodeURIComponent(window.location.pathname)}`)
+          return
+        }
         toast.error(prev ? 'Failed to unlike' : 'Failed to like')
       }
     } catch (err) {
