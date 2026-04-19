@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { motion } from 'motion/react'
 import { CINEMA_EASE } from '@/lib/cinema'
 
-export function LandingHeroAnimations({ children }: { children: React.ReactNode }) {
+export function LandingHeroAnimations({ logo }: { logo: React.ReactNode }) {
   return (
     <>
       <motion.p
@@ -16,13 +16,13 @@ export function LandingHeroAnimations({ children }: { children: React.ReactNode 
         Spacelight Studios Presents
       </motion.p>
 
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.25 }}
-      >
-        {children}
-      </motion.div>
+      {/*
+        Logo renders immediately as a Server Component child — no motion
+        wrapper. This is intentional: the logo is the LCP element and wrapping
+        it in motion.div with opacity 0→1 pushed LCP from ~900ms to ~2000ms
+        on desktop. The surrounding text still fades in for polish.
+      */}
+      {logo}
 
       <motion.p
         className="font-display mt-5 font-semibold leading-tight text-white/80"

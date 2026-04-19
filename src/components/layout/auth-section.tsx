@@ -66,10 +66,16 @@ export function AuthSection({ initialUser }: AuthSectionProps) {
   }, [])
 
   if (!user) {
+    // A11y: default (bg-primary) variant gave a 3.88:1 contrast with white
+    // text — below WCAG AA's 4.5:1 for normal text. Switched to outline:
+    // light text on near-black surface has 16:1+ contrast and reads as a
+    // secondary action in the navbar, which matches the brand hierarchy
+    // (primary CTA is Browse Shows on the landing page).
     return (
       <Button
         size="sm"
-        className="h-10 rounded-[16px] px-5 text-sm shadow-[0_14px_34px_rgba(96,115,255,0.22)]"
+        variant="outline"
+        className="h-10 rounded-[16px] px-5 text-sm"
         asChild
       >
         <Link href="/auth">Sign In</Link>

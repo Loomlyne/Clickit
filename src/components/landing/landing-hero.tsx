@@ -108,16 +108,33 @@ export async function LandingHero() {
       {/* Content */}
       <div className="absolute bottom-0 left-0 w-full px-6 pb-16 md:px-12 md:pb-20">
         <div className="max-w-[52rem]">
-          <LandingHeroAnimations>
-            <Image
-              src="/brand/Clickit_final_logo.svg"
-              alt="Clickit Story"
-              width={480}
-              height={120}
-              className="h-[5.25rem] w-auto md:h-[7.5rem]"
-              priority
-            />
-          </LandingHeroAnimations>
+          {/*
+            LCP optimization: the logo <Image> renders from the server HTML
+            so the browser's preload scanner can find it immediately with
+            fetchpriority=high. Previously it was nested inside
+            LandingHeroAnimations (a client component) which:
+              1. Rendered the <img> only after hydration (invisible to the
+                 preload scanner → ~700ms resource load delay).
+              2. Wrapped it in motion.div with opacity 0 → 1 fade over 600ms
+                 with 250ms delay — making LCP land at ~2000ms because the
+                 element was invisible until the animation played.
+            The text above/below still fades in via motion for polish, but the
+            brand mark paints instantly — which is also better for perceived
+            loading speed.
+          */}
+          <LandingHeroAnimations
+            logo={
+              <Image
+                src="/brand/Clickit_final_logo.svg"
+                alt="Clickit Story"
+                width={480}
+                height={120}
+                className="h-[5.25rem] w-auto md:h-[7.5rem]"
+                priority
+                fetchPriority="high"
+              />
+            }
+          />
         </div>
       </div>
 

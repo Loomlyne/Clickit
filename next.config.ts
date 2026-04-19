@@ -7,6 +7,21 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '55mb',
     },
   },
+  // Long-lived cache for immutable brand assets. These files are versioned in
+  // git — when we change the logo we'd change the filename. Vercel was serving
+  // them with `cache-control: max-age=0, must-revalidate` which forced every
+  // page load to re-validate the SVG, wasting ~700ms of LCP on the landing
+  // page (the logo is the LCP element). Now it's cached for a year, immutable.
+  async headers() {
+    return [
+      {
+        source: '/brand/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+    ]
+  },
   images: {
     remotePatterns: [
       {

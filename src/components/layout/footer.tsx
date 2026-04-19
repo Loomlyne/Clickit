@@ -112,7 +112,7 @@ export async function Footer() {
           {/* Nav columns */}
           <div className="grid grid-cols-3 gap-8">
             <div>
-              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Navigate</h4>
+              <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Navigate</h3>
               <ul className="space-y-3">
                 <li><Link href="/browse" className="text-sm text-white/56 transition-colors hover:text-white">Browse</Link></li>
                 <li><Link href="/coming-soon" className="text-sm text-white/56 transition-colors hover:text-white">Coming Soon</Link></li>
@@ -120,7 +120,7 @@ export async function Footer() {
               </ul>
             </div>
             <div>
-              <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Genres</h4>
+              <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Genres</h3>
               <ul className="space-y-3">
                 {GENRE_LINKS.map(({ label, href }) => (
                   <li key={label}>
@@ -131,7 +131,7 @@ export async function Footer() {
             </div>
             <div className="space-y-8">
               <div>
-                <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Account</h4>
+                <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Account</h3>
                 <ul className="space-y-3">
                   <li><Link href="/auth" className="text-sm text-white/56 transition-colors hover:text-white">Sign In</Link></li>
                   <li><Link href="/my-list" className="text-sm text-white/56 transition-colors hover:text-white">My List</Link></li>
@@ -139,7 +139,7 @@ export async function Footer() {
                 </ul>
               </div>
               <div>
-                <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Legal</h4>
+                <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Legal</h3>
                 <ul className="space-y-3">
                   {footer.legal.privacy && (
                     <li>
