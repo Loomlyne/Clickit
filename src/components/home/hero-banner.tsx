@@ -25,7 +25,11 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
 
   const shouldReduceMotion = useReducedMotion()
 
-  // Single interval just advances the slide — progress bar is pure CSS
+  // Single interval just advances the slide — progress bar is pure CSS.
+  // Dep is `shows.length` (not `shows`) on purpose: we only want to reset the
+  // interval when the number of slides changes. A new array reference with the
+  // same length (e.g., parent re-renders with a stable list) should NOT restart
+  // the rotation. This keeps the slide rhythm steady under routine re-renders.
   useEffect(() => {
     if (isPaused || shouldReduceMotion) return
 

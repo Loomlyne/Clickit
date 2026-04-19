@@ -58,6 +58,10 @@ export function SeasonFormDrawer({
     const result = await onSave(normalized)
     if (result.success) {
       toast.success(isEdit ? `"${data.title}" saved` : `"${data.title}" created`)
+      // Defensive reset — the open-transition useEffect also resets, but if the
+      // parent keeps this drawer mounted and doesn't re-issue a fresh nextSeasonNumber
+      // before the user reopens, dirty state could leak. Clear explicitly.
+      form.reset({ title: '', title_ar: '', season_number: nextSeasonNumber })
       onOpenChange(false)
     } else {
       toast.error(result.error || 'Failed to save season')

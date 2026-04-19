@@ -35,11 +35,18 @@ function VideoLayer({
   type,
   className,
   reducedMotion,
+  poster,
 }: {
   url: string
   type: 'mp4' | 'youtube'
   className: string
   reducedMotion?: boolean
+  /**
+   * Still image shown before the video's first frame is ready. Fills the
+   * visual gap during the `preload="metadata"` window, so mobile users on
+   * slow networks never see a black box. Falls back to nothing if absent.
+   */
+  poster?: string
 }) {
   if (type === 'mp4') {
     return (
@@ -49,6 +56,8 @@ function VideoLayer({
         muted
         loop={!reducedMotion}
         playsInline
+        preload="metadata"
+        poster={poster}
         className={className}
         aria-hidden
       />
@@ -123,6 +132,7 @@ export function CinematicBackdrop({
             type={resolved.type}
             className="absolute inset-0 h-full w-full scale-110 object-cover opacity-80 pointer-events-none"
             reducedMotion={reducedMotion}
+            poster={isMobile ? mobileImageUrl ?? imageUrl : imageUrl}
           />
         ) : resolved?.kind === 'image' ? (
           <Image
@@ -144,6 +154,7 @@ export function CinematicBackdrop({
               type={videoType!}
               className="absolute inset-0 hidden h-full w-full scale-110 object-cover opacity-80 pointer-events-none md:block"
               reducedMotion={reducedMotion}
+              poster={imageUrl}
             />
           ) : imageUrl ? (
             <Image
@@ -164,6 +175,7 @@ export function CinematicBackdrop({
               type={mobileVideoType!}
               className="absolute inset-0 block h-full w-full scale-110 object-cover opacity-80 pointer-events-none md:hidden"
               reducedMotion={reducedMotion}
+              poster={mobileImageUrl ?? imageUrl}
             />
           ) : mobileUsesDesktopVideo ? (
             <VideoLayer
@@ -171,6 +183,7 @@ export function CinematicBackdrop({
               type={videoType!}
               className="absolute inset-0 block h-full w-full scale-110 object-cover opacity-80 pointer-events-none md:hidden"
               reducedMotion={reducedMotion}
+              poster={mobileImageUrl ?? imageUrl}
             />
           ) : mobileImageUrl ? (
             <Image

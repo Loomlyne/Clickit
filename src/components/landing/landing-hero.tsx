@@ -18,6 +18,10 @@ export async function LandingHero() {
         <div className="absolute inset-0 bg-black" />
 
         {/* Layer 2: video */}
+        {/* preload="metadata" tells the browser to download only the first ~1s of
+            video data for dimensions/duration, not the whole file, before the user
+            even sees anything. The full stream then loads as playback needs it.
+            This saves ~hundreds of KB on mobile first paint. */}
         {heroVideo?.type === 'mp4' && (
           <video
             src={heroVideo.url}
@@ -25,6 +29,7 @@ export async function LandingHero() {
             muted
             loop
             playsInline
+            preload="metadata"
             className="absolute inset-0 h-full w-full object-cover opacity-60"
           />
         )}

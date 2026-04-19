@@ -5,6 +5,7 @@ import { z } from 'zod'
 import sharp from 'sharp'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { validateYouTubeUrl } from '@/lib/youtube'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -60,6 +61,8 @@ const optionalUrl = z
 
 // Hero video fields must be set together or both absent. A url without a type, or a
 // type without a url, is an invalid state — the viewer's fallback chain breaks.
+// Additionally, when type=='youtube', the URL MUST pass hostname validation — see
+// validateYouTubeUrl for why the substring regex alone is not safe for viewer-rendered iframes.
 function heroVideoInvariant(
   urlKey: 'hero_video_url' | 'hero_video_mobile_url',
   typeKey: 'hero_video_type' | 'hero_video_mobile_type',
@@ -75,6 +78,16 @@ function heroVideoInvariant(
         path: [hasUrl ? typeKey : urlKey],
         message: `${urlKey} and ${typeKey} must be set together or both empty`,
       })
+      return
+    }
+    if (hasUrl && type === 'youtube' && typeof url === 'string') {
+      if (!validateYouTubeUrl(url)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [urlKey],
+          message: 'Must be a valid youtube.com or youtu.be URL with a video ID',
+        })
+      }
     }
   }
 }
@@ -155,6 +168,7 @@ export async function createShow(
     updateTag('shows')
     return { success: true, data: show }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to create show' }
   }
 }
@@ -185,6 +199,7 @@ export async function updateShow(
     updateTag('shows')
     return { success: true, data: show }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to update show' }
   }
 }
@@ -212,6 +227,7 @@ export async function archiveShow(id: string): Promise<ActionResult> {
     updateTag('episodes')
     return { success: true }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to archive show' }
   }
 }
@@ -288,6 +304,7 @@ export async function restoreShow(id: string): Promise<RestoreResult> {
     updateTag('episodes')
     return { success: true }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to restore show' }
   }
 }
@@ -313,6 +330,7 @@ export async function resolveConflictsAndRestore(
     // Re-run restore with conflict check
     return restoreShow(showId)
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to resolve conflicts' }
   }
 }
@@ -344,6 +362,7 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
     updateTag('episodes')
     return { success: true }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to delete show' }
   }
 }
@@ -383,6 +402,7 @@ export async function createSeason(
     updateTag('shows')
     return { success: true, data: season }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to create season' }
   }
 }
@@ -410,6 +430,7 @@ export async function updateSeason(
     }
     return { success: true, data: season }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to update season' }
   }
 }
@@ -457,6 +478,7 @@ export async function deleteSeason(
     updateTag('episodes')
     return { success: true }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to delete season' }
   }
 }
@@ -550,6 +572,7 @@ export async function createEpisode(
     updateTag('episodes')
     return { success: true, data: episode }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to create episode' }
   }
 }
@@ -605,6 +628,7 @@ export async function updateEpisode(
     }
     return { success: true, data: episode }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to update episode' }
   }
 }
@@ -640,6 +664,7 @@ export async function archiveEpisode(
     updateTag('episodes')
     return { success: true }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to archive episode' }
   }
 }
@@ -702,6 +727,7 @@ export async function reorderEpisode(
     updateTag('episodes')
     return { success: true }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to reorder episode' }
   }
 }
@@ -850,6 +876,7 @@ export async function uploadHeroVideo(formData: FormData): Promise<ActionResult<
     revalidatePath('/')
     return { success: true, data: urlData.publicUrl }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
   }
 }
@@ -859,19 +886,37 @@ export async function setHeroVideoUrl(youtubeUrl: string): Promise<ActionResult>
     await assertAdmin()
     const admin = createAdminClient()
 
-    if (!youtubeUrl.trim()) return { success: false, error: 'URL is required' }
+    const trimmed = youtubeUrl.trim()
+    if (!trimmed) return { success: false, error: 'URL is required' }
+
+    // SECURITY: validate hostname is a real YouTube domain before storage.
+    // The extractYouTubeId regex alone matches the literal substring `youtu.be/`
+    // anywhere in the URL, which would let an admin save `https://attacker.com/youtu.be/xxxxxxxxxxx`
+    // and have every viewer load an attacker iframe. validateYouTubeUrl parses with
+    // new URL() and enforces an allowlist of YouTube hostnames.
+    const videoId = validateYouTubeUrl(trimmed)
+    if (!videoId) {
+      return { success: false, error: 'Invalid YouTube URL. Must be a youtube.com or youtu.be link with a valid video ID.' }
+    }
+
+    // Store canonical form so viewers always get a predictable embed URL.
+    const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`
 
     const { error } = await admin
       .from('app_config')
-      .update({ hero_video_url: youtubeUrl.trim(), hero_video_type: 'youtube' })
+      .update({ hero_video_url: canonicalUrl, hero_video_type: 'youtube' })
       .eq('id', 1)
 
-    if (error) return { success: false, error: error.message }
+    if (error) {
+      console.error('[setHeroVideoUrl] db update failed', { videoId, error: error.message })
+      return { success: false, error: error.message }
+    }
 
     updateTag('site-config')
     revalidatePath('/')
     return { success: true }
   } catch (err) {
+    console.error('[setHeroVideoUrl] failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to save URL' }
   }
 }
@@ -897,6 +942,7 @@ export async function removeHeroVideo(): Promise<ActionResult> {
     revalidatePath('/')
     return { success: true }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to remove video' }
   }
 }
@@ -1013,6 +1059,7 @@ export async function toggleFeatured(showId: string) {
     updateTag('shows')
     return { success: true, featured: newFeatured }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to toggle featured' }
   }
 }
@@ -1122,6 +1169,7 @@ export async function updateSiteMetadata(
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
   }
 }
@@ -1142,6 +1190,7 @@ export async function updateFooterContent(
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
   }
 }
@@ -1162,6 +1211,7 @@ export async function updateCtaCopy(
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
   }
 }
@@ -1182,6 +1232,7 @@ export async function updateGenreConfig(
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
   }
 }
@@ -1208,6 +1259,7 @@ export async function updateIntegrations(
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
   }
 }
@@ -1228,6 +1280,7 @@ export async function updateFeatureFlags(
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
   }
 }
@@ -1287,6 +1340,7 @@ export async function uploadSiteImage(
     bumpSiteConfigCache()
     return { success: true, data: bustedUrl }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
   }
 }
@@ -1307,6 +1361,7 @@ export async function removeSiteImage(
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to remove' }
   }
 }
@@ -1323,6 +1378,7 @@ export async function revalidateAllCache(): Promise<ActionResult> {
     revalidatePath('/', 'layout')
     return { success: true }
   } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to revalidate' }
   }
 }
