@@ -235,11 +235,13 @@ export async function archiveShow(id: string): Promise<ActionResult> {
   }
 }
 
-export async function restoreShow(id: string): Promise<RestoreResult> {
-  try {
-    await assertAdmin()
-    const admin = createAdminClient()
-
+// Internal implementation. Callers must have already run assertAdmin() —
+// split out so resolveConflictsAndRestore() doesn't pay the auth roundtrip
+// twice (once for itself, once through a nested restoreShow call).
+async function _restoreShow(
+  admin: ReturnType<typeof createAdminClient>,
+  id: string,
+): Promise<RestoreResult> {
     // Check for episode number conflicts before restoring
     const { data: archivedEpisodes } = await admin
       .from('episodes')
@@ -314,6 +316,13 @@ export async function restoreShow(id: string): Promise<RestoreResult> {
     updateTag('shows')
     updateTag('episodes')
     return { success: true }
+}
+
+export async function restoreShow(id: string): Promise<RestoreResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+    return await _restoreShow(admin, id)
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to restore show' }
@@ -328,18 +337,24 @@ export async function resolveConflictsAndRestore(
     await assertAdmin()
     const admin = createAdminClient()
 
-    // Apply the number fixes to archived episodes
-    for (const fix of fixes) {
-      const { error } = await admin
-        .from('episodes')
-        .update({ episode_number: fix.newEpisodeNumber })
-        .eq('id', fix.episodeId)
-
-      if (error) return { success: false, error: `Failed to update episode: ${error.message}` }
+    // Apply the number fixes to archived episodes in parallel — admin action,
+    // small N, safe to batch concurrently.
+    const results = await Promise.all(
+      fixes.map((fix) =>
+        admin
+          .from('episodes')
+          .update({ episode_number: fix.newEpisodeNumber })
+          .eq('id', fix.episodeId)
+      )
+    )
+    const firstError = results.find((r) => r.error)?.error
+    if (firstError) {
+      return { success: false, error: `Failed to update episode: ${firstError.message}` }
     }
 
-    // Re-run restore with conflict check
-    return restoreShow(showId)
+    // Re-run restore with conflict check (skipping redundant assertAdmin —
+    // we already authenticated this caller).
+    return await _restoreShow(admin, showId)
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to resolve conflicts' }

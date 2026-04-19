@@ -580,7 +580,8 @@ export const getAllShows = unstable_cache(
 
 export async function searchShows(query: string): Promise<ViewShow[]> {
   if (!query || query.trim().length < 2) return []
-  const supabase = await createClient()
+  // Public catalog read — no session needed; skip the cookie overhead.
+  const supabase = createPublicClient()
   const { data } = await supabase
     .from('shows')
     .select('*')
@@ -598,7 +599,7 @@ export async function searchEpisodes(
   (ViewEpisode & { showTitle: string; showSlug: string; showBrandColor: ViewShow['brandColor'] })[]
 > {
   if (!query || query.trim().length < 2) return []
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const { data } = await supabase
     .from('episodes')
     .select('*, shows!inner(title, slug, brand_color, status)')

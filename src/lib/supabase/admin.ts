@@ -7,8 +7,12 @@ import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/database.types'
 
 export function createAdminClient() {
-  return createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  // Fail loud at the call site with a clear message rather than handing a
+  // client with an `undefined` key to Supabase — the resulting 401s would be
+  // much harder to trace in production logs.
+  if (!url) throw new Error('[createAdminClient] NEXT_PUBLIC_SUPABASE_URL is not set')
+  if (!key) throw new Error('[createAdminClient] SUPABASE_SERVICE_ROLE_KEY is not set')
+  return createClient<Database>(url, key)
 }
