@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createPublicClient } from '@/lib/supabase/public'
@@ -350,7 +351,13 @@ export const getEpisodesBySeasonId = unstable_cache(
 // Watch page queries
 // ---------------------------------------------------------------------------
 
-export async function getEpisodeById(episodeId: string) {
+// Wrapped in React cache() so generateMetadata() and the page body share a
+// single fetch per request. Before: the watch page ran episode + season + show
+// fetches twice (once for metadata, once for render) because none of the three
+// sub-queries were deduplicated across the render tree.
+// unstable_cache is not right here — this query depends on user-specific auth
+// cookies via createClient, and cached closures can't touch next/headers.
+export const getEpisodeById = cache(async function getEpisodeById(episodeId: string) {
   const supabase = await createClient()
 
   const { data: episode } = await supabase
@@ -397,7 +404,7 @@ export async function getEpisodeById(episodeId: string) {
   const next = currentIdx < allEpisodes.length - 1 ? allEpisodes[currentIdx + 1] : null
 
   return { episode, show, season, seasons, episodesBySeason, prev, next }
-}
+})
 
 // ---------------------------------------------------------------------------
 // Episode progress query
