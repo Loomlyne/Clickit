@@ -59,3 +59,4 @@ _claude*
 _planning*
 .aidesigner/*
 !.aidesigner/.gitkeep
+.vercel/.cron-secret
