@@ -6,6 +6,7 @@ import sharp from 'sharp'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { validateYouTubeUrl } from '@/lib/youtube'
+import { logAudit } from '@/lib/audit'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -152,7 +153,7 @@ export async function createShow(
   data: z.input<typeof showSchema>,
 ): Promise<ActionResult> {
   try {
-    await assertAdmin()
+    const user = await assertAdmin()
     const parsed = showSchema.parse(data)
     const admin = createAdminClient()
 
@@ -166,6 +167,14 @@ export async function createShow(
       .single()
 
     if (error) return { success: false, error: error.message }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'create',
+      entity: 'show',
+      entityId: show.id,
+      diff: { data: { title: show.title, slug: show.slug, status: show.status } },
+    })
 
     revalidatePath('/admin')
     updateTag('shows')
@@ -181,7 +190,7 @@ export async function updateShow(
   data: z.input<typeof showSchema>,
 ): Promise<ActionResult> {
   try {
-    await assertAdmin()
+    const user = await assertAdmin()
     const parsed = showSchema.parse(data)
     const admin = createAdminClient()
 
@@ -197,6 +206,14 @@ export async function updateShow(
 
     if (error) return { success: false, error: error.message }
 
+    await logAudit({
+      adminUserId: user.id,
+      action: 'update',
+      entity: 'show',
+      entityId: id,
+      diff: { changed: Object.keys(updateData), title: show.title },
+    })
+
     revalidatePath('/admin')
     revalidatePath(`/admin/shows/${id}`)
     updateTag('shows')
@@ -209,7 +226,7 @@ export async function updateShow(
 
 export async function archiveShow(id: string): Promise<ActionResult> {
   try {
-    await assertAdmin()
+    const user = await assertAdmin()
     const admin = createAdminClient()
 
     const { error: showError } = await admin
@@ -224,6 +241,13 @@ export async function archiveShow(id: string): Promise<ActionResult> {
       .from('episodes')
       .update({ archived: true })
       .eq('show_id', id)
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'archive',
+      entity: 'show',
+      entityId: id,
+    })
 
     revalidatePath('/admin')
     updateTag('shows')
@@ -320,9 +344,13 @@ async function _restoreShow(
 
 export async function restoreShow(id: string): Promise<RestoreResult> {
   try {
-    await assertAdmin()
+    const user = await assertAdmin()
     const admin = createAdminClient()
-    return await _restoreShow(admin, id)
+    const result = await _restoreShow(admin, id)
+    if (result.success) {
+      await logAudit({ adminUserId: user.id, action: 'restore', entity: 'show', entityId: id })
+    }
+    return result
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to restore show' }
@@ -363,8 +391,12 @@ export async function resolveConflictsAndRestore(
 
 export async function deleteShowPermanently(id: string): Promise<ActionResult> {
   try {
-    await assertAdmin()
+    const user = await assertAdmin()
     const admin = createAdminClient()
+
+    // Capture show title BEFORE deletion so the audit row has recognizable
+    // context (after DELETE the id is all we'd know).
+    const { data: showRow } = await admin.from('shows').select('title, slug').eq('id', id).single()
 
     // List and delete every file under shows/{id}/ in both buckets.
     // Before versioning landed the stable paths were predictable
@@ -395,6 +427,14 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
       .eq('id', id)
 
     if (error) return { success: false, error: error.message }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'delete',
+      entity: 'show',
+      entityId: id,
+      diff: { title: showRow?.title, slug: showRow?.slug },
+    })
 
     revalidatePath('/admin/archive')
     updateTag('shows')
@@ -1168,11 +1208,26 @@ function bumpSiteConfigCache() {
   revalidatePath('/', 'layout')
 }
 
+/**
+ * Log a settings-tab save to the audit log. Every updateX() below calls this
+ * with the column(s) it touched so the audit dashboard can show "admin
+ * changed footer_content, tagline, social.x" instead of a generic
+ * "config_update" row.
+ */
+async function auditConfigUpdate(adminUserId: string, changedKeys: string[]) {
+  await logAudit({
+    adminUserId,
+    action: 'config_update',
+    entity: 'app_config',
+    diff: { keys: changedKeys },
+  })
+}
+
 export async function updateSiteMetadata(
   input: z.input<typeof siteMetadataSchema>
 ): Promise<ActionResult> {
   try {
-    await assertAdmin()
+    const user = await assertAdmin()
     const parsed = siteMetadataSchema.parse(input)
     const admin = createAdminClient()
     const { error } = await admin
@@ -1181,6 +1236,7 @@ export async function updateSiteMetadata(
       .update(parsed as any)
       .eq('id', 1)
     if (error) return { success: false, error: error.message }
+    await auditConfigUpdate(user.id, Object.keys(parsed))
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
@@ -1193,7 +1249,7 @@ export async function updateFooterContent(
   input: z.input<typeof footerSchema>
 ): Promise<ActionResult> {
   try {
-    await assertAdmin()
+    const user = await assertAdmin()
     const parsed = footerSchema.parse(input)
     const admin = createAdminClient()
     const { error } = await admin
@@ -1202,6 +1258,7 @@ export async function updateFooterContent(
       .update({ footer_content: parsed } as any)
       .eq('id', 1)
     if (error) return { success: false, error: error.message }
+    await auditConfigUpdate(user.id, ['footer_content'])
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
@@ -1214,7 +1271,7 @@ export async function updateCtaCopy(
   input: z.input<typeof ctaCopySchema>
 ): Promise<ActionResult> {
   try {
-    await assertAdmin()
+    const user = await assertAdmin()
     const parsed = ctaCopySchema.parse(input)
     const admin = createAdminClient()
     const { error } = await admin
@@ -1223,6 +1280,7 @@ export async function updateCtaCopy(
       .update({ cta_copy: parsed } as any)
       .eq('id', 1)
     if (error) return { success: false, error: error.message }
+    await auditConfigUpdate(user.id, ['cta_copy'])
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
@@ -1235,7 +1293,7 @@ export async function updateGenreConfig(
   input: z.input<typeof genreConfigSchema>
 ): Promise<ActionResult> {
   try {
-    await assertAdmin()
+    const user = await assertAdmin()
     const parsed = genreConfigSchema.parse(input)
     const admin = createAdminClient()
     const { error } = await admin
@@ -1244,6 +1302,7 @@ export async function updateGenreConfig(
       .update({ genre_config: parsed } as any)
       .eq('id', 1)
     if (error) return { success: false, error: error.message }
+    await auditConfigUpdate(user.id, ['genre_config'])
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
@@ -1256,7 +1315,7 @@ export async function updateIntegrations(
   input: z.input<typeof integrationsSchema>
 ): Promise<ActionResult> {
   try {
-    await assertAdmin()
+    const user = await assertAdmin()
     const parsed = integrationsSchema.parse(input)
     // Empty strings from form inputs → null so DB stays clean
     const cleaned = {
@@ -1271,6 +1330,11 @@ export async function updateIntegrations(
       .update(cleaned as any)
       .eq('id', 1)
     if (error) return { success: false, error: error.message }
+    // Log which integration keys were touched without leaking the secret values.
+    const keysTouched = Object.entries(cleaned)
+      .filter(([, v]) => v !== null)
+      .map(([k]) => k)
+    await auditConfigUpdate(user.id, keysTouched.length ? keysTouched : ['integrations_cleared'])
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
@@ -1283,7 +1347,7 @@ export async function updateFeatureFlags(
   input: z.input<typeof featureFlagsSchema>
 ): Promise<ActionResult> {
   try {
-    await assertAdmin()
+    const user = await assertAdmin()
     const parsed = featureFlagsSchema.parse(input)
     const admin = createAdminClient()
     const { error } = await admin
@@ -1292,6 +1356,7 @@ export async function updateFeatureFlags(
       .update({ feature_flags: parsed } as any)
       .eq('id', 1)
     if (error) return { success: false, error: error.message }
+    await auditConfigUpdate(user.id, ['feature_flags'])
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {

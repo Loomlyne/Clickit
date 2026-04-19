@@ -9,6 +9,7 @@ const tabs = [
   { label: 'Shows', href: '/admin' },
   { label: 'Archive', href: '/admin/archive' },
   { label: 'Settings', href: '/admin/settings' },
+  { label: 'Audit', href: '/admin/audit' },
 ]
 
 export function AdminHeader() {

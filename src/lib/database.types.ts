@@ -18,26 +18,62 @@ export type Database = {
         Row: {
           admin_user_id: string | null
           created_at: string
+          cta_copy: Json
+          favicon_url: string | null
+          feature_flags: Json
+          footer_content: Json
+          genre_config: Json
+          google_analytics_id: string | null
           hero_video_type: string | null
           hero_video_url: string | null
           id: number
+          meta_pixel_id: string | null
+          og_image_url: string | null
+          site_description: string | null
+          site_tagline: string | null
+          site_title: string | null
           updated_at: string
+          youtube_api_key: string | null
         }
         Insert: {
           admin_user_id?: string | null
           created_at?: string
+          cta_copy?: Json
+          favicon_url?: string | null
+          feature_flags?: Json
+          footer_content?: Json
+          genre_config?: Json
+          google_analytics_id?: string | null
           hero_video_type?: string | null
           hero_video_url?: string | null
           id?: number
+          meta_pixel_id?: string | null
+          og_image_url?: string | null
+          site_description?: string | null
+          site_tagline?: string | null
+          site_title?: string | null
           updated_at?: string
+          youtube_api_key?: string | null
         }
         Update: {
           admin_user_id?: string | null
           created_at?: string
+          cta_copy?: Json
+          favicon_url?: string | null
+          feature_flags?: Json
+          footer_content?: Json
+          genre_config?: Json
+          google_analytics_id?: string | null
           hero_video_type?: string | null
           hero_video_url?: string | null
           id?: number
+          meta_pixel_id?: string | null
+          og_image_url?: string | null
+          site_description?: string | null
+          site_tagline?: string | null
+          site_title?: string | null
           updated_at?: string
+          youtube_api_key?: string | null
         }
         Relationships: []
       }

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 
 import { AuthPanel } from '@/components/auth/auth-panel'
+import { BotIdInit } from '@/components/auth/botid-init'
 import { CinematicBackdrop } from '@/components/primitives/cinematic-backdrop'
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ const BRAND_COLORS = ['#2C3569', '#9F54A0', '#50A258', '#DB3F34', '#EA8C2E', '#F
 export default function AuthPage() {
   return (
     <div className="-mt-24 md:-mt-28 relative flex min-h-dvh items-center justify-center overflow-hidden px-6 py-16">
+      <BotIdInit />
       <CinematicBackdrop
         brandColor="#2C3569"
         intensity="high"

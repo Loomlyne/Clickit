@@ -30,5 +30,13 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", ".claude", "_claude", "_claude 2", "_planning", "_planning 2"]
+  "exclude": [
+    "node_modules",
+    ".claude",
+    "_claude",
+    "_claude 2",
+    "_planning",
+    "_planning 2",
+    "tests/unit"
+  ]
 }

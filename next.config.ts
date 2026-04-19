@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withBotId } from 'botid/next/config'
 
 const nextConfig: NextConfig = {
   experimental: {
@@ -30,4 +31,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// withBotId wires the BotID challenge into Vercel's edge so sign-in/sign-up
+// requests carry a verifiable bot-score header. Server Actions gate on
+// checkBotId() before touching Supabase (see src/app/(viewer)/auth/actions.ts).
+export default withBotId(nextConfig);

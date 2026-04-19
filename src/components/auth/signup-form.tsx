@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { mapAuthError } from '@/lib/auth-errors'
+import { signUpAction } from '@/app/(viewer)/auth/actions'
 
 const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -47,25 +48,19 @@ export function SignupForm() {
 
   async function onSubmit(data: SignupFormData) {
     setServerError(null)
-    const supabase = createClient()
 
-    const { data: authData, error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-    })
+    // BotID-gated Server Action. On success we still call the browser-side
+    // supabase client to sync the session cookie locally; see login-form.tsx
+    // comment for the rationale.
+    const result = await signUpAction(data.email, data.password, data.name)
 
-    if (error) {
-      setServerError(mapAuthError(error.message))
+    if (!result.ok) {
+      setServerError(mapAuthError(result.error))
       return
     }
 
-    // Create profile with display name
-    if (authData.user) {
-      await supabase.from('profiles').upsert({
-        id: authData.user.id,
-        display_name: data.name,
-      })
-    }
+    const supabase = createClient()
+    await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
 
     toast.success('Account created! Welcome to Clickit Story.')
     router.push('/browse')
