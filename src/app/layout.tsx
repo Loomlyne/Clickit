@@ -12,6 +12,7 @@ import {
 
 import '@/styles/globals.css'
 import '@/styles/editorial.css'
+import '@/styles/editorial-admin.css'
 import { Toaster } from 'sonner'
 import { getAppConfig } from '@/lib/config'
 import { DESIGN, isEditorial } from '@/lib/design'

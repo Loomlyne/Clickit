@@ -1,0 +1,86 @@
+/* Editorial admin overrides.
+ *
+ * The admin app uses shadcn/ui primitives (Dialog, Sheet, Input, Select,
+ * Button, Card, DropdownMenu) styled via Tailwind classes that reference
+ * the default OKLch tokens. Rather than rewrite 30+ admin components, we
+ * re-theme those primitives inside the editorial scope by reassigning the
+ * same Tailwind tokens to monochrome editorial values and adding a few
+ * typographic touches (mono labels, sharp radii, Newsreader for headings).
+ *
+ * This file is imported unconditionally; all rules are scoped under
+ * html[data-design="editorial"] so default builds are unaffected.
+ */
+
+html[data-design="editorial"] {
+  /* Re-map the shadcn/Tailwind surface tokens the admin uses to the
+     editorial palette. This means every `bg-card`, `text-foreground`,
+     `border-border`, `bg-primary`, etc. inside admin pages gets the
+     monochrome treatment without touching a single admin component. */
+  --background: var(--bg-0);
+  --foreground: var(--text);
+  --card: var(--bg-1);
+  --card-foreground: var(--text);
+  --popover: var(--bg-1);
+  --popover-foreground: var(--text);
+  --primary: var(--accent);
+  --primary-foreground: var(--accent-fg);
+  --secondary: var(--bg-3);
+  --secondary-foreground: var(--text);
+  --muted: var(--bg-2);
+  --muted-foreground: var(--text-dim);
+  --accent: var(--accent);
+  --accent-foreground: var(--accent-fg);
+  --destructive: #ff6b5b;
+  --destructive-foreground: #0a0a0a;
+  --border: var(--line);
+  --input: var(--line-2);
+  --ring: var(--accent);
+  --radius: 4px;
+}
+
+/* Admin shell — headings adopt the editorial display serif for personality. */
+html[data-design="editorial"] [data-admin="true"] h1,
+html[data-design="editorial"] main h1,
+html[data-design="editorial"] main h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* Eyebrow / label class reused in admin via the generic .mono utility. */
+html[data-design="editorial"] .text-\[11px\] {
+  font-family: var(--font-mono) !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+}
+
+/* Soften the glassmorphic borders inside admin card containers — the
+   rounded-[28px] / rounded-[24px] Tailwind shorthand still applies, but
+   the contrast against the warm-black reads too soft by default. */
+html[data-design="editorial"] [class*="rounded-[28px]"],
+html[data-design="editorial"] [class*="rounded-[24px]"] {
+  border-radius: 8px !important;
+  border-color: var(--line-2) !important;
+}
+
+/* Buttons — shadcn Button's primary variant uses bg-primary (now accent) and
+   should feel like the editorial btn-primary. Tweak the corners and weight. */
+html[data-design="editorial"] button[class*="bg-primary"],
+html[data-design="editorial"] a[class*="bg-primary"] {
+  border-radius: 4px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.005em !important;
+}
+
+/* Inputs — flatter, thinner. */
+html[data-design="editorial"] input[class*="border"],
+html[data-design="editorial"] textarea[class*="border"],
+html[data-design="editorial"] select[class*="border"] {
+  border-radius: 4px !important;
+  background: var(--bg-1) !important;
+}
+
+/* Tables — row hover reads too bright against the warm-black. */
+html[data-design="editorial"] table tr:hover {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
