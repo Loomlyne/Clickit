@@ -58,7 +58,13 @@ export async function logAudit(args: AuditArgs): Promise<void> {
       action_type: args.action,
       entity_type: args.entity,
       entity_id: args.entityId ?? null,
-      diff: args.diff ?? null,
+      // Cast: Supabase's generated Json type is narrower (JSON primitives only).
+      // Record<string, unknown> is JSON-compatible in practice — the wider
+      // public type here is intentional so callers can pass structured shapes
+      // without fighting the type system. The DB column is jsonb, storage
+      // accepts any JSON-serializable tree.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      diff: (args.diff ?? null) as any,
     })
     if (error) {
       // Structured, grep-friendly. Include context so you can tell which

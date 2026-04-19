@@ -174,10 +174,10 @@ export const getFeaturedShows = unstable_cache(
         .eq('archived', false)
         .order('created_at', { ascending: false })
         .limit(3)
-      return (fallback ?? []).map(mapShow)
+      return (fallback ?? []).map((s) => mapShow(s))
     }
 
-    return data.map(mapShow)
+    return data.map((s) => mapShow(s))
   },
   ['featured-shows'],
   { revalidate: 900, tags: ['shows'] } // 15 min — featured list changes occasionally
@@ -193,7 +193,7 @@ export const getStreamingShows = unstable_cache(
       .eq('archived', false)
       .order('created_at', { ascending: false })
 
-    return (data ?? []).map(mapShow)
+    return (data ?? []).map((s) => mapShow(s))
   },
   ['streaming-shows'],
   { revalidate: 3600, tags: ['shows'] } // 1 hr — show status rarely changes
@@ -209,7 +209,7 @@ export const getComingSoonShows = unstable_cache(
       .eq('archived', false)
       .order('created_at', { ascending: false })
 
-    return (data ?? []).map(mapShow)
+    return (data ?? []).map((s) => mapShow(s))
   },
   ['coming-soon-shows'],
   { revalidate: 3600, tags: ['shows'] } // 1 hr
@@ -580,7 +580,7 @@ export const getAllShows = unstable_cache(
       .in('status', ['now-streaming', 'coming-soon'])
       .order('title')
 
-    return (data ?? []).map(mapShow)
+    return (data ?? []).map((s) => mapShow(s))
   },
   ['all-shows'],
   { revalidate: 3600, tags: ['shows'] } // 1 hr
@@ -602,7 +602,7 @@ export async function searchShows(query: string): Promise<ViewShow[]> {
     .textSearch('fts', query, { type: 'websearch', config: 'english' })
     .limit(20)
 
-  return (data ?? []).map(mapShow)
+  return (data ?? []).map((s) => mapShow(s))
 }
 
 export async function searchEpisodes(
@@ -644,7 +644,7 @@ export async function getWatchlistShows(userId: string): Promise<ViewShow[]> {
   return data
     .map((row: any) => row.shows)
     .filter(Boolean)
-    .map(mapShow)
+    .map((s) => mapShow(s))
 }
 
 // ---------------------------------------------------------------------------
@@ -765,7 +765,7 @@ export async function getLikedShows(userId: string): Promise<ViewShow[]> {
   return data
     .map((row: any) => row.shows)
     .filter(Boolean)
-    .map(mapShow)
+    .map((s) => mapShow(s))
 }
 
 export async function getShowLikeState(userId: string, showId: string): Promise<boolean> {

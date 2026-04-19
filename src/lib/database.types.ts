@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action_type: string
+          admin_user_id: string
+          created_at: string
+          diff: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+        }
+        Insert: {
+          action_type: string
+          admin_user_id: string
+          created_at?: string
+          diff?: Json | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+        }
+        Update: {
+          action_type?: string
+          admin_user_id?: string
+          created_at?: string
+          diff?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+        }
+        Relationships: []
+      }
       app_config: {
         Row: {
           admin_user_id: string | null
@@ -200,6 +230,39 @@ export type Database = {
           },
         ]
       }
+      likes: {
+        Row: {
+          created_at: string
+          show_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          show_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          show_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "likes_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -301,12 +364,12 @@ export type Database = {
           featured: boolean
           fts: unknown
           genre: string
-          hero_url: string | null
           hero_image_mobile_url: string | null
-          hero_video_url: string | null
-          hero_video_type: string | null
-          hero_video_mobile_url: string | null
+          hero_url: string | null
           hero_video_mobile_type: string | null
+          hero_video_mobile_url: string | null
+          hero_video_type: string | null
+          hero_video_url: string | null
           id: string
           logo_url: string | null
           poster_url: string | null
@@ -331,12 +394,12 @@ export type Database = {
           featured?: boolean
           fts?: unknown
           genre: string
-          hero_url?: string | null
           hero_image_mobile_url?: string | null
-          hero_video_url?: string | null
-          hero_video_type?: string | null
-          hero_video_mobile_url?: string | null
+          hero_url?: string | null
           hero_video_mobile_type?: string | null
+          hero_video_mobile_url?: string | null
+          hero_video_type?: string | null
+          hero_video_url?: string | null
           id?: string
           logo_url?: string | null
           poster_url?: string | null
@@ -361,12 +424,12 @@ export type Database = {
           featured?: boolean
           fts?: unknown
           genre?: string
-          hero_url?: string | null
           hero_image_mobile_url?: string | null
-          hero_video_url?: string | null
-          hero_video_type?: string | null
-          hero_video_mobile_url?: string | null
+          hero_url?: string | null
           hero_video_mobile_type?: string | null
+          hero_video_mobile_url?: string | null
+          hero_video_type?: string | null
+          hero_video_url?: string | null
           id?: string
           logo_url?: string | null
           poster_url?: string | null
@@ -464,39 +527,6 @@ export type Database = {
           },
           {
             foreignKeyName: "watch_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      likes: {
-        Row: {
-          created_at: string
-          show_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          show_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          show_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "likes_show_id_fkey"
-            columns: ["show_id"]
-            isOneToOne: false
-            referencedRelation: "shows"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "likes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
