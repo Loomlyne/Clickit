@@ -41,6 +41,9 @@ export function mapShow(db: DbShow): ViewShow {
     genre: db.genre,
     episodeCount: db.episode_count,
     seasonCount: db.season_count,
+    // DB has three statuses (draft, coming-soon, now-streaming); viewer-facing
+    // ViewShow has two. Queries should already filter drafts out upstream, but
+    // if one ever leaks through we conservatively present it as coming-soon.
     status: db.status === 'now-streaming' ? 'streaming' : 'coming-soon',
     brandColor: (db.brand_color || 'brand-blue') as ViewShow['brandColor'],
     posterUrl: db.poster_url ?? undefined,
@@ -249,6 +252,10 @@ export const getNewEpisodes = unstable_cache(
  * For each show, returns the first published episode of season 1.
  * One query instead of 2N (seasons + episodes per show).
  */
+// unstable_cache includes the function's arguments in the cache key by default.
+// Bumping the keyParts to '-v2' forces a one-time cache flush after the other
+// changes in this commit land — safer than assuming the old entries will
+// revalidate naturally within the 30-minute window.
 export const getFirstEpisodesForShows = unstable_cache(
   async (showIds: string[]): Promise<Record<string, string>> => {
     if (showIds.length === 0) return {}
@@ -270,7 +277,7 @@ export const getFirstEpisodesForShows = unstable_cache(
     }
     return result
   },
-  ['first-episodes-for-shows'],
+  ['first-episodes-for-shows-v2'],
   { revalidate: 1800, tags: ['episodes'] } // 30 min
 )
 

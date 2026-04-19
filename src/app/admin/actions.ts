@@ -256,25 +256,33 @@ export async function restoreShow(id: string): Promise<RestoreResult> {
 
       const seasonMap = new Map(seasons?.map(s => [s.id, s.season_number]) ?? [])
 
-      // Check each archived episode against existing visible episodes
+      // Batch-fetch all visible episodes for the seasons involved in one round
+      // trip. The previous implementation ran one query per archived episode,
+      // so restoring a show with 20 episodes meant 20 sequential DB calls.
+      const involvedSeasonIds = [...new Set(archivedEpisodes.map(ep => ep.season_id))]
+      const { data: visibleEpisodes } = await admin
+        .from('episodes')
+        .select('season_id, episode_number, title')
+        .in('season_id', involvedSeasonIds)
+        .eq('archived', false)
+
+      // Lookup key: "{seasonId}:{episodeNumber}" → title of the blocker
+      const blockerByKey = new Map<string, string>()
+      for (const ve of visibleEpisodes ?? []) {
+        blockerByKey.set(`${ve.season_id}:${ve.episode_number}`, ve.title)
+      }
+
       const conflicts: EpisodeConflict[] = []
       for (const ep of archivedEpisodes) {
-        const { data: existing } = await admin
-          .from('episodes')
-          .select('title')
-          .eq('season_id', ep.season_id)
-          .eq('episode_number', ep.episode_number)
-          .eq('archived', false)
-          .maybeSingle()
-
-        if (existing) {
+        const blockerTitle = blockerByKey.get(`${ep.season_id}:${ep.episode_number}`)
+        if (blockerTitle) {
           conflicts.push({
             episodeId: ep.id,
             episodeTitle: ep.title,
             episodeNumber: ep.episode_number,
             seasonId: ep.season_id,
             seasonNumber: seasonMap.get(ep.season_id) ?? 0,
-            conflictingEpisodeTitle: existing.title,
+            conflictingEpisodeTitle: blockerTitle,
           })
         }
       }
