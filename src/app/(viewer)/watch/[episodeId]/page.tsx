@@ -13,9 +13,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { episodeId } = await params
   const data = await getEpisodeById(episodeId)
   if (!data) return { title: 'Episode Not Found | Clickit Story' }
+
+  const canonical = `/watch/${episodeId}`
+  // YouTube thumbnails are always available for published episodes; fall back
+  // to the show's hero/poster image if the episode has no YouTube ID yet.
+  const ogImage = data.episode.youtube_video_id
+    ? `https://img.youtube.com/vi/${data.episode.youtube_video_id}/maxresdefault.jpg`
+    : data.show.hero_url ?? data.show.poster_url ?? undefined
+
   return {
     title: `${data.episode.title} | ${data.show.title} | Clickit Story`,
     description: data.episode.description,
+    alternates: { canonical },
+    openGraph: {
+      title: `${data.episode.title} — ${data.show.title}`,
+      description: data.episode.description,
+      url: canonical,
+      type: 'video.episode',
+      images: ogImage ? [{ url: ogImage }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${data.episode.title} — ${data.show.title}`,
+      description: data.episode.description,
+      images: ogImage ? [ogImage] : undefined,
+    },
   }
 }
 

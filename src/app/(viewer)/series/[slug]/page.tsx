@@ -29,9 +29,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const show = await getShowBySlug(slug)
   if (!show) return { title: 'Show Not Found | Clickit Story' }
+
+  const canonical = `/series/${show.slug}`
+  // Prefer the show's own hero image for the OG card (falls back to poster,
+  // then the site-wide default via metadataBase). A real show-specific image
+  // makes link previews on WhatsApp / Slack / Twitter feel like the show.
+  const ogImage = show.hero_url ?? show.poster_url ?? undefined
+
   return {
     title: `${show.title} | Clickit Story`,
     description: show.description,
+    alternates: { canonical },
+    openGraph: {
+      title: show.title,
+      description: show.description,
+      url: canonical,
+      type: 'video.tv_show',
+      images: ogImage ? [{ url: ogImage }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: show.title,
+      description: show.description,
+      images: ogImage ? [ogImage] : undefined,
+    },
   }
 }
 

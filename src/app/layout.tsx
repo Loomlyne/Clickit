@@ -7,6 +7,7 @@ import { Plus_Jakarta_Sans, Cairo } from 'next/font/google'
 import '@/styles/globals.css'
 import { Toaster } from 'sonner'
 import { getAppConfig } from '@/lib/config'
+import { siteUrl } from '@/lib/site-url'
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -35,6 +36,10 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   const config = await getAppConfig()
   return {
+    // metadataBase lets Next resolve relative URLs in OG/twitter/icons. Without
+    // it, Next logs warnings and some crawlers fall back to localhost for image
+    // previews. See src/lib/site-url.ts for the resolution order.
+    metadataBase: new URL(siteUrl()),
     title: config.siteTitle,
     description: config.siteDescription ?? 'Original shows from the UAE - streaming now',
     icons: config.faviconUrl
@@ -45,8 +50,19 @@ export async function generateMetadata(): Promise<Metadata> {
           title: config.siteTitle,
           description: config.siteDescription ?? undefined,
           images: [{ url: config.ogImageUrl }],
+          type: 'website',
         }
-      : undefined,
+      : {
+          title: config.siteTitle,
+          description: config.siteDescription ?? undefined,
+          type: 'website',
+        },
+    twitter: {
+      card: 'summary_large_image',
+      title: config.siteTitle,
+      description: config.siteDescription ?? undefined,
+      images: config.ogImageUrl ? [config.ogImageUrl] : undefined,
+    },
   }
 }
 
