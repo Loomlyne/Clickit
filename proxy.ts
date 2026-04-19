@@ -15,7 +15,7 @@ const COMING_SOON_ALLOWLIST = [
   '/support',
 ]
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { response, checkIsAdmin } = await updateSession(request)
 
   // Coming-soon hard gate — redirect every public route to /coming-soon when
