@@ -1,7 +1,9 @@
-'use client'
-
+// Server component — hover/tap animations moved to CSS (see className below).
+// The old motion.div version pulled motion/react into the bundle for every show
+// card on the homepage. This one renders on the server and ships zero JS for
+// the card itself. Interaction still feels the same — translate + scale with a
+// 300ms cubic-bezier easing.
 import Link from 'next/link'
-import { motion } from 'motion/react'
 import { Play } from 'lucide-react'
 
 import { ShowArt } from '@/components/primitives/show-art'
@@ -18,12 +20,8 @@ export function ShowCard({ show }: ShowCardProps) {
 
   return (
     <Link href={`/series/${show.slug}`} className="group block cursor-pointer">
-      <motion.div
-        whileHover={{ y: -4 }}
-        whileTap={{ scale: 0.97, y: 0 }}
-        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.24)]"
-        style={{ willChange: 'transform' }}
+      <div
+        className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.24)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:-translate-y-1 group-active:translate-y-0 group-active:scale-[0.97]"
       >
         <ShowArt brandColor={brandColorHex} title={show.title} aspectRatio="16/9" className="rounded-none" imageUrl={show.heroImageUrl ?? show.posterUrl}>
           <div className="absolute inset-0 bg-gradient-to-t from-[#06070a] via-[#06070a]/32 to-transparent" />
@@ -52,7 +50,7 @@ export function ShowCard({ show }: ShowCardProps) {
           className="h-[2px] w-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
           style={{ background: brandColorHex, boxShadow: `0 0 20px 2px ${brandColorHex}50` }}
         />
-      </motion.div>
+      </div>
     </Link>
   )
 }

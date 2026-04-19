@@ -52,6 +52,22 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Top-level try/catch so an unexpected throw (admin-client init, storage
+  // API outage, network blip) still surfaces in logs + returns a 500 with a
+  // readable body. Previously a thrown error bubbled silently to a generic
+  // Vercel 500 page and we had no record in the cron log.
+  try {
+    return await runCleanup()
+  } catch (err) {
+    console.error('[cron/cleanup-media] unhandled failure', err)
+    return NextResponse.json(
+      { ok: false, error: err instanceof Error ? err.message : 'Unknown failure' },
+      { status: 500 },
+    )
+  }
+}
+
+async function runCleanup() {
   const admin = createAdminClient()
   const startedAt = Date.now()
   const cutoff = new Date(startedAt - MIN_AGE_MS)

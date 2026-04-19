@@ -445,19 +445,26 @@ export async function getContinueWatchingEpisodes(
   userId: string
 ): Promise<ContinueWatchingItem[]> {
   const supabase = await createClient()
+  // Filter archived episodes + shows at the DB level instead of in memory. The
+  // !inner joins + .eq('joined.column', ...) push the predicate into the SQL
+  // plan, so Postgres skips rows for archived shows/episodes before the
+  // network boundary. Old code filtered client-side — it still worked, but
+  // wasted bandwidth and CPU on progress rows we were about to drop anyway.
   const { data } = await supabase
     .from('watch_progress')
-    .select('progress_seconds, duration_seconds, episode_id, episodes!inner(id, title, episode_number, status, youtube_video_id, show_id, season_id, seasons!inner(season_number), shows!inner(id, title, slug, brand_color, archived))')
+    .select('progress_seconds, duration_seconds, episode_id, episodes!inner(id, title, episode_number, status, archived, youtube_video_id, show_id, season_id, seasons!inner(season_number), shows!inner(id, title, slug, brand_color, archived))')
     .eq('user_id', userId)
     .eq('completed', false)
     .gt('progress_seconds', 0)
+    .eq('episodes.archived', false)
+    .eq('episodes.status', 'published')
+    .eq('episodes.shows.archived', false)
     .order('updated_at', { ascending: false })
     .limit(20)
 
   if (!data) return []
 
   return data
-    .filter((row: any) => !row.episodes.shows.archived && row.episodes.status === 'published')
     .slice(0, 10)
     .map((row: any) => {
       const ep = row.episodes
@@ -655,17 +662,20 @@ export type RecentlyWatchedItem = {
 
 export async function getRecentlyWatched(userId: string): Promise<RecentlyWatchedItem[]> {
   const supabase = await createClient()
+  // Same archived-at-the-DB pattern as getContinueWatchingEpisodes above.
   const { data } = await supabase
     .from('watch_progress')
-    .select('progress_seconds, duration_seconds, completed, updated_at, episode_id, episodes!inner(id, title, episode_number, status, season_id, show_id, seasons!inner(season_number), shows!inner(title, slug, brand_color, archived))')
+    .select('progress_seconds, duration_seconds, completed, updated_at, episode_id, episodes!inner(id, title, episode_number, status, archived, season_id, show_id, seasons!inner(season_number), shows!inner(title, slug, brand_color, archived))')
     .eq('user_id', userId)
+    .eq('episodes.archived', false)
+    .eq('episodes.status', 'published')
+    .eq('episodes.shows.archived', false)
     .order('updated_at', { ascending: false })
     .limit(20)
 
   if (!data) return []
 
   return data
-    .filter((row: any) => !row.episodes.shows.archived && row.episodes.status === 'published')
     .slice(0, 10)
     .map((row: any) => {
       const ep = row.episodes

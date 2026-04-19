@@ -38,9 +38,12 @@ export function HeroMediaPicker({
 
   const label = variant === 'desktop' ? 'Desktop Hero' : 'Mobile Hero'
   const imageHint = variant === 'desktop' ? '16:9 landscape · 1920×1080' : '9:16 portrait · 1080×1920'
+  // Aim users at ≤8 MB so mobile LCP stays fast. Max is 50MB for edge cases
+  // (longer cinematics) but anything over ~8MB measurably hurts first paint on
+  // 4G. Phrase the guidance as a target, not a hard rule.
   const videoHint = variant === 'desktop'
-    ? 'Landscape · 1920×1080 recommended · Max 50MB'
-    : 'Portrait · 1080×1920 recommended · Max 50MB'
+    ? 'Landscape · 1920×1080 · Target ≤8 MB for fast mobile playback · Max 50MB'
+    : 'Portrait · 1080×1920 · Target ≤8 MB for fast mobile playback · Max 50MB'
   const imageSlot = variant === 'desktop' ? 'hero' : 'hero-mobile'
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
