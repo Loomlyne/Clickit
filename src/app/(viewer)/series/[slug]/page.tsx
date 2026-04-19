@@ -20,6 +20,7 @@ import {
   mapEpisode,
   type ViewEpisode,
 } from '@/lib/queries'
+import { getLocale } from '@/lib/locale'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -27,30 +28,30 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const show = await getShowBySlug(slug)
+  const [show, locale] = await Promise.all([getShowBySlug(slug), getLocale()])
   if (!show) return { title: 'Show Not Found | Clickit Story' }
 
+  // Localized title/description on the OG card so Arabic-cookie users sharing a
+  // link still see Arabic copy in the WhatsApp/Slack preview.
+  const view = mapShow(show, locale)
   const canonical = `/series/${show.slug}`
-  // Prefer the show's own hero image for the OG card (falls back to poster,
-  // then the site-wide default via metadataBase). A real show-specific image
-  // makes link previews on WhatsApp / Slack / Twitter feel like the show.
   const ogImage = show.hero_url ?? show.poster_url ?? undefined
 
   return {
-    title: `${show.title} | Clickit Story`,
-    description: show.description,
+    title: `${view.title} | Clickit Story`,
+    description: view.description,
     alternates: { canonical },
     openGraph: {
-      title: show.title,
-      description: show.description,
+      title: view.title,
+      description: view.description,
       url: canonical,
       type: 'video.tv_show',
       images: ogImage ? [{ url: ogImage }] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
-      title: show.title,
-      description: show.description,
+      title: view.title,
+      description: view.description,
       images: ogImage ? [ogImage] : undefined,
     },
   }
@@ -58,10 +59,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SeriesDetailPage({ params }: Props) {
   const { slug } = await params
-  const dbShow = await getShowBySlug(slug)
+  const [dbShow, locale] = await Promise.all([getShowBySlug(slug), getLocale()])
   if (!dbShow) notFound()
 
-  const show = mapShow(dbShow)
+  const show = mapShow(dbShow, locale)
 
   // Fetch seasons + all episodes in parallel (2 queries, not N+1)
   const [seasons, allEpisodes] = await Promise.all([
@@ -69,14 +70,14 @@ export default async function SeriesDetailPage({ params }: Props) {
     getEpisodesByShowId(dbShow.id),
   ])
 
-  const viewSeasons = seasons.map(mapSeason)
+  const viewSeasons = seasons.map((s) => mapSeason(s, locale))
 
   // Group episodes by season (in-memory, no extra queries)
   const viewEpisodesBySeason: Record<string, ViewEpisode[]> = {}
   for (const season of seasons) {
     viewEpisodesBySeason[season.id] = allEpisodes
       .filter(e => e.season_id === season.id)
-      .map(mapEpisode)
+      .map((e) => mapEpisode(e, locale))
   }
 
   // First episode for hero CTA

@@ -8,6 +8,7 @@ import '@/styles/globals.css'
 import { Toaster } from 'sonner'
 import { getAppConfig } from '@/lib/config'
 import { siteUrl } from '@/lib/site-url'
+import { dirFor, getLocale } from '@/lib/locale'
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -71,10 +72,17 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { googleAnalyticsId, metaPixelId } = await getAppConfig()
+  const [{ googleAnalyticsId, metaPixelId }, locale] = await Promise.all([
+    getAppConfig(),
+    getLocale(),
+  ])
+  // lang + dir flip together. dir='rtl' on the root html lets every Tailwind
+  // logical-property class (ms-, me-, ps-, pe-, etc.) and every text-start /
+  // text-end class flip automatically — no per-component conditional needed.
+  const dir = dirFor(locale)
 
   return (
-    <html lang="en" className={`dark ${jakarta.variable} ${cairo.variable}`}>
+    <html lang={locale} dir={dir} className={`dark ${jakarta.variable} ${cairo.variable}`}>
       <body className="bg-background text-foreground font-sans antialiased selection:bg-primary/70 selection:text-primary-foreground">
         <a
           href="#main"

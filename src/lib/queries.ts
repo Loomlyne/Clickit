@@ -3,6 +3,7 @@ import { unstable_cache } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createPublicClient } from '@/lib/supabase/public'
 import type { Database } from '@/lib/database.types'
+import { DEFAULT_LOCALE, pickLocalized, type Locale } from '@/lib/locale'
 
 export type DbShow = Database['public']['Tables']['shows']['Row']
 export type DbSeason = Database['public']['Tables']['seasons']['Row']
@@ -31,13 +32,17 @@ export type ViewShow = {
   platformRating?: number
 }
 
-export function mapShow(db: DbShow): ViewShow {
+export function mapShow(db: DbShow, locale: Locale = DEFAULT_LOCALE): ViewShow {
   return {
     id: db.id,
-    title: db.title,
+    // Locale-aware: when the user's NEXT_LOCALE cookie is 'ar' AND the row has
+    // a non-empty title_ar/description_ar/tagline_ar, return the Arabic value.
+    // English is always the safe fallback. Genre stays English-only — it's an
+    // internal taxonomy, not user-facing copy.
+    title: pickLocalized(locale, db.title, db.title_ar),
     slug: db.slug,
-    tagline: db.tagline ?? '',
-    description: db.description,
+    tagline: pickLocalized(locale, db.tagline ?? '', db.tagline_ar),
+    description: pickLocalized(locale, db.description, db.description_ar),
     genre: db.genre,
     episodeCount: db.episode_count,
     seasonCount: db.season_count,
@@ -81,14 +86,14 @@ export type ViewSeason = {
   episodeCount: number
 }
 
-export function mapEpisode(db: DbEpisode): ViewEpisode {
+export function mapEpisode(db: DbEpisode, locale: Locale = DEFAULT_LOCALE): ViewEpisode {
   return {
     id: db.id,
     showId: db.show_id,
     seasonId: db.season_id,
     episodeNumber: db.episode_number,
-    title: db.title,
-    description: db.description,
+    title: pickLocalized(locale, db.title, db.title_ar),
+    description: pickLocalized(locale, db.description, db.description_ar),
     duration: db.duration,
     status: db.status as ViewEpisode['status'],
     youtubeId: db.youtube_video_id,
@@ -111,12 +116,12 @@ export type ContinueWatchingItem = {
   progressPercent: number
 }
 
-export function mapSeason(db: DbSeason): ViewSeason {
+export function mapSeason(db: DbSeason, locale: Locale = DEFAULT_LOCALE): ViewSeason {
   return {
     id: db.id,
     showId: db.show_id,
     seasonNumber: db.season_number,
-    title: db.title,
+    title: pickLocalized(locale, db.title, db.title_ar),
     episodeCount: db.episode_count,
   }
 }
