@@ -42,6 +42,15 @@ export async function middleware(request: NextRequest) {
   return response
 }
 
+// Node.js runtime — required because updateSession/getAppConfig pull in the
+// Supabase server client, which uses next/headers (cookies) + a Node-only
+// postgres client. Fluid Compute runs middleware on Node.js natively and
+// fixes the "referencing unsupported modules" error that the Edge runtime
+// throws for @/lib/supabase/middleware + @/lib/config imports. Vercel
+// projects created after Fluid Compute GA need this opt-in explicit on
+// middleware; clickit-cit had it already because it predates the change.
+export const runtime = 'nodejs'
+
 export const config = {
   matcher: [
     /*
