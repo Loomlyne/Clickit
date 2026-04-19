@@ -2,11 +2,19 @@ import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
-import { Plus_Jakarta_Sans, Cairo } from 'next/font/google'
+import {
+  Plus_Jakarta_Sans,
+  Cairo,
+  Space_Grotesk,
+  Newsreader,
+  JetBrains_Mono,
+} from 'next/font/google'
 
 import '@/styles/globals.css'
+import '@/styles/editorial.css'
 import { Toaster } from 'sonner'
 import { getAppConfig } from '@/lib/config'
+import { DESIGN, isEditorial } from '@/lib/design'
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -19,6 +27,31 @@ const cairo = Cairo({
   subsets: ['arabic', 'latin'],
   variable: '--font-cairo',
   weight: ['400', '500', '600', '700', '900'],
+  display: 'swap',
+})
+
+// Editorial design fonts — always declared (next/font requires top-level
+// calls), but only attached to <html> when isEditorial. Unreferenced variables
+// don't trigger preload requests.
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-editorial-ui',
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+})
+
+const newsreader = Newsreader({
+  subsets: ['latin'],
+  variable: '--font-editorial-display',
+  weight: ['300', '400', '500'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-editorial-mono',
+  weight: ['400', '500'],
   display: 'swap',
 })
 
@@ -58,8 +91,22 @@ export default async function RootLayout({
   const { googleAnalyticsId, metaPixelId } = await getAppConfig()
 
   return (
-    <html lang="en" className={`dark ${jakarta.variable} ${cairo.variable}`}>
-      <body className="bg-background text-foreground font-sans antialiased selection:bg-primary/70 selection:text-primary-foreground">
+    <html
+      lang="en"
+      data-design={DESIGN}
+      className={
+        isEditorial
+          ? `dark ${jakarta.variable} ${cairo.variable} ${spaceGrotesk.variable} ${newsreader.variable} ${jetbrainsMono.variable}`
+          : `dark ${jakarta.variable} ${cairo.variable}`
+      }
+    >
+      <body
+        className={
+          isEditorial
+            ? 'antialiased'
+            : 'bg-background text-foreground font-sans antialiased selection:bg-primary/70 selection:text-primary-foreground'
+        }
+      >
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[60] focus:rounded-full focus:bg-card focus:px-4 focus:py-2 focus:text-foreground focus:ring-2 focus:ring-ring"
