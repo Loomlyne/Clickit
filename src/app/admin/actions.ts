@@ -39,9 +39,12 @@ async function assertAdmin() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
+  // Always scope to id=1. Without .eq('id', 1) a hypothetical second row in
+  // app_config would make .single() throw, locking every admin action.
   const { data: config } = await supabase
     .from('app_config')
     .select('admin_user_id')
+    .eq('id', 1)
     .single()
 
   if (config?.admin_user_id !== user.id) throw new Error('Unauthorized')

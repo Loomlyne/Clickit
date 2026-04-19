@@ -16,7 +16,7 @@ const COMING_SOON_ALLOWLIST = [
 ]
 
 export async function middleware(request: NextRequest) {
-  const { response, isAdmin } = await updateSession(request)
+  const { response, checkIsAdmin } = await updateSession(request)
 
   // Coming-soon hard gate — redirect every public route to /coming-soon when
   // the admin flag is on, except for allowlisted prefixes. Admin stays in
@@ -26,16 +26,22 @@ export async function middleware(request: NextRequest) {
     (p) => pathname === p || pathname.startsWith(`${p}/`)
   )
 
-  if (!isAllowlisted && !isAdmin) {
+  if (!isAllowlisted) {
     // getAppConfig() is cached (15min) — this doesn't hit the DB on every
     // request. The cache tag 'site-config' is bumped whenever the admin saves
     // feature flags, so the toggle takes effect within one revalidation cycle.
     const { flags } = await getAppConfig()
     if (flags.comingSoonMode) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/coming-soon'
-      url.search = ''
-      return NextResponse.redirect(url)
+      // Only consult app_config.admin_user_id when the coming-soon gate is
+      // ACTUALLY active. 99% of the time this flag is off and viewer requests
+      // skip the query entirely — saving ~100ms TTFB per page load.
+      const isAdmin = await checkIsAdmin()
+      if (!isAdmin) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/coming-soon'
+        url.search = ''
+        return NextResponse.redirect(url)
+      }
     }
   }
 

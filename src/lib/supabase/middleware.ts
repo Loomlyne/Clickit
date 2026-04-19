@@ -1,10 +1,19 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export type SessionResult = {
   response: NextResponse
   userId: string | null
-  isAdmin: boolean
+  /**
+   * Lazy admin check. Runs the app_config admin_user_id query only when called.
+   *
+   * Previously the middleware ran this query on EVERY request, including
+   * unauthenticated viewer page loads — adding ~100ms TTFB per page to a
+   * feature that only matters for the coming-soon bypass and /admin routes.
+   * Now callers invoke checkIsAdmin() only when the isAdmin answer is
+   * actually load-bearing (see src/middleware.ts coming-soon gate).
+   */
+  checkIsAdmin: () => Promise<boolean>
 }
 
 export async function updateSession(request: NextRequest): Promise<SessionResult> {
@@ -15,7 +24,11 @@ export async function updateSession(request: NextRequest): Promise<SessionResult
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!supabaseUrl || !supabaseAnonKey) {
-    return { response: supabaseResponse, userId: null, isAdmin: false }
+    return {
+      response: supabaseResponse,
+      userId: null,
+      checkIsAdmin: async () => false,
+    }
   }
 
   const supabase = createServerClient(
@@ -26,7 +39,7 @@ export async function updateSession(request: NextRequest): Promise<SessionResult
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options?: CookieOptions }[]) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
@@ -44,15 +57,15 @@ export async function updateSession(request: NextRequest): Promise<SessionResult
   // getSession() does NOT validate the JWT and can return stale/tampered data.
   const { data: { user } } = await supabase.auth.getUser()
 
-  let isAdmin = false
-  if (user) {
+  const checkIsAdmin = async (): Promise<boolean> => {
+    if (!user) return false
     const { data: config } = await supabase
       .from('app_config')
       .select('admin_user_id')
       .eq('id', 1)
       .single()
-    isAdmin = config?.admin_user_id === user.id
+    return config?.admin_user_id === user.id
   }
 
-  return { response: supabaseResponse, userId: user?.id ?? null, isAdmin }
+  return { response: supabaseResponse, userId: user?.id ?? null, checkIsAdmin }
 }
