@@ -28,7 +28,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
 ### 🚧 v1.1 Full Bilingual UI (AR/EN) — Phases 12-17
 
-- [ ] **Phase 12: i18n Infrastructure** — Wire next-intl primitives (routing, request, navigation, messages, provider); zero page edits
+- [x] **Phase 12: i18n Infrastructure** — Wire next-intl primitives (routing, request, navigation, messages, provider); zero page edits — completed 2026-04-21 (commit af2ab35)
 - [ ] **Phase 13: Route Restructure + Auth Safety** — Move every page under `[locale]/` and fix 6 latent auth/routing breaks atomically in one PR
 - [ ] **Phase 14: Global Layout + RTL CSS** — `[locale]/layout.tsx`, Cairo font, letter-spacing fix, logical-property migration across ~114 components, directional icon mirroring
 - [ ] **Phase 15: Viewer Pages Translation** — Every string on 13 viewer pages routed through `useTranslations()` / `getTranslations()`
@@ -48,7 +48,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   4. Existing `dirFor()` / `pickLocalized()` in `src/lib/locale.ts` continue to work unchanged — no regression in bilingual DB field rendering on show detail pages
   5. `npm run build` succeeds; no viewer or admin page has been moved yet, so the live site is byte-identical
 **Plans**: 1 plan
-  - [ ] 12-01-PLAN.md — Create next-intl primitives (routing, request, navigation) + bilingual message dictionary skeletons (en.json, ar.json) with 14 namespaces; zero page edits
+  - [x] 12-01-PLAN.md — Create next-intl primitives (routing, request, navigation) + bilingual message dictionary skeletons (en.json, ar.json) with 14 namespaces; zero page edits — completed 2026-04-21 (commit af2ab35)
 
 ### Phase 13: Route Restructure + Auth Safety
 **Goal**: All pages live under `src/app/[locale]/...` and the 6 auth/routing pitfalls are fixed atomically so sessions survive locale redirects
@@ -144,7 +144,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 | 8. Data Integration, Auth & Search | v1.0 | 3/3 | Complete | 2026-04-04 |
 | 9. Personalization & Watch Features | v1.0 | 3/3 | Complete | 2026-04-04 |
 | 10. Empty State Polish | v1.0 | 1/1 | Complete | 2026-04-14 |
-| 12. i18n Infrastructure | v1.1 | 0/1 | Planned | - |
+| 12. i18n Infrastructure | v1.1 | 1/1 | Complete | 2026-04-21 |
 | 13. Route Restructure + Auth Safety | v1.1 | 0/0 | Not started | - |
 | 14. Global Layout + RTL CSS | v1.1 | 0/0 | Not started | - |
 | 15. Viewer Pages Translation | v1.1 | 0/0 | Not started | - |

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Full Bilingual UI (AR/EN)
-status: roadmap-ready
-stopped_at: Roadmap drafted — next phase = 12 (i18n Infrastructure)
-last_updated: "2026-04-20T23:00:00.000Z"
-last_activity: 2026-04-20
+status: in-progress
+stopped_at: Completed 12-01-PLAN.md — next phase = 13 (Route Restructure + Auth Safety)
+last_updated: "2026-04-21T00:05:00.000Z"
+last_activity: 2026-04-21
 progress:
   total_phases: 6
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
+  percent: 17
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-20)
 
 ## Current Position
 
-Phase: Not started — Phase 12 is next (`/gsd:plan-phase 12`)
-Plan: —
-Status: Roadmap ready; requirements fully mapped; awaiting plan-phase kickoff
-Last activity: 2026-04-20 — Roadmap drafted (Phases 12-17)
+Phase: 12 COMPLETE — next phase = 13 (Route Restructure + Auth Safety)
+Plan: 12-01-PLAN.md shipped (commit af2ab35) — 5 files / 112 LOC, zero page edits
+Status: Phase 12 success criteria all green; tsc clean; build green; scope boundary held
+Last activity: 2026-04-21 — Phase 12 atomic execution; ready for `/gsd:plan-phase 13`
 
 ## Roadmap Summary (v1.1)
 
@@ -67,6 +67,19 @@ Last activity: 2026-04-20 — Roadmap drafted (Phases 12-17)
 
 ## Session Continuity
 
-Last session: 2026-04-20
-Stopped at: Roadmap drafted; awaiting `/gsd:plan-phase 12`
-Resume file: `.planning/ROADMAP.md` — Phase 12 details
+Last session: 2026-04-21
+Stopped at: Completed 12-01-PLAN.md (commit af2ab35); awaiting `/gsd:plan-phase 13`
+Resume file: `.planning/phases/12-i18n-infrastructure/12-01-SUMMARY.md` — Phase 12 → Phase 13 handoff notes
+
+## Decisions Made
+
+- **2026-04-21 (Phase 12):** `localePrefix: 'always'` — both /en/ and /ar/ URL segments required; no bare-root exception for the default locale.
+- **2026-04-21 (Phase 12):** Arabic dictionary values remain empty objects (not English placeholders) so missing keys surface as next-intl MISSING_MESSAGE warnings — prevents silent English fallback on /ar/ pages during later translation phases.
+- **2026-04-21 (Phase 12):** No `createNextIntlPlugin()` added to `next.config.ts`; next-intl v4 auto-detects `src/i18n/request.ts` — preserves zero-config-change invariant.
+- **2026-04-21 (Phase 12):** `src/lib/locale.ts` kept byte-identical (dirFor / pickLocalized / getLocale) — remains canonical for bilingual DB field rendering in existing viewer code.
+
+## Performance Metrics
+
+| Phase | Plan | Duration | Tasks | Files | Commit |
+|-------|------|----------|-------|-------|--------|
+| 12 | 01 | auto | 6 | 5 | af2ab35 |

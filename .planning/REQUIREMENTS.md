@@ -11,13 +11,13 @@
 
 Goal: wire `next-intl@4.9.1` (already installed) as the primary i18n system.
 
-- [ ] **I18N-01**: `src/i18n/routing.ts` defines `defineRouting({ locales: ['en','ar'], defaultLocale: 'en', localePrefix: 'always' })`
-- [ ] **I18N-02**: `src/i18n/request.ts` implements `getRequestConfig` that awaits `requestLocale`, validates it, and returns the matching message dictionary
-- [ ] **I18N-03**: `src/i18n/navigation.ts` re-exports `Link`, `useRouter`, `redirect`, `usePathname` from `createNavigation(routing)` so locale prefix is preserved
-- [ ] **I18N-04**: `src/messages/en.json` + `src/messages/ar.json` dictionary files created with namespaces (`nav`, `auth`, `home`, `show`, `player`, `search`, `profile`, `myList`, `comingSoon`, `support`, `faq`, `admin`, `errors`, `common`)
-- [ ] **I18N-05**: `NextIntlClientProvider` wired into `[locale]/layout.tsx` with `setRequestLocale(locale)` called at the top of every page + layout for static rendering support
-- [ ] **I18N-06**: `generateStaticParams` exports `[{locale: 'en'}, {locale: 'ar'}]` on `[locale]/layout.tsx`
-- [ ] **I18N-07**: Existing `dirFor()` and `pickLocalized()` helpers in `src/lib/locale.ts` continue to work unchanged (domain-specific, not replaced)
+- [x] **I18N-01**: `src/i18n/routing.ts` defines `defineRouting({ locales: ['en','ar'], defaultLocale: 'en', localePrefix: 'always' })`
+- [x] **I18N-02**: `src/i18n/request.ts` implements `getRequestConfig` that awaits `requestLocale`, validates it, and returns the matching message dictionary
+- [x] **I18N-03**: `src/i18n/navigation.ts` re-exports `Link`, `useRouter`, `redirect`, `usePathname` from `createNavigation(routing)` so locale prefix is preserved
+- [x] **I18N-04**: `src/messages/en.json` + `src/messages/ar.json` dictionary files created with namespaces (`nav`, `auth`, `home`, `show`, `player`, `search`, `profile`, `myList`, `comingSoon`, `support`, `faq`, `admin`, `errors`, `common`)
+- [ ] **I18N-05**: `NextIntlClientProvider` wired into `[locale]/layout.tsx` with `setRequestLocale(locale)` called at the top of every page + layout for static rendering support *(Phase 12 delivered prerequisite: getRequestConfig ready; final wiring = Phase 13)*
+- [ ] **I18N-06**: `generateStaticParams` exports `[{locale: 'en'}, {locale: 'ar'}]` on `[locale]/layout.tsx` *(Phase 12 delivered prerequisite: staticParams helper exported from routing.ts; final wiring = Phase 13)*
+- [x] **I18N-07**: Existing `dirFor()` and `pickLocalized()` helpers in `src/lib/locale.ts` continue to work unchanged (domain-specific, not replaced)
 
 ### Route Restructure + Auth Safety (`RTE-*`)
 
@@ -142,13 +142,13 @@ Mapped by roadmapper 2026-04-20. Coverage: **62/62** v1.1 requirements — no or
 
 | REQ-ID    | Phase | Status      |
 |-----------|-------|-------------|
-| I18N-01   | 12    | Not started |
-| I18N-02   | 12    | Not started |
-| I18N-03   | 12    | Not started |
-| I18N-04   | 12    | Not started |
-| I18N-05   | 12    | Not started |
-| I18N-06   | 12    | Not started |
-| I18N-07   | 12    | Not started |
+| I18N-01   | 12    | Complete (2026-04-21, af2ab35) |
+| I18N-02   | 12    | Complete (2026-04-21, af2ab35) |
+| I18N-03   | 12    | Complete (2026-04-21, af2ab35) |
+| I18N-04   | 12    | Complete (2026-04-21, af2ab35) |
+| I18N-05   | 12→13 | Partial — prerequisite delivered 2026-04-21; final wiring in Phase 13 |
+| I18N-06   | 12→13 | Partial — staticParams helper delivered 2026-04-21; final wiring in Phase 13 |
+| I18N-07   | 12    | Complete (2026-04-21, af2ab35) |
 | RTE-01    | 13    | Not started |
 | RTE-02    | 13    | Not started |
 | RTE-03    | 13    | Not started |
@@ -207,4 +207,4 @@ Mapped by roadmapper 2026-04-20. Coverage: **62/62** v1.1 requirements — no or
 
 ---
 
-*Last updated: 2026-04-20 — milestone v1.1 requirements mapped to phases 12-17*
+*Last updated: 2026-04-21 — Phase 12 shipped (I18N-01/02/03/04/07 complete; I18N-05/06 partial → Phase 13)*
