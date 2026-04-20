@@ -24,10 +24,10 @@ export function HeroSlide({ show, isActive, firstEpisodeId, isMobile, reducedMot
   return (
     <motion.div
       className="absolute inset-0"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: isActive ? 1 : 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.4, ease: 'easeInOut' }}
+      initial={{ opacity: 0, x: '4%' }}
+      animate={{ opacity: isActive ? 1 : 0, x: 0 }}
+      exit={{ opacity: 0, x: '-4%' }}
+      transition={{ duration: 0.75, ease: CINEMA_EASE }}
     >
       {/* Cinematic backdrop with brand color bloom */}
       <CinematicBackdrop
