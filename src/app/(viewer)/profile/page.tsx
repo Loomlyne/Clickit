@@ -2,10 +2,12 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { getLocale } from '@/lib/locale'
 import { ProfileForm } from '@/components/profile/profile-form'
 import { ProfileHeader } from '@/components/profile/profile-header'
 import { ProfileHistoryRow } from '@/components/profile/profile-history-row'
 import { PortraitShowCard } from '@/components/shows/portrait-show-card'
+import { LanguagePreference } from '@/components/profile/language-preference'
 import { getWatchlistShows, getLikedShows, getRecentlyWatched } from '@/lib/queries'
 
 export const metadata: Metadata = {
@@ -35,10 +37,11 @@ export default async function ProfilePage() {
   const isAdmin = config?.admin_user_id === user.id
 
   // Fetch personalization data
-  const [watchlistShows, likedShows, recentlyWatched] = await Promise.all([
+  const [watchlistShows, likedShows, recentlyWatched, locale] = await Promise.all([
     getWatchlistShows(user.id),
     getLikedShows(user.id),
     getRecentlyWatched(user.id),
+    getLocale(),
   ])
 
   const displayName = profile?.display_name ?? ''
@@ -58,9 +61,17 @@ export default async function ProfilePage() {
           <h3 className="font-display mb-4 text-lg font-semibold tracking-[-0.02em] text-white">
             Account Settings
           </h3>
-          <ProfileForm
-            displayName={displayName}
-          />
+          <ProfileForm displayName={displayName} />
+        </div>
+
+        <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
+          <h3 className="font-display mb-1 text-lg font-semibold tracking-[-0.02em] text-white">
+            Language
+          </h3>
+          <p className="mb-4 text-sm text-white/40">
+            Changes the language and text direction across the entire platform.
+          </p>
+          <LanguagePreference current={locale} />
         </div>
 
         <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">

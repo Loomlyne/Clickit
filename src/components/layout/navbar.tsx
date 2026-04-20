@@ -5,15 +5,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { AuthSection } from './auth-section'
-import { LocaleSwitcher } from './locale-switcher'
-import type { Locale } from '@/lib/locale'
 
 interface NavbarProps {
   initialUser?: { id: string; email: string } | null
-  locale: Locale
 }
 
-export function Navbar({ initialUser, locale }: NavbarProps) {
+export function Navbar({ initialUser }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -62,7 +59,6 @@ export function Navbar({ initialUser, locale }: NavbarProps) {
         </Link>
 
         <div className="flex items-center gap-3">
-          <LocaleSwitcher current={locale} />
           <AuthSection initialUser={initialUser} />
         </div>
       </div>
