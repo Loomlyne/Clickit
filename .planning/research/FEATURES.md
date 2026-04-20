@@ -1,125 +1,233 @@
-# Feature Landscape
+# Feature Landscape: Arabic i18n — Clickit Story Streaming Platform
 
-**Domain:** Cinematic streaming platform (YouTube-embed based)
-**Researched:** 2026-03-30
+**Domain:** Arabic/English bilingual streaming platform (UAE market) — i18n milestone
+**Researched:** 2026-04-20
+**Confidence:** HIGH (RTL/font/Tailwind verified via official docs; streaming UX patterns verified via Twitch, Shahid precedents)
+
+> NOTE: This file replaces the original FEATURES.md for the Arabic i18n milestone.
+> Original platform features (catalog, auth, watch page) are already built — this research scopes only the i18n layer.
+
+---
 
 ## Table Stakes
 
-Features users expect from a streaming platform. Missing = feels broken or incomplete.
+Features users expect in an Arabic UI. Missing any of these = the Arabic experience feels broken or half-done.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Show catalog with visual browsing | Netflix trained every user to expect cinematic card grids | Medium | Hero banner + horizontal content rails. Must feel premium, not like a YouTube channel listing. |
-| Series detail page with seasons | Users expect to pick a season, then browse episodes | Medium | Season tabs/selector, episode list with thumbnails and descriptions. |
-| Episode watch page | Core value proposition -- click and watch | Medium | YouTube IFrame embed, episode metadata, prev/next navigation. |
-| User authentication | Required for personalized features (watchlist, continue watching) | Low | Supabase Auth handles email/password + social login. |
-| Responsive design | 40-60% of streaming traffic is mobile | Medium | Must work well on phones. Video player aspect ratio handling is critical. |
-| Search | Users expect to find content by name | Low | Postgres FTS is sufficient. Search bar in header, results page. |
-| Show/episode status management | Content is still being produced -- must handle unreleased content | Low | Draft (admin only), Coming Soon (visible but not watchable), Published (watchable). |
-| Admin content management | Single admin needs to add/edit shows, seasons, episodes | Medium | CRUD forms, YouTube URL input, status toggles, image upload for artwork. |
-| Dark cinematic UI | Streaming platforms are universally dark. Light UI would feel wrong. | Low | Tailwind dark theme as default. CIT brand colors as accents. |
+| `html dir="rtl"` set per locale | Without it, nothing flows correctly — browsers won't reverse layout | Low | Set in root `layout.tsx` from locale param: `dir={locale === 'ar' ? 'rtl' : 'ltr'}` |
+| `html lang` set per locale | Triggers correct browser text rendering, screen readers, and Arabic keyboard detection | Low | `lang={locale}` alongside `dir`; `lang="ar"` for Arabic |
+| URL-prefix routing `/en/` and `/ar/` | SEO, shareable links, browser back-nav correctness — cookie-only locale doesn't survive link sharing | Medium | Use `next-intl` with `localePrefix: 'always'`; `[locale]` dynamic segment in App Router |
+| Central JSON translation files (`en.json`, `ar.json`) | All 130+ UI strings in one place, namespaced by page/section | Medium | Namespaces: `nav`, `auth`, `home`, `show`, `player`, `search`, `profile`, `myList`, `comingSoon`, `support`, `faq`, `admin`, `errors`, `common` |
+| All viewer pages translated | Landing, home, series detail, watch, profile, search, coming-soon, my-list, auth, support — untranslated pages break locale immersion | High | 130+ strings; `useTranslations('namespace')` per page |
+| All admin pages translated | Dashboard, show editor, settings, archive, audit — admin staff in UAE read Arabic | Medium | Separate `admin.*` namespace |
+| All component strings translated | Navbar, footer, content rails, cards, buttons, empty states, error messages — components render on every page; most visible breakage | High | Prioritize navbar and error states first |
+| FAQ translated to Arabic | FAQ is text-heavy and visible to all users | Low | Static content; translate once |
+| Arabic-capable font loaded globally | Default system fonts render Arabic poorly or fall back to ugly glyphs | Low | **Cairo** (Google Fonts, variable weight 200–900, free, open source) — recommended; fallback: `'Cairo', 'Noto Sans Arabic', sans-serif` |
+| Tailwind logical properties throughout | Hardcoded `ml-`, `mr-`, `pl-`, `pr-` break in RTL; logical properties (`ms-`, `me-`, `ps-`, `pe-`) adapt to `dir` automatically | High | Requires auditing every component with directional spacing; Tailwind v3.3+ supports this natively |
+| RTL icon mirroring (directional icons only) | Back/forward arrows, breadcrumbs, chevrons point the wrong way in RTL without mirroring | Medium | Mirror direction-of-movement icons; never mirror media controls or time icons — see Arabic UX Notes below |
+| "Continue watching" progress bar direction | Card-level progress indicator must advance right-to-left in Arabic | Low | CSS only: `dir="rtl"` on parent handles this if using logical width |
+| Text expansion accommodation | Arabic runs 25–40% wider than English — buttons, nav items, and cards must not clip | High | No fixed-width containers for text; use `min-w` not `w-`; test with longest Arabic strings before shipping |
+
+---
 
 ## Differentiators
 
-Features that elevate CIT above "just a YouTube channel with a website wrapper."
+Features that make the Arabic experience feel native, not like a translation layer on top of an English UI.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Continue watching with progress tracking | Remembers where you left off, resumes playback. Makes it feel like a real streaming service. | Medium | Requires YouTube IFrame API `getCurrentTime()` + periodic progress saves to Supabase. Interval-based (every 10-15 seconds while playing). |
-| Watchlist | Personal "My List" for shows to watch later | Low | Simple join table: `user_id + show_id`. Toggle button on show cards. |
-| Autoplay next episode | Seamless binge experience -- episode ends, next one starts | Medium | YouTube `onStateChange` ENDED event triggers next episode load. Optional countdown overlay before auto-advance. |
-| Broadcast schedule display | Connects the digital platform to CIT's production schedule | Low | Static schedule data (day/time per show). Display as a weekly grid. Shows "LIVE NOW" badge when a show is airing. |
-| Coming Soon page | Builds anticipation for unreleased shows/episodes | Low | Filter by status="coming_soon". Show artwork, description, expected release. |
-| Per-show branded identity | Each show has its own color ribbon and pattern from CIT brand guide | Medium | 5 brand color sets mapped to shows. Show-specific header/hero treatments. Pattern overlays on cards. |
-| Bilingual content support | Arabic and English content for UAE audience | Medium | Content stored in both languages. Language toggle for descriptions. RTL layout for Arabic. |
+| RTL content rail scroll direction | Carousel arrows and scroll direction reverse in Arabic — content flows right-to-left naturally | Medium | Set `dir="rtl"` on carousel wrapper; flip arrow icons; affects Swiper/Embla/custom carousels |
+| Bidirectional text guard for mixed content | Show titles, brand names, timestamps stay LTR inside RTL paragraphs — prevents punctuation flip | Medium | Wrap known LTR strings with `<span dir="ltr">` or apply `unicode-bidi: embed`; Unicode BiDi handles digits inside Arabic text automatically |
+| Arabic date formatting (Gregorian, Arabic month names) | "20 أبريل 2026" instead of "April 20, 2026" — localized but familiar calendar | Low | `new Intl.DateTimeFormat('ar-AE', { day: 'numeric', month: 'long', year: 'numeric' }).format(date)` |
+| Arabic search placeholder and keyboard hint | "ابحث عن مسلسلات، أفلام..." — reinforces locale immersion in the search bar | Low | Part of `search.placeholder` in translation dictionary |
+| RTL-aware empty states | "No results" and "My list is empty" illustrations read naturally RTL if figures face correctly | Low–Medium | Use symmetrical illustrations; avoid text baked into images |
+| Locale-aware Open Graph metadata | Arabic `og:title`, `og:description` for Arabic URLs — social shares in Arabic look correct | Low | `generateMetadata` per locale using `pickLocalized()` already available |
+
+---
 
 ## Anti-Features
 
-Features to explicitly NOT build in v1.
+Do not build these. They add complexity with no ROI for UAE streaming.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| Self-hosted video / video uploads | Massive infrastructure cost and complexity. YouTube handles transcoding, CDN, adaptive bitrate. | Keep YouTube as video host. Admin pastes YouTube URL. |
-| Payment / subscription system | All content is free for v1. Premature monetization adds complexity without value. | Remove all paywall logic. If needed later, Stripe + Supabase is well-documented. |
-| Comments / chat | Moderation burden for a small team. YouTube already has comments on the videos. | Link to the YouTube video page for comments if needed. |
-| Role-based access control | Single admin. Building RBAC for one user is waste. | Hardcode admin check: `user.id === ADMIN_USER_ID` or admin flag in profiles table. |
-| Mobile native app | v1 is web-first. React Native is a separate codebase to maintain. | Build responsive web app. Progressive Web App (PWA) is a lightweight alternative later. |
-| Recommendation engine | ML-based recommendations need usage data that doesn't exist yet. | Curate content manually. "Featured" flag on shows. Category-based browsing. |
-| Analytics dashboard | No data to analyze on day one. Build this after launch when there's traffic. | Use Vercel Analytics (free tier) for basic web metrics. |
-| Notification system | Email/push notifications need infrastructure and compliance (CAN-SPAM, etc). | Defer to v2. Use the Coming Soon page to surface new content. |
-| Trailer hover preview | Netflix-style auto-playing trailers on hover. Technically complex with YouTube embeds (each hover = iframe load). | Static thumbnail hover effects (scale, overlay). Trailer can be the first episode or a dedicated YouTube short linked from the show page. |
-| Real-time features | WebSocket subscriptions add complexity for a content platform where content changes are infrequent. | Standard HTTP requests. Admin publishes -> user refreshes -> sees update. ISR/revalidation handles staleness. |
-| Download for offline | YouTube embed API does not support download. Would require self-hosted video. | Not possible with YouTube-only architecture. Explicitly out of scope. |
+| Hijri calendar dates | UAE streaming audience expects Gregorian; Hijri calendar adds a dependency (no native browser support) and never appears on VOD platforms including Shahid and Netflix MENA | Use `Intl.DateTimeFormat('ar-AE')` — returns Gregorian with Arabic month names |
+| Eastern Arabic-Indic numerals (٠١٢٣٤٥٦٧٨٩) as default | UAE market — including Arabic speakers — uses Western numerals (0–9) on digital interfaces; Shahid, Anghami, Netflix MENA all use Western numerals | Display Western numerals everywhere; `Intl.NumberFormat('ar-AE')` already returns Western numerals for UAE locale |
+| Per-component / lazy-loaded namespace bundles | 130 strings across 2 locales is ~10KB total — splitting adds build complexity with zero measurable benefit at this scale | Single `en.json` and `ar.json`; load full locale file at request time via next-intl |
+| RTL-specific Tailwind plugin (tailwindcss-rtl, tailwindcss-vanilla-rtl) | Tailwind v3.3+ logical properties make these plugins redundant; they diverge from Tailwind's own roadmap and add a dependency | Migrate to native logical properties; enforce via linting |
+| Machine-translated Arabic (Google Translate API for UI strings) | Arabic MT quality is poor for UI copy; UAE market is sophisticated and notices bad Arabic immediately | Human-translate all 130+ strings once; UI strings are stable, not dynamic content |
+| Dialect-specific Arabic variants (Egyptian Arabic, Gulf Arabic) | Adds a third locale, doubles QA surface, risks alienating users from the excluded dialect | Use Modern Standard Arabic (MSA) — universally understood; this is what Shahid, Anghami, and MBC use |
+| Separate RTL stylesheet / CSS override file | Inevitably drifts from LTR stylesheet; maintenance nightmare as the platform grows | Implement RTL entirely via logical properties + `dir="rtl"` on `<html>`; single stylesheet |
+| IP geolocation for language detection | 5–15% false-positive rate; UAE residents who prefer English get the wrong locale | Detect via `accept-language` header as initial hint; respect explicit URL prefix above everything |
+| Translating video player internals | YouTube IFrame player UI is controlled by YouTube — it already localizes to browser language | Leave the YouTube player as-is; only translate the surrounding platform UI |
+
+---
+
+## Arabic UX Notes
+
+Patterns specific to streaming platforms and the UAE market.
+
+### RTL Layout — What Flips, What Does Not
+
+**Always mirror in RTL:**
+- Navigation flow (primary nav sits on the right)
+- Chevron/arrow icons in breadcrumbs, dropdown menus, back buttons
+- Content carousel scroll arrows
+- "Continue watching" progress bar on show cards (advances right-to-left)
+- Pagination controls (previous/next swap sides)
+- Toast/notification popups (appear from right edge, not left)
+- Progress indicators for multi-step flows (e.g., profile setup)
+
+**Never mirror in RTL:**
+- Video player transport controls (play, pause, skip forward/back, scrubber timeline) — these represent tape/time direction, which is universally LTR per industry convention (Twitch, YouTube, Netflix all maintain LTR playback controls in RTL modes)
+- Clock and timer icons
+- Volume slider
+- Logos and brand marks
+- Phone numbers and email addresses
+- Episode numbers, timestamps
+
+**Conditionally handled:**
+- Show card thumbnails — do not mirror image content; only reverse their horizontal position in the grid layout
+- Star/rating icons — direction is ambiguous; pick one direction and be consistent across the platform
+
+### Episode and Season Label Conventions
+
+Arabic streaming platforms (Shahid, Starzplay, OSN+) display labels as:
+- "الموسم ١ — الحلقة ٣" or more commonly "الموسم 1 - الحلقة 3"
+- UAE market accepts and prefers Western numerals (1, 2, 3) in episode labels
+- Labels should be right-aligned on episode cards in Arabic
+
+### Typography
+
+**Recommended font: Cairo** (Google Fonts)
+- Variable weight (200–900) in a single font file — optimal for a streaming platform where heading, body, and metadata use different weights
+- Rounded Naskh/Grotesque style; legible at 12px and above; doesn't feel decorative or heavy
+- Designed to harmonize with Latin glyphs at the same optical size — crucial for mixed Arabic/English content (show titles, metadata)
+- Free, open source, served via Google Fonts CDN or self-hostable via Fontsource
+
+**Fallback chain:** `'Cairo', 'Noto Sans Arabic', 'Arial', sans-serif`
+
+**Size rule:** Arabic body text needs to be 2–4px larger than the English equivalent to maintain visual parity. If English body is `text-sm` (14px), Arabic body should use `text-base` (16px).
+
+**Line height:** Use `leading-relaxed` (1.625) or higher for Arabic body text — diacritical marks and connected letterforms need vertical breathing room or they collide between lines.
+
+**Letter spacing:** Set `tracking-normal` or slightly wider for Arabic headings. Never use tight/negative tracking (`tracking-tight`) — Arabic letterforms become unreadable.
+
+### Number and Date Formatting (UAE market)
+
+- **Episode/season numbers:** Western numerals (0–9). `Intl.NumberFormat('ar-AE')` returns Western numerals by default for the UAE locale.
+- **Dates:** Gregorian with Arabic month names: "20 أبريل 2026". Implementation:
+  ```js
+  new Intl.DateTimeFormat('ar-AE', { day: 'numeric', month: 'long', year: 'numeric' }).format(date)
+  ```
+- **Duration:** "45 دقيقة" — use the number directly (Western), translate the unit string via the dictionary key `common.minutes`.
+
+### Text Expansion Budget
+
+Arabic strings run 25–40% longer than English. These components require explicit attention:
+
+| Component | Risk | Mitigation |
+|-----------|------|------------|
+| Navbar links | Overflow, wrapping | Allow wrapping or use shorter Arabic equivalents |
+| Buttons (primary/secondary) | Text clips or pushes layout | Use `min-w`, let horizontal padding expand |
+| Genre/rating badges on cards | Overflow | Allow multi-line or truncate with `...` |
+| Error messages | Breaks layout if fixed height | Allow multi-line, no max-height clip |
+| Player overlay text | Overlaps controls | Test with longest Arabic error string |
+
+### Bidirectional Text in Mixed Content
+
+Show titles stored in Supabase as `title_ar` are Arabic text. Episode numbers, timestamps, and some metadata are always LTR. In RTL mode:
+- Episode numbers inside Arabic sentences ("الحلقة 3") — Unicode BiDi algorithm handles the digit automatically; no manual wrapper needed
+- English show titles displayed in the Arabic UI — wrap in `<span dir="ltr" className="inline-block">` to prevent punctuation and number flip
+- URLs always wrap in `<span dir="ltr">`
+
+### Translation Dictionary Structure
+
+Recommended namespace layout for `messages/en.json` and `messages/ar.json`:
+
+```
+{
+  "nav": {},          // ~10 strings — links, menu labels
+  "auth": {},         // ~15 strings — login, register, reset, error states
+  "home": {},         // ~8 strings  — hero CTA, section headers
+  "show": {},         // ~20 strings — series detail, episode list, ratings, genres
+  "player": {},       // ~12 strings — player labels, quality, subtitles, next episode
+  "search": {},       // ~8 strings  — placeholder, no results, filters
+  "profile": {},      // ~10 strings — settings, language, history
+  "myList": {},       // ~5 strings  — empty state, add/remove
+  "comingSoon": {},   // ~6 strings  — release date, remind me
+  "support": {},      // ~8 strings  — contact, form labels
+  "faq": {},          // ~15 strings — questions and answers
+  "admin": {},        // ~20 strings — dashboard labels, form fields, status values
+  "errors": {},       // ~10 strings — 404, 500, empty states, auth errors
+  "common": {}        // ~8 strings  — loading, save, cancel, minutes, episodes
+}
+```
+
+Access pattern: `const t = useTranslations('show')` loads only that namespace. Key collisions across pages are impossible. Server Components and Client Components both supported via next-intl's `getTranslations` (server) and `useTranslations` (client) split.
+
+---
 
 ## Feature Dependencies
 
 ```
-Authentication
-  -> Watchlist (requires user identity)
-  -> Continue Watching (requires user identity + progress tracking)
-  -> Admin Dashboard (requires admin auth check)
+URL-prefix routing (/ar/, /en/)
+  → must be implemented first — unblocks everything below
+  → requires next-intl middleware + [locale] dynamic segment
 
-Show Catalog
-  -> Series Detail Page (requires shows to exist)
-  -> Search (requires shows/episodes to search over)
+html dir + html lang + Cairo font in root layout
+  → requires URL routing (locale known at layout render time)
+  → triggers Tailwind logical property cascade for all children
 
-Series Detail Page
-  -> Episode Watch Page (requires episode selection)
+Central en.json / ar.json translation files
+  → requires routing (locale available server-side for getTranslations)
+  → feeds all page and component translations
 
-Episode Watch Page
-  -> YouTube IFrame API integration
-  -> Continue Watching progress tracking (writes progress data)
-  -> Autoplay Next Episode (reads episode ordering)
+Tailwind logical properties audit
+  → independent — can run in parallel with routing setup
+  → must complete before RTL layout QA pass
 
-Admin Dashboard
-  -> YouTube URL connection (episode creation)
-  -> Show/Season/Episode CRUD
-  -> Status management (draft/coming soon/published)
-  -> Image upload (show artwork to Supabase Storage)
+Viewer page translations
+  → requires translation files to exist (even with stub strings)
+  → order: landing → home → series detail → watch → auth → profile → search
 
-Bilingual Support (next-intl)
-  -> Can be added incrementally. Start with English UI, add Arabic translations per-page.
+Admin page translations
+  → requires translation files; lower priority than viewer pages
+
+Component translations (navbar, footer, cards, errors)
+  → highest user-facing impact; tackle alongside or before viewer pages
 ```
+
+---
 
 ## MVP Recommendation
 
-### Phase 1: Core Streaming Experience
+Prioritize strictly in this order:
 
-Build these first -- they constitute the minimum viable streaming platform:
+1. URL-prefix routing + next-intl middleware (unblocks everything)
+2. `html dir` + `html lang` + Cairo font in root layout
+3. Central `en.json` / `ar.json` with all 130+ strings (stubs acceptable at first)
+4. Tailwind logical properties audit across all shared components
+5. Viewer pages translated: landing → home → series detail → watch → auth
+6. Component strings: navbar, footer, cards, empty states, error messages
+7. Admin pages translated
+8. FAQ and support pages
 
-1. **Show catalog with hero and content rails** -- the landing page experience
-2. **Series detail page with season browser** -- discover episodes
-3. **Episode watch page with YouTube embed** -- the core value
-4. **User authentication** -- gate for personalization
-5. **Basic search** -- find content
-6. **Admin CRUD** -- populate the platform with content
+Defer indefinitely: Hijri calendar, Eastern Arabic-Indic numerals, dialect variants.
 
-### Phase 2: Engagement
-
-These make it feel like a real streaming service:
-
-7. **Watchlist** -- (low complexity, high perceived value)
-8. **Continue watching** -- (medium complexity, high retention value)
-9. **Autoplay next episode** -- (medium complexity, binge enabler)
-10. **Show status management** -- (draft/coming soon/published)
-
-### Phase 3: Polish
-
-These complete the premium experience:
-
-11. **Broadcast schedule** -- connects platform to production
-12. **Coming Soon page** -- anticipation building
-13. **Per-show branded identity** -- visual richness
-14. **Bilingual support** -- Arabic content and RTL
-
-### Defer
-
-- **Analytics dashboard**: No data yet. Use Vercel Analytics.
-- **Notifications**: Complexity without clear value in v1.
-- **Trailer hover previews**: Technical complexity with YouTube embeds. Static hover effects are sufficient.
+---
 
 ## Sources
 
-- [YouTube IFrame API Reference](https://developers.google.com/youtube/iframe_api_reference) -- feature capability assessment
-- [Supabase Auth Docs](https://supabase.com/docs/guides/auth) -- auth feature assessment
-- Project requirements from PROJECT.md -- HIGH confidence
+- [next-intl routing configuration](https://next-intl.dev/docs/routing/configuration) — HIGH confidence (Context7 verified)
+- [next-intl App Router setup](https://next-intl.dev/docs/getting-started/app-router) — HIGH confidence (Context7 verified)
+- [Tailwind CSS RTL logical properties — Flowbite](https://flowbite.com/docs/customize/rtl/) — HIGH confidence
+- [Cairo — Google Fonts](https://fonts.google.com/specimen/Cairo) — HIGH confidence
+- [Twitch Arabic RTL launch](https://www.broadcastprome.com/news/twitch-launches-arabic-rtl-interface-to-expand-accessibility/) — MEDIUM confidence (industry precedent)
+- [Arabic interface design — CodeGuru](https://codeguru.ae/blog/designing-arabic-interfaces-right-to-left-ux-done-right/) — MEDIUM confidence
+- [6 Arabic localization challenges — Localazy](https://localazy.com/blog/6-challenges-of-localizing-your-app-to-arabic-and-how-to-solve-them) — MEDIUM confidence
+- [10 Arabic fonts for UX — Ahmed Elramlawy](https://ahmedelramlawy.com/10-arabic-fonts-every-ux-designer-should-know-in-2025/) — MEDIUM confidence
+- [RTL localization — POEditor](https://poeditor.com/blog/rtl-localization/) — MEDIUM confidence
+- [RTL design — Omar Al-Masry](https://omaralmasry.com/blog/building%20scalable%20rtl%20design%20systems%20for%20arabic%20websites:%20strategies%20for%20enterprise%20success/) — MEDIUM confidence
+- [Noto Sans Arabic — Fontsource](https://fontsource.org/fonts/noto-sans-arabic) — HIGH confidence (fallback font verification)

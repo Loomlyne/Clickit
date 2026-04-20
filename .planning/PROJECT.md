@@ -17,6 +17,48 @@ Viewers enter the platform, discover a show, pick an episode, and watch immediat
 
 The platform is live with the full viewer experience (cinematic home page, series browsing, watch page with autoplay, personalization) and admin dashboard (show/season/episode CRUD, artwork upload, archive management). All 15 CIT programs are seeded. Content is served from Supabase with Postgres FTS search and RLS security.
 
+## Current Milestone: v1.1 Full Bilingual UI (AR/EN)
+
+**Goal:** Every single visible piece of UI text on Clickit Story — every button, label, placeholder, tooltip, aria-label, page title, toast, error, countdown, metadata tag, and dynamic string — switches between English and Arabic when the viewer changes language. Zero hardcoded English strings remain in user-facing surfaces. Delivered on top of URL-prefix locale routing (`/en/...`, `/ar/...`) so Arabic is independently indexable by search engines.
+
+**User framing (verbatim):** "each section, each phase, each dev, each text, each whatsoever, when I translate it to Arabic, it needs to be translated to Arabic. If I translate to English, it needs to be translated to English. Like every pixel in the screen."
+
+**Target features (validated by research — see `.planning/research/SUMMARY.md`):**
+- URL-prefix routing — every page moves under `src/app/[locale]/...`; `en` is default, `ar` is the other locale. `localePrefix: 'always'` (both languages prefixed).
+- Translation infrastructure — `next-intl@4.9.1` (already installed), `src/i18n/routing.ts`, `src/i18n/request.ts`, `src/i18n/navigation.ts`, `src/messages/en.json` + `src/messages/ar.json`
+- Viewer surface strings — navbar, auth, landing, browse, series detail, season drawer, watch, my-list, profile, search, coming-soon, support, footer, FAQ, design-system
+- Admin surface strings — dashboard, show/season/episode CRUD forms, settings, archive, audit
+- Dynamic UI strings — toasts, empty states, error messages, autoplay countdown, ARIA labels, placeholders, tooltips, form validation messages
+- Metadata & SEO — per-locale `<title>`, `<meta description>`, OpenGraph, Twitter cards. Sitemap gains `alternates.languages` so Google indexes `/en/...` and `/ar/...` as language variants.
+- RTL polish — Tailwind logical-property migration (`ml-`→`ms-`, `pl-`→`ps-`) across ~114 components, directional icon mirroring (chevrons, skip-forward, back arrows), form alignment, carousel direction
+- Arabic typography refinement — Cairo font-display: swap (avoid FOIT), letter-spacing fix for Arabic glyph joining (one CSS rule in globals.css strips `tracking-[0.2em+]` on Arabic pages), line-height tuning
+- Number & date formatting — `Intl.NumberFormat('ar-AE')` returns Western numerals (0-9), matching UAE market and Shahid/Netflix MENA convention. `toLocaleDateString()` passes active locale.
+- Auth safety — 6 latent auth/routing breaks fixed atomically with the route restructure (see Pitfalls below)
+
+**6 critical auth/routing breaks (must land atomically in Phase 13):**
+1. Supabase session cookie loss on locale redirect — middleware must merge Supabase cookies onto the i18n response
+2. `useRouter` from `next/navigation` strips locale prefix on navigation — swap to `@/i18n/navigation` in ~7 client components
+3. Hard-coded redirects to `/auth/login` in auth actions and protected routes — must become locale-aware
+4. Supabase auth callback `?next=` redirect handling — audit and preserve locale
+5. `coming-soon` redirect in `proxy.ts` — currently redirects to `/coming-soon` (no locale), must become locale-aware
+6. Sitemap `alternates.languages` — add per-route so Google discovers the Arabic version
+
+**Scope strategy (URL-prefix routing, research-validated):**
+- Zero new dependencies — `next-intl@4.9.1` is already in `package.json`
+- `proxy.ts` already exists with Next.js 16 naming convention — add `createMiddleware(routing)` composition
+- Existing `dirFor()` and `pickLocalized()` helpers stay — they're domain-specific
+- `src/app/locale-actions.ts` + `src/components/layout/locale-switcher.tsx` + the Profile `LanguagePreference` card **become dead code** after migration (replaced by next-intl navigation-based switcher that writes the URL)
+- Migration is mechanical once Phase 12 (infrastructure) and Phase 13 (auth-safe route restructure) land
+
+**Explicit exclusions for this milestone:**
+- Hijri calendar — UAE uses Gregorian
+- Eastern Arabic-Indic numerals (٠-٩) — Western numerals (0-9) match UAE market (Shahid, Netflix MENA convention)
+- Dialect variants (Emirati, Egyptian) — Modern Standard Arabic only
+- Icon mirroring for every icon — only directional icons (arrows, chevrons, skip-forward)
+- Separate Arabic sitemap — use `alternates.languages` in existing sitemap
+- LLM-translated Arabic strings shipping to prod — all Arabic copy must be human-written or human-reviewed
+- Translation of DB columns without existing `_ar` pairs — admin fills those via dashboard
+
 ## Requirements
 
 ### Validated
@@ -45,7 +87,7 @@ The platform is live with the full viewer experience (cinematic home page, serie
 
 ### Active
 
-(None — next milestone requirements TBD via `/gsd-new-milestone`)
+v1.1 requirements being defined — see `.planning/REQUIREMENTS.md` once milestone setup completes.
 
 ### Out of Scope
 
@@ -189,4 +231,4 @@ This document evolves at phase transitions and milestone boundaries.
 5. All milestone decisions added to Key Decisions
 
 ---
-*Last updated: 2026-04-16 after v1.0 milestone completion*
+*Last updated: 2026-04-20 — milestone v1.1 (Arabic i18n) started*

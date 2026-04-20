@@ -1,528 +1,510 @@
-# Architecture Patterns
+# Architecture: i18n Migration — Cookie to URL-Prefix Locale Routing
 
-**Domain:** Cinematic streaming platform (YouTube-embed based)
-**Researched:** 2026-03-30
+**Project:** Clickit Story
+**Scope:** Full i18n migration, Next.js 16.2 App Router, next-intl v4.9.1 already installed
+**Researched:** 2026-04-20
+**Confidence:** HIGH — verified against next-intl v4 Context7 docs and live codebase
 
-## Recommended Architecture
+---
 
-### High-Level Overview
+## Current State Inventory
 
-```
-Browser (Client)
-  |
-  v
-Next.js 16 App Router (Vercel Edge Network)
-  |
-  |--> Server Components: Fetch show/episode data via Supabase client
-  |--> Server Actions: Admin CRUD, watchlist mutations, progress saves
-  |--> Route Handlers: YouTube URL validation, image upload presign
-  |
-  v
-Supabase (Backend-as-a-Service)
-  |--> Postgres DB: Shows, seasons, episodes, profiles, watchlists, progress
-  |--> Auth: Email/password, social login, JWT sessions
-  |--> Storage: Show artwork, hero banners, episode thumbnails
-  |--> Row Level Security: Authorization at the database layer
-  |
-  v
-YouTube (External)
-  |--> Video hosting + CDN + adaptive bitrate
-  |--> IFrame Player API: Playback control, progress tracking
-```
+Before touching anything, know exactly what exists:
 
-### Component Boundaries
+| File | Current role | Changes required |
+|------|--------------|-----------------|
+| `src/lib/locale.ts` | `getLocale()` reads `NEXT_LOCALE` cookie, `dirFor()`, `pickLocalized()` | Replace `getLocale()` with next-intl server API; keep `dirFor()` and `pickLocalized()` as pure helpers |
+| `src/app/locale-actions.ts` | Server Action writes cookie, calls `revalidatePath` | Delete entirely — locale change becomes URL navigation |
+| `src/lib/supabase/middleware.ts` | `updateSession()` — refreshes Supabase JWT, returns `userId` + lazy `checkIsAdmin` | No changes to this file |
+| `src/middleware.ts` | Does not exist yet — there is currently no root middleware file | Create new file here |
+| `src/app/layout.tsx` | Reads locale via `getLocale()`, sets `<html lang dir>` | Becomes thin shell; locale layout moves under `[locale]` |
+| `src/app/(viewer)/layout.tsx` | Viewer shell (Navbar + Footer) | Move to `src/app/[locale]/(viewer)/layout.tsx` |
+| `src/app/admin/layout.tsx` | Admin auth guard + shell | Move to `src/app/[locale]/admin/layout.tsx` |
+| `src/components/layout/locale-switcher.tsx` | Calls `setLocaleAction` server action + `router.refresh()` | Replace with `router.replace(pathname, { locale })` using next-intl navigation |
+| `src/components/layout/nav-links.tsx` | `NAV_LINKS` with bare hrefs (`/browse`, etc.) + `usePathname` | Swap imports to `@/i18n/navigation`; hrefs stay unchanged |
+| `src/components/layout/user-dropdown.tsx` | `router.push('/profile')`, `router.push('/admin')` | Swap `useRouter` import to `@/i18n/navigation` |
+| `src/app/(viewer)/auth/callback/route.ts` | OAuth code exchange, redirects to `${origin}${next}` | `next` param construction sites must produce locale-prefixed paths |
+| `src/app/(viewer)/profile/page.tsx` | `redirect('/auth')` on unauthenticated | Use next-intl's `redirect` from server — auto-prefixes |
+| `src/app/admin/layout.tsx` | `redirect('/browse')` on unauthorized | Same — use next-intl's `redirect` |
 
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
-| **Next.js App (Vercel)** | SSR/SSG pages, routing, auth middleware, API routes, Server Actions | Supabase, YouTube IFrame API |
-| **Supabase Postgres** | Data storage, full-text search, RLS authorization | Next.js (via PostgREST) |
-| **Supabase Auth** | User registration, login, session management, JWT tokens | Next.js middleware, Supabase client |
-| **Supabase Storage** | Image assets (show artwork, banners, thumbnails) | Next.js (via storage API), next/image |
-| **YouTube** | Video hosting, playback, transcoding, CDN delivery | Browser (via IFrame embed) |
-| **Vercel** | Hosting, edge functions, image optimization, CDN, analytics | Next.js (deployment target) |
+---
 
-### Data Flow
+## Directory Structure Change
 
-**Viewer browsing shows:**
-1. Browser requests `/` or `/shows/[slug]`
-2. Next.js Server Component fetches show data from Supabase (server-side, no client JS)
-3. RLS policy filters: only `status = 'published'` or `status = 'coming_soon'` rows returned
-4. HTML streamed to browser with show catalog pre-rendered
-5. Embla carousel and motion animations hydrate client-side
-
-**Viewer watching an episode:**
-1. Browser requests `/watch/[episodeId]`
-2. Server Component fetches episode metadata + YouTube video ID from Supabase
-3. Page renders with YouTube IFrame API player
-4. Client-side: `onPlayerReady` seeks to saved progress (if continue-watching)
-5. Client-side: `setInterval` saves `getCurrentTime()` to Supabase every 15 seconds
-6. Client-side: `onStateChange(ENDED)` triggers autoplay-next countdown
-
-**Admin creating an episode:**
-1. Admin navigates to `/admin/episodes/new`
-2. Middleware checks auth, verifies admin role
-3. Admin fills form (react-hook-form + zod validation)
-4. Server Action validates input, extracts YouTube video ID from URL
-5. Server Action inserts episode row into Supabase (using service role key, bypasses RLS)
-6. On-demand revalidation clears cached pages for the affected show
-
-## Route Structure
+### Before
 
 ```
-app/
-  (public)/
-    page.tsx                          # Home: hero + content rails
-    shows/
-      page.tsx                        # All shows catalog
-      [slug]/
-        page.tsx                      # Series detail: seasons + episodes
-    watch/
-      [episodeId]/
-        page.tsx                      # Watch page: YouTube player + metadata
-    search/
-      page.tsx                        # Search results
-    schedule/
-      page.tsx                        # Broadcast schedule grid
-    coming-soon/
-      page.tsx                        # Upcoming shows/episodes
-  (auth)/
-    login/
-      page.tsx                        # Login form
-    signup/
-      page.tsx                        # Registration form
-    callback/
-      route.ts                        # Supabase auth callback handler
-  (protected)/
-    watchlist/
-      page.tsx                        # User's saved shows
-    continue-watching/
-      page.tsx                        # Resume where you left off
-  admin/
-    layout.tsx                        # Admin layout with sidebar nav
-    page.tsx                          # Admin dashboard overview
-    shows/
-      page.tsx                        # List all shows
-      new/
-        page.tsx                      # Create show form
-      [id]/
-        edit/
-          page.tsx                    # Edit show form
-    seasons/
-      [showId]/
-        page.tsx                      # Manage seasons for a show
-    episodes/
-      [seasonId]/
-        page.tsx                      # Manage episodes for a season
-      new/
-        page.tsx                      # Create episode form
-      [id]/
-        edit/
-          page.tsx                    # Edit episode form
-  api/
-    youtube/
-      validate/
-        route.ts                      # Validate YouTube URL, extract video ID
-  layout.tsx                          # Root layout: providers, fonts, metadata
-  not-found.tsx                       # 404 page
-  error.tsx                           # Error boundary
-  loading.tsx                         # Global loading state
+src/app/
+├── layout.tsx                        <- root layout (reads locale cookie)
+├── locale-actions.ts                 <- server action for locale switching
+├── not-found.tsx
+├── robots.ts
+├── sitemap.ts
+├── favicon.ico
+├── (viewer)/
+│   ├── layout.tsx
+│   ├── page.tsx                      <- home (/)
+│   ├── auth/
+│   │   ├── page.tsx
+│   │   ├── actions.ts
+│   │   ├── callback/route.ts
+│   │   └── reset-password/page.tsx
+│   ├── browse/page.tsx
+│   ├── coming-soon/page.tsx
+│   ├── my-list/page.tsx
+│   ├── profile/page.tsx
+│   ├── search/page.tsx
+│   ├── series/[slug]/page.tsx
+│   ├── support/page.tsx
+│   ├── watch/[episodeId]/page.tsx
+│   └── design-system/...
+└── admin/
+    ├── layout.tsx
+    ├── page.tsx
+    ├── archive/page.tsx
+    ├── audit/page.tsx
+    ├── settings/page.tsx
+    └── shows/[id]/page.tsx
 ```
 
-## Patterns to Follow
+### After
 
-### Pattern 1: Supabase Client Factory
+```
+src/
+├── middleware.ts                     <- NEW: i18n routing + Supabase session in one file
+├── i18n/
+│   ├── routing.ts                    <- NEW: defineRouting({ locales, defaultLocale })
+│   ├── navigation.ts                 <- NEW: createNavigation(routing) exports
+│   └── request.ts                    <- NEW: getRequestConfig (loads messages, resolves locale)
+├── messages/
+│   ├── en.ts                         <- NEW: TypeScript dict
+│   └── ar.ts                         <- NEW: TypeScript dict
+└── app/
+    ├── layout.tsx                    <- MODIFIED: thin shell, no locale logic
+    ├── not-found.tsx                 <- keep
+    ├── robots.ts                     <- keep
+    ├── sitemap.ts                    <- keep
+    ├── [locale]/                     <- NEW segment
+    │   ├── layout.tsx                <- NEW: locale layout — validates locale param,
+    │   │                                sets html lang/dir, wraps NextIntlClientProvider
+    │   ├── (viewer)/
+    │   │   ├── layout.tsx            <- MOVED from (viewer)/layout.tsx
+    │   │   ├── page.tsx
+    │   │   ├── auth/
+    │   │   │   ├── page.tsx
+    │   │   │   ├── actions.ts        <- unchanged
+    │   │   │   ├── callback/route.ts <- needs next param audit
+    │   │   │   └── reset-password/page.tsx
+    │   │   ├── browse/page.tsx
+    │   │   ├── coming-soon/page.tsx
+    │   │   ├── my-list/page.tsx
+    │   │   ├── profile/page.tsx
+    │   │   ├── search/page.tsx
+    │   │   ├── series/[slug]/page.tsx
+    │   │   ├── support/page.tsx
+    │   │   ├── watch/[episodeId]/page.tsx
+    │   │   └── design-system/...
+    │   └── admin/
+    │       ├── layout.tsx            <- MOVED from admin/layout.tsx
+    │       ├── page.tsx
+    │       ├── archive/page.tsx
+    │       ├── audit/page.tsx
+    │       ├── settings/page.tsx
+    │       └── shows/[id]/page.tsx
+    └── api/                          <- stays at root, excluded from middleware matcher
+        ├── cron/cleanup-media/route.ts
+        └── youtube-meta/route.ts
+```
 
-Create typed Supabase clients for each context (server component, server action, middleware, browser).
+**Critical rule:** `src/app/api/` routes must live outside `[locale]` and must be excluded from the middleware matcher. The `api` path must be explicitly listed in the matcher exclusion. The `_next`, `_vercel`, and `.*\\..*` exclusions handle static files only.
 
-**What:** Separate client creation utilities following Supabase SSR docs.
-**When:** Every Supabase interaction.
-**Example:**
+---
+
+## Middleware Changes
+
+This is the most critical integration point. There is currently **no** `src/middleware.ts` in this project. The `src/lib/supabase/middleware.ts` is a helper library, not the Next.js middleware entrypoint. That distinction matters: `updateSession` does not change at all.
+
+### The composition problem
+
+next-intl's `createMiddleware(routing)` returns a `NextResponse` with locale redirects baked in (e.g., `/browse` → `/en/browse`). Supabase's `updateSession` also returns a `NextResponse` with refreshed session cookies. Returning them independently loses one response's cookies and headers.
+
+### The correct pattern: i18n first, then Supabase, merge cookies
+
 ```typescript
-// lib/supabase/server.ts
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+// src/middleware.ts
+import createMiddleware from 'next-intl/middleware'
+import { type NextRequest, NextResponse } from 'next/server'
+import { routing } from '@/i18n/routing'
+import { updateSession } from '@/lib/supabase/middleware'
 
-export async function createClient() {
-  const cookieStore = await cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-}
-
-// lib/supabase/admin.ts (service role - server only)
-import { createClient } from '@supabase/supabase-js'
-
-export const adminClient = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-```
-
-### Pattern 2: Server Components for Data Fetching
-
-**What:** Fetch all read-only data in Server Components. No `useEffect` + `fetch` pattern.
-**When:** Catalog pages, series detail, episode metadata, search results.
-**Example:**
-```typescript
-// app/(public)/shows/[slug]/page.tsx
-import { createClient } from '@/lib/supabase/server'
-
-export default async function ShowPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
-  const supabase = await createClient()
-
-  const { data: show } = await supabase
-    .from('shows')
-    .select('*, seasons(*, episodes(*))')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single()
-
-  if (!show) notFound()
-
-  return <ShowDetail show={show} />
-}
-```
-
-### Pattern 3: Server Actions for Mutations
-
-**What:** Use Server Actions for all data writes. No API route handlers for CRUD.
-**When:** Watchlist add/remove, progress save, admin CRUD.
-**Example:**
-```typescript
-// actions/watchlist.ts
-'use server'
-
-import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
-
-export async function toggleWatchlist(showId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  const { data: existing } = await supabase
-    .from('watchlist')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('show_id', showId)
-    .single()
-
-  if (existing) {
-    await supabase.from('watchlist').delete().eq('id', existing.id)
-  } else {
-    await supabase.from('watchlist').insert({ user_id: user.id, show_id: showId })
-  }
-
-  revalidatePath('/watchlist')
-}
-```
-
-### Pattern 4: Middleware for Auth Session Refresh
-
-**What:** Refresh Supabase auth tokens on every request via middleware (or proxy.ts in Next.js 16).
-**When:** Every navigation. Required by @supabase/ssr.
-**Example:**
-```typescript
-// middleware.ts (or proxy.ts in Next.js 16)
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+const handleI18nRouting = createMiddleware(routing)
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request })
+  // Step 1: Run i18n middleware to get locale redirect/rewrite response
+  const i18nResponse = handleI18nRouting(request)
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return request.cookies.getAll() },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
-          response = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
+  // If i18n issued a redirect (e.g., / -> /en), return immediately.
+  // A locale redirect does not need a refreshed Supabase session —
+  // middleware runs again on the redirected URL.
+  if (i18nResponse.status !== 200) {
+    return i18nResponse
+  }
 
-  await supabase.auth.getUser()
+  // Step 2: Run Supabase session refresh
+  const { response: supabaseResponse } = await updateSession(request)
 
-  return response
+  // Step 3: Merge both responses into one.
+  // The final response must carry Supabase's session cookies or the
+  // browser loses auth state on every locale-prefixed navigation.
+  const finalResponse = NextResponse.next({
+    request: { headers: supabaseResponse.headers },
+  })
+
+  // Copy i18n headers (x-next-intl-locale, x-middleware-rewrite, etc.)
+  i18nResponse.headers.forEach((value, key) => {
+    finalResponse.headers.set(key, value)
+  })
+
+  // Copy Supabase session cookies
+  supabaseResponse.cookies.getAll().forEach((cookie) => {
+    finalResponse.cookies.set(cookie.name, cookie.value, cookie)
+  })
+
+  return finalResponse
+}
+
+export const config = {
+  matcher: [
+    // Match all paths except: API routes, Next.js internals, static files, brand assets
+    '/((?!api|_next/static|_next/image|_vercel|favicon.ico|brand/|.*\\..*).*)',
+  ],
 }
 ```
 
-### Pattern 5: Admin Route Protection
+**Why i18n first:** next-intl needs to resolve the locale from the URL before Supabase touches the request. If Supabase runs first and returns its own `NextResponse`, the i18n routing headers are lost.
 
-**What:** Check admin status in layout, redirect non-admins.
-**When:** All `/admin/*` routes.
-**Example:**
+**Why early return on redirect:** A locale redirect (status 301/302) does not need session cookies. The browser follows the redirect immediately and middleware runs again on the final URL.
+
+**Note on Next.js 16 file naming:** The Next.js 16 changelog renamed `middleware.ts` to `proxy.ts`. Verify the current project's Next.js 16.2.1 release notes before finalizing the filename. The next-intl Context7 docs show both `middleware.ts` and `proxy.ts` as the export file. If v16.2 requires `proxy.ts`, rename accordingly — the logic inside is identical.
+
+---
+
+## Layout Changes
+
+### Root layout after migration (`src/app/layout.tsx`)
+
+Becomes a thin skeleton. Its only jobs are font CSS variable declarations and `generateMetadata`. The `<html>` element it renders has no `lang` or `dir` — those move to `[locale]/layout.tsx`.
+
 ```typescript
-// app/admin/layout.tsx
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+// src/app/layout.tsx — AFTER
+import { Plus_Jakarta_Sans, Cairo } from 'next/font/google'
+import '@/styles/globals.css'
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+const jakarta = Plus_Jakarta_Sans({ ... })  // must stay module-level
+const cairo = Cairo({ ... })
 
-  if (!user) redirect('/login')
+export async function generateMetadata() {
+  // unchanged — reads from app_config
+}
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single()
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // No lang, no dir, no Toaster, no Analytics here.
+  // Those all live in [locale]/layout.tsx.
+  return (
+    <html className={`dark ${jakarta.variable} ${cairo.variable}`}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
 
-  if (!profile?.is_admin) redirect('/')
+### New locale layout (`src/app/[locale]/layout.tsx`)
+
+Receives `params.locale` from the URL segment. Validates it. Sets `lang` and `dir`. Provides next-intl context to the entire subtree.
+
+```typescript
+// src/app/[locale]/layout.tsx — NEW
+import { NextIntlClientProvider, hasLocale } from 'next-intl'
+import { setRequestLocale, getMessages } from 'next-intl/server'
+import { notFound } from 'next/navigation'
+import { routing } from '@/i18n/routing'
+import { dirFor } from '@/lib/locale'
+import { getAppConfig } from '@/lib/config'
+import { Toaster } from 'sonner'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+import Script from 'next/script'
+
+type Props = {
+  children: React.ReactNode
+  params: Promise<{ locale: string }>
+}
+
+export default async function LocaleLayout({ children, params }: Props) {
+  const { locale } = await params
+
+  if (!hasLocale(routing.locales, locale)) {
+    notFound()
+  }
+
+  // Required for static rendering support with next-intl
+  setRequestLocale(locale)
+
+  const [messages, { googleAnalyticsId, metaPixelId }] = await Promise.all([
+    getMessages(),
+    getAppConfig(),
+  ])
+
+  const dir = dirFor(locale as 'en' | 'ar')
 
   return (
-    <div className="flex min-h-screen">
-      <AdminSidebar />
-      <main className="flex-1 p-8">{children}</main>
-    </div>
+    <html lang={locale} dir={dir}>
+      <body className="bg-background text-foreground ...">
+        <NextIntlClientProvider messages={messages}>
+          {/* skip-to-content link, <main>, children */}
+          {children}
+        </NextIntlClientProvider>
+        <Toaster ... />
+        <Analytics />
+        <SpeedInsights />
+        {googleAnalyticsId && ( /* GA scripts */ )}
+        {metaPixelId && ( /* Meta Pixel script */ )}
+      </body>
+    </html>
   )
 }
 ```
 
-### Pattern 6: YouTube Video ID Extraction
+**What moves from root layout to locale layout:**
+- `<html lang dir>` attributes
+- `<body>` with all its className and a11y markup
+- `<Toaster>`, `<Analytics>`, `<SpeedInsights>`
+- GA and Meta Pixel `<Script>` blocks
+- `getAppConfig()` call for analytics IDs
 
-**What:** Parse YouTube URLs to extract video IDs. Handle multiple URL formats.
-**When:** Admin creates/edits an episode.
-**Example:**
+**`generateMetadata` in `[locale]/layout.tsx`:** Add `alternates.languages` here for SEO. This is the primary justification for the migration:
+
 ```typescript
-// lib/youtube.ts
-export function extractYouTubeId(url: string): string | null {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=)([^&\s]+)/,
-    /(?:youtu\.be\/)([^?\s]+)/,
-    /(?:youtube\.com\/embed\/)([^?\s]+)/,
-    /(?:youtube\.com\/shorts\/)([^?\s]+)/,
-  ]
-  for (const pattern of patterns) {
-    const match = url.match(pattern)
-    if (match) return match[1]
+export async function generateMetadata({ params }: Props) {
+  const { locale } = await params
+  return {
+    alternates: {
+      languages: {
+        en: '/en',
+        ar: '/ar',
+      },
+    },
   }
-  return null
 }
 ```
 
-## Anti-Patterns to Avoid
+---
 
-### Anti-Pattern 1: Client-Side Data Fetching for Catalog Data
+## Link and Router Changes
 
-**What:** Using `useEffect` + `fetch` or `useSWR` to load show/episode data.
-**Why bad:** No SEO (search engines see empty page), waterfall loading (shell -> JS -> fetch -> render), unnecessary client JS bundle.
-**Instead:** Use Server Components for all read-only data. The HTML arrives fully rendered.
+### New file: `src/i18n/navigation.ts`
 
-### Anti-Pattern 2: Storing Supabase Client at Module Level
+```typescript
+import { createNavigation } from 'next-intl/navigation'
+import { routing } from './routing'
 
-**What:** `const supabase = createClient()` at the top of a module, shared across requests.
-**Why bad:** Sessions leak between users. User A's auth token is used for User B's request.
-**Instead:** Create a new Supabase client inside every request handler, Server Component, or Server Action.
-
-### Anti-Pattern 3: Using Service Role Key in Client Code
-
-**What:** Putting `SUPABASE_SERVICE_ROLE_KEY` in a `NEXT_PUBLIC_*` env var or importing admin client in client components.
-**Why bad:** Service role bypasses all RLS. Anyone with the key has full database access.
-**Instead:** Service role key is server-only. Use in Server Actions for admin operations. Never prefix with `NEXT_PUBLIC_`.
-
-### Anti-Pattern 4: Skipping RLS Policies
-
-**What:** Disabling Row Level Security on tables and relying on application-level auth checks.
-**Why bad:** Any direct Supabase access (API, client library, Postgres connection) bypasses your auth checks. Defense-in-depth requires DB-level enforcement.
-**Instead:** Enable RLS on every table. Write policies for each operation. Test from client SDK, not SQL editor (which bypasses RLS).
-
-### Anti-Pattern 5: Saving Watch Progress on Every Frame
-
-**What:** Calling Supabase on every second or every frame of video playback.
-**Why bad:** Generates thousands of writes per viewing session. Hits Supabase rate limits. Wastes bandwidth.
-**Instead:** Save progress every 15 seconds while video is PLAYING. Also save on PAUSED and ENDED events. Debounce aggressively.
-
-### Anti-Pattern 6: Loading All YouTube Iframes Eagerly
-
-**What:** Rendering full YouTube `<iframe>` for every episode thumbnail in a content rail.
-**Why bad:** 20 iframes = ~10MB initial load. Each iframe creates a separate browsing context. Destroys page performance.
-**Instead:** Use react-lite-youtube-embed for thumbnails (loads ~3KB per video). Only load full iframe on the watch page.
-
-## Database Schema (Recommended)
-
-```sql
--- Shows
-create table shows (
-  id uuid primary key default gen_random_uuid(),
-  title_en text not null,
-  title_ar text,
-  slug text unique not null,
-  description_en text,
-  description_ar text,
-  status text not null default 'draft' check (status in ('draft', 'coming_soon', 'published')),
-  category text,
-  duration_minutes int,
-  broadcast_day text,
-  broadcast_time time,
-  brand_color text,               -- CIT brand color hex
-  hero_image_url text,
-  thumbnail_url text,
-  logo_url text,
-  featured boolean default false,
-  sort_order int default 0,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now(),
-  -- Full-text search vector
-  search_vector tsvector generated always as (
-    setweight(to_tsvector('english', coalesce(title_en, '')), 'A') ||
-    setweight(to_tsvector('english', coalesce(description_en, '')), 'B')
-  ) stored
-);
-
-create index shows_search_idx on shows using gin(search_vector);
-create index shows_status_idx on shows(status);
-create index shows_slug_idx on shows(slug);
-
--- Seasons
-create table seasons (
-  id uuid primary key default gen_random_uuid(),
-  show_id uuid references shows(id) on delete cascade not null,
-  number int not null,
-  title_en text,
-  title_ar text,
-  created_at timestamptz default now(),
-  unique(show_id, number)
-);
-
--- Episodes
-create table episodes (
-  id uuid primary key default gen_random_uuid(),
-  season_id uuid references seasons(id) on delete cascade not null,
-  number int not null,
-  title_en text not null,
-  title_ar text,
-  description_en text,
-  description_ar text,
-  youtube_video_id text,
-  youtube_url text,
-  status text not null default 'draft' check (status in ('draft', 'coming_soon', 'published')),
-  duration_minutes int,
-  thumbnail_url text,
-  air_date date,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now(),
-  -- Full-text search vector
-  search_vector tsvector generated always as (
-    setweight(to_tsvector('english', coalesce(title_en, '')), 'A') ||
-    setweight(to_tsvector('english', coalesce(description_en, '')), 'B')
-  ) stored,
-  unique(season_id, number)
-);
-
-create index episodes_search_idx on episodes using gin(search_vector);
-create index episodes_status_idx on episodes(status);
-
--- User profiles (extends Supabase auth.users)
-create table profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  display_name text,
-  avatar_url text,
-  is_admin boolean default false,
-  preferred_language text default 'en',
-  created_at timestamptz default now()
-);
-
--- Watchlist
-create table watchlist (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references profiles(id) on delete cascade not null,
-  show_id uuid references shows(id) on delete cascade not null,
-  added_at timestamptz default now(),
-  unique(user_id, show_id)
-);
-
-create index watchlist_user_idx on watchlist(user_id);
-
--- Watch progress (continue watching)
-create table watch_progress (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references profiles(id) on delete cascade not null,
-  episode_id uuid references episodes(id) on delete cascade not null,
-  progress_seconds int not null default 0,
-  duration_seconds int,
-  completed boolean default false,
-  updated_at timestamptz default now(),
-  unique(user_id, episode_id)
-);
-
-create index watch_progress_user_idx on watch_progress(user_id);
-create index watch_progress_updated_idx on watch_progress(updated_at desc);
+export const { Link, redirect, usePathname, useRouter, getPathname } =
+  createNavigation(routing)
 ```
 
-### RLS Policies (Key Examples)
+### Import swap rule
 
-```sql
--- Shows: anyone can read published/coming_soon, admin can read all
-alter table shows enable row level security;
+| Before | After |
+|--------|-------|
+| `import Link from 'next/link'` | `import { Link } from '@/i18n/navigation'` |
+| `import { useRouter } from 'next/navigation'` | `import { useRouter } from '@/i18n/navigation'` |
+| `import { usePathname } from 'next/navigation'` | `import { usePathname } from '@/i18n/navigation'` |
+| `import { redirect } from 'next/navigation'` (server) | `import { redirect } from 'next-intl/server'` |
 
-create policy "Public can view published shows"
-  on shows for select
-  using (status in ('published', 'coming_soon'));
+**Href values do not change.** `href="/browse"` stays `href="/browse"`. next-intl's `Link` prepends the active locale automatically. This is the key DX benefit — no string construction like `/en/browse` anywhere in the component tree.
 
-create policy "Admin can manage all shows"
-  on shows for all
-  using (
-    exists (
-      select 1 from profiles
-      where profiles.id = auth.uid()
-      and profiles.is_admin = true
-    )
-  );
+### Files requiring import swaps
 
--- Watchlist: users manage their own
-alter table watchlist enable row level security;
+| File | Current import | Change |
+|------|---------------|--------|
+| `src/components/layout/nav-links.tsx` | `next/link`, `next/navigation` (usePathname) | Both swaps |
+| `src/components/layout/user-dropdown.tsx` | `next/navigation` (useRouter) | useRouter swap |
+| `src/components/layout/locale-switcher.tsx` | `next/navigation` (useRouter) | Full replacement (see below) |
+| `src/app/(viewer)/profile/page.tsx` | `next/navigation` (redirect) | Server redirect swap |
+| `src/app/admin/layout.tsx` | `next/navigation` (redirect) | Server redirect swap |
+| Any page file using `<Link href="...">` | `next/link` | Link swap |
 
-create policy "Users manage own watchlist"
-  on watchlist for all
-  using (auth.uid() = user_id);
+### Locale switcher replacement
 
--- Watch progress: users manage their own
-alter table watch_progress enable row level security;
+The current `LocaleSwitcher` calls a Server Action to write a cookie then does `router.refresh()`. After migration, locale switching is pure URL navigation — no server action, no cookie write, no revalidation needed.
 
-create policy "Users manage own progress"
-  on watch_progress for all
-  using (auth.uid() = user_id);
+```typescript
+// src/components/layout/locale-switcher.tsx — AFTER
+'use client'
+
+import { useRouter, usePathname } from '@/i18n/navigation'
+import type { Locale } from '@/lib/locale'
+
+export function LocaleSwitcher({ current }: { current: Locale }) {
+  const router = useRouter()
+  const pathname = usePathname()
+
+  function flip(next: Locale) {
+    if (next === current) return
+    router.replace(pathname, { locale: next })
+  }
+
+  // ... same button rendering as before
+}
 ```
 
-## Scalability Considerations
+`setLocaleAction` and `locale-actions.ts` become dead code after this change.
 
-| Concern | At Launch (15 shows) | At 100 shows | At 1000+ shows |
-|---------|---------------------|--------------|----------------|
-| Database queries | Simple queries, no optimization needed | Add composite indexes, consider materialized views for catalog | Evaluate external search (Meilisearch), read replicas |
-| Image delivery | Vercel image optimization + Supabase Storage | Same, consider CDN (already on Vercel) | Dedicated image CDN (Cloudinary, imgix) |
-| Search | Postgres FTS is instant | Still fast with GIN indexes | Consider Meilisearch for typo tolerance, facets |
-| Watch progress writes | Direct inserts, no contention | Same, upsert handles conflicts | Batch writes, write-behind queue |
-| Page caching | `use cache` for catalog pages | Same, revalidate on admin changes | ISR with tag-based revalidation |
-| Auth sessions | Supabase Auth handles everything | Same | Same (Supabase scales this) |
+### Auth callback `next` param
 
-## Sources
+The `auth/callback/route.ts` handler redirects to `${origin}${next}` where `next` defaults to `/`. After migration, `/` redirects to `/en/` via middleware, so this is safe as a fallback. However, if any callsite constructs `?next=/profile`, that path will work correctly — middleware will promote `/profile` to `/en/profile` on redirect follow. The `safeNext()` validation in the callback handler does not need to change.
 
-- [Supabase SSR Docs](https://supabase.com/docs/guides/auth/server-side/creating-a-client) -- HIGH confidence
-- [Supabase Next.js Auth Setup](https://supabase.com/docs/guides/auth/server-side/nextjs) -- HIGH confidence
-- [Supabase RLS Docs](https://supabase.com/docs/guides/database/postgres/row-level-security) -- HIGH confidence
-- [Supabase Full-Text Search](https://supabase.com/docs/guides/database/full-text-search) -- HIGH confidence
-- [Next.js App Router Docs](https://nextjs.org/docs/app) -- HIGH confidence
-- [YouTube IFrame API Reference](https://developers.google.com/youtube/iframe_api_reference) -- HIGH confidence
-- [Next.js 16 Blog](https://nextjs.org/blog/next-16) -- HIGH confidence
+The one case that does need attention: if the login form passes `?next=` with a bare path like `/admin`, verify it gets the locale prefix added. The safest approach is to always let the middleware handle the redirect rather than constructing prefixed `next` params manually.
+
+---
+
+## Build Order
+
+Route restructuring is a hard prerequisite for translation work. `useTranslations` and `getTranslations` only function once `[locale]` params are flowing through the component tree via next-intl's context. Do not start translation wiring until Phase 3 is stable.
+
+### Phase 1 — Infrastructure setup (no user-visible change)
+
+1. Create `src/i18n/routing.ts` — `defineRouting({ locales: ['en', 'ar'], defaultLocale: 'en', localePrefix: 'always' })`
+2. Create `src/i18n/navigation.ts` — `createNavigation(routing)` exports
+3. Create `src/i18n/request.ts` — `getRequestConfig` with locale validation and message loading
+4. Create `src/messages/en.ts` and `src/messages/ar.ts` as stub TypeScript objects (`export default {}`)
+5. Update `next.config.ts` — add `createNextIntlPlugin()` wrapper around `withBotId(nextConfig)`
+
+App is unchanged at this point — next-intl is installed but no routes or middleware are active.
+
+### Phase 2 — Middleware (routing changes, redirects activate)
+
+6. Create `src/middleware.ts` using the composition pattern (i18n first, Supabase second, merge cookies)
+7. Test: `GET /browse` returns `302` to `/en/browse`, response carries Supabase session cookies
+
+**Verification gate:** Sign in → navigate to `/profile` → confirm redirect to `/en/profile` → session cookie present. Sign out. This gate must pass before Phase 3.
+
+### Phase 3 — Route restructure (directory moves)
+
+8. Create `src/app/[locale]/layout.tsx` — locale shell with `<html lang dir>`, `NextIntlClientProvider`, analytics
+9. Move `src/app/(viewer)/` contents to `src/app/[locale]/(viewer)/`
+10. Move `src/app/admin/` contents to `src/app/[locale]/admin/`
+11. Strip `src/app/layout.tsx` to thin skeleton (fonts + metadata only, no `lang`/`dir`, no Toaster/Analytics)
+
+**Verification gate:** All existing pages render at `/en/browse`, `/en/auth`, `/en/admin`, etc. Auth flow end-to-end.
+
+### Phase 4 — Navigation import swaps
+
+12. Swap all `next/link` → `@/i18n/navigation` in affected components
+13. Swap all `useRouter`/`usePathname` from `next/navigation` → `@/i18n/navigation` in client components
+14. Swap `redirect` from `next/navigation` → `next-intl/server` in server components and layouts
+15. Replace `LocaleSwitcher` implementation — remove server action pattern
+16. Delete `src/app/locale-actions.ts`
+
+**Verification gate:** EN/AR toggle in navbar changes URL prefix. `<html dir>` flips on toggle.
+
+### Phase 5 — `getLocale()` replacement in page files
+
+17. In `series/[slug]/page.tsx`, `profile/page.tsx`, `watch/[episodeId]/page.tsx`: replace `getLocale()` from `@/lib/locale` with `getLocale()` from `next-intl/server`
+18. Remove `getLocale()` function from `src/lib/locale.ts` and its `cookies()` import
+19. Keep `dirFor()` and `pickLocalized()` in `src/lib/locale.ts` — pure helpers, no migration needed
+
+### Phase 6 — Translation wiring (separate milestone work)
+
+20. Populate `src/messages/en.ts` and `src/messages/ar.ts` with actual UI string dictionaries
+21. Replace hardcoded UI strings with `useTranslations` (client components) and `getTranslations` (async server components)
+22. Update `LocaleSwitcher` to read current locale from `useLocale()` hook rather than prop
+23. Add `alternates.languages` to `generateMetadata` in series and watch page files
+
+---
+
+## Component Boundary Diagram
+
+```
+src/app/layout.tsx  (Root — Server Component)
+  Owns: font CSS variables, generateMetadata, global CSS import
+  Does NOT own: html lang/dir, Toaster, Analytics, any locale logic
+
+  └── src/app/[locale]/layout.tsx  (Locale Shell — Server Component)
+        Owns: <html lang dir>, NextIntlClientProvider + messages,
+              Toaster, Analytics, SpeedInsights, GA/Pixel scripts
+        Reads: params.locale from URL segment (not cookie)
+
+        ├── src/app/[locale]/(viewer)/layout.tsx  (Viewer Shell — Server Component)
+        │     Owns: Navbar (passes user), Footer, pt-24 content padding
+        │     Reads: Supabase session
+        │
+        │     └── [all viewer pages]
+        │           Reads locale via: getLocale() from next-intl/server
+        │           Client components: useLocale() from next-intl
+        │
+        └── src/app/[locale]/admin/layout.tsx  (Admin Shell — Server Component)
+              Owns: auth guard (redirect if not admin), AdminHeader
+              Reads: Supabase session
+
+              └── [all admin pages]
+
+src/app/api/  (Route Handlers — excluded from middleware matcher)
+  No locale handling needed
+```
+
+---
+
+## Supabase-Specific Integration Notes
+
+### `updateSession` is safe as-is
+
+`updateSession` operates on `request.cookies`, not URL paths. The URL changing from `/browse` to `/en/browse` is invisible to it. No modifications needed.
+
+### Auth redirect paths
+
+When a logged-out user hits `/en/profile`, the layout's `redirect('/auth')` (using next-intl's server redirect) produces `/en/auth` automatically. Correct behavior.
+
+### Supabase dashboard configuration
+
+After the middleware is live, the Supabase Auth dashboard needs:
+- **Site URL:** unchanged (domain-level, not path-level)
+- **Redirect URLs:** Add `/en/auth/callback` and `/ar/auth/callback`, or use a wildcard pattern. The safest option is to keep the configured redirect as `/auth/callback` (no locale prefix) and let middleware promote it to `/en/auth/callback` — this avoids updating the Supabase dashboard for each locale.
+
+### Supabase OAuth provider callback
+
+If Google/GitHub OAuth is added later, the OAuth provider's authorized callback URI must be the full URL without locale prefix. The middleware promotion chain handles the rest.
+
+---
+
+## New Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/middleware.ts` | i18n routing + Supabase session composition |
+| `src/i18n/routing.ts` | `defineRouting` — single source of truth for locales |
+| `src/i18n/navigation.ts` | `createNavigation` — locale-aware Link, useRouter, redirect, usePathname |
+| `src/i18n/request.ts` | `getRequestConfig` — per-request locale + message loading |
+| `src/messages/en.ts` | English UI strings (TypeScript export, not JSON) |
+| `src/messages/ar.ts` | Arabic UI strings (TypeScript export, not JSON) |
+| `src/app/[locale]/layout.tsx` | Locale shell with `<html lang dir>` + NextIntlClientProvider |
+
+## Files to Delete
+
+| File | Reason |
+|------|--------|
+| `src/app/locale-actions.ts` | Cookie-based locale switching replaced by URL navigation |
+
+## Files to Modify
+
+| File | Change summary |
+|------|---------------|
+| `src/app/layout.tsx` | Strip locale logic; becomes thin skeleton |
+| `next.config.ts` | Add `createNextIntlPlugin()` wrapper |
+| `src/lib/locale.ts` | Remove `getLocale()` and `cookies()` import; keep `dirFor()` and `pickLocalized()` |
+| `src/components/layout/locale-switcher.tsx` | Replace server action pattern with `router.replace(pathname, { locale })` |
+| `src/components/layout/nav-links.tsx` | Swap Link and usePathname imports |
+| `src/components/layout/user-dropdown.tsx` | Swap useRouter import |
+| `src/app/(viewer)/profile/page.tsx` | Swap `redirect` import to next-intl/server |
+| `src/app/admin/layout.tsx` | Swap `redirect` import to next-intl/server |
+| Any page using `<Link>` from next/link | Swap Link import |
