@@ -1,6 +1,6 @@
 ---
 phase: 13-route-restructure-auth-safety
-plan: 03
+plan: 03a
 type: execute
 wave: 3
 depends_on:
@@ -35,32 +35,34 @@ user_setup: []
 
 must_haves:
   truths:
-    - "Every click on a Link, router.push, or Server Component redirect preserves the active locale prefix"
-    - "grep for `from 'next/navigation'` in src/components and src/app returns ZERO matches for Link, useRouter, usePathname, redirect, permanentRedirect (notFound stays — not path-based)"
-    - "grep for hardcoded `/auth` paths in router.push / redirect / href returns only calls through @/i18n/navigation"
-    - "No client component strips the locale prefix during a navigation"
+    - "Every useRouter / usePathname / Server-redirect call in the listed files preserves the active locale prefix"
+    - "grep for `from 'next/navigation'` in the listed files returns ZERO matches for useRouter, usePathname, redirect, permanentRedirect (notFound stays — not path-based)"
+    - "grep for hardcoded `/auth` paths in router.push / redirect returns only calls through @/i18n/navigation"
+    - "No client component in this plan's scope strips the locale prefix during a navigation"
   artifacts:
     - path: "src/hooks/use-likes.ts"
-      provides: "Locale-preserving watchlist/likes hook"
+      provides: "Locale-preserving likes hook (useRouter swap)"
     - path: "src/hooks/use-watchlist.ts"
-      provides: "Locale-preserving watchlist hook"
+      provides: "Locale-preserving watchlist hook (useRouter swap)"
     - path: "src/components/auth/login-form.tsx"
       provides: "Login form with locale-preserving router and /auth/callback URL (callback itself is locale-agnostic)"
   key_links:
     - from: "every swapped file"
       to: "src/i18n/navigation"
-      via: "import { useRouter/Link/redirect/usePathname } from '@/i18n/navigation'"
+      via: "import { useRouter/redirect/usePathname } from '@/i18n/navigation'"
       pattern: "from ['\\\"]@/i18n/navigation['\\\"]"
 ---
 
 <objective>
-Swap every client-component import of `Link`, `useRouter`, `usePathname`, `redirect`, or `permanentRedirect` from `next/navigation` / `next/link` to `@/i18n/navigation`. Swap Server Component `redirect` imports that target user-facing paths (`/auth`, `/browse`, `/design-system/...`, `/`) to `@/i18n/navigation` so the redirect URL carries the active locale prefix. Fix the one hardcoded `/auth/callback?next=/auth/reset-password` URL inside login-form.tsx so the `?next=` value uses the locale-preserving form.
+Swap every client-component import of `useRouter`, `usePathname`, `redirect`, or `permanentRedirect` from `next/navigation` to `@/i18n/navigation`. Swap Server Component `redirect` imports that target user-facing paths (`/auth`, `/browse`, `/design-system/...`, `/`) to `@/i18n/navigation` so the redirect URL carries the active locale prefix.
+
+**Scope note:** This plan (13-03a) handles `useRouter`/`usePathname`/Server-`redirect` only. The `Link` → `@/i18n/navigation` swap across ~38 `next/link`-importing files lives in sibling plan 13-03b (parallel-eligible in the same wave).
 
 Keep `notFound` imports on `next/navigation` — `notFound()` is not a path-based navigation and has no locale concern.
 
-Purpose: Closes pitfalls 2 (RTE-04) and 3 (RTE-05). Without these swaps, a click on a `<Link href="/auth">` in the `/ar/` segment navigates to bare `/auth`, dropping the locale and falling back to `/en/auth` through proxy-level re-routing — workable but breaks the seamless experience. Worse, `router.push('/admin')` from `/ar/admin/shows/[id]` strips the locale and triggers a full re-auth round-trip.
+Purpose: Closes pitfalls 2 (RTE-04, navigation-hook half) and 3 (RTE-05, Server-redirect half) for this plan's file subset. Without these swaps, `router.push('/admin')` from `/ar/admin/shows/[id]` strips the locale and triggers a full re-auth round-trip; `redirect('/auth')` in a Server Component sends the user to bare `/auth` and drops their locale.
 
-Output: 14 client components + 5 server components swapped; build clean.
+Output: 10 useRouter swaps + 4 usePathname swaps + 5 Server Component redirect swaps = 19 file edits; build clean. The `next/link` swap for ~38 files is delivered by sibling plan 13-03b.
 </objective>
 
 <execution_context>
@@ -82,7 +84,6 @@ From src/i18n/navigation.ts:
 ```typescript
 export const { Link, useRouter, redirect, usePathname, getPathname, permanentRedirect } =
   createNavigation(routing)
-// Link<Href>: drop-in for next/link — prepends active locale to href
 // useRouter(): { push, replace, back, forward, refresh, prefetch } — prepends active locale
 // useRouter().replace(pathname, { locale: 'ar' }): swap to a different locale on the SAME path
 // redirect(href, RedirectType): Server Component redirect — prepends active locale
@@ -100,7 +101,7 @@ import { notFound } from 'next/navigation'
 <tasks>
 
 <task type="auto">
-  <name>Task 1: Swap 9 client-component useRouter imports to @/i18n/navigation</name>
+  <name>Task 1: Swap 10 client-component useRouter imports to @/i18n/navigation</name>
   <files>
     src/components/layout/auth-section.tsx,
     src/components/layout/user-dropdown.tsx,
@@ -121,7 +122,12 @@ import { notFound } from 'next/navigation'
   </read_first>
 
   <action>
-For each file below, change the single import line. This is mechanical — the runtime API is identical to `next/navigation`.
+Before editing, confirm the current state with a fresh grep (files may shift slightly after plan 13-01 ran):
+```bash
+grep -rln "useRouter.*from 'next/navigation'\|from 'next/navigation'.*useRouter" src --include='*.tsx' --include='*.ts'
+```
+
+This plan owns 10 of those matches. For each file below, change the single import line. This is mechanical — the runtime API is identical to `next/navigation`.
 
 Also inspect whether any file passes a hardcoded absolute path starting with `/auth`, `/admin`, `/browse`, `/`, `/series`, `/watch`, `/profile`, `/my-list`, `/search`, `/support`, `/coming-soon`, or `/design-system` to `router.push` / `router.replace`. Those paths stay exactly as-is — `@/i18n/navigation`'s router prepends the locale automatically.
 
@@ -143,14 +149,13 @@ Also inspect whether any file passes a hardcoded absolute path starting with `/a
 +import { useRouter } from '@/i18n/navigation'
 ```
 
-Additionally, fix the one hardcoded callback URL inside this file — the callback itself is locale-agnostic (Pitfall 4 territory), but the `?next=` value IS locale-sensitive:
+Additionally, inspect the hardcoded callback URL inside this file — the callback itself is locale-agnostic (Pitfall 4 territory), but the `?next=` value IS locale-sensitive:
 
-```diff
--      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
-+      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+```
+${window.location.origin}/auth/callback?next=/auth/reset-password
 ```
 
-Wait — both sides are identical there. Rationale: `/auth/callback` is locale-agnostic (the OAuth return URL preserved in plan 13-01). The `?next=` value is `/auth/reset-password` — a path without locale prefix. The updated `safeNext()` in plan 13-04 will prepend the active locale from the `NEXT_LOCALE` cookie when it sees a plain path, landing the user on `/en/auth/reset-password` or `/ar/auth/reset-password` correctly. So **no change needed** to the URL literal here. Leave it exactly as-is.
+**No change needed** to the URL literal here. Rationale: `/auth/callback` is locale-agnostic (the OAuth return URL preserved in plan 13-01). The `?next=` value is `/auth/reset-password` — a path without locale prefix. The updated `safeNext()` in plan 13-04 will prepend the active locale from the `NEXT_LOCALE` cookie when it sees a plain path, landing the user on `/en/auth/reset-password` or `/ar/auth/reset-password` correctly. Leave the URL exactly as-is.
 
 ### src/components/auth/signup-form.tsx
 ```diff
@@ -194,7 +199,7 @@ Wait — both sides are identical there. Rationale: `/auth/callback` is locale-a
 +import { useRouter } from '@/i18n/navigation'
 ```
 
-That covers 9 of the 16 files. Do NOT touch `src/components/layout/locale-switcher.tsx` or `src/components/profile/language-preference.tsx` in this task — both are replaced/deleted in plan 13-05.
+Do NOT touch `src/components/layout/locale-switcher.tsx` or `src/components/profile/language-preference.tsx` — both are replaced/deleted in plan 13-05.
   </action>
 
   <verify>
@@ -202,14 +207,14 @@ That covers 9 of the 16 files. Do NOT touch `src/components/layout/locale-switch
   </verify>
 
   <acceptance_criteria>
-    - All 9 files import `useRouter` from `@/i18n/navigation` (not `next/navigation`)
-    - All 9 files have NO residual `import { useRouter } from 'next/navigation'`
-    - All 9 files still work as client components (the `'use client'` directive is unchanged at the top)
+    - All 10 files import `useRouter` from `@/i18n/navigation` (not `next/navigation`)
+    - All 10 files have NO residual `import { useRouter } from 'next/navigation'`
+    - All 10 files still work as client components (the `'use client'` directive is unchanged at the top)
     - The `${window.location.origin}/auth/callback?next=/auth/reset-password` URL in login-form.tsx is left exactly as-is (callback is locale-agnostic, safeNext handles locale)
   </acceptance_criteria>
 
   <done>
-    - 9 useRouter swaps complete
+    - 10 useRouter swaps complete
   </done>
 </task>
 
@@ -355,12 +360,12 @@ Keep `notFound` imports on `next/navigation` — `notFound()` is a 404 signal, n
 
   <done>
     - 5 Server Component redirect swaps complete
-    - RTE-05 closed (hardcoded /auth redirects now locale-aware)
+    - RTE-05 (Server-redirect half) closed
   </done>
 </task>
 
 <task type="auto">
-  <name>Task 4: Build gate — confirm client + server nav swaps don't break compilation</name>
+  <name>Task 4: Build gate — confirm navigation-hook and Server-redirect swaps don't break compilation</name>
   <files>none (verification task)</files>
 
   <read_first>
@@ -368,20 +373,24 @@ Keep `notFound` imports on `next/navigation` — `notFound()` is a 404 signal, n
   </read_first>
 
   <action>
-Run the full verification gate. Plan 13-03 is mechanical — the only failure mode is a typo in an import path. The `@/i18n/navigation` helpers have the same runtime API as `next/navigation` so no call-site changes are needed.
+Run the full verification gate for this plan's scope (useRouter + usePathname + Server redirect). Plan 13-03a is mechanical — the only failure mode is a typo in an import path. The `@/i18n/navigation` helpers have the same runtime API as `next/navigation` so no call-site changes are needed.
+
+Note: this gate does NOT require that all `next/link` imports be swapped — that work ships in sibling plan 13-03b. The combined "zero `next/(navigation|link)` imports outside the allowed list" gate lives in plan 13-06 Task 1.
 
 ```bash
 npx tsc --noEmit
 npm run build
 ```
 
-Also run the grep invariants from the CONTEXT build-safety list:
+Plan-scoped grep invariants (only useRouter/usePathname/redirect — leaves `next/link` alone):
 
 ```bash
-# No client component should import Link/useRouter/usePathname/redirect/permanentRedirect
-# from next/navigation. Only auth/callback/route.ts (Route Handler, not page) and
-# the root not-found.tsx should still have next/navigation imports for notFound.
-grep -rE "from ['\"]next/navigation['\"]" src/components src/app --include="*.tsx" --include="*.ts" | grep -vE "notFound" | grep -vE "auth/callback/route\.ts"
+# No useRouter/usePathname/redirect/permanentRedirect imports from next/navigation
+# in src/components, src/app, src/hooks. Only notFound and the OAuth callback route
+# handler should still have next/navigation imports.
+grep -rE "from ['\"]next/navigation['\"]" src/components src/app src/hooks --include="*.tsx" --include="*.ts" \
+  | grep -vE "notFound" \
+  | grep -vE "auth/callback/route\.ts"
 ```
 
 Expected: EMPTY output. Any match means a file still imports path-navigation helpers from `next/navigation` — go fix it before this task passes.
@@ -391,26 +400,27 @@ Expected: EMPTY output. Any match means a file still imports path-navigation hel
 grep -rE "router\.push\(['\"]/auth|redirect\(['\"]/auth|href=['\"]/auth" src --include="*.tsx" --include="*.ts" | grep -v "i18n/navigation"
 ```
 
-Expected: this grep may still show matches, but they should all be in files that now import from `@/i18n/navigation` (the grep pattern doesn't check imports, only literal strings). Manually verify each match is in a file that was swapped in Task 1-3. The two known hardcoded paths that are ALLOWED to stay:
+Expected: every remaining hit must be in a file that now imports from `@/i18n/navigation` (the grep pattern doesn't check imports, only literal strings). The two known hardcoded paths that are ALLOWED to stay:
 - `src/app/auth/callback/route.ts` — uses `NextResponse.redirect(\`${origin}/auth?error=…\`)` at an HTTP-redirect level. This is locale-handled in plan 13-04, NOT here.
 - `src/app/(viewer)/auth/actions.ts` (if it has any redirect) — Server Action; uses Supabase client, not redirect.
   </action>
 
   <verify>
-    <automated>npx tsc --noEmit &amp;&amp; npm run build &amp;&amp; test -z "$(grep -rE \"from ['\\\"]next/navigation['\\\"]\" src/components src/app --include='*.tsx' --include='*.ts' | grep -vE 'notFound' | grep -vE 'auth/callback/route\\.ts')"</automated>
+    <automated>npx tsc --noEmit &amp;&amp; npm run build &amp;&amp; test -z "$(grep -rE \"from ['\\\"]next/navigation['\\\"]\" src/components src/app src/hooks --include='*.tsx' --include='*.ts' | grep -vE 'notFound' | grep -vE 'auth/callback/route\\.ts')"</automated>
   </verify>
 
   <acceptance_criteria>
     - `npx tsc --noEmit` exits 0
     - `npm run build` exits 0
-    - `grep -rE "from ['\"]next/navigation['\"]" src/components src/app --include="*.tsx" --include="*.ts" | grep -vE "notFound" | grep -vE "auth/callback/route\.ts"` returns EMPTY
-    - No Link/useRouter/usePathname/redirect/permanentRedirect imports from `next/navigation` remain in client or server components
+    - `grep -rE "from ['\"]next/navigation['\"]" src/components src/app src/hooks --include="*.tsx" --include="*.ts" | grep -vE "notFound" | grep -vE "auth/callback/route\.ts"` returns EMPTY
+    - No useRouter/usePathname/redirect/permanentRedirect imports from `next/navigation` remain in client or server components
     - `notFound` imports from `next/navigation` are preserved in the 3 expected files (series/[slug]/page.tsx, watch/[episodeId]/page.tsx, admin/shows/[id]/page.tsx)
   </acceptance_criteria>
 
   <done>
-    - RTE-04 and RTE-05 closed
-    - Every path-based navigation in the app goes through locale-preserving helpers
+    - RTE-04 (navigation-hook half) and RTE-05 (Server-redirect half) closed
+    - Every path-based navigation hook and Server-component redirect goes through locale-preserving helpers
+    - `next/link` swaps still pending — delivered by sibling plan 13-03b
   </done>
 </task>
 
@@ -433,18 +443,19 @@ Expected: this grep may still show matches, but they should all be in files that
 <verification>
 - [ ] `npx tsc --noEmit` exit 0
 - [ ] `npm run build` exit 0
-- [ ] `grep -c "from '@/i18n/navigation'" src/components src/app src/hooks -r` returns at least 18 matches
-- [ ] `grep -rE "from ['\"]next/navigation['\"]" src/components src/app --include="*.tsx" --include="*.ts" | grep -vE "notFound|auth/callback/route\.ts"` is EMPTY
+- [ ] `grep -c "from '@/i18n/navigation'" src/components src/app src/hooks -r` returns at least 19 matches added by this plan
+- [ ] `grep -rE "from ['\"]next/navigation['\"]" src/components src/app src/hooks --include="*.tsx" --include="*.ts" | grep -vE "notFound|auth/callback/route\.ts"` is EMPTY
 </verification>
 
 <success_criteria>
-- 9 useRouter swaps, 4 usePathname swaps, 5 redirect swaps — 18 files total in this plan
+- 10 useRouter swaps, 4 usePathname swaps, 5 redirect swaps — 19 file edits total in this plan
 - Build + tsc green
-- RTE-04 + RTE-05 closed
+- RTE-04 (navigation-hook half) + RTE-05 (Server-redirect half) closed
 - `notFound` imports preserved (correct semantics)
 - Locale-switcher (deleted in 13-05) and language-preference (replaced in 13-05) not touched in this plan
+- `next/link` swap coverage delivered by sibling plan 13-03b
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/13-route-restructure-auth-safety/13-03-SUMMARY.md`.
+After completion, create `.planning/phases/13-route-restructure-auth-safety/13-03a-SUMMARY.md`.
 </output>

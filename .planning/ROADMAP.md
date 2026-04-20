@@ -57,16 +57,17 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 **Success Criteria** (what must be TRUE):
   1. Visiting `/` redirects to `/en` and `/ar` renders the same page; deep links like `/en/series/<slug>` and `/ar/series/<slug>` both resolve correctly
   2. Logging in on `/ar/auth` lands on `/ar/...` (not `/auth/login` or `/en/...`) and the Supabase session cookie survives the locale redirect — the user is NOT silently logged out
-  3. Every client-side navigation (navbar, footer, show cards, watch-page prev/next, auth flows, OAuth `?next=` return) preserves the current locale prefix — no `useRouter` from `next/navigation` remains in a viewer client component
+  3. Every client-side navigation (navbar, footer, show cards, watch-page prev/next, auth flows, OAuth `?next=` return) preserves the current locale prefix — no `useRouter` from `next/navigation` and no `Link` from `next/link` remain in a viewer client component
   4. The coming-soon gate in `proxy.ts` redirects to `/en/coming-soon` or `/ar/coming-soon` based on the incoming URL — never bare `/coming-soon`
   5. `src/app/locale-actions.ts`, `src/components/layout/locale-switcher.tsx`, and `src/components/profile/language-preference.tsx` are replaced by a next-intl navigation-based switcher that writes the URL; old cookie switcher is removed from the codebase
-**Plans**: 6 plans
+**Plans**: 7 plans
   - [ ] 13-01-PLAN.md — Route restructure: git-mv (viewer)/ and admin/ under [locale]/, relocate OAuth callback to locale-agnostic path, create [locale]/layout.tsx (NextIntlClientProvider + setRequestLocale + generateStaticParams + <html lang dir>), slim root layout.tsx to pass-through — closes RTE-01, RTE-02, I18N-05, I18N-06
   - [ ] 13-02-PLAN.md — Proxy composition: createMiddleware(routing) + updateSession() + cookie merge, locale-aware coming-soon redirect, /api and /auth/callback short-circuits — closes RTE-03, RTE-07
-  - [ ] 13-03-PLAN.md — Client + server navigation swaps: 9 useRouter + 4 usePathname + 5 Server Component redirect imports swapped to @/i18n/navigation (18 files) — closes RTE-04, RTE-05
+  - [ ] 13-03a-PLAN.md — Navigation-hook + Server-redirect swaps: 10 useRouter + 4 usePathname + 5 Server Component redirect imports swapped to @/i18n/navigation (19 file edits) — closes RTE-04 (hook half) + RTE-05
+  - [ ] 13-03b-PLAN.md — `next/link` swaps: ~38 files swap `import Link from 'next/link'` → `import { Link } from '@/i18n/navigation'` so every click preserves the active locale prefix — closes RTE-04 (Link half); parallel with 13-03a in Wave 3
   - [ ] 13-04-PLAN.md — OAuth callback safeNext() locale-aware: reads NEXT_LOCALE cookie, prepends locale on plain paths, preserves open-redirect defense, error path lands on /${locale}/auth — closes RTE-06
   - [ ] 13-05-PLAN.md — Dead code deletion (locale-actions.ts, locale-switcher.tsx), URL-based LanguagePreference rewrite (router.replace + locale option), sitemap alternates.languages, site-url.ts audit — closes RTE-08, RTE-09
-  - [ ] 13-06-PLAN.md — Full static-analysis gate (11 invariants) + mandatory Vercel preview 10-item auth-safety smoke test (human checkpoint) — atomic merge gate for Phase 13
+  - [ ] 13-06-PLAN.md — Full static-analysis gate (11 invariants incl. combined `next/(navigation|link)` zero-residue check) + mandatory Vercel preview 10-item auth-safety smoke test (human checkpoint) — atomic merge gate for Phase 13
 **UI hint**: yes
 
 ### Phase 14: Global Layout + RTL CSS
@@ -151,7 +152,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 | 9. Personalization & Watch Features | v1.0 | 3/3 | Complete | 2026-04-04 |
 | 10. Empty State Polish | v1.0 | 1/1 | Complete | 2026-04-14 |
 | 12. i18n Infrastructure | v1.1 | 1/1 | Complete | 2026-04-21 |
-| 13. Route Restructure + Auth Safety | v1.1 | 0/6 | Planned | - |
+| 13. Route Restructure + Auth Safety | v1.1 | 0/7 | Planned | - |
 | 14. Global Layout + RTL CSS | v1.1 | 0/0 | Not started | - |
 | 15. Viewer Pages Translation | v1.1 | 0/0 | Not started | - |
 | 16. Admin Pages Translation | v1.1 | 0/0 | Not started | - |
