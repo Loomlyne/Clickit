@@ -47,7 +47,8 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   3. `generateStaticParams` on the prepared `[locale]/layout.tsx` returns both `{locale:'en'}` and `{locale:'ar'}` and `setRequestLocale()` is importable and callable
   4. Existing `dirFor()` / `pickLocalized()` in `src/lib/locale.ts` continue to work unchanged — no regression in bilingual DB field rendering on show detail pages
   5. `npm run build` succeeds; no viewer or admin page has been moved yet, so the live site is byte-identical
-**Plans**: TBD
+**Plans**: 1 plan
+  - [ ] 12-01-PLAN.md — Create next-intl primitives (routing, request, navigation) + bilingual message dictionary skeletons (en.json, ar.json) with 14 namespaces; zero page edits
 
 ### Phase 13: Route Restructure + Auth Safety
 **Goal**: All pages live under `src/app/[locale]/...` and the 6 auth/routing pitfalls are fixed atomically so sessions survive locale redirects
@@ -143,7 +144,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 | 8. Data Integration, Auth & Search | v1.0 | 3/3 | Complete | 2026-04-04 |
 | 9. Personalization & Watch Features | v1.0 | 3/3 | Complete | 2026-04-04 |
 | 10. Empty State Polish | v1.0 | 1/1 | Complete | 2026-04-14 |
-| 12. i18n Infrastructure | v1.1 | 0/0 | Not started | - |
+| 12. i18n Infrastructure | v1.1 | 0/1 | Planned | - |
 | 13. Route Restructure + Auth Safety | v1.1 | 0/0 | Not started | - |
 | 14. Global Layout + RTL CSS | v1.1 | 0/0 | Not started | - |
 | 15. Viewer Pages Translation | v1.1 | 0/0 | Not started | - |
