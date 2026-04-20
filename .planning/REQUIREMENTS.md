@@ -1,7 +1,7 @@
 # Requirements — Milestone v1.1 Full Bilingual UI (AR/EN)
 
 **Derived from:** `.planning/research/SUMMARY.md` (research pass 2026-04-20)
-**Status:** Defining requirements — to be mapped to phases 12–17 by roadmapper
+**Status:** Requirements mapped to phases 12–17 (roadmap 2026-04-20)
 
 ---
 
@@ -138,12 +138,73 @@ Goal: translation-adjacent content quality issues that show up once the mechanic
 
 ## Traceability
 
-Filled in by roadmapper once phases are defined.
+Mapped by roadmapper 2026-04-20. Coverage: **62/62** v1.1 requirements — no orphans, no duplicates. Phase totals: 12→7, 13→9, 14→8, 15→14, 16→5, 17→19 = 62.
 
-| REQ-ID | Phase | Status |
-|--------|-------|--------|
-| (pending) | | |
+| REQ-ID    | Phase | Status      |
+|-----------|-------|-------------|
+| I18N-01   | 12    | Not started |
+| I18N-02   | 12    | Not started |
+| I18N-03   | 12    | Not started |
+| I18N-04   | 12    | Not started |
+| I18N-05   | 12    | Not started |
+| I18N-06   | 12    | Not started |
+| I18N-07   | 12    | Not started |
+| RTE-01    | 13    | Not started |
+| RTE-02    | 13    | Not started |
+| RTE-03    | 13    | Not started |
+| RTE-04    | 13    | Not started |
+| RTE-05    | 13    | Not started |
+| RTE-06    | 13    | Not started |
+| RTE-07    | 13    | Not started |
+| RTE-08    | 13    | Not started |
+| RTE-09    | 13    | Not started |
+| RTL-01    | 14    | Not started |
+| RTL-02    | 14    | Not started |
+| RTL-03    | 14    | Not started |
+| RTL-04    | 14    | Not started |
+| RTL-05    | 14    | Not started |
+| RTL-06    | 14    | Not started |
+| RTL-07    | 14    | Not started |
+| RTL-08    | 14    | Not started |
+| VW-01     | 15    | Not started |
+| VW-02     | 15    | Not started |
+| VW-03     | 15    | Not started |
+| VW-04     | 15    | Not started |
+| VW-05     | 15    | Not started |
+| VW-06     | 15    | Not started |
+| VW-07     | 15    | Not started |
+| VW-08     | 15    | Not started |
+| VW-09     | 15    | Not started |
+| VW-10     | 15    | Not started |
+| VW-11     | 15    | Not started |
+| VW-12     | 15    | Not started |
+| VW-13     | 15    | Not started |
+| VW-14     | 15    | Not started (scoped as exclusion — no action required) |
+| ADM-01    | 16    | Not started |
+| ADM-02    | 16    | Not started |
+| ADM-03    | 16    | Not started |
+| ADM-04    | 16    | Not started |
+| ADM-05    | 16    | Not started |
+| DYN-01    | 17    | Not started |
+| DYN-02    | 17    | Not started |
+| DYN-03    | 17    | Not started |
+| DYN-04    | 17    | Not started |
+| DYN-05    | 17    | Not started |
+| DYN-06    | 17    | Not started |
+| DYN-07    | 17    | Not started |
+| META-01   | 17    | Not started |
+| META-02   | 17    | Not started |
+| META-03   | 17    | Not started |
+| META-04   | 17    | Not started |
+| META-05   | 17    | Not started |
+| META-06   | 17    | Not started |
+| POLISH-01 | 17    | Not started |
+| POLISH-02 | 17    | Not started |
+| POLISH-03 | 17    | Not started |
+| POLISH-04 | 17    | Not started |
+| POLISH-05 | 17    | Not started |
+| POLISH-06 | 17    | Not started |
 
 ---
 
-*Last updated: 2026-04-20 — milestone v1.1 requirements drafted from research SUMMARY.md*
+*Last updated: 2026-04-20 — milestone v1.1 requirements mapped to phases 12-17*
