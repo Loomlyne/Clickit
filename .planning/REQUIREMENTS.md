@@ -26,8 +26,8 @@ Goal: move pages under `src/app/[locale]/...` and fix the 6 latent auth/routing 
 - [x] **RTE-01**: All pages moved under `src/app/[locale]/`. `(viewer)` and `admin` route groups preserved inside the `[locale]` segment *(delivered 2026-04-21 in Phase 13 plan 01; 38 files moved via git mv, blame preserved)*
 - [x] **RTE-02**: Root `src/app/layout.tsx` reduced to minimal shell (children + html body); locale-aware `html dir lang` attributes move to `[locale]/layout.tsx` *(delivered 2026-04-21 in Phase 13 plan 01; root slimmed 148 → 15 lines)*
 - [x] **RTE-03**: `proxy.ts` composes `createMiddleware(routing)` with existing Supabase `updateSession()` — Supabase auth cookies merged onto the i18n response so locale redirects do not log users out (Pitfall #1) *(delivered 2026-04-21 in Phase 13 plan 02, commit 5503cda)*
-- [ ] **RTE-04**: ~7 client components using `useRouter` from `next/navigation` swap to `@/i18n/navigation` so navigation preserves locale prefix (Pitfall #2)
-- [ ] **RTE-05**: Hard-coded redirects to `/auth/login` in auth actions and protected routes become locale-aware (`redirect` from `@/i18n/navigation`) (Pitfall #3)
+- [ ] **RTE-04**: ~7 client components using `useRouter` from `next/navigation` swap to `@/i18n/navigation` so navigation preserves locale prefix (Pitfall #2) *(hook half — 10 useRouter + 4 usePathname — delivered 2026-04-21 in Phase 13 plan 03a, commits 82c6735 / b9cb442; `next/link` half pending in plan 13-03b)*
+- [x] **RTE-05**: Hard-coded redirects to `/auth/login` in auth actions and protected routes become locale-aware (`redirect` from `@/i18n/navigation`) (Pitfall #3) *(delivered 2026-04-21 in Phase 13 plan 03a, commits 2740da6 / 9b079ba — 5 Server Component redirect swaps with {href, locale} signature)*
 - [ ] **RTE-06**: Supabase auth callback `?next=` redirect handling audited and preserved with locale context (Pitfall #4)
 - [x] **RTE-07**: `coming-soon` redirect in `proxy.ts` becomes locale-aware — preserves `/en/` or `/ar/` prefix (Pitfall #5) *(delivered 2026-04-21 in Phase 13 plan 02, commit 5503cda)*
 - [ ] **RTE-08**: `src/app/locale-actions.ts`, `src/components/layout/locale-switcher.tsx`, and `src/components/profile/language-preference.tsx` replaced with next-intl navigation-based switcher that writes the URL (old cookie-only switcher becomes dead code)
@@ -152,8 +152,8 @@ Mapped by roadmapper 2026-04-20. Coverage: **62/62** v1.1 requirements — no or
 | RTE-01    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 01, commit e857d21) |
 | RTE-02    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 01, commit b246eba) |
 | RTE-03    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 02, commit 5503cda) |
-| RTE-04    | 13    | Not started |
-| RTE-05    | 13    | Not started |
+| RTE-04    | 13    | Partial — hook half delivered 2026-04-21 (Phase 13 plan 03a, commits 82c6735 / b9cb442); Link half pending in plan 13-03b |
+| RTE-05    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 03a, commits 2740da6 / 9b079ba) |
 | RTE-06    | 13    | Not started |
 | RTE-07    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 02, commit 5503cda) |
 | RTE-08    | 13    | Not started |
