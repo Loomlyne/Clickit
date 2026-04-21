@@ -1,16 +1,27 @@
 'use client'
 
+import { useLocale } from 'next-intl'
 import { motion } from 'motion/react'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 
-const STATS = [
+const STATS_EN = [
   { label: 'Library', value: '15', suffix: '+', description: 'Exclusive Originals', color: '#9F54A0' },
   { label: 'Audio', value: '2', suffix: '', description: 'Immersive Languages', color: '#50A258' },
   { label: 'Origin', value: 'UAE', suffix: '', description: 'Abu Dhabi · Spacelight', color: '#EA8C2E' },
   { label: 'Access', value: 'Free', suffix: '', description: 'No subscription required', color: '#DB3F34' },
 ]
 
+const STATS_AR = [
+  { label: 'المكتبة', value: '15', suffix: '+', description: 'إنتاجات أصلية حصرية', color: '#9F54A0' },
+  { label: 'الصوتيات', value: '2', suffix: '', description: 'لغتان غامرتان', color: '#50A258' },
+  { label: 'المنشأ', value: 'الإمارات', suffix: '', description: 'أبوظبي · Spacelight', color: '#EA8C2E' },
+  { label: 'الوصول', value: 'مجاني', suffix: '', description: 'لا اشتراك مطلوب', color: '#DB3F34' },
+]
+
 export function BrandStats() {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
+  const STATS = isArabic ? STATS_AR : STATS_EN
   return (
     <ScrollReveal>
       <div className="px-6 md:px-12">
@@ -18,7 +29,7 @@ export function BrandStats() {
         <div className="mb-16 flex items-center gap-6">
           <div className="h-px flex-1 bg-white/[0.07]" />
           <span className="text-[10px] font-bold uppercase tracking-[0.35em] text-white/25">
-            By the numbers
+            {isArabic ? 'بالأرقام' : 'By the numbers'}
           </span>
           <div className="h-px flex-1 bg-white/[0.07]" />
         </div>

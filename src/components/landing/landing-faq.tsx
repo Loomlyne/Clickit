@@ -1,10 +1,15 @@
+import { getLocale, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { FAQ_ITEMS } from '@/lib/faq-data'
 
-const LANDING_FAQS = FAQ_ITEMS.slice(0, 5)
-
-export function LandingFaq() {
+export async function LandingFaq() {
+  const [locale, tFaq] = await Promise.all([getLocale(), getTranslations('faq')])
+  const isArabic = locale === 'ar'
+  // Top 5 FAQs from the faq namespace
+  const LANDING_FAQS = [1, 2, 3, 4, 5].map((i) => ({
+    q: tFaq(`q${i}Question`),
+    a: tFaq(`q${i}Answer`),
+  }))
   return (
     <section className="px-6 md:px-12">
       <div className="mx-auto max-w-7xl">
@@ -12,23 +17,28 @@ export function LandingFaq() {
           {/* Left: sticky editorial heading */}
           <div className="lg:sticky lg:top-32" style={{ height: 'fit-content' }}>
             <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.32em] text-white/28">
-              FAQ
+              {isArabic ? 'الأسئلة المتكررة' : 'FAQ'}
             </p>
             <h2
               className="font-display font-black leading-[0.92] text-white"
               style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', letterSpacing: '-0.05em' }}
             >
-              Questions,{' '}
-              <span className="text-white/28">answered.</span>
+              {isArabic ? (
+                <>الأسئلة،{' '}<span className="text-white/28">بإجاباتها.</span></>
+              ) : (
+                <>Questions,{' '}<span className="text-white/28">answered.</span></>
+              )}
             </h2>
             <p className="mt-5 text-sm leading-7 text-white/44 md:text-base">
-              Everything you need to know about Clickit Story — free, original, and built in Abu Dhabi.
+              {isArabic
+                ? 'كل ما تحتاج معرفته عن كلِك إت ستوري — مجاني، أصلي، ومصنوع في أبوظبي.'
+                : 'Everything you need to know about Clickit Story — free, original, and built in Abu Dhabi.'}
             </p>
             <Link
               href="/support#faq"
               className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-white/40 transition-colors hover:text-white/80"
             >
-              All FAQs and support →
+              {isArabic ? 'كل الأسئلة والدعم ←' : 'All FAQs and support →'}
             </Link>
           </div>
 

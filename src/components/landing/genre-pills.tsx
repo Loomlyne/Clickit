@@ -1,3 +1,4 @@
+import { getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getDistinctGenres } from '@/lib/queries'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
@@ -23,7 +24,8 @@ const GENRE_COLORS: Record<string, string> = {
 }
 
 export async function GenrePills() {
-  const genres = await getDistinctGenres()
+  const [genres, locale] = await Promise.all([getDistinctGenres(), getLocale()])
+  const isArabic = locale === 'ar'
 
   if (genres.length === 0) return null
 
@@ -46,24 +48,29 @@ export async function GenrePills() {
             <div className="mb-5 flex items-center gap-3">
               <div className="h-px w-10 bg-[#DB3F34]" />
               <span className="text-[10px] font-bold uppercase tracking-[0.34em] text-white/36">
-                Explore by genre
+                {isArabic ? 'استكشف حسب النوع' : 'Explore by genre'}
               </span>
             </div>
             <h2
               className="font-display font-black leading-[0.9] text-white"
               style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', letterSpacing: '-0.05em' }}
             >
-              Every mood.{' '}
-              <span className="text-white/24">Every story.</span>
+              {isArabic ? (
+                <>كل مزاج.{' '}<span className="text-white/24">كل قصة.</span></>
+              ) : (
+                <>Every mood.{' '}<span className="text-white/24">Every story.</span></>
+              )}
             </h2>
             <p className="mt-5 text-sm leading-7 text-white/44 md:text-base">
-              From health and cooking to music and cinema — find the genre that matches your moment.
+              {isArabic
+                ? 'من الصحة والطبخ إلى الموسيقى والسينما — اعثر على النوع الذي يناسب لحظتك.'
+                : 'From health and cooking to music and cinema — find the genre that matches your moment.'}
             </p>
             <Link
               href="/browse"
               className="mt-7 inline-flex items-center gap-2 text-sm font-medium text-white/40 transition-colors hover:text-white/80"
             >
-              Browse all shows →
+              {isArabic ? 'تصفح كل البرامج ←' : 'Browse all shows →'}
             </Link>
           </div>
 
