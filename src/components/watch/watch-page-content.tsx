@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { motion } from 'motion/react'
 import { ArrowLeft } from 'lucide-react'
 import { YouTubePlayer } from '@/components/watch/youtube-player'
