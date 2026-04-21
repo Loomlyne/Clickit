@@ -17,6 +17,38 @@ Viewers enter the platform, discover a show, pick an episode, and watch immediat
 
 The platform is live with the full viewer experience (cinematic home page, series browsing, watch page with autoplay, personalization) and admin dashboard (show/season/episode CRUD, artwork upload, archive management). All 15 CIT programs are seeded. Content is served from Supabase with Postgres FTS search and RLS security.
 
+## Queued Next Milestone: v1.2 Editorial Feature Parity
+
+**Status:** Scaffolded 2026-04-22 — starts after v1.1 ships (Phase 13-06 + Phases 14-17 complete).
+
+**Goal:** Bring `clickit-editorial.vercel.app` to full functional parity with primary, while preserving Editorial's visual design. Every edit, section, click, and feature that exists on primary must work inside the Editorial shell.
+
+**User framing (verbatim):** "everythin in editorial must be on editorial design system. keep for noe englais only."
+
+**Target features:**
+- Converge Editorial branch (`claude/angry-tharp-d39d9e`) into `main` behind the `NEXT_PUBLIC_DESIGN` build flag — one codebase, two Vercel projects, different env vars
+- Wire auth state (sign-in, avatar dropdown, sign-out, auth-gated routes) through Editorial chrome
+- Wire watchlist + likes hooks into Editorial `Poster` / `Rail` / `Series` (`onToggleList` callbacks currently no-op)
+- Port full YouTube IFrame API + `useProgressTracker` + autoplay-next + resume-from-timestamp into Editorial watch page (currently a simple iframe)
+- Continue Watching rail on Editorial browse + Recently Watched on Editorial profile (currently empty/missing)
+- Editorial variants for Search (Postgres FTS), Coming Soon (real data), Support (contact form), Auth pages
+- Respect `flags.comingSoonMode` gate on Editorial routes
+- Performance: `next/image`, `prefers-reduced-motion`, server-side mobile detection
+- Deploy to `clickit-editorial` Vercel project pointing at `main` with `NEXT_PUBLIC_DESIGN=editorial`
+
+**Explicit exclusions:**
+- Arabic / RTL for Editorial — deferred to v1.3
+- Redesigning Editorial visuals — this milestone ports logic into the existing shell, no visual changes
+- Admin Editorial theming — `/admin/*` stays on default chrome forever (admin isn't viewer-facing)
+- Editorial-exclusive features — if a feature exists on primary, it must exist on Editorial. No new features gated to Editorial only.
+- Modifying primary behavior — primary stays untouched (validated by smoke test)
+
+**Source plan:** `/Users/koss/.claude/plans/1-everythin-in-editorial-binary-raccoon.md`
+
+**Requirements:** see REQUIREMENTS.md `## v1.2 Requirements` section (28 reqs across 9 phases, 18-26)
+
+---
+
 ## Current Milestone: v1.1 Full Bilingual UI (AR/EN)
 
 **Goal:** Every single visible piece of UI text on Clickit Story — every button, label, placeholder, tooltip, aria-label, page title, toast, error, countdown, metadata tag, and dynamic string — switches between English and Arabic when the viewer changes language. Zero hardcoded English strings remain in user-facing surfaces. Delivered on top of URL-prefix locale routing (`/en/...`, `/ar/...`) so Arabic is independently indexable by search engines.
@@ -231,4 +263,4 @@ This document evolves at phase transitions and milestone boundaries.
 5. All milestone decisions added to Key Decisions
 
 ---
-*Last updated: 2026-04-20 — milestone v1.1 (Arabic i18n) started*
+*Last updated: 2026-04-22 — v1.2 Editorial Feature Parity scaffolded as queued next milestone (phases 18-26)*

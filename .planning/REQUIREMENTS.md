@@ -207,4 +207,138 @@ Mapped by roadmapper 2026-04-20. Coverage: **62/62** v1.1 requirements — no or
 
 ---
 
-*Last updated: 2026-04-21 — Phase 13 plan 01 shipped (RTE-01/02 + I18N-05/06 complete)*
+*Last updated: 2026-04-22 — v1.2 requirements appended below as queued next milestone*
+
+---
+
+# Requirements — Milestone v1.2 Editorial Feature Parity
+
+**Derived from:** `/Users/koss/.claude/plans/1-everythin-in-editorial-binary-raccoon.md`
+**Status:** SCAFFOLDED 2026-04-22 — Queued. Starts after v1.1 ships (Phase 13-06 + Phases 14-17 complete).
+**Scope:** English-only (Arabic/RTL deferred to v1.3). Admin stays on default chrome.
+
+---
+
+## v1.2 Requirements
+
+### Flag Infrastructure (`EPI-*`)
+
+Goal: merge Editorial branch into main behind the `NEXT_PUBLIC_DESIGN` build flag; both Vercel projects deploy from main with different env vars.
+
+- [ ] **EPI-01**: `src/lib/design.ts` exports `isEditorial` as a build-time constant (`NEXT_PUBLIC_DESIGN === 'editorial'`); dead-code-elim removes unused branch in each build mode
+- [ ] **EPI-02**: Root `src/app/layout.tsx` conditionally attaches editorial next/font variables (`Space_Grotesk`, `Newsreader`, `JetBrains_Mono`) and sets `data-design="editorial"` on `<html>` when flag is set; viewer layout short-circuits with `{children}` so Editorial pages own their chrome
+- [ ] **EPI-03**: `src/app/[locale]/admin/layout.tsx` NEVER branches on `isEditorial` — admin always renders default chrome regardless of build flag (accepted design decision for v1.2)
+
+### Auth + User State (`EPA-*`)
+
+Goal: Editorial surfaces get the same auth state wiring as primary — no placeholder email, no broken sign-in CTA.
+
+- [ ] **EPA-01**: `EditorialHeader` accepts `initialUser` prop (same pattern as [src/components/layout/navbar.tsx](src/components/layout/navbar.tsx)); renders "Sign in" button when signed out, avatar dropdown with sign-out when signed in
+- [ ] **EPA-02**: New `src/components/editorial/primitives/auth-section.tsx` — editorial-styled copy of [src/components/layout/auth-section.tsx](src/components/layout/auth-section.tsx) using `.btn-primary` and editorial colors; subscribes to `supabase.auth.onAuthStateChange`
+- [ ] **EPA-03**: Every Editorial page.tsx short-circuit receives `userId` (from `getSession()` server-side) and threads it into the Editorial component; `EditorialProfile` displays real email + display name + avatar (not placeholder)
+
+### Watchlist + Likes Wiring (`EPL-*`)
+
+Goal: the `onToggleList` callbacks on Editorial primitives become real Supabase mutations.
+
+- [ ] **EPL-01**: `EditorialPoster` accepts `initialSaved` + `userId` props; calls [src/hooks/use-watchlist.ts](src/hooks/use-watchlist.ts) internally; toggle state drives the heart/check icon
+- [ ] **EPL-02**: `EditorialSeries` adds `LikeButton` slot in hero meta card (editorial-styled); wires [src/hooks/use-likes.ts](src/hooks/use-likes.ts)
+- [ ] **EPL-03**: `EditorialRail` propagates batched `initialSavedMap` from server-computed state via existing `getShowWatchlistState()` in [src/lib/queries.ts](src/lib/queries.ts) — no per-poster roundtrip on page load
+- [ ] **EPL-04**: `src/app/[locale]/(viewer)/my-list/page.tsx` threads real watchlist shows into `EditorialMyList`; toggle removes from list and updates UI optimistically
+
+### Watch Page IFrame API (`EPW-*`)
+
+Goal: replace Editorial's simple iframe with the full YouTube IFrame API integration, preserving editorial visual structure.
+
+- [ ] **EPW-01**: `EditorialWatch` drops `playerSlot: ReactNode` prop; imports [src/components/watch/youtube-player.tsx](src/components/watch/youtube-player.tsx) directly; manages `playerInstance` state internally
+- [ ] **EPW-02**: `EditorialWatch` calls [src/hooks/use-progress-tracker.ts](src/hooks/use-progress-tracker.ts) — 10s interval polling; force-flush on visibility change + unmount; `watch_progress` upsert
+- [ ] **EPW-03**: `EditorialWatch` accepts `initialProgressSeconds` + `nextEpisode`; on player ready, calls `player.seekTo(initialProgressSeconds)` for resume; on `YT.PlayerState.ENDED`, shows autoplay overlay with countdown
+- [ ] **EPW-04**: Editorial visual structure (`.yt-watch`, `.yt-main`, `.yt-side`, season tabs, episode list) renders identically to pre-port — the port is functional only, no visual change
+- [ ] **EPW-05**: Error states (video unavailable, private, region-locked) render editorial-styled error overlay using the existing error codes from [src/components/watch/youtube-player.tsx](src/components/watch/youtube-player.tsx) (100/101/150)
+
+### Continue Watching + Recently Watched (`EPC-*`)
+
+Goal: Editorial browse surfaces user's in-progress episodes; profile surfaces history.
+
+- [ ] **EPC-01**: `EditorialBrowse` renders Continue Watching rail above "Now Streaming" when non-empty; data from `getRecentlyWatched(userId)` (uses DB filter pushdown via `!inner` join — don't rebuild)
+- [ ] **EPC-02**: `EditorialProfile` renders Recently Watched section with thumbnails + show title + relative-time labels (via `date-fns formatDistanceToNow`); finished episodes (≥95% progress) don't appear in Continue Watching but do appear in Recently Watched
+
+### Remaining Routes (`EPR-*`)
+
+Goal: Search, Coming Soon, Support, Auth all have functional Editorial variants.
+
+- [ ] **EPR-01**: `EditorialSearch` drops client-side substring filter; renders server-provided FTS results from existing `searchShows(q)` + `searchEpisodes(q)` in [src/lib/queries.ts](src/lib/queries.ts); `.rail` scroll-snap preserved
+- [ ] **EPR-02**: `EditorialComingSoon` renders upcoming shows grid + episodes-by-show section from real DB data; empty states match primary's tone
+- [ ] **EPR-03**: New `EditorialSupport` renders `<ContactForm>` (real submission, toast confirms) + FAQ accordion using [src/lib/faq-data.ts](src/lib/faq-data.ts)
+- [ ] **EPR-04**: New `<EditorialAuth>` wraps existing `<AuthPanel>` in editorial chrome; email/password, OAuth, reset-password all work; short-circuits from `src/app/[locale]/(viewer)/auth/page.tsx` when `isEditorial`
+
+### Feature Flags (`EPF-*`)
+
+Goal: the coming-soon gate applies equally to Editorial and primary.
+
+- [ ] **EPF-01**: `flags.comingSoonMode` check runs BEFORE the `isEditorial` short-circuit in `src/app/[locale]/(viewer)/layout.tsx`; Editorial viewer routes redirect to `/coming-soon` when gate is on; admin layout never gates
+
+### Performance (`EPP-*`)
+
+Goal: Editorial's Lighthouse scores match primary's.
+
+- [ ] **EPP-01**: `EditorialPoster` swaps raw `<img>` for `next/image` for all poster/backdrop/landscape variants; responsive srcset generated automatically
+- [ ] **EPP-02**: Editorial respects server-side mobile detection from [src/lib/device.ts](src/lib/device.ts) — mobile hero variant downloaded on mobile builds, desktop variant on desktop
+- [ ] **EPP-03**: Hero carousel auto-rotate (`setInterval` 7s in `EditorialBrowse`) pauses when `matchMedia('(prefers-reduced-motion: reduce)')` matches
+- [ ] **EPP-04**: Heavy rails below the fold lazy-mount (dynamic import or IntersectionObserver); Editorial CSS remains scoped under `html[data-design="editorial"]` — no leakage to default builds (~6KB gzip ships in both)
+
+### Deploy + Verification (`EPD-*`)
+
+Goal: Editorial v1.2 live; primary unchanged.
+
+- [ ] **EPD-01**: `clickit-editorial.vercel.app` passes the 10-item smoke test: (1) landing renders editorial chrome, (2) sign in from editorial auth page, (3) browse rails (Continue Watching + Now Streaming + Coming Soon), (4) series detail + season tabs play episode, (5) watch page progress-tracks (verify Supabase `watch_progress`), (6) autoplay-next countdown + advance, (7) watchlist toggle + `/my-list` roundtrip, (8) like toggle + Supabase `likes`, (9) search FTS, (10) support form submits
+- [ ] **EPD-02**: `clickitstory.com` spot-check (landing + browse + one watch page) confirms primary chrome unchanged; no regression from merge; git tag `v1.2` created on the merged commit
+
+---
+
+## v1.2 Out of Scope
+
+- Arabic / RTL for Editorial — deferred to v1.3
+- Redesigning Editorial visuals — this milestone is logic-porting only, no CSS/font/component visual changes
+- Admin Editorial theming — `/admin/*` stays on default chrome forever
+- Editorial-exclusive features — if a feature exists on primary it must exist on Editorial, no new features gated to Editorial only
+- Modifying primary behavior — primary stays untouched, validated by Phase 26 smoke test
+
+---
+
+## v1.2 Traceability
+
+Phase totals: 18→3, 19→3, 20→4, 21→5, 22→2, 23→4, 24→1, 25→4, 26→2 = 28
+
+| REQ-ID | Phase | Status |
+|--------|-------|--------|
+| EPI-01 | 18 | Queued |
+| EPI-02 | 18 | Queued |
+| EPI-03 | 18 | Queued |
+| EPA-01 | 19 | Queued |
+| EPA-02 | 19 | Queued |
+| EPA-03 | 19 | Queued |
+| EPL-01 | 20 | Queued |
+| EPL-02 | 20 | Queued |
+| EPL-03 | 20 | Queued |
+| EPL-04 | 20 | Queued |
+| EPW-01 | 21 | Queued |
+| EPW-02 | 21 | Queued |
+| EPW-03 | 21 | Queued |
+| EPW-04 | 21 | Queued |
+| EPW-05 | 21 | Queued |
+| EPC-01 | 22 | Queued |
+| EPC-02 | 22 | Queued |
+| EPR-01 | 23 | Queued |
+| EPR-02 | 23 | Queued |
+| EPR-03 | 23 | Queued |
+| EPR-04 | 23 | Queued |
+| EPF-01 | 24 | Queued |
+| EPP-01 | 25 | Queued |
+| EPP-02 | 25 | Queued |
+| EPP-03 | 25 | Queued |
+| EPP-04 | 25 | Queued |
+| EPD-01 | 26 | Queued |
+| EPD-02 | 26 | Queued |
+
+Coverage: **28/28** v1.2 requirements mapped — no orphans, no duplicates.

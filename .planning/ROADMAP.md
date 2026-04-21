@@ -4,6 +4,7 @@
 
 - ✅ **v1.0 CIT Streaming Platform** — Phases 1-10 (shipped 2026-04-16)
 - 🚧 **v1.1 Full Bilingual UI (AR/EN)** — Phases 12-17 (started 2026-04-20)
+- ⏳ **v1.2 Editorial Feature Parity** — Phases 18-26 (scaffolded 2026-04-22, queued after v1.1)
 
 ## Phases
 
@@ -122,6 +123,137 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 **Plans**: TBD
 **UI hint**: yes
 
+### ⏳ v1.2 Editorial Feature Parity — Phases 18-26 (QUEUED — starts after v1.1 ships)
+
+**Strategic decision:** Converge Editorial branch (`claude/angry-tharp-d39d9e`) into `main` behind the `NEXT_PUBLIC_DESIGN` build flag. One codebase, two Vercel projects. Primary project: flag unset → default chrome. Editorial project: flag set → editorial chrome. Eliminates branch drift; every future fix flows to both.
+
+**Scope:** English-only for Editorial (Arabic/RTL deferred to v1.3). Admin stays on default chrome regardless of flag.
+
+- [ ] **Phase 18: Branch Reconciliation & Flag Infrastructure** — Rebase Editorial onto post-v1.1 main; wire `NEXT_PUBLIC_DESIGN` flag in `src/lib/design.ts`; conditional next/font + `data-design` in root layout; viewer layout short-circuit; admin layout never branches; import `src/components/editorial/**`, `src/styles/editorial.css`, `src/lib/editorial/adapter.ts` — closes EPI-01, EPI-02, EPI-03
+- [ ] **Phase 19: Auth + User State Wiring in Editorial** — `EditorialHeader` accepts `initialUser` + renders sign-in vs avatar dropdown; new `src/components/editorial/primitives/auth-section.tsx` (editorial-styled copy of [src/components/layout/auth-section.tsx](src/components/layout/auth-section.tsx)); thread `userId` through all page.tsx short-circuits; `EditorialProfile` receives real user + profile props — closes EPA-01, EPA-02, EPA-03
+- [ ] **Phase 20: Watchlist + Likes Wiring** — `EditorialPoster` calls [src/hooks/use-watchlist.ts](src/hooks/use-watchlist.ts); `EditorialSeries` adds `LikeButton` slot using [src/hooks/use-likes.ts](src/hooks/use-likes.ts); `EditorialRail` propagates batched `initialSavedMap` via existing `getShowWatchlistState()`; `my-list` page.tsx threads real watchlist into `EditorialMyList` — closes EPL-01, EPL-02, EPL-03, EPL-04
+- [ ] **Phase 21: Watch Page — Full YouTube IFrame API Port** — `EditorialWatch` drops `playerSlot: ReactNode` prop; imports [src/components/watch/youtube-player.tsx](src/components/watch/youtube-player.tsx) directly; manages `playerInstance` state; calls [src/hooks/use-progress-tracker.ts](src/hooks/use-progress-tracker.ts); wires [src/components/watch/autoplay-overlay.tsx](src/components/watch/autoplay-overlay.tsx); accepts `initialProgressSeconds` + `nextEpisode`; preserves Editorial visual structure (`.yt-watch` / `.yt-main` / `.yt-side`); watch page.tsx drops simple-iframe short-circuit — closes EPW-01, EPW-02, EPW-03, EPW-04, EPW-05
+- [ ] **Phase 22: Continue Watching + Recently Watched Rails** — Browse page.tsx calls `getRecentlyWatched(userId)`; `EditorialBrowse` renders Continue Watching rail above "Now Streaming" when non-empty; profile page threads history; `EditorialProfile` renders history section with thumbnails + `date-fns formatDistanceToNow` — closes EPC-01, EPC-02
+- [ ] **Phase 23: Search + ComingSoon + Support + Auth Parity** — `EditorialSearch` drops client-side filter, renders server-provided Postgres FTS results from existing `searchShows` + `searchEpisodes`; `EditorialComingSoon` adds episodes-by-show section from real data; new `EditorialSupport` with `<ContactForm>` + FAQ accordion (reuse [src/lib/faq-data.ts](src/lib/faq-data.ts)); new `<EditorialAuth>` that wraps existing `<AuthPanel>` in editorial chrome — closes EPR-01, EPR-02, EPR-03, EPR-04
+- [ ] **Phase 24: Coming-Soon Gate + Feature Flags** — `flags.comingSoonMode` check runs BEFORE the `isEditorial` short-circuit in viewer layout; Editorial viewer routes redirect to `/coming-soon` when gate is on; admin layout doesn't gate — closes EPF-01
+- [ ] **Phase 25: Performance + Polish Pass** — `EditorialPoster` swaps raw `<img>` for `next/image`; Editorial respects server-side mobile detection from [src/lib/device.ts](src/lib/device.ts); hero carousel auto-rotate pauses on `prefers-reduced-motion`; heavy rails lazy-mount below fold; verify CSS still scoped under `html[data-design="editorial"]` — closes EPP-01, EPP-02, EPP-03, EPP-04
+- [ ] **Phase 26: Deploy + E2E Verification** — Merge `feat/editorial-parity-v1.2` → main; confirm `clickit-editorial` prod branch = main + `NEXT_PUBLIC_DESIGN=editorial`; trigger deploy + alias; confirm `clickit-cit` flag UNSET + redeploy; 10-item smoke test on `clickit-editorial.vercel.app`; spot-check `clickitstory.com` unchanged; tag `v1.2` — closes EPD-01, EPD-02
+
+## Phase Details (v1.2)
+
+### Phase 18: Branch Reconciliation & Flag Infrastructure
+**Goal**: Editorial codebase lives in main behind `NEXT_PUBLIC_DESIGN` build flag; both Vercel projects deploy from main with different env vars
+**Depends on**: v1.1 Phase 17 (full bilingual UI shipped so the merged state is stable)
+**Requirements**: EPI-01, EPI-02, EPI-03
+**Success Criteria**:
+  1. `npm run build` succeeds in both modes (flag unset → default chrome bundled; `NEXT_PUBLIC_DESIGN=editorial` → editorial chrome bundled); dead-code-elim removes the unused design branch in each build
+  2. Setting `data-design="editorial"` on `<html>` + loading `src/styles/editorial.css` produces the editorial visual shell on all viewer routes; unset leaves the primary chrome unchanged
+  3. `/admin/*` renders default admin chrome regardless of `isEditorial` value (admin layout never branches on the flag)
+  4. Deploy `main` to `clickit-editorial` with `NEXT_PUBLIC_DESIGN=editorial` → landing/browse render Editorial chrome; primary project at `clickitstory.com` is byte-identical to pre-reconciliation
+  5. `tsc --noEmit` clean; existing node:test suite (14/14) passes
+**UI hint**: yes
+
+### Phase 19: Auth + User State Wiring in Editorial
+**Goal**: Every Editorial route that needs the signed-in user has real auth state threaded end-to-end — no placeholder email, no broken sign-in CTA
+**Depends on**: Phase 18
+**Requirements**: EPA-01, EPA-02, EPA-03
+**Success Criteria**:
+  1. Signed-out user on Editorial sees "Sign in" CTA in header; signed-in user sees avatar dropdown with sign-out option
+  2. `/my-list` and `/profile` on Editorial redirect to `/auth` when signed out; render correctly when signed in
+  3. `EditorialProfile` displays real email + display name + avatar (not placeholder)
+  4. `supabase.auth.onAuthStateChange` listener works on Editorial pages — signing in/out in one tab updates the header in other tabs
+**UI hint**: yes
+
+### Phase 20: Watchlist + Likes Wiring
+**Goal**: The `onToggleList` callbacks that Editorial exposes become real Supabase mutations; watchlist + likes state persists correctly
+**Depends on**: Phase 19
+**Requirements**: EPL-01, EPL-02, EPL-03, EPL-04
+**Success Criteria**:
+  1. Clicking "+" on an Editorial poster adds the show to `watchlist`; icon swaps to checkmark; navigating to `/my-list` shows it
+  2. Clicking checkmark removes from watchlist; `/my-list` updates
+  3. Clicking "Like" on Editorial series detail adds to `likes`; reverses on second click
+  4. Batched initial-saved state for rails comes from server (`getShowWatchlistState`) — no per-poster roundtrip on page load
+**UI hint**: yes
+
+### Phase 21: Watch Page — Full YouTube IFrame API Port
+**Goal**: Editorial watch page uses the real YouTube IFrame API with resume, progress tracking, and autoplay-next — visual structure unchanged
+**Depends on**: Phase 19
+**Requirements**: EPW-01, EPW-02, EPW-03, EPW-04, EPW-05
+**Success Criteria**:
+  1. Watch an episode on Editorial, close tab, return → player seeks to within 10s of last saved position
+  2. Watch to end → autoplay countdown overlay appears → next episode loads (cross-season handled)
+  3. Pause during playback → `watch_progress` row updates within 10s (verify in Supabase)
+  4. Editorial visual structure (`.yt-watch`, `.yt-main`, `.yt-side`, season tabs, episode list) renders identically to pre-port — the port is functional, not visual
+  5. Error states (video unavailable, private, region-locked) render editorial-styled error overlay
+**UI hint**: yes
+
+### Phase 22: Continue Watching + Recently Watched Rails
+**Goal**: Editorial browse shows user's in-progress episodes; Editorial profile shows recently-watched history
+**Depends on**: Phase 21
+**Requirements**: EPC-01, EPC-02
+**Success Criteria**:
+  1. Watch 2+ episodes on Editorial → return to `/browse` → Continue Watching rail renders above "Now Streaming" with progress bars
+  2. `/profile` on Editorial shows Recently Watched section with thumbnails + show title + relative-time labels (e.g., "2 hours ago")
+  3. Finished episodes (≥95% progress) don't appear in Continue Watching (they appear in Recently Watched)
+
+### Phase 23: Search + ComingSoon + Support + Auth Parity
+**Goal**: All remaining viewer routes have functional Editorial variants — no dead placeholders
+**Depends on**: Phase 19
+**Requirements**: EPR-01, EPR-02, EPR-03, EPR-04
+**Success Criteria**:
+  1. Search on Editorial uses Postgres FTS (server-side); "music" returns ranked show + episode results
+  2. Coming Soon on Editorial shows upcoming shows grid + episodes-by-show section with real DB data
+  3. Support page on Editorial submits a real contact form (toast confirms) + renders FAQ accordion
+  4. `/auth` on Editorial uses editorial-styled wrapper around the existing `<AuthPanel>` — sign-in, sign-up, OAuth, reset-password all work
+
+### Phase 24: Coming-Soon Gate + Feature Flags
+**Goal**: Admin's `flags.comingSoonMode` splash gate applies equally to Editorial and primary
+**Depends on**: Phase 23
+**Requirements**: EPF-01
+**Success Criteria**:
+  1. Admin toggles coming-soon mode on → Editorial viewer routes (landing, browse, series, watch) redirect to `/coming-soon`
+  2. `/admin/*` on Editorial build remains accessible even when gate is on (admin layout never gates)
+  3. Toggle off → Editorial viewer routes render normally
+
+### Phase 25: Performance + Polish Pass
+**Goal**: Editorial's Lighthouse scores match primary's; mobile 3G throttle passes; no animation thrash for reduced-motion users
+**Depends on**: Phase 23
+**Requirements**: EPP-01, EPP-02, EPP-03, EPP-04
+**Success Criteria**:
+  1. Lighthouse on `clickit-editorial.vercel.app` browse + watch: LCP < 2.5s, TBT < 200ms, CLS < 0.1
+  2. `EditorialPoster` serves via `next/image` with responsive srcset; no raw `<img>` remain in editorial render tree
+  3. Hero carousel auto-rotate pauses when `matchMedia('(prefers-reduced-motion: reduce)')` matches
+  4. Mobile 3G throttled test on Editorial watch passes; server-side mobile detection picks mobile hero variant
+**UI hint**: yes
+
+### Phase 26: Deploy + E2E Verification
+**Goal**: Editorial v1.2 live on production Vercel project with feature parity; primary unchanged; milestone tagged
+**Depends on**: Phase 25
+**Requirements**: EPD-01, EPD-02
+**Success Criteria**:
+  1. `clickit-editorial.vercel.app` passes the 10-item smoke test (see plan: landing, sign-in, browse rails, series detail + season tabs, watch + progress + autoplay, watchlist toggle, like toggle, search FTS, support form)
+  2. `clickitstory.com` spot-check (landing, browse, a watch page) confirms primary chrome unchanged; no regression from merge
+  3. Supabase logs monitored 24h post-deploy — no new error patterns attributable to Editorial project
+  4. Git tag `v1.2` created on the merged commit
+
+## Dependency Graph (v1.2)
+
+```
+17 (v1.1 close — Polish + Metadata + QA) [must ship first]
+ └─> 18 (Branch Reconciliation + Flag)
+      └─> 19 (Auth + User State)
+           ├─> 20 (Watchlist + Likes)
+           ├─> 21 (Watch Page IFrame API)    ─┐
+           │                                   ├─> 22 (Continue Watching + Recently Watched)
+           │                                   │
+           └─> 23 (Search + ComingSoon + Support + Auth)
+                └─> 24 (Coming-Soon Gate)
+                └─> 25 (Perf + Polish)
+                     └─> 26 (Deploy + E2E)
+```
+
+Phases 20 + 21 + 23 may run in parallel after Phase 19 lands (independent component surfaces). Phase 22 blocks on 21 (needs progress tracking). Phase 24 + 25 block on 23 (need all routes complete). Phase 26 is serial after 25.
+
 ## Dependency Graph (v1.1)
 
 ```
@@ -157,3 +289,12 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 | 15. Viewer Pages Translation | v1.1 | 0/0 | Not started | - |
 | 16. Admin Pages Translation | v1.1 | 0/0 | Not started | - |
 | 17. Content + Polish | v1.1 | 0/0 | Not started | - |
+| 18. Branch Reconciliation & Flag Infrastructure | v1.2 | 0/0 | Queued | - |
+| 19. Auth + User State Wiring in Editorial | v1.2 | 0/0 | Queued | - |
+| 20. Watchlist + Likes Wiring | v1.2 | 0/0 | Queued | - |
+| 21. Watch Page — Full YouTube IFrame API Port | v1.2 | 0/0 | Queued | - |
+| 22. Continue Watching + Recently Watched Rails | v1.2 | 0/0 | Queued | - |
+| 23. Search + ComingSoon + Support + Auth Parity | v1.2 | 0/0 | Queued | - |
+| 24. Coming-Soon Gate + Feature Flags | v1.2 | 0/0 | Queued | - |
+| 25. Performance + Polish Pass | v1.2 | 0/0 | Queued | - |
+| 26. Deploy + E2E Verification | v1.2 | 0/0 | Queued | - |
