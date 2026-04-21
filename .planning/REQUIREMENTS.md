@@ -30,8 +30,8 @@ Goal: move pages under `src/app/[locale]/...` and fix the 6 latent auth/routing 
 - [x] **RTE-05**: Hard-coded redirects to `/auth/login` in auth actions and protected routes become locale-aware (`redirect` from `@/i18n/navigation`) (Pitfall #3) *(delivered 2026-04-21 in Phase 13 plan 03a, commits 2740da6 / 9b079ba — 5 Server Component redirect swaps with {href, locale} signature)*
 - [x] **RTE-06**: Supabase auth callback `?next=` redirect handling audited and preserved with locale context (Pitfall #4) *(delivered 2026-04-21 in Phase 13 plan 04, commit 8d90206 — locale-aware safeNext(raw, locale), resolveLocale() cookie reader, error redirect lands on /${locale}/auth)*
 - [x] **RTE-07**: `coming-soon` redirect in `proxy.ts` becomes locale-aware — preserves `/en/` or `/ar/` prefix (Pitfall #5) *(delivered 2026-04-21 in Phase 13 plan 02, commit 5503cda)*
-- [ ] **RTE-08**: `src/app/locale-actions.ts`, `src/components/layout/locale-switcher.tsx`, and `src/components/profile/language-preference.tsx` replaced with next-intl navigation-based switcher that writes the URL (old cookie-only switcher becomes dead code)
-- [ ] **RTE-09**: `src/lib/site-url.ts` / sitemap / metadata base audited for locale-awareness — no broken absolute URLs after restructure
+- [x] **RTE-08**: `src/app/locale-actions.ts`, `src/components/layout/locale-switcher.tsx`, and `src/components/profile/language-preference.tsx` replaced with next-intl navigation-based switcher that writes the URL (old cookie-only switcher becomes dead code) *(delivered 2026-04-21 in Phase 13 plan 05, commit c41c8de — cookie infra deleted, LanguagePreference rewritten to call router.replace(pathname, { locale }))*
+- [x] **RTE-09**: `src/lib/site-url.ts` / sitemap / metadata base audited for locale-awareness — no broken absolute URLs after restructure *(delivered 2026-04-21 in Phase 13 plan 05, commit 3266fc7 — sitemap emits alternates.languages for every entry; site-url.ts audit confirmed resolver locale-agnostic, no changes needed)*
 
 ### Global Layout + RTL CSS (`RTL-*`)
 
@@ -156,8 +156,8 @@ Mapped by roadmapper 2026-04-20. Coverage: **62/62** v1.1 requirements — no or
 | RTE-05    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 03a, commits 2740da6 / 9b079ba) |
 | RTE-06    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 04, commit 8d90206) |
 | RTE-07    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 02, commit 5503cda) |
-| RTE-08    | 13    | Not started |
-| RTE-09    | 13    | Not started |
+| RTE-08    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 05, commit c41c8de) |
+| RTE-09    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 05, commit 3266fc7) |
 | RTL-01    | 14    | Not started |
 | RTL-02    | 14    | Not started |
 | RTL-03    | 14    | Not started |

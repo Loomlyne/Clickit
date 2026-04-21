@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Full Bilingual UI (AR/EN)
 status: in-progress
-stopped_at: Completed Phase 13 plan 04 (OAuth callback locale-aware safeNext, RTE-06 closed) — next = Phase 13 plan 13-05 (URL-based locale switcher)
-last_updated: "2026-04-21T01:00:00.000Z"
+stopped_at: Completed Phase 13 plan 05 (URL-based locale switcher + sitemap alternates, RTE-08 + RTE-09 closed) — next = Phase 13 plan 13-06 (static-analysis gate + Vercel preview smoke test)
+last_updated: "2026-04-21T00:54:18Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
-  percent: 75
+  completed_plans: 7
+  percent: 87
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-20)
 
 ## Current Position
 
-Phase: 13 IN PROGRESS — plans 01 + 02 + 03a + 03b + 04 of 7 complete
-Plan: 13-04-PLAN.md shipped (commit 8d90206) — OAuth callback `safeNext()` extended to prepend active locale read from `NEXT_LOCALE` cookie; error redirect lands on `/${locale}/auth?error=...` never bare `/auth?error=...`. Open-redirect defense preserved (rejects `//`, `/\\`, non-`/` prefixes). `GET` signature upgraded from `Request` to `NextRequest` for typed `.cookies` access.
-Status: RTE-01, RTE-02, RTE-03, RTE-04 (both halves), RTE-05, RTE-06, RTE-07, I18N-05, I18N-06 closed. 5 of 6 Phase 13 auth pitfalls fixed. tsc clean; `npm run build` green with 44 routes; `/auth/callback` confirmed Route Handler (not under `[locale]/`). Next: plan 13-05 (URL-based locale switcher).
-Last activity: 2026-04-21 — Phase 13 plan 04 OAuth callback locale-awareness.
+Phase: 13 IN PROGRESS — plans 01 + 02 + 03a + 03b + 04 + 05 of 7 complete
+Plan: 13-05-PLAN.md shipped (commits c41c8de + 3266fc7) — cookie-based locale infrastructure deleted (`src/app/locale-actions.ts`, `src/components/layout/locale-switcher.tsx`); `src/components/profile/language-preference.tsx` rewritten as URL-based switcher using `useRouter` + `usePathname` from `@/i18n/navigation`; `src/app/sitemap.ts` now emits `alternates.languages` for every static + dynamic route; `src/lib/site-url.ts` audit confirmed no changes needed (resolver locale-agnostic by design).
+Status: RTE-01, RTE-02, RTE-03, RTE-04 (both halves), RTE-05, RTE-06, RTE-07, RTE-08, RTE-09, I18N-05, I18N-06 closed. All 9 RTE requirements closed. 6 of 6 Phase 13 auth/routing pitfalls fixed. tsc clean; `npm run build` green with 44 routes; `/sitemap.xml` static-prerendered (1h revalidate, 1y expire); `/auth/callback` remains the only locale-agnostic app route. Next: plan 13-06 (static-analysis gate + Vercel preview smoke test — atomic merge gate).
+Last activity: 2026-04-21 — Phase 13 plan 05 URL-based locale switcher + sitemap alternates.
 
 ## Roadmap Summary (v1.1)
 
@@ -68,8 +68,8 @@ Last activity: 2026-04-21 — Phase 13 plan 04 OAuth callback locale-awareness.
 ## Session Continuity
 
 Last session: 2026-04-21
-Stopped at: Completed Phase 13 plan 04 (commit 8d90206 — OAuth callback locale-aware safeNext, RTE-06 closed); next = plan 13-05 (URL-based locale switcher)
-Resume file: `.planning/phases/13-route-restructure-auth-safety/13-04-SUMMARY.md`
+Stopped at: Completed Phase 13 plan 05 (commits c41c8de + 3266fc7 — URL-based locale switcher + sitemap alternates, RTE-08 + RTE-09 closed); next = plan 13-06 (static-analysis gate + Vercel preview smoke test)
+Resume file: `.planning/phases/13-route-restructure-auth-safety/13-05-SUMMARY.md`
 
 ## Decisions Made
 
@@ -89,6 +89,10 @@ Resume file: `.planning/phases/13-route-restructure-auth-safety/13-04-SUMMARY.md
 - **2026-04-21 (Phase 13 plan 04):** OAuth callback `safeNext(raw, locale)` — open-redirect defense FIRST (reject `//`, `/\\`, non-`/` prefixes), locale short-circuit SECOND (keep `/en/...` and `/ar/...` unchanged), locale prepend LAST. Order matters: prepending before validation would turn `//attacker.com` into `/en//attacker.com` which is still a path but looks sketchy in logs. Reject-first keeps the defense legible.
 - **2026-04-21 (Phase 13 plan 04):** `GET(request: NextRequest)` signature — bumped from `Request` to `NextRequest` because the `.cookies` API is only typed on `NextRequest`. Alternative (parse `Cookie` header manually off `Request.headers.get('cookie')`) adds code surface for no benefit.
 - **2026-04-21 (Phase 13 plan 04):** `resolveLocale` reads `NEXT_LOCALE` cookie and validates against `routing.locales` tuple. Cookie tampering (e.g., `../en`) fails the `includes` check and falls back to `routing.defaultLocale`. Accept-Language sniffing intentionally skipped — the cookie reflects explicit user intent (set by URL switcher in plan 13-05 and by next-intl middleware on first locale-prefixed request).
+- **2026-04-21 (Phase 13 plan 05):** URL is the source of truth for locale, not a cookie. LanguagePreference click handler calls `router.replace(pathname, { locale })` — no server action, no cookie write, no revalidatePath. next-intl middleware persists `NEXT_LOCALE` automatically on the resulting locale-prefixed navigation, which keeps the OAuth callback locale resolver (plan 13-04) working. Retires the Phase-12-era setLocaleAction pattern (cookie + revalidate), which was redundant-at-best / broken-at-worst post-restructure (revalidated unprefixed paths that no longer existed).
+- **2026-04-21 (Phase 13 plan 05):** Tasks 1 + 2 committed together (c41c8de) to preserve buildable-tree invariant — deletion of `locale-actions.ts` would break the old `language-preference.tsx` import in between if split into separate commits. Task commit granularity bent one notch to preserve bisectability.
+- **2026-04-21 (Phase 13 plan 05):** Sitemap `url` field uses `routing.defaultLocale` as canonical; `alternates.languages` built dynamically from `routing.locales` via `Object.fromEntries` — adding a new locale in routing.ts auto-picks-up in sitemap output without further edits.
+- **2026-04-21 (Phase 13 plan 05):** site-url.ts audit outcome: no changes. Resolver is pure env-var precedence (NEXT_PUBLIC_SITE_URL → VERCEL_PROJECT_PRODUCTION_URL → VERCEL_URL → localhost). All 3 callers (metadataBase in [locale]/layout.tsx, robots.ts, sitemap.ts) correctly handle locale concerns at their own layer. metadataBase intentionally stays canonical per META-06 — per-page `alternates.canonical` / `alternates.languages` deferred to Phase 17 (META-03).
 
 ## Performance Metrics
 
@@ -100,3 +104,4 @@ Resume file: `.planning/phases/13-route-restructure-auth-safety/13-04-SUMMARY.md
 | 13 | 03a | ~11min | 4 | 19 | 82c6735..9b079ba |
 | 13 | 03b | ~4min | 3 | 38 | b10a964 |
 | 13 | 04 | ~3min | 2 | 1 | 8d90206 |
+| 13 | 05 | ~5min | 5 | 3 | c41c8de, 3266fc7 |
