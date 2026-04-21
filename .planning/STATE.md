@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Full Bilingual UI (AR/EN)
 status: in-progress
-stopped_at: Completed Phase 13 plan 01 (route restructure + [locale]/layout.tsx + root slim) — next = Phase 13 plan 02 (proxy composition)
-last_updated: "2026-04-21T18:00:00.000Z"
+stopped_at: Completed Phase 13 plan 02 (proxy composition — next-intl + Supabase cookie merge, locale-aware coming-soon) — next = Phase 13 plans 13-03a + 13-03b (nav + Link swaps, parallel wave)
+last_updated: "2026-04-21T18:10:00.000Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 8
-  completed_plans: 2
-  percent: 25
+  completed_plans: 3
+  percent: 37
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-20)
 
 ## Current Position
 
-Phase: 13 IN PROGRESS — plan 01 of 7 complete
-Plan: 13-01-PLAN.md shipped (commits 733c8f4 → b3234c6, 5 atomic commits) — 22 routes now under /[locale]/, [locale]/layout.tsx owns html/body, OAuth callback relocated, root layout slimmed 148 → 15 LOC, next-intl plugin wired
-Status: RTE-01, RTE-02, I18N-05, I18N-06 closed. tsc clean; `npm run build` green with 44 static pages across /en/ and /ar/. Plan 13-02 (proxy composition) is next.
-Last activity: 2026-04-21 — Phase 13 plan 01 atomic execution.
+Phase: 13 IN PROGRESS — plans 01 + 02 of 7 complete
+Plan: 13-02-PLAN.md shipped (commit 5503cda) — proxy.ts composes createMiddleware(routing) + updateSession(); Supabase cookies merged onto intlResponse; /api + /auth/callback short-circuit; coming-soon redirect now locale-aware (/en/coming-soon or /ar/coming-soon).
+Status: RTE-01, RTE-02, RTE-03, RTE-07, I18N-05, I18N-06 closed. tsc clean; `npm run build` green with 44 static pages. Next: plans 13-03a (nav hooks + Server redirects, 19 files) and 13-03b (next/link, ~38 files) — parallel-eligible in wave 3.
+Last activity: 2026-04-21 — Phase 13 plan 02 proxy composition.
 
 ## Roadmap Summary (v1.1)
 
@@ -68,8 +68,8 @@ Last activity: 2026-04-21 — Phase 13 plan 01 atomic execution.
 ## Session Continuity
 
 Last session: 2026-04-21
-Stopped at: Completed Phase 13 plan 01 (5 commits 733c8f4 → b3234c6); next = plan 13-02 (proxy composition)
-Resume file: `.planning/phases/13-route-restructure-auth-safety/13-01-SUMMARY.md`
+Stopped at: Completed Phase 13 plan 02 (commit 5503cda — proxy composition); next = plans 13-03a + 13-03b (parallel wave 3)
+Resume file: `.planning/phases/13-route-restructure-auth-safety/13-02-SUMMARY.md`
 
 ## Decisions Made
 
@@ -80,6 +80,9 @@ Resume file: `.planning/phases/13-route-restructure-auth-safety/13-01-SUMMARY.md
 - **2026-04-21 (Phase 13 plan 01):** `<html>` and `<body>` ownership lives on `src/app/[locale]/layout.tsx`, not the root. Root layout returns `{children}` (15 lines). Matches next-intl v4 canonical pattern and lets URL segment drive `lang`/`dir` without a cookie read.
 - **2026-04-21 (Phase 13 plan 01):** OAuth callback relocated to `src/app/auth/callback/route.ts` (out of `(viewer)` route group). Stays at exact URL registered with OAuth providers even after the `[locale]/` restructure. safeNext() locale-awareness deferred to plan 13-04.
 - **2026-04-21 (Phase 13 plan 01):** All 39 route moves executed via `git mv` with rename detection (R in git status), blame history preserved (`git log --follow` confirms).
+- **2026-04-21 (Phase 13 plan 02):** proxy.ts composition order is `handleI18nRouting(request)` first, `updateSession(request)` second, then merge `supabaseResponse.cookies.getAll().forEach(c => intlResponse.cookies.set(c.name, c.value, c))`. This merge MUST run in every code path (pass-through, 3xx redirect, coming-soon redirect) or the `/` → `/en/` redirect silently drops the Supabase auth cookie.
+- **2026-04-21 (Phase 13 plan 02):** `/api/*` and `/auth/callback` short-circuit above the i18n layer — both are locale-agnostic by requirement (API convention + OAuth provider URL registration). Session refresh still runs on the short-circuit branches so API routes get fresh cookies.
+- **2026-04-21 (Phase 13 plan 02):** Coming-soon redirect uses `` `/${locale}/coming-soon` `` built from `stripLocale(pathname).locale` — preserves /en/ or /ar/ prefix. Falls back to `routing.defaultLocale` for pre-redirect bare paths (shouldn't happen in practice because the 3xx short-circuit returns first).
 
 ## Performance Metrics
 
@@ -87,3 +90,4 @@ Resume file: `.planning/phases/13-route-restructure-auth-safety/13-01-SUMMARY.md
 |-------|------|----------|-------|-------|--------|
 | 12 | 01 | auto | 6 | 5 | af2ab35 |
 | 13 | 01 | ~35min | 5 | 62 | 733c8f4..b3234c6 |
+| 13 | 02 | ~8min | 2 | 1 | 5503cda |
