@@ -36,7 +36,7 @@ export function LandingFaq() {
           <Accordion type="single" collapsible className="w-full">
             {LANDING_FAQS.map((item, i) => (
               <AccordionItem key={i} value={`faq-${i}`}>
-                <AccordionTrigger className="text-left text-base font-medium text-white/80 hover:text-white data-[state=open]:text-white">
+                <AccordionTrigger className="text-start text-base font-medium text-white/80 hover:text-white data-[state=open]:text-white">
                   {item.q}
                 </AccordionTrigger>
                 <AccordionContent className="text-sm leading-7 text-white/44">

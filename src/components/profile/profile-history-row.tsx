@@ -51,7 +51,7 @@ export function ProfileHistoryRow({ item }: ProfileHistoryRowProps) {
                 style={{ width: `${progressPercent}%`, backgroundColor: brandHex }}
               />
             </div>
-            <p className="text-[11px] text-white/40 mt-1 text-right">{progressPercent}%</p>
+            <p className="text-[11px] text-white/40 mt-1 text-end">{progressPercent}%</p>
           </div>
         )}
       </div>

@@ -112,7 +112,7 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
                   type="button"
                   title="Clear override"
                   onClick={() => setColor(genre, undefined)}
-                  className={`ml-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider transition-colors ${
+                  className={`ms-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider transition-colors ${
                     active
                       ? 'bg-white/10 text-white hover:bg-white/20'
                       : 'text-white/30'

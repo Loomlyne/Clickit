@@ -89,7 +89,7 @@ export default async function AuditLogPage() {
       {typedRows.length > 0 && (
         <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
           <table className="w-full text-sm">
-            <thead className="border-b border-white/10 bg-white/[0.02] text-left text-xs uppercase tracking-[0.12em] text-white/48">
+            <thead className="border-b border-white/10 bg-white/[0.02] text-start text-xs uppercase tracking-[0.12em] text-white/48">
               <tr>
                 <th className="px-4 py-3 font-medium">When</th>
                 <th className="px-4 py-3 font-medium">Action</th>
@@ -115,7 +115,7 @@ export default async function AuditLogPage() {
                   <td className="px-4 py-3 text-white/80">
                     {row.entity_type}
                     {row.entity_id && (
-                      <span className="ml-2 font-mono text-[10px] text-white/40">
+                      <span className="ms-2 font-mono text-[10px] text-white/40">
                         {row.entity_id.slice(0, 8)}…
                       </span>
                     )}

@@ -149,7 +149,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                 <TableHead>Show</TableHead>
                 <TableHead className="hidden w-[100px] sm:table-cell">Genre</TableHead>
                 <TableHead className="hidden w-[130px] md:table-cell">Archived</TableHead>
-                <TableHead className="w-[180px] text-right">Actions</TableHead>
+                <TableHead className="w-[180px] text-end">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -173,7 +173,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                             onClick={() => handleRestore(show)}
                             disabled={restoring === show.id}
                           >
-                            <RotateCcw className="mr-1 size-3.5" />
+                            <RotateCcw className="me-1 size-3.5" />
                             {restoring === show.id ? 'Restoring...' : 'Restore'}
                           </Button>
                         </TooltipTrigger>
@@ -186,7 +186,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                             size="sm"
                             onClick={() => handleDeleteClick(show)}
                           >
-                            <Trash2 className="mr-1 size-3.5" />
+                            <Trash2 className="me-1 size-3.5" />
                             Delete
                           </Button>
                         </TooltipTrigger>

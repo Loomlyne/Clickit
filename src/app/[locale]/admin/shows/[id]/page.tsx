@@ -67,7 +67,7 @@ export default async function ShowDetailPage({
         href="/admin"
         className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
-        <ArrowLeft className="size-4" />
+        <ArrowLeft className="size-4 rtl:scale-x-[-1]" />
         All Shows
       </Link>
 

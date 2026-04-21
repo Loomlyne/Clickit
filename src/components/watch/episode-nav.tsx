@@ -29,7 +29,7 @@ export function EpisodeNav({ prev, next }: EpisodeNavProps) {
           href={`/watch/${prev.id}`}
           className={cn(baseClasses, enabledClasses, 'flex items-center gap-3 justify-start')}
         >
-          <ChevronLeft className="size-5 flex-shrink-0" />
+          <ChevronLeft className="size-5 flex-shrink-0 rtl:scale-x-[-1]" />
           <div className="min-w-0">
             <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
               Previous
@@ -45,7 +45,7 @@ export function EpisodeNav({ prev, next }: EpisodeNavProps) {
           tabIndex={-1}
           className={cn(baseClasses, disabledClasses, 'flex items-center gap-3 justify-start')}
         >
-          <ChevronLeft className="size-5 flex-shrink-0" />
+          <ChevronLeft className="size-5 flex-shrink-0 rtl:scale-x-[-1]" />
           <div className="min-w-0">
             <span className="text-sm">Previous</span>
           </div>
@@ -58,7 +58,7 @@ export function EpisodeNav({ prev, next }: EpisodeNavProps) {
           href={`/watch/${next.id}`}
           className={cn(baseClasses, enabledClasses, 'flex items-center gap-3 justify-end')}
         >
-          <div className="min-w-0 text-right">
+          <div className="min-w-0 text-end">
             <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
               Next
             </span>
@@ -66,7 +66,7 @@ export function EpisodeNav({ prev, next }: EpisodeNavProps) {
               {next.title}
             </span>
           </div>
-          <ChevronRight className="size-5 flex-shrink-0" />
+          <ChevronRight className="size-5 flex-shrink-0 rtl:scale-x-[-1]" />
         </Link>
       ) : (
         <div
@@ -74,10 +74,10 @@ export function EpisodeNav({ prev, next }: EpisodeNavProps) {
           tabIndex={-1}
           className={cn(baseClasses, disabledClasses, 'flex items-center gap-3 justify-end')}
         >
-          <div className="min-w-0 text-right">
+          <div className="min-w-0 text-end">
             <span className="text-sm">Next</span>
           </div>
-          <ChevronRight className="size-5 flex-shrink-0" />
+          <ChevronRight className="size-5 flex-shrink-0 rtl:scale-x-[-1]" />
         </div>
       )}
     </div>

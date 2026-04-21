@@ -108,7 +108,7 @@ export function WatchPageContent({
                 href={`/series/${show.slug}`}
                 className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors text-sm"
               >
-                <ArrowLeft className="size-4" />
+                <ArrowLeft className="size-4 rtl:scale-x-[-1]" />
                 {show.title}
               </Link>
               <span className="text-white/20">|</span>

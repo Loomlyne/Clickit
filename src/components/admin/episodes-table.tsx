@@ -101,7 +101,7 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
               <TableHead className="hidden w-20 sm:table-cell">Duration</TableHead>
               <TableHead className="hidden w-24 md:table-cell">YouTube</TableHead>
               <TableHead className="w-[100px]">Status</TableHead>
-              <TableHead className="w-32 text-right">Actions</TableHead>
+              <TableHead className="w-32 text-end">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

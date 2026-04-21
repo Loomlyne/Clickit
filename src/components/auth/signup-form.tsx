@@ -97,7 +97,7 @@ export function SignupForm() {
             id="signup-password"
             type={showPassword ? 'text' : 'password'}
             placeholder="••••••••"
-            className="pr-10"
+            className="pe-10"
             {...register('password')}
           />
           <button
@@ -119,7 +119,7 @@ export function SignupForm() {
             id="signup-confirm"
             type={showConfirm ? 'text' : 'password'}
             placeholder="••••••••"
-            className="pr-10"
+            className="pe-10"
             {...register('confirmPassword')}
           />
           <button

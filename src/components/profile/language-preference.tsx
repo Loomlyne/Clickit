@@ -50,7 +50,7 @@ export function LanguagePreference({ current }: { current: Locale }) {
             onClick={() => select(locale)}
             disabled={isPending}
             className={cn(
-              'relative flex-1 rounded-[16px] border p-4 text-left transition-all duration-200 disabled:opacity-60',
+              'relative flex-1 rounded-[16px] border p-4 text-start transition-all duration-200 disabled:opacity-60',
               active
                 ? 'border-white/30 bg-white/[0.08]'
                 : 'border-white/[0.08] bg-white/[0.02] hover:border-white/[0.16] hover:bg-white/[0.04]'

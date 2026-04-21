@@ -56,7 +56,7 @@ function Field({ label, required, error, children }: { label: string; required?:
     <div className="space-y-1.5">
       <Label className="text-sm">
         {label}
-        {required && <span className="text-destructive ml-0.5">*</span>}
+        {required && <span className="text-destructive ms-0.5">*</span>}
       </Label>
       {children}
       {error && <p className="text-xs text-destructive">{error}</p>}
@@ -182,14 +182,14 @@ export function EpisodeFormDrawer({
 
               {/* Status — radio buttons */}
               <div className="space-y-1.5">
-                <Label className="text-sm">Status<span className="text-destructive ml-0.5">*</span></Label>
+                <Label className="text-sm">Status<span className="text-destructive ms-0.5">*</span></Label>
                 <div className="grid grid-cols-3 gap-2">
                   {STATUS_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
                       type="button"
                       onClick={() => form.setValue('status', opt.value, { shouldValidate: true })}
-                      className={`rounded-lg border p-3 text-left transition-all ${
+                      className={`rounded-lg border p-3 text-start transition-all ${
                         currentStatus === opt.value
                           ? 'border-white/30 bg-white/10 ring-1 ring-white/20'
                           : 'border-border hover:border-white/15 hover:bg-white/[0.03]'
@@ -205,7 +205,7 @@ export function EpisodeFormDrawer({
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Duration" error={errors.duration?.message}>
                   <div className="relative">
-                    <Input type="number" min={1} placeholder="25" {...form.register('duration', { valueAsNumber: true })} className="pr-10" />
+                    <Input type="number" min={1} placeholder="25" {...form.register('duration', { valueAsNumber: true })} className="pe-10" />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">min</span>
                   </div>
                 </Field>

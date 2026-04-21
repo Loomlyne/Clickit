@@ -73,7 +73,7 @@ export function ResetPasswordForm() {
             id="reset-password"
             type={showPassword ? 'text' : 'password'}
             placeholder="••••••••"
-            className="pr-10"
+            className="pe-10"
             {...register('password')}
           />
           <button
@@ -95,7 +95,7 @@ export function ResetPasswordForm() {
             id="reset-confirm"
             type={showConfirm ? 'text' : 'password'}
             placeholder="••••••••"
-            className="pr-10"
+            className="pe-10"
             {...register('confirmPassword')}
           />
           <button

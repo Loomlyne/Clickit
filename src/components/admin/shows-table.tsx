@@ -106,7 +106,7 @@ export function ShowsTable({ shows }: ShowsTableProps) {
         <EmptyState
           heading="No Shows Yet"
           body="Create your first show to get started."
-          action={<Button onClick={handleCreate}><Plus className="size-4 mr-1.5" />Create Show</Button>}
+          action={<Button onClick={handleCreate}><Plus className="size-4 me-1.5" />Create Show</Button>}
         />
         <ShowFormDrawer open={drawerOpen} onOpenChange={setDrawerOpen} show={editingShow} onSave={handleSave} />
       </>
@@ -146,7 +146,7 @@ export function ShowsTable({ shows }: ShowsTableProps) {
                 placeholder="Search shows..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
+                className="ps-9"
               />
             </div>
             <select
@@ -160,7 +160,7 @@ export function ShowsTable({ shows }: ShowsTableProps) {
               <option value="draft">Draft</option>
             </select>
             <Button onClick={handleCreate} className="shrink-0">
-              <Plus className="mr-1.5 size-4" />
+              <Plus className="me-1.5 size-4" />
               Create Show
             </Button>
           </div>
@@ -180,7 +180,7 @@ export function ShowsTable({ shows }: ShowsTableProps) {
                 <TableHead className="w-[110px]">Status</TableHead>
                 <TableHead className="hidden w-[70px] sm:table-cell">Eps</TableHead>
                 <TableHead className="hidden w-[150px] lg:table-cell">Broadcast</TableHead>
-                <TableHead className="w-[90px] text-right">Actions</TableHead>
+                <TableHead className="w-[90px] text-end">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

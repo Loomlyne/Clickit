@@ -120,7 +120,7 @@ export function HeroMediaPicker({
         <p className="text-sm font-medium">{label}</p>
         {hasContent && (
           <Button type="button" variant="ghost" size="sm" onClick={handleRemove} disabled={uploading}>
-            <Trash2 className="mr-1.5 size-3.5" />
+            <Trash2 className="me-1.5 size-3.5" />
             Clear
           </Button>
         )}

@@ -87,7 +87,7 @@ function Field({ label, required, error, children }: { label: string; required?:
     <div className="space-y-1.5">
       <Label className="text-sm">
         {label}
-        {required && <span className="text-destructive ml-0.5">*</span>}
+        {required && <span className="text-destructive ms-0.5">*</span>}
       </Label>
       {children}
       {error && <p className="text-xs text-destructive">{error}</p>}
@@ -213,7 +213,7 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
                   <Input
                     {...form.register('slug')}
                     disabled={isEdit}
-                    className={isEdit ? 'pr-8 opacity-70' : ''}
+                    className={isEdit ? 'pe-8 opacity-70' : ''}
                   />
                   {isEdit && <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />}
                 </div>

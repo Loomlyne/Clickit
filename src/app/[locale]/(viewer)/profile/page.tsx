@@ -83,7 +83,7 @@ export default async function ProfilePage() {
             <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
               My List
               {watchlistShows.length > 0 && (
-                <span className="ml-2 text-sm font-normal text-white/40">
+                <span className="ms-2 text-sm font-normal text-white/40">
                   {watchlistShows.length}
                 </span>
               )}
@@ -120,7 +120,7 @@ export default async function ProfilePage() {
             <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
               Liked Shows
               {likedShows.length > 0 && (
-                <span className="ml-2 text-sm font-normal text-white/40">
+                <span className="ms-2 text-sm font-normal text-white/40">
                   {likedShows.length}
                 </span>
               )}

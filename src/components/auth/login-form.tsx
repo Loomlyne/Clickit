@@ -90,7 +90,7 @@ export function LoginForm() {
           onClick={() => { setMode('login'); setServerError(null); setResetSent(false) }}
           className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white/80 transition-colors"
         >
-          <ArrowLeft className="size-3.5" />
+          <ArrowLeft className="size-3.5 rtl:scale-x-[-1]" />
           Back to sign in
         </button>
 
@@ -170,7 +170,7 @@ export function LoginForm() {
             id="login-password"
             type={showPassword ? 'text' : 'password'}
             placeholder="••••••••"
-            className="pr-10"
+            className="pe-10"
             {...loginForm.register('password')}
           />
           <button

@@ -32,14 +32,14 @@ export function UserDropdown({ children, onSignOut, isAdmin = false, email }: Us
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => router.push('/profile')}>
-          <User className="mr-2 size-4" />
+          <User className="me-2 size-4" />
           Profile
         </DropdownMenuItem>
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => router.push('/admin')}>
-              <Shield className="mr-2 size-4" />
+              <Shield className="me-2 size-4" />
               Admin
             </DropdownMenuItem>
           </>
@@ -49,7 +49,7 @@ export function UserDropdown({ children, onSignOut, isAdmin = false, email }: Us
           className="text-brand-red-safe focus:text-brand-red-safe"
           onSelect={() => onSignOut()}
         >
-          <LogOut className="mr-2 size-4" />
+          <LogOut className="me-2 size-4" />
           Sign Out
         </DropdownMenuItem>
       </DropdownMenuContent>

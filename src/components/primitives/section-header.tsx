@@ -42,7 +42,7 @@ export function SectionHeader({
           className="inline-flex items-center gap-1 text-sm text-primary transition-colors hover:text-white"
         >
           See all
-          <ChevronRight className="size-4" />
+          <ChevronRight className="size-4 rtl:scale-x-[-1]" />
         </Link>
       )}
     </div>

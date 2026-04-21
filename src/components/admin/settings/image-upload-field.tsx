@@ -91,7 +91,7 @@ export function ImageUploadField({
             onClick={onRemove}
             disabled={busy}
           >
-            <Trash2 className="mr-2 size-4" />
+            <Trash2 className="me-2 size-4" />
             Remove
           </Button>
         </div>

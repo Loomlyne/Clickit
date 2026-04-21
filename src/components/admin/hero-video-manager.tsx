@@ -128,7 +128,7 @@ export function HeroVideoManager({ currentVideo }: { currentVideo: VideoConfig }
         onClick={handleRemove}
         disabled={uploading}
       >
-        <Trash2 className="mr-2 size-4" />
+        <Trash2 className="me-2 size-4" />
         Remove Video
       </Button>
     </div>

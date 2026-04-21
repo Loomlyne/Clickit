@@ -22,7 +22,7 @@ export function EditShowButton({ show }: { show: Show }) {
   return (
     <>
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        <Pencil className="mr-1.5 size-3.5" />
+        <Pencil className="me-1.5 size-3.5" />
         Edit Show Details
       </Button>
       <ShowFormDrawer open={open} onOpenChange={setOpen} show={show} onSave={handleSave} />

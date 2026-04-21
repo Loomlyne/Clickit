@@ -63,7 +63,7 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
           body="Create a season to start adding episodes."
           action={
             <Button onClick={handleAddSeason}>
-              <Plus className="mr-1.5 size-4" />
+              <Plus className="me-1.5 size-4" />
               Add Season
             </Button>
           }
@@ -100,7 +100,7 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
               </h2>
             </div>
             <Button variant="outline" size="sm" onClick={handleAddSeason}>
-              <Plus className="mr-1 size-4" />
+              <Plus className="me-1 size-4" />
               Add Season
             </Button>
           </div>
@@ -121,7 +121,7 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
                           e.stopPropagation()
                           handleEditSeason(season)
                         }}
-                        className="ml-0.5 rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                        className="ms-0.5 rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                         aria-label={`Edit ${season.title}`}
                       >
                         <Pencil className="size-3" />
@@ -146,7 +146,7 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
                     {seasonEpisodes.length} episode{seasonEpisodes.length !== 1 ? 's' : ''}
                   </p>
                   <Button size="sm" onClick={() => handleAddEpisode(season.id)}>
-                    <Plus className="mr-1 size-4" />
+                    <Plus className="me-1 size-4" />
                     Add Episode
                   </Button>
                 </div>

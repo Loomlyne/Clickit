@@ -203,6 +203,12 @@ html::-webkit-scrollbar {
   font-family: var(--font-cairo), system-ui, sans-serif;
 }
 
+/* RTL-04: strip wide letter-spacing on Arabic pages so glyph joining stays correct.
+   Tailwind's arbitrary tracking-[0.2em+] classes break Arabic connected letters. */
+html[lang="ar"] [class*="tracking-["] {
+  letter-spacing: 0 !important;
+}
+
 @keyframes glow-pulse {
   0%, 100% { box-shadow: 0 0 10px var(--glow-color, rgba(96, 115, 255, 0.28)), 0 0 26px rgba(96, 115, 255, 0.12); }
   50% { box-shadow: 0 0 14px var(--glow-color, rgba(96, 115, 255, 0.38)), 0 0 34px rgba(96, 115, 255, 0.18); }
