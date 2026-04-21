@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { uploadArtwork } from '@/app/admin/actions'
+import { uploadArtwork } from '@/app/[locale]/admin/actions'
 
 interface ArtworkUploadZoneProps {
   showId: string

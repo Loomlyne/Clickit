@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { Upload, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { uploadSiteImage, removeSiteImage } from '@/app/admin/actions'
+import { uploadSiteImage, removeSiteImage } from '@/app/[locale]/admin/actions'
 
 /**
  * Reusable image upload field for OG image + favicon.

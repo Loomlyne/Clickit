@@ -5,7 +5,7 @@ import { Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ShowFormDrawer } from '@/components/admin/show-form-drawer'
-import { updateShow } from '@/app/admin/actions'
+import { updateShow } from '@/app/[locale]/admin/actions'
 import type { Database } from '@/lib/database.types'
 
 type Show = Database['public']['Tables']['shows']['Row']

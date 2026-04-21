@@ -23,7 +23,7 @@ import { StatusBadge } from '@/components/admin/status-badge'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { EmptyState } from '@/components/admin/empty-state'
 import { EpisodeFormDrawer } from '@/components/admin/episode-form-drawer'
-import { reorderEpisode, updateEpisode, archiveEpisode } from '@/app/admin/actions'
+import { reorderEpisode, updateEpisode, archiveEpisode } from '@/app/[locale]/admin/actions'
 import type { Database } from '@/lib/database.types'
 
 type Episode = Database['public']['Tables']['episodes']['Row']

@@ -20,7 +20,7 @@ import {
   createSeason,
   updateSeason,
   createEpisode,
-} from '@/app/admin/actions'
+} from '@/app/[locale]/admin/actions'
 import type { Database } from '@/lib/database.types'
 
 type Season = Database['public']['Tables']['seasons']['Row']

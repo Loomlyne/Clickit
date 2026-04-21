@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { mapAuthError } from '@/lib/auth-errors'
-import { signUpAction } from '@/app/(viewer)/auth/actions'
+import { signUpAction } from '@/app/[locale]/(viewer)/auth/actions'
 
 const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),

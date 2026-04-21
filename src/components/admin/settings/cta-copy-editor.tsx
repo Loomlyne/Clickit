@@ -12,7 +12,7 @@ import {
   TabsTrigger,
   TabsContent,
 } from '@/components/ui/tabs'
-import { updateCtaCopy } from '@/app/admin/actions'
+import { updateCtaCopy } from '@/app/[locale]/admin/actions'
 import type { CtaCopy, CtaStageCopy } from '@/lib/config'
 import { SettingsCard, SettingsField } from './settings-card'
 

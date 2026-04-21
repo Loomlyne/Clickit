@@ -1,5 +1,11 @@
 import type { NextConfig } from "next";
 import { withBotId } from 'botid/next/config'
+import createNextIntlPlugin from 'next-intl/plugin'
+
+// next-intl v4 plugin: wires src/i18n/request.ts into the Next.js build so
+// getMessages() / setRequestLocale() resolve at render time. Required once any
+// layout/page awaits getMessages() during prerender (Phase 13 [locale]/layout).
+const withNextIntl = createNextIntlPlugin()
 
 const nextConfig: NextConfig = {
   experimental: {
@@ -48,5 +54,6 @@ const nextConfig: NextConfig = {
 
 // withBotId wires the BotID challenge into Vercel's edge so sign-in/sign-up
 // requests carry a verifiable bot-score header. Server Actions gate on
-// checkBotId() before touching Supabase (see src/app/(viewer)/auth/actions.ts).
-export default withBotId(nextConfig);
+// checkBotId() before touching Supabase (see the auth actions under
+// src/app/[locale]/(viewer)/auth/actions.ts).
+export default withBotId(withNextIntl(nextConfig));

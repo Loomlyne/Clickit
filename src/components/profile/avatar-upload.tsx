@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react'
 import { Camera } from 'lucide-react'
 import { toast } from 'sonner'
-import { uploadAvatar } from '@/app/(viewer)/profile/actions'
+import { uploadAvatar } from '@/app/[locale]/(viewer)/profile/actions'
 
 interface AvatarUploadProps {
   currentUrl: string | null

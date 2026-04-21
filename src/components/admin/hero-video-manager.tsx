@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import { Upload, Loader2, Trash2, Link as LinkIcon, Film } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { uploadHeroVideo, setHeroVideoUrl, removeHeroVideo } from '@/app/admin/actions'
+import { uploadHeroVideo, setHeroVideoUrl, removeHeroVideo } from '@/app/[locale]/admin/actions'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
 
 type VideoConfig = { url: string; type: 'mp4' | 'youtube' } | null

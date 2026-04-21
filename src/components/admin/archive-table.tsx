@@ -29,8 +29,8 @@ import {
 } from '@/components/ui/tooltip'
 import { EmptyState } from '@/components/admin/empty-state'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
-import { restoreShow, deleteShowPermanently, resolveConflictsAndRestore } from '@/app/admin/actions'
-import type { EpisodeConflict } from '@/app/admin/actions'
+import { restoreShow, deleteShowPermanently, resolveConflictsAndRestore } from '@/app/[locale]/admin/actions'
+import type { EpisodeConflict } from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
 import type { Database } from '@/lib/database.types'
 

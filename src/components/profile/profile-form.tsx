@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { Check, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { updateProfile } from '@/app/(viewer)/profile/actions'
+import { updateProfile } from '@/app/[locale]/(viewer)/profile/actions'
 
 interface ProfileFormProps {
   displayName: string

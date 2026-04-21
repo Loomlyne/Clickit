@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import {
   updateFeatureFlags,
   revalidateAllCache,
-} from '@/app/admin/actions'
+} from '@/app/[locale]/admin/actions'
 import type { AppConfig, FeatureFlags } from '@/lib/config'
 import { SettingsCard } from './settings-card'
 

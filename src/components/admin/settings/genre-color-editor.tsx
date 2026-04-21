@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { updateGenreConfig } from '@/app/admin/actions'
+import { updateGenreConfig } from '@/app/[locale]/admin/actions'
 import type { GenreConfig } from '@/lib/config'
 import { SettingsCard } from './settings-card'
 

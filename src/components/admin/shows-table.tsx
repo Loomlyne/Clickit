@@ -24,7 +24,7 @@ import { StatusBadge } from '@/components/admin/status-badge'
 import { EmptyState } from '@/components/admin/empty-state'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { ShowFormDrawer } from '@/components/admin/show-form-drawer'
-import { createShow, updateShow, archiveShow, toggleFeatured } from '@/app/admin/actions'
+import { createShow, updateShow, archiveShow, toggleFeatured } from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
 import type { Database } from '@/lib/database.types'
 

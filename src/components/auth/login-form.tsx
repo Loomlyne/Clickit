@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator'
 import { AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { mapAuthError } from '@/lib/auth-errors'
-import { signInAction } from '@/app/(viewer)/auth/actions'
+import { signInAction } from '@/app/[locale]/(viewer)/auth/actions'
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),

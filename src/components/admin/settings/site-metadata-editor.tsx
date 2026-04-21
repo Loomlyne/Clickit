@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { updateSiteMetadata } from '@/app/admin/actions'
+import { updateSiteMetadata } from '@/app/[locale]/admin/actions'
 import { SettingsCard, SettingsField } from './settings-card'
 
 type Values = {

@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import { Upload, Loader2, Trash2, Link as LinkIcon, Film, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { uploadArtwork, uploadShowVideoFile } from '@/app/admin/actions'
+import { uploadArtwork, uploadShowVideoFile } from '@/app/[locale]/admin/actions'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
 
 type Mode = 'image' | 'mp4' | 'youtube'
