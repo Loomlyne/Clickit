@@ -1,11 +1,15 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { searchShows, searchEpisodes } from '@/lib/queries'
 import { SearchResults } from '@/components/search/search-results'
 
-export const metadata: Metadata = {
-  title: 'Search | Clickit Story',
-  description: 'Search shows and episodes on Clickit Story',
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('search')
+  return {
+    title: `${t('heading')} | Clickit Story`,
+    description: t('description'),
+  }
 }
 
 interface Props {
@@ -14,17 +18,18 @@ interface Props {
 
 export default async function SearchPage({ searchParams }: Props) {
   const { q } = await searchParams
+  const t = await getTranslations('search')
 
   // Empty/no query state
   if (!q || q.trim().length === 0) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
-        <p className="mb-4 text-[11px] uppercase tracking-[0.28em] text-white/34">Search</p>
+        <p className="mb-4 text-[11px] uppercase tracking-[0.28em] text-white/34">{t('heading')}</p>
         <h1 className="font-display text-4xl font-semibold tracking-[-0.04em] text-white">
-          Search Clickit Story
+          {t('pageTitle')}
         </h1>
         <p className="mt-3 max-w-sm text-white/50">
-          Find your favorite shows and episodes by title
+          {t('description')}
         </p>
       </div>
     )
@@ -34,7 +39,7 @@ export default async function SearchPage({ searchParams }: Props) {
   if (q.trim().length < 2) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
-        <p className="text-white/50">Enter at least 2 characters to search</p>
+        <p className="text-white/50">{t('minChars')}</p>
       </div>
     )
   }
@@ -50,25 +55,22 @@ export default async function SearchPage({ searchParams }: Props) {
     return (
       <div className="px-6 pb-16 pt-12 md:px-12">
         <p className="text-[11px] uppercase tracking-[0.28em] text-white/34">
-          Results for
+          {t('resultsFor', { query: q })}
         </p>
-        <h1 className="mt-2 font-display text-4xl font-semibold tracking-[-0.04em]">
-          &ldquo;{q}&rdquo;
-        </h1>
         <div className="mt-16 flex flex-col items-center text-center">
-          <p className="text-white/50">No results found</p>
+          <p className="text-white/50">{t('noResultsHeading')}</p>
           <div className="mt-4 flex gap-3">
             <Link
               href="/search"
               className="text-sm text-white/60 underline hover:text-white"
             >
-              Clear search
+              {t('clearSearch')}
             </Link>
             <Link
               href="/"
               className="text-sm text-white/60 underline hover:text-white"
             >
-              Browse all shows
+              {t('noResultsDescription')}
             </Link>
           </div>
         </div>

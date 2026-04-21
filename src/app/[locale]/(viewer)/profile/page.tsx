@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getLocale as getIntlLocale } from 'next-intl/server'
+import { getLocale as getIntlLocale, getTranslations } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -11,9 +11,12 @@ import { PortraitShowCard } from '@/components/shows/portrait-show-card'
 import { LanguagePreference } from '@/components/profile/language-preference'
 import { getWatchlistShows, getLikedShows, getRecentlyWatched } from '@/lib/queries'
 
-export const metadata: Metadata = {
-  title: 'Profile | Clickit Story',
-  description: 'Manage your Clickit Story account',
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('profile')
+  return {
+    title: `Clickit Story`,
+    description: t('accountHeading'),
+  }
 }
 
 export default async function ProfilePage() {
@@ -41,11 +44,12 @@ export default async function ProfilePage() {
   const isAdmin = config?.admin_user_id === user.id
 
   // Fetch personalization data
-  const [watchlistShows, likedShows, recentlyWatched, locale] = await Promise.all([
+  const [watchlistShows, likedShows, recentlyWatched, locale, t] = await Promise.all([
     getWatchlistShows(user.id),
     getLikedShows(user.id),
     getRecentlyWatched(user.id),
     getLocale(),
+    getTranslations('profile'),
   ])
 
   const displayName = profile?.display_name ?? ''
@@ -63,17 +67,17 @@ export default async function ProfilePage() {
 
         <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
           <h3 className="font-display mb-4 text-lg font-semibold tracking-[-0.02em] text-white">
-            Account Settings
+            {t('accountHeading')}
           </h3>
           <ProfileForm displayName={displayName} />
         </div>
 
         <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
           <h3 className="font-display mb-1 text-lg font-semibold tracking-[-0.02em] text-white">
-            Language
+            {t('languageHeading')}
           </h3>
           <p className="mb-4 text-sm text-white/40">
-            Changes the language and text direction across the entire platform.
+            {t('languageDescription')}
           </p>
           <LanguagePreference current={locale} />
         </div>
@@ -81,7 +85,7 @@ export default async function ProfilePage() {
         <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
-              My List
+              {t('myListHeading')}
               {watchlistShows.length > 0 && (
                 <span className="ms-2 text-sm font-normal text-white/40">
                   {watchlistShows.length}
@@ -93,7 +97,7 @@ export default async function ProfilePage() {
                 href="/my-list"
                 className="text-sm text-white/50 hover:text-white transition-colors"
               >
-                See all &rarr;
+                {t('myListSeeAll')} &rarr;
               </Link>
             )}
           </div>
@@ -107,9 +111,9 @@ export default async function ProfilePage() {
             </div>
           ) : (
             <p className="text-sm text-white/40 py-6 text-center">
-              No saved shows yet.{' '}
+              {t('myListEmpty')}.{' '}
               <Link href="/series" className="text-white/60 hover:text-white underline">
-                Browse shows
+                {locale === 'ar' ? 'تصفح البرامج' : 'Browse shows'}
               </Link>
             </p>
           )}
@@ -118,7 +122,7 @@ export default async function ProfilePage() {
         <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
-              Liked Shows
+              {t('likedHeading')}
               {likedShows.length > 0 && (
                 <span className="ms-2 text-sm font-normal text-white/40">
                   {likedShows.length}
@@ -136,14 +140,14 @@ export default async function ProfilePage() {
             </div>
           ) : (
             <p className="text-sm text-white/40 py-6 text-center">
-              No liked shows yet. Hit the heart on any show to see it here.
+              {t('likedEmpty')}
             </p>
           )}
         </div>
 
         <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
           <h3 className="font-display mb-4 text-lg font-semibold tracking-[-0.02em] text-white">
-            Recently Watched
+            {t('historyHeading')}
           </h3>
           {recentlyWatched.length > 0 ? (
             <div>
@@ -153,7 +157,7 @@ export default async function ProfilePage() {
             </div>
           ) : (
             <p className="text-sm text-white/40 py-6 text-center">
-              No watch history yet.
+              {t('historyEmpty')}
             </p>
           )}
         </div>

@@ -1,18 +1,23 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
+import { getTranslations } from 'next-intl/server'
 
 import { AuthPanel } from '@/components/auth/auth-panel'
 import { BotIdInit } from '@/components/auth/botid-init'
 import { CinematicBackdrop } from '@/components/primitives/cinematic-backdrop'
 
-export const metadata: Metadata = {
-  title: 'Sign In | Clickit Story',
-  description: 'Sign in or create a Clickit Story account',
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('common')
+  return {
+    title: `${t('signIn')} | Clickit Story`,
+    description: t('tagline'),
+  }
 }
 
 const BRAND_COLORS = ['#2C3569', '#9F54A0', '#50A258', '#DB3F34', '#EA8C2E', '#F8C623']
 
-export default function AuthPage() {
+export default async function AuthPage() {
+  const t = await getTranslations('auth')
   return (
     <div className="-mt-24 md:-mt-28 relative flex min-h-dvh items-center justify-center overflow-hidden px-6 py-16">
       <BotIdInit />
@@ -29,16 +34,16 @@ export default function AuthPage() {
       <div className="relative z-10 grid w-full max-w-6xl gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div className="hidden lg:block">
           <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.28em] text-white/34">
-            Clickit access
+            {t('accessHeading')}
           </p>
           <h1 className="font-display max-w-xl text-[clamp(3rem,5vw,5.4rem)] font-semibold leading-[0.94] text-white">
-            Sign in to a more deliberate streaming experience.
+            {t('tagline')}
           </h1>
           <p className="mt-5 max-w-lg text-lg leading-8 text-white/58">
-            Save your list, resume where you left off, and move through Clickit’s original programming with a cleaner viewer shell.
+            {t('formTagline')}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            {['Original programming', 'Progress sync', 'Watchlist ready'].map((item) => (
+            {[t('benefits.continueWatching'), t('benefits.myList'), t('benefits.likes')].map((item) => (
               <span key={item} className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-white/60">
                 {item}
               </span>
@@ -66,13 +71,13 @@ export default function AuthPage() {
             }}
           >
             <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.28em] text-white/34">
-              Welcome back
+              {t('welcomeBack')}
             </p>
             <h2 className="font-display text-[2rem] font-semibold tracking-[-0.03em] text-white">
-              Continue where you left off
+              {t('benefits.continueWatching')}
             </h2>
             <p className="mb-8 mt-2 text-sm leading-6 text-white/52">
-              Sign in or create an account to save progress, manage your list, and unlock the full Clickit viewer experience.
+              {t('formTagline')}
             </p>
 
             <AuthPanel />

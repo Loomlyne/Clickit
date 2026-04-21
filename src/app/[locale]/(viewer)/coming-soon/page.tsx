@@ -1,5 +1,6 @@
 import { Link } from '@/i18n/navigation'
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 
 import { Button } from '@/components/ui/button'
 import { ComingSoonShowCard } from '@/components/shows/coming-soon-show-card'
@@ -13,13 +14,18 @@ import {
 } from '@/lib/queries'
 import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 
-export const metadata: Metadata = {
-  title: 'Coming Soon | Clickit Story',
-  description: 'Upcoming shows and new episodes coming to Clickit Story',
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('comingSoon')
+  return {
+    title: `${t('pageTitle')} | Clickit Story`,
+    description: t('description'),
+  }
 }
 
 export default async function ComingSoonPage() {
-  const [comingSoonShows, upcomingEpisodes] = await Promise.all([
+  const [t, tCommon, comingSoonShows, upcomingEpisodes] = await Promise.all([
+    getTranslations('comingSoon'),
+    getTranslations('common'),
     getComingSoonShows(),
     getComingSoonEpisodes(),
   ])
@@ -47,16 +53,16 @@ export default async function ComingSoonPage() {
             className="mb-4 text-[11px] tracking-[0.28em] uppercase"
             style={{ color: 'var(--color-brand-purple-safe)' }}
           >
-            What&apos;s Next
+            {t('eyebrow')}
           </p>
           <h1
             className="font-display font-semibold leading-tight text-white"
             style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}
           >
-            What&apos;s Coming
+            {t('heading')}
           </h1>
           <p className="text-white/50 text-lg mt-3 max-w-md mx-auto">
-            New shows and episodes on the way from CIT
+            {t('description')}
           </p>
         </div>
       </div>
@@ -64,7 +70,7 @@ export default async function ComingSoonPage() {
       {/* Section 1: Upcoming Shows */}
       {comingSoonShows.length > 0 ? (
         <section className="pb-12">
-          <SectionHeader title="Upcoming Shows" />
+          <SectionHeader title={t('upcomingShowsHeading')} />
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-6 md:px-12 mt-2">
             {comingSoonShows.map((show, i) => (
               <ScrollReveal key={show.id} delay={i * 0.06}>
@@ -75,14 +81,14 @@ export default async function ComingSoonPage() {
         </section>
       ) : (
         <section className="px-6 md:px-12 pb-12">
-          <SectionHeader title="Upcoming Shows" />
+          <SectionHeader title={t('upcomingShowsHeading')} />
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <h3 className="text-xl font-bold text-white">All Caught Up</h3>
+            <h3 className="text-xl font-bold text-white">{t('noUpcomingHeading')}</h3>
             <p className="mt-2 text-sm text-white/50">
-              No upcoming shows right now. Browse what&apos;s streaming.
+              {t('noUpcomingDescription')}
             </p>
             <Link href="/" className="mt-4">
-              <Button variant="default">Browse Shows</Button>
+              <Button variant="default">{tCommon('browseShows')}</Button>
             </Link>
           </div>
         </section>
@@ -91,7 +97,7 @@ export default async function ComingSoonPage() {
       {/* Section 2: New Episodes Dropping Soon */}
       {Object.keys(episodesByShow).length > 0 ? (
         <section className="px-6 md:px-12 pb-16">
-          <SectionHeader title="New Episodes Dropping Soon" />
+          <SectionHeader title={t('newEpisodesHeading')} />
           <div className="mt-2 space-y-8">
             {Object.entries(episodesByShow).map(
               ([showTitle, { brandColor, episodes }]) => (
@@ -121,13 +127,13 @@ export default async function ComingSoonPage() {
         </section>
       ) : (
         <section className="px-6 md:px-12 pb-16">
-          <SectionHeader title="New Episodes Dropping Soon" />
+          <SectionHeader title={t('newEpisodesHeading')} />
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <h3 className="text-xl font-bold text-white">
-              No New Episodes Scheduled
+              {t('noNewEpisodesHeading')}
             </h3>
             <p className="mt-2 text-sm text-white/50">
-              Check back for upcoming episode releases.
+              {t('noNewEpisodesDescription')}
             </p>
           </div>
         </section>

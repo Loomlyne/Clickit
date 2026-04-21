@@ -1,29 +1,43 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
+import { getTranslations } from 'next-intl/server'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
 import { ContactForm } from '@/components/support/contact-form'
 import { FAQ_ITEMS } from '@/lib/faq-data'
 
-export const metadata: Metadata = {
-  title: 'Support | Clickit Story',
-  description: 'Get help with Clickit Story — contact us or browse FAQs',
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('support')
+  return {
+    title: `${t('pageTitle')} | Clickit Story`,
+    description: t('description'),
+  }
 }
 
-export default function SupportPage() {
-  const leftFaq = FAQ_ITEMS.slice(0, 4)
-  const rightFaq = FAQ_ITEMS.slice(4)
+export default async function SupportPage() {
+  const [t, tFaq] = await Promise.all([
+    getTranslations('support'),
+    getTranslations('faq'),
+  ])
+
+  // Build FAQ items from the faq namespace keys (q1Question..q8Answer)
+  const faqItems = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => ({
+    q: tFaq(`q${i}Question`),
+    a: tFaq(`q${i}Answer`),
+  }))
+  const leftFaq = faqItems.slice(0, 4)
+  const rightFaq = faqItems.slice(4)
 
   return (
     <div className="px-6 pb-20 pt-8 md:px-12">
       <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
-          <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.28em] text-white/34">Support</p>
+          <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.28em] text-white/34">{t('pageTitle')}</p>
           <h1 className="font-display text-4xl font-semibold tracking-[-0.04em] text-foreground lg:text-5xl">
-            Get in touch
+            {t('heading')}
           </h1>
           <p className="mt-4 max-w-md text-base leading-7 text-muted-foreground">
-            Have a question, feedback, or need help? We&apos;d love to hear from you. Our team is based in Abu Dhabi and responds within 24 hours.
+            {t('description')}
           </p>
           <div className="mt-8" aria-hidden="true">
             <Image
@@ -52,7 +66,7 @@ export default function SupportPage() {
       </div>
 
       <section id="faq" className="mt-16">
-        <h2 className="text-3xl font-semibold tracking-[-0.03em] text-foreground">Frequently Asked Questions</h2>
+        <h2 className="text-3xl font-semibold tracking-[-0.03em] text-foreground">{t('faqHeading')}</h2>
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <Accordion type="single" collapsible>
             {leftFaq.map((item, i) => (
@@ -76,7 +90,7 @@ export default function SupportPage() {
           className="mt-8"
           asChild
         >
-          <a href="#top">Ask a Question</a>
+          <a href="#top">{t('contactHeading')}</a>
         </Button>
       </section>
     </div>

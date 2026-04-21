@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getLocale } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -8,9 +8,12 @@ import { PortraitShowCard } from '@/components/shows/portrait-show-card'
 import { SectionHeader } from '@/components/primitives/section-header'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 
-export const metadata: Metadata = {
-  title: 'My List | Clickit Story',
-  description: 'Your saved shows on Clickit Story',
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('myList')
+  return {
+    title: `${t('pageTitle')} | Clickit Story`,
+    description: t('emptyDescription'),
+  }
 }
 
 export default async function MyListPage() {
@@ -22,7 +25,13 @@ export default async function MyListPage() {
     return redirect({ href: '/auth?next=/my-list', locale })
   }
 
-  const shows = await getWatchlistShows(user.id)
+  const [locale, t, tCommon, shows] = await Promise.all([
+    getLocale(),
+    getTranslations('myList'),
+    getTranslations('common'),
+    getWatchlistShows(user.id),
+  ])
+  const isArabic = locale === 'ar'
 
   return (
     <div className="pb-20">
@@ -32,15 +41,15 @@ export default async function MyListPage() {
             className="mb-4 text-[11px] uppercase tracking-[0.28em]"
             style={{ color: 'var(--color-brand-blue-safe)' }}
           >
-            My List
+            {t('pageTitle')}
           </p>
           <h1 className="font-display text-3xl font-semibold leading-tight tracking-[-0.04em] text-white sm:text-4xl md:text-5xl">
-            Saved Shows
+            {t('heading')}
           </h1>
           <p className="mx-auto mt-3 max-w-md text-lg text-white/50">
             {shows.length > 0
-              ? `${shows.length} show${shows.length !== 1 ? 's' : ''} in your list`
-              : 'Save shows to watch them later.'}
+              ? t(shows.length === 1 ? 'countOne' : 'countMany', { count: shows.length })
+              : t('emptyDescription')}
           </p>
         </div>
       </div>
@@ -48,7 +57,7 @@ export default async function MyListPage() {
       {/* Show grid or empty state */}
       {shows.length > 0 ? (
         <div className="px-6 md:px-12">
-          <SectionHeader title="Your Shows" />
+          <SectionHeader title={isArabic ? 'برامجك' : 'Your Shows'} />
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-5 mt-2">
             {shows.map((show, i) => (
               <ScrollReveal key={show.id} delay={i * 0.04}>
@@ -59,10 +68,10 @@ export default async function MyListPage() {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center gap-4 px-6 py-32 text-center">
-          <h3 className="text-2xl font-semibold tracking-[-0.03em] text-white">Your list is empty</h3>
-          <p className="text-sm text-white/50">Save shows to watch them later.</p>
+          <h3 className="text-2xl font-semibold tracking-[-0.03em] text-white">{isArabic ? 'قائمتك فارغة' : 'Your list is empty'}</h3>
+          <p className="text-sm text-white/50">{t('emptyDescription')}</p>
           <Link href="/" className="rounded-full border border-white/14 bg-white/[0.03] px-6 py-3 text-sm text-white/70 transition-all duration-200 hover:border-white/24 hover:text-white">
-            Browse Shows
+            {tCommon('browseShows')}
           </Link>
         </div>
       )}
