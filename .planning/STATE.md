@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Full Bilingual UI (AR/EN)
 status: in-progress
-stopped_at: Completed 12-01-PLAN.md — next phase = 13 (Route Restructure + Auth Safety)
-last_updated: "2026-04-21T00:05:00.000Z"
+stopped_at: Completed Phase 13 plan 01 (route restructure + [locale]/layout.tsx + root slim) — next = Phase 13 plan 02 (proxy composition)
+last_updated: "2026-04-21T18:00:00.000Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 17
+  total_plans: 8
+  completed_plans: 2
+  percent: 25
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-20)
 
 ## Current Position
 
-Phase: 12 COMPLETE — next phase = 13 (Route Restructure + Auth Safety)
-Plan: 12-01-PLAN.md shipped (commit af2ab35) — 5 files / 112 LOC, zero page edits
-Status: Phase 12 success criteria all green; tsc clean; build green; scope boundary held
-Last activity: 2026-04-21 — Phase 12 atomic execution; ready for `/gsd:plan-phase 13`
+Phase: 13 IN PROGRESS — plan 01 of 7 complete
+Plan: 13-01-PLAN.md shipped (commits 733c8f4 → b3234c6, 5 atomic commits) — 22 routes now under /[locale]/, [locale]/layout.tsx owns html/body, OAuth callback relocated, root layout slimmed 148 → 15 LOC, next-intl plugin wired
+Status: RTE-01, RTE-02, I18N-05, I18N-06 closed. tsc clean; `npm run build` green with 44 static pages across /en/ and /ar/. Plan 13-02 (proxy composition) is next.
+Last activity: 2026-04-21 — Phase 13 plan 01 atomic execution.
 
 ## Roadmap Summary (v1.1)
 
@@ -68,18 +68,22 @@ Last activity: 2026-04-21 — Phase 12 atomic execution; ready for `/gsd:plan-ph
 ## Session Continuity
 
 Last session: 2026-04-21
-Stopped at: Completed 12-01-PLAN.md (commit af2ab35); awaiting `/gsd:plan-phase 13`
-Resume file: `.planning/phases/12-i18n-infrastructure/12-01-SUMMARY.md` — Phase 12 → Phase 13 handoff notes
+Stopped at: Completed Phase 13 plan 01 (5 commits 733c8f4 → b3234c6); next = plan 13-02 (proxy composition)
+Resume file: `.planning/phases/13-route-restructure-auth-safety/13-01-SUMMARY.md`
 
 ## Decisions Made
 
 - **2026-04-21 (Phase 12):** `localePrefix: 'always'` — both /en/ and /ar/ URL segments required; no bare-root exception for the default locale.
 - **2026-04-21 (Phase 12):** Arabic dictionary values remain empty objects (not English placeholders) so missing keys surface as next-intl MISSING_MESSAGE warnings — prevents silent English fallback on /ar/ pages during later translation phases.
-- **2026-04-21 (Phase 12):** No `createNextIntlPlugin()` added to `next.config.ts`; next-intl v4 auto-detects `src/i18n/request.ts` — preserves zero-config-change invariant.
+- **2026-04-21 (Phase 12):** ~~No `createNextIntlPlugin()` added to `next.config.ts`; next-intl v4 auto-detects `src/i18n/request.ts`~~ **Invalidated in Phase 13 plan 01.** The plugin IS required — build failed with "Couldn't find next-intl config file" once `[locale]/layout.tsx` awaited `getMessages()`. Plugin wired in commit b3234c6 as `withBotId(withNextIntl(nextConfig))`.
 - **2026-04-21 (Phase 12):** `src/lib/locale.ts` kept byte-identical (dirFor / pickLocalized / getLocale) — remains canonical for bilingual DB field rendering in existing viewer code.
+- **2026-04-21 (Phase 13 plan 01):** `<html>` and `<body>` ownership lives on `src/app/[locale]/layout.tsx`, not the root. Root layout returns `{children}` (15 lines). Matches next-intl v4 canonical pattern and lets URL segment drive `lang`/`dir` without a cookie read.
+- **2026-04-21 (Phase 13 plan 01):** OAuth callback relocated to `src/app/auth/callback/route.ts` (out of `(viewer)` route group). Stays at exact URL registered with OAuth providers even after the `[locale]/` restructure. safeNext() locale-awareness deferred to plan 13-04.
+- **2026-04-21 (Phase 13 plan 01):** All 39 route moves executed via `git mv` with rename detection (R in git status), blame history preserved (`git log --follow` confirms).
 
 ## Performance Metrics
 
 | Phase | Plan | Duration | Tasks | Files | Commit |
 |-------|------|----------|-------|-------|--------|
 | 12 | 01 | auto | 6 | 5 | af2ab35 |
+| 13 | 01 | ~35min | 5 | 62 | 733c8f4..b3234c6 |

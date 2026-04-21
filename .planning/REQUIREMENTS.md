@@ -15,16 +15,16 @@ Goal: wire `next-intl@4.9.1` (already installed) as the primary i18n system.
 - [x] **I18N-02**: `src/i18n/request.ts` implements `getRequestConfig` that awaits `requestLocale`, validates it, and returns the matching message dictionary
 - [x] **I18N-03**: `src/i18n/navigation.ts` re-exports `Link`, `useRouter`, `redirect`, `usePathname` from `createNavigation(routing)` so locale prefix is preserved
 - [x] **I18N-04**: `src/messages/en.json` + `src/messages/ar.json` dictionary files created with namespaces (`nav`, `auth`, `home`, `show`, `player`, `search`, `profile`, `myList`, `comingSoon`, `support`, `faq`, `admin`, `errors`, `common`)
-- [ ] **I18N-05**: `NextIntlClientProvider` wired into `[locale]/layout.tsx` with `setRequestLocale(locale)` called at the top of every page + layout for static rendering support *(Phase 12 delivered prerequisite: getRequestConfig ready; final wiring = Phase 13)*
-- [ ] **I18N-06**: `generateStaticParams` exports `[{locale: 'en'}, {locale: 'ar'}]` on `[locale]/layout.tsx` *(Phase 12 delivered prerequisite: staticParams helper exported from routing.ts; final wiring = Phase 13)*
+- [x] **I18N-05**: `NextIntlClientProvider` wired into `[locale]/layout.tsx` with `setRequestLocale(locale)` called at the top of every page + layout for static rendering support *(Phase 12 delivered prerequisite: getRequestConfig ready; final wiring delivered 2026-04-21 in Phase 13 plan 01)*
+- [x] **I18N-06**: `generateStaticParams` exports `[{locale: 'en'}, {locale: 'ar'}]` on `[locale]/layout.tsx` *(Phase 12 delivered prerequisite: staticParams helper exported from routing.ts; final wiring delivered 2026-04-21 in Phase 13 plan 01)*
 - [x] **I18N-07**: Existing `dirFor()` and `pickLocalized()` helpers in `src/lib/locale.ts` continue to work unchanged (domain-specific, not replaced)
 
 ### Route Restructure + Auth Safety (`RTE-*`)
 
 Goal: move pages under `src/app/[locale]/...` and fix the 6 latent auth/routing breaks atomically in the same PR.
 
-- [ ] **RTE-01**: All pages moved under `src/app/[locale]/`. `(viewer)` and `admin` route groups preserved inside the `[locale]` segment
-- [ ] **RTE-02**: Root `src/app/layout.tsx` reduced to minimal shell (children + html body); locale-aware `html dir lang` attributes move to `[locale]/layout.tsx`
+- [x] **RTE-01**: All pages moved under `src/app/[locale]/`. `(viewer)` and `admin` route groups preserved inside the `[locale]` segment *(delivered 2026-04-21 in Phase 13 plan 01; 38 files moved via git mv, blame preserved)*
+- [x] **RTE-02**: Root `src/app/layout.tsx` reduced to minimal shell (children + html body); locale-aware `html dir lang` attributes move to `[locale]/layout.tsx` *(delivered 2026-04-21 in Phase 13 plan 01; root slimmed 148 → 15 lines)*
 - [ ] **RTE-03**: `proxy.ts` composes `createMiddleware(routing)` with existing Supabase `updateSession()` — Supabase auth cookies merged onto the i18n response so locale redirects do not log users out (Pitfall #1)
 - [ ] **RTE-04**: ~7 client components using `useRouter` from `next/navigation` swap to `@/i18n/navigation` so navigation preserves locale prefix (Pitfall #2)
 - [ ] **RTE-05**: Hard-coded redirects to `/auth/login` in auth actions and protected routes become locale-aware (`redirect` from `@/i18n/navigation`) (Pitfall #3)
@@ -146,11 +146,11 @@ Mapped by roadmapper 2026-04-20. Coverage: **62/62** v1.1 requirements — no or
 | I18N-02   | 12    | Complete (2026-04-21, af2ab35) |
 | I18N-03   | 12    | Complete (2026-04-21, af2ab35) |
 | I18N-04   | 12    | Complete (2026-04-21, af2ab35) |
-| I18N-05   | 12→13 | Partial — prerequisite delivered 2026-04-21; final wiring in Phase 13 |
-| I18N-06   | 12→13 | Partial — staticParams helper delivered 2026-04-21; final wiring in Phase 13 |
+| I18N-05   | 12→13 | Complete — final wiring delivered 2026-04-21 (Phase 13 plan 01, commit 888bda9) |
+| I18N-06   | 12→13 | Complete — final wiring delivered 2026-04-21 (Phase 13 plan 01, commit 888bda9) |
 | I18N-07   | 12    | Complete (2026-04-21, af2ab35) |
-| RTE-01    | 13    | Not started |
-| RTE-02    | 13    | Not started |
+| RTE-01    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 01, commit e857d21) |
+| RTE-02    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 01, commit b246eba) |
 | RTE-03    | 13    | Not started |
 | RTE-04    | 13    | Not started |
 | RTE-05    | 13    | Not started |
@@ -207,4 +207,4 @@ Mapped by roadmapper 2026-04-20. Coverage: **62/62** v1.1 requirements — no or
 
 ---
 
-*Last updated: 2026-04-21 — Phase 12 shipped (I18N-01/02/03/04/07 complete; I18N-05/06 partial → Phase 13)*
+*Last updated: 2026-04-21 — Phase 13 plan 01 shipped (RTE-01/02 + I18N-05/06 complete)*

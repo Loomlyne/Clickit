@@ -29,7 +29,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 ### 🚧 v1.1 Full Bilingual UI (AR/EN) — Phases 12-17
 
 - [x] **Phase 12: i18n Infrastructure** — Wire next-intl primitives (routing, request, navigation, messages, provider); zero page edits — completed 2026-04-21 (commit af2ab35)
-- [ ] **Phase 13: Route Restructure + Auth Safety** — Move every page under `[locale]/` and fix 6 latent auth/routing breaks atomically in one PR
+- [ ] **Phase 13: Route Restructure + Auth Safety** — Move every page under `[locale]/` and fix 6 latent auth/routing breaks atomically in one PR (1/7 plans done)
 - [ ] **Phase 14: Global Layout + RTL CSS** — `[locale]/layout.tsx`, Cairo font, letter-spacing fix, logical-property migration across ~114 components, directional icon mirroring
 - [ ] **Phase 15: Viewer Pages Translation** — Every string on 13 viewer pages routed through `useTranslations()` / `getTranslations()`
 - [ ] **Phase 16: Admin Pages Translation** — All 5 admin views operable in Arabic
@@ -61,7 +61,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   4. The coming-soon gate in `proxy.ts` redirects to `/en/coming-soon` or `/ar/coming-soon` based on the incoming URL — never bare `/coming-soon`
   5. `src/app/locale-actions.ts`, `src/components/layout/locale-switcher.tsx`, and `src/components/profile/language-preference.tsx` are replaced by a next-intl navigation-based switcher that writes the URL; old cookie switcher is removed from the codebase
 **Plans**: 7 plans
-  - [ ] 13-01-PLAN.md — Route restructure: git-mv (viewer)/ and admin/ under [locale]/, relocate OAuth callback to locale-agnostic path, create [locale]/layout.tsx (NextIntlClientProvider + setRequestLocale + generateStaticParams + <html lang dir>), slim root layout.tsx to pass-through — closes RTE-01, RTE-02, I18N-05, I18N-06
+  - [x] 13-01-PLAN.md — Route restructure: git-mv (viewer)/ and admin/ under [locale]/, relocate OAuth callback to locale-agnostic path, create [locale]/layout.tsx (NextIntlClientProvider + setRequestLocale + generateStaticParams + <html lang dir>), slim root layout.tsx to pass-through — closes RTE-01, RTE-02, I18N-05, I18N-06 — completed 2026-04-21 (commits 733c8f4 → b3234c6)
   - [ ] 13-02-PLAN.md — Proxy composition: createMiddleware(routing) + updateSession() + cookie merge, locale-aware coming-soon redirect, /api and /auth/callback short-circuits — closes RTE-03, RTE-07
   - [ ] 13-03a-PLAN.md — Navigation-hook + Server-redirect swaps: 10 useRouter + 4 usePathname + 5 Server Component redirect imports swapped to @/i18n/navigation (19 file edits) — closes RTE-04 (hook half) + RTE-05
   - [ ] 13-03b-PLAN.md — `next/link` swaps: ~38 files swap `import Link from 'next/link'` → `import { Link } from '@/i18n/navigation'` so every click preserves the active locale prefix — closes RTE-04 (Link half); parallel with 13-03a in Wave 3
