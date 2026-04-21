@@ -1,3 +1,4 @@
+import { getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { ChevronRight } from 'lucide-react'
 
@@ -8,12 +9,14 @@ interface SectionHeaderProps {
   className?: string
 }
 
-export function SectionHeader({
+export async function SectionHeader({
   title,
   seeAllHref,
   accentColor,
   className,
 }: SectionHeaderProps) {
+  const locale = await getLocale()
+  const isArabic = locale === 'ar'
   return (
     <div
       className={`mb-5 flex items-center justify-between px-6 md:px-12${className ? ` ${className}` : ''}`}
@@ -28,7 +31,7 @@ export function SectionHeader({
         )}
         <div>
           <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.22em] text-white/34">
-            Curated by Clickit
+            {isArabic ? 'اختيار كلِك إت' : 'Curated by Clickit'}
           </p>
           <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white md:text-[2rem]">
             {title}
@@ -41,7 +44,7 @@ export function SectionHeader({
           href={seeAllHref}
           className="inline-flex items-center gap-1 text-sm text-primary transition-colors hover:text-white"
         >
-          See all
+          {isArabic ? 'عرض الكل' : 'See all'}
           <ChevronRight className="size-4 rtl:scale-x-[-1]" />
         </Link>
       )}

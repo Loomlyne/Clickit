@@ -1,5 +1,6 @@
 'use client'
 
+import { useLocale } from 'next-intl'
 import {
   Carousel,
   CarouselContent,
@@ -18,13 +19,15 @@ interface NewEpisodesRailProps {
 }
 
 export function NewEpisodesRail({ episodes, minCards = 6 }: NewEpisodesRailProps) {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const placeholderCount = Math.max(0, minCards - episodes.length)
   const accentColor = episodes[0] ? BRAND_COLOR_HEX[episodes[0].showBrandColor] : undefined
 
   return (
     <ScrollReveal>
       <section className="space-y-4">
-        <SectionHeader title="New Episodes" accentColor={accentColor} />
+        <SectionHeader title={isArabic ? 'حلقات جديدة' : 'New Episodes'} accentColor={accentColor} />
 
         <div className="px-6 md:px-12 overflow-hidden">
           <Carousel

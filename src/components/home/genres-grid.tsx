@@ -1,3 +1,4 @@
+import { getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getDistinctGenres } from '@/lib/queries'
 import { getAppConfig } from '@/lib/config'
@@ -25,7 +26,8 @@ const GENRE_COLORS: Record<string, string> = {
 }
 
 export async function GenresGrid() {
-  const [genres, config] = await Promise.all([getDistinctGenres(), getAppConfig()])
+  const [genres, config, locale] = await Promise.all([getDistinctGenres(), getAppConfig(), getLocale()])
+  const isArabic = locale === 'ar'
 
   // Honor admin feature flag.
   if (!config.flags.showGenresGrid) return null
@@ -46,7 +48,7 @@ export async function GenresGrid() {
   return (
     <ScrollReveal>
       <section className="pt-1">
-        <SectionHeader title="Browse by Genre" />
+        <SectionHeader title={isArabic ? 'تصفح حسب النوع' : 'Browse by Genre'} />
         <div className="scrollbar-hide flex gap-3 overflow-x-auto px-6 py-2 md:px-12">
           {orderedGenres.map((genre) => {
             const override = config.genreConfig[genre]?.color

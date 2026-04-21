@@ -1,3 +1,4 @@
+import { getLocale } from 'next-intl/server'
 import { getContinueWatchingEpisodes } from '@/lib/queries'
 import { SectionHeader } from '@/components/primitives/section-header'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
@@ -14,14 +15,19 @@ interface ContinueWatchingRailProps {
 export async function ContinueWatchingRail({ userId }: ContinueWatchingRailProps) {
   if (!userId) return null
 
-  const items = await getContinueWatchingEpisodes(userId)
+  const [items, locale] = await Promise.all([
+    getContinueWatchingEpisodes(userId),
+    getLocale(),
+  ])
 
   if (items.length === 0) return null
+
+  const isArabic = locale === 'ar'
 
   return (
     <ScrollReveal>
       <section className="overflow-hidden">
-        <SectionHeader title="Continue Watching" />
+        <SectionHeader title={isArabic ? 'تابع المشاهدة' : 'Continue Watching'} />
         <div className="scrollbar-hide flex gap-4 overflow-x-auto px-6 pb-4 md:px-12">
           {items.map((item) => (
             <ContinueWatchingCard key={item.episodeId} item={item} />
