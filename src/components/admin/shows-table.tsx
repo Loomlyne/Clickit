@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { Pencil, Archive, Plus, Search, Star } from 'lucide-react'
 
 import {

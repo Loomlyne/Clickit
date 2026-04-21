@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { Badge } from '@/components/ui/badge'
 import type { ViewShow } from '@/lib/queries'
 import { BRAND_COLOR_BG } from '@/lib/brand-colors'

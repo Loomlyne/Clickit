@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 
 import { createClient } from '@/lib/supabase/server'
 import { SeriesDetailHero } from '@/components/series/series-detail-hero'

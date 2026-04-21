@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { ShowArt } from '@/components/primitives/show-art'
 import type { RecentlyWatchedItem } from '@/lib/queries'
 import { BRAND_COLOR_HEX } from '@/lib/brand-colors'

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { getLocale as getIntlLocale } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getLocale } from '@/lib/locale'
 import { ProfileForm } from '@/components/profile/profile-form'

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { SeasonTabs } from '@/components/admin/season-tabs'

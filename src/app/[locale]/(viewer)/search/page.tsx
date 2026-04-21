@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { searchShows, searchEpisodes } from '@/lib/queries'
 import { SearchResults } from '@/components/search/search-results'
 

@@ -3,7 +3,7 @@
 // card on the homepage. This one renders on the server and ships zero JS for
 // the card itself. Interaction still feels the same — translate + scale with a
 // 300ms cubic-bezier easing.
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { Play } from 'lucide-react'
 
 import { ShowArt } from '@/components/primitives/show-art'

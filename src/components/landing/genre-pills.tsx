@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { getDistinctGenres } from '@/lib/queries'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 import { GenrePill } from './genre-pill'

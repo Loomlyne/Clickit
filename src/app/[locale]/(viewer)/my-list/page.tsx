@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { getLocale } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getWatchlistShows } from '@/lib/queries'
 import { PortraitShowCard } from '@/components/shows/portrait-show-card'

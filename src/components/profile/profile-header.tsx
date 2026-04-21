@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { Shield, LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { AvatarUpload } from './avatar-upload'

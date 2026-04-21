@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { getDistinctGenres } from '@/lib/queries'
 import { getAppConfig } from '@/lib/config'
 import { SectionHeader } from '@/components/primitives/section-header'

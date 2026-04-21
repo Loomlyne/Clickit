@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { getAllShows } from '@/lib/queries'
 import { ShowArt } from '@/components/primitives/show-art'
 import { SectionHeader } from '@/components/primitives/section-header'

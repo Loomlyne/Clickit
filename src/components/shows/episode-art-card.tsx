@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { motion } from 'motion/react'
 
 import { ShowArt } from '@/components/primitives/show-art'

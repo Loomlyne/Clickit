@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import { motion, AnimatePresence, MotionConfig } from 'motion/react'
 import { ChevronDown } from 'lucide-react'
