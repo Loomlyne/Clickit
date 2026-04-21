@@ -28,7 +28,7 @@ Goal: move pages under `src/app/[locale]/...` and fix the 6 latent auth/routing 
 - [x] **RTE-03**: `proxy.ts` composes `createMiddleware(routing)` with existing Supabase `updateSession()` — Supabase auth cookies merged onto the i18n response so locale redirects do not log users out (Pitfall #1) *(delivered 2026-04-21 in Phase 13 plan 02, commit 5503cda)*
 - [ ] **RTE-04**: ~7 client components using `useRouter` from `next/navigation` swap to `@/i18n/navigation` so navigation preserves locale prefix (Pitfall #2) *(hook half — 10 useRouter + 4 usePathname — delivered 2026-04-21 in Phase 13 plan 03a, commits 82c6735 / b9cb442; `next/link` half pending in plan 13-03b)*
 - [x] **RTE-05**: Hard-coded redirects to `/auth/login` in auth actions and protected routes become locale-aware (`redirect` from `@/i18n/navigation`) (Pitfall #3) *(delivered 2026-04-21 in Phase 13 plan 03a, commits 2740da6 / 9b079ba — 5 Server Component redirect swaps with {href, locale} signature)*
-- [ ] **RTE-06**: Supabase auth callback `?next=` redirect handling audited and preserved with locale context (Pitfall #4)
+- [x] **RTE-06**: Supabase auth callback `?next=` redirect handling audited and preserved with locale context (Pitfall #4) *(delivered 2026-04-21 in Phase 13 plan 04, commit 8d90206 — locale-aware safeNext(raw, locale), resolveLocale() cookie reader, error redirect lands on /${locale}/auth)*
 - [x] **RTE-07**: `coming-soon` redirect in `proxy.ts` becomes locale-aware — preserves `/en/` or `/ar/` prefix (Pitfall #5) *(delivered 2026-04-21 in Phase 13 plan 02, commit 5503cda)*
 - [ ] **RTE-08**: `src/app/locale-actions.ts`, `src/components/layout/locale-switcher.tsx`, and `src/components/profile/language-preference.tsx` replaced with next-intl navigation-based switcher that writes the URL (old cookie-only switcher becomes dead code)
 - [ ] **RTE-09**: `src/lib/site-url.ts` / sitemap / metadata base audited for locale-awareness — no broken absolute URLs after restructure
@@ -154,7 +154,7 @@ Mapped by roadmapper 2026-04-20. Coverage: **62/62** v1.1 requirements — no or
 | RTE-03    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 02, commit 5503cda) |
 | RTE-04    | 13    | Partial — hook half delivered 2026-04-21 (Phase 13 plan 03a, commits 82c6735 / b9cb442); Link half pending in plan 13-03b |
 | RTE-05    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 03a, commits 2740da6 / 9b079ba) |
-| RTE-06    | 13    | Not started |
+| RTE-06    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 04, commit 8d90206) |
 | RTE-07    | 13    | Complete — delivered 2026-04-21 (Phase 13 plan 02, commit 5503cda) |
 | RTE-08    | 13    | Not started |
 | RTE-09    | 13    | Not started |

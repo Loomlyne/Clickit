@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Full Bilingual UI (AR/EN)
 status: in-progress
-stopped_at: Completed Phase 13 plan 03b (next/link swaps in 38 files, locale-preserving <Link> clicks) — next = Phase 13 plan 13-04 (OAuth callback safeNext locale-awareness, RTE-06)
-last_updated: "2026-04-21T00:45:00.000Z"
+stopped_at: Completed Phase 13 plan 04 (OAuth callback locale-aware safeNext, RTE-06 closed) — next = Phase 13 plan 13-05 (URL-based locale switcher)
+last_updated: "2026-04-21T01:00:00.000Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 8
-  completed_plans: 5
-  percent: 62
+  completed_plans: 6
+  percent: 75
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-20)
 
 ## Current Position
 
-Phase: 13 IN PROGRESS — plans 01 + 02 + 03a + 03b of 7 complete
-Plan: 13-03b-PLAN.md shipped (commit b10a964) — 38 `next/link` → `@/i18n/navigation` Link swaps. Combined with 13-03a, RTE-04 is now fully closed: every `<Link>` click, `router.push`, `usePathname` compare, and Server `redirect` in scope preserves the active locale prefix. 1 drift file accepted (design-system/layout.tsx — 38 vs frontmatter's 37).
-Status: RTE-01, RTE-02, RTE-03, RTE-04 (both halves), RTE-05, RTE-07, I18N-05, I18N-06 closed. tsc clean; `npm run build` green with 44 routes. Zero `from 'next/link'` residue anywhere in src/. Next: plan 13-04 (OAuth callback safeNext locale-awareness, RTE-06).
-Last activity: 2026-04-21 — Phase 13 plan 03b Link swap sweep.
+Phase: 13 IN PROGRESS — plans 01 + 02 + 03a + 03b + 04 of 7 complete
+Plan: 13-04-PLAN.md shipped (commit 8d90206) — OAuth callback `safeNext()` extended to prepend active locale read from `NEXT_LOCALE` cookie; error redirect lands on `/${locale}/auth?error=...` never bare `/auth?error=...`. Open-redirect defense preserved (rejects `//`, `/\\`, non-`/` prefixes). `GET` signature upgraded from `Request` to `NextRequest` for typed `.cookies` access.
+Status: RTE-01, RTE-02, RTE-03, RTE-04 (both halves), RTE-05, RTE-06, RTE-07, I18N-05, I18N-06 closed. 5 of 6 Phase 13 auth pitfalls fixed. tsc clean; `npm run build` green with 44 routes; `/auth/callback` confirmed Route Handler (not under `[locale]/`). Next: plan 13-05 (URL-based locale switcher).
+Last activity: 2026-04-21 — Phase 13 plan 04 OAuth callback locale-awareness.
 
 ## Roadmap Summary (v1.1)
 
@@ -68,8 +68,8 @@ Last activity: 2026-04-21 — Phase 13 plan 03b Link swap sweep.
 ## Session Continuity
 
 Last session: 2026-04-21
-Stopped at: Completed Phase 13 plan 03b (commit b10a964 — 38 next/link → @/i18n/navigation swaps); next = plan 13-04 (OAuth callback safeNext locale-awareness, RTE-06)
-Resume file: `.planning/phases/13-route-restructure-auth-safety/13-03b-SUMMARY.md`
+Stopped at: Completed Phase 13 plan 04 (commit 8d90206 — OAuth callback locale-aware safeNext, RTE-06 closed); next = plan 13-05 (URL-based locale switcher)
+Resume file: `.planning/phases/13-route-restructure-auth-safety/13-04-SUMMARY.md`
 
 ## Decisions Made
 
@@ -86,6 +86,9 @@ Resume file: `.planning/phases/13-route-restructure-auth-safety/13-03b-SUMMARY.m
 - **2026-04-21 (Phase 13 plan 03a):** next-intl's Server-side `redirect` requires `{ href, locale }` object signature (not bare string as the plan examples showed). All 5 Server Component redirect call sites adopt `redirect({ href, locale })` after `const locale = await getLocale()` from `next-intl/server`. Plan's `redirect('/auth')` diff examples were wrong — documented the correct signature in the SUMMARY.
 - **2026-04-21 (Phase 13 plan 03a):** Auth guards use `if (!user) { ... return redirect(...) }` pattern. Required because multi-statement guards lose TS control-flow narrowing unless `return` precedes the never-returning call.
 - **2026-04-21 (Phase 13 plan 03b):** Drift handling for mechanical sweeps uses `comm -23 grep.txt frontmatter.txt` to detect files-in-grep-not-in-frontmatter. Plan's drift rule (accept into scope) applied: `design-system/layout.tsx` added to the 38-file swap list (frontmatter had 37). Single atomic commit for all 38 files — splitting mechanical sweeps into smaller commits adds no reviewable signal. Combined with 13-03a, RTE-04 is fully closed.
+- **2026-04-21 (Phase 13 plan 04):** OAuth callback `safeNext(raw, locale)` — open-redirect defense FIRST (reject `//`, `/\\`, non-`/` prefixes), locale short-circuit SECOND (keep `/en/...` and `/ar/...` unchanged), locale prepend LAST. Order matters: prepending before validation would turn `//attacker.com` into `/en//attacker.com` which is still a path but looks sketchy in logs. Reject-first keeps the defense legible.
+- **2026-04-21 (Phase 13 plan 04):** `GET(request: NextRequest)` signature — bumped from `Request` to `NextRequest` because the `.cookies` API is only typed on `NextRequest`. Alternative (parse `Cookie` header manually off `Request.headers.get('cookie')`) adds code surface for no benefit.
+- **2026-04-21 (Phase 13 plan 04):** `resolveLocale` reads `NEXT_LOCALE` cookie and validates against `routing.locales` tuple. Cookie tampering (e.g., `../en`) fails the `includes` check and falls back to `routing.defaultLocale`. Accept-Language sniffing intentionally skipped — the cookie reflects explicit user intent (set by URL switcher in plan 13-05 and by next-intl middleware on first locale-prefixed request).
 
 ## Performance Metrics
 
@@ -96,3 +99,4 @@ Resume file: `.planning/phases/13-route-restructure-auth-safety/13-03b-SUMMARY.m
 | 13 | 02 | ~8min | 2 | 1 | 5503cda |
 | 13 | 03a | ~11min | 4 | 19 | 82c6735..9b079ba |
 | 13 | 03b | ~4min | 3 | 38 | b10a964 |
+| 13 | 04 | ~3min | 2 | 1 | 8d90206 |
