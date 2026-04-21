@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -13,17 +14,19 @@ import { createClient } from '@/lib/supabase/client'
 
 const resetSchema = z
   .object({
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    password: z.string().min(6, 'passwordMin'),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
+    message: 'passwordMismatch',
     path: ['confirmPassword'],
   })
 
 type ResetFormData = z.infer<typeof resetSchema>
 
 export function ResetPasswordForm() {
+  const t = useTranslations('auth')
+  const tErrors = useTranslations('errors')
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
@@ -50,7 +53,7 @@ export function ResetPasswordForm() {
       return
     }
 
-    toast.success('Password updated successfully!')
+    toast.success(t('resetSuccess'))
     router.push('/')
     router.refresh()
   }
@@ -67,7 +70,7 @@ export function ResetPasswordForm() {
       )}
 
       <div>
-        <Label htmlFor="reset-password">New Password</Label>
+        <Label htmlFor="reset-password">{t('newPassword')}</Label>
         <div className="relative mt-1.5">
           <Input
             id="reset-password"
@@ -80,16 +83,17 @@ export function ResetPasswordForm() {
             type="button"
             tabIndex={-1}
             onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? t('hidePassword') : t('showPassword')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
-        {errors.password && <p className="mt-1 text-xs text-brand-red-safe">{errors.password.message}</p>}
+        {errors.password && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.password.message as never)}</p>}
       </div>
 
       <div>
-        <Label htmlFor="reset-confirm">Confirm New Password</Label>
+        <Label htmlFor="reset-confirm">{t('confirmPassword')}</Label>
         <div className="relative mt-1.5">
           <Input
             id="reset-confirm"
@@ -102,12 +106,13 @@ export function ResetPasswordForm() {
             type="button"
             tabIndex={-1}
             onClick={() => setShowConfirm(!showConfirm)}
+            aria-label={showConfirm ? t('hidePassword') : t('showPassword')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
           >
             {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
-        {errors.confirmPassword && <p className="mt-1 text-xs text-brand-red-safe">{errors.confirmPassword.message}</p>}
+        {errors.confirmPassword && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.confirmPassword.message as never)}</p>}
       </div>
 
       <button
@@ -115,7 +120,7 @@ export function ResetPasswordForm() {
         disabled={isSubmitting}
         className="w-full rounded-full bg-white px-7 py-3 text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isSubmitting ? 'Updating...' : 'Update Password'}
+        {isSubmitting ? t('resetButton') + '…' : t('resetButton')}
       </button>
     </form>
   )

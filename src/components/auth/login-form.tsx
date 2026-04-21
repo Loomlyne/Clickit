@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -15,19 +16,21 @@ import { mapAuthError } from '@/lib/auth-errors'
 import { signInAction } from '@/app/[locale]/(viewer)/auth/actions'
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email('emailInvalid'),
+  password: z.string().min(6, 'passwordMin'),
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
 
 const forgotSchema = z.object({
-  email: z.string().email('Please enter a valid email'),
+  email: z.string().email('emailInvalid'),
 })
 
 type ForgotFormData = z.infer<typeof forgotSchema>
 
 export function LoginForm() {
+  const t = useTranslations('auth')
+  const tErrors = useTranslations('errors')
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
@@ -61,7 +64,7 @@ export function LoginForm() {
     const supabase = createClient()
     await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
 
-    toast.success('Signed in successfully!')
+    toast.success(t('welcomeBack'))
     router.push(result.isAdmin ? '/admin' : '/')
     router.refresh()
   }
@@ -91,14 +94,14 @@ export function LoginForm() {
           className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white/80 transition-colors"
         >
           <ArrowLeft className="size-3.5 rtl:scale-x-[-1]" />
-          Back to sign in
+          {t('backToSignIn')}
         </button>
 
         {resetSent ? (
           <div className="rounded-lg px-4 py-4 text-sm bg-[#50A258]/10 border border-[#50A258]/25 text-green-300">
-            <p className="font-medium">Check your email</p>
+            <p className="font-medium">{t('resetEmailSent')}</p>
             <p className="mt-1 text-white/52">
-              We sent a password reset link to your email. Click the link to set a new password.
+              {t('resetEmailDescription')}
             </p>
           </div>
         ) : (
@@ -113,14 +116,14 @@ export function LoginForm() {
             )}
 
             <p className="text-sm text-white/52">
-              Enter your email and we&apos;ll send you a link to reset your password.
+              {t('resetDescription')}
             </p>
 
             <div>
-              <Label htmlFor="forgot-email">Email</Label>
-              <Input id="forgot-email" type="email" placeholder="you@example.com" className="mt-1.5" {...forgotForm.register('email')} />
+              <Label htmlFor="forgot-email">{t('email')}</Label>
+              <Input id="forgot-email" type="email" placeholder={t('emailPlaceholder')} className="mt-1.5" {...forgotForm.register('email')} />
               {forgotForm.formState.errors.email && (
-                <p className="mt-1 text-xs text-brand-red-safe">{forgotForm.formState.errors.email.message}</p>
+                <p className="mt-1 text-xs text-brand-red-safe">{tErrors(forgotForm.formState.errors.email.message as never)}</p>
               )}
             </div>
 
@@ -129,7 +132,7 @@ export function LoginForm() {
               disabled={forgotForm.formState.isSubmitting}
               className="w-full rounded-full bg-white px-7 py-3 text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {forgotForm.formState.isSubmitting ? 'Sending...' : 'Send Reset Link'}
+              {forgotForm.formState.isSubmitting ? t('resetButton') + '…' : t('resetButton')}
             </button>
           </form>
         )}
@@ -149,20 +152,20 @@ export function LoginForm() {
       )}
 
       <div>
-        <Label htmlFor="login-email">Email</Label>
-        <Input id="login-email" type="email" placeholder="you@example.com" className="mt-1.5" {...loginForm.register('email')} />
-        {loginForm.formState.errors.email && <p className="mt-1 text-xs text-brand-red-safe">{loginForm.formState.errors.email.message}</p>}
+        <Label htmlFor="login-email">{t('email')}</Label>
+        <Input id="login-email" type="email" placeholder={t('emailPlaceholder')} className="mt-1.5" {...loginForm.register('email')} />
+        {loginForm.formState.errors.email && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(loginForm.formState.errors.email.message as never)}</p>}
       </div>
 
       <div>
         <div className="flex items-center justify-between">
-          <Label htmlFor="login-password">Password</Label>
+          <Label htmlFor="login-password">{t('password')}</Label>
           <button
             type="button"
             onClick={() => { setMode('forgot'); setServerError(null) }}
             className="text-xs text-white/40 hover:text-white/70 transition-colors"
           >
-            Forgot password?
+            {t('forgotPassword')}
           </button>
         </div>
         <div className="relative mt-1.5">
@@ -177,12 +180,13 @@ export function LoginForm() {
             type="button"
             tabIndex={-1}
             onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? t('hidePassword') : t('showPassword')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
-        {loginForm.formState.errors.password && <p className="mt-1 text-xs text-brand-red-safe">{loginForm.formState.errors.password.message}</p>}
+        {loginForm.formState.errors.password && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(loginForm.formState.errors.password.message as never)}</p>}
       </div>
 
       <button
@@ -190,13 +194,13 @@ export function LoginForm() {
         disabled={loginForm.formState.isSubmitting}
         className="w-full rounded-full bg-white px-7 py-3 text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loginForm.formState.isSubmitting ? 'Signing in...' : 'Sign In'}
+        {loginForm.formState.isSubmitting ? t('signInButton') + '…' : t('signInButton')}
       </button>
 
       <div className="relative my-4">
         <Separator />
         <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#111116] px-3 text-xs text-white/40">
-          or continue with
+          {t('orContinueWith')}
         </span>
       </div>
 

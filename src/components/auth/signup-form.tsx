@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -15,19 +16,21 @@ import { mapAuthError } from '@/lib/auth-errors'
 import { signUpAction } from '@/app/[locale]/(viewer)/auth/actions'
 
 const signupSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  name: z.string().min(2, 'nameMin'),
+  email: z.string().email('emailInvalid'),
+  password: z.string().min(6, 'passwordMin'),
   confirmPassword: z.string(),
-  terms: z.boolean().refine((v) => v === true, 'You must accept the terms'),
+  terms: z.boolean().refine((v) => v === true, 'termsRequired'),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
+  message: 'passwordMismatch',
   path: ['confirmPassword'],
 })
 
 type SignupFormData = z.infer<typeof signupSchema>
 
 export function SignupForm() {
+  const t = useTranslations('auth')
+  const tErrors = useTranslations('errors')
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
@@ -62,7 +65,7 @@ export function SignupForm() {
     const supabase = createClient()
     await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
 
-    toast.success('Account created! Welcome to Clickit Story.')
+    toast.success(t('accountCreated'))
     router.push('/browse')
     router.refresh()
   }
@@ -79,19 +82,19 @@ export function SignupForm() {
       )}
 
       <div>
-        <Label htmlFor="signup-name">Name</Label>
-        <Input id="signup-name" placeholder="Your full name" className="mt-1.5" {...register('name')} />
-        {errors.name && <p className="mt-1 text-xs text-brand-red-safe">{errors.name.message}</p>}
+        <Label htmlFor="signup-name">{t('displayName')}</Label>
+        <Input id="signup-name" placeholder={t('displayNamePlaceholder')} className="mt-1.5" {...register('name')} />
+        {errors.name && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.name.message as never)}</p>}
       </div>
 
       <div>
-        <Label htmlFor="signup-email">Email</Label>
-        <Input id="signup-email" type="email" placeholder="you@example.com" className="mt-1.5" {...register('email')} />
-        {errors.email && <p className="mt-1 text-xs text-brand-red-safe">{errors.email.message}</p>}
+        <Label htmlFor="signup-email">{t('email')}</Label>
+        <Input id="signup-email" type="email" placeholder={t('emailPlaceholder')} className="mt-1.5" {...register('email')} />
+        {errors.email && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.email.message as never)}</p>}
       </div>
 
       <div>
-        <Label htmlFor="signup-password">Password</Label>
+        <Label htmlFor="signup-password">{t('password')}</Label>
         <div className="relative mt-1.5">
           <Input
             id="signup-password"
@@ -104,16 +107,17 @@ export function SignupForm() {
             type="button"
             tabIndex={-1}
             onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? t('hidePassword') : t('showPassword')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
-        {errors.password && <p className="mt-1 text-xs text-brand-red-safe">{errors.password.message}</p>}
+        {errors.password && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.password.message as never)}</p>}
       </div>
 
       <div>
-        <Label htmlFor="signup-confirm">Confirm Password</Label>
+        <Label htmlFor="signup-confirm">{t('confirmPassword')}</Label>
         <div className="relative mt-1.5">
           <Input
             id="signup-confirm"
@@ -126,12 +130,13 @@ export function SignupForm() {
             type="button"
             tabIndex={-1}
             onClick={() => setShowConfirm(!showConfirm)}
+            aria-label={showConfirm ? t('hidePassword') : t('showPassword')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
           >
             {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
-        {errors.confirmPassword && <p className="mt-1 text-xs text-brand-red-safe">{errors.confirmPassword.message}</p>}
+        {errors.confirmPassword && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.confirmPassword.message as never)}</p>}
       </div>
 
       <div className="flex items-start gap-2">
@@ -141,17 +146,17 @@ export function SignupForm() {
           onCheckedChange={(checked) => setValue('terms', checked === true)}
         />
         <Label htmlFor="signup-terms" className="text-sm text-muted-foreground leading-relaxed">
-          I agree to the Terms of Service and Privacy Policy
+          {t('termsAccept')}
         </Label>
       </div>
-      {errors.terms && <p className="text-xs text-brand-red-safe">{errors.terms.message}</p>}
+      {errors.terms && <p className="text-xs text-brand-red-safe">{tErrors(errors.terms.message as never)}</p>}
 
       <button
         type="submit"
         disabled={isSubmitting}
         className="w-full rounded-full bg-white px-7 py-3 text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isSubmitting ? 'Creating account...' : 'Create Account'}
+        {isSubmitting ? t('signUpButton') + '…' : t('signUpButton')}
       </button>
     </form>
   )
