@@ -1,3 +1,4 @@
+import { getLocale } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { HeroBanner } from '@/components/home/hero-banner'
 import { ContentRail } from '@/components/home/content-rail'
@@ -34,7 +35,8 @@ export default async function BrowsePage() {
 
   // D-01: empty catalog redirects to marketing landing page
   if (streaming.length === 0 && comingSoon.length === 0) {
-    redirect('/')
+    const locale = await getLocale()
+    redirect({ href: '/', locale })
   }
 
   // Batch: one query for all featured shows' first episodes (was 2N queries)

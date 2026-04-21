@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getLocale as getIntlLocale } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -19,7 +20,10 @@ export default async function ProfilePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect('/auth')
+  if (!user) {
+    const locale = await getIntlLocale()
+    return redirect({ href: '/auth', locale })
+  }
 
   // Fetch profile
   const { data: profile } = await supabase

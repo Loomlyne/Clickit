@@ -1,3 +1,4 @@
+import { getLocale } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdminHeader } from '@/components/admin/admin-header'
@@ -6,7 +7,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect('/browse')
+  if (!user) {
+    const locale = await getLocale()
+    return redirect({ href: '/browse', locale })
+  }
 
   // Check if user is admin via app_config table lookup
   const { data: config } = await supabase
@@ -14,7 +18,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     .select('admin_user_id')
     .single()
 
-  if (config?.admin_user_id !== user.id) redirect('/browse')
+  if (config?.admin_user_id !== user.id) {
+    const locale = await getLocale()
+    return redirect({ href: '/browse', locale })
+  }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.14),transparent_28%),linear-gradient(180deg,#05070c_0%,#090c13_42%,#070910_100%)]">

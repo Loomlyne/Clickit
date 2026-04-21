@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getLocale } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -16,7 +17,10 @@ export default async function MyListPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect('/auth?next=/my-list')
+  if (!user) {
+    const locale = await getLocale()
+    return redirect({ href: '/auth?next=/my-list', locale })
+  }
 
   const shows = await getWatchlistShows(user.id)
 
