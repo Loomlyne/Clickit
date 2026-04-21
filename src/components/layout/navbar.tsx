@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
@@ -11,6 +12,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ initialUser }: NavbarProps) {
+  const t = useTranslations('nav')
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export function Navbar({ initialUser }: NavbarProps) {
 
   return (
     <nav
-      aria-label="Main navigation"
+      aria-label={t('home')}
       className="fixed inset-x-0 top-0 z-50 px-4 pt-4 transition-all duration-300 md:px-6 md:pt-5"
     >
       <div
@@ -45,7 +47,7 @@ export function Navbar({ initialUser }: NavbarProps) {
       >
         <Link
           href="/"
-          aria-label="Clickit Story home"
+          aria-label={t('home')}
           className="flex items-center px-3 md:px-4"
         >
           <Image

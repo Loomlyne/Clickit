@@ -1,3 +1,4 @@
+import { getLocale, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import { getAppConfig } from '@/lib/config'
@@ -5,11 +6,11 @@ import { getAppConfig } from '@/lib/config'
 const BRAND_COLORS = ['#2C3569', '#9F54A0', '#50A258', '#DB3F34', '#EA8C2E', '#F8C623']
 
 const GENRE_LINKS = [
-  { label: 'Travel', href: '/browse?genre=Travel' },
-  { label: 'Health', href: '/browse?genre=Health' },
-  { label: 'Music', href: '/browse?genre=Music' },
-  { label: 'Comedy', href: '/browse?genre=Comedy' },
-  { label: 'Tech', href: '/browse?genre=Tech' },
+  { key: 'travel', href: '/browse?genre=Travel' },
+  { key: 'health', href: '/browse?genre=Health' },
+  { key: 'music', href: '/browse?genre=Music' },
+  { key: 'comedy', href: '/browse?genre=Comedy' },
+  { key: 'tech', href: '/browse?genre=Tech' },
 ]
 
 // Renders a social icon link when a URL is set; returns null for empty slots
@@ -63,8 +64,31 @@ function XIcon({ className }: { className?: string }) {
   )
 }
 
+const GENRE_LABEL: Record<string, string> = {
+  travel: 'Travel',
+  health: 'Health',
+  music: 'Music',
+  comedy: 'Comedy',
+  tech: 'Tech',
+}
+
+const GENRE_LABEL_AR: Record<string, string> = {
+  travel: 'سفر',
+  health: 'صحة',
+  music: 'موسيقى',
+  comedy: 'كوميديا',
+  tech: 'تقنية',
+}
+
 export async function Footer() {
-  const { footer } = await getAppConfig()
+  const [{ footer }, locale, tCommon, tNav] = await Promise.all([
+    getAppConfig(),
+    getLocale(),
+    getTranslations('common'),
+    getTranslations('nav'),
+  ])
+  const isArabic = locale === 'ar'
+  const genreLabel = (key: string) => (isArabic ? GENRE_LABEL_AR[key] : GENRE_LABEL[key])
 
   return (
     <footer className="relative mt-24 border-t border-white/[0.06] bg-[#07090d]">
@@ -112,34 +136,34 @@ export async function Footer() {
           {/* Nav columns */}
           <div className="grid grid-cols-3 gap-8">
             <div>
-              <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Navigate</h3>
+              <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">{isArabic ? 'التنقّل' : 'Navigate'}</h3>
               <ul className="space-y-3">
-                <li><Link href="/browse" className="text-sm text-white/56 transition-colors hover:text-white">Browse</Link></li>
-                <li><Link href="/coming-soon" className="text-sm text-white/56 transition-colors hover:text-white">Coming Soon</Link></li>
-                <li><Link href="/support" className="text-sm text-white/56 transition-colors hover:text-white">Support</Link></li>
+                <li><Link href="/browse" className="text-sm text-white/56 transition-colors hover:text-white">{tNav('browse')}</Link></li>
+                <li><Link href="/coming-soon" className="text-sm text-white/56 transition-colors hover:text-white">{tNav('comingSoon')}</Link></li>
+                <li><Link href="/support" className="text-sm text-white/56 transition-colors hover:text-white">{isArabic ? 'الدعم' : 'Support'}</Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Genres</h3>
+              <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">{isArabic ? 'الأنواع' : 'Genres'}</h3>
               <ul className="space-y-3">
-                {GENRE_LINKS.map(({ label, href }) => (
-                  <li key={label}>
-                    <Link href={href} className="text-sm text-white/56 transition-colors hover:text-white">{label}</Link>
+                {GENRE_LINKS.map(({ key, href }) => (
+                  <li key={key}>
+                    <Link href={href} className="text-sm text-white/56 transition-colors hover:text-white">{genreLabel(key)}</Link>
                   </li>
                 ))}
               </ul>
             </div>
             <div className="space-y-8">
               <div>
-                <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Account</h3>
+                <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">{isArabic ? 'الحساب' : 'Account'}</h3>
                 <ul className="space-y-3">
-                  <li><Link href="/auth" className="text-sm text-white/56 transition-colors hover:text-white">Sign In</Link></li>
-                  <li><Link href="/my-list" className="text-sm text-white/56 transition-colors hover:text-white">My List</Link></li>
-                  <li><Link href="/profile" className="text-sm text-white/56 transition-colors hover:text-white">Profile</Link></li>
+                  <li><Link href="/auth" className="text-sm text-white/56 transition-colors hover:text-white">{tCommon('signIn')}</Link></li>
+                  <li><Link href="/my-list" className="text-sm text-white/56 transition-colors hover:text-white">{tNav('myList')}</Link></li>
+                  <li><Link href="/profile" className="text-sm text-white/56 transition-colors hover:text-white">{tNav('profile')}</Link></li>
                 </ul>
               </div>
               <div>
-                <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Legal</h3>
+                <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">{isArabic ? 'قانوني' : 'Legal'}</h3>
                 <ul className="space-y-3">
                   {footer.legal.privacy && (
                     <li>
@@ -147,7 +171,7 @@ export async function Footer() {
                         href={footer.legal.privacy}
                         className="text-sm text-white/56 transition-colors hover:text-white"
                       >
-                        Privacy Policy
+                        {isArabic ? 'سياسة الخصوصية' : 'Privacy Policy'}
                       </Link>
                     </li>
                   )}
@@ -157,7 +181,7 @@ export async function Footer() {
                         href={footer.legal.terms}
                         className="text-sm text-white/56 transition-colors hover:text-white"
                       >
-                        Terms of Service
+                        {isArabic ? 'شروط الخدمة' : 'Terms of Service'}
                       </Link>
                     </li>
                   )}
@@ -167,7 +191,7 @@ export async function Footer() {
                         href={footer.legal.cookies}
                         className="text-sm text-white/56 transition-colors hover:text-white"
                       >
-                        Cookie Policy
+                        {isArabic ? 'سياسة ملفات الارتباط' : 'Cookie Policy'}
                       </Link>
                     </li>
                   )}
@@ -178,8 +202,8 @@ export async function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col gap-2 border-t border-white/[0.06] pt-8 text-xs text-white/50 md:flex-row md:items-center md:justify-between">
-          <p>&copy; {new Date().getFullYear()} Clickit Story. All rights reserved.</p>
-          <p>A Spacelight Studios FZ LLC production · Abu Dhabi, UAE</p>
+          <p>&copy; {new Date().getFullYear()} {tCommon('brand')}. {isArabic ? 'جميع الحقوق محفوظة.' : 'All rights reserved.'}</p>
+          <p>{isArabic ? 'إنتاج Spacelight Studios FZ LLC · أبوظبي، الإمارات العربية المتحدة' : 'A Spacelight Studios FZ LLC production · Abu Dhabi, UAE'}</p>
         </div>
       </div>
 
