@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 
 import { createClient } from '@/lib/supabase/server'
@@ -114,6 +115,8 @@ export default async function SeriesDetailPage({ params }: Props) {
   const allStreaming = await getStreamingShows()
   const moreLikeThis = allStreaming.filter((s) => s.genre === show.genre && s.id !== show.id)
 
+  const t = await getTranslations('show')
+
   return (
     <div>
       <SeriesDetailHero show={show} seasons={viewSeasons} firstEpisodeLabel={firstEpisodeLabel} firstEpisodeId={firstEpisodeId} initialSaved={inWatchlist} initialLiked={isLiked} userId={user?.id ?? null} />
@@ -123,17 +126,17 @@ export default async function SeriesDetailPage({ params }: Props) {
           {viewSeasons.length === 0 ? (
             <div className="py-16">
               <p className="text-[11px] font-normal uppercase tracking-[0.28em] text-white/38">
-                Seasons
+                {t('seasonsLabel')}
               </p>
               <h2 className="font-display mt-2 text-3xl font-semibold text-white">
-                Episodes are being prepared.
+                {t('emptyEpisodesHeading')}
               </h2>
-              <p className="mt-2 text-white/50">Check back soon.</p>
+              <p className="mt-2 text-white/50">{t('emptyEpisodesDescription')}</p>
               <Link
                 href="/coming-soon"
                 className="mt-4 inline-flex items-center text-sm text-white/60 transition-colors hover:text-white"
               >
-                See what&apos;s coming &rarr;
+                {t('comingSoonEyebrow')} &rarr;
               </Link>
             </div>
           ) : (
@@ -150,7 +153,7 @@ export default async function SeriesDetailPage({ params }: Props) {
 
       {moreLikeThis.length > 0 && (
         <div className="mt-12 pb-16">
-          <ContentRail title={`More ${show.genre} Shows`} shows={moreLikeThis} />
+          <ContentRail title={t('moreLikeThisHeading', { genre: show.genre })} shows={moreLikeThis} />
         </div>
       )}
 

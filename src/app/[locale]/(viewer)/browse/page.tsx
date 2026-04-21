@@ -1,4 +1,4 @@
-import { getLocale } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { HeroBanner } from '@/components/home/hero-banner'
 import { ContentRail } from '@/components/home/content-rail'
@@ -25,17 +25,18 @@ export default async function BrowsePage() {
   const userId = user?.id ?? null
 
   // Fetch all data from Supabase in parallel
-  const [featured, streaming, comingSoon, newEpisodes, isMobile] = await Promise.all([
+  const [featured, streaming, comingSoon, newEpisodes, isMobile, locale] = await Promise.all([
     getFeaturedShows(),
     getStreamingShows(),
     getComingSoonShows(),
     getNewEpisodes(),
     getIsMobile(),
+    getLocale(),
   ])
+  const isArabic = locale === 'ar'
 
   // D-01: empty catalog redirects to marketing landing page
   if (streaming.length === 0 && comingSoon.length === 0) {
-    const locale = await getLocale()
     redirect({ href: '/', locale })
   }
 
@@ -59,10 +60,10 @@ export default async function BrowsePage() {
         )}
 
         {streaming.length > 0 && (
-          <ContentRail title="Now Streaming" shows={streaming} />
+          <ContentRail title={isArabic ? 'يُبثّ الآن' : 'Now Streaming'} shows={streaming} />
         )}
         {comingSoon.length > 0 && (
-          <ContentRail title="Coming Soon" shows={comingSoon} />
+          <ContentRail title={isArabic ? 'قريباً' : 'Coming Soon'} shows={comingSoon} />
         )}
 
         <GenresGrid />

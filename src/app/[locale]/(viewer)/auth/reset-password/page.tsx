@@ -1,15 +1,20 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
+import { getTranslations } from 'next-intl/server'
 
 import { ResetPasswordForm } from '@/components/auth/reset-password-form'
 import { CinematicBackdrop } from '@/components/primitives/cinematic-backdrop'
 
-export const metadata: Metadata = {
-  title: 'Reset Password | Clickit Story',
-  description: 'Set a new password for your Clickit Story account',
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('auth')
+  return {
+    title: `${t('resetHeading')} | Clickit Story`,
+    description: t('resetDescription'),
+  }
 }
 
-export default function ResetPasswordPage() {
+export default async function ResetPasswordPage() {
+  const t = await getTranslations('auth')
   return (
     <div className="-mt-24 md:-mt-28 relative flex min-h-dvh items-center justify-center overflow-hidden px-6 py-16">
       <CinematicBackdrop
@@ -42,13 +47,13 @@ export default function ResetPasswordPage() {
           }}
         >
           <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.28em] text-white/34">
-            Account recovery
+            {t('resetHeading')}
           </p>
           <h2 className="font-display text-[2rem] font-semibold tracking-[-0.03em] text-white">
-            Set new password
+            {t('resetDescription')}
           </h2>
           <p className="mb-8 mt-2 text-sm leading-6 text-white/52">
-            Enter your new password below.
+            {t('resetButton')}
           </p>
 
           <ResetPasswordForm />
