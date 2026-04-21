@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { redirect } from '@/i18n/navigation'
 import { HeroBanner } from '@/components/home/hero-banner'
 import { ContentRail } from '@/components/home/content-rail'
 import { ContinueWatchingRail } from '@/components/home/continue-watching-rail'

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { redirect } from 'next/navigation'
+import { redirect } from '@/i18n/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getWatchlistShows } from '@/lib/queries'

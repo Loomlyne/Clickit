@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { redirect } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdminHeader } from '@/components/admin/admin-header'
 
