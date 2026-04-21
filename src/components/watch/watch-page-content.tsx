@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { useRouter } from '@/i18n/navigation'
 import { motion } from 'motion/react'
@@ -44,6 +45,9 @@ export function WatchPageContent({
   const [playerInstance, setPlayerInstance] = useState<YT.Player | null>(null)
   const [showAutoplay, setShowAutoplay] = useState(false)
   const router = useRouter()
+  const t = useTranslations('player')
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
 
   // Progress tracking
   const { forceFlush } = useProgressTracker(playerInstance, episode.id, userId ?? null)
@@ -127,7 +131,7 @@ export function WatchPageContent({
 
             {episode.duration && (
               <span className="inline-block mt-2 text-xs bg-white/10 text-white/60 px-2.5 py-1 rounded-full">
-                {episode.duration} min
+                {episode.duration} {isArabic ? 'دقيقة' : 'min'}
               </span>
             )}
 
@@ -143,13 +147,13 @@ export function WatchPageContent({
 
         {/* Right column: episode list — sits beside the player on desktop */}
         <aside
-          aria-label="Episode selector"
+          aria-label={t('episodeListHeading')}
           className="w-full lg:w-[380px] lg:flex-shrink-0 border-t border-white/[0.06] lg:border-t-0 lg:border-l lg:border-white/[0.06] bg-black"
         >
           <div className="lg:sticky lg:top-[72px] lg:h-[calc(100dvh-72px)] lg:overflow-y-auto scrollbar-hide">
             <div className="px-4 py-3 border-b border-white/[0.06]">
               <p className="text-white/40 text-xs uppercase tracking-wider mb-1">{show.title}</p>
-              <p className="text-white font-semibold text-sm">Episodes</p>
+              <p className="text-white font-semibold text-sm">{isArabic ? 'الحلقات' : 'Episodes'}</p>
               <div className="mt-2">
                 <SeasonSelector
                   seasons={seasons}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 
 interface AutoplayOverlayProps {
   nextEpisode: {
@@ -18,6 +19,7 @@ export function AutoplayOverlay({
   onPlayNow,
   onCancel,
 }: AutoplayOverlayProps) {
+  const t = useTranslations('player')
   const [countdown, setCountdown] = useState(8)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -43,7 +45,7 @@ export function AutoplayOverlay({
       {/* Left column - next episode info */}
       <div className="flex flex-col gap-2">
         <span className="text-xs font-medium uppercase tracking-widest text-white/50">
-          Up next
+          {t('nextEpisode')}
         </span>
         <span className="text-sm text-white/70">
           S{nextEpisode.seasonNumber} E{nextEpisode.episodeNumber}
@@ -52,7 +54,7 @@ export function AutoplayOverlay({
           {nextEpisode.title}
         </span>
         <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs text-white/70">
-          Playing in {countdown}s
+          {t('autoplayCountdown', { seconds: countdown })}
         </span>
       </div>
 
@@ -62,7 +64,7 @@ export function AutoplayOverlay({
           onClick={onPlayNow}
           className="rounded-full bg-white px-6 py-2 text-sm font-semibold text-black transition-colors duration-200 hover:bg-white/90 max-sm:flex-1"
         >
-          Play now
+          {t('autoplayPlayNow')}
         </button>
         <button
           onClick={() => {
@@ -71,7 +73,7 @@ export function AutoplayOverlay({
           }}
           className="rounded-full border border-white/20 px-4 py-2 text-sm text-white/70 transition-all duration-200 hover:border-white/40 hover:text-white max-sm:flex-1"
         >
-          Cancel
+          {t('autoplayCancelButton')}
         </button>
       </div>
     </div>

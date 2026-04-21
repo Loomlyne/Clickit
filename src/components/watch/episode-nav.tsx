@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -21,6 +22,7 @@ const disabledClasses =
   'opacity-50 pointer-events-none cursor-default text-text-muted border-border/50'
 
 export function EpisodeNav({ prev, next }: EpisodeNavProps) {
+  const t = useTranslations('common')
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
       {/* Previous button */}
@@ -32,7 +34,7 @@ export function EpisodeNav({ prev, next }: EpisodeNavProps) {
           <ChevronLeft className="size-5 flex-shrink-0 rtl:scale-x-[-1]" />
           <div className="min-w-0">
             <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-              Previous
+              {t('previous')}
             </span>
             <span className="block text-sm font-bold text-foreground truncate">
               {prev.title}
@@ -47,7 +49,7 @@ export function EpisodeNav({ prev, next }: EpisodeNavProps) {
         >
           <ChevronLeft className="size-5 flex-shrink-0 rtl:scale-x-[-1]" />
           <div className="min-w-0">
-            <span className="text-sm">Previous</span>
+            <span className="text-sm">{t('previous')}</span>
           </div>
         </div>
       )}
@@ -60,7 +62,7 @@ export function EpisodeNav({ prev, next }: EpisodeNavProps) {
         >
           <div className="min-w-0 text-end">
             <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-              Next
+              {t('next')}
             </span>
             <span className="block text-sm font-bold text-foreground truncate">
               {next.title}
@@ -75,7 +77,7 @@ export function EpisodeNav({ prev, next }: EpisodeNavProps) {
           className={cn(baseClasses, disabledClasses, 'flex items-center gap-3 justify-end')}
         >
           <div className="min-w-0 text-end">
-            <span className="text-sm">Next</span>
+            <span className="text-sm">{t('next')}</span>
           </div>
           <ChevronRight className="size-5 flex-shrink-0 rtl:scale-x-[-1]" />
         </div>
