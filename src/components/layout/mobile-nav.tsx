@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { usePathname } from '@/i18n/navigation'
 import { Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
