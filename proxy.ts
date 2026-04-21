@@ -133,12 +133,19 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // Bare root — must be listed explicitly. Without this, next-intl can't
+    // redirect `/` → `/${defaultLocale}/` because the greedy pattern below
+    // compiles such that bare `/` falls through (Next.js 16 matcher quirk).
+    '/',
+    // Locale-prefixed paths — explicit so next-intl's rewrite/redirect fires
+    // deterministically for every `/en/*` and `/ar/*` request.
+    '/(ar|en)/:path*',
     /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - Static assets (svg, png, jpg, jpeg, gif, webp)
+     * Catch-all for everything else, excluding:
+     * - _next/static, _next/image, favicon.ico
+     * - Static assets (.svg, .png, .jpg, .jpeg, .gif, .webp)
+     * /api/* and /auth/callback are NOT excluded here — proxy.ts handles them
+     * inline so Supabase session cookies refresh on API + OAuth boundaries.
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
