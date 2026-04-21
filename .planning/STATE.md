@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Full Bilingual UI (AR/EN)
 status: in-progress
-stopped_at: Completed Phase 13 plan 03a (navigation-hook + Server-redirect swaps, 19 files, locale-preserving router/redirect) — next = Phase 13 plan 13-03b (next/link swaps, ~38 files)
-last_updated: "2026-04-21T00:33:00.000Z"
+stopped_at: Completed Phase 13 plan 03b (next/link swaps in 38 files, locale-preserving <Link> clicks) — next = Phase 13 plan 13-04 (OAuth callback safeNext locale-awareness, RTE-06)
+last_updated: "2026-04-21T00:45:00.000Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 8
-  completed_plans: 4
-  percent: 50
+  completed_plans: 5
+  percent: 62
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-20)
 
 ## Current Position
 
-Phase: 13 IN PROGRESS — plans 01 + 02 + 03a of 7 complete
-Plan: 13-03a-PLAN.md shipped (commits 82c6735, b9cb442, 2740da6, 9b079ba) — 10 useRouter + 4 usePathname + 5 Server redirect swaps. All 19 target files now import from `@/i18n/navigation`. Server `redirect` needs `{ href, locale }` object signature (fixed in task 4 with `getLocale` from `next-intl/server` and `return redirect(...)` pattern for TS narrowing).
-Status: RTE-01, RTE-02, RTE-03, RTE-04 (hook half), RTE-05, RTE-07, I18N-05, I18N-06 closed. tsc clean; `npm run build` green with 44 routes. Next: plan 13-03b (next/link swaps, ~38 files) — was originally parallel-eligible but sequenced after 13-03a due to 4 shared files (auth-section, nav-links, mobile-nav, watch-page-content).
-Last activity: 2026-04-21 — Phase 13 plan 03a navigation swaps.
+Phase: 13 IN PROGRESS — plans 01 + 02 + 03a + 03b of 7 complete
+Plan: 13-03b-PLAN.md shipped (commit b10a964) — 38 `next/link` → `@/i18n/navigation` Link swaps. Combined with 13-03a, RTE-04 is now fully closed: every `<Link>` click, `router.push`, `usePathname` compare, and Server `redirect` in scope preserves the active locale prefix. 1 drift file accepted (design-system/layout.tsx — 38 vs frontmatter's 37).
+Status: RTE-01, RTE-02, RTE-03, RTE-04 (both halves), RTE-05, RTE-07, I18N-05, I18N-06 closed. tsc clean; `npm run build` green with 44 routes. Zero `from 'next/link'` residue anywhere in src/. Next: plan 13-04 (OAuth callback safeNext locale-awareness, RTE-06).
+Last activity: 2026-04-21 — Phase 13 plan 03b Link swap sweep.
 
 ## Roadmap Summary (v1.1)
 
@@ -68,8 +68,8 @@ Last activity: 2026-04-21 — Phase 13 plan 03a navigation swaps.
 ## Session Continuity
 
 Last session: 2026-04-21
-Stopped at: Completed Phase 13 plan 03a (commits 82c6735 → 9b079ba — nav hook + Server redirect swaps); next = plan 13-03b (next/link swaps, ~38 files)
-Resume file: `.planning/phases/13-route-restructure-auth-safety/13-03a-SUMMARY.md`
+Stopped at: Completed Phase 13 plan 03b (commit b10a964 — 38 next/link → @/i18n/navigation swaps); next = plan 13-04 (OAuth callback safeNext locale-awareness, RTE-06)
+Resume file: `.planning/phases/13-route-restructure-auth-safety/13-03b-SUMMARY.md`
 
 ## Decisions Made
 
@@ -85,6 +85,7 @@ Resume file: `.planning/phases/13-route-restructure-auth-safety/13-03a-SUMMARY.m
 - **2026-04-21 (Phase 13 plan 02):** Coming-soon redirect uses `` `/${locale}/coming-soon` `` built from `stripLocale(pathname).locale` — preserves /en/ or /ar/ prefix. Falls back to `routing.defaultLocale` for pre-redirect bare paths (shouldn't happen in practice because the 3xx short-circuit returns first).
 - **2026-04-21 (Phase 13 plan 03a):** next-intl's Server-side `redirect` requires `{ href, locale }` object signature (not bare string as the plan examples showed). All 5 Server Component redirect call sites adopt `redirect({ href, locale })` after `const locale = await getLocale()` from `next-intl/server`. Plan's `redirect('/auth')` diff examples were wrong — documented the correct signature in the SUMMARY.
 - **2026-04-21 (Phase 13 plan 03a):** Auth guards use `if (!user) { ... return redirect(...) }` pattern. Required because multi-statement guards lose TS control-flow narrowing unless `return` precedes the never-returning call.
+- **2026-04-21 (Phase 13 plan 03b):** Drift handling for mechanical sweeps uses `comm -23 grep.txt frontmatter.txt` to detect files-in-grep-not-in-frontmatter. Plan's drift rule (accept into scope) applied: `design-system/layout.tsx` added to the 38-file swap list (frontmatter had 37). Single atomic commit for all 38 files — splitting mechanical sweeps into smaller commits adds no reviewable signal. Combined with 13-03a, RTE-04 is fully closed.
 
 ## Performance Metrics
 
@@ -94,3 +95,4 @@ Resume file: `.planning/phases/13-route-restructure-auth-safety/13-03a-SUMMARY.m
 | 13 | 01 | ~35min | 5 | 62 | 733c8f4..b3234c6 |
 | 13 | 02 | ~8min | 2 | 1 | 5503cda |
 | 13 | 03a | ~11min | 4 | 19 | 82c6735..9b079ba |
+| 13 | 03b | ~4min | 3 | 38 | b10a964 |
