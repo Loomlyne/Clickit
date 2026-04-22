@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -22,23 +23,17 @@ import { YouTubeUrlInput } from '@/components/admin/youtube-url-input'
 import type { Database } from '@/lib/database.types'
 
 const episodeFormSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  title: z.string().min(1, 'titleRequired'),
   title_ar: z.string().optional().nullable(),
-  description: z.string().min(1, 'Description is required'),
+  description: z.string().min(1, 'descriptionRequired'),
   description_ar: z.string().optional().nullable(),
-  episode_number: z.number().int().positive('Episode number must be positive'),
+  episode_number: z.number().int().positive('episodeNumberRequired'),
   youtube_video_id: z.string().optional().nullable(),
-  duration: z.number().int().positive('Duration must be positive').optional().nullable(),
+  duration: z.number().int().positive('fieldRequired').optional().nullable(),
   status: z.enum(['draft', 'coming-soon', 'published']),
 })
 
 type EpisodeFormData = z.infer<typeof episodeFormSchema>
-
-const STATUS_OPTIONS = [
-  { value: 'draft', label: 'Draft', desc: 'Not visible to viewers' },
-  { value: 'coming-soon', label: 'Coming Soon', desc: 'Visible but not playable' },
-  { value: 'published', label: 'Published', desc: 'Live and playable' },
-] as const
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -78,6 +73,17 @@ export function EpisodeFormDrawer({
   open, onOpenChange, episode, showId, seasonId, nextEpisodeNumber, onSave,
 }: EpisodeFormDrawerProps) {
   const isEdit = !!episode
+  const t = useTranslations('admin.episodeForm')
+  const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
+
+  const STATUS_OPTIONS = [
+    { value: 'draft' as const, label: t('statusDraft'), desc: isArabic ? 'غير مرئية للزوار' : 'Not visible to viewers' },
+    { value: 'coming-soon' as const, label: t('statusScheduled'), desc: isArabic ? 'مرئية ولكن غير قابلة للتشغيل' : 'Visible but not playable' },
+    { value: 'published' as const, label: t('statusPublished'), desc: isArabic ? 'مباشرة وقابلة للتشغيل' : 'Live and playable' },
+  ]
 
   const form = useForm<EpisodeFormData>({
     resolver: zodResolver(episodeFormSchema),
@@ -124,7 +130,7 @@ export function EpisodeFormDrawer({
       if (seconds && seconds > 0) {
         const minutes = Math.round(seconds / 60)
         form.setValue('duration', minutes, { shouldDirty: true })
-        toast.success(`Duration auto-detected: ${minutes} min`)
+        toast.success(isArabic ? `تم الكشف عن المدة: ${minutes} دقيقة` : `Duration auto-detected: ${minutes} min`)
       }
     })
   }, [watchedVideoId, form])
@@ -137,10 +143,10 @@ export function EpisodeFormDrawer({
     }
     const result = await onSave(normalized)
     if (result.success) {
-      toast.success(isEdit ? `"${data.title}" saved` : `"${data.title}" created`)
+      toast.success(isEdit ? t('episodeUpdated') : t('episodeCreated'))
       onOpenChange(false)
     } else {
-      toast.error(result.error || 'Failed to save episode')
+      toast.error(result.error || tCommon('error'))
     }
   }
 
@@ -154,9 +160,11 @@ export function EpisodeFormDrawer({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="sm:max-w-xl w-full p-0 flex flex-col">
         <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
-          <SheetTitle className="text-lg">{isEdit ? 'Edit Episode' : 'Create Episode'}</SheetTitle>
+          <SheetTitle className="text-lg">{isEdit ? (isArabic ? 'تعديل الحلقة' : 'Edit Episode') : (isArabic ? 'إنشاء حلقة' : 'Create Episode')}</SheetTitle>
           <p className="text-sm text-muted-foreground">
-            {isEdit ? `Editing "${episode.title}"` : `Episode #${nextEpisodeNumber}`}
+            {isEdit
+              ? (isArabic ? `تعديل "${episode.title}"` : `Editing "${episode.title}"`)
+              : (isArabic ? `الحلقة #${nextEpisodeNumber}` : `Episode #${nextEpisodeNumber}`)}
           </p>
         </SheetHeader>
 
@@ -164,25 +172,25 @@ export function EpisodeFormDrawer({
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-8">
 
             {/* EPISODE INFO */}
-            <Section title="Episode Info">
+            <Section title={isArabic ? 'معلومات الحلقة' : 'Episode Info'}>
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
-                  <Field label="Title" required error={errors.title?.message}>
-                    <Input {...form.register('title')} placeholder="Episode title" />
+                  <Field label={t('titleLabel')} required error={errors.title?.message ? tErrors(errors.title.message as never) : undefined}>
+                    <Input {...form.register('title')} placeholder={isArabic ? 'عنوان الحلقة' : 'Episode title'} />
                   </Field>
                 </div>
-                <Field label="Episode #" required error={errors.episode_number?.message}>
+                <Field label={isArabic ? 'رقم الحلقة' : 'Episode #'} required error={errors.episode_number?.message ? tErrors(errors.episode_number.message as never) : undefined}>
                   <Input type="number" min={1} {...form.register('episode_number', { valueAsNumber: true })} />
                 </Field>
               </div>
 
-              <Field label="Title (Arabic)">
+              <Field label={t('titleArLabel')}>
                 <Input dir="rtl" {...form.register('title_ar')} />
               </Field>
 
               {/* Status — radio buttons */}
               <div className="space-y-1.5">
-                <Label className="text-sm">Status<span className="text-destructive ms-0.5">*</span></Label>
+                <Label className="text-sm">{t('statusLabel')}<span className="text-destructive ms-0.5">*</span></Label>
                 <div className="grid grid-cols-3 gap-2">
                   {STATUS_OPTIONS.map((opt) => (
                     <button
@@ -203,18 +211,18 @@ export function EpisodeFormDrawer({
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Duration" error={errors.duration?.message}>
+                <Field label={t('durationLabel')} error={errors.duration?.message ? tErrors(errors.duration.message as never) : undefined}>
                   <div className="relative">
                     <Input type="number" min={1} placeholder="25" {...form.register('duration', { valueAsNumber: true })} className="pe-10" />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">min</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{isArabic ? 'د' : 'min'}</span>
                   </div>
                 </Field>
               </div>
             </Section>
 
             {/* CONTENT */}
-            <Section title="Content">
-              <Field label="YouTube URL">
+            <Section title={isArabic ? 'المحتوى' : 'Content'}>
+              <Field label={t('youtubeUrlLabel')}>
                 <Controller
                   name="youtube_video_id"
                   control={form.control}
@@ -253,11 +261,11 @@ export function EpisodeFormDrawer({
                 )}
               </Field>
 
-              <Field label="Description" required error={errors.description?.message}>
-                <Textarea rows={5} {...form.register('description')} placeholder="What happens in this episode?" />
+              <Field label={t('descriptionLabel')} required error={errors.description?.message ? tErrors(errors.description.message as never) : undefined}>
+                <Textarea rows={5} {...form.register('description')} placeholder={isArabic ? 'ما الذي يحدث في هذه الحلقة؟' : 'What happens in this episode?'} />
               </Field>
 
-              <Field label="Description (Arabic)">
+              <Field label={t('descriptionArLabel')}>
                 <Textarea rows={5} dir="rtl" {...form.register('description_ar')} />
               </Field>
             </Section>
@@ -270,13 +278,17 @@ export function EpisodeFormDrawer({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Discard Changes
+              {isArabic ? 'تجاهل التغييرات' : 'Discard Changes'}
             </Button>
             <Button
               type="submit"
               disabled={form.formState.isSubmitting}
             >
-              {form.formState.isSubmitting ? 'Saving...' : isEdit ? 'Save Episode' : 'Create Episode'}
+              {form.formState.isSubmitting
+                ? (isArabic ? 'جارٍ الحفظ…' : 'Saving...')
+                : isEdit
+                  ? t('saveEpisode')
+                  : (isArabic ? 'إنشاء حلقة' : 'Create Episode')}
             </Button>
           </div>
         </form>
@@ -308,6 +320,8 @@ function YouTubeFetchButton({
   onFetched: (meta: YouTubeMeta) => void
 }) {
   const [loading, setLoading] = useState(false)
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
 
   async function onClick() {
     setLoading(true)
@@ -315,19 +329,21 @@ function YouTubeFetchButton({
       const url = `https://www.youtube.com/watch?v=${videoId}`
       const res = await fetch(`/api/youtube-meta?url=${encodeURIComponent(url)}`)
       if (res.status === 503) {
-        toast.error('No YouTube API key configured', {
-          description: 'Add one under Settings → Integrations to enable auto-fill.',
+        toast.error(isArabic ? 'لم يُعدّ مفتاح YouTube API' : 'No YouTube API key configured', {
+          description: isArabic
+            ? 'أضف مفتاحاً من الإعدادات ← التكاملات لتمكين الملء التلقائي.'
+            : 'Add one under Settings → Integrations to enable auto-fill.',
         })
         return
       }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        toast.error(body.error ?? 'Failed to fetch from YouTube')
+        toast.error(body.error ?? (isArabic ? 'تعذّر الجلب من يوتيوب' : 'Failed to fetch from YouTube'))
         return
       }
       const meta: YouTubeMeta = await res.json()
       onFetched(meta)
-      toast.success('Fetched title, description, and duration from YouTube')
+      toast.success(isArabic ? 'تم جلب العنوان والوصف والمدة من يوتيوب' : 'Fetched title, description, and duration from YouTube')
     } finally {
       setLoading(false)
     }
@@ -345,7 +361,7 @@ function YouTubeFetchButton({
       ) : (
         <Sparkles className="size-3" />
       )}
-      Fetch title & description from YouTube
+      {isArabic ? 'جلب العنوان والوصف من يوتيوب' : 'Fetch title & description from YouTube'}
     </button>
   )
 }
