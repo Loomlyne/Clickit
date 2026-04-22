@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useLocale } from 'next-intl'
 import { Upload, Loader2, MoreVertical, Trash2, Replace } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -41,6 +42,8 @@ export function ArtworkUploadZone({
   const [uploading, setUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentUrl)
   const inputRef = useRef<HTMLInputElement>(null)
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -49,7 +52,7 @@ export function ArtworkUploadZone({
     const maxSize = MAX_SIZE_BYTES[slot]
     if (file.size > maxSize) {
       const maxMB = maxSize / (1024 * 1024)
-      toast.error(`File too large — max ${maxMB}MB for ${slot}.`)
+      toast.error(isArabic ? `الملف كبير جداً — الحد الأقصى ${maxMB} ميغابايت` : `File too large — max ${maxMB}MB for ${slot}.`)
       return
     }
 
@@ -64,14 +67,14 @@ export function ArtworkUploadZone({
       const result = await uploadArtwork(formData)
 
       if (!result.success) {
-        toast.error(`Upload failed: ${result.error}`)
+        toast.error(isArabic ? `فشل الرفع: ${result.error}` : `Upload failed: ${result.error}`)
         return
       }
 
       setPreviewUrl(result.data!)
       onUploadComplete(result.data!)
     } catch {
-      toast.error('Upload failed. Please try again.')
+      toast.error(isArabic ? 'فشل الرفع. يُرجى المحاولة مرة أخرى.' : 'Upload failed. Please try again.')
     } finally {
       setUploading(false)
       if (inputRef.current) inputRef.current.value = ''
@@ -88,7 +91,7 @@ export function ArtworkUploadZone({
   function handleDelete() {
     setPreviewUrl(null)
     onDelete?.()
-    toast.success(`${label} cleared`)
+    toast.success(isArabic ? `تم مسح ${label}` : `${label} cleared`)
   }
 
   // Uploading state
@@ -98,7 +101,7 @@ export function ArtworkUploadZone({
         <p className="text-sm font-medium">{label}</p>
         <div className="flex flex-col items-center justify-center gap-2 rounded-[24px] border border-dashed border-white/12 bg-black/20 p-6">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Uploading...</p>
+          <p className="text-sm text-muted-foreground">{isArabic ? 'جارٍ الرفع…' : 'Uploading...'}</p>
         </div>
       </div>
     )
@@ -126,14 +129,14 @@ export function ArtworkUploadZone({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => inputRef.current?.click()}>
                   <Replace className="size-4" />
-                  Replace
+                  {isArabic ? 'استبدال' : 'Replace'}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={handleDelete}
                   className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="size-4" />
-                  Delete
+                  {isArabic ? 'حذف' : 'Delete'}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -157,7 +160,7 @@ export function ArtworkUploadZone({
       <p className="text-sm font-medium">{label}</p>
       <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[24px] border border-dashed border-white/12 bg-black/20 p-6 transition-colors hover:border-white/20">
         <Upload className="size-6 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">Click to upload</p>
+        <p className="text-sm text-muted-foreground">{isArabic ? 'انقر للرفع' : 'Click to upload'}</p>
         <p className="text-xs text-muted-foreground">{aspectHint}</p>
         <input
           ref={inputRef}
