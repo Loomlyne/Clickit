@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Plus, Pencil } from 'lucide-react'
 import { useRouter } from '@/i18n/navigation'
 
@@ -35,6 +36,10 @@ interface SeasonTabsProps {
 
 export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason, showId }: SeasonTabsProps) {
   const router = useRouter()
+  const tSeason = useTranslations('admin.seasonForm')
+  const tEpisode = useTranslations('admin.episodeForm')
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [seasonDrawerOpen, setSeasonDrawerOpen] = useState(false)
   const [editSeason, setEditSeason] = useState<Season | null>(null)
   const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false)
@@ -59,12 +64,12 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
     return (
       <div>
         <EmptyState
-          heading="No Seasons"
-          body="Create a season to start adding episodes."
+          heading={isArabic ? 'لا توجد مواسم' : 'No Seasons'}
+          body={isArabic ? 'أنشئ موسماً لإضافة الحلقات.' : 'Create a season to start adding episodes.'}
           action={
             <Button onClick={handleAddSeason}>
               <Plus className="me-1.5 size-4" />
-              Add Season
+              {isArabic ? 'إضافة موسم' : 'Add Season'}
             </Button>
           }
         />
@@ -93,15 +98,15 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
-                Seasons
+                {isArabic ? 'المواسم' : 'Seasons'}
               </p>
               <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
-                Episode management
+                {isArabic ? 'إدارة الحلقات' : 'Episode management'}
               </h2>
             </div>
             <Button variant="outline" size="sm" onClick={handleAddSeason}>
               <Plus className="me-1 size-4" />
-              Add Season
+              {isArabic ? 'إضافة موسم' : 'Add Season'}
             </Button>
           </div>
 
@@ -122,12 +127,12 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
                           handleEditSeason(season)
                         }}
                         className="ms-0.5 rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                        aria-label={`Edit ${season.title}`}
+                        aria-label={isArabic ? `تعديل ${season.title}` : `Edit ${season.title}`}
                       >
                         <Pencil className="size-3" />
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent>Edit season</TooltipContent>
+                    <TooltipContent>{isArabic ? 'تعديل الموسم' : 'Edit season'}</TooltipContent>
                   </Tooltip>
                 </TabsTrigger>
               )
@@ -143,11 +148,11 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
               <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
-                    {seasonEpisodes.length} episode{seasonEpisodes.length !== 1 ? 's' : ''}
+                    {seasonEpisodes.length} {isArabic ? 'حلقة' : (seasonEpisodes.length === 1 ? 'episode' : 'episodes')}
                   </p>
                   <Button size="sm" onClick={() => handleAddEpisode(season.id)}>
                     <Plus className="me-1 size-4" />
-                    Add Episode
+                    {tEpisode('addEpisode')}
                   </Button>
                 </div>
                 <EpisodesTable
