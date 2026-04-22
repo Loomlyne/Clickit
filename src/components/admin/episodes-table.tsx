@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition, useOptimistic } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Pencil, ChevronUp, ChevronDown, Archive } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -36,6 +37,10 @@ interface EpisodesTableProps {
 }
 
 export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }: EpisodesTableProps) {
+  const t = useTranslations('admin.episodeForm')
+  const tCommon = useTranslations('common')
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [isPending, startTransition] = useTransition()
   const [editEpisode, setEditEpisode] = useState<Episode | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -64,7 +69,7 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
     startTransition(async () => {
       setOptimisticEpisodes({ episodeId, direction })
       const result = await reorderEpisode(episodeId, direction)
-      if (!result.success) toast.error(result.error || 'Reorder failed')
+      if (!result.success) toast.error(result.error || tCommon('error'))
     })
   }
 
@@ -79,15 +84,15 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
     const result = await archiveEpisode(archiveTarget.id, showId)
     setArchiveLoading(false)
     if (result.success) {
-      toast.success(`"${archiveTarget.title}" archived`)
+      toast.success(t('episodeArchived'))
       setArchiveTarget(null)
     } else {
-      toast.error(result.error || 'Failed to archive episode')
+      toast.error(result.error || tCommon('error'))
     }
   }
 
   if (episodes.length === 0) {
-    return <EmptyState heading="No Episodes" body="Add an episode to this season." />
+    return <EmptyState heading={isArabic ? 'لا توجد حلقات' : 'No Episodes'} body={isArabic ? 'أضف حلقة إلى هذا الموسم.' : 'Add an episode to this season.'} />
   }
 
   return (
@@ -97,11 +102,11 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
           <TableHeader>
             <TableRow className="bg-transparent">
               <TableHead className="w-12">#</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead className="hidden w-20 sm:table-cell">Duration</TableHead>
-              <TableHead className="hidden w-24 md:table-cell">YouTube</TableHead>
-              <TableHead className="w-[100px]">Status</TableHead>
-              <TableHead className="w-32 text-end">Actions</TableHead>
+              <TableHead>{t('titleLabel')}</TableHead>
+              <TableHead className="hidden w-20 sm:table-cell">{t('durationLabel')}</TableHead>
+              <TableHead className="hidden w-24 md:table-cell">{isArabic ? 'يوتيوب' : 'YouTube'}</TableHead>
+              <TableHead className="w-[100px]">{t('statusLabel')}</TableHead>
+              <TableHead className="w-32 text-end">{isArabic ? 'الإجراءات' : 'Actions'}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -113,11 +118,11 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
                 <TableCell>
                   <span className="font-medium">{episode.title}</span>
                   <span className="mt-0.5 block text-xs text-muted-foreground sm:hidden">
-                    {episode.duration ? `${episode.duration} min` : ''}
+                    {episode.duration ? `${episode.duration} ${isArabic ? 'دقيقة' : 'min'}` : ''}
                   </span>
                 </TableCell>
                 <TableCell className="hidden text-muted-foreground sm:table-cell">
-                  {episode.duration ? `${episode.duration} min` : '---'}
+                  {episode.duration ? `${episode.duration} ${isArabic ? 'دقيقة' : 'min'}` : '---'}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {episode.youtube_video_id ? (
@@ -125,7 +130,7 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
                       {episode.youtube_video_id}
                     </span>
                   ) : (
-                    <span className="text-xs text-muted-foreground">No video</span>
+                    <span className="text-xs text-muted-foreground">{isArabic ? 'لا يوجد فيديو' : 'No video'}</span>
                   )}
                 </TableCell>
                 <TableCell>
@@ -135,11 +140,11 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
                   <div className="flex items-center justify-end gap-0.5">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon-xs" onClick={() => handleEdit(episode)} aria-label={`Edit ${episode.title}`}>
+                        <Button variant="ghost" size="icon-xs" onClick={() => handleEdit(episode)} aria-label={isArabic ? `تعديل ${episode.title}` : `Edit ${episode.title}`}>
                           <Pencil />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Edit</TooltipContent>
+                      <TooltipContent>{tCommon('edit')}</TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -148,12 +153,12 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
                           size="icon-xs"
                           onClick={() => handleReorder(episode.id, 'up')}
                           disabled={isPending || index === 0}
-                          aria-label="Move up"
+                          aria-label={isArabic ? 'نقل لأعلى' : 'Move up'}
                         >
                           <ChevronUp />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Move up</TooltipContent>
+                      <TooltipContent>{isArabic ? 'نقل لأعلى' : 'Move up'}</TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -162,20 +167,20 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
                           size="icon-xs"
                           onClick={() => handleReorder(episode.id, 'down')}
                           disabled={isPending || index === optimisticEpisodes.length - 1}
-                          aria-label="Move down"
+                          aria-label={isArabic ? 'نقل لأسفل' : 'Move down'}
                         >
                           <ChevronDown />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Move down</TooltipContent>
+                      <TooltipContent>{isArabic ? 'نقل لأسفل' : 'Move down'}</TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon-xs" onClick={() => setArchiveTarget(episode)} aria-label={`Archive ${episode.title}`}>
+                        <Button variant="ghost" size="icon-xs" onClick={() => setArchiveTarget(episode)} aria-label={isArabic ? `أرشفة ${episode.title}` : `Archive ${episode.title}`}>
                           <Archive />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Archive</TooltipContent>
+                      <TooltipContent>{isArabic ? 'أرشفة' : 'Archive'}</TooltipContent>
                     </Tooltip>
                   </div>
                 </TableCell>
@@ -201,9 +206,11 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
       <ConfirmDialog
         open={!!archiveTarget}
         onOpenChange={(open) => { if (!open) setArchiveTarget(null) }}
-        title="Archive Episode"
-        description={`This will hide "${archiveTarget?.title ?? 'this episode'}" from viewers.`}
-        confirmLabel="Archive Episode"
+        title={isArabic ? 'أرشفة الحلقة' : 'Archive Episode'}
+        description={isArabic
+          ? `سيُخفي هذا "${archiveTarget?.title ?? 'هذه الحلقة'}" عن الزوار.`
+          : `This will hide "${archiveTarget?.title ?? 'this episode'}" from viewers.`}
+        confirmLabel={isArabic ? 'أرشفة الحلقة' : 'Archive Episode'}
         onConfirm={handleArchiveConfirm}
         destructive
         loading={archiveLoading}
