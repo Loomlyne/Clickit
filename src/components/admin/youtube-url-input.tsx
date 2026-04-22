@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useLocale } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
 
@@ -11,6 +12,8 @@ interface YouTubeUrlInputProps {
 }
 
 export function YouTubeUrlInput({ value, onChange, error }: YouTubeUrlInputProps) {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   // Determine if initial value is a bare video ID (11 chars, no slashes)
   const isVideoId = value && value.length === 11 && !value.includes('/')
   const [rawUrl, setRawUrl] = useState(isVideoId ? '' : value)
@@ -30,7 +33,7 @@ export function YouTubeUrlInput({ value, onChange, error }: YouTubeUrlInputProps
       setRawUrl(value)
       const id = extractYouTubeId(value)
       setExtractedId(id)
-      setValidationError(id ? null : 'Could not extract video ID from this URL')
+      setValidationError(id ? null : (isArabic ? 'تعذّر استخراج معرّف الفيديو من هذا الرابط' : 'Could not extract video ID from this URL'))
     } else {
       setRawUrl('')
       setExtractedId(null)
@@ -56,7 +59,7 @@ export function YouTubeUrlInput({ value, onChange, error }: YouTubeUrlInputProps
       setValidationError(null)
       onChange(id, url)
     } else {
-      setValidationError('Could not extract video ID from this URL')
+      setValidationError(isArabic ? 'تعذّر استخراج معرّف الفيديو من هذا الرابط' : 'Could not extract video ID from this URL')
       onChange(null, url)
     }
   }
@@ -66,7 +69,7 @@ export function YouTubeUrlInput({ value, onChange, error }: YouTubeUrlInputProps
       <Input
         value={rawUrl}
         onChange={handleChange}
-        placeholder="Paste YouTube URL (e.g., youtube.com/watch?v=...)"
+        placeholder={isArabic ? 'الصق رابط يوتيوب (مثلاً: youtube.com/watch?v=...)' : 'Paste YouTube URL (e.g., youtube.com/watch?v=...)'}
         aria-invalid={!!(error || validationError)}
       />
       {(error || validationError) && (
@@ -83,7 +86,7 @@ export function YouTubeUrlInput({ value, onChange, error }: YouTubeUrlInputProps
             className="rounded border border-border"
           />
           <span className="text-sm text-muted-foreground">
-            ID: {extractedId}
+            {isArabic ? 'المعرّف:' : 'ID:'} {extractedId}
           </span>
         </div>
       )}
