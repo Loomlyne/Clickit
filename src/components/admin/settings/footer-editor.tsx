@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useLocale } from 'next-intl'
 import { toast } from 'sonner'
 // lucide-react 1.7.0 removed brand-specific icons (Instagram/Twitter/Youtube)
 // for licensing reasons. Use neutral icons for the editor labels — the actual
@@ -16,6 +17,8 @@ import { SettingsCard, SettingsField } from './settings-card'
 export function FooterEditor({ initial }: { initial: FooterContent }) {
   const [v, setV] = useState<FooterContent>(initial)
   const [saving, setSaving] = useState(false)
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
 
   // Stringify for cheap dirty-check — fine at this scale (<1KB of JSON)
   const dirty = JSON.stringify(v) !== JSON.stringify(initial)
@@ -25,18 +28,20 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
     setSaving(true)
     const result = await updateFooterContent(v)
     setSaving(false)
-    if (result.success) toast.success('Footer saved')
-    else toast.error(result.error ?? 'Failed to save')
+    if (result.success) toast.success(isArabic ? 'تم حفظ التذييل' : 'Footer saved')
+    else toast.error(result.error ?? (isArabic ? 'تعذّر الحفظ' : 'Failed to save'))
   }
 
   return (
     <SettingsCard
-      title="Footer"
-      description="Tagline, social links, and legal page URLs displayed in the site footer."
+      title={isArabic ? 'التذييل' : 'Footer'}
+      description={isArabic
+        ? 'الشعار وروابط التواصل وروابط الصفحات القانونية المعروضة في تذييل الموقع.'
+        : 'Tagline, social links, and legal page URLs displayed in the site footer.'}
     >
       <form onSubmit={onSave} className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2">
-          <SettingsField label="Footer tagline">
+          <SettingsField label={isArabic ? 'شعار التذييل' : 'Footer tagline'}>
             <Textarea
               rows={2}
               maxLength={300}
@@ -44,14 +49,14 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
               onChange={(e) => setV({ ...v, tagline: e.target.value })}
             />
           </SettingsField>
-          <SettingsField label="Catalog stat" hint='e.g. "15 original programs"'>
+          <SettingsField label={isArabic ? 'إحصائية المكتبة' : 'Catalog stat'} hint={isArabic ? 'مثلاً: "15 برنامجاً أصلياً"' : 'e.g. "15 original programs"'}>
             <Input
               maxLength={80}
               value={v.stat}
               onChange={(e) => setV({ ...v, stat: e.target.value })}
             />
           </SettingsField>
-          <SettingsField label="Contact email" hint="Leave blank to hide.">
+          <SettingsField label={isArabic ? 'البريد الإلكتروني للتواصل' : 'Contact email'} hint={isArabic ? 'اتركه فارغاً للإخفاء.' : 'Leave blank to hide.'}>
             <Input
               type="email"
               value={v.contactEmail}
@@ -63,7 +68,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
 
         <fieldset className="space-y-3">
           <legend className="text-xs font-medium uppercase tracking-[0.16em] text-white/60">
-            Social links
+            {isArabic ? 'روابط التواصل الاجتماعي' : 'Social links'}
           </legend>
           <div className="grid gap-3 md:grid-cols-2">
             <SocialInput
@@ -95,24 +100,24 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
 
         <fieldset className="space-y-3">
           <legend className="text-xs font-medium uppercase tracking-[0.16em] text-white/60">
-            Legal pages
+            {isArabic ? 'الصفحات القانونية' : 'Legal pages'}
           </legend>
           <div className="grid gap-3 md:grid-cols-3">
-            <SettingsField label="Privacy Policy URL">
+            <SettingsField label={isArabic ? 'رابط سياسة الخصوصية' : 'Privacy Policy URL'}>
               <Input
                 value={v.legal.privacy}
                 onChange={(e) => setV({ ...v, legal: { ...v.legal, privacy: e.target.value } })}
                 placeholder="/legal/privacy"
               />
             </SettingsField>
-            <SettingsField label="Terms of Service URL">
+            <SettingsField label={isArabic ? 'رابط شروط الخدمة' : 'Terms of Service URL'}>
               <Input
                 value={v.legal.terms}
                 onChange={(e) => setV({ ...v, legal: { ...v.legal, terms: e.target.value } })}
                 placeholder="/legal/terms"
               />
             </SettingsField>
-            <SettingsField label="Cookie Policy URL">
+            <SettingsField label={isArabic ? 'رابط سياسة ملفات الارتباط' : 'Cookie Policy URL'}>
               <Input
                 value={v.legal.cookies}
                 onChange={(e) => setV({ ...v, legal: { ...v.legal, cookies: e.target.value } })}
@@ -124,7 +129,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
 
         <div className="flex items-center justify-end">
           <Button type="submit" disabled={!dirty || saving}>
-            {saving ? <Loader2 className="size-4 animate-spin" /> : 'Save footer'}
+            {saving ? <Loader2 className="size-4 animate-spin" /> : (isArabic ? 'حفظ التذييل' : 'Save footer')}
           </Button>
         </div>
       </form>
