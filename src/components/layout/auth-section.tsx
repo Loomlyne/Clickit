@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ interface AuthSectionProps {
 }
 
 export function AuthSection({ initialUser }: AuthSectionProps) {
+  const t = useTranslations('common')
   const router = useRouter()
   const [user, setUser] = useState<UserState | null>(
     initialUser
@@ -78,7 +80,7 @@ export function AuthSection({ initialUser }: AuthSectionProps) {
         className="h-10 rounded-[16px] px-5 text-sm"
         asChild
       >
-        <Link href="/auth">Sign In</Link>
+        <Link href="/auth">{t('signIn')}</Link>
       </Button>
     )
   }

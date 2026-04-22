@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import {
   DropdownMenu,
@@ -19,6 +20,8 @@ interface UserDropdownProps {
 }
 
 export function UserDropdown({ children, onSignOut, isAdmin = false, email }: UserDropdownProps) {
+  const tNav = useTranslations('nav')
+  const tCommon = useTranslations('common')
   const router = useRouter()
 
   return (
@@ -28,19 +31,19 @@ export function UserDropdown({ children, onSignOut, isAdmin = false, email }: Us
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={8} className="w-[200px]">
         <DropdownMenuLabel className="font-normal text-muted-foreground">
-          {email ?? 'Account'}
+          {email ?? tNav('profile')}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => router.push('/profile')}>
           <User className="me-2 size-4" />
-          Profile
+          {tNav('profile')}
         </DropdownMenuItem>
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => router.push('/admin')}>
               <Shield className="me-2 size-4" />
-              Admin
+              {tNav('admin')}
             </DropdownMenuItem>
           </>
         )}
@@ -50,7 +53,7 @@ export function UserDropdown({ children, onSignOut, isAdmin = false, email }: Us
           onSelect={() => onSignOut()}
         >
           <LogOut className="me-2 size-4" />
-          Sign Out
+          {tCommon('signOut')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

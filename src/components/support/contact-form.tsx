@@ -1,5 +1,6 @@
 'use client'
 
+import { useLocale, useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -12,16 +13,21 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 
 const contactSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email'),
+  name: z.string().min(2, 'nameMin'),
+  email: z.string().email('emailInvalid'),
   phone: z.string().optional(),
-  message: z.string().min(10, 'Message must be at least 10 characters'),
-  terms: z.boolean().refine((v) => v === true, 'You must accept the terms'),
+  message: z.string().min(10, 'messageMin'),
+  terms: z.boolean().refine((v) => v === true, 'termsRequired'),
 })
 
 type ContactFormData = z.infer<typeof contactSchema>
 
 export function ContactForm() {
+  const t = useTranslations('support')
+  const tAuth = useTranslations('auth')
+  const tErrors = useTranslations('errors')
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const {
     register,
     handleSubmit,
@@ -39,33 +45,33 @@ export function ContactForm() {
   async function onSubmit(data: ContactFormData) {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000))
-    toast.success('Message sent! We\'ll get back to you within 24 hours.')
+    toast.success(t('messageSent'))
     reset()
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div>
-        <Label htmlFor="name">Name</Label>
-        <Input id="name" placeholder="Your name" className="mt-1.5" {...register('name')} />
-        {errors.name && <p className="mt-1 text-xs text-brand-red-safe">{errors.name.message}</p>}
+        <Label htmlFor="name">{t('nameLabel')}</Label>
+        <Input id="name" placeholder={t('namePlaceholder')} className="mt-1.5" {...register('name')} />
+        {errors.name && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.name.message as never)}</p>}
       </div>
 
       <div>
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" placeholder="you@example.com" className="mt-1.5" {...register('email')} />
-        {errors.email && <p className="mt-1 text-xs text-brand-red-safe">{errors.email.message}</p>}
+        <Label htmlFor="email">{t('emailLabel')}</Label>
+        <Input id="email" type="email" placeholder={t('emailPlaceholder')} className="mt-1.5" {...register('email')} />
+        {errors.email && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.email.message as never)}</p>}
       </div>
 
       <div>
-        <Label htmlFor="phone">Phone (optional)</Label>
+        <Label htmlFor="phone">{isArabic ? 'الهاتف (اختياري)' : 'Phone (optional)'}</Label>
         <Input id="phone" type="tel" placeholder="+971 XX XXX XXXX" className="mt-1.5" {...register('phone')} />
       </div>
 
       <div>
-        <Label htmlFor="message">Message</Label>
-        <Textarea id="message" placeholder="How can we help?" rows={5} className="mt-1.5" {...register('message')} />
-        {errors.message && <p className="mt-1 text-xs text-brand-red-safe">{errors.message.message}</p>}
+        <Label htmlFor="message">{t('messageLabel')}</Label>
+        <Textarea id="message" placeholder={t('messagePlaceholder')} rows={5} className="mt-1.5" {...register('message')} />
+        {errors.message && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.message.message as never)}</p>}
       </div>
 
       <div className="flex items-start gap-2">
@@ -75,13 +81,13 @@ export function ContactForm() {
           onCheckedChange={(checked) => setValue('terms', checked === true)}
         />
         <Label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed">
-          I agree to the Terms of Service and Privacy Policy
+          {t('termsAccept')}
         </Label>
       </div>
-      {errors.terms && <p className="text-xs text-brand-red-safe">{errors.terms.message}</p>}
+      {errors.terms && <p className="text-xs text-brand-red-safe">{tErrors(errors.terms.message as never)}</p>}
 
       <Button type="submit" disabled={isSubmitting} className="w-full">
-        {isSubmitting ? 'Sending...' : 'Send Message'}
+        {isSubmitting ? t('submitButton') + '…' : t('submitButton')}
       </Button>
     </form>
   )
