@@ -1,5 +1,6 @@
 'use client'
 
+import { useLocale } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 
 import { ShowArt } from '@/components/primitives/show-art'
@@ -15,6 +16,8 @@ interface PortraitShowCardProps {
 
 export function PortraitShowCard({ show, initialSaved, userId }: PortraitShowCardProps) {
   const brandColorHex = BRAND_COLOR_HEX[show.brandColor]
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
 
   return (
     <div className="group">
@@ -40,7 +43,9 @@ export function PortraitShowCard({ show, initialSaved, userId }: PortraitShowCar
         <div className="space-y-2 px-4 py-4">
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-white/60">
-              {show.seasonCount} Season{show.seasonCount !== 1 ? 's' : ''}
+              {show.seasonCount} {isArabic
+                ? (show.seasonCount === 1 ? 'موسم' : 'مواسم')
+                : (show.seasonCount === 1 ? 'Season' : 'Seasons')}
             </span>
             {show.platformRating && (
               <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/60">

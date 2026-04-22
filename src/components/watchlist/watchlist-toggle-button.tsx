@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { motion, AnimatePresence } from 'motion/react'
 import { Plus, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -23,6 +24,7 @@ export function WatchlistToggleButton({
 }: WatchlistToggleButtonProps) {
   const { isInList, toggle, isLoading } = useWatchlist(showId, initialSaved, userId)
   const justAddedRef = useRef(false)
+  const t = useTranslations('show')
 
   const handleClick = (e?: React.MouseEvent) => {
     if (e) { e.preventDefault(); e.stopPropagation() }
@@ -74,7 +76,7 @@ export function WatchlistToggleButton({
         onClick={handleClick}
         disabled={isLoading}
         whileTap={{ scale: 0.85 }}
-        aria-label={isInList ? 'Remove from My List' : 'Add to My List'}
+        aria-label={isInList ? t('removeFromList') : t('addToList')}
         className={cn(
           'absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200',
           isInList
@@ -93,7 +95,7 @@ export function WatchlistToggleButton({
       disabled={isLoading}
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.9 }}
-      aria-label={isInList ? 'Remove from My List' : 'Add to My List'}
+      aria-label={isInList ? t('removeFromList') : t('addToList')}
       className={cn(
         'flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-sm transition-colors',
         isInList

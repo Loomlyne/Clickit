@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { motion, AnimatePresence } from 'motion/react'
 import { Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -27,6 +28,7 @@ interface LikeButtonProps {
 export function LikeButton({ showId, initialLiked = false, userId }: LikeButtonProps) {
   const { isLiked, toggle, isLoading } = useLikes(showId, initialLiked, userId)
   const justLikedRef = useRef(false)
+  const t = useTranslations('show')
 
   const handleClick = () => {
     if (!isLiked) justLikedRef.current = true
@@ -39,7 +41,7 @@ export function LikeButton({ showId, initialLiked = false, userId }: LikeButtonP
       disabled={isLoading}
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.9 }}
-      aria-label={isLiked ? 'Unlike this show' : 'Like this show'}
+      aria-label={isLiked ? t('unlike') : t('like')}
       className={cn(
         'relative flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-sm transition-all duration-300',
         isLiked

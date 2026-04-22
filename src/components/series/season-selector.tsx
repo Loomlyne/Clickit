@@ -1,5 +1,6 @@
 'use client'
 
+import { useLocale } from 'next-intl'
 import { cn } from '@/lib/utils'
 import type { ViewSeason } from '@/lib/queries'
 
@@ -17,6 +18,8 @@ export function SeasonSelector({
   brandColorHex = '#2C3569',
 }: SeasonSelectorProps) {
   const activeSeasonNumber = seasons.find((s) => s.id === activeSeason)?.seasonNumber ?? 1
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
 
   return (
     <div>
@@ -37,12 +40,12 @@ export function SeasonSelector({
                 : {}
             }
           >
-            S{season.seasonNumber}
+            {isArabic ? `الموسم ${season.seasonNumber}` : `S${season.seasonNumber}`}
           </button>
         ))}
       </div>
       <span className="sr-only" aria-live="polite">
-        Showing Season {activeSeasonNumber}
+        {isArabic ? `عرض الموسم ${activeSeasonNumber}` : `Showing Season ${activeSeasonNumber}`}
       </span>
     </div>
   )
