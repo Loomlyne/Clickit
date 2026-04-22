@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { Pencil, Archive, Plus, Search, Star } from 'lucide-react'
 
@@ -35,6 +36,11 @@ interface ShowsTableProps {
 }
 
 export function ShowsTable({ shows }: ShowsTableProps) {
+  const tDash = useTranslations('admin.dashboard')
+  const tShowForm = useTranslations('admin.showForm')
+  const tCommon = useTranslations('common')
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingShow, setEditingShow] = useState<Show | null>(null)
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false)
@@ -85,11 +91,11 @@ export function ShowsTable({ shows }: ShowsTableProps) {
     const result = await archiveShow(archivingShow.id)
     setArchiving(false)
     if (result.success) {
-      toast.success(`"${archivingShow.title}" archived`)
+      toast.success(tShowForm('showArchived'))
       setArchiveDialogOpen(false)
       setArchivingShow(null)
     } else {
-      toast.error(result.error ?? 'Failed to archive show')
+      toast.error(result.error ?? tCommon('error'))
     }
   }
 
@@ -104,9 +110,9 @@ export function ShowsTable({ shows }: ShowsTableProps) {
     return (
       <>
         <EmptyState
-          heading="No Shows Yet"
-          body="Create your first show to get started."
-          action={<Button onClick={handleCreate}><Plus className="size-4 me-1.5" />Create Show</Button>}
+          heading={isArabic ? 'لا توجد برامج بعد' : 'No Shows Yet'}
+          body={isArabic ? 'أنشئ برنامجك الأول للبدء.' : 'Create your first show to get started.'}
+          action={<Button onClick={handleCreate}><Plus className="size-4 me-1.5" />{tDash('createShow')}</Button>}
         />
         <ShowFormDrawer open={drawerOpen} onOpenChange={setDrawerOpen} show={editingShow} onSave={handleSave} />
       </>
@@ -117,10 +123,10 @@ export function ShowsTable({ shows }: ShowsTableProps) {
     <TooltipProvider delayDuration={300}>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
-          { label: 'Total Shows', value: stats.total, color: 'text-foreground' },
-          { label: 'Streaming', value: stats.streaming, color: 'text-emerald-200' },
-          { label: 'Coming Soon', value: stats.comingSoon, color: 'text-amber-100' },
-          { label: 'Draft', value: stats.draft, color: 'text-muted-foreground' },
+          { label: isArabic ? 'إجمالي البرامج' : 'Total Shows', value: stats.total, color: 'text-foreground' },
+          { label: isArabic ? 'يُبثّ الآن' : 'Streaming', value: stats.streaming, color: 'text-emerald-200' },
+          { label: isArabic ? 'قريباً' : 'Coming Soon', value: stats.comingSoon, color: 'text-amber-100' },
+          { label: isArabic ? 'مسودة' : 'Draft', value: stats.draft, color: 'text-muted-foreground' },
         ].map((stat) => (
           <div key={stat.label} className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.18)]">
             <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{stat.label}</p>
@@ -133,17 +139,17 @@ export function ShowsTable({ shows }: ShowsTableProps) {
         <div className="flex flex-col gap-4 border-b border-white/8 pb-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
-              Catalog
+              {isArabic ? 'المكتبة' : 'Catalog'}
             </p>
             <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
-              Active shows
+              {isArabic ? 'البرامج النشطة' : 'Active shows'}
             </h2>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative min-w-[240px] flex-1">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search shows..."
+                placeholder={isArabic ? 'بحث في البرامج…' : 'Search shows...'}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="ps-9"
@@ -154,33 +160,33 @@ export function ShowsTable({ shows }: ShowsTableProps) {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="h-11 rounded-full border border-white/10 bg-black/20 px-4 text-sm text-foreground outline-none transition-colors focus:border-white/20"
             >
-              <option value="all">All Status</option>
-              <option value="now-streaming">Streaming</option>
-              <option value="coming-soon">Coming Soon</option>
-              <option value="draft">Draft</option>
+              <option value="all">{isArabic ? 'كل الحالات' : 'All Status'}</option>
+              <option value="now-streaming">{isArabic ? 'يُبثّ الآن' : 'Streaming'}</option>
+              <option value="coming-soon">{isArabic ? 'قريباً' : 'Coming Soon'}</option>
+              <option value="draft">{isArabic ? 'مسودة' : 'Draft'}</option>
             </select>
             <Button onClick={handleCreate} className="shrink-0">
               <Plus className="me-1.5 size-4" />
-              Create Show
+              {tDash('createShow')}
             </Button>
           </div>
         </div>
 
         <div className="mt-5 flex items-center justify-between pb-3 text-sm text-muted-foreground">
-          <span>{filtered.length} result{filtered.length === 1 ? '' : 's'}</span>
-          <span>Sorted by newest</span>
+          <span>{filtered.length} {isArabic ? 'نتيجة' : (filtered.length === 1 ? 'result' : 'results')}</span>
+          <span>{isArabic ? 'مرتّبة من الأحدث' : 'Sorted by newest'}</span>
         </div>
 
         <div className="overflow-hidden rounded-[24px] border border-white/10 bg-black/20">
           <Table>
             <TableHeader>
               <TableRow className="bg-transparent">
-                <TableHead>Show</TableHead>
-                <TableHead className="hidden w-[100px] md:table-cell">Genre</TableHead>
-                <TableHead className="w-[110px]">Status</TableHead>
-                <TableHead className="hidden w-[70px] sm:table-cell">Eps</TableHead>
-                <TableHead className="hidden w-[150px] lg:table-cell">Broadcast</TableHead>
-                <TableHead className="w-[90px] text-end">Actions</TableHead>
+                <TableHead>{isArabic ? 'البرنامج' : 'Show'}</TableHead>
+                <TableHead className="hidden w-[100px] md:table-cell">{isArabic ? 'النوع' : 'Genre'}</TableHead>
+                <TableHead className="w-[110px]">{isArabic ? 'الحالة' : 'Status'}</TableHead>
+                <TableHead className="hidden w-[70px] sm:table-cell">{isArabic ? 'حلقات' : 'Eps'}</TableHead>
+                <TableHead className="hidden w-[150px] lg:table-cell">{isArabic ? 'البث' : 'Broadcast'}</TableHead>
+                <TableHead className="w-[90px] text-end">{isArabic ? 'الإجراءات' : 'Actions'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -195,7 +201,7 @@ export function ShowsTable({ shows }: ShowsTableProps) {
                     </Link>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground md:hidden">
                       <span>{show.genre}</span>
-                      {show.featured && <span className="text-amber-200">Featured</span>}
+                      {show.featured && <span className="text-amber-200">{isArabic ? 'مميّز' : 'Featured'}</span>}
                     </div>
                   </TableCell>
                   <TableCell className="hidden text-muted-foreground md:table-cell">{show.genre}</TableCell>
@@ -218,17 +224,21 @@ export function ShowsTable({ shows }: ShowsTableProps) {
                             onClick={async () => {
                               const result = await toggleFeatured(show.id)
                               if (result.success) {
-                                toast.success(result.featured ? `"${show.title}" featured on hero` : `"${show.title}" removed from hero`)
+                                toast.success(result.featured
+                                  ? (isArabic ? `"${show.title}" ظهر في الهيرو` : `"${show.title}" featured on hero`)
+                                  : (isArabic ? `"${show.title}" أُزيل من الهيرو` : `"${show.title}" removed from hero`))
                               } else {
-                                toast.error(result.error ?? 'Failed to toggle featured')
+                                toast.error(result.error ?? tCommon('error'))
                               }
                             }}
-                            aria-label={show.featured ? `Unfeature ${show.title}` : `Feature ${show.title}`}
+                            aria-label={show.featured
+                              ? (isArabic ? `إلغاء تمييز ${show.title}` : `Unfeature ${show.title}`)
+                              : (isArabic ? `تمييز ${show.title}` : `Feature ${show.title}`)}
                           >
                             <Star className={`size-4 ${show.featured ? 'fill-amber-300 text-amber-300' : ''}`} />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>{show.featured ? 'Remove from hero' : 'Feature on hero'}</TooltipContent>
+                        <TooltipContent>{show.featured ? (isArabic ? 'إزالة من الهيرو' : 'Remove from hero') : (isArabic ? 'تمييز في الهيرو' : 'Feature on hero')}</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -236,12 +246,12 @@ export function ShowsTable({ shows }: ShowsTableProps) {
                             variant="ghost"
                             size="icon-sm"
                             onClick={() => handleEdit(show)}
-                            aria-label={`Edit ${show.title}`}
+                            aria-label={isArabic ? `تعديل ${show.title}` : `Edit ${show.title}`}
                           >
                             <Pencil className="size-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Edit show</TooltipContent>
+                        <TooltipContent>{isArabic ? 'تعديل البرنامج' : 'Edit show'}</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -249,12 +259,12 @@ export function ShowsTable({ shows }: ShowsTableProps) {
                             variant="ghost"
                             size="icon-sm"
                             onClick={() => handleArchiveClick(show)}
-                            aria-label={`Archive ${show.title}`}
+                            aria-label={isArabic ? `أرشفة ${show.title}` : `Archive ${show.title}`}
                           >
                             <Archive className="size-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Archive show</TooltipContent>
+                        <TooltipContent>{isArabic ? 'أرشفة البرنامج' : 'Archive show'}</TooltipContent>
                       </Tooltip>
                     </div>
                   </TableCell>
@@ -263,7 +273,7 @@ export function ShowsTable({ shows }: ShowsTableProps) {
               {filtered.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-                    No shows match your search
+                    {isArabic ? 'لا توجد برامج مطابقة لبحثك' : 'No shows match your search'}
                   </TableCell>
                 </TableRow>
               )}
@@ -277,9 +287,11 @@ export function ShowsTable({ shows }: ShowsTableProps) {
       <ConfirmDialog
         open={archiveDialogOpen}
         onOpenChange={setArchiveDialogOpen}
-        title="Archive Show"
-        description={`This will hide "${archivingShow?.title ?? 'this show'}" from all viewers. You can restore it from the Archive section.`}
-        confirmLabel="Archive Show"
+        title={isArabic ? 'أرشفة البرنامج' : 'Archive Show'}
+        description={isArabic
+          ? `سيُخفي هذا "${archivingShow?.title ?? 'هذا البرنامج'}" عن الزوار. يمكنك استعادته من قسم الأرشيف.`
+          : `This will hide "${archivingShow?.title ?? 'this show'}" from all viewers. You can restore it from the Archive section.`}
+        confirmLabel={isArabic ? 'أرشفة البرنامج' : 'Archive Show'}
         onConfirm={handleArchiveConfirm}
         destructive
         loading={archiving}
