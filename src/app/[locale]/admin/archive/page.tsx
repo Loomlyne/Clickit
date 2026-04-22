@@ -1,9 +1,15 @@
+import { getLocale, getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { AlertTriangle } from 'lucide-react'
 import { ArchiveTable } from '@/components/admin/archive-table'
 
 export default async function ArchivePage() {
   const supabase = await createClient()
+  const [t, locale] = await Promise.all([
+    getTranslations('admin.archive'),
+    getLocale(),
+  ])
+  const isArabic = locale === 'ar'
 
   const { data: shows } = await supabase
     .from('shows')
@@ -15,15 +21,15 @@ export default async function ArchivePage() {
     <div className="space-y-6">
       <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] md:p-8">
         <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
-          Admin Console
+          {isArabic ? 'لوحة الإدارة' : 'Admin Console'}
         </p>
         <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-              Archive
+              {t('heading')}
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground md:text-base">
-              Hidden catalog entries live here until they are restored or removed permanently.
+              {t('description')}
             </p>
           </div>
 
@@ -31,10 +37,10 @@ export default async function ArchivePage() {
             <AlertTriangle className="mt-0.5 size-5 shrink-0 text-yellow-400" />
             <div className="text-sm">
               <p className="font-medium text-yellow-100">
-                Archived shows are hidden from viewers
+                {isArabic ? 'البرامج المؤرشفة مخفية عن الزوار' : 'Archived shows are hidden from viewers'}
               </p>
               <p className="mt-1 text-yellow-100/65">
-                Permanent deletion removes the show with all seasons and episodes.
+                {t('warning')}
               </p>
             </div>
           </div>

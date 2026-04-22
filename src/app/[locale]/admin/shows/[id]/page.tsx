@@ -1,3 +1,4 @@
+import { getLocale, getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
@@ -16,6 +17,13 @@ export default async function ShowDetailPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
+  const [t, tDash, tShows, locale] = await Promise.all([
+    getTranslations('admin.showForm'),
+    getTranslations('admin.dashboard'),
+    getTranslations('admin.shows'),
+    getLocale(),
+  ])
+  const isArabic = locale === 'ar'
 
   const { data: show } = await supabase
     .from('shows')
@@ -68,14 +76,14 @@ export default async function ShowDetailPage({
         className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="size-4 rtl:scale-x-[-1]" />
-        All Shows
+        {tDash('allShows')}
       </Link>
 
       <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] md:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
-              Show Detail
+              {tShows('showDetail')}
             </p>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
               {show.title}
@@ -83,9 +91,9 @@ export default async function ShowDetailPage({
             <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <span>{show.genre}</span>
               <span>·</span>
-              <span>{show.episode_count} episodes</span>
+              <span>{show.episode_count} {tShows('episodes')}</span>
               <span>·</span>
-              <span>{(seasons ?? []).length} season{(seasons ?? []).length !== 1 ? 's' : ''}</span>
+              <span>{(seasons ?? []).length} {tShows('seasons')}</span>
               {show.broadcast_day && (
                 <>
                   <span>·</span>
@@ -99,7 +107,7 @@ export default async function ShowDetailPage({
           </div>
           <div className="flex flex-col items-start gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-4">
             <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              Publishing state
+              {tShows('publishingState')}
             </span>
             <StatusBadge status={show.status} />
             <EditShowButton show={show} />

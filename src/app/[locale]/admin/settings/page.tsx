@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import { getAppConfig } from '@/lib/config'
 import { createClient } from '@/lib/supabase/server'
 import { SettingsTabs } from '@/components/admin/settings/settings-tabs'
@@ -15,7 +16,10 @@ import { SettingsTabs } from '@/components/admin/settings/settings-tabs'
  * is set; the has-key status is fetched via the admin client below.
  */
 export default async function AdminSettingsPage() {
-  const config = await getAppConfig()
+  const [config, t] = await Promise.all([
+    getAppConfig(),
+    getTranslations('admin.settings'),
+  ])
 
   // Admin-only: detect whether a YouTube key is already saved. We don't send
   // the key to the client — only a boolean so the masked field can show
@@ -32,9 +36,9 @@ export default async function AdminSettingsPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-[-0.03em] text-white">Settings</h1>
+        <h1 className="text-2xl font-semibold tracking-[-0.03em] text-white">{t('heading')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Control what visitors see and connect external services — no code required.
+          {t('description')}
         </p>
       </header>
 

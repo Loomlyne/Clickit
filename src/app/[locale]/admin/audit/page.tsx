@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
+import { getLocale, getTranslations } from 'next-intl/server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export const metadata: Metadata = {
-  title: 'Audit Log | Clickit Admin',
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('admin.audit')
+  return { title: `${t('pageTitle')} | Clickit Admin` }
 }
 
 // Revalidation is cheap (admin-only page, low traffic). Force a fresh read
@@ -29,10 +31,16 @@ function formatDiff(diff: Record<string, unknown> | null): string {
   }
 }
 
-function formatRelative(iso: string): string {
+function formatRelative(iso: string, isArabic: boolean): string {
   const t = new Date(iso).getTime()
   const now = Date.now()
   const s = Math.round((now - t) / 1000)
+  if (isArabic) {
+    if (s < 60) return `قبل ${s} ث`
+    if (s < 3600) return `قبل ${Math.round(s / 60)} د`
+    if (s < 86400) return `قبل ${Math.round(s / 3600)} س`
+    return `قبل ${Math.round(s / 86400)} ي`
+  }
   if (s < 60) return `${s}s ago`
   if (s < 3600) return `${Math.round(s / 60)}m ago`
   if (s < 86400) return `${Math.round(s / 3600)}h ago`
@@ -55,6 +63,11 @@ export default async function AuditLogPage() {
   // to the admin, but the layout has already verified admin before we get here.
   // Reading via admin skips the getUser() round trip on this page.
   const admin = createAdminClient()
+  const [t, locale] = await Promise.all([
+    getTranslations('admin.audit'),
+    getLocale(),
+  ])
+  const isArabic = locale === 'ar'
   const { data: rows, error } = await admin
     .from('admin_audit_log')
     .select('*')
@@ -67,22 +80,22 @@ export default async function AuditLogPage() {
     <div className="space-y-6">
       <header>
         <h1 className="font-display text-2xl font-semibold tracking-[-0.02em] text-white">
-          Audit Log
+          {t('heading')}
         </h1>
         <p className="mt-1 text-sm text-white/56">
-          Last 200 admin actions. Newest first. Rows are immutable — there is no edit or delete.
+          {t('description')}
         </p>
       </header>
 
       {error && (
         <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200">
-          Failed to load audit log: {error.message}
+          {t('errorHeading')}: {error.message}
         </div>
       )}
 
       {typedRows.length === 0 && !error && (
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center text-sm text-white/56">
-          No audit rows yet. Actions taken on this admin from now on will appear here.
+          {t('emptyDescription')}
         </div>
       )}
 
@@ -91,17 +104,17 @@ export default async function AuditLogPage() {
           <table className="w-full text-sm">
             <thead className="border-b border-white/10 bg-white/[0.02] text-start text-xs uppercase tracking-[0.12em] text-white/48">
               <tr>
-                <th className="px-4 py-3 font-medium">When</th>
-                <th className="px-4 py-3 font-medium">Action</th>
-                <th className="px-4 py-3 font-medium">Entity</th>
-                <th className="px-4 py-3 font-medium">Details</th>
+                <th className="px-4 py-3 font-medium">{t('whenColumn')}</th>
+                <th className="px-4 py-3 font-medium">{t('actionColumn')}</th>
+                <th className="px-4 py-3 font-medium">{t('entityColumn')}</th>
+                <th className="px-4 py-3 font-medium">{t('detailsColumn')}</th>
               </tr>
             </thead>
             <tbody>
               {typedRows.map((row) => (
                 <tr key={row.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02]">
                   <td className="px-4 py-3 text-white/64" title={row.created_at}>
-                    {formatRelative(row.created_at)}
+                    {formatRelative(row.created_at, isArabic)}
                   </td>
                   <td className="px-4 py-3">
                     <span

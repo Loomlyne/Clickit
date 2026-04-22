@@ -1,19 +1,22 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import { usePathname } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
 
-const tabs = [
-  { label: 'Shows', href: '/admin' },
-  { label: 'Archive', href: '/admin/archive' },
-  { label: 'Settings', href: '/admin/settings' },
-  { label: 'Audit', href: '/admin/audit' },
-]
-
 export function AdminHeader() {
   const pathname = usePathname()
+  const t = useTranslations('admin.dashboard')
+  const tNav = useTranslations('nav')
+
+  const tabs = [
+    { label: t('shows'), href: '/admin' },
+    { label: t('archive'), href: '/admin/archive' },
+    { label: t('settings'), href: '/admin/settings' },
+    { label: t('audit'), href: '/admin/audit' },
+  ]
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/8 bg-[rgba(5,7,12,0.76)] backdrop-blur-2xl">
@@ -58,7 +61,7 @@ export function AdminHeader() {
           href="/profile"
           className="hidden rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
         >
-          Account
+          {tNav('profile')}
         </Link>
       </div>
     </header>
