@@ -1,3 +1,4 @@
+import { getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { ShowArt } from '@/components/primitives/show-art'
 import type { RecentlyWatchedItem } from '@/lib/queries'
@@ -7,11 +8,13 @@ interface ProfileHistoryRowProps {
   item: RecentlyWatchedItem
 }
 
-export function ProfileHistoryRow({ item }: ProfileHistoryRowProps) {
+export async function ProfileHistoryRow({ item }: ProfileHistoryRowProps) {
   const brandHex = BRAND_COLOR_HEX[item.showBrandColor] ?? '#2C3569'
   const progressPercent = item.durationSeconds > 0
     ? Math.min(Math.round((item.progressSeconds / item.durationSeconds) * 100), 100)
     : 0
+  const locale = await getLocale()
+  const isArabic = locale === 'ar'
 
   return (
     <Link
@@ -41,7 +44,7 @@ export function ProfileHistoryRow({ item }: ProfileHistoryRowProps) {
       <div className="flex-shrink-0">
         {item.completed ? (
           <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/60">
-            Completed
+            {isArabic ? 'مُكتمل' : 'Completed'}
           </span>
         ) : (
           <div className="w-20">

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
 import { Shield, LogOut } from 'lucide-react'
@@ -16,6 +17,10 @@ interface ProfileHeaderProps {
 
 export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: ProfileHeaderProps) {
   const router = useRouter()
+  const tNav = useTranslations('nav')
+  const tCommon = useTranslations('common')
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [signingOut, setSigningOut] = useState(false)
 
   const initial = (displayName || email || '?').charAt(0).toUpperCase()
@@ -33,9 +38,9 @@ export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: Profil
       <AvatarUpload currentUrl={avatarUrl} fallbackInitial={initial} />
 
       <div className="flex flex-col items-center gap-1 sm:items-start sm:flex-1">
-        <p className="text-[11px] uppercase tracking-[0.26em] text-white/34">Account</p>
+        <p className="text-[11px] uppercase tracking-[0.26em] text-white/34">{isArabic ? 'الحساب' : 'Account'}</p>
         <h1 className="font-display text-3xl font-semibold tracking-[-0.04em] text-white">
-          {displayName || 'Your Account'}
+          {displayName || (isArabic ? 'حسابك' : 'Your Account')}
         </h1>
         <p className="text-sm text-white/50">{email}</p>
       </div>
@@ -48,7 +53,7 @@ export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: Profil
             className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/10"
           >
             <Shield className="size-4" />
-            Admin
+            {tNav('admin')}
           </Link>
         )}
         <button
@@ -57,7 +62,7 @@ export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: Profil
           className="flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-5 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20 disabled:opacity-50"
         >
           <LogOut className="size-4" />
-          {signingOut ? 'Signing out...' : 'Sign Out'}
+          {signingOut ? (isArabic ? 'جارٍ تسجيل الخروج…' : 'Signing out…') : tCommon('signOut')}
         </button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Check, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -12,6 +13,10 @@ interface ProfileFormProps {
 }
 
 export function ProfileForm({ displayName }: ProfileFormProps) {
+  const t = useTranslations('profile')
+  const tCommon = useTranslations('common')
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [name, setName] = useState(displayName)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null)
@@ -26,7 +31,7 @@ export function ProfileForm({ displayName }: ProfileFormProps) {
       setStatus('saved')
       setTimeout(() => setStatus((s) => s === 'saved' ? 'idle' : s), 2000)
     } catch {
-      toast.error('Failed to save')
+      toast.error(tCommon('error'))
       setStatus('idle')
     }
   }, [])
@@ -42,18 +47,18 @@ export function ProfileForm({ displayName }: ProfileFormProps) {
       <div className="flex-1">
         <div className="flex items-center justify-between">
           <Label htmlFor="display-name" className="text-white/60">
-            Display Name
+            {t('displayNameLabel')}
           </Label>
           {status === 'saving' && (
             <span className="flex items-center gap-1.5 text-xs text-white/40">
               <Loader2 className="size-3 animate-spin" />
-              Saving
+              {isArabic ? 'جارٍ الحفظ' : 'Saving'}
             </span>
           )}
           {status === 'saved' && (
             <span className="flex items-center gap-1.5 text-xs text-emerald-400/80">
               <Check className="size-3" />
-              Saved
+              {isArabic ? 'تم الحفظ' : 'Saved'}
             </span>
           )}
         </div>
@@ -61,7 +66,7 @@ export function ProfileForm({ displayName }: ProfileFormProps) {
           id="display-name"
           value={name}
           onChange={(e) => handleChange(e.target.value)}
-          placeholder="Your name"
+          placeholder={isArabic ? 'اسمك' : 'Your name'}
           className="mt-1.5"
         />
       </div>
