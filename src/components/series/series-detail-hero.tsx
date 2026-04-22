@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import { motion, AnimatePresence, MotionConfig } from 'motion/react'
@@ -32,6 +33,10 @@ export function SeriesDetailHero({
   userId,
 }: SeriesDetailHeroProps) {
   const [scrolled, setScrolled] = useState(false)
+  const t = useTranslations('show')
+  const tCommon = useTranslations('common')
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const mobileBackdropUrl = show.posterUrl ?? show.heroImageUrl
   const desktopBackdropUrl = show.heroImageUrl ?? show.posterUrl
 
@@ -67,7 +72,7 @@ export function SeriesDetailHero({
                 href={`/watch/${firstEpisodeId}`}
                 className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff]"
               >
-                &#9654; Watch Now
+                &#9654; {t('watchNow')}
               </Link>
             )}
           </motion.div>
@@ -114,7 +119,7 @@ export function SeriesDetailHero({
               href="/"
               className="inline-flex items-center text-white/50 hover:text-white text-sm mb-6 transition-colors"
             >
-              ← Home
+              {isArabic ? '→ الصفحة الرئيسية' : '← Home'}
             </Link>
           </motion.div>
 
@@ -126,7 +131,9 @@ export function SeriesDetailHero({
             transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.25 }}
           >
             <GlowBadge
-              label={show.status === 'streaming' ? 'Now Streaming' : 'Coming Soon'}
+              label={show.status === 'streaming'
+                ? (isArabic ? 'يُبثّ الآن' : 'Now Streaming')
+                : (isArabic ? 'قريباً' : 'Coming Soon')}
               color={show.status === 'streaming' ? '#50A258' : '#EA8C2E'}
             />
           </motion.div>
@@ -171,10 +178,12 @@ export function SeriesDetailHero({
             <span>{show.genre}</span>
             <span>·</span>
             <span>
-              {seasons.length} Season{seasons.length !== 1 ? 's' : ''}
+              {seasons.length} {isArabic
+                ? (seasons.length === 1 ? 'موسم' : 'مواسم')
+                : (seasons.length === 1 ? 'Season' : 'Seasons')}
             </span>
             <span>·</span>
-            <span>{show.episodeCount} Episodes</span>
+            <span>{show.episodeCount} {isArabic ? 'حلقة' : 'Episodes'}</span>
             {show.imdbRating && (
               <>
                 <span>·</span>
@@ -196,12 +205,14 @@ export function SeriesDetailHero({
                   href={`/watch/${firstEpisodeId}`}
                   className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff]"
                 >
-                  &#9654; {firstEpisodeLabel ? `Watch ${firstEpisodeLabel}` : 'Watch Now'}
+                  &#9654; {firstEpisodeLabel
+                    ? (isArabic ? `شاهد ${firstEpisodeLabel}` : `Watch ${firstEpisodeLabel}`)
+                    : t('watchNow')}
                 </Link>
               </motion.div>
             ) : (
               <span className="inline-flex items-center rounded-full bg-white/10 px-7 py-3 text-sm font-medium text-white/50 cursor-not-allowed">
-                Coming Soon
+                {isArabic ? 'قريباً' : 'Coming Soon'}
               </span>
             )}
             {userId !== undefined && (
