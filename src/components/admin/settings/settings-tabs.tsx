@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import type { AppConfig } from '@/lib/config'
 import { GeneralTab } from './general-tab'
@@ -14,13 +15,14 @@ export function SettingsTabs({
   config: AppConfig
   hasYouTubeKey: boolean
 }) {
+  const t = useTranslations('admin.settings')
   return (
     <Tabs defaultValue="general" className="gap-6">
       <TabsList className="w-full md:w-fit">
-        <TabsTrigger value="general">General</TabsTrigger>
-        <TabsTrigger value="branding">Branding</TabsTrigger>
-        <TabsTrigger value="integrations">Integrations</TabsTrigger>
-        <TabsTrigger value="advanced">Advanced</TabsTrigger>
+        <TabsTrigger value="general">{t('generalTab')}</TabsTrigger>
+        <TabsTrigger value="branding">{t('brandingTab')}</TabsTrigger>
+        <TabsTrigger value="integrations">{t('integrationsTab')}</TabsTrigger>
+        <TabsTrigger value="advanced">{t('advancedTab')}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="general" className="space-y-6">
