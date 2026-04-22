@@ -1,5 +1,6 @@
 'use client'
 
+import { useLocale } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { motion } from 'motion/react'
 import { Play, Clock, EyeOff } from 'lucide-react'
@@ -25,6 +26,8 @@ export function EpisodeRow({
   resumePercent,
   isCompleted,
 }: EpisodeRowProps) {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const isPublished = episode.status === 'published'
   const isComingSoon = episode.status === 'coming-soon'
   const isDraft = episode.status === 'draft'
@@ -111,18 +114,18 @@ export function EpisodeRow({
         {/* Row 3: duration + status badge */}
         <div className="flex items-center gap-2 mt-2">
           <Badge variant="secondary" className="text-xs text-muted-foreground">
-            {episode.duration ? `${episode.duration} min` : '-- min'}
+            {episode.duration ? `${episode.duration} ${isArabic ? 'دقيقة' : 'min'}` : (isArabic ? '-- دقيقة' : '-- min')}
           </Badge>
 
           {isComingSoon && (
             <Badge className="bg-brand-orange text-black text-xs">
-              Coming Soon
+              {isArabic ? 'قريباً' : 'Coming Soon'}
             </Badge>
           )}
 
           {isDraft && (
             <Badge className="bg-surface-3 text-foreground text-xs">
-              Draft
+              {isArabic ? 'مسودة' : 'Draft'}
             </Badge>
           )}
         </div>
@@ -131,7 +134,7 @@ export function EpisodeRow({
         {isCompleted && (
           <div className="mt-2">
             <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] text-white/50">
-              Completed
+              {isArabic ? 'مُكتمل' : 'Completed'}
             </span>
           </div>
         )}

@@ -1,5 +1,6 @@
 'use client'
 
+import { useLocale } from 'next-intl'
 import { PortraitShowCard } from '@/components/shows/portrait-show-card'
 import { GlowBadge } from '@/components/primitives/glow-badge'
 import type { ViewShow } from '@/lib/queries'
@@ -11,6 +12,8 @@ interface ComingSoonShowCardProps {
 
 export function ComingSoonShowCard({ show }: ComingSoonShowCardProps) {
   const brandColorHex = BRAND_COLOR_HEX[show.brandColor]
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
 
   return (
     <div className="relative opacity-85">
@@ -20,7 +23,7 @@ export function ComingSoonShowCard({ show }: ComingSoonShowCardProps) {
       {/* Coming soon badge */}
       <div className="absolute top-3 right-3 z-10">
         <GlowBadge
-          label="Coming Soon"
+          label={isArabic ? 'قريباً' : 'Coming Soon'}
           color={brandColorHex}
           pulse={true}
         />
