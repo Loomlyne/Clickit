@@ -17,79 +17,44 @@ Viewers enter the platform, discover a show, pick an episode, and watch immediat
 
 The platform is live with the full viewer experience (cinematic home page, series browsing, watch page with autoplay, personalization) and admin dashboard (show/season/episode CRUD, artwork upload, archive management). All 15 CIT programs are seeded. Content is served from Supabase with Postgres FTS search and RLS security.
 
-## Queued Next Milestone: v1.2 Editorial Feature Parity
+## Current Milestone: v2.0 Full Visual Redesign
 
-**Status:** Scaffolded 2026-04-22 — starts after v1.1 ships (Phase 13-06 + Phases 14-17 complete).
+**Goal:** Replace the entire UI with a new editorial design system — Newsreader (serif display), Space Grotesk (UI sans), JetBrains Mono (mono labels), electric yellow (#ffcc00) accent on near-black (#0a0a0a) backgrounds — across ALL viewer pages and the admin portal. Add Shorts overlay, review composer with real-time DB, and marquee ticker. Nothing from the old visual design survives.
 
-**Goal:** Bring `clickit-editorial.vercel.app` to full functional parity with primary, while preserving Editorial's visual design. Every edit, section, click, and feature that exists on primary must work inside the Editorial shell.
+**User framing (verbatim):** "i want allllll design i send to you all pages sections, features available to be planned and implemented... dont keep anything from the old design, also as because you have the design system i want you to apply it on the admin portal also"
 
-**User framing (verbatim):** "everythin in editorial must be on editorial design system. keep for noe englais only."
+**Design source:** Claude Design handoff bundle at `/tmp/clickit-design/clickit/project/` — styles.css (~3800 lines), 8 JSX screen files, data.jsx, app.jsx, auth.jsx. Backup of old design at git tag `design-backup-2026-04-24`.
 
 **Target features:**
-- Converge Editorial branch (`claude/angry-tharp-d39d9e`) into `main` behind the `NEXT_PUBLIC_DESIGN` build flag — one codebase, two Vercel projects, different env vars
-- Wire auth state (sign-in, avatar dropdown, sign-out, auth-gated routes) through Editorial chrome
-- Wire watchlist + likes hooks into Editorial `Poster` / `Rail` / `Series` (`onToggleList` callbacks currently no-op)
-- Port full YouTube IFrame API + `useProgressTracker` + autoplay-next + resume-from-timestamp into Editorial watch page (currently a simple iframe)
-- Continue Watching rail on Editorial browse + Recently Watched on Editorial profile (currently empty/missing)
-- Editorial variants for Search (Postgres FTS), Coming Soon (real data), Support (contact form), Auth pages
-- Respect `flags.comingSoonMode` gate on Editorial routes
-- Performance: `next/image`, `prefers-reduced-motion`, server-side mobile detection
-- Deploy to `clickit-editorial` Vercel project pointing at `main` with `NEXT_PUBLIC_DESIGN=editorial`
+- New design tokens: fonts (Newsreader, Space Grotesk, JetBrains Mono), colors (#0a0a0a base, #ffcc00 accent), radii (4px), motion (cubic-bezier(0.2,0.8,0.2,1))
+- Redesigned Header: dot logo + "CLICKIT" text, nav links, sign in/start free buttons, no search bar
+- Redesigned Footer: editorial "Click*it.*" wordmark, newsletter signup, 5-column grid, social icons, live status
+- Landing page: editorial split hero (copy + poster collage), scrolling marquee, stats bar, show grid, "Why Clickit" features, genre tiles, FAQ accordion, CTA banner
+- Browse page: full-bleed hero carousel with dot indicators, continue watching rail, Shorts/Reels section (9:16 cards), landscape show cards, bottom CTA
+- Series detail: cinematic hero, cast row, season tabs, episode list with hover-play, review composer with star rating (persisted to Supabase, real-time), meta sidebar, "More like this" rail
+- Watch page: YouTube-style layout (player on top, title+actions, prev/next cards, episode sidebar)
+- Shorts overlay: full-screen vertical reel viewer (9:16), segmented progress, creator info, action rail, keyboard+swipe nav
+- Auth redesign: split-screen layout (editorial hero left, form right), OAuth, password strength meter
+- Supporting pages restyled: Search, My List, Profile (with admin button), Coming Soon, Support
+- Admin portal: same design tokens applied (backgrounds, accent, fonts, radii) — functionality unchanged
+- Mobile responsive: breakpoints at 1180, 1100, 960, 900, 720, 560, 420px
+
+**New DB table:** `reviews` — user reviews with star rating, persisted to Supabase, visible to all users in real-time via Supabase Realtime
+
+**Superseded milestones:**
+- v1.1 Phases 14-17 (RTL CSS + translations on old components) — superseded, will redo on new components
+- v1.2 Editorial Feature Parity — superseded, editorial design IS now the main design
+
+**What carries over from v1.1:**
+- Phases 12-13 (i18n infrastructure, route restructure, auth safety) — all still valid
+- next-intl routing, locale-aware navigation, proxy.ts cookie merge — unchanged
 
 **Explicit exclusions:**
-- Arabic / RTL for Editorial — deferred to v1.3
-- Redesigning Editorial visuals — this milestone ports logic into the existing shell, no visual changes
-- Admin Editorial theming — `/admin/*` stays on default chrome forever (admin isn't viewer-facing)
-- Editorial-exclusive features — if a feature exists on primary, it must exist on Editorial. No new features gated to Editorial only.
-- Modifying primary behavior — primary stays untouched (validated by smoke test)
-
-**Source plan:** `/Users/koss/.claude/plans/1-everythin-in-editorial-binary-raccoon.md`
-
-**Requirements:** see REQUIREMENTS.md `## v1.2 Requirements` section (28 reqs across 9 phases, 18-26)
-
----
-
-## Current Milestone: v1.1 Full Bilingual UI (AR/EN)
-
-**Goal:** Every single visible piece of UI text on Clickit Story — every button, label, placeholder, tooltip, aria-label, page title, toast, error, countdown, metadata tag, and dynamic string — switches between English and Arabic when the viewer changes language. Zero hardcoded English strings remain in user-facing surfaces. Delivered on top of URL-prefix locale routing (`/en/...`, `/ar/...`) so Arabic is independently indexable by search engines.
-
-**User framing (verbatim):** "each section, each phase, each dev, each text, each whatsoever, when I translate it to Arabic, it needs to be translated to Arabic. If I translate to English, it needs to be translated to English. Like every pixel in the screen."
-
-**Target features (validated by research — see `.planning/research/SUMMARY.md`):**
-- URL-prefix routing — every page moves under `src/app/[locale]/...`; `en` is default, `ar` is the other locale. `localePrefix: 'always'` (both languages prefixed).
-- Translation infrastructure — `next-intl@4.9.1` (already installed), `src/i18n/routing.ts`, `src/i18n/request.ts`, `src/i18n/navigation.ts`, `src/messages/en.json` + `src/messages/ar.json`
-- Viewer surface strings — navbar, auth, landing, browse, series detail, season drawer, watch, my-list, profile, search, coming-soon, support, footer, FAQ, design-system
-- Admin surface strings — dashboard, show/season/episode CRUD forms, settings, archive, audit
-- Dynamic UI strings — toasts, empty states, error messages, autoplay countdown, ARIA labels, placeholders, tooltips, form validation messages
-- Metadata & SEO — per-locale `<title>`, `<meta description>`, OpenGraph, Twitter cards. Sitemap gains `alternates.languages` so Google indexes `/en/...` and `/ar/...` as language variants.
-- RTL polish — Tailwind logical-property migration (`ml-`→`ms-`, `pl-`→`ps-`) across ~114 components, directional icon mirroring (chevrons, skip-forward, back arrows), form alignment, carousel direction
-- Arabic typography refinement — Cairo font-display: swap (avoid FOIT), letter-spacing fix for Arabic glyph joining (one CSS rule in globals.css strips `tracking-[0.2em+]` on Arabic pages), line-height tuning
-- Number & date formatting — `Intl.NumberFormat('ar-AE')` returns Western numerals (0-9), matching UAE market and Shahid/Netflix MENA convention. `toLocaleDateString()` passes active locale.
-- Auth safety — 6 latent auth/routing breaks fixed atomically with the route restructure (see Pitfalls below)
-
-**6 critical auth/routing breaks (must land atomically in Phase 13):**
-1. Supabase session cookie loss on locale redirect — middleware must merge Supabase cookies onto the i18n response
-2. `useRouter` from `next/navigation` strips locale prefix on navigation — swap to `@/i18n/navigation` in ~7 client components
-3. Hard-coded redirects to `/auth/login` in auth actions and protected routes — must become locale-aware
-4. Supabase auth callback `?next=` redirect handling — audit and preserve locale
-5. `coming-soon` redirect in `proxy.ts` — currently redirects to `/coming-soon` (no locale), must become locale-aware
-6. Sitemap `alternates.languages` — add per-route so Google discovers the Arabic version
-
-**Scope strategy (URL-prefix routing, research-validated):**
-- Zero new dependencies — `next-intl@4.9.1` is already in `package.json`
-- `proxy.ts` already exists with Next.js 16 naming convention — add `createMiddleware(routing)` composition
-- Existing `dirFor()` and `pickLocalized()` helpers stay — they're domain-specific
-- `src/app/locale-actions.ts` + `src/components/layout/locale-switcher.tsx` + the Profile `LanguagePreference` card **become dead code** after migration (replaced by next-intl navigation-based switcher that writes the URL)
-- Migration is mechanical once Phase 12 (infrastructure) and Phase 13 (auth-safe route restructure) land
-
-**Explicit exclusions for this milestone:**
-- Hijri calendar — UAE uses Gregorian
-- Eastern Arabic-Indic numerals (٠-٩) — Western numerals (0-9) match UAE market (Shahid, Netflix MENA convention)
-- Dialect variants (Emirati, Egyptian) — Modern Standard Arabic only
-- Icon mirroring for every icon — only directional icons (arrows, chevrons, skip-forward)
-- Separate Arabic sitemap — use `alternates.languages` in existing sitemap
-- LLM-translated Arabic strings shipping to prod — all Arabic copy must be human-written or human-reviewed
-- Translation of DB columns without existing `_ar` pairs — admin fills those via dashboard
+- Arabic/RTL for new components — deferred to v2.1
+- Tweaks panel from prototype — prototyping tool only, not production
+- Self-hosted video — YouTube embeds stay
+- AI recommendations — not enough content
+- Translation of new component strings — deferred to v2.1
 
 ## Requirements
 
