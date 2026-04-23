@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Full Bilingual UI (AR/EN)
-status: in-progress
-stopped_at: Phase 13 complete — UAT 8/8 passed, all 9 RTE + I18N-05/06 requirements closed. Phase 14 (Global Layout + RTL CSS) ready to discuss.
-last_updated: "2026-04-24T00:00:00Z"
-last_activity: 2026-04-24
+status: completed
+stopped_at: Phase 14 context gathered
+last_updated: "2026-04-23T21:18:52.246Z"
+last_activity: 2026-04-24 — Phase 13 UAT complete, transition to Phase 14.
 progress:
-  total_phases: 6
-  completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
-  percent: 33
+  total_phases: 14
+  completed_phases: 13
+  total_plans: 38
+  completed_plans: 38
+  percent: 100
 ---
 
 # Project State
@@ -46,6 +46,7 @@ Last activity: 2026-04-24 — Phase 13 UAT complete, transition to Phase 14.
 ## Accumulated Context
 
 ### v1.0 shipped (2026-04-16)
+
 - 11 phases, 27 plans, 60/60 requirements, 13,259 LOC
 - Next.js 16.2 + Supabase + Tailwind CSS v4 + shadcn/ui
 - Cookie-based locale infrastructure exists but mostly unwired
@@ -54,6 +55,7 @@ Last activity: 2026-04-24 — Phase 13 UAT complete, transition to Phase 14.
 - Supabase session helper in `src/lib/supabase/middleware.ts` (library, not middleware entrypoint)
 
 ### v1.1 research findings (see .planning/research/SUMMARY.md)
+
 - Zero new dependencies required
 - Migration is mechanical once Phase 12-13 (infrastructure + auth-safe route restructure) land
 - 6 latent auth/routing breaks identified — must fix atomically in Phase 13
@@ -61,15 +63,16 @@ Last activity: 2026-04-24 — Phase 13 UAT complete, transition to Phase 14.
 - `locale-actions.ts` + cookie switcher + profile `LanguagePreference` become dead code
 
 ### v1.1 risk profile
+
 - **Highest risk:** Phase 13 (route restructure + 6 auth fixes atomic). Must deploy + smoke-test auth flows on preview before merge.
 - **Medium risk:** Phase 14 logical-property migration across ~114 components — potential for visual regression on English.
 - **Low risk:** Phase 12 (additive, safe), Phase 15/16 (mechanical string extraction), Phase 17 (additive polish).
 
 ## Session Continuity
 
-Last session: 2026-04-24
-Stopped at: Phase 13 complete — UAT 8/8 passed, transitioned to Phase 14
-Resume file: None
+Last session: --stopped-at
+Stopped at: Phase 14 context gathered
+Resume file: --resume-file
 
 ## Decisions Made
 
