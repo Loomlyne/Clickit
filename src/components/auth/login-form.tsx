@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -31,6 +31,7 @@ type ForgotFormData = z.infer<typeof forgotSchema>
 export function LoginForm() {
   const t = useTranslations('auth')
   const tErrors = useTranslations('errors')
+  const locale = useLocale()
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
@@ -207,14 +208,14 @@ export function LoginForm() {
       <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
-          onClick={() => toast.info('Google SSO coming soon')}
+          onClick={() => toast.info(locale === 'ar' ? 'تسجيل الدخول عبر جوجل قريباً' : 'Google SSO coming soon')}
           className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/5 px-5 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/10"
         >
           Google
         </button>
         <button
           type="button"
-          onClick={() => toast.info('Apple SSO coming soon')}
+          onClick={() => toast.info(locale === 'ar' ? 'تسجيل الدخول عبر آبل قريباً' : 'Apple SSO coming soon')}
           className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/5 px-5 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/10"
         >
           Apple

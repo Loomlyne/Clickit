@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
+import { useLocale } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
@@ -20,6 +21,8 @@ export function useWatchlist(
   const [isLoading, setIsLoading] = useState(false)
   const busyRef = useRef(false)
   const router = useRouter()
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
 
   const toggle = useCallback(async () => {
     if (!userId || busyRef.current) {
@@ -53,17 +56,19 @@ export function useWatchlist(
           router.push(`/auth?next=${encodeURIComponent(window.location.pathname)}`)
           return
         }
-        toast.error(prev ? 'Failed to remove from list' : 'Failed to add to list')
+        toast.error(prev
+          ? (isArabic ? 'تعذّرت الإزالة من القائمة' : 'Failed to remove from list')
+          : (isArabic ? 'تعذّرت الإضافة إلى القائمة' : 'Failed to add to list'))
       }
     } catch (err) {
       console.error('Watchlist network error:', err)
       setIsInList(prev)
-      toast.error('Network error — please try again')
+      toast.error(isArabic ? 'خطأ في الشبكة — حاول مجدداً' : 'Network error — please try again')
     } finally {
       setIsLoading(false)
       busyRef.current = false
     }
-  }, [showId, userId, isInList, router])
+  }, [showId, userId, isInList, router, isArabic])
 
   return { isInList, toggle, isLoading }
 }
