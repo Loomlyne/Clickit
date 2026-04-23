@@ -13,6 +13,7 @@ interface AvatarUploadProps {
 
 export function AvatarUpload({ currentUrl, fallbackInitial }: AvatarUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const objectUrlRef = useRef<string | null>(null)
   const [preview, setPreview] = useState<string | null>(currentUrl)
   const [uploading, setUploading] = useState(false)
   const locale = useLocale()
@@ -24,8 +25,12 @@ export function AvatarUpload({ currentUrl, fallbackInitial }: AvatarUploadProps)
       return
     }
 
+    // Revoke previous blob URL to avoid memory leak
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
+
     // Show instant preview
     const objectUrl = URL.createObjectURL(file)
+    objectUrlRef.current = objectUrl
     setPreview(objectUrl)
     setUploading(true)
 
@@ -33,11 +38,14 @@ export function AvatarUpload({ currentUrl, fallbackInitial }: AvatarUploadProps)
       const formData = new FormData()
       formData.append('avatar', file)
       const result = await uploadAvatar(formData)
+      URL.revokeObjectURL(objectUrl)
+      objectUrlRef.current = null
       setPreview(result.avatarUrl)
       toast.success(isArabic ? 'تم تحديث الصورة الشخصية' : 'Profile picture updated')
     } catch (err) {
       setPreview(currentUrl) // revert on failure
-      toast.error(err instanceof Error ? err.message : (isArabic ? 'فشل الرفع' : 'Upload failed'))
+      console.error('[avatar-upload] upload failed:', err instanceof Error ? err.message : err)
+      toast.error(isArabic ? 'فشل الرفع' : (err instanceof Error ? err.message : 'Upload failed'))
     } finally {
       setUploading(false)
     }

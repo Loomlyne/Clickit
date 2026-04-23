@@ -82,7 +82,9 @@
     "termsAccept": "أوافق على شروط الخدمة وسياسة الخصوصية",
     "showPassword": "إظهار كلمة المرور",
     "hidePassword": "إخفاء كلمة المرور",
-    "callbackError": "تعذّر التحقق من هويتك"
+    "callbackError": "تعذّر التحقق من هويتك",
+    "googleSSOComingSoon": "تسجيل الدخول عبر جوجل قريباً",
+    "appleSSOComingSoon": "تسجيل الدخول عبر آبل قريباً"
   },
   "home": {
     "heroHeadline": "كل قصة تنقر.",
