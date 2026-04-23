@@ -2,273 +2,206 @@
 
 ## Milestones
 
-- ✅ **v1.0 CIT Streaming Platform** — Phases 1-10 (shipped 2026-04-16)
-- 🚧 **v1.1 Full Bilingual UI (AR/EN)** — Phases 12-17 (started 2026-04-20)
-- ⏳ **v1.2 Editorial Feature Parity** — Phases 18-26 (scaffolded 2026-04-22, queued after v1.1)
+- ✅ **v1.0 CIT Streaming Platform** -- Phases 1-10 (shipped 2026-04-16)
+- ✅ **v1.1 Full Bilingual UI (AR/EN)** -- Phases 12-13 shipped; Phases 14-17 superseded by v2.0
+- ~~v1.2 Editorial Feature Parity~~ -- Superseded by v2.0 (editorial design IS the main design now)
+- 🚧 **v2.0 Full Visual Redesign** -- Phases 18-27 (started 2026-04-24)
 
 ## Phases
 
 <details>
-<summary>✅ v1.0 CIT Streaming Platform (Phases 1-10) — SHIPPED 2026-04-16</summary>
+<summary>v1.0 CIT Streaming Platform (Phases 1-10) -- SHIPPED 2026-04-16</summary>
 
-- [x] Phase 1: Project Scaffolding & Design System (2/2 plans) — completed 2026-03-30
-- [x] Phase 2: App Shell & Navigation (2/2 plans) — completed 2026-03-31
-- [x] Phase 3: Home Page & Catalog UI (3/3 plans) — completed 2026-03-31
-- [x] Phase 4: Series Detail & Browse Pages (3/3 plans) — completed 2026-04-01
-- [x] Phase 5: Watch Page UI (2/2 plans) — completed 2026-04-01
-- [x] Phase 6: Backend Foundation (2/2 plans) — completed 2026-04-02
-- [x] Phase 6.1: UI Cinematic Redesign (5/5 plans) — completed 2026-04-03 (INSERTED)
-- [x] Phase 7: Admin Dashboard (4/4 plans) — completed 2026-04-04
-- [x] Phase 8: Data Integration, Auth & Search (3/3 plans) — completed 2026-04-04
-- [x] Phase 9: Personalization & Watch Features (3/3 plans) — completed 2026-04-04
-- [x] Phase 10: Empty State Polish (1/1 plan) — completed 2026-04-14
+- [x] Phase 1: Project Scaffolding & Design System (2/2 plans) -- completed 2026-03-30
+- [x] Phase 2: App Shell & Navigation (2/2 plans) -- completed 2026-03-31
+- [x] Phase 3: Home Page & Catalog UI (3/3 plans) -- completed 2026-03-31
+- [x] Phase 4: Series Detail & Browse Pages (3/3 plans) -- completed 2026-04-01
+- [x] Phase 5: Watch Page UI (2/2 plans) -- completed 2026-04-01
+- [x] Phase 6: Backend Foundation (2/2 plans) -- completed 2026-04-02
+- [x] Phase 6.1: UI Cinematic Redesign (5/5 plans) -- completed 2026-04-03 (INSERTED)
+- [x] Phase 7: Admin Dashboard (4/4 plans) -- completed 2026-04-04
+- [x] Phase 8: Data Integration, Auth & Search (3/3 plans) -- completed 2026-04-04
+- [x] Phase 9: Personalization & Watch Features (3/3 plans) -- completed 2026-04-04
+- [x] Phase 10: Empty State Polish (1/1 plan) -- completed 2026-04-14
 
 Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
 </details>
 
-### 🚧 v1.1 Full Bilingual UI (AR/EN) — Phases 12-17
+<details>
+<summary>v1.1 Full Bilingual UI -- Phases 12-13 shipped, Phases 14-17 superseded</summary>
 
-- [x] **Phase 12: i18n Infrastructure** — Wire next-intl primitives (routing, request, navigation, messages, provider); zero page edits — completed 2026-04-21 (commit af2ab35)
-- [x] **Phase 13: Route Restructure + Auth Safety** — Move every page under `[locale]/` and fix 6 latent auth/routing breaks atomically in one PR (7/7 plans) — completed 2026-04-24
-- [ ] **Phase 14: Global Layout + RTL CSS** — `[locale]/layout.tsx`, Cairo font, letter-spacing fix, logical-property migration across ~114 components, directional icon mirroring
-- [ ] **Phase 15: Viewer Pages Translation** — Every string on 13 viewer pages routed through `useTranslations()` / `getTranslations()`
-- [ ] **Phase 16: Admin Pages Translation** — All 5 admin views operable in Arabic
-- [ ] **Phase 17: Content + Polish** — Dynamic strings (toasts, aria, errors, dates, numbers), metadata, sitemap alternates, text-expansion QA, BiDi guards, final human review
+- [x] Phase 12: i18n Infrastructure (1/1 plan) -- completed 2026-04-21
+- [x] Phase 13: Route Restructure + Auth Safety (7/7 plans) -- completed 2026-04-24
+- [x] ~~Phase 14-17~~ -- Superseded by v2.0 (RTL + translations will redo on new components in v2.1)
 
-## Phase Details (v1.1)
+</details>
 
-### Phase 12: i18n Infrastructure
-**Goal**: next-intl primitives wired and functional without touching any page code — ships independently
-**Depends on**: Nothing (first phase of v1.1)
-**Requirements**: I18N-01, I18N-02, I18N-03, I18N-04, I18N-05, I18N-06, I18N-07
+### 🚧 v2.0 Full Visual Redesign -- Phases 18-27
+
+- [ ] **Phase 18: Design Tokens & Typography** -- New fonts, colors, radii, CSS custom properties, utility classes, global resets
+- [ ] **Phase 19: Header & Footer Shell** -- Editorial header (dot logo, nav, auth buttons) + footer (wordmark, newsletter, 5-col grid, socials, live status)
+- [ ] **Phase 20: Landing Page** -- Split hero, marquee ticker, stats bar, show grid, Why Clickit, genre tiles, FAQ accordion, CTA banner
+- [ ] **Phase 21: Browse Page** -- Full-bleed hero carousel, continue watching rail, shorts/reels cards, landscape show rails, bottom CTA
+- [ ] **Phase 22: Series Detail & Reviews** -- Cinematic hero, cast row, season tabs, episode grid, meta sidebar, review composer with Supabase Realtime
+- [ ] **Phase 23: Watch Page** -- YouTube-style layout, sticky header breadcrumb, 2-column grid, action bar, description card, prev/next cards, episode sidebar
+- [ ] **Phase 24: Shorts Overlay** -- Full-screen vertical reel viewer, segmented progress, creator info, action rail, keyboard+swipe nav
+- [ ] **Phase 25: Auth & Supporting Pages** -- Split-screen auth, OAuth, password strength meter; search, my list, profile, coming soon, support restyled
+- [ ] **Phase 26: Admin Visual Refresh** -- New tokens applied to admin portal (backgrounds, accent, fonts, radii) -- functionality unchanged
+- [ ] **Phase 27: Responsive Polish** -- Mobile breakpoints across all pages (header, landing, content rails, watch, footer, shorts, auth)
+
+## Phase Details
+
+### Phase 18: Design Tokens & Typography
+**Goal**: Every component in the app draws from the new editorial design system -- fonts load without FOIT, colors cascade via CSS custom properties, and the visual foundation is locked before any page work begins
+**Depends on**: Nothing (first phase of v2.0; builds on i18n infrastructure from v1.1 Phases 12-13)
+**Requirements**: DSYS-01, DSYS-02, DSYS-03, DSYS-04, DSYS-05, DSYS-06
 **Success Criteria** (what must be TRUE):
-  1. Developer importing `Link` / `useRouter` / `redirect` from `@/i18n/navigation` gets working helpers that preserve locale prefix
-  2. `src/messages/en.json` and `src/messages/ar.json` exist with the full namespace skeleton (`nav`, `auth`, `home`, `show`, `player`, `search`, `profile`, `myList`, `comingSoon`, `support`, `faq`, `admin`, `errors`, `common`) and load via `getRequestConfig`
-  3. `generateStaticParams` on the prepared `[locale]/layout.tsx` returns both `{locale:'en'}` and `{locale:'ar'}` and `setRequestLocale()` is importable and callable
-  4. Existing `dirFor()` / `pickLocalized()` in `src/lib/locale.ts` continue to work unchanged — no regression in bilingual DB field rendering on show detail pages
-  5. `npm run build` succeeds; no viewer or admin page has been moved yet, so the live site is byte-identical
-**Plans**: 1 plan
-  - [x] 12-01-PLAN.md — Create next-intl primitives (routing, request, navigation) + bilingual message dictionary skeletons (en.json, ar.json) with 14 namespaces; zero page edits — completed 2026-04-21 (commit af2ab35)
-
-### Phase 13: Route Restructure + Auth Safety
-**Goal**: All pages live under `src/app/[locale]/...` and the 6 auth/routing pitfalls are fixed atomically so sessions survive locale redirects
-**Depends on**: Phase 12
-**Requirements**: RTE-01, RTE-02, RTE-03, RTE-04, RTE-05, RTE-06, RTE-07, RTE-08, RTE-09 (plus final-wiring closure of I18N-05 and I18N-06 from Phase 12)
-**Success Criteria** (what must be TRUE):
-  1. Visiting `/` redirects to `/en` and `/ar` renders the same page; deep links like `/en/series/<slug>` and `/ar/series/<slug>` both resolve correctly
-  2. Logging in on `/ar/auth` lands on `/ar/...` (not `/auth/login` or `/en/...`) and the Supabase session cookie survives the locale redirect — the user is NOT silently logged out
-  3. Every client-side navigation (navbar, footer, show cards, watch-page prev/next, auth flows, OAuth `?next=` return) preserves the current locale prefix — no `useRouter` from `next/navigation` and no `Link` from `next/link` remain in a viewer client component
-  4. The coming-soon gate in `proxy.ts` redirects to `/en/coming-soon` or `/ar/coming-soon` based on the incoming URL — never bare `/coming-soon`
-  5. `src/app/locale-actions.ts`, `src/components/layout/locale-switcher.tsx`, and `src/components/profile/language-preference.tsx` are replaced by a next-intl navigation-based switcher that writes the URL; old cookie switcher is removed from the codebase
-**Plans**: 7 plans
-  - [x] 13-01-PLAN.md — Route restructure: git-mv (viewer)/ and admin/ under [locale]/, relocate OAuth callback to locale-agnostic path, create [locale]/layout.tsx (NextIntlClientProvider + setRequestLocale + generateStaticParams + <html lang dir>), slim root layout.tsx to pass-through — closes RTE-01, RTE-02, I18N-05, I18N-06 — completed 2026-04-21 (commits 733c8f4 → b3234c6)
-  - [x] 13-02-PLAN.md — Proxy composition: createMiddleware(routing) + updateSession() + cookie merge, locale-aware coming-soon redirect, /api and /auth/callback short-circuits — closes RTE-03, RTE-07 — completed 2026-04-21 (commit 5503cda)
-  - [x] 13-03a-PLAN.md — Navigation-hook + Server-redirect swaps: 10 useRouter + 4 usePathname + 5 Server Component redirect imports swapped to @/i18n/navigation (19 file edits) — closes RTE-04 (hook half) + RTE-05 — completed 2026-04-21 (commits 82c6735 → 9b079ba)
-  - [x] 13-03b-PLAN.md — `next/link` swaps: 38 files swap `import Link from 'next/link'` → `import { Link } from '@/i18n/navigation'` so every click preserves the active locale prefix — closes RTE-04 (Link half) — completed 2026-04-21 (commit b10a964)
-  - [x] 13-04-PLAN.md — OAuth callback safeNext() locale-aware: reads NEXT_LOCALE cookie, prepends locale on plain paths, preserves open-redirect defense, error path lands on /${locale}/auth — closes RTE-06 — completed 2026-04-21 (commit 8d90206)
-  - [x] 13-05-PLAN.md — Dead code deletion (locale-actions.ts, locale-switcher.tsx), URL-based LanguagePreference rewrite (router.replace + locale option), sitemap alternates.languages, site-url.ts audit — closes RTE-08, RTE-09 — completed 2026-04-21 (commits c41c8de, 3266fc7)
-  - [ ] 13-06-PLAN.md — Full static-analysis gate (11 invariants incl. combined `next/(navigation|link)` zero-residue check) + mandatory Vercel preview 10-item auth-safety smoke test (human checkpoint) — atomic merge gate for Phase 13
-**UI hint**: yes
-
-### Phase 14: Global Layout + RTL CSS
-**Goal**: Arabic pages render with correct direction, font, glyph joining, and visual polish; English experience is visually unchanged
-**Depends on**: Phase 13
-**Requirements**: RTL-01, RTL-02, RTL-03, RTL-04, RTL-05, RTL-06, RTL-07, RTL-08
-**Success Criteria** (what must be TRUE):
-  1. On `/ar/...` the `<html>` tag has `lang="ar" dir="rtl"` and Cairo renders without FOIT; on `/en/...` Plus Jakarta Sans renders unchanged
-  2. Arabic headings with previously-tight `tracking-[0.2em+]` classes render with correctly joined glyphs (no broken letter connections) while English headings retain their tracking
-  3. Tailwind directional classes across all ~114 components use logical properties (`ms-`/`me-`/`ps-`/`pe-`/`text-start`/`text-end`/`start-`/`end-`/`border-s`/`border-e`/`rounded-s-*`/`rounded-e-*`) — layout mirrors cleanly on Arabic pages
-  4. Directional icons (chevrons, arrows, skip-forward, back) visually mirror on Arabic pages while media-control icons (play/pause/volume) and the YouTube player chrome stay LTR
-  5. Content rails swipe right-to-left on Arabic pages (Embla `direction: rtl`) and left-to-right on English pages
+  1. Navigating to any page shows Newsreader rendering on display headlines, Space Grotesk on UI text, and JetBrains Mono on labels/metadata -- no fallback flash
+  2. The page background is near-black (#0a0a0a) and any accent-colored element (button, link, badge) uses electric yellow (#ffcc00)
+  3. All interactive elements (buttons, cards, inputs, modals) render with 4px border-radius -- no remnant 11.2px rounded corners
+  4. Browser DevTools confirms CSS custom properties --bg-0 through --bg-4, --text/--text-dim/--text-mute, --line, and --ease are defined and consumed by components
+  5. Selecting text shows the accent-colored ::selection highlight, scrollbars are thin-styled, and .mono/.serif/.label utility classes produce the expected typography
 **Plans**: TBD
-**UI hint**: yes
 
-### Phase 15: Viewer Pages Translation
-**Goal**: Every visible string on the viewer surface resolves through `useTranslations()` / `getTranslations()` in both locales
-**Depends on**: Phase 14
-**Requirements**: VW-01, VW-02, VW-03, VW-04, VW-05, VW-06, VW-07, VW-08, VW-09, VW-10, VW-11, VW-12, VW-13, VW-14
-**Success Criteria** (what must be TRUE):
-  1. Switching locale on landing, browse, series detail, season drawer, watch, my-list, profile, search, coming-soon, support, navbar, and footer swaps every visible string to Arabic (and back to English) — no English literal visible on an Arabic viewer page
-  2. Autoplay countdown on `/ar/watch/[id]` reads an Arabic template (e.g., "الحلقة التالية خلال N ثانية"), not "Next episode in Ns"
-  3. Auth form field labels, placeholders, submit buttons, social sign-in labels, and validation-error copy render in the active locale on `/en/auth` and `/ar/auth`
-  4. `/design-system/*` pages remain English-only by design and are intentionally excluded from `[locale]/` translation scope (documented as such)
-  5. `npm run build` succeeds with all viewer pages statically renderable under both locales
-**Plans**: TBD
-**UI hint**: yes
-
-### Phase 16: Admin Pages Translation
-**Goal**: UAE-based admin staff can operate the full dashboard in Arabic
-**Depends on**: Phase 14
-**Requirements**: ADM-01, ADM-02, ADM-03, ADM-04, ADM-05
-**Success Criteria** (what must be TRUE):
-  1. Admin dashboard landing (`/ar/admin`) renders all section headings, nav tabs, and quick-action buttons in Arabic
-  2. Show editor (`/ar/admin/shows/[id]`) renders every field label, artwork slot label, validation message, and CTA (save, delete, archive) in Arabic
-  3. Admin settings tabs (General / Branding / Integrations / Advanced) and their field labels + help text render in Arabic on `/ar/admin/settings`
-  4. Archive view (`/ar/admin/archive`) and audit view (`/ar/admin/audit`) render page chrome, column headings, filter labels, and action buttons in Arabic
-  5. Every admin save action produces a toast confirmation in the active locale using the same translation mechanism as viewer toasts
-**Plans**: TBD
-**UI hint**: yes
-
-### Phase 17: Content + Polish
-**Goal**: Dynamic strings, metadata, sitemap alternates, text-expansion QA, and BiDi correctness close the milestone with a final human-reviewed Arabic pass
-**Depends on**: Phase 15, Phase 16
-**Requirements**: DYN-01, DYN-02, DYN-03, DYN-04, DYN-05, DYN-06, DYN-07, META-01, META-02, META-03, META-04, META-05, META-06, POLISH-01, POLISH-02, POLISH-03, POLISH-04, POLISH-05, POLISH-06
-**Success Criteria** (what must be TRUE):
-  1. Every `toast()` call, `aria-label`, empty state, and form-validation error renders in the active locale; dates and numbers format via `Intl.DateTimeFormat` / `Intl.NumberFormat` with the active locale (Western numerals 0-9 on both)
-  2. `view-source` shows per-locale `<title>`, `<meta description>`, OpenGraph + Twitter tags, and `<link rel="alternate" hreflang>` pairs on every page; `sitemap.xml` lists both locale versions with `alternates.languages`
-  3. Visual QA pass on all pages at mobile + desktop breakpoints confirms no button clipping, no card overflow, and no nav wrapping when Arabic runs 25-40% wider than English
-  4. Show titles, brand names, and timestamps embedded inside Arabic paragraphs are wrapped in `<span dir="ltr">` where needed — punctuation does not flip at string boundaries
-  5. Full Arabic copy has been reviewed by a human reviewer before merge — no LLM-generated strings ship to prod; English experience is pixel-identical to pre-migration baseline (visual regression check)
-**Plans**: TBD
-**UI hint**: yes
-
-### ⏳ v1.2 Editorial Feature Parity — Phases 18-26 (QUEUED — starts after v1.1 ships)
-
-**Strategic decision:** Converge Editorial branch (`claude/angry-tharp-d39d9e`) into `main` behind the `NEXT_PUBLIC_DESIGN` build flag. One codebase, two Vercel projects. Primary project: flag unset → default chrome. Editorial project: flag set → editorial chrome. Eliminates branch drift; every future fix flows to both.
-
-**Scope:** English-only for Editorial (Arabic/RTL deferred to v1.3). Admin stays on default chrome regardless of flag.
-
-- [ ] **Phase 18: Branch Reconciliation & Flag Infrastructure** — Rebase Editorial onto post-v1.1 main; wire `NEXT_PUBLIC_DESIGN` flag in `src/lib/design.ts`; conditional next/font + `data-design` in root layout; viewer layout short-circuit; admin layout never branches; import `src/components/editorial/**`, `src/styles/editorial.css`, `src/lib/editorial/adapter.ts` — closes EPI-01, EPI-02, EPI-03
-- [ ] **Phase 19: Auth + User State Wiring in Editorial** — `EditorialHeader` accepts `initialUser` + renders sign-in vs avatar dropdown; new `src/components/editorial/primitives/auth-section.tsx` (editorial-styled copy of [src/components/layout/auth-section.tsx](src/components/layout/auth-section.tsx)); thread `userId` through all page.tsx short-circuits; `EditorialProfile` receives real user + profile props — closes EPA-01, EPA-02, EPA-03
-- [ ] **Phase 20: Watchlist + Likes Wiring** — `EditorialPoster` calls [src/hooks/use-watchlist.ts](src/hooks/use-watchlist.ts); `EditorialSeries` adds `LikeButton` slot using [src/hooks/use-likes.ts](src/hooks/use-likes.ts); `EditorialRail` propagates batched `initialSavedMap` via existing `getShowWatchlistState()`; `my-list` page.tsx threads real watchlist into `EditorialMyList` — closes EPL-01, EPL-02, EPL-03, EPL-04
-- [ ] **Phase 21: Watch Page — Full YouTube IFrame API Port** — `EditorialWatch` drops `playerSlot: ReactNode` prop; imports [src/components/watch/youtube-player.tsx](src/components/watch/youtube-player.tsx) directly; manages `playerInstance` state; calls [src/hooks/use-progress-tracker.ts](src/hooks/use-progress-tracker.ts); wires [src/components/watch/autoplay-overlay.tsx](src/components/watch/autoplay-overlay.tsx); accepts `initialProgressSeconds` + `nextEpisode`; preserves Editorial visual structure (`.yt-watch` / `.yt-main` / `.yt-side`); watch page.tsx drops simple-iframe short-circuit — closes EPW-01, EPW-02, EPW-03, EPW-04, EPW-05
-- [ ] **Phase 22: Continue Watching + Recently Watched Rails** — Browse page.tsx calls `getRecentlyWatched(userId)`; `EditorialBrowse` renders Continue Watching rail above "Now Streaming" when non-empty; profile page threads history; `EditorialProfile` renders history section with thumbnails + `date-fns formatDistanceToNow` — closes EPC-01, EPC-02
-- [ ] **Phase 23: Search + ComingSoon + Support + Auth Parity** — `EditorialSearch` drops client-side filter, renders server-provided Postgres FTS results from existing `searchShows` + `searchEpisodes`; `EditorialComingSoon` adds episodes-by-show section from real data; new `EditorialSupport` with `<ContactForm>` + FAQ accordion (reuse [src/lib/faq-data.ts](src/lib/faq-data.ts)); new `<EditorialAuth>` that wraps existing `<AuthPanel>` in editorial chrome — closes EPR-01, EPR-02, EPR-03, EPR-04
-- [ ] **Phase 24: Coming-Soon Gate + Feature Flags** — `flags.comingSoonMode` check runs BEFORE the `isEditorial` short-circuit in viewer layout; Editorial viewer routes redirect to `/coming-soon` when gate is on; admin layout doesn't gate — closes EPF-01
-- [ ] **Phase 25: Performance + Polish Pass** — `EditorialPoster` swaps raw `<img>` for `next/image`; Editorial respects server-side mobile detection from [src/lib/device.ts](src/lib/device.ts); hero carousel auto-rotate pauses on `prefers-reduced-motion`; heavy rails lazy-mount below fold; verify CSS still scoped under `html[data-design="editorial"]` — closes EPP-01, EPP-02, EPP-03, EPP-04
-- [ ] **Phase 26: Deploy + E2E Verification** — Merge `feat/editorial-parity-v1.2` → main; confirm `clickit-editorial` prod branch = main + `NEXT_PUBLIC_DESIGN=editorial`; trigger deploy + alias; confirm `clickit-cit` flag UNSET + redeploy; 10-item smoke test on `clickit-editorial.vercel.app`; spot-check `clickitstory.com` unchanged; tag `v1.2` — closes EPD-01, EPD-02
-
-## Phase Details (v1.2)
-
-### Phase 18: Branch Reconciliation & Flag Infrastructure
-**Goal**: Editorial codebase lives in main behind `NEXT_PUBLIC_DESIGN` build flag; both Vercel projects deploy from main with different env vars
-**Depends on**: v1.1 Phase 17 (full bilingual UI shipped so the merged state is stable)
-**Requirements**: EPI-01, EPI-02, EPI-03
-**Success Criteria**:
-  1. `npm run build` succeeds in both modes (flag unset → default chrome bundled; `NEXT_PUBLIC_DESIGN=editorial` → editorial chrome bundled); dead-code-elim removes the unused design branch in each build
-  2. Setting `data-design="editorial"` on `<html>` + loading `src/styles/editorial.css` produces the editorial visual shell on all viewer routes; unset leaves the primary chrome unchanged
-  3. `/admin/*` renders default admin chrome regardless of `isEditorial` value (admin layout never branches on the flag)
-  4. Deploy `main` to `clickit-editorial` with `NEXT_PUBLIC_DESIGN=editorial` → landing/browse render Editorial chrome; primary project at `clickitstory.com` is byte-identical to pre-reconciliation
-  5. `tsc --noEmit` clean; existing node:test suite (14/14) passes
-**UI hint**: yes
-
-### Phase 19: Auth + User State Wiring in Editorial
-**Goal**: Every Editorial route that needs the signed-in user has real auth state threaded end-to-end — no placeholder email, no broken sign-in CTA
+### Phase 19: Header & Footer Shell
+**Goal**: The global chrome wrapping every page matches the editorial design -- visitors see the new header on every route and scroll to the new footer at the bottom
 **Depends on**: Phase 18
-**Requirements**: EPA-01, EPA-02, EPA-03
-**Success Criteria**:
-  1. Signed-out user on Editorial sees "Sign in" CTA in header; signed-in user sees avatar dropdown with sign-out option
-  2. `/my-list` and `/profile` on Editorial redirect to `/auth` when signed out; render correctly when signed in
-  3. `EditorialProfile` displays real email + display name + avatar (not placeholder)
-  4. `supabase.auth.onAuthStateChange` listener works on Editorial pages — signing in/out in one tab updates the header in other tabs
+**Requirements**: HEAD-01, HEAD-02, HEAD-03, HEAD-04, HEAD-05, HEAD-06, FOOT-01, FOOT-02, FOOT-03, FOOT-04, FOOT-05
+**Success Criteria** (what must be TRUE):
+  1. Header displays the yellow dot + "CLICKIT" logo text, and shows Browse/Coming Soon/Support nav links when user is signed in; shows anchor nav (Why Clickit, Shows, FAQ) on the landing page
+  2. Unauthenticated visitors see "Sign in" and "Start free" buttons in the header; authenticated visitors see their avatar -- no search bar appears anywhere in the header
+  3. Header is sticky with backdrop blur, starts transparent on landing page, and transitions to solid background on scroll
+  4. Footer displays the editorial "Click*it.*" serif wordmark, a newsletter email signup with inline confirmation, and a 5-column navigation grid with working links
+  5. Footer bottom bar shows copyright, a live status indicator dot, legal links (Privacy, Terms), social icons (Instagram, X, YouTube, Letterboxd, RSS), and locale indicator
+**Plans**: TBD
 **UI hint**: yes
 
-### Phase 20: Watchlist + Likes Wiring
-**Goal**: The `onToggleList` callbacks that Editorial exposes become real Supabase mutations; watchlist + likes state persists correctly
+### Phase 20: Landing Page
+**Goal**: First-time visitors land on an editorial home page that sells the platform through visual storytelling -- copy, posters, stats, features, genres, FAQ, and a final CTA
 **Depends on**: Phase 19
-**Requirements**: EPL-01, EPL-02, EPL-03, EPL-04
-**Success Criteria**:
-  1. Clicking "+" on an Editorial poster adds the show to `watchlist`; icon swaps to checkmark; navigating to `/my-list` shows it
-  2. Clicking checkmark removes from watchlist; `/my-list` updates
-  3. Clicking "Like" on Editorial series detail adds to `likes`; reverses on second click
-  4. Batched initial-saved state for rails comes from server (`getShowWatchlistState`) — no per-poster roundtrip on page load
+**Requirements**: LAND-01, LAND-02, LAND-03, LAND-04, LAND-05, LAND-06, LAND-07, LAND-08
+**Success Criteria** (what must be TRUE):
+  1. Landing hero displays a split layout: editorial copy on the left (eyebrow, serif title, subtitle, 2 CTA buttons, 3 stats) and a collage of 4 rotated show posters with a "Now playing" tag on the right
+  2. A scrolling marquee ticker runs continuously below the hero with show announcements
+  3. Stats bar shows 4 metrics in a bordered grid; show grid displays 4 featured shows with 2:3 poster cards that scale on hover; "Why Clickit" section uses split layout with numbered feature blocks
+  4. Genre tiles render in a 3-column grid with hover effects and accent arrow; FAQ accordion opens/closes with CSS grid animation and a rotating plus icon
+  5. CTA banner at the bottom shows a backdrop image with gradient scrim and signup buttons
+**Plans**: TBD
 **UI hint**: yes
 
-### Phase 21: Watch Page — Full YouTube IFrame API Port
-**Goal**: Editorial watch page uses the real YouTube IFrame API with resume, progress tracking, and autoplay-next — visual structure unchanged
+### Phase 21: Browse Page
+**Goal**: Authenticated viewers browse the full catalog through an auto-rotating hero carousel, content rails, and shorts preview cards -- the main discovery surface of the platform
 **Depends on**: Phase 19
-**Requirements**: EPW-01, EPW-02, EPW-03, EPW-04, EPW-05
-**Success Criteria**:
-  1. Watch an episode on Editorial, close tab, return → player seeks to within 10s of last saved position
-  2. Watch to end → autoplay countdown overlay appears → next episode loads (cross-season handled)
-  3. Pause during playback → `watch_progress` row updates within 10s (verify in Supabase)
-  4. Editorial visual structure (`.yt-watch`, `.yt-main`, `.yt-side`, season tabs, episode list) renders identically to pre-port — the port is functional, not visual
-  5. Error states (video unavailable, private, region-locked) render editorial-styled error overlay
+**Requirements**: BRWS-01, BRWS-02, BRWS-03, BRWS-04, BRWS-05, BRWS-06, BRWS-07, BRWS-08, BRWS-09
+**Success Criteria** (what must be TRUE):
+  1. Browse hero is a full-bleed auto-rotating carousel with backdrop zoom animation, vertical dot indicators with fill animation synced to rotation interval, and each slide shows eyebrow/serif title/meta row/synopsis/3 action buttons
+  2. Continue Watching rail displays landscape cards with progress bars reflecting real watch_progress data
+  3. Shorts/Reels section shows 9:16 vertical cards with SHORT badge, play overlay, and view counts; clicking a short card opens the Shorts overlay (Phase 24)
+  4. Now Streaming and Coming Soon rails display landscape (16:9) show cards with hover lift and image scale effect
+  5. Bottom CTA banner renders below the last content rail
+**Plans**: TBD
 **UI hint**: yes
 
-### Phase 22: Continue Watching + Recently Watched Rails
-**Goal**: Editorial browse shows user's in-progress episodes; Editorial profile shows recently-watched history
+### Phase 22: Series Detail & Reviews
+**Goal**: Viewers see a cinematic series page with cast, episodes, and metadata -- and can write star-rated reviews that appear in real-time for all users
+**Depends on**: Phase 19
+**Requirements**: SERS-01, SERS-02, SERS-03, SERS-04, SERS-05, SERS-06, REVW-01, REVW-02, REVW-03, REVW-04, REVW-05
+**Success Criteria** (what must be TRUE):
+  1. Series hero fills 72vh with full-bleed backdrop image, gradient scrims, and content positioned bottom-left; cast row displays scrollable 140px photo cards with name and role
+  2. Season tabs highlight the active season with an accent underline; episode list renders a grid with episode number, thumbnail with play overlay, info text, and runtime badge
+  3. Meta sidebar shows year, rating, runtime, genre, creator, and italic tagline; "More like this" rail displays related shows
+  4. Authenticated user can submit a review with 1-5 star rating (hover labels: Nope/Meh/Fine/Great/A masterpiece) and text body (max 600 chars); reviews persist to Supabase `reviews` table with RLS
+  5. All users see reviews in real-time via Supabase Realtime; user's own review displays with a "YOURS" accent indicator
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 23: Watch Page
+**Goal**: Viewers watch episodes in a YouTube-style layout with clear navigation, episode context, and quick access to the rest of the series
+**Depends on**: Phase 19
+**Requirements**: WTCH-01, WTCH-02, WTCH-03, WTCH-04, WTCH-05, WTCH-06, WTCH-07, WTCH-08
+**Success Criteria** (what must be TRUE):
+  1. Watch page uses YouTube-style layout -- player on top, scrollable content below -- with the YouTube IFrame API player preserved and restyled chrome
+  2. Sticky header shows a back button, clickable breadcrumb (show > season > episode), and navigation buttons
+  3. 2-column grid renders main content area alongside a 420px episode sidebar; sidebar includes season selector, episode list with NOW PLAYING badge, and "More like this" rail
+  4. Title + action bar displays channel avatar, show info, View series button, and My List/Like/Share pill buttons
+  5. Description card shows view count, premiere date, genre, synopsis, and hashtags; prev/next episode cards render in a 2-column grid below the description
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 24: Shorts Overlay
+**Goal**: Viewers can browse vertical short-form content in a full-screen immersive overlay with swipe/keyboard navigation
 **Depends on**: Phase 21
-**Requirements**: EPC-01, EPC-02
-**Success Criteria**:
-  1. Watch 2+ episodes on Editorial → return to `/browse` → Continue Watching rail renders above "Now Streaming" with progress bars
-  2. `/profile` on Editorial shows Recently Watched section with thumbnails + show title + relative-time labels (e.g., "2 hours ago")
-  3. Finished episodes (≥95% progress) don't appear in Continue Watching (they appear in Recently Watched)
-
-### Phase 23: Search + ComingSoon + Support + Auth Parity
-**Goal**: All remaining viewer routes have functional Editorial variants — no dead placeholders
-**Depends on**: Phase 19
-**Requirements**: EPR-01, EPR-02, EPR-03, EPR-04
-**Success Criteria**:
-  1. Search on Editorial uses Postgres FTS (server-side); "music" returns ranked show + episode results
-  2. Coming Soon on Editorial shows upcoming shows grid + episodes-by-show section with real DB data
-  3. Support page on Editorial submits a real contact form (toast confirms) + renders FAQ accordion
-  4. `/auth` on Editorial uses editorial-styled wrapper around the existing `<AuthPanel>` — sign-in, sign-up, OAuth, reset-password all work
-
-### Phase 24: Coming-Soon Gate + Feature Flags
-**Goal**: Admin's `flags.comingSoonMode` splash gate applies equally to Editorial and primary
-**Depends on**: Phase 23
-**Requirements**: EPF-01
-**Success Criteria**:
-  1. Admin toggles coming-soon mode on → Editorial viewer routes (landing, browse, series, watch) redirect to `/coming-soon`
-  2. `/admin/*` on Editorial build remains accessible even when gate is on (admin layout never gates)
-  3. Toggle off → Editorial viewer routes render normally
-
-### Phase 25: Performance + Polish Pass
-**Goal**: Editorial's Lighthouse scores match primary's; mobile 3G throttle passes; no animation thrash for reduced-motion users
-**Depends on**: Phase 23
-**Requirements**: EPP-01, EPP-02, EPP-03, EPP-04
-**Success Criteria**:
-  1. Lighthouse on `clickit-editorial.vercel.app` browse + watch: LCP < 2.5s, TBT < 200ms, CLS < 0.1
-  2. `EditorialPoster` serves via `next/image` with responsive srcset; no raw `<img>` remain in editorial render tree
-  3. Hero carousel auto-rotate pauses when `matchMedia('(prefers-reduced-motion: reduce)')` matches
-  4. Mobile 3G throttled test on Editorial watch passes; server-side mobile detection picks mobile hero variant
+**Requirements**: SHRT-01, SHRT-02, SHRT-03, SHRT-04, SHRT-05, SHRT-06
+**Success Criteria** (what must be TRUE):
+  1. Clicking a short card on the browse page opens a full-screen vertical reel viewer displaying 9:16 content with a segmented progress bar that auto-advances over 20 seconds
+  2. Bottom info shows creator avatar, handle, Follow button, title, tagline, and metadata
+  3. Right action rail displays Like (heart toggle), List, and Comment buttons
+  4. User can navigate via keyboard (arrows for prev/next, space for pause, M for mute, Esc to close), touch swipe (vertical), and prev/next peek cards flanking the main card
+  5. Body scroll is locked while the overlay is open; closing the overlay returns to the browse page scroll position
+**Plans**: TBD
 **UI hint**: yes
 
-### Phase 26: Deploy + E2E Verification
-**Goal**: Editorial v1.2 live on production Vercel project with feature parity; primary unchanged; milestone tagged
-**Depends on**: Phase 25
-**Requirements**: EPD-01, EPD-02
-**Success Criteria**:
-  1. `clickit-editorial.vercel.app` passes the 10-item smoke test (see plan: landing, sign-in, browse rails, series detail + season tabs, watch + progress + autoplay, watchlist toggle, like toggle, search FTS, support form)
-  2. `clickitstory.com` spot-check (landing, browse, a watch page) confirms primary chrome unchanged; no regression from merge
-  3. Supabase logs monitored 24h post-deploy — no new error patterns attributable to Editorial project
-  4. Git tag `v1.2` created on the merged commit
+### Phase 25: Auth & Supporting Pages
+**Goal**: All secondary viewer surfaces (auth, search, my list, profile, coming soon, support) match the editorial design -- no page retains the old visual treatment
+**Depends on**: Phase 18
+**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, SUPP-01, SUPP-02, SUPP-03, SUPP-04, SUPP-05
+**Success Criteria** (what must be TRUE):
+  1. Auth page uses split-screen layout: editorial hero on the left (backdrop image, quote testimonial, 3 stats, logo + badge) and form on the right (Sign in/Sign up toggle tabs with serif title)
+  2. Auth form includes OAuth buttons for Google and Apple, a password strength meter (4 bars) on signup, remember me checkbox, forgot password link, and terms checkbox -- all wired to existing Supabase Auth
+  3. Search page renders with new design tokens, search input, results grid, and styled empty state
+  4. My List page shows watchlist as 2:3 poster cards with remove button and hover scale; Profile page has avatar upload, profile nav tabs, and Go to Admin button
+  5. Coming Soon page displays upcoming shows with remind me button; Support page has a contact form (email, topic, message, submit) styled in the editorial design
+**Plans**: TBD
+**UI hint**: yes
 
-## Dependency Graph (v1.2)
+### Phase 26: Admin Visual Refresh
+**Goal**: Admin portal uses the same design tokens as the viewer surface -- dark backgrounds, yellow accent, new fonts, tight radii -- while all CRUD functionality remains unchanged
+**Depends on**: Phase 18
+**Requirements**: ADMN-01, ADMN-02, ADMN-03, ADMN-04, ADMN-05
+**Success Criteria** (what must be TRUE):
+  1. Admin pages render on #0a0a0a/#121212/#1a1a1a background surfaces instead of the old palette
+  2. All accent-colored admin elements (active tabs, save buttons, status badges, progress indicators) use electric yellow (#ffcc00)
+  3. Admin typography uses Space Grotesk for UI text and JetBrains Mono for labels/metadata; all admin components use 4px border-radius
+  4. Every admin CRUD operation (create show, edit episode, upload artwork, archive, restore) works identically to pre-redesign -- visual refresh only, zero functional changes
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 27: Responsive Polish
+**Goal**: Every page in the redesigned platform adapts gracefully to mobile, tablet, and desktop viewports -- no layout breaks, no truncated content, no unusable interactions
+**Depends on**: Phase 20, Phase 21, Phase 22, Phase 23, Phase 24, Phase 25, Phase 26
+**Requirements**: RESP-01, RESP-02, RESP-03, RESP-04, RESP-05, RESP-06, RESP-07
+**Success Criteria** (what must be TRUE):
+  1. Mobile header collapses navigation into a hamburger/drawer menu; landing hero stacks to single column at 960px breakpoint
+  2. Content rails use smaller poster widths on mobile viewports; watch page collapses from 2-column to single column at 1180px
+  3. Footer stacks its 5-column grid into a single column on mobile; auth layout stacks from side-by-side to vertical at 900px
+  4. Shorts overlay on mobile uses swipe-only navigation (no peek cards flanking the main card)
+  5. All pages pass visual QA at breakpoints 1180, 1100, 960, 900, 720, 560, and 420px without layout breaks, text overflow, or unusable touch targets
+**Plans**: TBD
+**UI hint**: yes
+
+## Dependency Graph (v2.0)
 
 ```
-17 (v1.1 close — Polish + Metadata + QA) [must ship first]
- └─> 18 (Branch Reconciliation + Flag)
-      └─> 19 (Auth + User State)
-           ├─> 20 (Watchlist + Likes)
-           ├─> 21 (Watch Page IFrame API)    ─┐
-           │                                   ├─> 22 (Continue Watching + Recently Watched)
-           │                                   │
-           └─> 23 (Search + ComingSoon + Support + Auth)
-                └─> 24 (Coming-Soon Gate)
-                └─> 25 (Perf + Polish)
-                     └─> 26 (Deploy + E2E)
+18 (Design Tokens & Typography) [foundation -- everything depends on this]
+ ├─> 19 (Header & Footer Shell)
+ │    ├─> 20 (Landing Page)
+ │    ├─> 21 (Browse Page)
+ │    │    └─> 24 (Shorts Overlay)
+ │    ├─> 22 (Series Detail & Reviews)
+ │    └─> 23 (Watch Page)
+ ├─> 25 (Auth & Supporting Pages)
+ └─> 26 (Admin Visual Refresh)
+
+All viewer + admin phases ──> 27 (Responsive Polish) [final phase]
 ```
 
-Phases 20 + 21 + 23 may run in parallel after Phase 19 lands (independent component surfaces). Phase 22 blocks on 21 (needs progress tracking). Phase 24 + 25 block on 23 (need all routes complete). Phase 26 is serial after 25.
-
-## Dependency Graph (v1.1)
-
-```
-12 (Infra — safe, zero page edits)
- └─> 13 (Route Restructure + Auth Safety — HIGHEST RISK, atomic)
-      └─> 14 (Global Layout + RTL CSS)
-           ├─> 15 (Viewer Translation)   ┐
-           └─> 16 (Admin Translation)    ├─> 17 (Polish + Metadata + QA)
-                                         ┘
-```
-
-- Phases 15 and 16 MAY run in parallel after Phase 14 lands (independent page surfaces; shared dictionary file co-edits manageable via namespace separation — viewer uses `home`/`show`/`player`/etc., admin uses `admin`)
-- Phase 17 requires both translation phases complete (text-expansion QA and final human review can only run on a fully translated surface)
+Phases 20, 21, 22, 23 may run in parallel after Phase 19 lands (independent page surfaces). Phase 24 blocks on Phase 21 (shorts cards live on browse). Phases 25 and 26 can run in parallel with viewer page phases since they only depend on Phase 18 tokens. Phase 27 is serial after all other phases complete.
 
 ## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 18 -> 19 -> 20/21/22/23 (parallel eligible) -> 24 -> 25/26 (parallel eligible) -> 27
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -285,16 +218,15 @@ Phases 20 + 21 + 23 may run in parallel after Phase 19 lands (independent compon
 | 10. Empty State Polish | v1.0 | 1/1 | Complete | 2026-04-14 |
 | 12. i18n Infrastructure | v1.1 | 1/1 | Complete | 2026-04-21 |
 | 13. Route Restructure + Auth Safety | v1.1 | 7/7 | Complete | 2026-04-24 |
-| 14. Global Layout + RTL CSS | v1.1 | 0/0 | Not started | - |
-| 15. Viewer Pages Translation | v1.1 | 0/0 | Not started | - |
-| 16. Admin Pages Translation | v1.1 | 0/0 | Not started | - |
-| 17. Content + Polish | v1.1 | 0/0 | Not started | - |
-| 18. Branch Reconciliation & Flag Infrastructure | v1.2 | 0/0 | Queued | - |
-| 19. Auth + User State Wiring in Editorial | v1.2 | 0/0 | Queued | - |
-| 20. Watchlist + Likes Wiring | v1.2 | 0/0 | Queued | - |
-| 21. Watch Page — Full YouTube IFrame API Port | v1.2 | 0/0 | Queued | - |
-| 22. Continue Watching + Recently Watched Rails | v1.2 | 0/0 | Queued | - |
-| 23. Search + ComingSoon + Support + Auth Parity | v1.2 | 0/0 | Queued | - |
-| 24. Coming-Soon Gate + Feature Flags | v1.2 | 0/0 | Queued | - |
-| 25. Performance + Polish Pass | v1.2 | 0/0 | Queued | - |
-| 26. Deploy + E2E Verification | v1.2 | 0/0 | Queued | - |
+| ~~14-17~~ | ~~v1.1~~ | - | Superseded | - |
+| ~~18-26~~ | ~~v1.2~~ | - | Superseded | - |
+| 18. Design Tokens & Typography | v2.0 | 0/0 | Not started | - |
+| 19. Header & Footer Shell | v2.0 | 0/0 | Not started | - |
+| 20. Landing Page | v2.0 | 0/0 | Not started | - |
+| 21. Browse Page | v2.0 | 0/0 | Not started | - |
+| 22. Series Detail & Reviews | v2.0 | 0/0 | Not started | - |
+| 23. Watch Page | v2.0 | 0/0 | Not started | - |
+| 24. Shorts Overlay | v2.0 | 0/0 | Not started | - |
+| 25. Auth & Supporting Pages | v2.0 | 0/0 | Not started | - |
+| 26. Admin Visual Refresh | v2.0 | 0/0 | Not started | - |
+| 27. Responsive Polish | v2.0 | 0/0 | Not started | - |

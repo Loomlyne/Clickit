@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Full Visual Redesign
-status: defining_requirements
+status: roadmap_complete
 stopped_at: null
 last_updated: "2026-04-24"
-last_activity: 2026-04-24 -- Milestone v2.0 started
+last_activity: 2026-04-24 -- Roadmap created (10 phases, 83 requirements mapped)
 progress:
-  total_phases: 0
+  total_phases: 10
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,19 +20,34 @@ progress:
 
 See: .planning/PROJECT.md (updated 2026-04-24)
 
-**Core value:** Viewers enter, discover a show, pick an episode, watch immediately — premium streaming experience for CIT originals.
-**Current focus:** Milestone v2.0 — Full Visual Redesign
+**Core value:** Viewers enter, discover a show, pick an episode, watch immediately -- premium streaming experience for CIT originals.
+**Current focus:** Milestone v2.0 -- Full Visual Redesign
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-24 — Milestone v2.0 started
+Phase: 18 of 27 (Design Tokens & Typography) -- ready to plan
+Plan: --
+Status: Ready to plan
+Last activity: 2026-04-24 -- Roadmap created
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Roadmap Summary (v2.0)
 
-*Pending — requirements being defined*
+10 phases (18-27), 83 requirements, fine granularity
+
+| Phase | Scope | Reqs |
+|-------|-------|------|
+| 18 | Design Tokens & Typography | 6 |
+| 19 | Header & Footer Shell | 11 |
+| 20 | Landing Page | 8 |
+| 21 | Browse Page | 9 |
+| 22 | Series Detail & Reviews | 11 |
+| 23 | Watch Page | 8 |
+| 24 | Shorts Overlay | 6 |
+| 25 | Auth & Supporting Pages | 12 |
+| 26 | Admin Visual Refresh | 5 |
+| 27 | Responsive Polish | 7 |
 
 ## Accumulated Context
 
@@ -40,14 +55,13 @@ Last activity: 2026-04-24 — Milestone v2.0 started
 
 - 11 phases, 27 plans, 60/60 requirements, 13,259 LOC
 - Next.js 16.2 + Supabase + Tailwind CSS v4 + shadcn/ui
-- Full viewer + admin experience live
 
 ### v1.1 partial (Phases 12-13 shipped, 14-17 superseded)
 
 - i18n infrastructure: next-intl routing, request.ts, navigation.ts, messages/
 - Route restructure: all pages under [locale]/
 - Auth safety: 6 latent breaks fixed (cookie merge, locale-aware redirects, OAuth callback)
-- Phases 14-17 (RTL CSS + translations) superseded by v2.0 redesign — will redo on new components
+- Phases 14-17 superseded by v2.0 -- will redo on new components in v2.1
 
 ### v2.0 design source
 
@@ -56,20 +70,17 @@ Last activity: 2026-04-24 — Milestone v2.0 started
 - Old design backed up at git tag design-backup-2026-04-24 (commit 212bc5b)
 - New design system: Newsreader + Space Grotesk + JetBrains Mono, #ffcc00 accent, 4px radii
 
-## Session Continuity
-
-Last session: Milestone v2.0 initialization
-Stopped at: Requirements definition
-Resume file: —
-
 ## Decisions Made
 
-- **2026-04-24:** v2.0 supersedes v1.1 Phases 14-17 and v1.2 entirely. Old design backed up at git tag.
-- **2026-04-24:** Reviews must be stored in Supabase with real-time visibility to all users.
-- **2026-04-24:** Shorts section built with placeholder data from existing shows for now.
-- **2026-04-24:** Admin portal gets the new design tokens (visual refresh only, functionality unchanged).
-- **2026-04-24:** Arabic/RTL for new components deferred to v2.1.
+- **2026-04-24:** v2.0 supersedes v1.1 Phases 14-17 and v1.2 entirely
+- **2026-04-24:** Reviews stored in Supabase with real-time visibility (grouped with series detail in Phase 22)
+- **2026-04-24:** Shorts built with placeholder data from existing shows
+- **2026-04-24:** Admin portal visual refresh only -- functionality unchanged
+- **2026-04-24:** Arabic/RTL for new components deferred to v2.1
+- **2026-04-24:** Responsive polish is final phase (touches all pages)
 
-## Performance Metrics
+## Session Continuity
 
-*No phases executed yet*
+Last session: 2026-04-24
+Stopped at: Roadmap created, ready to plan Phase 18
+Resume file: None
