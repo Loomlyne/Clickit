@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Full Bilingual UI (AR/EN)
 status: in-progress
-stopped_at: Completed Phase 13 plan 05 (URL-based locale switcher + sitemap alternates, RTE-08 + RTE-09 closed) — next = Phase 13 plan 13-06 (static-analysis gate + Vercel preview smoke test)
-last_updated: "2026-04-21T00:54:18Z"
-last_activity: 2026-04-21
+stopped_at: Phase 13 complete — UAT 8/8 passed, all 9 RTE + I18N-05/06 requirements closed. Phase 14 (Global Layout + RTL CSS) ready to discuss.
+last_updated: "2026-04-24T00:00:00Z"
+last_activity: 2026-04-24
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 7
-  percent: 87
+  completed_plans: 8
+  percent: 33
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-20)
 
 ## Current Position
 
-Phase: 13 IN PROGRESS — plans 01 + 02 + 03a + 03b + 04 + 05 of 7 complete
-Plan: 13-05-PLAN.md shipped (commits c41c8de + 3266fc7) — cookie-based locale infrastructure deleted (`src/app/locale-actions.ts`, `src/components/layout/locale-switcher.tsx`); `src/components/profile/language-preference.tsx` rewritten as URL-based switcher using `useRouter` + `usePathname` from `@/i18n/navigation`; `src/app/sitemap.ts` now emits `alternates.languages` for every static + dynamic route; `src/lib/site-url.ts` audit confirmed no changes needed (resolver locale-agnostic by design).
-Status: RTE-01, RTE-02, RTE-03, RTE-04 (both halves), RTE-05, RTE-06, RTE-07, RTE-08, RTE-09, I18N-05, I18N-06 closed. All 9 RTE requirements closed. 6 of 6 Phase 13 auth/routing pitfalls fixed. tsc clean; `npm run build` green with 44 routes; `/sitemap.xml` static-prerendered (1h revalidate, 1y expire); `/auth/callback` remains the only locale-agnostic app route. Next: plan 13-06 (static-analysis gate + Vercel preview smoke test — atomic merge gate).
-Last activity: 2026-04-21 — Phase 13 plan 05 URL-based locale switcher + sitemap alternates.
+Phase: 14 READY TO DISCUSS — Global Layout + RTL CSS
+Plan: Not started
+Status: Phase 13 complete (2026-04-24). UAT 8/8 passed against clickitstory.com. All 9 RTE + I18N-05/06 requirements closed. Static gate 11/11 green (plan 13-06, commit 33b65a8). Phase 14 phase directory does not exist yet — run `/gsd-discuss-phase 14` to gather context.
+Last activity: 2026-04-24 — Phase 13 UAT complete, transition to Phase 14.
 
 ## Roadmap Summary (v1.1)
 
@@ -67,9 +67,9 @@ Last activity: 2026-04-21 — Phase 13 plan 05 URL-based locale switcher + sitem
 
 ## Session Continuity
 
-Last session: 2026-04-21
-Stopped at: Completed Phase 13 plan 05 (commits c41c8de + 3266fc7 — URL-based locale switcher + sitemap alternates, RTE-08 + RTE-09 closed); next = plan 13-06 (static-analysis gate + Vercel preview smoke test)
-Resume file: `.planning/phases/13-route-restructure-auth-safety/13-05-SUMMARY.md`
+Last session: 2026-04-24
+Stopped at: Phase 13 complete — UAT 8/8 passed, transitioned to Phase 14
+Resume file: None
 
 ## Decisions Made
 

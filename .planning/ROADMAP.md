@@ -30,7 +30,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 ### 🚧 v1.1 Full Bilingual UI (AR/EN) — Phases 12-17
 
 - [x] **Phase 12: i18n Infrastructure** — Wire next-intl primitives (routing, request, navigation, messages, provider); zero page edits — completed 2026-04-21 (commit af2ab35)
-- [ ] **Phase 13: Route Restructure + Auth Safety** — Move every page under `[locale]/` and fix 6 latent auth/routing breaks atomically in one PR (6/7 plans done)
+- [x] **Phase 13: Route Restructure + Auth Safety** — Move every page under `[locale]/` and fix 6 latent auth/routing breaks atomically in one PR (7/7 plans) — completed 2026-04-24
 - [ ] **Phase 14: Global Layout + RTL CSS** — `[locale]/layout.tsx`, Cairo font, letter-spacing fix, logical-property migration across ~114 components, directional icon mirroring
 - [ ] **Phase 15: Viewer Pages Translation** — Every string on 13 viewer pages routed through `useTranslations()` / `getTranslations()`
 - [ ] **Phase 16: Admin Pages Translation** — All 5 admin views operable in Arabic
@@ -284,7 +284,7 @@ Phases 20 + 21 + 23 may run in parallel after Phase 19 lands (independent compon
 | 9. Personalization & Watch Features | v1.0 | 3/3 | Complete | 2026-04-04 |
 | 10. Empty State Polish | v1.0 | 1/1 | Complete | 2026-04-14 |
 | 12. i18n Infrastructure | v1.1 | 1/1 | Complete | 2026-04-21 |
-| 13. Route Restructure + Auth Safety | v1.1 | 6/7 | In progress | - |
+| 13. Route Restructure + Auth Safety | v1.1 | 7/7 | Complete | 2026-04-24 |
 | 14. Global Layout + RTL CSS | v1.1 | 0/0 | Not started | - |
 | 15. Viewer Pages Translation | v1.1 | 0/0 | Not started | - |
 | 16. Admin Pages Translation | v1.1 | 0/0 | Not started | - |

@@ -117,9 +117,24 @@ The platform is live with the full viewer experience (cinematic home page, serie
 - ✓ Catalog-aware empty states and browse redirect — v1.0
 - ✓ Profile page with watchlist preview and watch history — v1.0
 
-### Active
+### Active (v1.1 — in progress)
 
-v1.1 requirements being defined — see `.planning/REQUIREMENTS.md` once milestone setup completes.
+- [ ] Global Layout + RTL CSS (Phase 14) — Cairo font, logical-property migration, directional icons, Embla RTL
+- [ ] Viewer Pages Translation (Phase 15) — 13 viewer pages fully translated via useTranslations()
+- [ ] Admin Pages Translation (Phase 16) — 5 admin views operable in Arabic
+- [ ] Content + Polish (Phase 17) — dynamic strings, metadata, BiDi guards, human review
+
+### Validated (v1.1)
+
+- ✓ URL-prefix routing (`/en/...`, `/ar/...`) — Phase 12 + 13
+- ✓ next-intl infrastructure (routing.ts, request.ts, navigation.ts, messages/) — Phase 12
+- ✓ All viewer + admin routes under `src/app/[locale]/` — Phase 13
+- ✓ Supabase session cookie survives locale redirect (proxy.ts cookie merge) — Phase 13
+- ✓ Every Link/useRouter/Server-redirect preserves locale prefix — Phase 13
+- ✓ OAuth callback locale-aware (safeNext reads NEXT_LOCALE cookie) — Phase 13
+- ✓ Coming-soon gate redirects to `/{locale}/coming-soon` — Phase 13
+- ✓ URL-based locale switcher (router.replace) replaces dead cookie infrastructure — Phase 13
+- ✓ Sitemap emits `alternates.languages` for every route — Phase 13
 
 ### Out of Scope
 
@@ -237,7 +252,10 @@ Each program gets a branded "ribbon" — a pattern + color combination from 5 br
 | Dark cinematic UI | Netflix-style immersion for streaming content, white logo on dark | ✓ Good — brand-color glow system adds premium feel |
 | Next.js + Vercel | SSR for SEO, App Router for modern patterns, Vercel for deployment | ✓ Good — unstable_cache + updateTag for ISR |
 | Single admin (no RBAC) | Only one person manages content, keep it simple | ✓ Good — app_config lookup is flexible enough |
-| English-first UI | Arabic content supported but UI chrome is English for v1 | -- Pending — RTL deferred to v2 |
+| English-first UI for v1 | Arabic content supported but UI chrome was English for v1 | ✓ Resolved — v1.1 adds full bilingual UI |
+| `localePrefix: 'always'` | Both /en/ and /ar/ always required; no bare-root default locale exception | ✓ Phase 12 — keeps locale explicit for SEO |
+| proxy.ts cookie merge on every response | Supabase cookies must be merged onto next-intl response in all code paths or auth cookie is lost on redirect | ✓ Phase 13 — critical for session survival |
+| URL-based locale switcher over cookie action | `router.replace(pathname, { locale })` is the only safe switcher post-restructure; cookie + revalidatePath was broken after `[locale]/` move | ✓ Phase 13 — setLocaleAction deleted |
 | Minimal navbar (logo + profile only) | Clean streaming aesthetic, content speaks for itself | ✓ Good — intentional design, not a gap |
 | Frontend-first approach | UI with mock data before backend, client validates look first | ✓ Good — visual sign-off before wiring |
 | Brand color static maps | Tailwind v4 compatibility, never construct class names dynamically | ✓ Good — type-safe, zero runtime cost |
@@ -263,4 +281,4 @@ This document evolves at phase transitions and milestone boundaries.
 5. All milestone decisions added to Key Decisions
 
 ---
-*Last updated: 2026-04-22 — v1.2 Editorial Feature Parity scaffolded as queued next milestone (phases 18-26)*
+*Last updated: 2026-04-24 — Phase 13 complete (UAT 8/8), v1.1 routing + auth requirements validated, advancing to Phase 14*
