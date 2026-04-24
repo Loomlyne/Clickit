@@ -53,13 +53,13 @@ export function WatchPageContent({
   const { forceFlush } = useProgressTracker(playerInstance, episode.id, userId ?? null)
 
   return (
-    <div className="-mt-24 md:-mt-28 bg-black pt-24 md:pt-28 text-white">
-      {/* Side-by-side: player+metadata left, episodes right */}
-      <div className="flex flex-col lg:flex-row">
+    <div className="bg-[var(--bg-0)] min-h-screen text-white">
+      {/* YT-style layout: player+metadata left, episodes right */}
+      <div className="yt-layout mx-auto grid max-w-[1600px] grid-cols-1 gap-8 px-8 py-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         {/* Left column: player + metadata */}
         <div className="w-full flex-1 min-w-0">
           {/* Player */}
-          <div className="relative w-full aspect-video bg-[#111]">
+          <div className="relative w-full aspect-video rounded-[10px] overflow-hidden bg-black shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
             <YouTubePlayer
               videoId={episode.youtubeId ?? ''}
               brandColor={BRAND_COLOR_BG[show.brandColor]}

@@ -69,7 +69,7 @@ export function SeriesDetailHero({
             {firstEpisodeId && (
               <Link
                 href={`/watch/${firstEpisodeId}`}
-                className="inline-flex items-center gap-1.5 rounded-[4px] bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff]"
+                className="inline-flex items-center gap-1.5 rounded-[4px] bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-white"
               >
                 &#9654; {t('watchNow')}
               </Link>
@@ -78,7 +78,7 @@ export function SeriesDetailHero({
         )}
       </AnimatePresence>
 
-      <div className="relative -mt-24 md:-mt-28 min-h-dvh overflow-hidden">
+      <div className="relative overflow-hidden" style={{ height: '72vh', minHeight: 520 }}>
         <div className="absolute inset-0 bg-black" />
         {mobileBackdropUrl && (
           <Image
@@ -103,11 +103,19 @@ export function SeriesDetailHero({
           />
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+        {/* Handoff scrim: bottom fade + left vignette */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `
+              linear-gradient(180deg, transparent 0%, rgba(10,10,10,0.4) 40%, var(--bg-0) 98%),
+              linear-gradient(90deg, rgba(10,10,10,0.8) 0%, transparent 60%)
+            `,
+          }}
+        />
 
         {/* Content — bottom-third, left-aligned */}
-        <div className="absolute bottom-0 start-0 px-6 md:px-12 pb-16 md:pb-20 max-w-3xl z-10">
+        <div className="absolute bottom-[60px] start-10 end-10 max-w-[720px] z-10">
           {/* Back link */}
           <motion.div
             initial={{ opacity: 0, x: -12 }}
@@ -137,15 +145,10 @@ export function SeriesDetailHero({
             />
           </motion.div>
 
-          {/* Genre label */}
-          <motion.p
-            className="text-white/50 text-xs tracking-[0.3em] uppercase mb-3"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.35 }}
-          >
-            {show.genre}
-          </motion.p>
+          {/* Eyebrow — matches handoff .hero-eyebrow */}
+          <div className="mono mb-3.5" style={{ color: 'var(--accent)', letterSpacing: '0.18em' }}>
+            {show.genre.toUpperCase()} · CLICKIT ORIGINAL
+          </div>
 
           <motion.h1
             className="font-display mb-5 font-semibold leading-none text-white drop-shadow-2xl"
@@ -202,7 +205,7 @@ export function SeriesDetailHero({
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
                 <Link
                   href={`/watch/${firstEpisodeId}`}
-                  className="inline-flex items-center gap-2 rounded-[4px] bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff]"
+                  className="inline-flex items-center gap-2 rounded-[4px] bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-white"
                 >
                   &#9654; {firstEpisodeLabel
                     ? (isArabic ? `شاهد ${firstEpisodeLabel}` : `Watch ${firstEpisodeLabel}`)

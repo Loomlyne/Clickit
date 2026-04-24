@@ -13,13 +13,13 @@ interface EpisodeNavProps {
 }
 
 const baseClasses =
-  'flex-1 min-h-[44px] rounded-[18px] border border-white/10 bg-white/[0.03] p-4 transition-colors duration-200'
+  'flex-1 min-h-[44px] rounded-[4px] border border-[var(--line)] bg-[var(--bg-1)] p-3.5 transition-[background,border-color,transform] duration-150'
 
 const enabledClasses =
-  'group text-muted-foreground hover:bg-surface-2/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+  'group text-[var(--text-dim)] hover:bg-[var(--bg-2)] hover:border-[var(--line-2)] hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 const disabledClasses =
-  'opacity-50 pointer-events-none cursor-default text-text-muted border-border/50'
+  'opacity-50 pointer-events-none cursor-default text-[var(--text-mute)]'
 
 export function EpisodeNav({ prev, next }: EpisodeNavProps) {
   const t = useTranslations('common')

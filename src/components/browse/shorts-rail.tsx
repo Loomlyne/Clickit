@@ -53,12 +53,6 @@ export function ShortsRail({ shows }: ShortsRailProps) {
             >
               SHORT
             </div>
-            {/* Play overlay on hover */}
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 text-[#0a0a0a]">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3" /></svg>
-              </div>
-            </div>
             {/* Bottom info */}
             <div className="absolute bottom-3 left-3 right-3">
               <div className="font-display mb-1 text-[16px] leading-[1.15]">{s.title}</div>
