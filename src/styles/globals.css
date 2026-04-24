@@ -362,15 +362,109 @@ html[lang="ar"] [class*="tracking-["] {
    Responsive — Editorial breakpoints
    ═══════════════════════════════════════════════════ */
 
+/* Tablet */
+@media (max-width: 960px) {
+  .landing-hero-v2 {
+    grid-template-columns: 1fr;
+    padding: 110px 24px 40px;
+    gap: 40px;
+  }
+  .landing-collage {
+    height: 420px;
+  }
+  .series-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile */
 @media (max-width: 720px) {
-  /* Mobile: compress header, smaller type, stacked layouts */
   :root {
     --poster-w: 140px;
-    --landscape-w: 250px;
+    --landscape-w: 260px;
     --rail-gap: 10px;
   }
 
   .mono {
     font-size: 10px;
+  }
+
+  /* Rails */
+  .rail {
+    padding: 20px 16px 8px;
+  }
+  .rail-title {
+    font-size: 20px;
+  }
+
+  /* Hero */
+  .hero {
+    height: 85vh;
+    min-height: 500px;
+  }
+  .hero-content {
+    left: 20px;
+    right: 20px;
+    bottom: 60px;
+    max-width: none;
+  }
+
+  /* Sections */
+  .section {
+    padding: 60px 20px;
+  }
+  .section-title {
+    font-size: clamp(28px, 8vw, 44px);
+    margin-bottom: 32px;
+  }
+
+  /* Stats */
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stat {
+    padding: 24px 18px;
+  }
+
+  /* Genre grid */
+  .genre-grid {
+    grid-template-columns: 1fr;
+  }
+  .genre-tile {
+    padding: 32px 20px;
+    aspect-ratio: auto;
+    min-height: 140px;
+  }
+  .genre-name {
+    font-size: 28px;
+  }
+
+  /* Series */
+  .series-hero {
+    height: 70vh;
+    min-height: 440px;
+  }
+  .series-content {
+    padding: 24px 16px;
+  }
+  .series-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    margin-bottom: 32px;
+  }
+
+  /* Watch YT layout */
+  .yt-layout {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 14px 14px 40px;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 420px) {
+  :root {
+    --poster-w: 120px;
+    --landscape-w: 220px;
   }
 }
