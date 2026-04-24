@@ -7,8 +7,24 @@ const AUTH_ERROR_MAP: Record<string, string> = {
   'Email rate limit exceeded': 'Too many attempts. Please try again later.',
   'For security purposes, you can only request this once every 60 seconds':
     'Please wait a moment before trying again.',
+  'Invalid email or password': 'Email or password is incorrect.',
+  'Email link is invalid or has expired': 'This link has expired. Please request a new one.',
 }
 
 export function mapAuthError(rawMessage: string): string {
-  return AUTH_ERROR_MAP[rawMessage] ?? 'Something went wrong. Please try again.'
+  // Check exact match first, then partial match for Supabase error variations
+  if (AUTH_ERROR_MAP[rawMessage]) return AUTH_ERROR_MAP[rawMessage]
+
+  const lower = rawMessage.toLowerCase()
+  if (lower.includes('invalid') && (lower.includes('credentials') || lower.includes('password'))) {
+    return 'Email or password is incorrect.'
+  }
+  if (lower.includes('rate limit') || lower.includes('too many')) {
+    return 'Too many attempts. Please try again later.'
+  }
+  if (lower.includes('already registered') || lower.includes('already exists')) {
+    return 'An account with this email already exists.'
+  }
+
+  return rawMessage || 'Something went wrong. Please try again.'
 }

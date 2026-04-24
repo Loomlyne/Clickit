@@ -55,7 +55,10 @@ export async function signInAction(email: string, password: string): Promise<Aut
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
-  if (error) return { ok: false, error: error.message }
+  if (error) {
+    console.error('[auth] signIn failed:', error.message, error.status)
+    return { ok: false, error: error.message }
+  }
   if (!data.user) return { ok: false, error: 'Sign-in returned no user' }
 
   // Read admin status once so the client can redirect correctly without a
