@@ -1574,3 +1574,34 @@ export async function deleteShort(id: string): Promise<ActionResult> {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to delete short' }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Reviews Moderation Actions
+// ---------------------------------------------------------------------------
+
+export async function deleteReview(id: string): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const admin = createAdminClient()
+
+    const { error } = await admin
+      .from('reviews')
+      .delete()
+      .eq('id', id)
+
+    if (error) return { success: false, error: error.message }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'delete',
+      entity: 'review',
+      entityId: id,
+    })
+
+    revalidatePath('/admin/reviews')
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/reviews] delete failed', err)
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to delete review' }
+  }
+}

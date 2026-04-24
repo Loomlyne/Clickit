@@ -32,13 +32,12 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
     const supabase = createClient()
 
     async function load() {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- reviews table not in generated types yet (migration pending)
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from('reviews')
         .select('*, profiles(display_name, avatar_url)')
         .eq('show_id', showId)
         .order('created_at', { ascending: false })
-      if (data) setReviews(data as Review[])
+      if (data) setReviews(data as unknown as Review[])
     }
 
     load()
@@ -59,13 +58,17 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
     if (!userId || !draftText.trim() || draftStars === 0) return
     setSubmitting(true)
     const supabase = createClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- reviews table not in generated types yet (migration pending)
-    await (supabase as any).from('reviews').insert({
+    const { error } = await supabase.from('reviews').insert({
       show_id: showId,
       user_id: userId,
       stars: draftStars,
       body: draftText.trim(),
     })
+    if (error) {
+      console.error('[review-composer] insert failed', error)
+      setSubmitting(false)
+      return
+    }
     setDraftStars(0)
     setDraftText('')
     setSubmitting(false)
