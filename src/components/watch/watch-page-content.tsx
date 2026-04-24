@@ -10,7 +10,6 @@ import { YouTubePlayer } from '@/components/watch/youtube-player'
 import { AutoplayOverlay } from '@/components/watch/autoplay-overlay'
 import { EpisodeNav } from '@/components/watch/episode-nav'
 import { SeasonSelector } from '@/components/series/season-selector'
-import { EpisodeList } from '@/components/series/episode-list'
 import { useProgressTracker } from '@/hooks/use-progress-tracker'
 import type { ViewEpisode, ViewShow, ViewSeason } from '@/lib/queries'
 import { BRAND_COLOR_BG } from '@/lib/brand-colors'
@@ -159,25 +158,57 @@ export function WatchPageContent({
           </div>
         </div>
 
-        {/* Right: episode sidebar */}
+        {/* Right: episode sidebar — matches handoff .yt-side */}
         <aside className="min-w-0">
-          <div className="lg:sticky lg:top-[72px] lg:h-[calc(100dvh-72px)] lg:overflow-y-auto scrollbar-hide rounded-[10px] border border-[var(--line)] bg-[var(--bg-1)]">
-            <div className="border-b border-[var(--line)] px-4 py-3">
-              <div className="mono mb-1 text-[var(--text-mute)]">{show.title}</div>
-              <div className="text-[15px] font-semibold">{isArabic ? 'الحلقات' : 'Episodes'}</div>
-              <div className="mt-2">
-                <SeasonSelector
-                  seasons={seasons}
-                  activeSeason={activeSeasonId}
-                  onSeasonChange={setActiveSeasonId}
-                />
+          <div className="flex items-center justify-between gap-2.5 mb-3">
+            <div>
+              <div className="mono mb-1 text-[var(--text-mute)]">
+                {isArabic ? 'الحلقات' : 'Episodes'} · {isArabic ? `الموسم ${season.seasonNumber}` : `Season ${season.seasonNumber}`}
               </div>
+              <div className="font-display text-[20px]">{show.title}</div>
             </div>
-            <EpisodeList
-              episodes={currentEpisodes}
-              showBrandColor={show.brandColor}
-              currentEpisodeId={episode.id}
-            />
+            {seasons.length > 1 && (
+              <SeasonSelector
+                seasons={seasons}
+                activeSeason={activeSeasonId}
+                onSeasonChange={setActiveSeasonId}
+              />
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1">
+            {currentEpisodes.map((ep) => {
+              const isCurrent = ep.id === episode.id
+              const thumbUrl = ep.youtubeId
+                ? `https://img.youtube.com/vi/${ep.youtubeId}/mqdefault.jpg`
+                : null
+              return (
+                <Link
+                  key={ep.id}
+                  href={`/watch/${ep.id}`}
+                  className={`yt-side-ep ${isCurrent ? 'current' : ''}`}
+                >
+                  <div className="yt-side-thumb">
+                    {thumbUrl ? (
+                      <img src={thumbUrl} alt={ep.title} />
+                    ) : (
+                      <div className="h-full w-full bg-[var(--bg-3)]" />
+                    )}
+                    {ep.duration && (
+                      <div className="yt-side-runtime">{ep.duration} min</div>
+                    )}
+                    {isCurrent && (
+                      <div className="yt-side-now">{isArabic ? 'يعرض الآن' : 'NOW PLAYING'}</div>
+                    )}
+                  </div>
+                  <div className="yt-side-body">
+                    <div className="yt-side-num">E{String(ep.episodeNumber).padStart(2, '0')}</div>
+                    <div className="yt-side-title">{ep.title}</div>
+                    <div className="yt-side-desc">{ep.description}</div>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         </aside>
       </div>

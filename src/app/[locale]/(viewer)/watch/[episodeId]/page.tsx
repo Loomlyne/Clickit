@@ -77,16 +77,18 @@ export default async function WatchPage({ params }: Props) {
   }
 
   return (
-    <WatchPageContent
-      episode={viewEpisode}
-      show={viewShow}
-      season={viewSeason}
-      seasons={viewSeasons}
-      episodesBySeason={viewEpisodesBySeason}
-      prevEpisode={viewPrev}
-      nextEpisode={viewNext}
-      initialProgressSeconds={initialProgressSeconds}
-      userId={user?.id ?? null}
-    />
+    <div className="watch-page-wrap -mt-16">
+      <WatchPageContent
+        episode={viewEpisode}
+        show={viewShow}
+        season={viewSeason}
+        seasons={viewSeasons}
+        episodesBySeason={viewEpisodesBySeason}
+        prevEpisode={viewPrev}
+        nextEpisode={viewNext}
+        initialProgressSeconds={initialProgressSeconds}
+        userId={user?.id ?? null}
+      />
+    </div>
   )
 }
