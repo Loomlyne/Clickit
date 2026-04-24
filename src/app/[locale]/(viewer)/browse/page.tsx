@@ -1,9 +1,8 @@
-import { getLocale, getTranslations } from 'next-intl/server'
+import { getLocale } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { HeroBanner } from '@/components/home/hero-banner'
 import { ContentRail } from '@/components/home/content-rail'
 import { ContinueWatchingRail } from '@/components/home/continue-watching-rail'
-import { NewEpisodesRail } from '@/components/home/new-episodes-rail'
 import { ShortsRail } from '@/components/browse/shorts-rail'
 import { createClient } from '@/lib/supabase/server'
 import {
@@ -61,15 +60,15 @@ export default async function BrowsePage() {
         )}
 
         {/* Bottom CTA */}
-        <section className="mx-10 rounded-lg border border-[var(--line)] bg-gradient-to-b from-[var(--bg-1)] to-[var(--bg-2)] p-20 text-center">
+        <section className="mx-10 rounded-[24px] border border-white/10 bg-gradient-to-b from-[var(--bg-1)] to-[var(--bg-2)] p-20 text-center">
           <div className="mono mb-3.5 text-[var(--primary)]">Upgrade · Annual plan</div>
-          <h2 className="font-[family-name:var(--font-display)] text-[48px] font-normal tracking-[-0.02em] mb-3.5">
+          <h2 className="font-display text-[48px] tracking-[-0.02em] mb-3.5">
             Save 30% with a yearly plan.
           </h2>
           <p className="text-[var(--text-dim)] max-w-[520px] mx-auto mb-6">
             Two months free, four profiles, 4K streaming, and early access to every new release.
           </p>
-          <button className="rounded bg-[var(--primary)] px-6 py-3.5 text-[15px] font-medium text-[var(--primary-foreground)] transition-all hover:bg-white">
+          <button className="rounded-[10px] bg-primary px-6 py-3.5 text-[15px] font-medium text-primary-foreground transition-all hover:brightness-110">
             Upgrade now
           </button>
         </section>

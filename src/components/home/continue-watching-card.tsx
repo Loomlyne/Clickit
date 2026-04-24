@@ -19,7 +19,7 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
 
   return (
     <Link href={`/watch/${item.episodeId}`} className="group block basis-[85%] sm:basis-1/2 md:basis-[340px] flex-shrink-0">
-      <div className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+      <div className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.38)]">
         <div className="relative aspect-video w-full overflow-hidden">
           {thumbnailUrl ? (
             <Image
@@ -42,7 +42,7 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
             </ShowArt>
           )}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-[#06070a] via-[#06070a]/25 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/25 to-transparent" />
 
           <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             <div className="flex size-12 items-center justify-center rounded-full border border-white/16 bg-[rgba(8,11,18,0.76)] backdrop-blur-md">
@@ -61,14 +61,14 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
           </div>
         </div>
         <div className="space-y-2 px-4 py-4">
-          <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/36">
+          <span className="mono text-white/36">
             Continue watching
           </span>
           <div className="space-y-1">
             <p className="truncate text-sm text-white/52">
               {item.showTitle} · S{item.seasonNumber} E{item.episodeNumber}
             </p>
-            <p className="truncate text-[17px] font-semibold tracking-[-0.02em] text-white">
+            <p className="font-display truncate text-[17px] font-semibold tracking-[-0.02em] text-white">
               {item.episodeTitle}
             </p>
           </div>

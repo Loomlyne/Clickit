@@ -21,7 +21,7 @@ export function PortraitShowCard({ show, initialSaved, userId }: PortraitShowCar
 
   return (
     <div className="group">
-      <div className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+      <div className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.38)]">
         {userId !== undefined && (
           <WatchlistToggleButton
             showId={show.id}
@@ -33,10 +33,10 @@ export function PortraitShowCard({ show, initialSaved, userId }: PortraitShowCar
 
         <Link href={`/series/${show.slug}`} className="block">
           <ShowArt brandColor={brandColorHex} title={show.title} aspectRatio="2/3" imageUrl={show.posterUrl} className="rounded-none">
-            <div className="absolute inset-0 bg-gradient-to-t from-[#06070a] via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent" />
             <div className="absolute inset-x-0 bottom-0 px-4 pb-4 pt-16">
-              <p className="truncate text-[11px] font-medium uppercase tracking-[0.22em] text-white/42">{show.genre}</p>
-              <p className="mt-1 truncate text-base font-semibold tracking-[-0.02em] text-white">{show.title}</p>
+              <p className="mono truncate text-white/42">{show.genre}</p>
+              <p className="font-display mt-1 truncate text-base font-semibold tracking-[-0.02em] text-white">{show.title}</p>
             </div>
           </ShowArt>
         </Link>
@@ -48,7 +48,7 @@ export function PortraitShowCard({ show, initialSaved, userId }: PortraitShowCar
                 : (show.seasonCount === 1 ? 'Season' : 'Seasons')}
             </span>
             {show.platformRating && (
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/60">
+              <span className="mono rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-white/60">
                 CIT {show.platformRating}
               </span>
             )}

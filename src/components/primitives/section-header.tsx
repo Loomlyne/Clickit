@@ -30,10 +30,10 @@ export function SectionHeader({
           />
         )}
         <div>
-          <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.22em] text-white/34">
+          <p className="mono mb-1 text-white/34">
             {isArabic ? 'اختيار كلِك إت' : 'Curated by Clickit'}
           </p>
-          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white md:text-[2rem]">
+          <h2 className="font-display text-2xl font-semibold tracking-[-0.03em] text-white md:text-[2rem]">
             {title}
           </h2>
         </div>

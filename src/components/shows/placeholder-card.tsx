@@ -5,15 +5,15 @@ export function PlaceholderCard() {
     <div
       aria-hidden="true"
       className={cn(
-        'overflow-hidden rounded-lg opacity-60'
+        'overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] opacity-60'
       )}
     >
       {/* Muted brand ribbon - border color, no bright brand color */}
-      <div className="h-1 bg-border" />
+      <div className="h-[2px] bg-white/[0.06]" />
 
       {/* Artwork area - 16:9 aspect ratio, muted surface */}
       <div className="relative flex aspect-video items-center justify-center bg-surface-3">
-        <span className="text-sm text-text-muted">Coming Soon</span>
+        <span className="mono">Coming Soon</span>
       </div>
 
       {/* Card text area - skeleton placeholders */}

@@ -119,7 +119,7 @@ export function HeroSlide({ show, isActive, firstEpisodeId, isMobile, reducedMot
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
                 <Link
                   href={`/watch/${firstEpisodeId}`}
-                  className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[0_16px_40px_rgba(96,115,255,0.28)] transition-colors hover:bg-[#7082ff]"
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[0_16px_40px_rgba(255,204,0,0.28)] transition-colors hover:brightness-110"
                 >
                   &#9654; Watch first episode
                 </Link>

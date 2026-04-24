@@ -17,7 +17,7 @@ export function ShortsRail({ shows }: ShortsRailProps) {
       <div className="flex items-baseline justify-between mb-4">
         <div>
           <div className="mono mb-1.5 text-[var(--primary)]">Shorts · Connected to YouTube Shorts</div>
-          <h2 className="font-[family-name:var(--font-display)] text-[26px] font-normal tracking-[-0.01em]">Quick bites</h2>
+          <h2 className="font-display text-[26px]">Quick bites</h2>
         </div>
         <span className="mono flex items-center gap-1.5 cursor-pointer">
           View all
@@ -29,13 +29,13 @@ export function ShortsRail({ shows }: ShortsRailProps) {
           <div
             key={`short-${s.id}`}
             onClick={() => setSelectedIdx(i)}
-            className="group relative shrink-0 w-[180px] cursor-pointer overflow-hidden rounded-lg bg-[var(--bg-2)]"
+            className="group relative shrink-0 w-[180px] cursor-pointer overflow-hidden rounded-[16px] border border-white/10 bg-white/[0.03]"
             style={{ aspectRatio: '9/16' }}
           >
             {s.posterUrl ? (
               <img src={s.posterUrl} alt={s.title} className="h-full w-full object-cover" />
             ) : (
-              <div className="h-full w-full bg-[var(--bg-2)]" />
+              <div className="h-full w-full bg-surface-2" />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
             {/* SHORT badge */}
@@ -50,7 +50,7 @@ export function ShortsRail({ shows }: ShortsRailProps) {
             </div>
             {/* Bottom info */}
             <div className="absolute bottom-3 left-3 right-3">
-              <div className="font-[family-name:var(--font-display)] text-[16px] leading-tight mb-1">{s.title}</div>
+              <div className="font-display text-[16px] leading-tight mb-1">{s.title}</div>
               <div className="mono text-[9px]">{s.genre} · {Math.floor(200 + i * 137) % 900}K views</div>
             </div>
           </div>

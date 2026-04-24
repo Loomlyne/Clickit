@@ -21,10 +21,10 @@ export function ShowCard({ show }: ShowCardProps) {
   return (
     <Link href={`/series/${show.slug}`} className="group block cursor-pointer">
       <div
-        className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.24)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:-translate-y-1 group-active:translate-y-0 group-active:scale-[0.97]"
+        className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.38)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:-translate-y-1 group-active:translate-y-0 group-active:scale-[0.97]"
       >
         <ShowArt brandColor={brandColorHex} title={show.title} aspectRatio="16/9" className="rounded-none" imageUrl={show.heroImageUrl ?? show.posterUrl}>
-          <div className="absolute inset-0 bg-gradient-to-t from-[#06070a] via-[#06070a]/32 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/32 to-transparent" />
           <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/16 bg-[rgba(8,11,18,0.76)] backdrop-blur-sm ring-1 ring-white/8 transition-transform duration-300 group-hover:scale-110">
               <Play className="size-5 fill-white text-white translate-x-0.5" />
@@ -34,12 +34,12 @@ export function ShowCard({ show }: ShowCardProps) {
         <div className="space-y-2 px-4 py-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="mt-1 truncate text-[17px] font-semibold tracking-[-0.02em] text-white">
+              <h3 className="font-display mt-1 truncate text-[17px] font-semibold tracking-[-0.02em] text-white">
                 {show.title}
               </h3>
             </div>
             {rating !== null && (
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/62">
+              <span className="mono rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-white/62">
                 ★ {rating}
               </span>
             )}
