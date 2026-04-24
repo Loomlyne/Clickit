@@ -6,6 +6,7 @@ import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SeriesDetailHero } from '@/components/series/series-detail-hero'
 import { SeriesDetailContent } from '@/components/series/series-detail-content'
+import { ReviewComposer } from '@/components/series/review-composer'
 import { ContentRail } from '@/components/home/content-rail'
 import { CtaBanner } from '@/components/home/cta-banner'
 import {
@@ -148,6 +149,13 @@ export default async function SeriesDetailPage({ params }: Props) {
               progressMap={episodesProgressMap}
             />
           )}
+        </div>
+      </div>
+
+      {/* Reviews */}
+      <div className="mt-12 px-6 md:px-12">
+        <div className="mx-auto max-w-7xl">
+          <ReviewComposer showId={dbShow.id} userId={user?.id ?? null} />
         </div>
       </div>
 

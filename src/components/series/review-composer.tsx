@@ -1,0 +1,196 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+
+interface Review {
+  id: string
+  show_id: string
+  user_id: string
+  stars: number
+  body: string
+  created_at: string
+  profiles?: { display_name: string | null; avatar_url: string | null }
+}
+
+interface ReviewComposerProps {
+  showId: string
+  userId: string | null
+}
+
+const STAR_LABELS = ['', 'Nope', 'Meh', 'Fine', 'Great', 'A masterpiece']
+
+export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [draftStars, setDraftStars] = useState(0)
+  const [hoverStars, setHoverStars] = useState(0)
+  const [draftText, setDraftText] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  // Fetch reviews + subscribe to real-time
+  useEffect(() => {
+    const supabase = createClient()
+
+    async function load() {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- reviews table not in generated types yet (migration pending)
+      const { data } = await (supabase as any)
+        .from('reviews')
+        .select('*, profiles(display_name, avatar_url)')
+        .eq('show_id', showId)
+        .order('created_at', { ascending: false })
+      if (data) setReviews(data as Review[])
+    }
+
+    load()
+
+    const channel = supabase
+      .channel(`reviews:${showId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reviews', filter: `show_id=eq.${showId}` },
+        () => { load() }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [showId])
+
+  const submitReview = async () => {
+    if (!userId || !draftText.trim() || draftStars === 0) return
+    setSubmitting(true)
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- reviews table not in generated types yet (migration pending)
+    await (supabase as any).from('reviews').insert({
+      show_id: showId,
+      user_id: userId,
+      stars: draftStars,
+      body: draftText.trim(),
+    })
+    setDraftStars(0)
+    setDraftText('')
+    setSubmitting(false)
+  }
+
+  const activeStars = hoverStars || draftStars
+
+  return (
+    <div>
+      <div className="label mb-4">
+        Reviews · {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+      </div>
+
+      {/* Composer (auth'd users only) */}
+      {userId && (
+        <div className="mb-8 rounded border border-[var(--line)] bg-[var(--bg-1)] p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] font-[family-name:var(--font-mono)] text-xs font-medium">
+              K
+            </div>
+            <div className="flex-1">
+              <div className="text-sm font-medium">Your review</div>
+            </div>
+          </div>
+
+          {/* Star rating */}
+          <div className="flex items-center gap-1 mb-3" onMouseLeave={() => setHoverStars(0)}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                className="p-0.5 transition-colors"
+                onMouseEnter={() => setHoverStars(n)}
+                onClick={() => setDraftStars(n)}
+                aria-label={`${n} stars`}
+                style={{ color: activeStars >= n ? 'var(--primary)' : 'var(--text-mute)' }}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill={activeStars >= n ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
+                  <polygon points="12 2 15 9 22 9.3 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9.3 9 9" />
+                </svg>
+              </button>
+            ))}
+            <span className="mono ms-2 text-[var(--text-dim)]">
+              {activeStars > 0 ? STAR_LABELS[activeStars] : 'Tap to rate'}
+            </span>
+          </div>
+
+          <textarea
+            className="w-full rounded border border-[var(--line)] bg-[var(--bg-0)] px-3 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-mute)] outline-none focus:border-[var(--primary)] resize-none"
+            placeholder="What stood out? Episodes you loved, things that dragged..."
+            value={draftText}
+            onChange={(e) => setDraftText(e.target.value)}
+            rows={3}
+            maxLength={600}
+          />
+
+          <div className="flex items-center justify-between mt-3">
+            <span className="mono text-[11px] text-[var(--text-mute)]">{draftText.length} / 600</span>
+            <div className="flex gap-2">
+              <button
+                className="rounded border border-[var(--line-2)] px-3 py-1.5 text-[12.5px] text-[var(--text)] transition-colors hover:bg-white/[0.04] disabled:opacity-40"
+                onClick={() => { setDraftStars(0); setDraftText('') }}
+                disabled={!draftText && !draftStars}
+              >
+                Clear
+              </button>
+              <button
+                className="rounded bg-[var(--primary)] px-3 py-1.5 text-[12.5px] font-medium text-[var(--primary-foreground)] transition-colors hover:bg-white disabled:opacity-40"
+                onClick={submitReview}
+                disabled={!draftText.trim() || draftStars === 0 || submitting}
+              >
+                {submitting ? 'Posting...' : 'Post review'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reviews list */}
+      <div className="space-y-0">
+        {reviews.map((r) => {
+          const isMine = r.user_id === userId
+          const name = r.profiles?.display_name || 'Anonymous'
+          const initials = name.slice(0, 2).toUpperCase()
+
+          return (
+            <div
+              key={r.id}
+              className={`border-t border-[var(--line)] py-5 ${isMine ? 'border-s-2 border-s-[var(--primary)] ps-4' : ''}`}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-medium"
+                    style={isMine ? { background: 'var(--primary)', color: 'var(--primary-foreground)' } : { background: 'var(--bg-3)', color: 'var(--text-dim)' }}
+                  >
+                    {initials}
+                  </div>
+                  <div>
+                    <div className="text-[13px] font-medium">
+                      {name}
+                      {isMine && <span className="mono ms-2 text-[10px] text-[var(--primary)]">YOURS</span>}
+                    </div>
+                    <div className="mono text-[10px] text-[var(--text-mute)]">
+                      {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-0.5 text-[var(--primary)]">
+                  {[...Array(5)].map((_, j) => (
+                    <svg key={j} width="11" height="11" viewBox="0 0 24 24" fill={j < r.stars ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
+                      <polygon points="12 2 15 9 22 9.3 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9.3 9 9" />
+                    </svg>
+                  ))}
+                </div>
+              </div>
+              <p className="text-[14px] leading-relaxed text-[var(--text-dim)]">{r.body}</p>
+            </div>
+          )
+        })}
+        {reviews.length === 0 && (
+          <div className="py-10 text-center text-[var(--text-mute)]">
+            No reviews yet. Be the first to share your thoughts.
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
