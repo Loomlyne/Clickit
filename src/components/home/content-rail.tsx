@@ -1,75 +1,50 @@
-'use client'
+// Rail — matches handoff .rail with native flex scroll
+import { useLocale } from 'next-intl'
+import { ArrowRight } from 'lucide-react'
 
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-} from '@/components/ui/carousel'
 import { ShowCard } from '@/components/shows/show-card'
 import { PlaceholderCard } from '@/components/shows/placeholder-card'
-import { SectionHeader } from '@/components/primitives/section-header'
-import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 import type { ViewShow } from '@/lib/queries'
-import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 
 interface ContentRailProps {
   title: string
+  eyebrow?: string
   shows: ViewShow[]
-  seeAllHref?: string
-  /** Minimum total cards (real + placeholder) for visual density. Defaults to 6. */
   minCards?: number
 }
 
 export function ContentRail({
   title,
+  eyebrow,
   shows,
-  seeAllHref,
   minCards = 6,
 }: ContentRailProps) {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const placeholderCount = Math.max(0, minCards - shows.length)
-  const accentColor = shows[0] ? BRAND_COLOR_HEX[shows[0].brandColor] : undefined
 
   return (
-    <ScrollReveal>
-      <section className="space-y-4">
-        <SectionHeader
-          title={title}
-          seeAllHref={seeAllHref}
-          accentColor={accentColor}
-        />
-
-        {/* Horizontal carousel */}
-        <div className="px-6 md:px-12 overflow-hidden">
-          <Carousel
-            opts={{
-              align: 'start',
-              containScroll: 'trimSnaps',
-              dragFree: false,
-              loop: false,
-              slidesToScroll: 1,
-            }}
-          >
-            <CarouselContent>
-              {shows.map((show) => (
-                <CarouselItem
-                  key={show.id}
-                  className="basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 flex-shrink-0"
-                >
-                  <ShowCard show={show} />
-                </CarouselItem>
-              ))}
-              {Array.from({ length: placeholderCount }).map((_, i) => (
-                <CarouselItem
-                  key={`placeholder-${i}`}
-                  className="basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 flex-shrink-0"
-                >
-                  <PlaceholderCard />
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-          </Carousel>
+    <section className="rail px-10 pb-3 pt-8">
+      {/* Rail header */}
+      <div className="mb-4 flex items-baseline justify-between">
+        <div>
+          {eyebrow && <div className="mono mb-1.5">{eyebrow}</div>}
+          <h2 className="font-display m-0 text-[26px]">{title}</h2>
         </div>
-      </section>
-    </ScrollReveal>
+        <a className="mono flex items-center gap-1.5 cursor-pointer" href="#">
+          {isArabic ? 'عرض الكل' : 'View all'} <ArrowRight className="size-3" />
+        </a>
+      </div>
+
+      {/* Native scroll track */}
+      <div className="flex gap-[var(--rail-gap)] overflow-x-auto scroll-snap-x-mandatory py-1.5 pb-5 scrollbar-hide">
+        {shows.map((show) => (
+          <ShowCard key={show.id} show={show} />
+        ))}
+        {Array.from({ length: placeholderCount }).map((_, i) => (
+          <PlaceholderCard key={`placeholder-${i}`} />
+        ))}
+      </div>
+    </section>
   )
 }

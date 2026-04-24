@@ -1,3 +1,4 @@
+// Browse page — matches handoff browse.jsx exactly
 import { getLocale } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { HeroBanner } from '@/components/home/hero-banner'
@@ -47,32 +48,38 @@ export default async function BrowsePage() {
         <HeroBanner shows={featuredWithEpisodes} isMobile={isMobile} />
       )}
 
-      <div className="mt-8 space-y-10 pb-20">
-        <ContinueWatchingRail userId={userId} />
+      <ContinueWatchingRail userId={userId} />
 
-        <ShortsRail shows={shortsShows} />
+      <ShortsRail shows={shortsShows} />
 
-        {streaming.length > 0 && (
-          <ContentRail title="Now Streaming" shows={streaming} />
-        )}
-        {comingSoon.length > 0 && (
-          <ContentRail title="Coming Soon" shows={comingSoon} />
-        )}
+      {streaming.length > 0 && (
+        <ContentRail title="Now streaming" eyebrow="The full catalog" shows={streaming} />
+      )}
+      {comingSoon.length > 0 && (
+        <ContentRail title="Coming soon" eyebrow="Teasers & release dates" shows={comingSoon} />
+      )}
 
-        {/* Bottom CTA */}
-        <section className="mx-10 rounded-[24px] border border-white/10 bg-gradient-to-b from-[var(--bg-1)] to-[var(--bg-2)] p-20 text-center">
-          <div className="mono mb-3.5 text-[var(--primary)]">Upgrade · Annual plan</div>
-          <h2 className="font-display text-[48px] tracking-[-0.02em] mb-3.5">
-            Save 30% with a yearly plan.
-          </h2>
-          <p className="text-[var(--text-dim)] max-w-[520px] mx-auto mb-6">
-            Two months free, four profiles, 4K streaming, and early access to every new release.
-          </p>
-          <button className="rounded-[10px] bg-primary px-6 py-3.5 text-[15px] font-medium text-primary-foreground transition-all hover:brightness-110">
-            Upgrade now
-          </button>
-        </section>
-      </div>
+      {/* Bottom CTA — matches handoff inline section */}
+      <section
+        className="mx-10 my-[60px] rounded-[8px] border border-[var(--line)] p-20 text-center"
+        style={{ background: 'linear-gradient(180deg, var(--bg-1), var(--bg-2))' }}
+      >
+        <div className="mono mb-3.5" style={{ color: 'var(--accent)', letterSpacing: '0.18em' }}>
+          Upgrade · Annual plan
+        </div>
+        <h2
+          className="font-display m-0 mb-3.5 font-normal"
+          style={{ fontSize: 48, letterSpacing: '-0.02em' }}
+        >
+          Save 30% with a yearly plan.
+        </h2>
+        <p className="mx-auto mb-6 max-w-[520px] text-[var(--text-dim)]">
+          Two months free, four profiles, 4K streaming, and early access to every new release.
+        </p>
+        <button className="rounded-[4px] bg-primary px-[26px] py-3.5 text-[15px] font-medium text-primary-foreground transition-[transform,background] duration-[120ms] hover:bg-white active:translate-y-px">
+          Upgrade now
+        </button>
+      </section>
     </div>
   )
 }

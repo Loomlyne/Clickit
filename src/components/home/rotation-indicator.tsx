@@ -1,25 +1,24 @@
+// Hero dots — vertical column on right side, matches handoff .hero-dots
 'use client'
 
-interface RotationIndicatorProps {
+interface HeroDotsProps {
   activeIndex: number
   total: number
-  /** Duration in ms for the progress fill animation */
   intervalMs: number
   isPaused: boolean
-  /** Hex color of the active show's brand color for progress fill */
-  activeColor?: string
+  onSelect: (index: number) => void
 }
 
-export function RotationIndicator({
+export function HeroDots({
   activeIndex,
   total,
   intervalMs,
   isPaused,
-  activeColor = '#ffffff',
-}: RotationIndicatorProps) {
+  onSelect,
+}: HeroDotsProps) {
   return (
     <div
-      className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 gap-2"
+      className="absolute end-10 bottom-[100px] z-[2] flex flex-col gap-2.5"
       aria-label={`Show ${activeIndex + 1} of ${total}`}
       role="progressbar"
       aria-valuenow={activeIndex + 1}
@@ -29,27 +28,30 @@ export function RotationIndicator({
       {Array.from({ length: total }, (_, index) => (
         <div
           key={index}
-          className="relative w-12 h-0.5 bg-white/20 rounded-full overflow-hidden"
+          onClick={() => onSelect(index)}
+          className="relative w-[3px] cursor-pointer overflow-hidden rounded-[2px] bg-white/20 transition-all duration-200 ease-[var(--ease)]"
+          style={{ height: index === activeIndex ? 60 : 28 }}
         >
           {index === activeIndex && (
             <div
-              key={`progress-${activeIndex}`}
-              className="absolute inset-y-0 left-0 rounded-full"
+              key={`fill-${activeIndex}`}
+              className="absolute inset-x-0 top-0 w-full bg-[var(--accent)]"
               style={{
-                backgroundColor: activeColor,
-                animation: `progress-fill ${intervalMs}ms linear forwards`,
+                transformOrigin: 'top',
+                animation: `heroDotFill ${intervalMs}ms linear forwards`,
                 animationPlayState: isPaused ? 'paused' : 'running',
+                height: '100%',
               }}
             />
           )}
           {index < activeIndex && (
-            <div
-              className="absolute inset-0 rounded-full"
-              style={{ backgroundColor: 'rgba(255,255,255,0.5)' }}
-            />
+            <div className="absolute inset-0 bg-white/50" />
           )}
         </div>
       ))}
     </div>
   )
 }
+
+// Keep old export name for backward compat
+export { HeroDots as RotationIndicator }

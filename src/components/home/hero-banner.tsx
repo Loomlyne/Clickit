@@ -1,3 +1,4 @@
+// Hero banner — matches handoff .hero (78vh, vertical dots on right)
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -8,11 +9,10 @@ import {
 } from 'motion/react'
 
 import type { ViewShow } from '@/lib/queries'
-import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 import { HeroSlide } from '@/components/home/hero-slide'
-import { RotationIndicator } from '@/components/home/rotation-indicator'
+import { HeroDots } from '@/components/home/rotation-indicator'
 
-const INTERVAL = 2500
+const INTERVAL = 7000
 
 interface HeroBannerProps {
   shows: Array<{ show: ViewShow; firstEpisodeId?: string }>
@@ -25,11 +25,6 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
 
   const shouldReduceMotion = useReducedMotion()
 
-  // Single interval just advances the slide — progress bar is pure CSS.
-  // Dep is `shows.length` (not `shows`) on purpose: we only want to reset the
-  // interval when the number of slides changes. A new array reference with the
-  // same length (e.g., parent re-renders with a stable list) should NOT restart
-  // the rotation. This keeps the slide rhythm steady under routine re-renders.
   useEffect(() => {
     if (isPaused || shouldReduceMotion) return
 
@@ -48,7 +43,8 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
 
   return (
     <div
-      className="-mt-24 md:-mt-28 relative h-dvh w-full overflow-hidden"
+      className="relative mb-3 overflow-hidden"
+      style={{ height: '78vh', minHeight: 580 }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocus={() => setIsPaused(true)}
@@ -66,16 +62,16 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
           />
         </AnimatePresence>
 
-        <RotationIndicator
+        {/* Vertical dots — right side, matching handoff .hero-dots */}
+        <HeroDots
           activeIndex={activeIndex}
           total={shows.length}
           intervalMs={INTERVAL}
           isPaused={isPaused}
-          activeColor={BRAND_COLOR_HEX[shows[activeIndex].show.brandColor]}
+          onSelect={setActiveIndex}
         />
       </MotionConfig>
 
-      {/* Screen reader announcement for slide changes */}
       <div className="sr-only" aria-live="polite">
         Now showing: {shows[activeIndex].show.title}
       </div>

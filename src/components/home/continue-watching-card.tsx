@@ -1,79 +1,58 @@
-'use client'
-
+// Continue watching poster — landscape with progress bar
 import { Link } from '@/i18n/navigation'
-import Image from 'next/image'
 import { Play } from 'lucide-react'
-import { ShowArt } from '@/components/primitives/show-art'
+
 import type { ContinueWatchingItem } from '@/lib/queries'
-import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 
 interface ContinueWatchingCardProps {
   item: ContinueWatchingItem
 }
 
 export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
-  const brandHex = BRAND_COLOR_HEX[item.showBrandColor] ?? '#2C3569'
   const thumbnailUrl = item.youtubeVideoId
     ? `https://img.youtube.com/vi/${item.youtubeVideoId}/hqdefault.jpg`
     : null
 
   return (
-    <Link href={`/watch/${item.episodeId}`} className="group block basis-[85%] sm:basis-1/2 md:basis-[340px] flex-shrink-0">
-      <div className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] shadow-[0_24px_80px_rgba(0,0,0,0.38)]">
-        <div className="relative aspect-video w-full overflow-hidden">
-          {thumbnailUrl ? (
-            <Image
-              src={thumbnailUrl}
-              alt={item.episodeTitle}
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 639px) 85vw, (max-width: 767px) 50vw, 340px"
-            />
-          ) : (
-            <ShowArt brandColor={brandHex} title={item.episodeTitle} aspectRatio="16/9">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span
-                  className="text-3xl font-black text-white/30"
-                  style={{ textShadow: `0 0 24px ${brandHex}60` }}
-                >
-                  E{item.episodeNumber}
-                </span>
-              </div>
-            </ShowArt>
-          )}
+    <Link
+      href={`/watch/${item.episodeId}`}
+      className="poster group relative block flex-shrink-0 cursor-pointer overflow-hidden rounded-[6px] bg-[var(--bg-2)] transition-transform duration-[250ms] ease-[var(--ease)] hover:-translate-y-1 hover:z-[2]"
+      style={{ width: 'var(--landscape-w)', aspectRatio: '16 / 9' }}
+    >
+      {thumbnailUrl ? (
+        <img
+          src={thumbnailUrl}
+          alt={item.episodeTitle}
+          className="h-full w-full object-cover transition-transform duration-[400ms] ease-[var(--ease)] group-hover:scale-[1.04]"
+        />
+      ) : (
+        <div className="h-full w-full bg-[var(--bg-2)]" />
+      )}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/25 to-transparent" />
-
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-            <div className="flex size-12 items-center justify-center rounded-full border border-white/16 bg-[rgba(8,11,18,0.76)] backdrop-blur-md">
-              <Play className="size-5 fill-white text-white" />
-            </div>
-          </div>
-
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/40">
-            <div
-              className="h-full transition-all duration-300"
-              style={{
-                width: `${item.progressPercent}%`,
-                backgroundColor: brandHex,
-              }}
-            />
-          </div>
+      {/* Hover overlay */}
+      <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-b from-transparent from-[40%] to-[rgba(0,0,0,0.85)] p-3.5 opacity-0 transition-opacity duration-200 ease-[var(--ease)] group-hover:opacity-100">
+        <h3 className="font-display m-0 mb-0.5 text-[18px] leading-[1.1]">
+          {item.episodeTitle}
+        </h3>
+        <div className="mono text-[10.5px]">
+          {item.showTitle} · S{item.seasonNumber} E{item.episodeNumber}
         </div>
-        <div className="space-y-2 px-4 py-4">
-          <span className="mono text-white/36">
-            Continue watching
+        <div className="mt-2.5 flex gap-1.5">
+          <span className="inline-flex items-center gap-1.5 rounded-[4px] bg-primary px-3 py-[7px] text-[12.5px] font-medium text-primary-foreground">
+            <Play className="size-3 fill-current" /> Continue
           </span>
-          <div className="space-y-1">
-            <p className="truncate text-sm text-white/52">
-              {item.showTitle} · S{item.seasonNumber} E{item.episodeNumber}
-            </p>
-            <p className="font-display truncate text-[17px] font-semibold tracking-[-0.02em] text-white">
-              {item.episodeTitle}
-            </p>
-          </div>
         </div>
       </div>
+
+      {/* Progress bar */}
+      {item.progressPercent > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/12">
+          <span
+            className="block h-full bg-primary"
+            style={{ width: `${item.progressPercent}%` }}
+          />
+        </div>
+      )}
     </Link>
   )
 }

@@ -1,11 +1,12 @@
+// Hero slide — matches handoff .hero-content
+// Sharp, minimal: eyebrow + title + meta + synopsis + 3 buttons
 'use client'
 
 import { motion } from 'motion/react'
 import { Link } from '@/i18n/navigation'
+import { Play, Info } from 'lucide-react'
 
 import { CinematicBackdrop } from '@/components/primitives/cinematic-backdrop'
-import { GlowBadge } from '@/components/primitives/glow-badge'
-import { Badge } from '@/components/ui/badge'
 import type { ViewShow } from '@/lib/queries'
 import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 import { CINEMA_EASE } from '@/lib/cinema'
@@ -24,12 +25,12 @@ export function HeroSlide({ show, isActive, firstEpisodeId, isMobile, reducedMot
   return (
     <motion.div
       className="absolute inset-0"
-      initial={{ opacity: 0, x: '4%' }}
-      animate={{ opacity: isActive ? 1 : 0, x: 0 }}
-      exit={{ opacity: 0, x: '-4%' }}
-      transition={{ duration: 0.75, ease: CINEMA_EASE }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: isActive ? 1 : 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.6, ease: CINEMA_EASE }}
     >
-      {/* Cinematic backdrop with brand color bloom */}
+      {/* Background image with cinematic bloom */}
       <CinematicBackdrop
         brandColor={brandColorHex}
         intensity="high"
@@ -45,99 +46,67 @@ export function HeroSlide({ show, isActive, firstEpisodeId, isMobile, reducedMot
         reducedMotion={reducedMotion}
       />
 
-      {/* Left vignette gradient — only covers bottom-left for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-transparent pointer-events-none" />
+      {/* Scrim — matches handoff: left vignette + bottom fade */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            linear-gradient(90deg, rgba(10,10,10,0.9) 0%, rgba(10,10,10,0.5) 40%, transparent 70%),
+            linear-gradient(180deg, transparent 40%, var(--bg-0) 98%)
+          `,
+        }}
+      />
 
-      {/* Bottom gradient — soft fade for text area only */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent pointer-events-none" />
+      {/* Content — positioned bottom-left, max 620px */}
+      <div className="absolute bottom-20 start-10 end-10 max-w-[620px]">
+        {/* Eyebrow */}
+        <div className="mono mb-3.5 flex items-center gap-2.5" style={{ color: 'var(--accent)', letterSpacing: '0.18em' }}>
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+          Featured · {show.genre.toUpperCase()}
+        </div>
 
-      <div className="absolute bottom-0 start-0 w-full px-6 pb-10 md:px-12 md:pb-12">
-        <div className="max-w-[42rem]">
-          <motion.p
-            className="mb-3 text-[11px] font-medium uppercase tracking-[0.28em] text-white/40"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.1 }}
-          >
-            Featured now
-          </motion.p>
+        {/* Title */}
+        <h1
+          className="font-display m-0 mb-[18px] font-normal leading-[0.95] text-white"
+          style={{ fontSize: 'clamp(48px, 6vw, 84px)', letterSpacing: '-0.02em' }}
+        >
+          {show.title}
+        </h1>
 
-          <motion.h1
-            className="font-display mb-4 font-semibold leading-[0.94] text-white"
-            style={{ fontSize: 'clamp(2.75rem, 6vw, 5.4rem)' }}
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-          >
-            {show.title}
-          </motion.h1>
+        {/* Meta row */}
+        <div className="mono mb-[18px] flex items-center gap-3.5" style={{ letterSpacing: '0.12em' }}>
+          <span>{show.seasonCount} Season{show.seasonCount !== 1 ? 's' : ''}</span>
+          <span className="inline-block h-[3px] w-[3px] rounded-full bg-[var(--text-mute)]" />
+          <span>{show.episodeCount} episodes</span>
+          <span className="inline-block h-[3px] w-[3px] rounded-full bg-[var(--text-mute)]" />
+          <span>{show.genre}</span>
+        </div>
 
-          {show.tagline && (
-            <motion.p
-              className="mb-2 max-w-xl text-base leading-7 text-white/72 md:text-lg"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.3 }}
+        {/* Synopsis */}
+        <p className="m-0 mb-6 max-w-[560px] text-[16px] text-[var(--text-dim)]" style={{ textWrap: 'pretty' }}>
+          {show.description}
+        </p>
+
+        {/* Actions — 3 buttons matching handoff */}
+        <div className="flex gap-2.5">
+          {firstEpisodeId && show.status === 'streaming' ? (
+            <Link
+              href={`/watch/${firstEpisodeId}`}
+              className="btn inline-flex items-center gap-2 rounded-[4px] bg-primary px-[26px] py-3.5 text-[15px] font-medium text-primary-foreground transition-[transform,background] duration-[120ms] hover:bg-white active:translate-y-px"
             >
-              {show.tagline}
-            </motion.p>
+              <Play className="size-4 fill-current" /> Continue watching
+            </Link>
+          ) : (
+            <span className="inline-flex items-center gap-2 rounded-[4px] bg-white/[0.08] border border-white/[0.08] px-[26px] py-3.5 text-[15px] font-medium text-white/50 backdrop-blur-[8px] cursor-not-allowed">
+              Coming Soon
+            </span>
           )}
-
-          <motion.p
-            className="mb-6 max-w-2xl text-sm leading-6 text-white/56 md:text-[15px]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
+          <Link
+            href={`/series/${show.slug}`}
+            className="inline-flex items-center gap-2 rounded-[4px] bg-white/[0.08] border border-white/[0.08] px-[26px] py-3.5 text-[15px] font-medium text-white backdrop-blur-[8px] transition-[transform,background,border-color] duration-[120ms] hover:bg-white/[0.14] hover:border-[var(--line-2)] active:translate-y-px"
           >
-            {show.description}
-          </motion.p>
-
-          <motion.div
-            className="mb-6 flex flex-wrap items-center gap-2.5"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.45 }}
-          >
-            <GlowBadge
-              label={show.status === 'streaming' ? 'Now Streaming' : 'Coming Soon'}
-              color={show.status === 'streaming' ? '#77d586' : '#ffb46e'}
-            />
-            <Badge variant="secondary">{show.genre}</Badge>
-            <Badge variant="secondary">
-              {show.seasonCount} Season{show.seasonCount !== 1 ? 's' : ''}
-            </Badge>
-            {show.imdbRating && <Badge variant="secondary">IMDb {show.imdbRating}</Badge>}
-          </motion.div>
-
-          <motion.div
-            className="flex flex-wrap items-center gap-3"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.55 }}
-          >
-            {firstEpisodeId && show.status === 'streaming' ? (
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
-                <Link
-                  href={`/watch/${firstEpisodeId}`}
-                  className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[0_16px_40px_rgba(255,204,0,0.28)] transition-colors hover:brightness-110"
-                >
-                  &#9654; Watch first episode
-                </Link>
-              </motion.div>
-            ) : (
-              <span className="inline-flex cursor-not-allowed items-center rounded-full border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-medium text-white/50">
-                Coming Soon
-              </span>
-            )}
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
-              <Link
-                href={`/series/${show.slug}`}
-                className="inline-flex items-center rounded-full border border-white/14 bg-white/[0.04] px-6 py-3 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/[0.08]"
-              >
-                View details
-              </Link>
-            </motion.div>
-          </motion.div>
+            <Info className="size-4" /> More info
+          </Link>
         </div>
       </div>
     </motion.div>

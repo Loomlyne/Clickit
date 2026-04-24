@@ -1,7 +1,7 @@
 # Requirements — v2.0 Full Visual Redesign
 
 **Milestone:** v2.0
-**Total:** 68 requirements across 12 categories
+**Total:** 83 requirements across 13 categories
 **Generated:** 2026-04-24
 
 ## v2.0 Requirements
@@ -131,4 +131,88 @@
 
 ## Traceability
 
-*Populated by roadmap*
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| DSYS-01 | Phase 18 | Pending |
+| DSYS-02 | Phase 18 | Pending |
+| DSYS-03 | Phase 18 | Pending |
+| DSYS-04 | Phase 18 | Pending |
+| DSYS-05 | Phase 18 | Pending |
+| DSYS-06 | Phase 18 | Pending |
+| HEAD-01 | Phase 19 | Pending |
+| HEAD-02 | Phase 19 | Pending |
+| HEAD-03 | Phase 19 | Pending |
+| HEAD-04 | Phase 19 | Pending |
+| HEAD-05 | Phase 19 | Pending |
+| HEAD-06 | Phase 19 | Pending |
+| FOOT-01 | Phase 19 | Pending |
+| FOOT-02 | Phase 19 | Pending |
+| FOOT-03 | Phase 19 | Pending |
+| FOOT-04 | Phase 19 | Pending |
+| FOOT-05 | Phase 19 | Pending |
+| LAND-01 | Phase 20 | Pending |
+| LAND-02 | Phase 20 | Pending |
+| LAND-03 | Phase 20 | Pending |
+| LAND-04 | Phase 20 | Pending |
+| LAND-05 | Phase 20 | Pending |
+| LAND-06 | Phase 20 | Pending |
+| LAND-07 | Phase 20 | Pending |
+| LAND-08 | Phase 20 | Pending |
+| BRWS-01 | Phase 21 | Pending |
+| BRWS-02 | Phase 21 | Pending |
+| BRWS-03 | Phase 21 | Pending |
+| BRWS-04 | Phase 21 | Pending |
+| BRWS-05 | Phase 21 | Pending |
+| BRWS-06 | Phase 21 | Pending |
+| BRWS-07 | Phase 21 | Pending |
+| BRWS-08 | Phase 21 | Pending |
+| BRWS-09 | Phase 21 | Pending |
+| SERS-01 | Phase 22 | Pending |
+| SERS-02 | Phase 22 | Pending |
+| SERS-03 | Phase 22 | Pending |
+| SERS-04 | Phase 22 | Pending |
+| SERS-05 | Phase 22 | Pending |
+| SERS-06 | Phase 22 | Pending |
+| REVW-01 | Phase 22 | Pending |
+| REVW-02 | Phase 22 | Pending |
+| REVW-03 | Phase 22 | Pending |
+| REVW-04 | Phase 22 | Pending |
+| REVW-05 | Phase 22 | Pending |
+| WTCH-01 | Phase 23 | Pending |
+| WTCH-02 | Phase 23 | Pending |
+| WTCH-03 | Phase 23 | Pending |
+| WTCH-04 | Phase 23 | Pending |
+| WTCH-05 | Phase 23 | Pending |
+| WTCH-06 | Phase 23 | Pending |
+| WTCH-07 | Phase 23 | Pending |
+| WTCH-08 | Phase 23 | Pending |
+| SHRT-01 | Phase 24 | Pending |
+| SHRT-02 | Phase 24 | Pending |
+| SHRT-03 | Phase 24 | Pending |
+| SHRT-04 | Phase 24 | Pending |
+| SHRT-05 | Phase 24 | Pending |
+| SHRT-06 | Phase 24 | Pending |
+| AUTH-01 | Phase 25 | Pending |
+| AUTH-02 | Phase 25 | Pending |
+| AUTH-03 | Phase 25 | Pending |
+| AUTH-04 | Phase 25 | Pending |
+| AUTH-05 | Phase 25 | Pending |
+| AUTH-06 | Phase 25 | Pending |
+| AUTH-07 | Phase 25 | Pending |
+| SUPP-01 | Phase 25 | Pending |
+| SUPP-02 | Phase 25 | Pending |
+| SUPP-03 | Phase 25 | Pending |
+| SUPP-04 | Phase 25 | Pending |
+| SUPP-05 | Phase 25 | Pending |
+| ADMN-01 | Phase 26 | Pending |
+| ADMN-02 | Phase 26 | Pending |
+| ADMN-03 | Phase 26 | Pending |
+| ADMN-04 | Phase 26 | Pending |
+| ADMN-05 | Phase 26 | Pending |
+| RESP-01 | Phase 27 | Pending |
+| RESP-02 | Phase 27 | Pending |
+| RESP-03 | Phase 27 | Pending |
+| RESP-04 | Phase 27 | Pending |
+| RESP-05 | Phase 27 | Pending |
+| RESP-06 | Phase 27 | Pending |
+| RESP-07 | Phase 27 | Pending |

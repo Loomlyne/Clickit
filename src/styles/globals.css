@@ -344,6 +344,11 @@ html[lang="ar"] [class*="tracking-["] {
   to { width: 100%; }
 }
 
+@keyframes heroDotFill {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
