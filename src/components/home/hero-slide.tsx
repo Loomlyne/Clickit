@@ -51,7 +51,7 @@ export function HeroSlide({ show, isActive, firstEpisodeId, isMobile, reducedMot
       {/* Bottom gradient — soft fade for text area only */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent pointer-events-none" />
 
-      <div className="absolute bottom-0 left-0 w-full px-6 pb-10 md:px-12 md:pb-12">
+      <div className="absolute bottom-0 start-0 w-full px-6 pb-10 md:px-12 md:pb-12">
         <div className="max-w-[42rem]">
           <motion.p
             className="mb-3 text-[11px] font-medium uppercase tracking-[0.28em] text-white/40"

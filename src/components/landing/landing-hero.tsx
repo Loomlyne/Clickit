@@ -106,7 +106,7 @@ export async function LandingHero() {
       </div>
 
       {/* Content */}
-      <div className="absolute bottom-0 left-0 w-full px-6 pb-16 md:px-12 md:pb-20">
+      <div className="absolute bottom-0 start-0 w-full px-6 pb-16 md:px-12 md:pb-20">
         <div className="max-w-[52rem]">
           {/*
             LCP optimization: the logo <Image> renders from the server HTML

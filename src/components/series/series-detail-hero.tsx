@@ -108,7 +108,7 @@ export function SeriesDetailHero({
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
 
         {/* Content — bottom-third, left-aligned */}
-        <div className="absolute bottom-0 left-0 px-6 md:px-12 pb-16 md:pb-20 max-w-3xl z-10">
+        <div className="absolute bottom-0 start-0 px-6 md:px-12 pb-16 md:pb-20 max-w-3xl z-10">
           {/* Back link */}
           <motion.div
             initial={{ opacity: 0, x: -12 }}
