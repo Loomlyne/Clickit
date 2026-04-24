@@ -1,21 +1,19 @@
+// Watch page — YT-style layout matching handoff watch.jsx
 'use client'
 
 import { useState } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useLocale } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { useRouter } from '@/i18n/navigation'
-import { motion } from 'motion/react'
 import { ArrowLeft } from 'lucide-react'
 import { YouTubePlayer } from '@/components/watch/youtube-player'
 import { AutoplayOverlay } from '@/components/watch/autoplay-overlay'
-import { EpisodeBreadcrumb } from '@/components/watch/episode-breadcrumb'
 import { EpisodeNav } from '@/components/watch/episode-nav'
 import { SeasonSelector } from '@/components/series/season-selector'
 import { EpisodeList } from '@/components/series/episode-list'
 import { useProgressTracker } from '@/hooks/use-progress-tracker'
 import type { ViewEpisode, ViewShow, ViewSeason } from '@/lib/queries'
 import { BRAND_COLOR_BG } from '@/lib/brand-colors'
-import { CINEMA_EASE } from '@/lib/cinema'
 
 interface WatchPageContentProps {
   episode: ViewEpisode
@@ -45,21 +43,48 @@ export function WatchPageContent({
   const [playerInstance, setPlayerInstance] = useState<YT.Player | null>(null)
   const [showAutoplay, setShowAutoplay] = useState(false)
   const router = useRouter()
-  const t = useTranslations('player')
   const locale = useLocale()
   const isArabic = locale === 'ar'
 
-  // Progress tracking
   const { forceFlush } = useProgressTracker(playerInstance, episode.id, userId ?? null)
 
   return (
-    <div className="bg-[var(--bg-0)] min-h-screen text-white">
-      {/* YT-style layout: player+metadata left, episodes right */}
-      <div className="yt-layout mx-auto grid max-w-[1600px] grid-cols-1 gap-8 px-8 py-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-        {/* Left column: player + metadata */}
-        <div className="w-full flex-1 min-w-0">
-          {/* Player */}
-          <div className="relative w-full aspect-video rounded-[10px] overflow-hidden bg-black shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
+    <div className="min-h-screen bg-[var(--bg-0)] text-white">
+      {/* Sticky header — matches handoff .yt-header */}
+      <div className="sticky top-0 z-20 flex items-center gap-[18px] border-b border-[var(--line)] px-8 py-3.5" style={{ background: 'rgba(10,10,10,0.92)', backdropFilter: 'blur(14px)' }}>
+        <Link
+          href={`/series/${show.slug}`}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--line)] bg-white/[0.06] transition-colors hover:bg-white/[0.12]"
+        >
+          <ArrowLeft className="size-[18px] rtl:scale-x-[-1]" />
+        </Link>
+        <div className="mono flex items-center gap-2" style={{ letterSpacing: '0.14em' }}>
+          <span className="cursor-pointer hover:text-white" onClick={() => router.push(`/series/${show.slug}`)}>{show.title}</span>
+          <span className="opacity-40">›</span>
+          <span className="cursor-pointer hover:text-white" onClick={() => router.push(`/series/${show.slug}`)}>
+            {isArabic ? `الموسم ${season.seasonNumber}` : `Season ${season.seasonNumber}`}
+          </span>
+          <span className="opacity-40">›</span>
+          <span className="text-white">
+            E{String(episode.episodeNumber).padStart(2, '0')} · {episode.title}
+          </span>
+        </div>
+        <div className="ms-auto flex gap-2">
+          <Link href="/browse" className="inline-flex items-center rounded-[4px] border border-[var(--line-2)] px-3 py-[7px] text-[12.5px] transition-colors hover:bg-white/[0.04]">
+            {isArabic ? 'تصفح' : 'Browse'}
+          </Link>
+          <Link href={`/series/${show.slug}`} className="inline-flex items-center rounded-[4px] border border-[var(--line-2)] px-3 py-[7px] text-[12.5px] transition-colors hover:bg-white/[0.04]">
+            {isArabic ? 'العودة للمسلسل' : 'Back to show'}
+          </Link>
+        </div>
+      </div>
+
+      {/* Main grid — matches handoff .yt-layout */}
+      <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-8 px-8 py-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+        {/* Left: player + metadata */}
+        <div className="min-w-0">
+          {/* Player frame — rounded-[10px] with shadow */}
+          <div className="relative w-full aspect-video overflow-hidden rounded-[10px] bg-black shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
             <YouTubePlayer
               videoId={episode.youtubeId ?? ''}
               brandColor={BRAND_COLOR_BG[show.brandColor]}
@@ -70,17 +95,11 @@ export function WatchPageContent({
                 }
               }}
               onStateChange={(state) => {
-                // YT.PlayerState.ENDED === 0
                 if (state === 0) {
                   forceFlush()
-                  if (nextEpisode) {
-                    setShowAutoplay(true)
-                  }
+                  if (nextEpisode) setShowAutoplay(true)
                 }
-                // YT.PlayerState.PAUSED === 2
-                if (state === 2) {
-                  forceFlush()
-                }
+                if (state === 2) forceFlush()
               }}
             />
             {showAutoplay && nextEpisode && (
@@ -100,60 +119,52 @@ export function WatchPageContent({
             )}
           </div>
 
-          {/* Metadata below player */}
-          <motion.div
-            className="px-4 py-5 md:px-6"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: CINEMA_EASE }}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <Link
-                href={`/series/${show.slug}`}
-                className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors text-sm"
-              >
-                <ArrowLeft className="size-4 rtl:scale-x-[-1]" />
-                {show.title}
-              </Link>
-              <span className="text-white/20">|</span>
-              <EpisodeBreadcrumb
-                seasonNumber={season.seasonNumber}
-                episodeNumber={episode.episodeNumber}
-              />
+          {/* Title — matches handoff .yt-title */}
+          <h1 className="font-display mt-[22px] mb-3.5 text-[28px] font-medium leading-[1.2] tracking-[-0.01em]" style={{ textWrap: 'balance' }}>
+            {episode.title}
+          </h1>
+
+          {/* Channel + actions row */}
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+            <Link href={`/series/${show.slug}`} className="flex items-center gap-3">
+              {show.posterUrl && (
+                <div
+                  className="h-[46px] w-[46px] flex-shrink-0 rounded-full border border-[var(--line-2)] bg-cover bg-center"
+                  style={{ backgroundImage: `url(${show.posterUrl})` }}
+                />
+              )}
+              <div>
+                <div className="text-[15px] font-semibold tracking-[-0.005em]">{show.title}</div>
+                <div className="mono mt-0.5" style={{ letterSpacing: '0.1em' }}>
+                  {isArabic ? `الموسم ${season.seasonNumber}` : `Season ${season.seasonNumber}`} · {isArabic ? 'حلقة' : 'Episode'} {episode.episodeNumber}
+                </div>
+              </div>
+            </Link>
+          </div>
+
+          {/* Description card — matches handoff .yt-desc */}
+          <div className="mb-6 rounded-[10px] border border-[var(--line)] bg-[var(--bg-1)] p-4">
+            <div className="mono mb-2.5 flex flex-wrap gap-3.5" style={{ letterSpacing: '0.12em' }}>
+              <span style={{ color: 'var(--accent)' }}>{show.genre}</span>
+              {episode.duration && <span className="text-[var(--text-dim)]">{episode.duration} {isArabic ? 'دقيقة' : 'min'}</span>}
             </div>
-
-            <h1
-              className="font-display font-semibold leading-tight text-white"
-              style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.75rem)' }}
-            >
-              {episode.title}
-            </h1>
-
-            {episode.duration && (
-              <span className="inline-block mt-2 text-xs bg-white/10 text-white/60 px-2.5 py-1 rounded-full">
-                {episode.duration} {isArabic ? 'دقيقة' : 'min'}
-              </span>
-            )}
-
-            <p className="mt-3 text-white/60 text-sm leading-relaxed max-w-2xl">
+            <p className="m-0 text-[14px] leading-[1.55] text-[var(--text-dim)]" style={{ textWrap: 'pretty' }}>
               {episode.description}
             </p>
+          </div>
 
-            <div className="mt-5">
-              <EpisodeNav prev={prevEpisode} next={nextEpisode} />
-            </div>
-          </motion.div>
+          {/* Prev / Next episode nav */}
+          <div className="mb-8">
+            <EpisodeNav prev={prevEpisode} next={nextEpisode} />
+          </div>
         </div>
 
-        {/* Right column: episode list — sits beside the player on desktop */}
-        <aside
-          aria-label={t('episodeListHeading')}
-          className="w-full lg:w-[380px] lg:flex-shrink-0 border-t border-white/[0.06] lg:border-t-0 lg:border-s lg:border-white/[0.06] bg-black"
-        >
-          <div className="lg:sticky lg:top-[72px] lg:h-[calc(100dvh-72px)] lg:overflow-y-auto scrollbar-hide">
-            <div className="px-4 py-3 border-b border-white/[0.06]">
-              <p className="text-white/40 text-xs uppercase tracking-wider mb-1">{show.title}</p>
-              <p className="text-white font-semibold text-sm">{isArabic ? 'الحلقات' : 'Episodes'}</p>
+        {/* Right: episode sidebar */}
+        <aside className="min-w-0">
+          <div className="lg:sticky lg:top-[72px] lg:h-[calc(100dvh-72px)] lg:overflow-y-auto scrollbar-hide rounded-[10px] border border-[var(--line)] bg-[var(--bg-1)]">
+            <div className="border-b border-[var(--line)] px-4 py-3">
+              <div className="mono mb-1 text-[var(--text-mute)]">{show.title}</div>
+              <div className="text-[15px] font-semibold">{isArabic ? 'الحلقات' : 'Episodes'}</div>
               <div className="mt-2">
                 <SeasonSelector
                   seasons={seasons}
