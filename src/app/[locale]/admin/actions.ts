@@ -1454,11 +1454,123 @@ export async function revalidateAllCache(): Promise<ActionResult> {
     updateTag('shows')
     updateTag('episodes')
     updateTag('seasons')
+    updateTag('shorts')
     updateTag('site-config')
     revalidatePath('/', 'layout')
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to revalidate' }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shorts (Quick Bites) Actions
+// ---------------------------------------------------------------------------
+
+const shortSchema = z.object({
+  youtube_video_id: z.string().min(1, 'YouTube video ID is required'),
+  title: z.string().min(1, 'Title is required'),
+  channel_name: z.string().optional().nullable(),
+  thumbnail_url: optionalUrl,
+  duration_seconds: z.number().int().positive().optional().nullable(),
+  genre: z.string().optional().nullable(),
+  sort_order: z.number().int().default(0),
+  expires_at: z.string().optional().nullable(),
+})
+
+export async function createShort(
+  data: z.input<typeof shortSchema>,
+): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const parsed = shortSchema.parse(data)
+    const admin = createAdminClient()
+
+    const { data: short, error } = await admin
+      .from('shorts')
+      .insert(parsed)
+      .select()
+      .single()
+
+    if (error) return { success: false, error: error.message }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'create',
+      entity: 'short',
+      entityId: short.id,
+      diff: { data: { title: short.title, youtube_video_id: short.youtube_video_id } },
+    })
+
+    revalidatePath('/admin/shorts')
+    updateTag('shorts')
+    return { success: true, data: short }
+  } catch (err) {
+    console.error('[admin/shorts] create failed', err)
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to create short' }
+  }
+}
+
+export async function updateShort(
+  id: string,
+  data: z.input<typeof shortSchema>,
+): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const parsed = shortSchema.parse(data)
+    const admin = createAdminClient()
+
+    const { data: short, error } = await admin
+      .from('shorts')
+      .update(parsed)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) return { success: false, error: error.message }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'update',
+      entity: 'short',
+      entityId: short.id,
+      diff: { data: { title: short.title } },
+    })
+
+    revalidatePath('/admin/shorts')
+    updateTag('shorts')
+    return { success: true, data: short }
+  } catch (err) {
+    console.error('[admin/shorts] update failed', err)
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to update short' }
+  }
+}
+
+export async function deleteShort(id: string): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const admin = createAdminClient()
+
+    const { error } = await admin
+      .from('shorts')
+      .delete()
+      .eq('id', id)
+
+    if (error) return { success: false, error: error.message }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'delete',
+      entity: 'short',
+      entityId: id,
+    })
+
+    revalidatePath('/admin/shorts')
+    updateTag('shorts')
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/shorts] delete failed', err)
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to delete short' }
   }
 }

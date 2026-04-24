@@ -806,3 +806,53 @@ export const getCatalogStage = unstable_cache(
   ['catalog-stage'],
   { revalidate: 3600, tags: ['shows'] }
 )
+
+// ---------------------------------------------------------------------------
+// Shorts (Quick Bites) queries
+// ---------------------------------------------------------------------------
+
+export type DbShort = Database['public']['Tables']['shorts']['Row']
+
+export type ViewShort = {
+  id: string
+  youtubeVideoId: string
+  title: string
+  channelName: string | null
+  thumbnailUrl: string | null
+  durationSeconds: number | null
+  genre: string | null
+  sortOrder: number
+  expiresAt: string | null
+}
+
+export function mapShort(db: DbShort): ViewShort {
+  return {
+    id: db.id,
+    youtubeVideoId: db.youtube_video_id,
+    title: db.title,
+    channelName: db.channel_name,
+    thumbnailUrl: db.thumbnail_url,
+    durationSeconds: db.duration_seconds,
+    genre: db.genre,
+    sortOrder: db.sort_order,
+    expiresAt: db.expires_at,
+  }
+}
+
+export const getShortsForBrowse = unstable_cache(
+  async (): Promise<ViewShort[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('shorts')
+      .select('*')
+      .eq('archived', false)
+      .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
+      .limit(20)
+
+    return (data ?? []).map(mapShort)
+  },
+  ['shorts-browse'],
+  { revalidate: 900, tags: ['shorts'] } // 15 min
+)

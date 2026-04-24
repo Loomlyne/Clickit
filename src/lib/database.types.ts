@@ -351,6 +351,51 @@ export type Database = {
           },
         ]
       }
+      shorts: {
+        Row: {
+          id: string
+          youtube_video_id: string
+          title: string
+          channel_name: string | null
+          thumbnail_url: string | null
+          duration_seconds: number | null
+          genre: string | null
+          sort_order: number
+          expires_at: string | null
+          archived: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          youtube_video_id: string
+          title: string
+          channel_name?: string | null
+          thumbnail_url?: string | null
+          duration_seconds?: number | null
+          genre?: string | null
+          sort_order?: number
+          expires_at?: string | null
+          archived?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          youtube_video_id?: string
+          title?: string
+          channel_name?: string | null
+          thumbnail_url?: string | null
+          duration_seconds?: number | null
+          genre?: string | null
+          sort_order?: number
+          expires_at?: string | null
+          archived?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shows: {
         Row: {
           archived: boolean

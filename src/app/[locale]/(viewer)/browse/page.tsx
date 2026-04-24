@@ -10,8 +10,8 @@ import {
   getFeaturedShows,
   getStreamingShows,
   getComingSoonShows,
-  getNewEpisodes,
   getFirstEpisodesForShows,
+  getShortsForBrowse,
 } from '@/lib/queries'
 import { getIsMobile } from '@/lib/device'
 
@@ -20,11 +20,11 @@ export default async function BrowsePage() {
   const { data: { user } } = await supabase.auth.getUser()
   const userId = user?.id ?? null
 
-  const [featured, streaming, comingSoon, newEpisodes, isMobile, locale] = await Promise.all([
+  const [featured, streaming, comingSoon, shorts, isMobile, locale] = await Promise.all([
     getFeaturedShows(),
     getStreamingShows(),
     getComingSoonShows(),
-    getNewEpisodes(),
+    getShortsForBrowse(),
     getIsMobile(),
     getLocale(),
   ])
@@ -39,9 +39,6 @@ export default async function BrowsePage() {
     firstEpisodeId: firstEpisodeMap[show.id],
   }))
 
-  // Shorts: placeholder data from new + streaming shows
-  const shortsShows = [...newEpisodes.map(e => streaming.find(s => s.id === e.showId)).filter(Boolean), ...streaming].slice(0, 8) as typeof streaming
-
   return (
     <div>
       {featuredWithEpisodes.length > 0 && (
@@ -50,7 +47,7 @@ export default async function BrowsePage() {
 
       <ContinueWatchingRail userId={userId} />
 
-      <ShortsRail shows={shortsShows} />
+      <ShortsRail shorts={shorts} />
 
       {streaming.length > 0 && (
         <ContentRail title="Now streaming" eyebrow="The full catalog" shows={streaming} />
