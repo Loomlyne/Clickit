@@ -1,11 +1,10 @@
-import { getLocale } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { HeroBanner } from '@/components/home/hero-banner'
 import { ContentRail } from '@/components/home/content-rail'
 import { ContinueWatchingRail } from '@/components/home/continue-watching-rail'
 import { NewEpisodesRail } from '@/components/home/new-episodes-rail'
 import { ShortsRail } from '@/components/browse/shorts-rail'
-import { CtaBanner } from '@/components/home/cta-banner'
 import { createClient } from '@/lib/supabase/server'
 import {
   getFeaturedShows,
