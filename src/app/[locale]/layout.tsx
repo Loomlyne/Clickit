@@ -5,7 +5,7 @@ import { getMessages, setRequestLocale } from 'next-intl/server'
 import Script from 'next/script'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
-import { Plus_Jakarta_Sans, Cairo } from 'next/font/google'
+import { Space_Grotesk, Newsreader, JetBrains_Mono, Cairo } from 'next/font/google'
 
 import '@/styles/globals.css'
 import { Toaster } from 'sonner'
@@ -14,10 +14,25 @@ import { siteUrl } from '@/lib/site-url'
 import { dirFor } from '@/lib/locale'
 import { routing, staticParams, type Locale } from '@/i18n/routing'
 
-const jakarta = Plus_Jakarta_Sans({
+const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
-  variable: '--font-jakarta',
-  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-ui',
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+})
+
+const newsreader = Newsreader({
+  subsets: ['latin'],
+  variable: '--font-display',
+  weight: ['300', '400', '500'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  weight: ['400', '500'],
   display: 'swap',
 })
 
@@ -98,7 +113,7 @@ export default async function LocaleLayout({
   const dir = dirFor(locale as Locale)
 
   return (
-    <html lang={locale} dir={dir} className={`dark ${jakarta.variable} ${cairo.variable}`}>
+    <html lang={locale} dir={dir} className={`dark ${spaceGrotesk.variable} ${newsreader.variable} ${jetbrainsMono.variable} ${cairo.variable}`}>
       <body className="bg-background text-foreground font-sans antialiased selection:bg-primary/70 selection:text-primary-foreground">
         <a
           href="#main"
