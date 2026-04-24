@@ -351,3 +351,20 @@ html[lang="ar"] [class*="tracking-["] {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* ═══════════════════════════════════════════════════
+   Responsive — Editorial breakpoints
+   ═══════════════════════════════════════════════════ */
+
+@media (max-width: 720px) {
+  /* Mobile: compress header, smaller type, stacked layouts */
+  :root {
+    --poster-w: 140px;
+    --landscape-w: 250px;
+    --rail-gap: 10px;
+  }
+
+  .mono {
+    font-size: 10px;
+  }
+}
