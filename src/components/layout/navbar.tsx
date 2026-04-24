@@ -41,7 +41,7 @@ export function Navbar({ initialUser }: NavbarProps) {
   return (
     <header
       className={cn(
-        'fixed inset-x-0 top-0 z-50 flex items-center gap-7 px-10 py-[18px] border-b transition-all duration-200 backdrop-blur-[18px]',
+        'sticky top-0 z-50 flex items-center gap-7 px-10 py-[18px] border-b transition-all duration-200 backdrop-blur-[18px]',
         isLanding && !scrolled && 'bg-gradient-to-b from-[rgba(10,10,10,0.8)] to-transparent border-transparent',
         isLanding && scrolled && 'bg-[rgba(10,10,10,0.96)] border-[var(--line)]',
         !isLanding && 'bg-[linear-gradient(180deg,rgba(10,10,10,0.95),rgba(10,10,10,0.65))] border-[var(--line)]',

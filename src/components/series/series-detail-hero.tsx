@@ -34,7 +34,6 @@ export function SeriesDetailHero({
 }: SeriesDetailHeroProps) {
   const [scrolled, setScrolled] = useState(false)
   const t = useTranslations('show')
-  const tCommon = useTranslations('common')
   const locale = useLocale()
   const isArabic = locale === 'ar'
   const mobileBackdropUrl = show.posterUrl ?? show.heroImageUrl
@@ -64,13 +63,13 @@ export function SeriesDetailHero({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -64, opacity: 0 }}
             transition={{ duration: 0.3, ease: CINEMA_EASE }}
-            className="fixed left-4 right-4 top-24 z-40 mx-auto flex max-w-7xl items-center justify-between rounded-[20px] border border-white/10 bg-[rgba(10,13,19,0.88)] px-5 py-3 backdrop-blur-xl"
+            className="fixed left-4 right-4 top-24 z-40 mx-auto flex max-w-7xl items-center justify-between rounded-[4px] border border-[var(--line)] bg-[var(--bg-1)] px-5 py-3"
           >
             <span className="text-white font-semibold">{show.title}</span>
             {firstEpisodeId && (
               <Link
                 href={`/watch/${firstEpisodeId}`}
-                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff]"
+                className="inline-flex items-center gap-1.5 rounded-[4px] bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff]"
               >
                 &#9654; {t('watchNow')}
               </Link>
@@ -203,7 +202,7 @@ export function SeriesDetailHero({
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
                 <Link
                   href={`/watch/${firstEpisodeId}`}
-                  className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff]"
+                  className="inline-flex items-center gap-2 rounded-[4px] bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff]"
                 >
                   &#9654; {firstEpisodeLabel
                     ? (isArabic ? `شاهد ${firstEpisodeLabel}` : `Watch ${firstEpisodeLabel}`)
@@ -211,7 +210,7 @@ export function SeriesDetailHero({
                 </Link>
               </motion.div>
             ) : (
-              <span className="inline-flex items-center rounded-full bg-white/10 px-7 py-3 text-sm font-medium text-white/50 cursor-not-allowed">
+              <span className="inline-flex items-center rounded-[4px] bg-white/10 px-7 py-3 text-sm font-medium text-white/50 cursor-not-allowed">
                 {isArabic ? 'قريباً' : 'Coming Soon'}
               </span>
             )}

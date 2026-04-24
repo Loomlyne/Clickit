@@ -38,11 +38,11 @@ export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: Profil
       <AvatarUpload currentUrl={avatarUrl} fallbackInitial={initial} />
 
       <div className="flex flex-col items-center gap-1 sm:items-start sm:flex-1">
-        <p className="text-[11px] uppercase tracking-[0.26em] text-white/34">{isArabic ? 'الحساب' : 'Account'}</p>
+        <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-[var(--text-mute)]">{isArabic ? 'الحساب' : 'Account'}</p>
         <h1 className="font-display text-3xl font-semibold tracking-[-0.04em] text-white">
           {displayName || (isArabic ? 'حسابك' : 'Your Account')}
         </h1>
-        <p className="text-sm text-white/50">{email}</p>
+        <p className="text-sm text-[var(--text-dim)]">{email}</p>
       </div>
 
       {/* Action buttons */}
@@ -50,7 +50,7 @@ export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: Profil
         {isAdmin && (
           <Link
             href="/admin"
-            className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/10"
+            className="flex items-center gap-2 rounded-[4px] border border-[var(--line-2)] bg-[var(--bg-2)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--bg-3)]"
           >
             <Shield className="size-4" />
             {tNav('admin')}
@@ -59,7 +59,7 @@ export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: Profil
         <button
           onClick={handleSignOut}
           disabled={signingOut}
-          className="flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-5 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-[4px] border border-red-500/20 bg-red-500/10 px-5 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20 disabled:opacity-50"
         >
           <LogOut className="size-4" />
           {signingOut ? (isArabic ? 'جارٍ تسجيل الخروج…' : 'Signing out…') : tCommon('signOut')}

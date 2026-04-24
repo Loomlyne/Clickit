@@ -8,14 +8,12 @@ interface SeasonSelectorProps {
   seasons: ViewSeason[]
   activeSeason: string // season.id
   onSeasonChange: (seasonId: string) => void
-  brandColorHex?: string
 }
 
 export function SeasonSelector({
   seasons,
   activeSeason,
   onSeasonChange,
-  brandColorHex = '#2C3569',
 }: SeasonSelectorProps) {
   const activeSeasonNumber = seasons.find((s) => s.id === activeSeason)?.seasonNumber ?? 1
   const locale = useLocale()
@@ -23,22 +21,17 @@ export function SeasonSelector({
 
   return (
     <div>
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-0 border-b border-[var(--line)]">
         {seasons.map((season) => (
           <button
             key={season.id}
             onClick={() => onSeasonChange(season.id)}
             className={cn(
-              'rounded-full border px-4 py-2 text-sm font-medium transition-all cursor-pointer',
+              'px-4 py-2.5 font-[family-name:var(--font-mono)] text-[12px] uppercase tracking-[0.1em] transition-colors cursor-pointer border-b-2 -mb-px',
               activeSeason === season.id
-                ? 'text-white border-transparent'
-                : 'bg-white/[0.03] text-white/60 hover:text-white border-white/10'
+                ? 'text-white border-[var(--primary)]'
+                : 'text-[var(--text-mute)] hover:text-white border-transparent'
             )}
-            style={
-              activeSeason === season.id
-                ? { background: brandColorHex, borderColor: 'transparent', boxShadow: `0 16px 40px ${brandColorHex}30` }
-                : {}
-            }
           >
             {isArabic ? `الموسم ${season.seasonNumber}` : `S${season.seasonNumber}`}
           </button>

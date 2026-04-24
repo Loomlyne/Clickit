@@ -23,14 +23,29 @@ export default async function SearchPage({ searchParams }: Props) {
   // Empty/no query state
   if (!q || q.trim().length === 0) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
-        <p className="mb-4 text-[11px] uppercase tracking-[0.28em] text-white/34">{t('heading')}</p>
-        <h1 className="font-display text-4xl font-semibold tracking-[-0.04em] text-white">
-          {t('pageTitle')}
-        </h1>
-        <p className="mt-3 max-w-sm text-white/50">
-          {t('description')}
-        </p>
+      <div className="px-6 pb-16 pt-16 md:px-12">
+        <div className="mx-auto max-w-3xl">
+          <p className="mono mb-4 text-[var(--text-mute)]">
+            Search the catalog
+          </p>
+          <h1 className="font-display text-[clamp(2.5rem,5vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--text)]">
+            {t('pageTitle')}
+          </h1>
+          <p className="mt-3 text-[var(--text-dim)]">
+            {t('description')}
+          </p>
+
+          {/* Search input placeholder */}
+          <form action="/search" method="get" className="mt-10">
+            <input
+              type="text"
+              name="q"
+              placeholder={t('placeholder')}
+              autoFocus
+              className="w-full rounded-[4px] border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
+            />
+          </form>
+        </div>
       </div>
     )
   }
@@ -38,8 +53,23 @@ export default async function SearchPage({ searchParams }: Props) {
   // Short query state
   if (q.trim().length < 2) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
-        <p className="text-white/50">{t('minChars')}</p>
+      <div className="px-6 pb-16 pt-16 md:px-12">
+        <div className="mx-auto max-w-3xl">
+          <p className="mono mb-4 text-[var(--text-mute)]">
+            Search the catalog
+          </p>
+          <form action="/search" method="get" className="mt-6">
+            <input
+              type="text"
+              name="q"
+              defaultValue={q}
+              autoFocus
+              placeholder={t('placeholder')}
+              className="w-full rounded-[4px] border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
+            />
+          </form>
+          <p className="mono mt-4 text-[var(--text-mute)]">{t('minChars')}</p>
+        </div>
       </div>
     )
   }
@@ -53,25 +83,43 @@ export default async function SearchPage({ searchParams }: Props) {
   // No results state
   if (shows.length === 0 && episodes.length === 0) {
     return (
-      <div className="px-6 pb-16 pt-12 md:px-12">
-        <p className="text-[11px] uppercase tracking-[0.28em] text-white/34">
-          {t('resultsFor', { query: q })}
-        </p>
-        <div className="mt-16 flex flex-col items-center text-center">
-          <p className="text-white/50">{t('noResultsHeading')}</p>
-          <div className="mt-4 flex gap-3">
-            <Link
-              href="/search"
-              className="text-sm text-white/60 underline hover:text-white"
-            >
-              {t('clearSearch')}
-            </Link>
-            <Link
-              href="/"
-              className="text-sm text-white/60 underline hover:text-white"
-            >
+      <div className="px-6 pb-16 pt-16 md:px-12">
+        <div className="mx-auto max-w-3xl">
+          <p className="mono mb-4 text-[var(--text-mute)]">
+            Search the catalog
+          </p>
+          <form action="/search" method="get" className="mb-8">
+            <input
+              type="text"
+              name="q"
+              defaultValue={q}
+              autoFocus
+              placeholder={t('placeholder')}
+              className="w-full rounded-[4px] border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
+            />
+          </form>
+
+          <div className="border-t border-[var(--line)] py-20 text-center">
+            <h2 className="font-display text-[28px] font-normal text-[var(--text)]">
+              No results for &ldquo;{q}&rdquo;
+            </h2>
+            <p className="mt-3 text-[14px] text-[var(--text-dim)]">
               {t('noResultsDescription')}
-            </Link>
+            </p>
+            <div className="mt-6 flex justify-center gap-4">
+              <Link
+                href="/search"
+                className="mono rounded-[4px] border border-[var(--line-2)] bg-transparent px-5 py-2.5 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]"
+              >
+                {t('clearSearch')}
+              </Link>
+              <Link
+                href="/"
+                className="mono rounded-[4px] border border-[var(--line-2)] bg-transparent px-5 py-2.5 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]"
+              >
+                Browse catalog
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -80,8 +128,23 @@ export default async function SearchPage({ searchParams }: Props) {
 
   // Results state
   return (
-    <div className="px-6 pb-16 pt-12 md:px-12">
-      <SearchResults query={q} shows={shows} episodes={episodes} />
+    <div className="px-6 pb-16 pt-16 md:px-12">
+      <div className="mx-auto max-w-5xl">
+        <p className="mono mb-4 text-[var(--text-mute)]">
+          Search the catalog
+        </p>
+        <form action="/search" method="get" className="mb-8">
+          <input
+            type="text"
+            name="q"
+            defaultValue={q}
+            autoFocus
+            placeholder={t('placeholder')}
+            className="w-full rounded-[4px] border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
+          />
+        </form>
+        <SearchResults query={q} shows={shows} episodes={episodes} />
+      </div>
     </div>
   )
 }

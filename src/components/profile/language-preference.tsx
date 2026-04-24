@@ -50,19 +50,19 @@ export function LanguagePreference({ current }: { current: Locale }) {
             onClick={() => select(locale)}
             disabled={isPending}
             className={cn(
-              'relative flex-1 rounded-[16px] border p-4 text-start transition-all duration-200 disabled:opacity-60',
+              'relative flex-1 rounded-[4px] border p-4 text-start transition-all duration-200 disabled:opacity-60',
               active
-                ? 'border-white/30 bg-white/[0.08]'
-                : 'border-white/[0.08] bg-white/[0.02] hover:border-white/[0.16] hover:bg-white/[0.04]'
+                ? 'border-[var(--line-2)] bg-[var(--bg-2)]'
+                : 'border-[var(--line)] bg-[var(--bg-1)] hover:border-[var(--line-2)] hover:bg-[var(--bg-2)]'
             )}
           >
             {active && (
-              <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-white">
-                <Check className="h-3 w-3 text-black" strokeWidth={2.5} />
+              <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-[2px] bg-[var(--accent-yellow)]">
+                <Check className="h-3 w-3 text-[var(--accent-yellow-fg)]" strokeWidth={2.5} />
               </span>
             )}
             <p className="text-sm font-semibold text-white">{label}</p>
-            <p className="mt-0.5 text-xs text-white/40">{sublabel}</p>
+            <p className="mt-0.5 text-xs text-[var(--text-mute)]">{sublabel}</p>
           </button>
         )
       })}

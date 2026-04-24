@@ -3,10 +3,7 @@ import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 
 import { Button } from '@/components/ui/button'
-import { ComingSoonShowCard } from '@/components/shows/coming-soon-show-card'
 import { EpisodeRow } from '@/components/series/episode-row'
-import { SectionHeader } from '@/components/primitives/section-header'
-import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 import {
   getComingSoonShows,
   getComingSoonEpisodes,
@@ -47,48 +44,89 @@ export default async function ComingSoonPage() {
 
   return (
     <div className="pb-20">
-      <div className="px-6 py-8 md:px-12">
-        <div className="mx-auto max-w-5xl rounded-[28px] border border-white/10 bg-white/[0.03] px-8 py-12 text-center shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
-          <p
-            className="mb-4 text-[11px] tracking-[0.28em] uppercase"
-            style={{ color: 'var(--color-brand-purple-safe)' }}
-          >
-            {t('eyebrow')}
+      {/* Header */}
+      <div className="px-6 pb-12 pt-16 md:px-12">
+        <div className="mx-auto max-w-4xl">
+          <p className="mono mb-4 text-[var(--text-mute)]">
+            Coming soon &middot; 2026
           </p>
-          <h1
-            className="font-display font-semibold leading-tight text-white"
-            style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}
-          >
-            {t('heading')}
+          <h1 className="font-display text-[clamp(2.5rem,6vw,64px)] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--text)]">
+            What we&rsquo;re releasing next.
           </h1>
-          <p className="text-white/50 text-lg mt-3 max-w-md mx-auto">
+          <p className="mt-4 max-w-lg text-[var(--text-dim)]">
             {t('description')}
           </p>
         </div>
       </div>
 
-      {/* Section 1: Upcoming Shows */}
+      {/* Section 1: Upcoming Shows — editorial list */}
       {comingSoonShows.length > 0 ? (
-        <section className="pb-12">
-          <SectionHeader title={t('upcomingShowsHeading')} />
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-6 md:px-12 mt-2">
-            {comingSoonShows.map((show, i) => (
-              <ScrollReveal key={show.id} delay={i * 0.06}>
-                <ComingSoonShowCard show={show} />
-              </ScrollReveal>
+        <section className="mx-auto max-w-4xl px-6 pb-16 md:px-12">
+          <div className="space-y-0">
+            {comingSoonShows.map((show) => (
+              <div
+                key={show.id}
+                className="grid grid-cols-1 gap-6 border-t border-[var(--line)] py-8 md:grid-cols-[320px_1fr_auto] md:gap-10"
+              >
+                {/* Landscape thumbnail */}
+                <div className="w-full overflow-hidden rounded-[4px] bg-[var(--bg-2)] md:w-[320px]">
+                  {show.heroImageUrl || show.posterUrl ? (
+                    <img
+                      src={show.heroImageUrl || show.posterUrl}
+                      alt={show.title}
+                      className="aspect-video w-full object-cover"
+                    />
+                  ) : (
+                    <div className="aspect-video w-full bg-[var(--bg-2)]" />
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="flex flex-col justify-center gap-2">
+                  <p
+                    className="mono text-[12px]"
+                    style={{ color: BRAND_COLOR_HEX[show.brandColor] }}
+                  >
+                    {show.tagline || show.genre}
+                  </p>
+                  <h2 className="font-display text-[clamp(1.5rem,4vw,44px)] font-normal leading-[1.1] tracking-[-0.02em] text-[var(--text)]">
+                    {show.title}
+                  </h2>
+                  <p className="line-clamp-2 text-[14px] leading-relaxed text-[var(--text-dim)]">
+                    {show.description}
+                  </p>
+                  <p className="mono mt-1 text-[11px] text-[var(--text-mute)]">
+                    {show.genre} &middot; {show.seasonCount}{' '}
+                    {show.seasonCount === 1 ? 'season' : 'seasons'}
+                  </p>
+                </div>
+
+                {/* Action */}
+                <div className="flex items-center">
+                  <button className="mono rounded-[4px] border border-[var(--line-2)] bg-transparent px-5 py-2.5 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]">
+                    Remind me
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
         </section>
       ) : (
-        <section className="px-6 md:px-12 pb-12">
-          <SectionHeader title={t('upcomingShowsHeading')} />
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <h3 className="text-xl font-bold text-white">{t('noUpcomingHeading')}</h3>
-            <p className="mt-2 text-sm text-white/50">
+        <section className="mx-auto max-w-4xl px-6 pb-16 md:px-12">
+          <div className="border-t border-[var(--line)] py-16 text-center">
+            <h3 className="font-display text-[24px] font-normal text-[var(--text)]">
+              {t('noUpcomingHeading')}
+            </h3>
+            <p className="mt-2 text-[14px] text-[var(--text-dim)]">
               {t('noUpcomingDescription')}
             </p>
-            <Link href="/" className="mt-4">
-              <Button variant="default">{tCommon('browseShows')}</Button>
+            <Link href="/" className="mt-6 inline-block">
+              <Button
+                variant="outline"
+                className="mono rounded-[4px] border-[var(--line-2)] text-[12px]"
+              >
+                {tCommon('browseShows')}
+              </Button>
             </Link>
           </div>
         </section>
@@ -96,43 +134,42 @@ export default async function ComingSoonPage() {
 
       {/* Section 2: New Episodes Dropping Soon */}
       {Object.keys(episodesByShow).length > 0 ? (
-        <section className="px-6 md:px-12 pb-16">
-          <SectionHeader title={t('newEpisodesHeading')} />
-          <div className="mt-2 space-y-8">
+        <section className="mx-auto max-w-4xl px-6 pb-16 md:px-12">
+          <p className="mono mb-6 text-[var(--text-mute)]">
+            {t('newEpisodesHeading')}
+          </p>
+          <div className="space-y-8">
             {Object.entries(episodesByShow).map(
               ([showTitle, { brandColor, episodes }]) => (
-                <ScrollReveal key={showTitle}>
-                  <div>
-                    <h3 className="mb-3 text-sm font-medium text-white/60 flex items-center gap-2">
-                      <div
-                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                        style={{ background: BRAND_COLOR_HEX[brandColor] }}
+                <div key={showTitle}>
+                  <h3 className="mono mb-3 flex items-center gap-2 text-[12px] text-[var(--text-dim)]">
+                    <div
+                      className="size-1.5 flex-shrink-0 rounded-full"
+                      style={{ background: BRAND_COLOR_HEX[brandColor] }}
+                    />
+                    {showTitle}
+                  </h3>
+                  <div className="space-y-2">
+                    {episodes.map((ep) => (
+                      <EpisodeRow
+                        key={ep.id}
+                        episode={ep}
+                        showBrandColor={brandColor}
                       />
-                      {showTitle}
-                    </h3>
-                    <div className="space-y-2">
-                      {episodes.map((ep) => (
-                        <EpisodeRow
-                          key={ep.id}
-                          episode={ep}
-                          showBrandColor={brandColor}
-                        />
-                      ))}
-                    </div>
+                    ))}
                   </div>
-                </ScrollReveal>
+                </div>
               )
             )}
           </div>
         </section>
       ) : (
-        <section className="px-6 md:px-12 pb-16">
-          <SectionHeader title={t('newEpisodesHeading')} />
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <h3 className="text-xl font-bold text-white">
+        <section className="mx-auto max-w-4xl px-6 pb-16 md:px-12">
+          <div className="border-t border-[var(--line)] py-16 text-center">
+            <h3 className="font-display text-[24px] font-normal text-[var(--text)]">
               {t('noNewEpisodesHeading')}
             </h3>
-            <p className="mt-2 text-sm text-white/50">
+            <p className="mt-2 text-[14px] text-[var(--text-dim)]">
               {t('noNewEpisodesDescription')}
             </p>
           </div>

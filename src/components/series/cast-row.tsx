@@ -15,7 +15,7 @@ export function CastRow({ cast }: CastRowProps) {
 
   return (
     <section className="px-6 md:px-12 mt-10">
-      <h2 className="text-xl font-bold text-foreground">Cast</h2>
+      <h2 className="font-display text-xl font-medium text-foreground">Cast</h2>
       <div className="mt-4 flex gap-6 overflow-x-auto pb-2">
         {cast.map((member) => {
           const initials = member.name
@@ -25,8 +25,8 @@ export function CastRow({ cast }: CastRowProps) {
             .slice(0, 2)
           return (
             <div key={member.name} className="flex min-w-[80px] flex-col items-center gap-2">
-              <Avatar className="size-20">
-                <AvatarFallback className="bg-surface-3 text-lg font-medium text-muted-foreground">
+              <Avatar className="size-20 rounded-[4px]">
+                <AvatarFallback className="rounded-[4px] bg-[var(--bg-2)] text-lg font-medium text-muted-foreground">
                   {initials}
                 </AvatarFallback>
               </Avatar>

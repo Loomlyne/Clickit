@@ -46,11 +46,11 @@ export function ProfileForm({ displayName }: ProfileFormProps) {
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
       <div className="flex-1">
         <div className="flex items-center justify-between">
-          <Label htmlFor="display-name" className="text-white/60">
+          <Label htmlFor="display-name" className="text-[var(--text-dim)]">
             {t('displayNameLabel')}
           </Label>
           {status === 'saving' && (
-            <span className="flex items-center gap-1.5 text-xs text-white/40">
+            <span className="flex items-center gap-1.5 text-xs text-[var(--text-mute)]">
               <Loader2 className="size-3 animate-spin" />
               {isArabic ? 'جارٍ الحفظ' : 'Saving'}
             </span>

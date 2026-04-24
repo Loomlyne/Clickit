@@ -6,7 +6,6 @@ import { SeasonSelector } from '@/components/series/season-selector'
 import { EpisodeList } from '@/components/series/episode-list'
 import { MetadataCard } from './metadata-card'
 import type { ViewSeason, ViewEpisode, ViewShow } from '@/lib/queries'
-import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 
 interface SeriesDetailContentProps {
   seasons: ViewSeason[]
@@ -25,17 +24,14 @@ export function SeriesDetailContent({
 }: SeriesDetailContentProps) {
   const [activeSeasonId, setActiveSeasonId] = useState(seasons[0]?.id ?? '')
   const currentEpisodes = episodesBySeason[activeSeasonId] ?? []
-  const brandColorHex = BRAND_COLOR_HEX[showBrandColor] ?? '#2C3569'
-
   return (
     <div className="flex flex-col gap-8 lg:flex-row">
-      <div className="min-w-0 flex-1 rounded-[24px] border border-white/10 bg-white/[0.03] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
+      <div className="min-w-0 flex-1 rounded-[4px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
         {seasons.length > 0 && (
           <SeasonSelector
             seasons={seasons}
             activeSeason={activeSeasonId}
             onSeasonChange={setActiveSeasonId}
-            brandColorHex={brandColorHex}
           />
         )}
         <div className="mt-6">

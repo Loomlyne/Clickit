@@ -65,29 +65,29 @@ export default async function ProfilePage() {
           isAdmin={isAdmin}
         />
 
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
+        <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
           <h3 className="font-display mb-4 text-lg font-semibold tracking-[-0.02em] text-white">
             {t('accountHeading')}
           </h3>
           <ProfileForm displayName={displayName} />
         </div>
 
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
+        <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
           <h3 className="font-display mb-1 text-lg font-semibold tracking-[-0.02em] text-white">
             {t('languageHeading')}
           </h3>
-          <p className="mb-4 text-sm text-white/40">
+          <p className="mb-4 text-sm text-[var(--text-mute)]">
             {t('languageDescription')}
           </p>
           <LanguagePreference current={locale} />
         </div>
 
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
+        <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
               {t('myListHeading')}
               {watchlistShows.length > 0 && (
-                <span className="ms-2 text-sm font-normal text-white/40">
+                <span className="ms-2 font-mono text-sm font-normal text-[var(--text-mute)]">
                   {watchlistShows.length}
                 </span>
               )}
@@ -95,7 +95,7 @@ export default async function ProfilePage() {
             {watchlistShows.length > 0 && (
               <Link
                 href="/my-list"
-                className="text-sm text-white/50 hover:text-white transition-colors"
+                className="text-sm text-[var(--text-dim)] hover:text-white transition-colors"
               >
                 {t('myListSeeAll')} &rarr;
               </Link>
@@ -110,21 +110,21 @@ export default async function ProfilePage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-white/40 py-6 text-center">
+            <p className="text-sm text-[var(--text-mute)] py-6 text-center">
               {t('myListEmpty')}.{' '}
-              <Link href="/series" className="text-white/60 hover:text-white underline">
+              <Link href="/series" className="text-[var(--text-dim)] hover:text-white underline">
                 {locale === 'ar' ? 'تصفح البرامج' : 'Browse shows'}
               </Link>
             </p>
           )}
         </div>
 
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
+        <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
               {t('likedHeading')}
               {likedShows.length > 0 && (
-                <span className="ms-2 text-sm font-normal text-white/40">
+                <span className="ms-2 font-mono text-sm font-normal text-[var(--text-mute)]">
                   {likedShows.length}
                 </span>
               )}
@@ -139,13 +139,13 @@ export default async function ProfilePage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-white/40 py-6 text-center">
+            <p className="text-sm text-[var(--text-mute)] py-6 text-center">
               {t('likedEmpty')}
             </p>
           )}
         </div>
 
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
+        <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
           <h3 className="font-display mb-4 text-lg font-semibold tracking-[-0.02em] text-white">
             {t('historyHeading')}
           </h3>
@@ -156,7 +156,7 @@ export default async function ProfilePage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-white/40 py-6 text-center">
+            <p className="text-sm text-[var(--text-mute)] py-6 text-center">
               {t('historyEmpty')}
             </p>
           )}

@@ -56,7 +56,7 @@ export function AvatarUpload({ currentUrl, fallbackInitial }: AvatarUploadProps)
       type="button"
       onClick={() => inputRef.current?.click()}
       disabled={uploading}
-      className="group relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 shadow-[0_18px_48px_rgba(0,0,0,0.28)] transition-all hover:border-white/20"
+      className="group relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--line-2)] transition-all hover:border-[var(--text-mute)]"
       style={{ background: preview ? undefined : 'linear-gradient(135deg, rgba(96,115,255,0.85), rgba(46,57,121,0.92))' }}
     >
       {preview ? (

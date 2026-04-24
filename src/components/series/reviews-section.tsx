@@ -19,10 +19,10 @@ export function ReviewsSection({ reviews }: ReviewsSectionProps) {
 
   return (
     <section className="px-6 md:px-12 mt-10">
-      <h2 className="text-xl font-bold text-foreground">Reviews</h2>
+      <h2 className="font-display text-xl font-medium text-foreground">Reviews</h2>
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
         {reviews.map((review) => (
-          <Card key={review.id} className="bg-card border-border">
+          <Card key={review.id} className="rounded-[4px] border border-[var(--line)] bg-[var(--bg-1)]">
             <CardContent className="p-4">
               <div className="flex items-center gap-1">
                 {Array.from({ length: 5 }).map((_, i) => (
