@@ -1,3 +1,4 @@
+// User avatar — matches handoff .avatar (30px circle, gradient bg, mono initial)
 'use client'
 
 import { forwardRef } from 'react'
@@ -15,9 +16,10 @@ export const UserAvatar = forwardRef<HTMLButtonElement, UserAvatarProps>(
         ref={ref}
         aria-label="User menu"
         className={cn(
-          'flex size-11 items-center justify-center overflow-hidden rounded-[16px] border border-white/10',
-          'bg-white/[0.05] text-sm font-semibold text-foreground shadow-[0_10px_24px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.04)]',
-          'transition-colors hover:bg-white/[0.08]',
+          'flex size-[30px] items-center justify-center overflow-hidden rounded-full',
+          'border border-[var(--line-2)] bg-gradient-to-br from-[#c8a04a] to-[#d97757]',
+          'font-[family-name:var(--font-mono)] text-[12px] font-medium text-[#0a0a0a]',
+          'cursor-pointer flex-shrink-0 transition-transform duration-150 hover:scale-105',
           'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           className
         )}

@@ -287,6 +287,41 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          id: string
+          show_id: string
+          user_id: string
+          stars: number
+          body: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          show_id: string
+          user_id: string
+          stars: number
+          body: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          show_id?: string
+          user_id?: string
+          stars?: number
+          body?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seasons: {
         Row: {
           created_at: string
