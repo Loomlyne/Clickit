@@ -88,21 +88,21 @@ export default async function AuditLogPage() {
       </header>
 
       {error && (
-        <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200">
+        <div className="rounded-[6px] border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200">
           {t('errorHeading')}: {error.message}
         </div>
       )}
 
       {typedRows.length === 0 && !error && (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center text-sm text-white/56">
+        <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-8 text-center text-sm text-white/56">
           {t('emptyDescription')}
         </div>
       )}
 
       {typedRows.length > 0 && (
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+        <div className="overflow-hidden rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)]">
           <table className="w-full text-sm">
-            <thead className="border-b border-white/10 bg-white/[0.02] text-start text-xs uppercase tracking-[0.12em] text-white/48">
+            <thead className="border-b border-[var(--line)] bg-[var(--bg-2)] text-start text-xs uppercase tracking-[0.12em] text-white/48">
               <tr>
                 <th className="px-4 py-3 font-medium">{t('whenColumn')}</th>
                 <th className="px-4 py-3 font-medium">{t('actionColumn')}</th>
@@ -118,8 +118,8 @@ export default async function AuditLogPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${
-                        ACTION_STYLES[row.action_type] ?? 'bg-white/5 text-white/70 border-white/10'
+                      className={`inline-flex rounded-[4px] border px-2 py-0.5 text-xs font-medium ${
+                        ACTION_STYLES[row.action_type] ?? 'bg-white/5 text-white/70 border-[var(--line)]'
                       }`}
                     >
                       {row.action_type}

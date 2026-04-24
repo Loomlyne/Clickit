@@ -101,7 +101,7 @@ export function HeroVideoManager({ currentVideo }: { currentVideo: VideoConfig }
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/40">
         {isArabic ? 'الحالي:' : 'Current:'} {video.type === 'mp4' ? (isArabic ? 'ملف MP4' : 'MP4 File') : (isArabic ? 'يوتيوب' : 'YouTube')}
       </p>
-      <div className="relative overflow-hidden rounded-[16px] border border-white/10 bg-black">
+      <div className="relative overflow-hidden rounded-[6px] border border-[var(--line)] bg-black">
         {video.type === 'mp4' ? (
           <video
             src={video.url}
@@ -173,12 +173,12 @@ export function HeroVideoManager({ currentVideo }: { currentVideo: VideoConfig }
       {mode === 'mp4' && (
         <div>
           {uploading ? (
-            <div className="flex flex-col items-center justify-center gap-2 rounded-[24px] border border-dashed border-white/12 bg-black/20 p-8">
+            <div className="flex flex-col items-center justify-center gap-2 rounded-[6px] border border-dashed border-white/12 bg-[var(--bg-2)] p-8">
               <Loader2 className="size-6 animate-spin text-muted-foreground" />
               <p className="text-sm text-muted-foreground">{isArabic ? 'جارٍ رفع الفيديو…' : 'Uploading video...'}</p>
             </div>
           ) : (
-            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[24px] border border-dashed border-white/12 bg-black/20 p-8 transition-colors hover:border-white/20">
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[6px] border border-dashed border-white/12 bg-[var(--bg-2)] p-8 transition-colors hover:border-white/20">
               <Upload className="size-6 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">{isArabic ? 'انقر لرفع MP4' : 'Click to upload MP4'}</p>
               <p className="text-xs text-muted-foreground">{isArabic ? 'الحد 50 م.ب. · يعمل بدون صوت كخلفية هيرو' : 'Max 50MB · Plays muted as hero background'}</p>
@@ -202,7 +202,7 @@ export function HeroVideoManager({ currentVideo }: { currentVideo: VideoConfig }
             placeholder="https://www.youtube.com/watch?v=..."
             value={youtubeInput}
             onChange={(e) => setYoutubeInput(e.target.value)}
-            className="flex-1 rounded-[16px] border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-muted-foreground focus:border-white/20 focus:outline-none"
+            className="flex-1 rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] px-4 py-3 text-sm text-white placeholder:text-muted-foreground focus:border-white/20 focus:outline-none"
           />
           <Button
             onClick={handleYoutubeSave}

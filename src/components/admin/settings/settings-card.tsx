@@ -2,9 +2,9 @@ import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
 
 /**
- * Shared glassmorphic card used for every settings section.
- * Mirrors the style already used in the legacy single-section settings page:
- *   rounded-[24px] border border-white/10 bg-white/[0.03] p-6 md:p-8
+ * Shared editorial card used for every settings section.
+ * Uses the editorial design system tokens:
+ *   rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-6 md:p-8
  */
 export function SettingsCard({
   title,
@@ -22,7 +22,7 @@ export function SettingsCard({
   return (
     <section
       className={cn(
-        'rounded-[24px] border border-white/10 bg-white/[0.03] p-6 md:p-8',
+        'rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-6 md:p-8',
         className
       )}
     >

@@ -73,13 +73,13 @@ export default async function ShowDetailPage({
     <div className="space-y-6">
       <Link
         href="/admin"
-        className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className="inline-flex items-center gap-1.5 rounded-[4px] border border-[var(--line)] bg-[var(--bg-2)] px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="size-4 rtl:scale-x-[-1]" />
         {tDash('allShows')}
       </Link>
 
-      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] md:p-8">
+      <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-6 md:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
@@ -105,7 +105,7 @@ export default async function ShowDetailPage({
               {show.description}
             </p>
           </div>
-          <div className="flex flex-col items-start gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-4">
+          <div className="flex flex-col items-start gap-3 rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] px-4 py-4">
             <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
               {tShows('publishingState')}
             </span>

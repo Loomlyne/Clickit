@@ -141,13 +141,13 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-6">
+      <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-5 md:p-6">
         <div className="flex items-center justify-between pb-4 text-sm text-muted-foreground">
           <span>{shows.length} {isArabic ? 'برنامج مؤرشف' : (shows.length === 1 ? 'archived show' : 'archived shows')}</span>
           <span>{isArabic ? 'الأحدث أولاً' : 'Newest changes first'}</span>
         </div>
 
-        <div className="overflow-hidden rounded-[24px] border border-white/10 bg-black/20">
+        <div className="overflow-hidden rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)]">
           <Table>
             <TableHeader>
               <TableRow className="bg-transparent">

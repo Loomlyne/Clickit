@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 const statusConfig: Record<string, { en: string; ar: string; className: string }> = {
   'now-streaming': { en: 'Now Streaming', ar: 'يُبثّ الآن', className: 'border-emerald-400/25 bg-emerald-500/14 text-emerald-200 hover:bg-emerald-500/14' },
   'coming-soon': { en: 'Coming Soon', ar: 'قريباً', className: 'border-amber-400/25 bg-amber-500/14 text-amber-100 hover:bg-amber-500/14' },
-  'draft': { en: 'Draft', ar: 'مسودة', className: 'border-white/10 bg-white/[0.05] text-muted-foreground hover:bg-white/[0.05]' },
+  'draft': { en: 'Draft', ar: 'مسودة', className: 'border-[var(--line)] bg-[var(--bg-2)] text-muted-foreground hover:bg-[var(--bg-2)]' },
   'published': { en: 'Published', ar: 'منشور', className: 'border-sky-400/25 bg-sky-500/14 text-sky-100 hover:bg-sky-500/14' },
   'archived': { en: 'Archived', ar: 'مؤرشف', className: 'border-red-400/25 bg-red-500/14 text-red-100 hover:bg-red-500/14' },
 }

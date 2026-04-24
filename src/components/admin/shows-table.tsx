@@ -128,14 +128,14 @@ export function ShowsTable({ shows }: ShowsTableProps) {
           { label: isArabic ? 'قريباً' : 'Coming Soon', value: stats.comingSoon, color: 'text-amber-100' },
           { label: isArabic ? 'مسودة' : 'Draft', value: stats.draft, color: 'text-muted-foreground' },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.18)]">
+          <div key={stat.label} className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-4">
             <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{stat.label}</p>
             <p className={`mt-3 text-3xl font-semibold tracking-tight ${stat.color}`}>{stat.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-6">
+      <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-5 md:p-6">
         <div className="flex flex-col gap-4 border-b border-white/8 pb-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
@@ -158,7 +158,7 @@ export function ShowsTable({ shows }: ShowsTableProps) {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-11 rounded-full border border-white/10 bg-black/20 px-4 text-sm text-foreground outline-none transition-colors focus:border-white/20"
+              className="h-11 rounded-[4px] border border-[var(--line)] bg-[var(--bg-2)] px-4 text-sm text-foreground outline-none transition-colors focus:border-white/20"
             >
               <option value="all">{isArabic ? 'كل الحالات' : 'All Status'}</option>
               <option value="now-streaming">{isArabic ? 'يُبثّ الآن' : 'Streaming'}</option>
@@ -177,7 +177,7 @@ export function ShowsTable({ shows }: ShowsTableProps) {
           <span>{isArabic ? 'مرتّبة من الأحدث' : 'Sorted by newest'}</span>
         </div>
 
-        <div className="overflow-hidden rounded-[24px] border border-white/10 bg-black/20">
+        <div className="overflow-hidden rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)]">
           <Table>
             <TableHeader>
               <TableRow className="bg-transparent">

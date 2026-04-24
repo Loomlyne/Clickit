@@ -14,7 +14,7 @@ export function EmptyState({
   const locale = useLocale()
   const isArabic = locale === 'ar'
   return (
-    <div className="flex flex-col items-center justify-center rounded-[28px] border border-white/10 bg-white/[0.04] px-6 py-16 text-center shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+    <div className="flex flex-col items-center justify-center rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] px-6 py-16 text-center">
       <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
         {isArabic ? 'حالة فارغة' : 'Empty State'}
       </p>

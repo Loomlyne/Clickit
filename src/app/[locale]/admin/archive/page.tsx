@@ -19,7 +19,7 @@ export default async function ArchivePage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] md:p-8">
+      <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-6 md:p-8">
         <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
           {isArabic ? 'لوحة الإدارة' : 'Admin Console'}
         </p>
@@ -33,7 +33,7 @@ export default async function ArchivePage() {
             </p>
           </div>
 
-          <div className="flex max-w-md items-start gap-3 rounded-2xl border border-yellow-500/20 bg-yellow-500/8 px-4 py-4">
+          <div className="flex max-w-md items-start gap-3 rounded-[6px] border border-yellow-500/20 bg-yellow-500/8 px-4 py-4">
             <AlertTriangle className="mt-0.5 size-5 shrink-0 text-yellow-400" />
             <div className="text-sm">
               <p className="font-medium text-yellow-100">

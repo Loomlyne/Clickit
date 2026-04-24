@@ -94,7 +94,7 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
   return (
     <TooltipProvider delayDuration={300}>
       <Tabs defaultValue={defaultTab} className="space-y-4">
-        <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-6">
+        <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-5 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
@@ -145,7 +145,7 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
           const seasonEpisodes = episodesBySeason[season.id] ?? []
           return (
             <TabsContent key={season.id} value={season.id}>
-              <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-6">
+              <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-5 md:p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
                     {seasonEpisodes.length} {isArabic ? 'حلقة' : (seasonEpisodes.length === 1 ? 'episode' : 'episodes')}
