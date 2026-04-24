@@ -165,12 +165,12 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
-        <SheetHeader>
+      <SheetContent side="right" className="sm:max-w-xl w-full p-0 flex flex-col">
+        <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
           <SheetTitle>{isEditing ? 'Edit Short' : 'Add Short'}</SheetTitle>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {/* YouTube URL + Fetch */}
           <div className="space-y-2">
             <Label htmlFor="youtube_url">YouTube Shorts URL</Label>
@@ -198,17 +198,18 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
 
           {/* Preview thumbnail */}
           {thumbnailUrl && (
-            <div className="flex gap-4">
+            <div className="flex items-start gap-4 rounded-lg border border-white/8 bg-white/[0.02] p-3">
               <img
                 src={thumbnailUrl}
                 alt="Thumbnail"
-                className="h-24 w-auto rounded object-cover"
+                className="h-20 w-auto rounded object-cover"
               />
-              {videoId && (
-                <div className="text-xs text-muted-foreground">
-                  Video ID: <code className="text-foreground">{videoId}</code>
-                </div>
-              )}
+              <div className="text-xs text-muted-foreground space-y-1">
+                <div>Video ID: <code className="text-foreground">{videoId}</code></div>
+                {watch('duration_seconds') && (
+                  <div>Duration: {watch('duration_seconds')}s</div>
+                )}
+              </div>
             </div>
           )}
 
@@ -230,30 +231,30 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
             <Input id="channel_name" {...register('channel_name')} />
           </div>
 
-          {/* Genre */}
-          <div className="space-y-2">
-            <Label htmlFor="genre">Genre</Label>
-            <select
-              id="genre"
-              {...register('genre')}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <option value="">None</option>
-              {GENRES.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Sort order */}
-          <div className="space-y-2">
-            <Label htmlFor="sort_order">Sort Order</Label>
-            <Input
-              id="sort_order"
-              type="number"
-              {...register('sort_order', { valueAsNumber: true })}
-            />
-            <p className="text-xs text-muted-foreground">Lower numbers appear first</p>
+          {/* Genre + Sort in a row */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="genre">Genre</Label>
+              <select
+                id="genre"
+                {...register('genre')}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="">None</option>
+                {GENRES.map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sort_order">Sort Order</Label>
+              <Input
+                id="sort_order"
+                type="number"
+                {...register('sort_order', { valueAsNumber: true })}
+              />
+              <p className="text-xs text-muted-foreground">Lower = first</p>
+            </div>
           </div>
 
           {/* Expiration */}
@@ -265,30 +266,29 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
               {...register('expires_at')}
             />
             <p className="text-xs text-muted-foreground">
-              Leave empty for no expiration. Short disappears from the platform after this date.
+              Leave empty for no expiration. Short disappears after this date.
             </p>
           </div>
-
-          {/* Submit */}
-          <div className="flex gap-3 pt-4">
-            <Button type="submit" disabled={saving} className="flex-1">
-              {saving ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : isEditing ? (
-                'Save Changes'
-              ) : (
-                'Add Short'
-              )}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-          </div>
         </form>
+
+        {/* Sticky footer */}
+        <div className="shrink-0 border-t border-border px-6 py-4 flex gap-3">
+          <Button onClick={handleSubmit(onSubmit)} disabled={saving} className="flex-1">
+            {saving ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : isEditing ? (
+              'Save Changes'
+            ) : (
+              'Add Short'
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   )
