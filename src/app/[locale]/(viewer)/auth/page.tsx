@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 
+import Image from 'next/image'
 import { AuthPanel } from '@/components/auth/auth-panel'
 import { BotIdInit } from '@/components/auth/botid-init'
 import { getFeaturedShows } from '@/lib/queries'
@@ -35,10 +36,13 @@ export default async function AuthPage() {
         <div className="relative flex h-full flex-col justify-between p-12">
           {/* Top: logo + badge */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-lg font-bold tracking-[-0.03em] text-white">
-              <span className="inline-block h-[6px] w-[6px] rounded-full bg-[var(--primary)]" />
-              CLICKIT
-            </div>
+            <Image
+              src="/brand/Clickit_final_logo.svg"
+              alt="Clickit Story"
+              width={120}
+              height={30}
+              className="h-7 w-auto"
+            />
             <span className="mono text-[10px] text-white/50">Beta · Invite open</span>
           </div>
 
