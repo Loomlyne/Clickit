@@ -1,4 +1,4 @@
-import { getLocale } from 'next-intl/server'
+import { useLocale } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { ChevronRight } from 'lucide-react'
 
@@ -9,13 +9,13 @@ interface SectionHeaderProps {
   className?: string
 }
 
-export async function SectionHeader({
+export function SectionHeader({
   title,
   seeAllHref,
   accentColor,
   className,
 }: SectionHeaderProps) {
-  const locale = await getLocale()
+  const locale = useLocale()
   const isArabic = locale === 'ar'
   return (
     <div
