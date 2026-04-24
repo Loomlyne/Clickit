@@ -1,68 +1,38 @@
 import { Link } from '@/i18n/navigation'
-import { getAllShows } from '@/lib/queries'
-import { ShowArt } from '@/components/primitives/show-art'
-import { SectionHeader } from '@/components/primitives/section-header'
-import { ScrollReveal } from '@/components/primitives/scroll-reveal'
-import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
-import type { ViewShow } from '@/lib/queries'
-
-function ShowPortfolioCard({ show }: { show: ViewShow }) {
-  const brandColorHex = BRAND_COLOR_HEX[show.brandColor]
-
-  return (
-    <Link href={`/series/${show.slug}`} className="group block">
-      <div className="overflow-hidden rounded-[20px] border border-white/10 bg-white/[0.03] shadow-[0_12px_40px_rgba(0,0,0,0.22)] transition-transform duration-300 ease-out group-hover:-translate-y-1">
-        <ShowArt
-          brandColor={brandColorHex}
-          title={show.title}
-          aspectRatio="2/3"
-          imageUrl={show.posterUrl}
-          className="rounded-none"
-        >
-          {/* Hover overlay bloom */}
-          <div
-            className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-            style={{
-              background: `radial-gradient(circle at center, ${brandColorHex}30 0%, transparent 70%)`,
-            }}
-          />
-        </ShowArt>
-
-        {/* Card footer */}
-        <div className="px-3 py-3">
-          <p className="truncate text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
-            {show.genre}
-          </p>
-          <p className="mt-0.5 truncate text-sm font-semibold tracking-[-0.02em] text-white">
-            {show.title}
-          </p>
-        </div>
-
-        {/* Brand color accent bar — reveals on hover */}
-        <div
-          className="h-[2px] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-          style={{ background: brandColorHex, boxShadow: `0 0 16px ${brandColorHex}50` }}
-        />
-      </div>
-    </Link>
-  )
-}
+import { getFeaturedShows } from '@/lib/queries'
 
 export async function ShowsPortfolio() {
-  const shows = await getAllShows()
+  const shows = await getFeaturedShows()
+  const display = shows.slice(0, 4)
 
-  if (shows.length === 0) return null
+  if (display.length === 0) return null
 
   return (
-    <ScrollReveal>
-      <section>
-        <SectionHeader title="All Original Shows" />
-        <div className="grid grid-cols-2 gap-3 px-6 sm:grid-cols-3 md:gap-4 md:px-12 lg:grid-cols-4 xl:grid-cols-5">
-          {shows.map((show) => (
-            <ShowPortfolioCard key={show.id} show={show} />
-          ))}
-        </div>
-      </section>
-    </ScrollReveal>
+    <section className="mx-auto max-w-[1400px] px-10 py-24" id="shows">
+      <div className="mono mb-3.5 text-[var(--text-mute)]">002 · What to watch</div>
+      <h2 className="font-[family-name:var(--font-display)] text-[clamp(36px,5vw,64px)] font-normal leading-none tracking-[-0.02em] mb-12 max-w-[800px]">
+        A catalog curated by editors, not by clicks.
+      </h2>
+      <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
+        {display.map((s) => (
+          <Link key={s.slug} href={`/series/${s.slug}`} className="group cursor-pointer">
+            <div className="aspect-[2/3] overflow-hidden rounded bg-[var(--bg-2)] mb-3.5">
+              {s.posterUrl ? (
+                <img
+                  src={s.posterUrl}
+                  alt={s.title}
+                  className="h-full w-full object-cover transition-transform duration-400 ease-[var(--ease)] group-hover:scale-105"
+                />
+              ) : (
+                <div className="h-full w-full bg-[var(--bg-2)]" />
+              )}
+            </div>
+            <div className="mono mb-1">{s.genre}</div>
+            <div className="font-[family-name:var(--font-display)] text-[22px] tracking-[-0.01em] mb-1.5">{s.title}</div>
+            <div className="text-[13px] text-[var(--text-dim)]">{s.tagline}</div>
+          </Link>
+        ))}
+      </div>
+    </section>
   )
 }

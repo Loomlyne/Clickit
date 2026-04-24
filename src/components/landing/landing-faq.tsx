@@ -1,61 +1,78 @@
-import { getLocale, getTranslations } from 'next-intl/server'
-import { Link } from '@/i18n/navigation'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+'use client'
 
-export async function LandingFaq() {
-  const [locale, tFaq] = await Promise.all([getLocale(), getTranslations('faq')])
-  const isArabic = locale === 'ar'
-  // Top 5 FAQs from the faq namespace
-  const LANDING_FAQS = [1, 2, 3, 4, 5].map((i) => ({
-    q: tFaq(`q${i}Question`),
-    a: tFaq(`q${i}Answer`),
-  }))
+import { useState } from 'react'
+
+const FAQS = [
+  {
+    q: 'What is Clickit?',
+    a: 'Clickit is a curated streaming service for original shows produced in Abu Dhabi. Every show is hand-picked by our editors.',
+  },
+  {
+    q: 'How much does it cost?',
+    a: 'Clickit is free during open beta. No subscription required — just sign up and start watching.',
+  },
+  {
+    q: 'Which devices are supported?',
+    a: 'Any modern browser on desktop, tablet, or mobile. Our shows stream via YouTube for maximum compatibility.',
+  },
+  {
+    q: 'Where does the content come from?',
+    a: 'All content is original, produced by Spacelight Studios FZ LLC from Yas Creative Hub, Abu Dhabi.',
+  },
+  {
+    q: 'Is there Arabic content?',
+    a: 'Yes — all shows are bilingual (Arabic and English). The platform UI supports both languages.',
+  },
+  {
+    q: 'How many shows are available?',
+    a: 'We currently have 15 original programs spanning travel, health, music, comedy, cooking, kids, poetry, cinema, tech, and more.',
+  },
+]
+
+export function LandingFaq() {
+  const [openIdx, setOpenIdx] = useState(0)
+
   return (
-    <section className="px-6 md:px-12">
-      <div className="mx-auto max-w-7xl">
-        <div className="grid gap-16 lg:grid-cols-[1fr_1.6fr] lg:gap-24">
-          {/* Left: sticky editorial heading */}
-          <div className="lg:sticky lg:top-32" style={{ height: 'fit-content' }}>
-            <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.32em] text-white/28">
-              {isArabic ? 'الأسئلة المتكررة' : 'FAQ'}
-            </p>
-            <h2
-              className="font-display font-black leading-[0.92] text-white"
-              style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', letterSpacing: '-0.05em' }}
+    <section className="mx-auto max-w-[1400px] px-10 py-24 border-t border-[var(--line)]" id="faq">
+      <div className="mono mb-3.5 text-[var(--text-mute)]">005 · FAQ</div>
+      <h2 className="font-[family-name:var(--font-display)] text-[clamp(36px,5vw,64px)] font-normal leading-none tracking-[-0.02em] mb-12">
+        Common questions.
+      </h2>
+      <div className="mx-auto max-w-[860px]">
+        {FAQS.map((f, i) => (
+          <div
+            key={i}
+            className="cursor-pointer border-t border-[var(--line)] py-7 last:border-b"
+            onClick={() => setOpenIdx(openIdx === i ? -1 : i)}
+          >
+            <div className="flex items-center justify-between gap-6">
+              <h3 className="font-[family-name:var(--font-display)] text-[24px] font-normal tracking-[-0.01em] flex-1">
+                {f.q}
+              </h3>
+              <div
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-all duration-200 ${
+                  openIdx === i
+                    ? 'bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)] rotate-45'
+                    : 'border-[var(--line-2)]'
+                }`}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </div>
+            </div>
+            <div
+              className="grid transition-[grid-template-rows] duration-300"
+              style={{ gridTemplateRows: openIdx === i ? '1fr' : '0fr' }}
             >
-              {isArabic ? (
-                <>الأسئلة،{' '}<span className="text-white/28">بإجاباتها.</span></>
-              ) : (
-                <>Questions,{' '}<span className="text-white/28">answered.</span></>
-              )}
-            </h2>
-            <p className="mt-5 text-sm leading-7 text-white/44 md:text-base">
-              {isArabic
-                ? 'كل ما تحتاج معرفته عن كلِك إت ستوري — مجاني، أصلي، ومصنوع في أبوظبي.'
-                : 'Everything you need to know about Clickit Story — free, original, and built in Abu Dhabi.'}
-            </p>
-            <Link
-              href="/support#faq"
-              className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-white/40 transition-colors hover:text-white/80"
-            >
-              {isArabic ? 'كل الأسئلة والدعم ←' : 'All FAQs and support →'}
-            </Link>
+              <div className="overflow-hidden">
+                <p className="pt-4 text-[16px] leading-relaxed text-[var(--text-dim)] max-w-[640px]">
+                  {f.a}
+                </p>
+              </div>
+            </div>
           </div>
-
-          {/* Right: accordion */}
-          <Accordion type="single" collapsible className="w-full">
-            {LANDING_FAQS.map((item, i) => (
-              <AccordionItem key={i} value={`faq-${i}`}>
-                <AccordionTrigger className="text-start text-base font-medium text-white/80 hover:text-white data-[state=open]:text-white">
-                  {item.q}
-                </AccordionTrigger>
-                <AccordionContent className="text-sm leading-7 text-white/44">
-                  {item.a}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
+        ))}
       </div>
     </section>
   )

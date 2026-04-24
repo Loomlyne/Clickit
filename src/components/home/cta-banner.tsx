@@ -1,81 +1,45 @@
 import { Link } from '@/i18n/navigation'
-import { Button } from '@/components/ui/button'
-import { ScrollReveal } from '@/components/primitives/scroll-reveal'
-import { getCatalogStage } from '@/lib/queries'
-import { getAppConfig } from '@/lib/config'
-
-const BRAND_COLORS = ['#2C3569', '#9F54A0', '#50A258', '#DB3F34', '#EA8C2E', '#F8C623']
+import { getFeaturedShows } from '@/lib/queries'
 
 export async function CtaBanner() {
-  const [{ stage }, config] = await Promise.all([getCatalogStage(), getAppConfig()])
-  const copy = config.ctaCopy[stage]
-
-  // Feature flag — admin can hide the banner entirely from the Advanced tab.
-  if (!config.flags.showCtaBanner) return null
+  const shows = await getFeaturedShows()
+  const backdrop = shows[2]?.heroImageUrl || shows[0]?.posterUrl
 
   return (
-    <ScrollReveal>
-      {/* Full-bleed — no rounded card, no container padding */}
-      <div className="relative overflow-hidden border-y border-white/[0.06]">
-        {/* Background: deep dark with brand glow */}
-        <div className="absolute inset-0 bg-[#07080d]" />
+    <section className="relative overflow-hidden border-y border-[var(--line)] py-28 px-10 text-center">
+      {backdrop && (
         <div
-          className="pointer-events-none absolute inset-0"
-          aria-hidden="true"
-          style={{
-            background:
-              'radial-gradient(ellipse 70% 60% at 50% 100%, rgba(159,84,160,0.12) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 20% 0%, rgba(44,53,105,0.2) 0%, transparent 60%)',
-          }}
+          className="absolute inset-0 bg-cover bg-center opacity-25 grayscale"
+          style={{ backgroundImage: `url(${backdrop})` }}
         />
-
-        {/* Brand color strip at top */}
-        <div className="absolute inset-x-0 top-0 flex h-[2px]" aria-hidden="true">
-          {BRAND_COLORS.map((color) => (
-            <div key={color} className="flex-1" style={{ background: color }} />
-          ))}
-        </div>
-
-        <div className="relative mx-auto max-w-5xl px-6 py-24 text-center md:px-12 md:py-32">
-          <p className="mb-6 text-[11px] font-semibold uppercase tracking-[0.32em] text-white/32">
-            {copy.label}
-          </p>
-
-          <h2
-            className="font-display mx-auto mb-6 font-black text-white"
-            style={{ fontSize: 'clamp(3rem, 8vw, 6.5rem)', lineHeight: 0.93, letterSpacing: '-0.05em', maxWidth: '14ch' }}
+      )}
+      <div
+        className="absolute inset-0"
+        style={{ background: 'radial-gradient(ellipse at center, transparent, var(--bg-0))' }}
+      />
+      <div className="relative mx-auto max-w-[720px]">
+        <div className="mono mb-3.5 text-[var(--primary)]">Start the beta</div>
+        <h2 className="font-[family-name:var(--font-display)] text-[clamp(40px,6vw,80px)] font-normal leading-none tracking-[-0.02em] mb-6">
+          Seven days free. Cancel in the app.
+        </h2>
+        <p className="text-[17px] text-[var(--text-dim)] mb-9">
+          No card required. Full catalog. Keep your watchlist if you stick around.
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <Link
+            href="/auth"
+            className="inline-flex items-center rounded bg-[var(--primary)] px-6 py-3.5 text-[15px] font-medium text-[var(--primary-foreground)] transition-all hover:bg-white"
           >
-            {copy.headline}{' '}
-            <span className="text-white/28">{copy.headlineB}</span>
-          </h2>
-
-          <p className="mx-auto mb-12 max-w-xl text-base leading-7 text-white/48 md:text-lg">
-            {copy.body}
-          </p>
-
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Button
-              size="lg"
-              className="w-full rounded-full px-10 py-6 text-base font-bold shadow-[0_0_60px_-10px_rgba(255,255,255,0.35)] sm:w-auto"
-              asChild
-            >
-              <Link href={copy.primaryHref}>{copy.primaryLabel}</Link>
-            </Button>
-            <Link
-              href={copy.secondaryHref}
-              className="text-sm font-medium text-white/44 transition-colors hover:text-white/80"
-            >
-              {copy.secondaryLabel}
-            </Link>
-          </div>
-        </div>
-
-        {/* Brand color strip at bottom */}
-        <div className="absolute inset-x-0 bottom-0 flex h-[2px]" aria-hidden="true">
-          {BRAND_COLORS.map((color) => (
-            <div key={color} className="flex-1" style={{ background: color }} />
-          ))}
+            Create free account
+          </Link>
+          <Link
+            href="/browse"
+            className="inline-flex items-center rounded border border-[var(--line-2)] px-6 py-3.5 text-[15px] font-medium text-[var(--text)] transition-all hover:bg-white/[0.04]"
+          >
+            Take the tour
+          </Link>
         </div>
       </div>
-    </ScrollReveal>
+    </section>
   )
 }

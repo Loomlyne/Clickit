@@ -1,148 +1,123 @@
-import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
-import { getHeroVideo } from '@/lib/queries'
-import { extractYouTubeId } from '@/lib/youtube'
-import { LandingHeroAnimations } from './landing-hero-animations'
-
-const BRAND_COLORS = ['#2C3569', '#9F54A0', '#50A258', '#DB3F34', '#EA8C2E', '#F8C623']
+import { getFeaturedShows } from '@/lib/queries'
 
 export async function LandingHero() {
-  const heroVideo = await getHeroVideo()
-  const youtubeId = heroVideo?.type === 'youtube' ? extractYouTubeId(heroVideo.url) : null
+  const shows = await getFeaturedShows()
+  const collage = shows.slice(0, 4)
+  const backdrop = shows[0]?.heroImageUrl || shows[0]?.posterUrl
 
   return (
-    <section className="relative -mt-24 h-dvh overflow-hidden md:-mt-28">
-      {/* Video / Fallback background */}
-      <div className="absolute inset-0">
-        {/* Layer 1: black base */}
-        <div className="absolute inset-0 bg-black" />
+    <section className="relative -mt-16 min-h-dvh overflow-hidden">
+      {/* Background image with grain */}
+      {backdrop && (
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-[0.08] grayscale-[30%]"
+          style={{ backgroundImage: `url(${backdrop})` }}
+        />
+      )}
+      <div
+        className="absolute inset-0"
+        aria-hidden="true"
+        style={{
+          background:
+            'radial-gradient(ellipse at 20% 40%, transparent 0%, rgba(10,10,10,0.8) 60%), linear-gradient(180deg, transparent 0%, var(--bg-0) 100%)',
+        }}
+      />
 
-        {/* Layer 2: video */}
-        {/* preload="metadata" tells the browser to download only the first ~1s of
-            video data for dimensions/duration, not the whole file, before the user
-            even sees anything. The full stream then loads as playback needs it.
-            This saves ~hundreds of KB on mobile first paint. */}
-        {heroVideo?.type === 'mp4' && (
-          <video
-            src={heroVideo.url}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            className="absolute inset-0 h-full w-full object-cover opacity-60"
-          />
-        )}
-        {heroVideo?.type === 'youtube' && youtubeId && (
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <iframe
-              src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`}
-              allow="autoplay; encrypted-media"
-              className="absolute left-1/2 top-1/2 h-[120%] w-[120%] -translate-x-1/2 -translate-y-1/2 border-none"
-              style={{ aspectRatio: '16/9', opacity: 0.6 }}
-              title="Hero background video"
-            />
-          </div>
-        )}
-
-        {/* Fallback: gradient bloom when no video */}
-        {!heroVideo && (
-          <>
-            <div
-              className="absolute inset-0"
-              style={{
-                background: 'radial-gradient(ellipse 80% 60% at 50% 120%, rgba(96,115,255,0.5) 0%, transparent 70%)',
-              }}
-            />
-            <div
-              className="absolute inset-0 flex items-center justify-center overflow-hidden"
-              aria-hidden="true"
-            >
-              <span
-                style={{
-                  fontSize: 'clamp(8rem, 20vw, 18rem)',
-                  fontWeight: 800,
-                  color: 'white',
-                  opacity: 0.03,
-                  userSelect: 'none',
-                  pointerEvents: 'none',
-                  textTransform: 'uppercase',
-                  lineHeight: 1,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                CIT
-              </span>
+      {/* Content grid */}
+      <div className="relative flex min-h-dvh items-center px-10 pt-32 pb-20">
+        <div className="mx-auto grid w-full max-w-[1400px] grid-cols-1 items-center gap-16 lg:grid-cols-2">
+          {/* LEFT — copy */}
+          <div>
+            <div className="mono mb-5 flex items-center gap-2.5 text-[var(--primary)]">
+              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              Now streaming · Est. 2026
             </div>
-          </>
-        )}
+            <h1 className="font-[family-name:var(--font-display)] text-[clamp(48px,7vw,96px)] font-normal leading-[0.92] tracking-[-0.03em] mb-6">
+              Television for the city that{' '}
+              <em className="italic text-[var(--primary)]">can&apos;t sleep.</em>
+            </h1>
+            <p className="text-[17px] leading-relaxed text-[var(--text-dim)] max-w-[560px] mb-9">
+              A hand-curated channel for urban culture, food, design and travel. No ads, no algorithm — just the shows editors love, from creators you&apos;ve never heard of.
+            </p>
+            <div className="flex items-center gap-3 mb-16">
+              <Link
+                href="/auth"
+                className="inline-flex items-center gap-2 rounded bg-[var(--primary)] px-6 py-3.5 text-[15px] font-medium text-[var(--primary-foreground)] transition-all hover:bg-white"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3" /></svg>
+                Start watching free
+              </Link>
+              <Link
+                href="/browse"
+                className="inline-flex items-center gap-2 rounded border border-[var(--line-2)] px-6 py-3.5 text-[15px] font-medium text-[var(--text)] transition-all hover:bg-white/[0.04]"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3" /></svg>
+                60-second trailer
+              </Link>
+            </div>
+            {/* Stats strip */}
+            <div className="flex gap-10">
+              <div>
+                <div className="font-[family-name:var(--font-display)] text-3xl">7 days</div>
+                <div className="mono mt-1">Free beta<br />No card required</div>
+              </div>
+              <div>
+                <div className="font-[family-name:var(--font-display)] text-3xl">{shows.length || 15}</div>
+                <div className="mono mt-1">Original shows<br />From Abu Dhabi</div>
+              </div>
+              <div>
+                <div className="font-[family-name:var(--font-display)] text-3xl">0</div>
+                <div className="mono mt-1">Ads. Ever.<br />That&apos;s the deal</div>
+              </div>
+            </div>
+          </div>
 
-        {/* Layer 3: cinematic overlays (always present) */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          aria-hidden="true"
-          style={{
-            background:
-              'radial-gradient(ellipse 60% 50% at 10% 20%, rgba(96,115,255,0.18) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 90% 80%, rgba(159,84,160,0.12) 0%, transparent 70%)',
-          }}
-        />
-
-        {/* Bottom vignette */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#06070A] via-black/30 to-transparent" />
-
-        {/* Noise texture */}
-        <div
-          className="absolute inset-0"
-          aria-hidden="true"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E\")",
-            backgroundRepeat: 'repeat',
-            backgroundSize: '256px',
-            opacity: 0.4,
-            mixBlendMode: 'overlay',
-          }}
-        />
-      </div>
-
-      {/* Content */}
-      <div className="absolute bottom-0 start-0 w-full px-6 pb-16 md:px-12 md:pb-20">
-        <div className="max-w-[52rem]">
-          {/*
-            LCP optimization: the logo <Image> renders from the server HTML
-            so the browser's preload scanner can find it immediately with
-            fetchpriority=high. Previously it was nested inside
-            LandingHeroAnimations (a client component) which:
-              1. Rendered the <img> only after hydration (invisible to the
-                 preload scanner → ~700ms resource load delay).
-              2. Wrapped it in motion.div with opacity 0 → 1 fade over 600ms
-                 with 250ms delay — making LCP land at ~2000ms because the
-                 element was invisible until the animation played.
-            The text above/below still fades in via motion for polish, but the
-            brand mark paints instantly — which is also better for perceived
-            loading speed.
-          */}
-          <LandingHeroAnimations
-            logo={
-              <Image
-                src="/brand/Clickit_final_logo.svg"
-                alt="Clickit Story"
-                width={480}
-                height={120}
-                className="h-[5.25rem] w-auto md:h-[7.5rem]"
-                priority
-                fetchPriority="high"
-              />
-            }
-          />
+          {/* RIGHT — poster collage */}
+          <div className="relative hidden lg:block" style={{ height: 520 }}>
+            {collage.map((show, i) => {
+              const rotations = [-6, 4, -3, 5]
+              const offsets = [
+                { top: 0, left: 40 },
+                { top: 30, left: 220 },
+                { top: 160, left: 0 },
+                { top: 200, left: 200 },
+              ]
+              return (
+                <Link
+                  key={show.slug}
+                  href={`/series/${show.slug}`}
+                  className="absolute w-[200px] overflow-hidden rounded shadow-[0_20px_60px_rgba(0,0,0,0.5)] transition-transform duration-300 hover:scale-105"
+                  style={{
+                    aspectRatio: '2/3',
+                    transform: `rotate(${rotations[i]}deg)`,
+                    top: offsets[i].top,
+                    left: offsets[i].left,
+                    zIndex: i + 1,
+                  }}
+                >
+                  {show.posterUrl ? (
+                    <img
+                      src={show.posterUrl}
+                      alt={show.title}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-[var(--bg-2)]" />
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                    <div className="mono text-[9px]">{show.genre}</div>
+                    <div className="font-[family-name:var(--font-display)] text-sm">{show.title}</div>
+                  </div>
+                </Link>
+              )
+            })}
+            <div className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5 rounded bg-[var(--primary)] px-2.5 py-1 text-[var(--primary-foreground)]">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3" /></svg>
+              <span className="mono text-[9px] text-[var(--primary-foreground)]">Now playing</span>
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* Decorative 6-color brand bar at the very bottom */}
-      <div className="absolute inset-x-0 bottom-0 flex h-0.5 opacity-40" aria-hidden="true">
-        {BRAND_COLORS.map((color) => (
-          <div key={color} className="flex-1" style={{ background: color }} />
-        ))}
       </div>
     </section>
   )
