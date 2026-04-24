@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { Link, usePathname } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
 import { AuthSection } from './auth-section'
@@ -48,13 +49,15 @@ export function Navbar({ initialUser }: NavbarProps) {
       )}
       style={{ WebkitBackdropFilter: 'blur(18px)' }}
     >
-      {/* Logo: yellow dot + CLICKIT text */}
-      <Link
-        href="/"
-        className="flex items-center gap-2 text-xl font-bold tracking-[-0.03em] text-[var(--text)]"
-      >
-        <span className="inline-block h-[7px] w-[7px] rounded-full bg-[var(--primary)] mb-0.5" />
-        CLICKIT
+      <Link href="/" aria-label="Clickit Story home">
+        <Image
+          src="/brand/Clickit_final_logo.svg"
+          alt="Clickit Story"
+          width={124}
+          height={32}
+          className="h-7 w-auto"
+          priority
+        />
       </Link>
 
       {/* Nav links */}

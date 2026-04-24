@@ -1,4 +1,5 @@
 import { getLocale } from 'next-intl/server'
+import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { getAppConfig } from '@/lib/config'
 
@@ -46,9 +47,14 @@ export async function Footer() {
         <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
           {/* About column */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-[-0.03em] text-[var(--text)] mb-4">
-              <span className="inline-block h-[6px] w-[6px] rounded-full bg-[var(--primary)]" />
-              CLICKIT
+            <Link href="/" className="mb-4 block" aria-label="Clickit Story home">
+              <Image
+                src="/brand/Clickit_final_logo.svg"
+                alt="Clickit Story"
+                width={120}
+                height={30}
+                className="h-6 w-auto"
+              />
             </Link>
             <p className="text-[13px] leading-relaxed text-[var(--text-dim)] mb-5">
               A hand-curated streaming home for urban culture, food, design, and travel. No algorithm, no ads.
