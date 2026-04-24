@@ -1,216 +1,142 @@
-import { getLocale, getTranslations } from 'next-intl/server'
+import { getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
-import Image from 'next/image'
 import { getAppConfig } from '@/lib/config'
 
-const BRAND_COLORS = ['#2C3569', '#9F54A0', '#50A258', '#DB3F34', '#EA8C2E', '#F8C623']
-
-const GENRE_LINKS = [
-  { key: 'travel', href: '/browse?genre=Travel' },
-  { key: 'health', href: '/browse?genre=Health' },
-  { key: 'music', href: '/browse?genre=Music' },
-  { key: 'comedy', href: '/browse?genre=Comedy' },
-  { key: 'tech', href: '/browse?genre=Tech' },
-]
-
-// Renders a social icon link when a URL is set; returns null for empty slots
-// so the footer doesn't render dead href="#" placeholders.
-function SocialLink({
-  href,
-  label,
-  children,
-}: {
-  href: string
-  label: string
-  children: React.ReactNode
-}) {
-  if (!href) return null
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      aria-label={label}
-      className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/48 transition-colors hover:border-white/20 hover:text-white"
-    >
-      {children}
-    </a>
-  )
-}
-
-function YouTubeIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-    </svg>
-  )
-}
-
-function InstagramIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-    </svg>
-  )
-}
-
-function XIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  )
-}
-
-const GENRE_LABEL: Record<string, string> = {
-  travel: 'Travel',
-  health: 'Health',
-  music: 'Music',
-  comedy: 'Comedy',
-  tech: 'Tech',
-}
-
-const GENRE_LABEL_AR: Record<string, string> = {
-  travel: 'سفر',
-  health: 'صحة',
-  music: 'موسيقى',
-  comedy: 'كوميديا',
-  tech: 'تقنية',
-}
-
 export async function Footer() {
-  const [{ footer }, locale, tCommon, tNav] = await Promise.all([
+  const [{ footer }, locale] = await Promise.all([
     getAppConfig(),
     getLocale(),
-    getTranslations('common'),
-    getTranslations('nav'),
   ])
-  const isArabic = locale === 'ar'
-  const genreLabel = (key: string) => (isArabic ? GENRE_LABEL_AR[key] : GENRE_LABEL[key])
 
   return (
-    <footer className="relative mt-24 border-t border-white/[0.06] bg-[#07090d]">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
-      <div className="mx-auto max-w-7xl px-6 py-16 md:px-12">
-        <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr]">
-          {/* Brand panel */}
-          <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-md">
-            <div className="flex flex-col gap-5">
-              <Image
-                src="/brand/Clickit_final_logo.svg"
-                alt="Clickit Story"
-                width={156}
-                height={36}
-                className="h-9 w-auto"
-              />
-              <p className="text-base leading-7 text-white/66">{footer.tagline}</p>
-              <div className="flex flex-wrap items-center gap-3 text-sm text-white/48">
-                {footer.stat && (
-                  <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
-                    {footer.stat}
-                  </span>
-                )}
-                <SocialLink href={footer.social.instagram} label="Instagram">
-                  <InstagramIcon className="h-4 w-4" />
-                </SocialLink>
-                <SocialLink href={footer.social.x} label="X (Twitter)">
-                  <XIcon className="h-4 w-4" />
-                </SocialLink>
-                <SocialLink href={footer.social.youtube} label="YouTube">
-                  <YouTubeIcon className="h-4 w-4" />
-                </SocialLink>
-                {footer.contactEmail && (
-                  <a
-                    href={`mailto:${footer.contactEmail}`}
-                    className="text-xs font-medium text-white/48 transition-colors hover:text-white"
-                  >
-                    {footer.contactEmail}
-                  </a>
-                )}
+    <footer className="border-t border-[var(--line)] bg-[var(--bg-1)]">
+      {/* Hero wordmark section */}
+      <div className="mx-auto max-w-[1400px] px-10 pt-20 pb-16">
+        <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="mono mb-4">Est. 2026 · Streaming the city</div>
+            <h2 className="font-[family-name:var(--font-display)] text-[clamp(64px,8vw,120px)] font-normal leading-[0.85] tracking-[-0.03em]">
+              Click<em className="italic">it.</em>
+            </h2>
+          </div>
+          <div className="max-w-md">
+            <p className="text-[15px] leading-relaxed text-[var(--text-dim)] italic font-[family-name:var(--font-display)] mb-6">
+              A channel for people who still like to watch one thing, all the way through.
+            </p>
+            {/* Newsletter signup */}
+            <div>
+              <div className="mono mb-2">The dispatch · weekly, short</div>
+              <div className="flex items-center gap-0 rounded border border-[var(--line)] bg-[var(--bg-0)]">
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  className="flex-1 bg-transparent px-3 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-mute)] outline-none"
+                />
+                <button className="flex items-center justify-center px-3 py-2.5 text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </button>
               </div>
             </div>
           </div>
-
-          {/* Nav columns */}
-          <div className="grid grid-cols-3 gap-8">
-            <div>
-              <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">{isArabic ? 'التنقّل' : 'Navigate'}</h3>
-              <ul className="space-y-3">
-                <li><Link href="/browse" className="text-sm text-white/56 transition-colors hover:text-white">{tNav('browse')}</Link></li>
-                <li><Link href="/coming-soon" className="text-sm text-white/56 transition-colors hover:text-white">{tNav('comingSoon')}</Link></li>
-                <li><Link href="/support" className="text-sm text-white/56 transition-colors hover:text-white">{isArabic ? 'الدعم' : 'Support'}</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">{isArabic ? 'الأنواع' : 'Genres'}</h3>
-              <ul className="space-y-3">
-                {GENRE_LINKS.map(({ key, href }) => (
-                  <li key={key}>
-                    <Link href={href} className="text-sm text-white/56 transition-colors hover:text-white">{genreLabel(key)}</Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="space-y-8">
-              <div>
-                <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">{isArabic ? 'الحساب' : 'Account'}</h3>
-                <ul className="space-y-3">
-                  <li><Link href="/auth" className="text-sm text-white/56 transition-colors hover:text-white">{tCommon('signIn')}</Link></li>
-                  <li><Link href="/my-list" className="text-sm text-white/56 transition-colors hover:text-white">{tNav('myList')}</Link></li>
-                  <li><Link href="/profile" className="text-sm text-white/56 transition-colors hover:text-white">{tNav('profile')}</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">{isArabic ? 'قانوني' : 'Legal'}</h3>
-                <ul className="space-y-3">
-                  {footer.legal.privacy && (
-                    <li>
-                      <Link
-                        href={footer.legal.privacy}
-                        className="text-sm text-white/56 transition-colors hover:text-white"
-                      >
-                        {isArabic ? 'سياسة الخصوصية' : 'Privacy Policy'}
-                      </Link>
-                    </li>
-                  )}
-                  {footer.legal.terms && (
-                    <li>
-                      <Link
-                        href={footer.legal.terms}
-                        className="text-sm text-white/56 transition-colors hover:text-white"
-                      >
-                        {isArabic ? 'شروط الخدمة' : 'Terms of Service'}
-                      </Link>
-                    </li>
-                  )}
-                  {footer.legal.cookies && (
-                    <li>
-                      <Link
-                        href={footer.legal.cookies}
-                        className="text-sm text-white/56 transition-colors hover:text-white"
-                      >
-                        {isArabic ? 'سياسة ملفات الارتباط' : 'Cookie Policy'}
-                      </Link>
-                    </li>
-                  )}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-12 flex flex-col gap-2 border-t border-white/[0.06] pt-8 text-xs text-white/50 md:flex-row md:items-center md:justify-between">
-          <p>&copy; {new Date().getFullYear()} {tCommon('brand')}. {isArabic ? 'جميع الحقوق محفوظة.' : 'All rights reserved.'}</p>
-          <p>{isArabic ? 'إنتاج Spacelight Studios FZ LLC · أبوظبي، الإمارات العربية المتحدة' : 'A Spacelight Studios FZ LLC production · Abu Dhabi, UAE'}</p>
         </div>
       </div>
 
-      <div className="flex h-1" aria-hidden="true">
-        {BRAND_COLORS.map((color) => (
-          <div key={color} className="flex-1" style={{ background: color }} />
-        ))}
+      {/* 5-column navigation grid */}
+      <div className="mx-auto max-w-[1400px] px-10 pb-16">
+        <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
+          {/* About column */}
+          <div className="col-span-2 md:col-span-1">
+            <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-[-0.03em] text-[var(--text)] mb-4">
+              <span className="inline-block h-[6px] w-[6px] rounded-full bg-[var(--primary)]" />
+              CLICKIT
+            </Link>
+            <p className="text-[13px] leading-relaxed text-[var(--text-dim)] mb-5">
+              A hand-curated streaming home for urban culture, food, design, and travel. No algorithm, no ads.
+            </p>
+            {/* Social icons */}
+            <div className="flex items-center gap-2">
+              {footer.social?.instagram && (
+                <a href={footer.social.instagram} target="_blank" rel="noreferrer" title="Instagram" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line)] text-[var(--text-mute)] transition-colors hover:border-[var(--line-2)] hover:text-[var(--text)]">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="1" fill="currentColor" /></svg>
+                </a>
+              )}
+              {footer.social?.x && (
+                <a href={footer.social.x} target="_blank" rel="noreferrer" title="X" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line)] text-[var(--text-mute)] transition-colors hover:border-[var(--line-2)] hover:text-[var(--text)]">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18 3h3l-7.5 8.5L22 21h-6.5l-5-6.5L5 21H2l8-9L2 3h6.5l4.5 6L18 3z" /></svg>
+                </a>
+              )}
+              {footer.social?.youtube && (
+                <a href={footer.social.youtube} target="_blank" rel="noreferrer" title="YouTube" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line)] text-[var(--text-mute)] transition-colors hover:border-[var(--line-2)] hover:text-[var(--text)]">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 7.5a3 3 0 0 0-2.1-2.1C18 5 12 5 12 5s-6 0-7.9.4A3 3 0 0 0 2 7.5C1.6 9.4 1.6 12 1.6 12s0 2.6.4 4.5a3 3 0 0 0 2.1 2.1C6 19 12 19 12 19s6 0 7.9-.4a3 3 0 0 0 2.1-2.1c.4-1.9.4-4.5.4-4.5s0-2.6-.4-4.5zM10 15V9l5 3-5 3z" /></svg>
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Watch column */}
+          <div>
+            <h5 className="mono mb-4 text-[var(--text-dim)]">Watch</h5>
+            <ul className="space-y-2.5">
+              <li><Link href="/browse" className="text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">Browse all</Link></li>
+              <li><Link href="/browse" className="text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">New this week</Link></li>
+              <li><Link href="/coming-soon" className="text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">Coming soon</Link></li>
+              <li><Link href="/my-list" className="text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">My list</Link></li>
+            </ul>
+          </div>
+
+          {/* Discover column */}
+          <div>
+            <h5 className="mono mb-4 text-[var(--text-dim)]">Discover</h5>
+            <ul className="space-y-2.5">
+              <li><Link href="/browse?genre=Travel" className="text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">Travel</Link></li>
+              <li><Link href="/browse?genre=Health" className="text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">Health</Link></li>
+              <li><Link href="/browse?genre=Music" className="text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">Music</Link></li>
+              <li><Link href="/browse?genre=Comedy" className="text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">Comedy</Link></li>
+              <li><Link href="/browse?genre=Tech" className="text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">Tech</Link></li>
+            </ul>
+          </div>
+
+          {/* Company column */}
+          <div>
+            <h5 className="mono mb-4 text-[var(--text-dim)]">Company</h5>
+            <ul className="space-y-2.5">
+              <li><span className="text-sm text-[var(--text-dim)]">About</span></li>
+              <li><span className="text-sm text-[var(--text-dim)]">Creators</span></li>
+              <li><span className="text-sm text-[var(--text-dim)]">Press</span></li>
+              <li><Link href="/support" className="text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">Help &amp; support</Link></li>
+            </ul>
+          </div>
+
+          {/* Account column */}
+          <div>
+            <h5 className="mono mb-4 text-[var(--text-dim)]">Account</h5>
+            <ul className="space-y-2.5">
+              <li><Link href="/profile" className="text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">Profile</Link></li>
+              <li><Link href="/profile" className="text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">Settings</Link></li>
+              <li><Link href="/auth" className="text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">Sign in</Link></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom bar */}
+      <div className="border-t border-[var(--line)] mx-auto max-w-[1400px] px-10 py-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-wrap items-center gap-4 font-[family-name:var(--font-mono)] text-[11px] tracking-[0.1em] uppercase text-[var(--text-mute)]">
+            <span>&copy; {new Date().getFullYear()} Clickit Story</span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              All systems streaming
+            </span>
+            {footer.legal?.privacy && <a href={footer.legal.privacy} className="hover:text-[var(--text)]">Privacy</a>}
+            {footer.legal?.terms && <a href={footer.legal.terms} className="hover:text-[var(--text)]">Terms</a>}
+            {footer.legal?.cookies && <a href={footer.legal.cookies} className="hover:text-[var(--text)]">Cookies</a>}
+          </div>
+          <div className="flex items-center gap-4 font-[family-name:var(--font-mono)] text-[11px] tracking-[0.1em] uppercase text-[var(--text-mute)]">
+            <span>EN · UAE</span>
+            <span>Made between cities</span>
+          </div>
+        </div>
       </div>
     </footer>
   )

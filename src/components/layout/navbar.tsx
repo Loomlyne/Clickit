@@ -1,9 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useTranslations } from 'next-intl'
-import { Link } from '@/i18n/navigation'
-import Image from 'next/image'
+import { Link, usePathname } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
 import { AuthSection } from './auth-section'
 
@@ -12,15 +10,16 @@ interface NavbarProps {
 }
 
 export function Navbar({ initialUser }: NavbarProps) {
-  const t = useTranslations('nav')
+  const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
+  const isLanding = pathname === '/' || pathname === ''
 
   useEffect(() => {
     let ticking = false
     const handler = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
-          setScrolled(window.scrollY > 20)
+          setScrolled(window.scrollY > 24)
           ticking = false
         })
         ticking = true
@@ -30,40 +29,56 @@ export function Navbar({ initialUser }: NavbarProps) {
     return () => window.removeEventListener('scroll', handler)
   }, [])
 
-  return (
-    <nav
-      aria-label={t('home')}
-      className="fixed inset-x-0 top-0 z-50 px-4 pt-4 transition-all duration-300 md:px-6 md:pt-5"
-    >
-      <div
-        className={cn(
-          'mx-auto flex h-[72px] w-full max-w-5xl items-center justify-between rounded-[28px] border p-2.5 transition-all duration-300',
-          'bg-[linear-gradient(180deg,rgba(15,18,27,0.86),rgba(9,12,18,0.78))] shadow-[0_24px_80px_rgba(0,0,0,0.36),inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-2xl',
-          scrolled
-            ? 'border-white/14 bg-[linear-gradient(180deg,rgba(12,15,22,0.94),rgba(7,10,15,0.9))]'
-            : 'border-white/10'
-        )}
-        style={{ WebkitBackdropFilter: 'blur(28px)' }}
-      >
-        <Link
-          href="/"
-          aria-label={t('home')}
-          className="flex items-center px-3 md:px-4"
-        >
-          <Image
-            src="/brand/Clickit_final_logo.svg"
-            alt="Clickit Story"
-            width={124}
-            height={32}
-            priority
-            className="h-8 w-auto"
-          />
-        </Link>
+  const navLinkClass = (active: boolean) =>
+    cn(
+      'text-[13.5px] py-1.5 px-0.5 relative transition-colors duration-150 hover:text-[var(--text)]',
+      active
+        ? 'text-[var(--text)] after:absolute after:inset-x-0 after:-bottom-1 after:h-0.5 after:bg-[var(--primary)]'
+        : 'text-[var(--text-dim)]'
+    )
 
-        <div className="flex items-center gap-3">
-          <AuthSection initialUser={initialUser} />
-        </div>
+  return (
+    <header
+      className={cn(
+        'fixed inset-x-0 top-0 z-50 flex items-center gap-7 px-10 py-[18px] border-b transition-all duration-200 backdrop-blur-[18px]',
+        isLanding && !scrolled && 'bg-gradient-to-b from-[rgba(10,10,10,0.8)] to-transparent border-transparent',
+        isLanding && scrolled && 'bg-[rgba(10,10,10,0.96)] border-[var(--line)]',
+        !isLanding && 'bg-[linear-gradient(180deg,rgba(10,10,10,0.95),rgba(10,10,10,0.65))] border-[var(--line)]',
+        !isLanding && scrolled && 'bg-[rgba(10,10,10,0.96)]',
+      )}
+      style={{ WebkitBackdropFilter: 'blur(18px)' }}
+    >
+      {/* Logo: yellow dot + CLICKIT text */}
+      <Link
+        href="/"
+        className="flex items-center gap-2 text-xl font-bold tracking-[-0.03em] text-[var(--text)]"
+      >
+        <span className="inline-block h-[7px] w-[7px] rounded-full bg-[var(--primary)] mb-0.5" />
+        CLICKIT
+      </Link>
+
+      {/* Nav links */}
+      <nav className="flex items-center gap-[22px]">
+        {!isLanding && (
+          <>
+            <Link href="/browse" className={navLinkClass(pathname === '/browse')}>Browse</Link>
+            <Link href="/coming-soon" className={navLinkClass(pathname === '/coming-soon')}>Coming Soon</Link>
+            <Link href="/support" className={navLinkClass(pathname === '/support')}>Support</Link>
+          </>
+        )}
+        {isLanding && (
+          <>
+            <a href="#features" className="text-[13.5px] text-[var(--text-dim)] py-1.5 px-0.5 transition-colors duration-150 hover:text-[var(--text)]">Why Clickit</a>
+            <a href="#shows" className="text-[13.5px] text-[var(--text-dim)] py-1.5 px-0.5 transition-colors duration-150 hover:text-[var(--text)]">Shows</a>
+            <a href="#faq" className="text-[13.5px] text-[var(--text-dim)] py-1.5 px-0.5 transition-colors duration-150 hover:text-[var(--text)]">FAQ</a>
+          </>
+        )}
+      </nav>
+
+      {/* Right side: auth */}
+      <div className="ms-auto flex items-center gap-3.5">
+        <AuthSection initialUser={initialUser} isLanding={isLanding} />
       </div>
-    </nav>
+    </header>
   )
 }

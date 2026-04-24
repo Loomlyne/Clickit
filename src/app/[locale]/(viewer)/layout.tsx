@@ -14,7 +14,7 @@ export default async function ViewerLayout({ children }: { children: React.React
       <Navbar
         initialUser={user ? { id: user.id, email: user.email ?? '' } : null}
       />
-      <div className="pt-24 md:pt-28">
+      <div className="pt-16">
         {children}
       </div>
       <Footer />

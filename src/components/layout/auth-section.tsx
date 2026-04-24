@@ -18,9 +18,10 @@ interface UserState {
 
 interface AuthSectionProps {
   initialUser?: { id: string; email: string } | null
+  isLanding?: boolean
 }
 
-export function AuthSection({ initialUser }: AuthSectionProps) {
+export function AuthSection({ initialUser, isLanding }: AuthSectionProps) {
   const t = useTranslations('common')
   const router = useRouter()
   const [user, setUser] = useState<UserState | null>(
@@ -68,16 +69,29 @@ export function AuthSection({ initialUser }: AuthSectionProps) {
   }, [])
 
   if (!user) {
-    // A11y: default (bg-primary) variant gave a 3.88:1 contrast with white
-    // text — below WCAG AA's 4.5:1 for normal text. Switched to outline:
-    // light text on near-black surface has 16:1+ contrast and reads as a
-    // secondary action in the navbar, which matches the brand hierarchy
-    // (primary CTA is Browse Shows on the landing page).
+    if (isLanding) {
+      return (
+        <>
+          <Link
+            href="/auth"
+            className="inline-flex items-center justify-center rounded px-3 py-[7px] text-[12.5px] font-medium border border-[var(--line-2)] text-[var(--text)] transition-all duration-150 hover:bg-white/[0.04]"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/auth"
+            className="inline-flex items-center justify-center rounded px-3 py-[7px] text-[12.5px] font-medium bg-[var(--primary)] text-[var(--primary-foreground)] transition-all duration-150 hover:bg-white"
+          >
+            Start free
+          </Link>
+        </>
+      )
+    }
     return (
       <Button
         size="sm"
         variant="outline"
-        className="h-10 rounded-[16px] px-5 text-sm"
+        className="h-10 rounded px-5 text-sm"
         asChild
       >
         <Link href="/auth">{t('signIn')}</Link>
