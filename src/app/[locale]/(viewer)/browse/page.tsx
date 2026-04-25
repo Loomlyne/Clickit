@@ -16,9 +16,12 @@ import {
 import { getIsMobile } from '@/lib/device'
 
 export default async function BrowsePage() {
+  // proxy.ts already validated the JWT this request — getSession() reads the
+  // refreshed cookie locally without a Supabase auth round-trip (~5ms vs
+  // ~50-150ms for getUser()). Same pattern viewer-layout.tsx uses.
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const userId = user?.id ?? null
+  const { data: { session } } = await supabase.auth.getSession()
+  const userId = session?.user?.id ?? null
 
   const [featured, streaming, comingSoon, shorts, isMobile, locale] = await Promise.all([
     getFeaturedShows(),

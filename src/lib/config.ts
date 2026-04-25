@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { createPublicClient } from '@/lib/supabase/public'
 
@@ -142,7 +143,12 @@ export const DEFAULT_FLAGS: FeatureFlags = {
 //   invalidates the whole site config on save.
 // ---------------------------------------------------------------------------
 
-export const getAppConfig = unstable_cache(
+// React cache() wraps unstable_cache to dedupe repeat calls within ONE request.
+// LocaleLayout calls this twice per render: once in generateMetadata() for SEO
+// tags, once in the body for googleAnalyticsId/metaPixelId. Each call without
+// cache() is a separate Vercel data-cache lookup. With cache(), the second
+// call returns the memoized result instantly.
+export const getAppConfig = cache(unstable_cache(
   async (): Promise<AppConfig> => {
     const supabase = createPublicClient()
     // Select every non-sensitive column explicitly. youtube_api_key is
@@ -160,7 +166,7 @@ export const getAppConfig = unstable_cache(
   },
   ['app-config-v1'],
   { revalidate: 900, tags: ['site-config'] } // 15 min
-)
+))
 
 // ---------------------------------------------------------------------------
 // Internal shape (raw DB row) — declared locally because generated types may

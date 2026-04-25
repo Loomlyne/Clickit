@@ -97,9 +97,11 @@ export default async function SeriesDetailPage({ params }: Props) {
     }
   }
 
-  // User watchlist state + episode progress
+  // User watchlist state + episode progress.
+  // proxy.ts already validated the JWT — getSession() reads the cookie locally.
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user ?? null
   const [inWatchlist, isLiked] = user
     ? await Promise.all([
         getShowWatchlistState(user.id, dbShow.id),

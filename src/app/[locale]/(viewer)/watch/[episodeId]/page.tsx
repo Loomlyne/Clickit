@@ -64,9 +64,11 @@ export default async function WatchPage({ params }: Props) {
   const viewPrev = prev ? mapEpisode(prev, locale) : null
   const viewNext = next ? mapEpisode(next, locale) : null
 
-  // Fetch user and saved progress for resume
+  // Fetch user and saved progress for resume.
+  // proxy.ts already validated the JWT — getSession() reads the cookie locally.
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user ?? null
 
   let initialProgressSeconds = 0
   if (user) {

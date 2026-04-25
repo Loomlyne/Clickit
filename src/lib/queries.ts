@@ -155,7 +155,12 @@ export const getHeroVideo = unstable_cache(
 // Homepage queries
 // ---------------------------------------------------------------------------
 
-export const getFeaturedShows = unstable_cache(
+// React cache() wraps unstable_cache to dedupe repeat calls within ONE request.
+// Landing page renders LandingHero, ShowsPortfolio, and CtaBanner — all three
+// call getFeaturedShows(). Without cache(), each one does its own Vercel
+// data-cache lookup. With cache(), only the first lookup runs; the rest are
+// in-memory hits.
+export const getFeaturedShows = cache(unstable_cache(
   async (): Promise<ViewShow[]> => {
     const supabase = createPublicClient()
     const { data } = await supabase
@@ -181,7 +186,7 @@ export const getFeaturedShows = unstable_cache(
   },
   ['featured-shows'],
   { revalidate: 900, tags: ['shows'] } // 15 min — featured list changes occasionally
-)
+))
 
 export const getStreamingShows = unstable_cache(
   async (): Promise<ViewShow[]> => {

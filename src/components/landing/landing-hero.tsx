@@ -3,11 +3,15 @@ import { getFeaturedShows } from '@/lib/queries'
 import { createClient } from '@/lib/supabase/server'
 
 export async function LandingHero() {
+  // proxy.ts already validated the JWT — getSession() reads the cookie locally
+  // without a Supabase auth round-trip. The user is only consumed to pick the
+  // CTA href; getUser()'s extra validation is unnecessary here.
   const supabase = await createClient()
-  const [shows, { data: { user } }] = await Promise.all([
+  const [shows, { data: { session } }] = await Promise.all([
     getFeaturedShows(),
-    supabase.auth.getUser(),
+    supabase.auth.getSession(),
   ])
+  const user = session?.user ?? null
   const collage = shows.slice(0, 4)
   const backdrop = shows[0]?.heroImageUrl || shows[0]?.posterUrl
   const ctaHref = user ? '/browse' : '/auth'
