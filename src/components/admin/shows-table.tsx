@@ -24,8 +24,7 @@ import {
 import { StatusBadge } from '@/components/admin/status-badge'
 import { EmptyState } from '@/components/admin/empty-state'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
-import { ShowFormDrawer } from '@/components/admin/show-form-drawer'
-import { createShow, updateShow, archiveShow, toggleFeatured } from '@/app/[locale]/admin/actions'
+import { archiveShow, toggleFeatured } from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
 import type { Database } from '@/lib/database.types'
 
@@ -41,8 +40,6 @@ export function ShowsTable({ shows }: ShowsTableProps) {
   const tCommon = useTranslations('common')
   const locale = useLocale()
   const isArabic = locale === 'ar'
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [editingShow, setEditingShow] = useState<Show | null>(null)
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false)
   const [archivingShow, setArchivingShow] = useState<Show | null>(null)
   const [archiving, setArchiving] = useState(false)
@@ -70,16 +67,6 @@ export function ShowsTable({ shows }: ShowsTableProps) {
     draft: shows.filter((s) => s.status === 'draft').length,
   }), [shows])
 
-  function handleCreate() {
-    setEditingShow(null)
-    setDrawerOpen(true)
-  }
-
-  function handleEdit(show: Show) {
-    setEditingShow(show)
-    setDrawerOpen(true)
-  }
-
   function handleArchiveClick(show: Show) {
     setArchivingShow(show)
     setArchiveDialogOpen(true)
@@ -99,23 +86,13 @@ export function ShowsTable({ shows }: ShowsTableProps) {
     }
   }
 
-  async function handleSave(data: Parameters<typeof createShow>[0] & { id?: string }) {
-    if (editingShow) {
-      return updateShow(editingShow.id, data)
-    }
-    return createShow(data)
-  }
-
   if (shows.length === 0) {
     return (
-      <>
-        <EmptyState
-          heading={isArabic ? 'لا توجد برامج بعد' : 'No Shows Yet'}
-          body={isArabic ? 'أنشئ برنامجك الأول للبدء.' : 'Create your first show to get started.'}
-          action={<Button onClick={handleCreate}><Plus className="size-4 me-1.5" />{tDash('createShow')}</Button>}
-        />
-        <ShowFormDrawer open={drawerOpen} onOpenChange={setDrawerOpen} show={editingShow} onSave={handleSave} />
-      </>
+      <EmptyState
+        heading={isArabic ? 'لا توجد برامج بعد' : 'No Shows Yet'}
+        body={isArabic ? 'أنشئ برنامجك الأول للبدء.' : 'Create your first show to get started.'}
+        action={<Link href="/admin/shows/new"><Button><Plus className="size-4 me-1.5" />{tDash('createShow')}</Button></Link>}
+      />
     )
   }
 
@@ -165,10 +142,12 @@ export function ShowsTable({ shows }: ShowsTableProps) {
               <option value="coming-soon">{isArabic ? 'قريباً' : 'Coming Soon'}</option>
               <option value="draft">{isArabic ? 'مسودة' : 'Draft'}</option>
             </select>
-            <Button onClick={handleCreate} className="shrink-0">
-              <Plus className="me-1.5 size-4" />
-              {tDash('createShow')}
-            </Button>
+            <Link href="/admin/shows/new">
+              <Button className="shrink-0">
+                <Plus className="me-1.5 size-4" />
+                {tDash('createShow')}
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -242,14 +221,15 @@ export function ShowsTable({ shows }: ShowsTableProps) {
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => handleEdit(show)}
-                            aria-label={isArabic ? `تعديل ${show.title}` : `Edit ${show.title}`}
-                          >
-                            <Pencil className="size-4" />
-                          </Button>
+                          <Link href={`/admin/shows/${show.id}/edit`}>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label={isArabic ? `تعديل ${show.title}` : `Edit ${show.title}`}
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                          </Link>
                         </TooltipTrigger>
                         <TooltipContent>{isArabic ? 'تعديل البرنامج' : 'Edit show'}</TooltipContent>
                       </Tooltip>
@@ -281,8 +261,6 @@ export function ShowsTable({ shows }: ShowsTableProps) {
           </Table>
         </div>
       </div>
-
-      <ShowFormDrawer open={drawerOpen} onOpenChange={setDrawerOpen} show={editingShow} onSave={handleSave} />
 
       <ConfirmDialog
         open={archiveDialogOpen}
