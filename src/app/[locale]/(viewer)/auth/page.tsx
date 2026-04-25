@@ -20,7 +20,7 @@ export default async function AuthPage() {
   const backdrop = shows[1]?.heroImageUrl || shows[0]?.posterUrl
 
   return (
-    <div className="-mt-16 relative flex min-h-dvh overflow-hidden">
+    <div className="-mt-16 relative flex min-h-[calc(100dvh-4rem)] overflow-hidden">
       <BotIdInit />
 
       {/* LEFT — editorial hero */}
