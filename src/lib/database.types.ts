@@ -137,6 +137,44 @@ export type Database = {
         }
         Relationships: []
       }
+      show_cast: {
+        Row: {
+          id: string
+          show_id: string
+          name: string
+          role: string | null
+          image_url: string | null
+          sort_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          show_id: string
+          name: string
+          role?: string | null
+          image_url?: string | null
+          sort_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          show_id?: string
+          name?: string
+          role?: string | null
+          image_url?: string | null
+          sort_order?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "show_cast_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_notifications: {
         Row: {
           created_at: string

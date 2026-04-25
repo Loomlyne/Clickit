@@ -32,6 +32,7 @@ export type AuditEntity =
   | 'episode'
   | 'short'
   | 'review'
+  | 'cast'
   | 'app_config'
   | 'storage'
   | 'feature_flags'

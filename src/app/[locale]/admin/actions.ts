@@ -1605,3 +1605,76 @@ export async function deleteReview(id: string): Promise<ActionResult> {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to delete review' }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Cast Actions
+// ---------------------------------------------------------------------------
+
+const castSchema = z.object({
+  show_id: z.string().uuid(),
+  name: z.string().min(1, 'Name is required'),
+  role: z.string().optional().nullable(),
+  image_url: z.string().optional().nullable(),
+  sort_order: z.number().int().optional(),
+})
+
+export async function addCastMember(
+  data: z.input<typeof castSchema>,
+): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const parsed = castSchema.parse(data)
+    const admin = createAdminClient()
+
+    const { data: cast, error } = await admin
+      .from('show_cast')
+      .insert({ ...parsed, sort_order: parsed.sort_order ?? 0 })
+      .select()
+      .single()
+
+    if (error) return { success: false, error: error.message }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'create',
+      entity: 'cast',
+      entityId: cast.id,
+      diff: { data: { name: cast.name, show_id: cast.show_id } },
+    })
+
+    revalidatePath('/admin')
+    updateTag('shows')
+    return { success: true, data: cast }
+  } catch (err) {
+    console.error('[admin/cast] create failed', err)
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to add cast' }
+  }
+}
+
+export async function deleteCastMember(id: string): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const admin = createAdminClient()
+
+    const { error } = await admin
+      .from('show_cast')
+      .delete()
+      .eq('id', id)
+
+    if (error) return { success: false, error: error.message }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'delete',
+      entity: 'cast',
+      entityId: id,
+    })
+
+    revalidatePath('/admin')
+    updateTag('shows')
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/cast] delete failed', err)
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to delete cast' }
+  }
+}

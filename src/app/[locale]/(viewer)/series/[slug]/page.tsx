@@ -66,10 +66,12 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   const show = mapShow(dbShow, locale)
 
-  // Fetch seasons + all episodes in parallel (2 queries, not N+1)
-  const [seasons, allEpisodes] = await Promise.all([
+  // Fetch seasons + all episodes + cast in parallel
+  const supabasePublic = await createClient()
+  const [seasons, allEpisodes, { data: castMembers }] = await Promise.all([
     getSeasonsByShowId(dbShow.id),
     getEpisodesByShowId(dbShow.id),
+    supabasePublic.from('show_cast').select('*').eq('show_id', dbShow.id).order('sort_order'),
   ])
 
   const viewSeasons = seasons.map((s) => mapSeason(s, locale))
@@ -151,6 +153,36 @@ export default async function SeriesDetailPage({ params }: Props) {
           )}
         </div>
       </div>
+
+      {/* Cast */}
+      {castMembers && castMembers.length > 0 && (
+        <div className="mt-12 px-6 md:px-12">
+          <div className="mx-auto max-w-7xl">
+            <div className="label mb-4">Cast &amp; Crew</div>
+            <div className="flex gap-5 overflow-x-auto pb-3 scrollbar-hide">
+              {castMembers.map((c) => (
+                <div key={c.id} className="shrink-0 text-center" style={{ width: 100 }}>
+                  {c.image_url ? (
+                    <img
+                      src={c.image_url}
+                      alt={c.name}
+                      className="mx-auto mb-2 h-20 w-20 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="mx-auto mb-2 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--bg-3)] text-lg font-medium text-[var(--text-dim)]">
+                      {c.name.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="text-[13px] font-medium truncate">{c.name}</div>
+                  {c.role && (
+                    <div className="mono text-[10px] text-[var(--text-mute)] truncate">{c.role}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Reviews */}
       <div className="mt-12 px-6 md:px-12">

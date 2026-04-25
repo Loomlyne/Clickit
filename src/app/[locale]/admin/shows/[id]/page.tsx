@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { SeasonTabs } from '@/components/admin/season-tabs'
 import { EditShowButton } from '@/components/admin/edit-show-button'
+import { CastEditor } from '@/components/admin/cast-editor'
 import type { Database } from '@/lib/database.types'
 
 type Episode = Database['public']['Tables']['episodes']['Row']
@@ -47,10 +48,17 @@ export default async function ShowDetailPage({
     .order('episode_number', { ascending: true })
 
   // Fetch ALL episodes (including archived) to compute correct max episode_number per season
-  const { data: allEpisodes } = await supabase
-    .from('episodes')
-    .select('season_id, episode_number')
-    .eq('show_id', id)
+  const [{ data: allEpisodes }, { data: castMembers }] = await Promise.all([
+    supabase
+      .from('episodes')
+      .select('season_id, episode_number')
+      .eq('show_id', id),
+    supabase
+      .from('show_cast')
+      .select('*')
+      .eq('show_id', id)
+      .order('sort_order', { ascending: true }),
+  ])
 
   const episodesBySeason: Record<string, Episode[]> = {}
   for (const ep of episodes ?? []) {
@@ -113,6 +121,11 @@ export default async function ShowDetailPage({
             <EditShowButton show={show} />
           </div>
         </div>
+      </div>
+
+      {/* Cast & Crew */}
+      <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-6 md:p-8">
+        <CastEditor showId={id} cast={castMembers ?? []} />
       </div>
 
       <SeasonTabs
