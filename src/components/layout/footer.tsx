@@ -17,10 +17,17 @@ export async function Footer() {
           Est. 2026 · Streaming the city
         </div>
 
-        {/* Wordmark */}
-        <h2 className="font-display m-0 mb-0 font-normal leading-[0.88] tracking-[-0.04em]" style={{ fontSize: 'clamp(60px, 12vw, 180px)' }}>
-          Click<em className="italic text-[var(--text-dim)]">it.</em>
-        </h2>
+        {/* Wordmark logo */}
+        <Link href="/" aria-label="Clickit Story home" className="block">
+          <Image
+            src="/brand/Clickit_final_logo.svg"
+            alt="Clickit Story"
+            width={1200}
+            height={300}
+            priority
+            className="h-auto w-full max-w-[820px]"
+          />
+        </Link>
 
         {/* Tagline + newsletter */}
         <div className="mt-10 flex flex-col justify-between gap-10 md:flex-row md:items-end">
