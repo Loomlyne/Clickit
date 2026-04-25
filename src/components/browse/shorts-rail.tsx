@@ -1,7 +1,7 @@
 // Shorts rail — Quick Bites section on browse page
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { ArrowRight } from 'lucide-react'
 import type { ViewShort } from '@/lib/queries'
 import { ShortsOverlay } from '@/components/shorts/shorts-overlay'
@@ -12,11 +12,31 @@ interface ShortsRailProps {
 
 export function ShortsRail({ shorts }: ShortsRailProps) {
   const [overlayIdx, setOverlayIdx] = useState<number | null>(null)
+  // Track which video IDs we've already pre-warmed so hover doesn't spam.
+  const prefetched = useRef<Set<string>>(new Set())
 
   if (shorts.length === 0) return null
 
+  // Hover-intent prefetch: append a hidden <link rel="prefetch"> to <head>.
+  // The browser fetches the embed HTML at low priority — when the user clicks,
+  // the iframe boots from HTTP cache instead of cold network.
+  const prefetchShort = (videoId: string) => {
+    if (!videoId || prefetched.current.has(videoId)) return
+    prefetched.current.add(videoId)
+    const link = document.createElement('link')
+    link.rel = 'prefetch'
+    link.as = 'document'
+    link.href = `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&rel=0&playsinline=1`
+    document.head.appendChild(link)
+  }
+
   return (
     <>
+      {/* Warm YouTube CDNs as soon as the rail mounts — React 19 hoists to <head> */}
+      <link rel="preconnect" href="https://www.youtube.com" />
+      <link rel="preconnect" href="https://i.ytimg.com" />
+      <link rel="preconnect" href="https://s.ytimg.com" />
+      <link rel="dns-prefetch" href="https://googlevideo.com" />
       <section className="rail px-10 pb-3 pt-8">
         <div className="mb-4 flex items-baseline justify-between">
           <div>
@@ -33,6 +53,8 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
             <div
               key={s.id}
               onClick={() => setOverlayIdx(i)}
+              onMouseEnter={() => prefetchShort(s.youtubeVideoId)}
+              onTouchStart={() => prefetchShort(s.youtubeVideoId)}
               className="group relative shrink-0 cursor-pointer overflow-hidden rounded-[8px] bg-[var(--bg-2)]"
               style={{ width: 180, aspectRatio: '9/16' }}
             >

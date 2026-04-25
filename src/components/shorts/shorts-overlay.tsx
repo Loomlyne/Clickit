@@ -71,6 +71,28 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
       />
       <div className="absolute inset-0 bg-black/80" />
 
+      {/* Pre-warm adjacent shorts so arrow/swipe navigation is instant.
+          Hidden offscreen iframes load YouTube player JS + initial chunks
+          for prev/next videos while the user watches the current one. */}
+      <div aria-hidden className="pointer-events-none fixed top-0 left-0 h-px w-px overflow-hidden opacity-0">
+        {hasPrev && (
+          <iframe
+            key={`prewarm-prev-${shorts[idx - 1].youtubeVideoId}`}
+            src={`https://www.youtube.com/embed/${shorts[idx - 1].youtubeVideoId}?autoplay=0&controls=0&mute=1&playsinline=1`}
+            tabIndex={-1}
+            title=""
+          />
+        )}
+        {hasNext && (
+          <iframe
+            key={`prewarm-next-${shorts[idx + 1].youtubeVideoId}`}
+            src={`https://www.youtube.com/embed/${shorts[idx + 1].youtubeVideoId}?autoplay=0&controls=0&mute=1&playsinline=1`}
+            tabIndex={-1}
+            title=""
+          />
+        )}
+      </div>
+
       {/* Top bar */}
       <div className="absolute top-0 inset-x-0 z-10 flex items-center justify-between px-6 py-4">
         <div className="flex items-center gap-3">
