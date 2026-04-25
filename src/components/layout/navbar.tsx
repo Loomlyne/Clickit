@@ -13,7 +13,7 @@ interface NavbarProps {
 export function Navbar({ initialUser }: NavbarProps) {
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
-  const isLanding = pathname === '/' || pathname === ''
+  const isLanding = pathname === '/' || pathname === '' || pathname.startsWith('/auth')
 
   useEffect(() => {
     let ticking = false
@@ -69,13 +69,17 @@ export function Navbar({ initialUser }: NavbarProps) {
             <Link href="/support" className={navLinkClass(pathname === '/support')}>Support</Link>
           </>
         )}
-        {isLanding && (
-          <>
-            <a href="#features" className="text-[13.5px] text-[var(--text-dim)] py-1.5 px-0.5 transition-colors duration-150 hover:text-[var(--text)]">Why Clickit</a>
-            <a href="#shows" className="text-[13.5px] text-[var(--text-dim)] py-1.5 px-0.5 transition-colors duration-150 hover:text-[var(--text)]">Shows</a>
-            <a href="#faq" className="text-[13.5px] text-[var(--text-dim)] py-1.5 px-0.5 transition-colors duration-150 hover:text-[var(--text)]">FAQ</a>
-          </>
-        )}
+        {isLanding && (() => {
+          const isHome = pathname === '/' || pathname === ''
+          const prefix = isHome ? '' : '/'
+          return (
+            <>
+              <a href={`${prefix}#features`} className="text-[13.5px] text-[var(--text-dim)] py-1.5 px-0.5 transition-colors duration-150 hover:text-[var(--text)]">Why Clickit</a>
+              <a href={`${prefix}#shows`} className="text-[13.5px] text-[var(--text-dim)] py-1.5 px-0.5 transition-colors duration-150 hover:text-[var(--text)]">Shows</a>
+              <a href={`${prefix}#faq`} className="text-[13.5px] text-[var(--text-dim)] py-1.5 px-0.5 transition-colors duration-150 hover:text-[var(--text)]">FAQ</a>
+            </>
+          )
+        })()}
       </nav>
 
       {/* Right side: auth */}
