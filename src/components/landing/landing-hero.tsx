@@ -35,7 +35,7 @@ export async function LandingHero() {
       />
 
       {/* Content grid */}
-      <div className="relative flex min-h-dvh items-center px-10 pt-32 pb-20">
+      <div className="relative flex min-h-dvh items-center px-4 pt-28 pb-16 sm:px-6 md:px-10 md:pt-32 md:pb-20">
         <div className="mx-auto grid w-full max-w-[1400px] grid-cols-1 items-center gap-16 lg:grid-cols-2">
           {/* LEFT — copy */}
           <div>
@@ -50,35 +50,35 @@ export async function LandingHero() {
             <p className="text-[17px] leading-relaxed text-[var(--text-dim)] max-w-[560px] mb-9">
               A hand-curated channel for urban culture, food, design and travel. No ads, no algorithm — just the shows editors love, from creators you&apos;ve never heard of.
             </p>
-            <div className="flex items-center gap-3 mb-16">
+            <div className="flex flex-wrap items-center gap-3 mb-12 md:mb-16">
               <Link
                 href={ctaHref}
-                className="inline-flex items-center gap-2 rounded bg-[var(--primary)] px-6 py-3.5 text-[15px] font-medium text-[var(--primary-foreground)] transition-all hover:bg-white"
+                className="inline-flex items-center gap-2 whitespace-nowrap rounded bg-[var(--primary)] px-5 py-3 text-[14px] font-medium text-[var(--primary-foreground)] transition-all hover:bg-white sm:px-6 sm:py-3.5 sm:text-[15px]"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3" /></svg>
-                Start watching free
+                Start watching
               </Link>
               <Link
                 href="/browse"
-                className="inline-flex items-center gap-2 rounded border border-[var(--line-2)] px-6 py-3.5 text-[15px] font-medium text-[var(--text)] transition-all hover:bg-white/[0.04]"
+                className="inline-flex items-center gap-2 whitespace-nowrap rounded border border-[var(--line-2)] px-5 py-3 text-[14px] font-medium text-[var(--text)] transition-all hover:bg-white/[0.04] sm:px-6 sm:py-3.5 sm:text-[15px]"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3" /></svg>
                 60-second trailer
               </Link>
             </div>
             {/* Stats strip */}
-            <div className="flex gap-10">
+            <div className="flex flex-wrap gap-6 sm:gap-10">
               <div>
-                <div className="font-[family-name:var(--font-display)] text-3xl">7 days</div>
-                <div className="mono mt-1">Free beta<br />No card required</div>
+                <div className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl">7 days</div>
+                <div className="mono mt-1 text-xs sm:text-sm">Free beta<br />No card required</div>
               </div>
               <div>
-                <div className="font-[family-name:var(--font-display)] text-3xl">{shows.length || 15}</div>
-                <div className="mono mt-1">Original shows<br />From Abu Dhabi</div>
+                <div className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl">{shows.length || 15}</div>
+                <div className="mono mt-1 text-xs sm:text-sm">Original shows<br />From Abu Dhabi</div>
               </div>
               <div>
-                <div className="font-[family-name:var(--font-display)] text-3xl">0</div>
-                <div className="mono mt-1">Ads. Ever.<br />That&apos;s the deal</div>
+                <div className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl">0</div>
+                <div className="mono mt-1 text-xs sm:text-sm">Ads. Ever.<br />That&apos;s the deal</div>
               </div>
             </div>
           </div>
