@@ -86,14 +86,14 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
         </button>
       </div>
 
-      {/* Prev peek */}
+      {/* Prev arrow — desktop only */}
       {hasPrev && (
         <button
-          className="absolute top-20 left-1/2 -translate-x-1/2 hidden md:flex items-center gap-2 opacity-40 hover:opacity-70 transition-opacity"
+          className="absolute left-6 lg:left-10 top-1/2 -translate-y-1/2 z-20 hidden md:flex h-12 w-12 items-center justify-center rounded-full border border-[var(--line-2)] bg-black/40 text-white/80 backdrop-blur-md transition-all duration-200 hover:bg-white/10 hover:text-white hover:scale-110 hover:border-white/40"
           onClick={() => setIdx((i) => i - 1)}
           aria-label="Previous short"
         >
-          <span className="mono text-[10px]">↑ Prev · {shorts[idx - 1].title}</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
         </button>
       )}
 
@@ -138,20 +138,21 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
         </div>
       </div>
 
-      {/* Next peek */}
+      {/* Next arrow — desktop only */}
       {hasNext && (
         <button
-          className="absolute bottom-20 left-1/2 -translate-x-1/2 hidden md:flex items-center gap-2 opacity-40 hover:opacity-70 transition-opacity"
+          className="absolute right-6 lg:right-10 top-1/2 -translate-y-1/2 z-20 hidden md:flex h-12 w-12 items-center justify-center rounded-full border border-[var(--line-2)] bg-black/40 text-white/80 backdrop-blur-md transition-all duration-200 hover:bg-white/10 hover:text-white hover:scale-110 hover:border-white/40"
           onClick={() => setIdx((i) => i + 1)}
           aria-label="Next short"
         >
-          <span className="mono text-[10px]">↓ Next · {shorts[idx + 1].title}</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
         </button>
       )}
 
-      {/* Swipe hint */}
+      {/* Hint — adapts to viewport */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 mono text-[10px] text-white/30">
-        Swipe · Arrow keys · Esc to close
+        <span className="md:hidden">Swipe · Tap to close</span>
+        <span className="hidden md:inline">Arrows · ← → keys · Esc to close</span>
       </div>
     </div>
   )
