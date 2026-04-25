@@ -1,10 +1,16 @@
 import { Link } from '@/i18n/navigation'
 import { getFeaturedShows } from '@/lib/queries'
+import { createClient } from '@/lib/supabase/server'
 
 export async function LandingHero() {
-  const shows = await getFeaturedShows()
+  const supabase = await createClient()
+  const [shows, { data: { user } }] = await Promise.all([
+    getFeaturedShows(),
+    supabase.auth.getUser(),
+  ])
   const collage = shows.slice(0, 4)
   const backdrop = shows[0]?.heroImageUrl || shows[0]?.posterUrl
+  const ctaHref = user ? '/browse' : '/auth'
 
   return (
     <section className="relative -mt-16 min-h-dvh overflow-hidden">
@@ -42,7 +48,7 @@ export async function LandingHero() {
             </p>
             <div className="flex items-center gap-3 mb-16">
               <Link
-                href="/auth"
+                href={ctaHref}
                 className="inline-flex items-center gap-2 rounded bg-[var(--primary)] px-6 py-3.5 text-[15px] font-medium text-[var(--primary-foreground)] transition-all hover:bg-white"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3" /></svg>

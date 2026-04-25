@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 
 import Image from 'next/image'
+import { Link } from '@/i18n/navigation'
 import { AuthPanel } from '@/components/auth/auth-panel'
 import { BotIdInit } from '@/components/auth/botid-init'
 import { getFeaturedShows } from '@/lib/queries'
@@ -84,6 +85,15 @@ export default async function AuthPage() {
           </p>
 
           <AuthPanel />
+
+          <div className="mt-6 text-center">
+            <Link
+              href="/browse"
+              className="text-[13px] font-[family-name:var(--font-mono)] tracking-[0.08em] uppercase text-[var(--text-mute)] hover:text-[var(--text)] transition-colors"
+            >
+              Skip sign in →
+            </Link>
+          </div>
 
           <div className="mt-8 flex items-center justify-between text-[11px] font-[family-name:var(--font-mono)] tracking-[0.1em] uppercase text-[var(--text-mute)]">
             <span>◆ End-to-end encrypted</span>
