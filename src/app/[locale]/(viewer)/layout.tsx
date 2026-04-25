@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
+import { SmoothScroll } from '@/components/providers/smooth-scroll'
+import { PageTransition } from '@/components/layout/page-transition'
 
 export default async function ViewerLayout({ children }: { children: React.ReactNode }) {
   // Use getSession() instead of getUser() — middleware already validated the JWT
@@ -10,14 +12,14 @@ export default async function ViewerLayout({ children }: { children: React.React
   const user = session?.user ?? null
 
   return (
-    <>
+    <SmoothScroll>
       <Navbar
         initialUser={user ? { id: user.id, email: user.email ?? '' } : null}
       />
       <div className="pt-16">
-        {children}
+        <PageTransition>{children}</PageTransition>
       </div>
       <Footer />
-    </>
+    </SmoothScroll>
   )
 }

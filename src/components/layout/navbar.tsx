@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { Link, usePathname } from '@/i18n/navigation'
+import { useLenis } from 'lenis/react'
 import { cn } from '@/lib/utils'
 import { AuthSection } from './auth-section'
 
@@ -13,21 +14,29 @@ interface NavbarProps {
 export function Navbar({ initialUser }: NavbarProps) {
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
+  const [hidden, setHidden] = useState(false)
+  const lastScrollY = useRef(0)
   const isLanding = pathname === '/' || pathname === '' || pathname.startsWith('/auth')
 
-  useEffect(() => {
-    let ticking = false
-    const handler = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          setScrolled(window.scrollY > 24)
-          ticking = false
-        })
-        ticking = true
-      }
+  // Direction-aware show/hide via Lenis. Hide on scroll down, show on scroll up.
+  useLenis(({ scroll }) => {
+    const y = scroll
+    const delta = y - lastScrollY.current
+    setScrolled(y > 24)
+    if (y < 80) {
+      setHidden(false)
+    } else if (delta > 4) {
+      setHidden(true)
+    } else if (delta < -4) {
+      setHidden(false)
     }
-    window.addEventListener('scroll', handler, { passive: true })
-    return () => window.removeEventListener('scroll', handler)
+    lastScrollY.current = y
+  })
+
+  // Sync once on mount (Lenis only fires on real scroll events)
+  useEffect(() => {
+    setScrolled(window.scrollY > 24)
+    lastScrollY.current = window.scrollY
   }, [])
 
   const navLinkClass = (active: boolean) =>
@@ -41,7 +50,9 @@ export function Navbar({ initialUser }: NavbarProps) {
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 flex items-center gap-7 px-10 py-[18px] border-b transition-all duration-200 backdrop-blur-[18px]',
+        'sticky top-0 z-50 flex items-center gap-7 px-10 py-[18px] border-b backdrop-blur-[18px]',
+        'transition-[transform,background-color,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform',
+        hidden ? '-translate-y-full' : 'translate-y-0',
         isLanding && !scrolled && 'bg-gradient-to-b from-[rgba(10,10,10,0.8)] to-transparent border-transparent',
         isLanding && scrolled && 'bg-[rgba(10,10,10,0.96)] border-[var(--line)]',
         !isLanding && 'bg-[linear-gradient(180deg,rgba(10,10,10,0.95),rgba(10,10,10,0.65))] border-[var(--line)]',
