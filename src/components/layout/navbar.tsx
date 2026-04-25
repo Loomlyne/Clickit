@@ -6,6 +6,7 @@ import { Link, usePathname } from '@/i18n/navigation'
 import { useLenis } from 'lenis/react'
 import { cn } from '@/lib/utils'
 import { AuthSection } from './auth-section'
+import { MobileNav } from './mobile-nav'
 
 interface NavbarProps {
   initialUser?: { id: string; email: string } | null
@@ -50,7 +51,7 @@ export function Navbar({ initialUser }: NavbarProps) {
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 flex items-center gap-7 px-10 py-[18px] border-b backdrop-blur-[18px]',
+        'sticky top-0 z-50 flex items-center gap-3 px-4 py-3 md:gap-7 md:px-10 md:py-[18px] border-b backdrop-blur-[18px]',
         'transition-[transform,background-color,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform',
         hidden ? '-translate-y-full' : 'translate-y-0',
         isLanding && !scrolled && 'bg-gradient-to-b from-[rgba(10,10,10,0.8)] to-transparent border-transparent',
@@ -71,8 +72,8 @@ export function Navbar({ initialUser }: NavbarProps) {
         />
       </Link>
 
-      {/* Nav links */}
-      <nav className="flex items-center gap-[22px]">
+      {/* Nav links — hidden on mobile, MobileNav handles those */}
+      <nav className="hidden md:flex items-center gap-[22px]">
         {!isLanding && (
           <>
             <Link href="/browse" className={navLinkClass(pathname === '/browse')}>Browse</Link>
@@ -93,9 +94,14 @@ export function Navbar({ initialUser }: NavbarProps) {
         })()}
       </nav>
 
-      {/* Right side: auth */}
-      <div className="ms-auto flex items-center gap-3.5">
+      {/* Right side: auth (desktop) */}
+      <div className="ms-auto hidden md:flex items-center gap-3.5">
         <AuthSection initialUser={initialUser} isLanding={isLanding} />
+      </div>
+
+      {/* Mobile hamburger — only visible on <md: */}
+      <div className="ms-auto md:hidden">
+        <MobileNav initialUser={initialUser} />
       </div>
     </header>
   )

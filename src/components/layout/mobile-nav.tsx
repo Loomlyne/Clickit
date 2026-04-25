@@ -14,8 +14,13 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { NAV_LINKS } from './nav-links'
+import { AuthSection } from './auth-section'
 
-export function MobileNav() {
+interface MobileNavProps {
+  initialUser?: { id: string; email: string } | null
+}
+
+export function MobileNav({ initialUser }: MobileNavProps = {}) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
@@ -33,7 +38,7 @@ export function MobileNav() {
         <Menu className="size-5" />
       </SheetTrigger>
 
-      <SheetContent side="left" className="w-[280px] p-0 sm:max-w-[320px]">
+      <SheetContent side="left" className="flex w-[280px] flex-col p-0 sm:max-w-[320px]">
         <SheetHeader className="border-b border-white/[0.06] px-6 py-5">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <Link href="/" aria-label="Clickit Story home" onClick={() => setOpen(false)}>
@@ -67,6 +72,11 @@ export function MobileNav() {
             )
           })}
         </nav>
+
+        {/* Auth section inside the sheet */}
+        <div className="mt-auto border-t border-white/[0.06] px-4 py-4 flex flex-col gap-2 [&_a]:w-full [&_a]:justify-center [&_a]:py-3 [&_a]:text-[14px]">
+          <AuthSection initialUser={initialUser} />
+        </div>
       </SheetContent>
     </Sheet>
   )
