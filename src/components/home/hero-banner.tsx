@@ -43,8 +43,7 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
 
   return (
     <div
-      className="relative mb-3 overflow-hidden"
-      style={{ height: '78vh', minHeight: 580 }}
+      className="relative mb-3 overflow-hidden h-[78vh] min-h-[480px] md:min-h-[580px]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocus={() => setIsPaused(true)}

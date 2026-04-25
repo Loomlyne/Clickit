@@ -78,7 +78,7 @@ export function SeriesDetailHero({
         )}
       </AnimatePresence>
 
-      <div className="relative overflow-hidden" style={{ height: '72vh', minHeight: 520 }}>
+      <div className="relative overflow-hidden h-[72vh] min-h-[460px] md:min-h-[520px]">
         <div className="absolute inset-0 bg-black" />
         {mobileBackdropUrl && (
           <Image
@@ -115,7 +115,7 @@ export function SeriesDetailHero({
         />
 
         {/* Content — bottom-third, left-aligned */}
-        <div className="absolute bottom-[60px] start-10 end-10 max-w-[720px] z-10">
+        <div className="absolute bottom-10 start-4 end-4 max-w-[720px] z-10 sm:bottom-[60px] sm:start-10 sm:end-10">
           {/* Back link */}
           <motion.div
             initial={{ opacity: 0, x: -12 }}
@@ -124,7 +124,7 @@ export function SeriesDetailHero({
           >
             <Link
               href="/"
-              className="inline-flex items-center text-white/50 hover:text-white text-sm mb-6 transition-colors"
+              className="inline-flex h-11 items-center text-white/50 hover:text-white text-sm mb-4 sm:mb-6 transition-colors"
             >
               {isArabic ? '→ الصفحة الرئيسية' : '← Home'}
             </Link>
