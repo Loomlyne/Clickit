@@ -12,7 +12,7 @@ import type { ViewShow } from '@/lib/queries'
 import { HeroSlide } from '@/components/home/hero-slide'
 import { HeroDots } from '@/components/home/rotation-indicator'
 
-const INTERVAL = 7000
+const INTERVAL = 2000
 
 interface HeroBannerProps {
   shows: Array<{ show: ViewShow; firstEpisodeId?: string }>

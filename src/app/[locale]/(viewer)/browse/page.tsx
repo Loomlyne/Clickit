@@ -45,7 +45,9 @@ export default async function BrowsePage() {
   return (
     <div>
       {featuredWithEpisodes.length > 0 && (
-        <HeroBanner shows={featuredWithEpisodes} isMobile={isMobile} />
+        <div className="-mt-16">
+          <HeroBanner shows={featuredWithEpisodes} isMobile={isMobile} />
+        </div>
       )}
 
       <ContinueWatchingRail userId={userId} />
