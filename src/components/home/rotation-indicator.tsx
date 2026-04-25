@@ -18,7 +18,7 @@ export function HeroDots({
 }: HeroDotsProps) {
   return (
     <div
-      className="absolute end-10 bottom-[100px] z-[2] flex flex-col gap-2.5"
+      className="absolute end-10 bottom-[100px] z-[2] hidden flex-col gap-2.5 md:flex"
       aria-label={`Show ${activeIndex + 1} of ${total}`}
       role="progressbar"
       aria-valuenow={activeIndex + 1}
