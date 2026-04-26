@@ -37,7 +37,9 @@ async function gateAgainstBots(context: string): Promise<null | { ok: false; err
         isVerifiedBot: result.isVerifiedBot,
         bypassed: result.bypassed,
       })
-      return { ok: false, error: 'We could not verify your request. Please try again.' }
+      // BotID has produced false negatives on real auth requests in this app.
+      // Keep the signal, but do not block sign-in/sign-up availability here.
+      return null
     }
   } catch (err) {
     // If BotID itself throws (misconfig, network), do not hard-block auth —

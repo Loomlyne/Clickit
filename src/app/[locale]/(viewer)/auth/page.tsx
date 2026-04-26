@@ -24,17 +24,18 @@ export default async function AuthPage() {
       <BotIdInit />
 
       {/* LEFT — editorial hero */}
-      <div className="relative hidden w-1/2 lg:block">
+      <div className="relative hidden w-1/2 overflow-hidden lg:block">
         {backdrop && (
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url(${backdrop})`, animation: 'heroZoom 40s ease-out infinite alternate' }}
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/40" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+        <div className="absolute inset-0 bg-black/18" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/72 via-black/46 to-black/72" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-black/26 to-transparent" />
 
-        <div className="relative flex h-full flex-col justify-between p-12">
+        <div className="relative flex h-full w-full flex-col justify-between p-12">
           {/* Top: logo + badge */}
           <div className="flex items-center justify-between">
             <Image

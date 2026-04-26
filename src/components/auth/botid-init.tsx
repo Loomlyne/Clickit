@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { initBotId } from 'botid/client/core'
+import { usePathname } from '@/i18n/navigation'
 
 /**
  * Initializes BotID on the client. Placed on /auth so the challenge token
@@ -13,12 +14,14 @@ import { initBotId } from 'botid/client/core'
  * form rendered on, so protecting POST /auth covers both sign-in and sign-up.
  */
 export function BotIdInit() {
+  const pathname = usePathname()
+
   useEffect(() => {
     initBotId({
       protect: [
-        { path: '/auth', method: 'POST' },
+        { path: pathname, method: 'POST' },
       ],
     })
-  }, [])
+  }, [pathname])
   return null
 }
