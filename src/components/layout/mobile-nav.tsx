@@ -38,7 +38,10 @@ export function MobileNav({ initialUser }: MobileNavProps = {}) {
         <Menu className="size-5" />
       </SheetTrigger>
 
-      <SheetContent side="left" className="flex w-[280px] flex-col p-0 sm:max-w-[320px]">
+      <SheetContent
+        side="top"
+        className="flex w-full flex-col rounded-b-[24px] border-x-0 border-t-0 p-0"
+      >
         <SheetHeader className="border-b border-white/[0.06] px-6 py-5">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <Link href="/" aria-label="Clickit Story home" onClick={() => setOpen(false)}>
