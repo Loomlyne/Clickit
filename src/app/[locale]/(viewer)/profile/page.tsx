@@ -104,12 +104,14 @@ export default async function ProfilePage() {
             )}
           </div>
           {watchlistShows.length > 0 ? (
-            <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-1">
-              {watchlistShows.slice(0, 8).map((show) => (
-                <div key={show.id} className="w-32 flex-shrink-0">
-                  <PortraitShowCard show={show} />
-                </div>
-              ))}
+            <div className="relative before:pointer-events-none before:absolute before:inset-y-0 before:end-0 before:z-10 before:w-10 before:bg-[linear-gradient(90deg,transparent,var(--bg-1))]">
+              <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-1">
+                {watchlistShows.slice(0, 8).map((show) => (
+                  <div key={show.id} className="w-32 flex-shrink-0">
+                    <PortraitShowCard show={show} />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <p className="text-sm text-[var(--text-mute)] py-6 text-center">
@@ -133,12 +135,14 @@ export default async function ProfilePage() {
             </h3>
           </div>
           {likedShows.length > 0 ? (
-            <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-1">
-              {likedShows.slice(0, 8).map((show) => (
-                <div key={show.id} className="w-32 flex-shrink-0">
-                  <PortraitShowCard show={show} />
-                </div>
-              ))}
+            <div className="relative before:pointer-events-none before:absolute before:inset-y-0 before:end-0 before:z-10 before:w-10 before:bg-[linear-gradient(90deg,transparent,var(--bg-1))]">
+              <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-1">
+                {likedShows.slice(0, 8).map((show) => (
+                  <div key={show.id} className="w-32 flex-shrink-0">
+                    <PortraitShowCard show={show} />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <p className="text-sm text-[var(--text-mute)] py-6 text-center">
@@ -152,10 +156,12 @@ export default async function ProfilePage() {
             {t('historyHeading')}
           </h3>
           {recentlyWatched.length > 0 ? (
-            <div>
-              {recentlyWatched.map((item) => (
-                <ProfileHistoryRow key={item.episodeId} item={item} />
-              ))}
+            <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+              <div className="min-w-[520px]">
+                {recentlyWatched.map((item) => (
+                  <ProfileHistoryRow key={item.episodeId} item={item} />
+                ))}
+              </div>
             </div>
           ) : (
             <p className="text-sm text-[var(--text-mute)] py-6 text-center">

@@ -38,12 +38,12 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
       <link rel="preconnect" href="https://s.ytimg.com" />
       <link rel="dns-prefetch" href="https://googlevideo.com" />
       <section className="rail px-10 pb-3 pt-8">
-        <div className="mb-4 flex items-baseline justify-between">
+        <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             <div className="mono mb-1.5" style={{ color: 'var(--accent)' }}>Shorts · Connected to YouTube Shorts</div>
             <h2 className="font-display m-0 text-[26px]">Quick bites</h2>
           </div>
-          <button className="mono flex items-center gap-1.5 cursor-pointer hover:text-[var(--text)]">
+          <button className="mono inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 hover:text-[var(--text)]">
             View all <ArrowRight className="size-3" />
           </button>
         </div>

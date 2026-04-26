@@ -87,11 +87,11 @@ export function LoginForm() {
 
   if (mode === 'forgot') {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3 md:space-y-4">
         <button
           type="button"
           onClick={() => { setMode('login'); setServerError(null); setResetSent(false) }}
-          className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white/80 transition-colors"
+          className="flex min-h-11 items-center gap-1.5 text-sm text-white/50 hover:text-white/80 transition-colors"
         >
           <ArrowLeft className="size-3.5 rtl:scale-x-[-1]" />
           {t('backToSignIn')}
@@ -105,7 +105,7 @@ export function LoginForm() {
             </p>
           </div>
         ) : (
-          <form onSubmit={forgotForm.handleSubmit(onForgot)} className="space-y-4">
+          <form onSubmit={forgotForm.handleSubmit(onForgot)} className="space-y-3 md:space-y-4">
             {serverError && (
               <div className="rounded-[4px] px-4 py-3 text-sm bg-[#DB3F34]/10 border border-[#DB3F34]/25 text-red-300">
                 <div className="flex gap-2.5 items-start">
@@ -141,7 +141,7 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
+    <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-3 md:space-y-4">
       {serverError && (
         <div className="rounded-[4px] px-4 py-3 text-sm bg-[#DB3F34]/10 border border-[#DB3F34]/25 text-red-300">
           <div className="flex gap-2.5 items-start">
@@ -163,7 +163,7 @@ export function LoginForm() {
           <button
             type="button"
             onClick={() => { setMode('forgot'); setServerError(null) }}
-            className="text-xs text-white/40 hover:text-white/70 transition-colors"
+            className="inline-flex min-h-11 items-center text-xs text-white/40 hover:text-white/70 transition-colors"
           >
             {t('forgotPassword')}
           </button>
@@ -197,7 +197,7 @@ export function LoginForm() {
         {loginForm.formState.isSubmitting ? t('signInButton') + '…' : t('signInButton')}
       </button>
 
-      <div className="relative my-4">
+      <div className="relative my-3 md:my-4">
         <Separator />
         <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--bg-0)] px-3 text-xs text-white/40">
           {t('orContinueWith')}

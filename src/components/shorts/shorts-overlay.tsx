@@ -94,7 +94,7 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
       </div>
 
       {/* Top bar */}
-      <div className="absolute top-0 inset-x-0 z-10 flex items-center justify-between px-6 py-4">
+      <div className="absolute top-0 inset-x-0 z-10 flex items-center justify-between px-6 pb-4 pt-[max(env(safe-area-inset-top),16px)]">
         <div className="flex items-center gap-3">
           <span className="mono text-[10px] px-2 py-0.5 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-sm">SHORTS</span>
           <span className="mono text-[var(--text-dim)]">{idx + 1} / {shorts.length}</span>

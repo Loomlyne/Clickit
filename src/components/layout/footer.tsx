@@ -10,7 +10,7 @@ export async function Footer() {
   return (
     <footer className="border-t border-[var(--line)] bg-[var(--bg-0)] relative overflow-hidden">
       {/* Hero wordmark section */}
-      <div className="border-b border-[var(--line)] px-12 pb-[60px] pt-[90px] relative">
+      <div className="border-b border-[var(--line)] px-4 pb-[60px] pt-[90px] sm:px-6 md:px-12 relative">
         {/* Eyebrow with accent line */}
         <div className="mono mb-[18px] flex items-center gap-2.5" style={{ color: 'var(--accent)', letterSpacing: '0.22em' }}>
           <span className="inline-block h-px w-6 bg-[var(--accent)]" />
@@ -42,7 +42,7 @@ export async function Footer() {
                 placeholder="your@email.com"
                 className="flex-1 bg-transparent py-3 text-sm text-[var(--text)] placeholder:text-[var(--text-mute)] outline-none"
               />
-              <button className="flex items-center justify-center px-2 py-3 text-[var(--text-dim)] transition-colors hover:text-[var(--accent)]">
+              <button className="flex min-h-11 min-w-11 items-center justify-center px-2 py-3 text-[var(--text-dim)] transition-colors hover:text-[var(--accent)]" aria-label="Submit newsletter signup">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
               </button>
             </div>
@@ -51,9 +51,9 @@ export async function Footer() {
       </div>
 
       {/* 5-column grid */}
-      <div className="grid grid-cols-2 gap-12 border-b border-[var(--line)] px-12 pb-10 pt-12 md:grid-cols-[1.2fr_repeat(4,1fr)]">
+      <div className="grid grid-cols-1 gap-10 border-b border-[var(--line)] px-4 pb-10 pt-12 sm:grid-cols-2 sm:px-6 md:grid-cols-[1.2fr_repeat(4,1fr)] md:gap-12 md:px-12">
         {/* About column */}
-        <div className="col-span-2 md:col-span-1">
+        <div className="sm:col-span-2 md:col-span-1">
           <Link href="/" className="mb-4 block" aria-label="Clickit Story home">
             <Image
               src="/brand/Clickit_final_logo.svg"
@@ -69,17 +69,17 @@ export async function Footer() {
           {/* Social icons — square, not rounded */}
           <div className="flex items-center gap-2">
             {footer.social?.instagram && (
-              <a href={footer.social.instagram} target="_blank" rel="noreferrer" title="Instagram" className="flex h-9 w-9 items-center justify-center border border-[var(--line)] text-[var(--text-dim)] transition-all duration-150 hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5">
+              <a href={footer.social.instagram} target="_blank" rel="noreferrer" title="Instagram" aria-label="Instagram" className="flex h-11 w-11 items-center justify-center border border-[var(--line)] text-[var(--text-dim)] transition-all duration-150 hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="1" fill="currentColor" /></svg>
               </a>
             )}
             {footer.social?.x && (
-              <a href={footer.social.x} target="_blank" rel="noreferrer" title="X" className="flex h-9 w-9 items-center justify-center border border-[var(--line)] text-[var(--text-dim)] transition-all duration-150 hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5">
+              <a href={footer.social.x} target="_blank" rel="noreferrer" title="X" aria-label="X" className="flex h-11 w-11 items-center justify-center border border-[var(--line)] text-[var(--text-dim)] transition-all duration-150 hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18 3h3l-7.5 8.5L22 21h-6.5l-5-6.5L5 21H2l8-9L2 3h6.5l4.5 6L18 3z" /></svg>
               </a>
             )}
             {footer.social?.youtube && (
-              <a href={footer.social.youtube} target="_blank" rel="noreferrer" title="YouTube" className="flex h-9 w-9 items-center justify-center border border-[var(--line)] text-[var(--text-dim)] transition-all duration-150 hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5">
+              <a href={footer.social.youtube} target="_blank" rel="noreferrer" title="YouTube" aria-label="YouTube" className="flex h-11 w-11 items-center justify-center border border-[var(--line)] text-[var(--text-dim)] transition-all duration-150 hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 7.5a3 3 0 0 0-2.1-2.1C18 5 12 5 12 5s-6 0-7.9.4A3 3 0 0 0 2 7.5C1.6 9.4 1.6 12 1.6 12s0 2.6.4 4.5a3 3 0 0 0 2.1 2.1C6 19 12 19 12 19s6 0 7.9-.4a3 3 0 0 0 2.1-2.1c.4-1.9.4-4.5.4-4.5s0-2.6-.4-4.5zM10 15V9l5 3-5 3z" /></svg>
               </a>
             )}
@@ -88,51 +88,51 @@ export async function Footer() {
 
         {/* Watch column */}
         <div>
-          <h5 className="mono mb-4 font-medium text-[var(--text-dim)]">Watch</h5>
-          <ul className="flex flex-col gap-2.5">
-            <li><Link href="/browse" className="text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Browse all</Link></li>
-            <li><Link href="/browse" className="text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">New this week</Link></li>
-            <li><Link href="/coming-soon" className="text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Coming soon</Link></li>
-            <li><Link href="/my-list" className="text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">My list</Link></li>
+          <h2 className="mono mb-4 font-medium text-[var(--text-dim)]">Watch</h2>
+          <ul className="flex flex-col gap-0.5">
+            <li><Link href="/browse" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Browse all</Link></li>
+            <li><Link href="/browse" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">New this week</Link></li>
+            <li><Link href="/coming-soon" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Coming soon</Link></li>
+            <li><Link href="/my-list" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">My list</Link></li>
           </ul>
         </div>
 
         {/* Discover column */}
         <div>
-          <h5 className="mono mb-4 font-medium text-[var(--text-dim)]">Discover</h5>
-          <ul className="flex flex-col gap-2.5">
-            <li><Link href="/browse?genre=Travel" className="text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Travel</Link></li>
-            <li><Link href="/browse?genre=Health" className="text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Health</Link></li>
-            <li><Link href="/browse?genre=Music" className="text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Music</Link></li>
-            <li><Link href="/browse?genre=Comedy" className="text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Comedy</Link></li>
-            <li><Link href="/browse?genre=Tech" className="text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Tech</Link></li>
+          <h2 className="mono mb-4 font-medium text-[var(--text-dim)]">Discover</h2>
+          <ul className="flex flex-col gap-0.5">
+            <li><Link href="/browse?genre=Travel" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Travel</Link></li>
+            <li><Link href="/browse?genre=Health" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Health</Link></li>
+            <li><Link href="/browse?genre=Music" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Music</Link></li>
+            <li><Link href="/browse?genre=Comedy" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Comedy</Link></li>
+            <li><Link href="/browse?genre=Tech" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Tech</Link></li>
           </ul>
         </div>
 
         {/* Company column */}
         <div>
-          <h5 className="mono mb-4 font-medium text-[var(--text-dim)]">Company</h5>
-          <ul className="flex flex-col gap-2.5">
-            <li><span className="text-[14px] text-[var(--text)] cursor-pointer transition-colors hover:text-[var(--accent)]">About</span></li>
-            <li><span className="text-[14px] text-[var(--text)] cursor-pointer transition-colors hover:text-[var(--accent)]">Creators</span></li>
-            <li><span className="text-[14px] text-[var(--text)] cursor-pointer transition-colors hover:text-[var(--accent)]">Press</span></li>
-            <li><Link href="/support" className="text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Help &amp; support</Link></li>
+          <h2 className="mono mb-4 font-medium text-[var(--text-dim)]">Company</h2>
+          <ul className="flex flex-col gap-0.5">
+            <li><span className="inline-flex min-h-11 cursor-pointer items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">About</span></li>
+            <li><span className="inline-flex min-h-11 cursor-pointer items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Creators</span></li>
+            <li><span className="inline-flex min-h-11 cursor-pointer items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Press</span></li>
+            <li><Link href="/support" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Help &amp; support</Link></li>
           </ul>
         </div>
 
         {/* Account column */}
         <div>
-          <h5 className="mono mb-4 font-medium text-[var(--text-dim)]">Account</h5>
-          <ul className="flex flex-col gap-2.5">
-            <li><Link href="/profile" className="text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Profile</Link></li>
-            <li><Link href="/profile" className="text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Settings</Link></li>
-            <li><Link href="/auth" className="text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Sign in</Link></li>
+          <h2 className="mono mb-4 font-medium text-[var(--text-dim)]">Account</h2>
+          <ul className="flex flex-col gap-0.5">
+            <li><Link href="/profile" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Profile</Link></li>
+            <li><Link href="/profile" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Settings</Link></li>
+            <li><Link href="/auth" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Sign in</Link></li>
           </ul>
         </div>
       </div>
 
       {/* Bottom bar */}
-      <div className="px-12 py-6">
+      <div className="px-4 py-6 sm:px-6 md:px-12">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-4 mono text-[var(--text-mute)]">
             <span>&copy; {new Date().getFullYear()} Clickit Story</span>
@@ -140,9 +140,9 @@ export async function Footer() {
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               All systems streaming
             </span>
-            {footer.legal?.terms && <a href={footer.legal.terms} className="transition-colors hover:text-[var(--text)]">Terms</a>}
-            {footer.legal?.privacy && <a href={footer.legal.privacy} className="transition-colors hover:text-[var(--text)]">Privacy</a>}
-            {footer.legal?.cookies && <a href={footer.legal.cookies} className="transition-colors hover:text-[var(--text)]">Cookies</a>}
+            {footer.legal?.terms && <a href={footer.legal.terms} className="inline-flex min-h-11 items-center transition-colors hover:text-[var(--text)]">Terms</a>}
+            {footer.legal?.privacy && <a href={footer.legal.privacy} className="inline-flex min-h-11 items-center transition-colors hover:text-[var(--text)]">Privacy</a>}
+            {footer.legal?.cookies && <a href={footer.legal.cookies} className="inline-flex min-h-11 items-center transition-colors hover:text-[var(--text)]">Cookies</a>}
           </div>
           <div className="flex items-center gap-4 mono text-[var(--text-mute)]">
             <span>EN · UAE</span>

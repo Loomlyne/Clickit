@@ -75,27 +75,27 @@ export default async function AuthPage() {
       </div>
 
       {/* RIGHT — form */}
-      <div className="flex w-full items-center justify-center bg-[var(--bg-0)] px-6 py-16 lg:w-1/2">
+      <div className="flex w-full items-center justify-center bg-[var(--bg-0)] px-5 py-8 sm:px-6 md:py-12 lg:w-1/2 lg:py-16">
         <div className="w-full max-w-[420px]">
-          <h1 className="font-[family-name:var(--font-display)] text-[36px] font-normal tracking-[-0.01em] mb-2">
+          <h1 className="font-[family-name:var(--font-display)] text-[32px] font-normal tracking-[-0.01em] mb-2 md:text-[36px]">
             Welcome <em className="italic">back.</em>
           </h1>
-          <p className="text-[15px] text-[var(--text-dim)] mb-8">
+          <p className="mb-6 text-[15px] text-[var(--text-dim)] md:mb-8">
             Pick up where you left off. New here? Sign up below.
           </p>
 
           <AuthPanel />
 
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center md:mt-6">
             <Link
               href="/browse"
-              className="text-[13px] font-[family-name:var(--font-mono)] tracking-[0.08em] uppercase text-[var(--text-mute)] hover:text-[var(--text)] transition-colors"
+              className="inline-flex min-h-11 items-center text-[13px] font-[family-name:var(--font-mono)] tracking-[0.08em] uppercase text-[var(--text-mute)] hover:text-[var(--text)] transition-colors"
             >
               Skip sign in →
             </Link>
           </div>
 
-          <div className="mt-8 flex items-center justify-between text-[11px] font-[family-name:var(--font-mono)] tracking-[0.1em] uppercase text-[var(--text-mute)]">
+          <div className="mt-6 flex items-center justify-between text-[11px] font-[family-name:var(--font-mono)] tracking-[0.1em] uppercase text-[var(--text-mute)] md:mt-8">
             <span>◆ End-to-end encrypted</span>
             <span>v2.0 · Beta</span>
           </div>

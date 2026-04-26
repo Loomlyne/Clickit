@@ -51,7 +51,7 @@ export function Navbar({ initialUser }: NavbarProps) {
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 flex items-center gap-3 px-4 py-3 md:gap-7 md:px-10 md:py-[18px] border-b backdrop-blur-[18px]',
+        'sticky top-0 z-50 flex items-center gap-3 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] md:gap-7 md:px-10 md:pb-[18px] md:pt-[calc(env(safe-area-inset-top)+18px)] border-b backdrop-blur-[18px]',
         'transition-[transform,background-color,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform',
         hidden ? '-translate-y-full' : 'translate-y-0',
         isLanding && !scrolled && 'bg-gradient-to-b from-[rgba(10,10,10,0.8)] to-transparent border-transparent',

@@ -144,7 +144,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
               )}
               {/* Delete button */}
               <button
-                className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-red-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-300"
+                className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-red-400 opacity-60 transition-opacity group-hover:opacity-100 hover:text-red-300"
                 onClick={() => handleDelete(c.id)}
                 disabled={deletingId === c.id}
               >

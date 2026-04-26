@@ -21,7 +21,7 @@ export function SectionHeader({
   const isArabic = locale === 'ar'
 
   return (
-    <div className={`mb-4 flex items-baseline justify-between px-10${className ? ` ${className}` : ''}`}>
+    <div className={`mb-4 flex items-start justify-between gap-4 px-10${className ? ` ${className}` : ''}`}>
       <div>
         {eyebrow && <div className="mono mb-1.5">{eyebrow}</div>}
         <h2 className="font-display m-0 text-[26px]">{title}</h2>
@@ -30,7 +30,7 @@ export function SectionHeader({
       {seeAllHref && (
         <Link
           href={seeAllHref}
-          className="mono flex items-center gap-1.5"
+          className="mono inline-flex min-h-11 shrink-0 items-center gap-1.5"
         >
           {isArabic ? 'عرض الكل' : 'View all'}
           <ArrowRight className="size-3 rtl:scale-x-[-1]" />

@@ -71,7 +71,7 @@ export function SignupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 md:space-y-4">
       {serverError && (
         <div className="rounded-[4px] px-4 py-3 text-sm bg-[#DB3F34]/10 border border-[#DB3F34]/25 text-red-300">
           <div className="flex gap-2.5 items-start">

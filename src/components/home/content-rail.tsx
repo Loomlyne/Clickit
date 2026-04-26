@@ -26,12 +26,12 @@ export function ContentRail({
   return (
     <section className="rail px-10 pb-3 pt-8">
       {/* Rail header */}
-      <div className="mb-4 flex items-baseline justify-between">
+      <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           {eyebrow && <div className="mono mb-1.5">{eyebrow}</div>}
           <h2 className="font-display m-0 text-[26px]">{title}</h2>
         </div>
-        <a className="mono flex items-center gap-1.5 cursor-pointer" href="#">
+        <a className="mono inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5" href="#">
           {isArabic ? 'عرض الكل' : 'View all'} <ArrowRight className="size-3" />
         </a>
       </div>
