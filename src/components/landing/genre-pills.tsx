@@ -12,12 +12,16 @@ export async function GenrePills() {
       <h2 className="font-[family-name:var(--font-display)] text-[clamp(36px,5vw,64px)] font-normal leading-none tracking-[-0.02em] mb-12">
         Pick a pillar.
       </h2>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-px border border-[var(--line)] bg-[var(--line)]">
-        {genres.map((genre) => (
+      <div className="grid grid-cols-2 gap-px border border-[var(--line)] bg-[var(--line)] md:grid-cols-3">
+        {genres.map((genre, index) => (
           <Link
             key={genre}
             href={`/browse?genre=${encodeURIComponent(genre)}`}
-            className="group flex min-h-[220px] flex-col justify-between bg-[var(--bg-0)] p-6 transition-colors duration-200 hover:bg-[var(--bg-1)] md:min-h-[260px] md:p-8"
+            className={[
+              'group flex min-h-[220px] flex-col justify-between bg-[var(--bg-0)] p-6 transition-colors duration-200 hover:bg-[var(--bg-1)] md:min-h-[260px] md:p-8',
+              genres.length % 2 === 1 && index === genres.length - 1 ? 'col-span-2' : '',
+              genres.length % 3 === 1 && index === genres.length - 1 ? 'md:col-span-3' : '',
+            ].filter(Boolean).join(' ')}
           >
             <div className="font-[family-name:var(--font-display)] text-[clamp(28px,3vw,40px)] leading-none tracking-[-0.02em] transition-colors duration-200 group-hover:text-[var(--primary)]">
               {genre}

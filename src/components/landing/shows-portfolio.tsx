@@ -8,15 +8,15 @@ export async function ShowsPortfolio() {
   if (display.length === 0) return null
 
   return (
-    <section className="mx-auto max-w-[1400px] px-10 py-24" id="shows">
+    <section className="mx-auto max-w-[1400px] px-4 py-24 sm:px-6 md:px-10" id="shows">
       <div className="mono mb-3.5 text-[var(--text-mute)]">002 · What to watch</div>
       <h2 className="font-[family-name:var(--font-display)] text-[clamp(36px,5vw,64px)] font-normal leading-none tracking-[-0.02em] mb-12 max-w-[800px]">
         A catalog curated by editors, not by clicks.
       </h2>
-      <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
         {display.map((s) => (
           <Link key={s.slug} href={`/series/${s.slug}`} className="group cursor-pointer">
-            <div className="aspect-[2/3] overflow-hidden rounded bg-[var(--bg-2)] mb-3.5">
+            <div className="mb-3 aspect-[2/3] overflow-hidden rounded bg-[var(--bg-2)] md:mb-3.5">
               {s.posterUrl ? (
                 <img
                   src={s.posterUrl}
@@ -28,8 +28,8 @@ export async function ShowsPortfolio() {
               )}
             </div>
             <div className="mono mb-1">{s.genre}</div>
-            <div className="font-[family-name:var(--font-display)] text-[22px] tracking-[-0.01em] mb-1.5">{s.title}</div>
-            <div className="text-[13px] text-[var(--text-dim)]">{s.tagline}</div>
+            <div className="mb-1.5 font-[family-name:var(--font-display)] text-[20px] tracking-[-0.01em] md:text-[22px]">{s.title}</div>
+            <div className="text-[12px] text-[var(--text-dim)] md:text-[13px]">{s.tagline}</div>
           </Link>
         ))}
       </div>
