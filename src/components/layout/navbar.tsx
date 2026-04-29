@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { Link, usePathname } from '@/i18n/navigation'
 import { useLenis } from 'lenis/react'
 import { cn } from '@/lib/utils'
-import { ClickitLogo } from '@/components/brand/clickit-logo'
 import { AuthSection } from './auth-section'
 import { MobileNav } from './mobile-nav'
 
@@ -66,7 +66,14 @@ export function Navbar({ initialUser }: NavbarProps) {
         aria-label="Clickit Story home"
         className="flex min-h-11 items-center"
       >
-        <ClickitLogo className="text-[1.55rem]" dotClassName="h-[0.44em] w-[0.44em]" />
+        <Image
+          src="/brand/Clickit_final_logo.svg"
+          alt="Clickit"
+          width={136}
+          height={56}
+          className="h-8 w-auto"
+          priority
+        />
       </Link>
 
       {/* Nav links — hidden on mobile, MobileNav handles those */}

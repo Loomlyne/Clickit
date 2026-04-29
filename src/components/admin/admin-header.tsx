@@ -1,11 +1,11 @@
 'use client'
 
+import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { Menu } from 'lucide-react'
 import { Link } from '@/i18n/navigation'
 import { usePathname } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
-import { ClickitLogo } from '@/components/brand/clickit-logo'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,7 +38,14 @@ export function AdminHeader() {
             aria-label="Go to browse"
             className="flex min-h-11 items-center"
           >
-            <ClickitLogo className="text-[1.4rem]" dotClassName="h-[0.42em] w-[0.42em]" />
+            <Image
+              src="/brand/Clickit_final_logo.svg"
+              alt="Clickit"
+              width={136}
+              height={56}
+              className="h-7 w-auto"
+              priority
+            />
           </Link>
         </div>
 

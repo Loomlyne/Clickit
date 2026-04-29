@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { usePathname } from '@/i18n/navigation'
 import { Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ClickitLogo } from '@/components/brand/clickit-logo'
 import {
   Sheet,
   SheetTrigger,
@@ -50,7 +50,14 @@ export function MobileNav({ initialUser }: MobileNavProps = {}) {
             onClick={() => setOpen(false)}
             className="flex min-h-11 items-center"
           >
-            <ClickitLogo className="text-[1.55rem]" dotClassName="h-[0.44em] w-[0.44em]" />
+            <Image
+              src="/brand/Clickit_final_logo.svg"
+              alt="Clickit"
+              width={136}
+              height={56}
+              className="h-8 w-auto"
+              priority
+            />
           </Link>
         </SheetHeader>
 
