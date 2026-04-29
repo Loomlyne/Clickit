@@ -5,7 +5,7 @@ import { AdminProfileCard } from '@/components/admin/admin-profile-card'
 export default async function AdminPage() {
   const supabase = await createClient()
 
-  const [{ data: { user } }, { data: shows }, { data: profile }] = await Promise.all([
+  const [{ data: { user } }, { data: shows }, { data: profile }, { data: showCategories }] = await Promise.all([
     supabase.auth.getUser(),
     supabase
       .from('shows')
@@ -16,7 +16,18 @@ export default async function AdminPage() {
       .from('profiles')
       .select('*')
       .single(),
+    supabase
+      .from('show_categories')
+      .select('show_id, categories!inner(name_en, slug)'),
   ])
+
+  const categoriesByShowId = (showCategories ?? []).reduce<Record<string, { name: string; slug: string }[]>>((acc, row: any) => {
+    const category = Array.isArray(row.categories) ? row.categories[0] : row.categories
+    if (!category) return acc
+    if (!acc[row.show_id]) acc[row.show_id] = []
+    acc[row.show_id].push({ name: category.name_en, slug: category.slug })
+    return acc
+  }, {})
 
   return (
     <div className="space-y-6">
@@ -27,7 +38,7 @@ export default async function AdminPage() {
         avatarUrl={profile?.avatar_url ?? null}
       />
 
-      <ShowsTable shows={shows ?? []} />
+      <ShowsTable shows={shows ?? []} categoriesByShowId={categoriesByShowId} />
     </div>
   )
 }

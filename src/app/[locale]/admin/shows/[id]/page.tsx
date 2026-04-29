@@ -7,6 +7,7 @@ import { StatusBadge } from '@/components/admin/status-badge'
 import { SeasonTabs } from '@/components/admin/season-tabs'
 import { EditShowButton } from '@/components/admin/edit-show-button'
 import { CastEditor } from '@/components/admin/cast-editor'
+import { Badge } from '@/components/ui/badge'
 import type { Database } from '@/lib/database.types'
 
 type Episode = Database['public']['Tables']['episodes']['Row']
@@ -34,21 +35,18 @@ export default async function ShowDetailPage({
 
   if (!show) notFound()
 
-  const { data: seasons } = await supabase
-    .from('seasons')
-    .select('*')
-    .eq('show_id', id)
-    .order('season_number', { ascending: true })
-
-  const { data: episodes } = await supabase
-    .from('episodes')
-    .select('*')
-    .eq('show_id', id)
-    .eq('archived', false)
-    .order('episode_number', { ascending: true })
-
-  // Fetch ALL episodes (including archived) to compute correct max episode_number per season
-  const [{ data: allEpisodes }, { data: castMembers }] = await Promise.all([
+  const [{ data: seasons }, { data: episodes }, { data: allEpisodes }, { data: castMembers }, { data: showCategories }] = await Promise.all([
+    supabase
+      .from('seasons')
+      .select('*')
+      .eq('show_id', id)
+      .order('season_number', { ascending: true }),
+    supabase
+      .from('episodes')
+      .select('*')
+      .eq('show_id', id)
+      .eq('archived', false)
+      .order('episode_number', { ascending: true }),
     supabase
       .from('episodes')
       .select('season_id, episode_number')
@@ -58,7 +56,16 @@ export default async function ShowDetailPage({
       .select('*')
       .eq('show_id', id)
       .order('sort_order', { ascending: true }),
+    supabase
+      .from('show_categories')
+      .select('category_id, categories!inner(name_en, slug)')
+      .eq('show_id', id),
   ])
+
+  const categories = (showCategories ?? []).flatMap((row: any) => {
+    const category = Array.isArray(row.categories) ? row.categories[0] : row.categories
+    return category ? [{ id: row.category_id, name: category.name_en, slug: category.slug }] : []
+  })
 
   const episodesBySeason: Record<string, Episode[]> = {}
   for (const ep of episodes ?? []) {
@@ -109,6 +116,15 @@ export default async function ShowDetailPage({
                 </>
               )}
             </div>
+            {categories.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {categories.map((category) => (
+                  <Badge key={category.id} variant="secondary">
+                    {category.name}
+                  </Badge>
+                ))}
+              </div>
+            )}
             <p className="mt-4 max-w-3xl text-sm leading-7 text-muted-foreground md:text-base">
               {show.description}
             </p>

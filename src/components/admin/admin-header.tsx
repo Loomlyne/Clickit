@@ -20,6 +20,7 @@ export function AdminHeader() {
 
   const tabs = [
     { label: t('shows'), href: '/admin' },
+    { label: 'Categories', href: '/admin/categories' },
     { label: 'Shorts', href: '/admin/shorts' },
     { label: 'Reviews', href: '/admin/reviews' },
     { label: t('archive'), href: '/admin/archive' },

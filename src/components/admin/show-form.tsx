@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { ArtworkUploadZone } from '@/components/admin/artwork-upload-zone'
 import { HeroMediaPicker } from '@/components/admin/hero-media-picker'
 import { generateSlug } from '@/lib/slug'
@@ -46,10 +47,12 @@ const showFormSchema = z.object({
   hero_video_type: z.enum(['mp4', 'youtube']).optional().nullable(),
   hero_video_mobile_url: z.string().optional().nullable(),
   hero_video_mobile_type: z.enum(['mp4', 'youtube']).optional().nullable(),
+  category_ids: z.array(z.string().uuid()).default([]),
 })
 
 type ShowFormData = z.infer<typeof showFormSchema>
 type DbShow = Database['public']['Tables']['shows']['Row']
+type Category = Database['public']['Tables']['categories']['Row']
 
 const GENRES = [
   'Travel', 'Health', 'Music', 'Comedy', 'Cooking',
@@ -88,7 +91,7 @@ function Field({ label, required, error, children }: { label: string; required?:
   )
 }
 
-function getFormDefaults(show: DbShow | null): ShowFormData {
+function getFormDefaults(show: DbShow | null, categoryIds: string[]): ShowFormData {
   if (!show) {
     return {
       title: '', title_ar: '', slug: '', description: '', description_ar: '',
@@ -97,6 +100,7 @@ function getFormDefaults(show: DbShow | null): ShowFormData {
       poster_url: '', hero_url: '', logo_url: '',
       hero_image_mobile_url: '', hero_video_url: '', hero_video_type: null,
       hero_video_mobile_url: '', hero_video_mobile_type: null,
+      category_ids: categoryIds,
     }
   }
   return {
@@ -113,14 +117,17 @@ function getFormDefaults(show: DbShow | null): ShowFormData {
     hero_video_type: (show.hero_video_type as 'mp4' | 'youtube' | null) ?? null,
     hero_video_mobile_url: show.hero_video_mobile_url ?? '',
     hero_video_mobile_type: (show.hero_video_mobile_type as 'mp4' | 'youtube' | null) ?? null,
+    category_ids: categoryIds,
   }
 }
 
 interface ShowFormProps {
   show?: DbShow | null
+  categories: Category[]
+  initialCategoryIds?: string[]
 }
 
-export function ShowForm({ show }: ShowFormProps) {
+export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowFormProps) {
   const isEdit = !!show
   const router = useRouter()
 
@@ -132,7 +139,7 @@ export function ShowForm({ show }: ShowFormProps) {
   const form = useForm<ShowFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(showFormSchema) as any,
-    defaultValues: getFormDefaults(show ?? null),
+    defaultValues: getFormDefaults(show ?? null, initialCategoryIds),
   })
 
   const watchedTitle = form.watch('title')
@@ -155,6 +162,7 @@ export function ShowForm({ show }: ShowFormProps) {
       hero_video_type: data.hero_video_type || null,
       hero_video_mobile_url: data.hero_video_mobile_url || null,
       hero_video_mobile_type: data.hero_video_mobile_type || null,
+      category_ids: data.category_ids,
     }
     if (!isEdit) normalized.id = generatedId
 
@@ -171,6 +179,14 @@ export function ShowForm({ show }: ShowFormProps) {
   }
 
   const errors = form.formState.errors
+  const selectedCategoryIds = form.watch('category_ids')
+
+  function toggleCategory(categoryId: string, checked: boolean) {
+    const next = checked
+      ? [...new Set([...selectedCategoryIds, categoryId])]
+      : selectedCategoryIds.filter((id) => id !== categoryId)
+    form.setValue('category_ids', next, { shouldDirty: true })
+  }
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -223,6 +239,35 @@ export function ShowForm({ show }: ShowFormProps) {
             </Select>
           </Field>
         </div>
+
+        <Field label="Categories">
+          {categories.length === 0 ? (
+            <div className="rounded-[6px] border border-dashed border-[var(--line)] px-4 py-3 text-sm text-muted-foreground">
+              Create categories first in Admin, Categories.
+            </div>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {categories.map((category) => {
+                const checked = selectedCategoryIds.includes(category.id)
+                return (
+                  <label
+                    key={category.id}
+                    className="flex min-h-11 cursor-pointer items-center gap-3 rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2.5 transition-colors hover:border-white/16"
+                  >
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(value) => toggleCategory(category.id, value === true)}
+                    />
+                    <div className="min-w-0">
+                      <div className="text-sm text-foreground">{category.name_en}</div>
+                      <div className="text-xs text-muted-foreground">{category.slug}</div>
+                    </div>
+                  </label>
+                )
+              })}
+            </div>
+          )}
+        </Field>
       </Section>
 
       {/* Description */}

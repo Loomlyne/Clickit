@@ -12,11 +12,22 @@ export default async function EditShowPage({
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: show } = await supabase
-    .from('shows')
-    .select('*')
-    .eq('id', id)
-    .single()
+  const [{ data: show }, { data: categories }, { data: showCategories }] = await Promise.all([
+    supabase
+      .from('shows')
+      .select('*')
+      .eq('id', id)
+      .single(),
+    supabase
+      .from('categories')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('show_categories')
+      .select('category_id')
+      .eq('show_id', id),
+  ])
 
   if (!show) notFound()
 
@@ -37,7 +48,11 @@ export default async function EditShowPage({
         </p>
       </div>
 
-      <ShowForm show={show} />
+      <ShowForm
+        show={show}
+        categories={categories ?? []}
+        initialCategoryIds={(showCategories ?? []).map((row) => row.category_id)}
+      />
     </div>
   )
 }

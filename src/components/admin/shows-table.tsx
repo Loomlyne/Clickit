@@ -24,6 +24,7 @@ import {
 import { StatusBadge } from '@/components/admin/status-badge'
 import { EmptyState } from '@/components/admin/empty-state'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
+import { Badge } from '@/components/ui/badge'
 import { archiveShow, toggleFeatured } from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
 import type { Database } from '@/lib/database.types'
@@ -32,9 +33,10 @@ type Show = Database['public']['Tables']['shows']['Row']
 
 interface ShowsTableProps {
   shows: Show[]
+  categoriesByShowId: Record<string, { name: string; slug: string }[]>
 }
 
-export function ShowsTable({ shows }: ShowsTableProps) {
+export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
   const tDash = useTranslations('admin.dashboard')
   const tShowForm = useTranslations('admin.showForm')
   const tCommon = useTranslations('common')
@@ -182,6 +184,15 @@ export function ShowsTable({ shows }: ShowsTableProps) {
                       <span>{show.genre}</span>
                       {show.featured && <span className="text-amber-200">{isArabic ? 'مميّز' : 'Featured'}</span>}
                     </div>
+                    {(categoriesByShowId[show.id] ?? []).length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {categoriesByShowId[show.id].map((category) => (
+                          <Badge key={`${show.id}-${category.slug}`} variant="secondary">
+                            {category.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell className="hidden text-muted-foreground md:table-cell">{show.genre}</TableCell>
                   <TableCell>

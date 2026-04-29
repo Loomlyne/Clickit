@@ -1,8 +1,16 @@
+import { createClient } from '@/lib/supabase/server'
 import { Link } from '@/i18n/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { ShowForm } from '@/components/admin/show-form'
 
-export default function NewShowPage() {
+export default async function NewShowPage() {
+  const supabase = await createClient()
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('*')
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
+
   return (
     <div className="space-y-6">
       <Link
@@ -20,7 +28,7 @@ export default function NewShowPage() {
         </p>
       </div>
 
-      <ShowForm />
+      <ShowForm categories={categories ?? []} />
     </div>
   )
 }

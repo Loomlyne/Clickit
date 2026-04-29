@@ -28,6 +28,7 @@ export type AuditAction =
 
 export type AuditEntity =
   | 'show'
+  | 'category'
   | 'season'
   | 'episode'
   | 'short'

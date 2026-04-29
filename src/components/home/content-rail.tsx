@@ -1,6 +1,7 @@
 // Rail — matches handoff .rail with native flex scroll
 import { useLocale } from 'next-intl'
 import { ArrowRight } from 'lucide-react'
+import { Link } from '@/i18n/navigation'
 
 import { ShowCard } from '@/components/shows/show-card'
 import { PlaceholderCard } from '@/components/shows/placeholder-card'
@@ -11,6 +12,7 @@ interface ContentRailProps {
   eyebrow?: string
   shows: ViewShow[]
   minCards?: number
+  seeAllHref?: string
 }
 
 export function ContentRail({
@@ -18,6 +20,7 @@ export function ContentRail({
   eyebrow,
   shows,
   minCards = 6,
+  seeAllHref,
 }: ContentRailProps) {
   const locale = useLocale()
   const isArabic = locale === 'ar'
@@ -31,9 +34,15 @@ export function ContentRail({
           {eyebrow && <div className="mono mb-1.5">{eyebrow}</div>}
           <h2 className="font-display m-0 text-[26px]">{title}</h2>
         </div>
-        <a className="mono inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5" href="#">
-          {isArabic ? 'عرض الكل' : 'View all'} <ArrowRight className="size-3" />
-        </a>
+        {seeAllHref ? (
+          <Link className="mono inline-flex min-h-11 shrink-0 items-center gap-1.5" href={seeAllHref}>
+            {isArabic ? 'عرض الكل' : 'View all'} <ArrowRight className="size-3 rtl:scale-x-[-1]" />
+          </Link>
+        ) : (
+          <span className="mono inline-flex min-h-11 shrink-0 items-center gap-1.5 text-[var(--text-mute)]">
+            {isArabic ? 'عرض الكل' : 'View all'} <ArrowRight className="size-3 rtl:scale-x-[-1]" />
+          </span>
+        )}
       </div>
 
       {/* Native scroll track */}
