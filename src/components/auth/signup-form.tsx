@@ -48,6 +48,13 @@ export function SignupForm() {
   })
 
   const termsValue = watch('terms')
+  const passwordValue = watch('password') ?? ''
+  const passwordScore = [
+    passwordValue.length >= 8,
+    /[A-Z]/.test(passwordValue),
+    /[0-9]/.test(passwordValue),
+    /[^A-Za-z0-9]/.test(passwordValue),
+  ].filter(Boolean).length
 
   async function onSubmit(data: SignupFormData) {
     setServerError(null)
@@ -113,6 +120,17 @@ export function SignupForm() {
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
+        <div className="mt-2 grid grid-cols-4 gap-1.5" aria-label="Password strength">
+          {[1, 2, 3, 4].map((level) => (
+            <span
+              key={level}
+              className={`h-1 rounded-[4px] ${passwordScore >= level ? 'bg-[var(--primary)]' : 'bg-[var(--bg-3)]'}`}
+            />
+          ))}
+        </div>
+        <p className="mono mt-1.5 text-[10px] text-[var(--text-mute)]">
+          Strength · {passwordScore < 2 ? 'weak' : passwordScore < 4 ? 'good' : 'strong'}
+        </p>
         {errors.password && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.password.message as never)}</p>}
       </div>
 

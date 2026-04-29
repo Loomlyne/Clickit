@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import Image from 'next/image'
 import { Link, usePathname } from '@/i18n/navigation'
 import { useLenis } from 'lenis/react'
 import { cn } from '@/lib/utils'
@@ -61,15 +60,13 @@ export function Navbar({ initialUser }: NavbarProps) {
       )}
       style={{ WebkitBackdropFilter: 'blur(18px)' }}
     >
-      <Link href="/" aria-label="Clickit Story home">
-        <Image
-          src="/brand/Clickit_final_logo.svg"
-          alt="Clickit Story"
-          width={124}
-          height={32}
-          className="h-7 w-auto"
-          priority
-        />
+      <Link
+        href="/"
+        aria-label="Clickit Story home"
+        className="flex min-h-11 items-center gap-2 font-[family-name:var(--font-ui)] text-xl font-bold tracking-normal text-[var(--text)]"
+      >
+        <span className="inline-block h-[7px] w-[7px] rounded-full bg-[var(--primary)]" />
+        CLICKIT
       </Link>
 
       {/* Nav links — hidden on mobile, MobileNav handles those */}

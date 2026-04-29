@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import type { ViewShort } from '@/lib/queries'
 
 interface ShortsOverlayProps {
@@ -12,28 +13,83 @@ interface ShortsOverlayProps {
 export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlayProps) {
   const [idx, setIdx] = useState(startIndex)
   const [liked, setLiked] = useState<Set<string>>(new Set())
+  const [saved, setSaved] = useState<Set<string>>(new Set())
+  const [paused, setPaused] = useState(false)
+  const [muted, setMuted] = useState(true)
+  const [progress, setProgress] = useState(0)
   const touchStart = useRef<number | null>(null)
 
   const current = shorts[idx]
   const hasPrev = idx > 0
   const hasNext = idx < shorts.length - 1
+  const goPrev = () => setIdx((i) => i - 1)
+  const goNext = () => setIdx((i) => i + 1)
 
   // Keyboard nav
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
-      else if ((e.key === 'ArrowDown' || e.key === 'ArrowRight') && hasNext) setIdx((i) => i + 1)
-      else if ((e.key === 'ArrowUp' || e.key === 'ArrowLeft') && hasPrev) setIdx((i) => i - 1)
+      else if ((e.key === 'ArrowDown' || e.key === 'ArrowRight') && hasNext) goNext()
+      else if ((e.key === 'ArrowUp' || e.key === 'ArrowLeft') && hasPrev) goPrev()
+      else if (e.key === ' ') {
+        e.preventDefault()
+        setPaused((value) => !value)
+      } else if (e.key.toLowerCase() === 'm') {
+        setMuted((value) => !value)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [hasNext, hasPrev, onClose])
 
+  useEffect(() => {
+    setProgress(0)
+  }, [idx])
+
+  useEffect(() => {
+    if (paused) return
+    const timer = window.setInterval(() => {
+      setProgress((value) => {
+        if (value >= 100) {
+          if (hasNext) goNext()
+          return 0
+        }
+        return value + 0.5
+      })
+    }, 100)
+    return () => window.clearInterval(timer)
+  }, [hasNext, paused])
+
   // Lock body scroll
   useEffect(() => {
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = prev }
+    const { body, documentElement } = document
+    const scrollY = window.scrollY
+    const prevBodyOverflow = body.style.overflow
+    const prevBodyPosition = body.style.position
+    const prevBodyTop = body.style.top
+    const prevBodyWidth = body.style.width
+    const prevHtmlOverflow = documentElement.style.overflow
+    const prevHtmlOverscroll = documentElement.style.overscrollBehavior
+    const prevBodyOverscroll = body.style.overscrollBehavior
+
+    documentElement.style.overflow = 'hidden'
+    documentElement.style.overscrollBehavior = 'none'
+    body.style.overflow = 'hidden'
+    body.style.overscrollBehavior = 'none'
+    body.style.position = 'fixed'
+    body.style.top = `-${scrollY}px`
+    body.style.width = '100%'
+
+    return () => {
+      documentElement.style.overflow = prevHtmlOverflow
+      documentElement.style.overscrollBehavior = prevHtmlOverscroll
+      body.style.overflow = prevBodyOverflow
+      body.style.overscrollBehavior = prevBodyOverscroll
+      body.style.position = prevBodyPosition
+      body.style.top = prevBodyTop
+      body.style.width = prevBodyWidth
+      window.scrollTo(0, scrollY)
+    }
   }, [])
 
   // Touch swipe
@@ -42,8 +98,8 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
     if (touchStart.current == null) return
     const dy = e.changedTouches[0].clientY - touchStart.current
     if (Math.abs(dy) > 60) {
-      if (dy < 0 && hasNext) setIdx((i) => i + 1)
-      if (dy > 0 && hasPrev) setIdx((i) => i - 1)
+      if (dy < 0 && hasNext) goNext()
+      if (dy > 0 && hasPrev) goPrev()
     }
     touchStart.current = null
   }
@@ -57,6 +113,14 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
   }
 
   const isLiked = liked.has(current.id)
+  const isSaved = saved.has(current.id)
+  const toggleSaved = () => {
+    setSaved((s) => {
+      const n = new Set(s)
+      if (n.has(current.id)) n.delete(current.id); else n.add(current.id)
+      return n
+    })
+  }
 
   return (
     <div
@@ -108,11 +172,22 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
         </button>
       </div>
 
+      <div className="absolute left-4 right-4 top-[calc(max(env(safe-area-inset-top),16px)+52px)] z-10 flex gap-1 md:left-8 md:right-8">
+        {shorts.map((s, i) => (
+          <div key={s.id} className="h-0.5 flex-1 overflow-hidden rounded-full bg-white/18">
+            <div
+              className="h-full bg-[var(--primary)] transition-[width] duration-100"
+              style={{ width: `${i < idx ? 100 : i === idx ? progress : 0}%` }}
+            />
+          </div>
+        ))}
+      </div>
+
       {/* Prev arrow — desktop only */}
       {hasPrev && (
         <button
-          className="absolute left-6 lg:left-10 top-1/2 -translate-y-1/2 z-20 hidden md:flex h-12 w-12 items-center justify-center rounded-full border border-[var(--line-2)] bg-black/40 text-white/80 backdrop-blur-md transition-all duration-200 hover:bg-white/10 hover:text-white hover:scale-110 hover:border-white/40"
-          onClick={() => setIdx((i) => i - 1)}
+          className="absolute left-6 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--line-2)] bg-black/40 text-white/80 backdrop-blur-md transition-all duration-200 hover:scale-110 hover:border-white/40 hover:bg-white/10 hover:text-white lg:left-10 lg:flex"
+          onClick={goPrev}
           aria-label="Previous short"
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
@@ -120,42 +195,118 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
       )}
 
       {/* Main card — YouTube Short embed */}
-      <div
-        className="relative w-full max-w-[380px] overflow-hidden rounded-[14px] shadow-[0_40px_120px_rgba(0,0,0,0.6)]"
-        style={{ aspectRatio: '9/16' }}
-      >
-        <iframe
-          key={current.youtubeVideoId}
-          src={`https://www.youtube.com/embed/${current.youtubeVideoId}?autoplay=1&loop=1&playlist=${current.youtubeVideoId}&controls=0&modestbranding=1&rel=0&playsinline=1`}
-          className="absolute inset-0 h-full w-full"
-          allow="autoplay; encrypted-media"
-          allowFullScreen
-          title={current.title}
-        />
+      <div className="flex w-full max-w-[380px] flex-col items-center gap-3 px-4 lg:px-0">
+        <div
+          className="relative w-full overflow-hidden rounded-[4px] shadow-[0_40px_120px_rgba(0,0,0,0.6)]"
+          style={{ aspectRatio: '9/16' }}
+        >
+          <iframe
+            key={current.youtubeVideoId}
+            src={`https://www.youtube.com/embed/${current.youtubeVideoId}?autoplay=${paused ? 0 : 1}&loop=1&playlist=${current.youtubeVideoId}&controls=0&modestbranding=1&rel=0&playsinline=1&mute=${muted ? 1 : 0}`}
+            className="absolute inset-0 h-full w-full"
+            allow="autoplay; encrypted-media"
+            allowFullScreen
+            title={current.title}
+          />
 
-        {/* Bottom info overlay */}
-        <div className="absolute bottom-4 left-4 right-16 z-10 pointer-events-none">
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg-3)] text-[11px] font-medium text-white">
-              {current.title.charAt(0)}
-            </div>
-            <span className="mono text-[11px] text-white/80">
-              {current.channelName || current.title.toLowerCase().replace(/[^a-z]/g, '').slice(0, 14)}
-            </span>
-          </div>
-          <div className="font-[family-name:var(--font-display)] text-[16px] leading-tight mb-1 text-white drop-shadow-lg">{current.title}</div>
-          {current.genre && (
-            <div className="flex items-center gap-2 mt-1.5">
-              <span className="mono text-[10px] text-white/50">{current.genre}</span>
-            </div>
+          {hasPrev && (
+            <button
+              type="button"
+              className="absolute inset-y-0 left-0 z-20 w-1/3 bg-transparent"
+              onClick={goPrev}
+              aria-label="Previous short"
+            >
+              <span className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/35 text-white/75 opacity-0 backdrop-blur-md transition-opacity hover:opacity-100 lg:left-4">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+              </span>
+            </button>
           )}
+
+          {hasNext && (
+            <button
+              type="button"
+              className="absolute inset-y-0 right-0 z-20 w-1/3 bg-transparent"
+              onClick={goNext}
+              aria-label="Next short"
+            >
+              <span className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/35 text-white/75 opacity-0 backdrop-blur-md transition-opacity hover:opacity-100 lg:right-4">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+              </span>
+            </button>
+          )}
+
+          {/* Bottom info overlay */}
+          <div className="pointer-events-none absolute bottom-4 left-4 right-16 z-10">
+            <div className="mb-2 flex items-center gap-2.5">
+              <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[var(--bg-3)] text-[11px] font-medium text-white">
+                {current.thumbnailUrl ? (
+                  <Image
+                    src={current.thumbnailUrl}
+                    alt=""
+                    fill
+                    sizes="32px"
+                    className="object-cover opacity-80"
+                  />
+                ) : (
+                  current.title.charAt(0)
+                )}
+              </div>
+              <span className="mono text-[11px] text-white/80">
+                {current.channelName || current.title.toLowerCase().replace(/[^a-z]/g, '').slice(0, 14)}
+              </span>
+              <button className="pointer-events-auto rounded-[4px] bg-white px-2 py-1 text-[10px] font-medium text-black">
+                Follow
+              </button>
+            </div>
+            <div className="mb-1 font-[family-name:var(--font-display)] text-[16px] leading-tight text-white drop-shadow-lg">{current.title}</div>
+            {current.genre && (
+              <div className="mt-1.5 flex items-center gap-2">
+                <span className="mono text-[10px] text-white/50">{current.genre}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Right action rail */}
+          <div className="absolute bottom-20 right-3 z-10 flex flex-col items-center gap-5">
+            <button className={`flex flex-col items-center gap-1 ${isLiked ? 'text-red-500' : 'text-white/80'}`} onClick={toggleLike}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+              <span className="mono text-[9px]">{isLiked ? 'Liked' : 'Like'}</span>
+            </button>
+            <button className={`flex flex-col items-center gap-1 ${isSaved ? 'text-[var(--primary)]' : 'text-white/80'}`} onClick={toggleSaved}>
+              <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>
+              <span className="mono text-[9px]">List</span>
+            </button>
+            <button className="flex flex-col items-center gap-1 text-white/80">
+              <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" /></svg>
+              <span className="mono text-[9px]">Comment</span>
+            </button>
+            <button className="flex flex-col items-center gap-1 text-white/80" onClick={() => setMuted((value) => !value)}>
+              <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" />{muted && <path d="M23 9l-6 6M17 9l6 6" />}</svg>
+              <span className="mono text-[9px]">{muted ? 'Muted' : 'Sound'}</span>
+            </button>
+          </div>
         </div>
 
-        {/* Right action rail */}
-        <div className="absolute bottom-20 right-3 z-10 flex flex-col items-center gap-5">
-          <button className={`flex flex-col items-center gap-1 ${isLiked ? 'text-red-500' : 'text-white/80'}`} onClick={toggleLike}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
-            <span className="mono text-[9px]">{isLiked ? 'Liked' : 'Like'}</span>
+        <div className="pointer-events-auto relative z-30 flex w-full items-center justify-center gap-3 lg:hidden">
+          <button
+            type="button"
+            className="flex min-w-[132px] items-center justify-center gap-2 rounded-full border border-[var(--line-2)] bg-black/50 px-5 py-3 text-sm font-medium text-white/85 backdrop-blur-md transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-35"
+            onClick={goPrev}
+            aria-label="Previous short"
+            disabled={!hasPrev}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+            <span>Back</span>
+          </button>
+          <button
+            type="button"
+            className="flex min-w-[132px] items-center justify-center gap-2 rounded-full border border-[var(--line-2)] bg-white/12 px-5 py-3 text-sm font-medium text-white backdrop-blur-md transition-colors hover:bg-white/18 disabled:cursor-not-allowed disabled:opacity-35"
+            onClick={goNext}
+            aria-label="Next short"
+            disabled={!hasNext}
+          >
+            <span>Next</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
           </button>
         </div>
       </div>
@@ -163,8 +314,8 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
       {/* Next arrow — desktop only */}
       {hasNext && (
         <button
-          className="absolute right-6 lg:right-10 top-1/2 -translate-y-1/2 z-20 hidden md:flex h-12 w-12 items-center justify-center rounded-full border border-[var(--line-2)] bg-black/40 text-white/80 backdrop-blur-md transition-all duration-200 hover:bg-white/10 hover:text-white hover:scale-110 hover:border-white/40"
-          onClick={() => setIdx((i) => i + 1)}
+          className="absolute right-6 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--line-2)] bg-black/40 text-white/80 backdrop-blur-md transition-all duration-200 hover:scale-110 hover:border-white/40 hover:bg-white/10 hover:text-white lg:right-10 lg:flex"
+          onClick={goNext}
           aria-label="Next short"
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
@@ -173,8 +324,8 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
 
       {/* Hint — adapts to viewport */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 mono text-[10px] text-white/30">
-        <span className="md:hidden">Swipe · Tap to close</span>
-        <span className="hidden md:inline">Arrows · ← → keys · Esc to close</span>
+        <span className="lg:hidden">Swipe or use buttons</span>
+        <span className="hidden lg:inline">Arrows · Space · M · Esc</span>
       </div>
     </div>
   )

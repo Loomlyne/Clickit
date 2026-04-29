@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 import type { ViewShort } from '@/lib/queries'
 import { ShortsOverlay } from '@/components/shorts/shorts-overlay'
@@ -59,7 +60,13 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
               style={{ width: 180, aspectRatio: '9/16' }}
             >
               {s.thumbnailUrl ? (
-                <img src={s.thumbnailUrl} alt={s.title} className="h-full w-full object-cover" />
+                <Image
+                  src={s.thumbnailUrl}
+                  alt={s.title}
+                  fill
+                  sizes="180px"
+                  className="object-cover"
+                />
               ) : (
                 <div className="h-full w-full bg-[var(--bg-2)]" />
               )}

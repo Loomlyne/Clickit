@@ -1651,6 +1651,52 @@ export async function addCastMember(
   }
 }
 
+export async function uploadCastImage(
+  formData: FormData,
+): Promise<ActionResult<string>> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    const file = formData.get('file') as File | null
+    const showId = formData.get('showId') as string | null
+
+    if (!file || file.size === 0) {
+      return { success: false, error: 'No file provided' }
+    }
+    if (!showId) {
+      return { success: false, error: 'Show ID is required' }
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      return { success: false, error: 'Image must be under 2MB' }
+    }
+
+    const extMap: Record<string, string> = {
+      'image/png': 'png',
+      'image/jpeg': 'jpg',
+      'image/webp': 'webp',
+    }
+    const ext = extMap[file.type]
+    if (!ext) {
+      return { success: false, error: 'Only PNG, JPEG, or WebP images are allowed' }
+    }
+
+    const path = `shows/${showId}/cast/${Date.now()}.${ext}`
+
+    const { error: uploadError } = await admin.storage
+      .from('show-artwork')
+      .upload(path, file, { upsert: false, contentType: file.type, cacheControl: '3600' })
+
+    if (uploadError) return { success: false, error: uploadError.message }
+
+    const { data: urlData } = admin.storage.from('show-artwork').getPublicUrl(path)
+    return { success: true, data: `${urlData.publicUrl}?v=${Date.now()}` }
+  } catch (err) {
+    console.error('[admin/cast] upload failed', err)
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to upload cast image' }
+  }
+}
+
 export async function deleteCastMember(id: string): Promise<ActionResult> {
   try {
     const user = await assertAdmin()

@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, Trash2, Loader2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
+import { Plus, Trash2, Loader2, Camera, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { addCastMember, deleteCastMember } from '@/app/[locale]/admin/actions'
+import { addCastMember, deleteCastMember, uploadCastImage } from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
 import type { Database } from '@/lib/database.types'
 
@@ -22,30 +23,86 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
   const [formOpen, setFormOpen] = useState(false)
   const [name, setName] = useState('')
   const [role, setRole] = useState('')
-  const [imageUrl, setImageUrl] = useState('')
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview?.startsWith('blob:')) URL.revokeObjectURL(imagePreview)
+    }
+  }, [imagePreview])
+
+  const resetForm = () => {
+    if (imagePreview?.startsWith('blob:')) URL.revokeObjectURL(imagePreview)
+    setName('')
+    setRole('')
+    setImageFile(null)
+    setImagePreview(null)
+    setFormOpen(false)
+  }
 
   const handleAdd = async () => {
     if (!name.trim()) return
     setAdding(true)
+    let uploadedImageUrl: string | null = null
+
+    if (imageFile) {
+      const formData = new FormData()
+      formData.set('file', imageFile)
+      formData.set('showId', showId)
+      const uploadResult = await uploadCastImage(formData)
+      if (!uploadResult.success) {
+        setAdding(false)
+        toast.error(uploadResult.error || 'Failed to upload image')
+        return
+      }
+      uploadedImageUrl = uploadResult.data ?? null
+    }
+
     const result = await addCastMember({
       show_id: showId,
       name: name.trim(),
       role: role.trim() || null,
-      image_url: imageUrl.trim() || null,
+      image_url: uploadedImageUrl,
       sort_order: cast.length,
     })
     setAdding(false)
     if (result.success && result.data) {
       setCast((prev) => [...prev, result.data as CastMember])
-      setName('')
-      setRole('')
-      setImageUrl('')
-      setFormOpen(false)
+      resetForm()
       toast.success('Cast member added')
     } else {
       toast.error(result.error || 'Failed to add')
     }
+  }
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      toast.error('Only PNG, JPEG, or WebP images are allowed')
+      event.target.value = ''
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be under 2MB')
+      event.target.value = ''
+      return
+    }
+
+    if (imagePreview?.startsWith('blob:')) URL.revokeObjectURL(imagePreview)
+    const previewUrl = URL.createObjectURL(file)
+    setImageFile(file)
+    setImagePreview(previewUrl)
+    event.target.value = ''
+  }
+
+  const clearImage = () => {
+    if (imagePreview?.startsWith('blob:')) URL.revokeObjectURL(imagePreview)
+    setImageFile(null)
+    setImagePreview(null)
   }
 
   const handleDelete = async (id: string) => {
@@ -81,37 +138,85 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
       {/* Add form */}
       {formOpen && (
         <div className="mb-4 rounded border border-[var(--line)] bg-[var(--bg-1)] p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Name *</Label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Ahmed Al Mansoori"
-              />
+          <div className="flex flex-col gap-4 md:flex-row md:items-start">
+            <div className="flex justify-center md:block">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  className="group relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--line-2)] transition-all hover:border-[var(--text-mute)]"
+                  style={{ background: imagePreview ? undefined : 'linear-gradient(135deg, rgba(96,115,255,0.85), rgba(46,57,121,0.92))' }}
+                >
+                  {imagePreview ? (
+                    <Image
+                      src={imagePreview}
+                      alt="Cast member preview"
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl font-semibold text-white">
+                      {name.trim().slice(0, 1).toUpperCase() || '?'}
+                    </span>
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                    {adding ? (
+                      <Loader2 className="size-5 animate-spin text-white" />
+                    ) : (
+                      <Camera className="size-5 text-white" />
+                    )}
+                  </div>
+                </button>
+                {imagePreview && (
+                  <button
+                    type="button"
+                    onClick={clearImage}
+                    className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white transition-colors hover:bg-black"
+                    aria-label="Remove image"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Role</Label>
-              <Input
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                placeholder="e.g. Host, Director"
-              />
+
+            <div className="grid flex-1 gap-3 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Name *</Label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Ahmed Al Mansoori"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Role</Label>
+                <Input
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  placeholder="e.g. Host, Director"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <p className="text-xs text-[var(--text-mute)]">
+                  Upload image, PNG, JPEG, or WebP, max 2MB
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Image URL</Label>
-            <Input
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://..."
-            />
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleAdd} disabled={!name.trim() || adding}>
               {adding ? <Loader2 className="size-3.5 animate-spin" /> : 'Add member'}
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setFormOpen(false)}>
+            <Button size="sm" variant="ghost" onClick={resetForm}>
               Cancel
             </Button>
           </div>
@@ -128,11 +233,15 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
             >
               {/* Avatar */}
               {c.image_url ? (
-                <img
-                  src={c.image_url}
-                  alt={c.name}
-                  className="mx-auto mb-2 h-16 w-16 rounded-full object-cover"
-                />
+                <div className="relative mx-auto mb-2 h-16 w-16 overflow-hidden rounded-full">
+                  <Image
+                    src={c.image_url}
+                    alt={c.name}
+                    fill
+                    unoptimized
+                    className="object-cover"
+                  />
+                </div>
               ) : (
                 <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--bg-3)] text-lg font-medium text-[var(--text-dim)]">
                   {c.name.slice(0, 2).toUpperCase()}

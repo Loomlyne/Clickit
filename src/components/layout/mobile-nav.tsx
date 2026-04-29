@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { Link } from '@/i18n/navigation'
-import Image from 'next/image'
 import { usePathname } from '@/i18n/navigation'
 import { Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -33,25 +32,25 @@ export function MobileNav({ initialUser }: MobileNavProps = {}) {
     <Sheet open={open} onOpenChange={setOpen} modal={false}>
       <SheetTrigger
         aria-label="Open navigation menu"
-        className="flex size-11 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.03] text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white md:hidden"
+        className="flex size-11 items-center justify-center rounded-[4px] border border-[var(--line)] bg-[var(--bg-2)] text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white md:hidden"
       >
         <Menu className="size-5" />
       </SheetTrigger>
 
       <SheetContent
         side="top"
-        className="flex w-full flex-col rounded-b-[24px] border-x-0 border-t-0 p-0"
+        className="flex w-full flex-col rounded-b-[4px] border-x-0 border-t-0 p-0"
       >
         <SheetHeader className="border-b border-white/[0.06] px-6 py-5">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <Link href="/" aria-label="Clickit Story home" onClick={() => setOpen(false)}>
-            <Image
-              src="/brand/Clickit_final_logo.svg"
-              alt="Clickit Story"
-              width={124}
-              height={32}
-              className="h-8 w-auto"
-            />
+          <Link
+            href="/"
+            aria-label="Clickit Story home"
+            onClick={() => setOpen(false)}
+            className="flex min-h-11 items-center gap-2 font-[family-name:var(--font-ui)] text-xl font-bold tracking-normal text-[var(--text)]"
+          >
+            <span className="inline-block h-[7px] w-[7px] rounded-full bg-[var(--primary)]" />
+            CLICKIT
           </Link>
         </SheetHeader>
 
@@ -64,7 +63,7 @@ export function MobileNav({ initialUser }: MobileNavProps = {}) {
                 href={href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  'flex min-h-[48px] items-center rounded-[14px] px-4 text-[15px] font-medium tracking-[-0.01em] transition-colors',
+                  'flex min-h-[48px] items-center rounded-[4px] px-4 text-[15px] font-medium tracking-normal transition-colors',
                   isActive
                     ? 'bg-white/[0.08] text-white'
                     : 'text-white/56 hover:bg-white/[0.04] hover:text-white'

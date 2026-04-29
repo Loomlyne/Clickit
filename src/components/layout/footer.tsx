@@ -1,6 +1,3 @@
-// Footer — matches handoff footer-v2 exactly
-// Wordmark hero + 5-col grid + bottom bar
-import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { getAppConfig } from '@/lib/config'
 
@@ -8,7 +5,7 @@ export async function Footer() {
   const { footer } = await getAppConfig()
 
   return (
-    <footer className="border-t border-[var(--line)] bg-[var(--bg-0)] relative overflow-hidden">
+    <footer className="relative overflow-hidden border-t border-[var(--line)] bg-[var(--bg-1)]">
       {/* Hero wordmark section */}
       <div className="border-b border-[var(--line)] px-4 pb-[60px] pt-[90px] sm:px-6 md:px-12 relative">
         {/* Eyebrow with accent line */}
@@ -17,16 +14,10 @@ export async function Footer() {
           Est. 2026 · Streaming the city
         </div>
 
-        {/* Wordmark logo */}
         <Link href="/" aria-label="Clickit Story home" className="block">
-          <Image
-            src="/brand/Clickit_final_logo.svg"
-            alt="Clickit Story"
-            width={1200}
-            height={300}
-            priority
-            className="h-auto w-full max-w-[820px]"
-          />
+          <h2 className="font-[family-name:var(--font-display)] text-[clamp(64px,14vw,180px)] font-normal leading-[0.82] tracking-normal text-[var(--text)]">
+            Click<em className="italic">it.</em>
+          </h2>
         </Link>
 
         {/* Tagline + newsletter */}
@@ -54,14 +45,10 @@ export async function Footer() {
       <div className="grid grid-cols-1 gap-10 border-b border-[var(--line)] px-4 pb-10 pt-12 sm:grid-cols-2 sm:px-6 md:grid-cols-[1.2fr_repeat(4,1fr)] md:gap-12 md:px-12">
         {/* About column */}
         <div className="sm:col-span-2 md:col-span-1">
-          <Link href="/" className="mb-4 block" aria-label="Clickit Story home">
-            <Image
-              src="/brand/Clickit_final_logo.svg"
-              alt="Clickit Story"
-              width={120}
-              height={30}
-              className="h-6 w-auto"
-            />
+          <h5 className="sr-only">About</h5>
+          <Link href="/" className="mb-4 flex min-h-11 items-center gap-2 font-[family-name:var(--font-ui)] text-lg font-bold tracking-normal text-[var(--text)]" aria-label="Clickit Story home">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--primary)]" />
+            CLICKIT
           </Link>
           <p className="text-[14px] leading-relaxed text-[var(--text-dim)] mb-5">
             A hand-curated streaming home for urban culture, food, design, and travel. No algorithm, no ads — just shows editors stand behind.
@@ -88,7 +75,7 @@ export async function Footer() {
 
         {/* Watch column */}
         <div>
-          <h2 className="mono mb-4 font-medium text-[var(--text-dim)]">Watch</h2>
+          <h5 className="mono mb-4 font-medium text-[var(--text-dim)]">Watch</h5>
           <ul className="flex flex-col gap-0.5">
             <li><Link href="/browse" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Browse all</Link></li>
             <li><Link href="/browse" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">New this week</Link></li>
@@ -99,7 +86,7 @@ export async function Footer() {
 
         {/* Discover column */}
         <div>
-          <h2 className="mono mb-4 font-medium text-[var(--text-dim)]">Discover</h2>
+          <h5 className="mono mb-4 font-medium text-[var(--text-dim)]">Discover</h5>
           <ul className="flex flex-col gap-0.5">
             <li><Link href="/browse?genre=Travel" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Travel</Link></li>
             <li><Link href="/browse?genre=Health" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Health</Link></li>
@@ -111,7 +98,7 @@ export async function Footer() {
 
         {/* Company column */}
         <div>
-          <h2 className="mono mb-4 font-medium text-[var(--text-dim)]">Company</h2>
+          <h5 className="mono mb-4 font-medium text-[var(--text-dim)]">Company</h5>
           <ul className="flex flex-col gap-0.5">
             <li><span className="inline-flex min-h-11 cursor-pointer items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">About</span></li>
             <li><span className="inline-flex min-h-11 cursor-pointer items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Creators</span></li>
@@ -122,7 +109,7 @@ export async function Footer() {
 
         {/* Account column */}
         <div>
-          <h2 className="mono mb-4 font-medium text-[var(--text-dim)]">Account</h2>
+          <h5 className="mono mb-4 font-medium text-[var(--text-dim)]">Account</h5>
           <ul className="flex flex-col gap-0.5">
             <li><Link href="/profile" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Profile</Link></li>
             <li><Link href="/profile" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Settings</Link></li>

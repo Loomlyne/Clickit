@@ -1,7 +1,6 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import Image from 'next/image'
 import { Menu } from 'lucide-react'
 import { Link } from '@/i18n/navigation'
 import { usePathname } from '@/i18n/navigation'
@@ -29,17 +28,16 @@ export function AdminHeader() {
   ]
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/8 bg-[rgba(5,7,12,0.76)] backdrop-blur-[18px]">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-[var(--line)] bg-[rgba(10,10,10,0.88)] backdrop-blur-[18px]">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 md:gap-4 md:px-8 md:py-4">
         <div className="flex items-center gap-3">
-          <Link href="/browse" aria-label="Go to browse">
-            <Image
-              src="/brand/Clickit_final_logo.svg"
-              alt="Clickit Story Admin"
-              width={90}
-              height={24}
-              className="h-5 w-auto md:h-6"
-            />
+          <Link
+            href="/browse"
+            aria-label="Go to browse"
+            className="flex min-h-11 items-center gap-2 font-[family-name:var(--font-ui)] text-lg font-bold tracking-normal text-[var(--text)]"
+          >
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--primary)]" />
+            CLICKIT
           </Link>
         </div>
 
@@ -57,7 +55,7 @@ export function AdminHeader() {
                 className={cn(
                   'rounded-[4px] px-4 py-2 text-sm font-medium transition-all',
                   isActive
-                    ? 'bg-white text-black'
+                    ? 'bg-[var(--primary)] text-[var(--primary-foreground)]'
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
@@ -91,7 +89,7 @@ export function AdminHeader() {
                   asChild
                   className={cn(
                     'min-h-11',
-                    isActive && 'bg-white text-black focus:bg-white focus:text-black'
+                    isActive && 'bg-[var(--primary)] text-[var(--primary-foreground)] focus:bg-[var(--primary)] focus:text-[var(--primary-foreground)]'
                   )}
                 >
                   <Link href={tab.href}>{tab.label}</Link>

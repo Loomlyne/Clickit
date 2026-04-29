@@ -2,10 +2,11 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { useLocale } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { useRouter } from '@/i18n/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Heart, ListPlus, Share2 } from 'lucide-react'
 import { YouTubePlayer } from '@/components/watch/youtube-player'
 import { AutoplayOverlay } from '@/components/watch/autoplay-overlay'
 import { EpisodeNav } from '@/components/watch/episode-nav'
@@ -94,8 +95,8 @@ export function WatchPageContent({
       <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 px-4 py-4 md:gap-8 md:px-8 md:py-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         {/* Left: player + metadata */}
         <div className="min-w-0">
-          {/* Player frame — rounded-[10px] with shadow */}
-          <div className="relative w-full aspect-video overflow-hidden rounded-[10px] bg-black shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
+          {/* Player frame with v2 radius and shadow */}
+          <div className="relative w-full aspect-video overflow-hidden rounded-[4px] bg-black shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
             <YouTubePlayer
               videoId={episode.youtubeId ?? ''}
               brandColor={BRAND_COLOR_BG[show.brandColor]}
@@ -151,10 +152,30 @@ export function WatchPageContent({
                 </div>
               </div>
             </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href={`/series/${show.slug}`}
+                className="inline-flex min-h-10 items-center rounded-[4px] bg-[var(--primary)] px-4 text-[13px] font-medium text-[var(--primary-foreground)] transition-colors hover:bg-white"
+              >
+                {isArabic ? 'عرض المسلسل' : 'View series'}
+              </Link>
+              <button className="inline-flex min-h-10 items-center gap-1.5 rounded-[4px] border border-[var(--line-2)] px-3 text-[13px] text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">
+                <ListPlus className="size-4" />
+                {isArabic ? 'قائمتي' : 'My List'}
+              </button>
+              <button className="inline-flex min-h-10 items-center gap-1.5 rounded-[4px] border border-[var(--line-2)] px-3 text-[13px] text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">
+                <Heart className="size-4" />
+                {isArabic ? 'إعجاب' : 'Like'}
+              </button>
+              <button className="inline-flex min-h-10 items-center gap-1.5 rounded-[4px] border border-[var(--line-2)] px-3 text-[13px] text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">
+                <Share2 className="size-4" />
+                {isArabic ? 'مشاركة' : 'Share'}
+              </button>
+            </div>
           </div>
 
           {/* Description card — matches handoff .yt-desc */}
-          <div className="mb-6 rounded-[10px] border border-[var(--line)] bg-[var(--bg-1)] p-3.5 sm:p-4">
+          <div className="mb-6 rounded-[4px] border border-[var(--line)] bg-[var(--bg-1)] p-3.5 sm:p-4">
             <div className="mono mb-2.5 flex flex-wrap gap-3 text-[10.5px] sm:gap-3.5 sm:text-xs" style={{ letterSpacing: '0.12em' }}>
               <span style={{ color: 'var(--accent)' }}>{show.genre}</span>
               {episode.duration && <span className="text-[var(--text-dim)]">{episode.duration} {isArabic ? 'دقيقة' : 'min'}</span>}
@@ -202,7 +223,12 @@ export function WatchPageContent({
                 >
                   <div className="yt-side-thumb">
                     {thumbUrl ? (
-                      <img src={thumbUrl} alt={ep.title} />
+                      <Image
+                        src={thumbUrl}
+                        alt={ep.title}
+                        fill
+                        sizes="168px"
+                      />
                     ) : (
                       <div className="h-full w-full bg-[var(--bg-3)]" />
                     )}

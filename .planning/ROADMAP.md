@@ -5,7 +5,7 @@
 - ✅ **v1.0 CIT Streaming Platform** -- Phases 1-10 (shipped 2026-04-16)
 - ✅ **v1.1 Full Bilingual UI (AR/EN)** -- Phases 12-13 shipped; Phases 14-17 superseded by v2.0
 - ~~v1.2 Editorial Feature Parity~~ -- Superseded by v2.0 (editorial design IS the main design now)
-- 🚧 **v2.0 Full Visual Redesign** -- Phases 18-27 (started 2026-04-24)
+- ✅ **v2.0 Full Visual Redesign** -- Phases 18-27 (completed 2026-04-28)
 
 ## Phases
 
@@ -37,18 +37,18 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
 </details>
 
-### 🚧 v2.0 Full Visual Redesign -- Phases 18-27
+### ✅ v2.0 Full Visual Redesign -- Phases 18-27
 
-- [ ] **Phase 18: Design Tokens & Typography** -- New fonts, colors, radii, CSS custom properties, utility classes, global resets
-- [ ] **Phase 19: Header & Footer Shell** -- Editorial header (dot logo, nav, auth buttons) + footer (wordmark, newsletter, 5-col grid, socials, live status)
-- [ ] **Phase 20: Landing Page** -- Split hero, marquee ticker, stats bar, show grid, Why Clickit, genre tiles, FAQ accordion, CTA banner
-- [ ] **Phase 21: Browse Page** -- Full-bleed hero carousel, continue watching rail, shorts/reels cards, landscape show rails, bottom CTA
-- [ ] **Phase 22: Series Detail & Reviews** -- Cinematic hero, cast row, season tabs, episode grid, meta sidebar, review composer with Supabase Realtime
-- [ ] **Phase 23: Watch Page** -- YouTube-style layout, sticky header breadcrumb, 2-column grid, action bar, description card, prev/next cards, episode sidebar
-- [ ] **Phase 24: Shorts Overlay** -- Full-screen vertical reel viewer, segmented progress, creator info, action rail, keyboard+swipe nav
-- [ ] **Phase 25: Auth & Supporting Pages** -- Split-screen auth, OAuth, password strength meter; search, my list, profile, coming soon, support restyled
-- [ ] **Phase 26: Admin Visual Refresh** -- New tokens applied to admin portal (backgrounds, accent, fonts, radii) -- functionality unchanged
-- [ ] **Phase 27: Responsive Polish** -- Mobile breakpoints across all pages (header, landing, content rails, watch, footer, shorts, auth)
+- [x] **Phase 18: Design Tokens & Typography** -- New fonts, colors, radii, CSS custom properties, utility classes, global resets
+- [x] **Phase 19: Header & Footer Shell** -- Editorial header (dot logo, nav, auth buttons) + footer (wordmark, newsletter, 5-col grid, socials, live status)
+- [x] **Phase 20: Landing Page** -- Split hero, marquee ticker, stats bar, show grid, Why Clickit, genre tiles, FAQ accordion, CTA banner
+- [x] **Phase 21: Browse Page** -- Full-bleed hero carousel, continue watching rail, shorts/reels cards, landscape show rails, bottom CTA
+- [x] **Phase 22: Series Detail & Reviews** -- Cinematic hero, cast row, season tabs, episode grid, meta sidebar, review composer with Supabase Realtime
+- [x] **Phase 23: Watch Page** -- YouTube-style layout, sticky header breadcrumb, 2-column grid, action bar, description card, prev/next cards, episode sidebar
+- [x] **Phase 24: Shorts Overlay** -- Full-screen vertical reel viewer, segmented progress, creator info, action rail, keyboard+swipe nav
+- [x] **Phase 25: Auth & Supporting Pages** -- Split-screen auth, OAuth, password strength meter; search, my list, profile, coming soon, support restyled
+- [x] **Phase 26: Admin Visual Refresh** -- New tokens applied to admin portal (backgrounds, accent, fonts, radii) -- functionality unchanged
+- [x] **Phase 27: Responsive Polish** -- Mobile breakpoints across all pages (header, landing, content rails, watch, footer, shorts, auth)
 
 ## Phase Details
 
@@ -62,7 +62,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   3. All interactive elements (buttons, cards, inputs, modals) render with 4px border-radius -- no remnant 11.2px rounded corners
   4. Browser DevTools confirms CSS custom properties --bg-0 through --bg-4, --text/--text-dim/--text-mute, --line, and --ease are defined and consumed by components
   5. Selecting text shows the accent-colored ::selection highlight, scrollbars are thin-styled, and .mono/.serif/.label utility classes produce the expected typography
-**Plans**: TBD
+**Plans**: 1/1 complete
 
 ### Phase 19: Header & Footer Shell
 **Goal**: The global chrome wrapping every page matches the editorial design -- visitors see the new header on every route and scroll to the new footer at the bottom
@@ -74,7 +74,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   3. Header is sticky with backdrop blur, starts transparent on landing page, and transitions to solid background on scroll
   4. Footer displays the editorial "Click*it.*" serif wordmark, a newsletter email signup with inline confirmation, and a 5-column navigation grid with working links
   5. Footer bottom bar shows copyright, a live status indicator dot, legal links (Privacy, Terms), social icons (Instagram, X, YouTube, Letterboxd, RSS), and locale indicator
-**Plans**: TBD
+**Plans**: 2/2 complete
 **UI hint**: yes
 
 ### Phase 20: Landing Page
@@ -87,7 +87,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   3. Stats bar shows 4 metrics in a bordered grid; show grid displays 4 featured shows with 2:3 poster cards that scale on hover; "Why Clickit" section uses split layout with numbered feature blocks
   4. Genre tiles render in a 3-column grid with hover effects and accent arrow; FAQ accordion opens/closes with CSS grid animation and a rotating plus icon
   5. CTA banner at the bottom shows a backdrop image with gradient scrim and signup buttons
-**Plans**: TBD
+**Plans**: 1/1 complete
 **UI hint**: yes
 
 ### Phase 21: Browse Page
@@ -100,7 +100,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   3. Shorts/Reels section shows 9:16 vertical cards with SHORT badge, play overlay, and view counts; clicking a short card opens the Shorts overlay (Phase 24)
   4. Now Streaming and Coming Soon rails display landscape (16:9) show cards with hover lift and image scale effect
   5. Bottom CTA banner renders below the last content rail
-**Plans**: TBD
+**Plans**: 1/1 complete
 **UI hint**: yes
 
 ### Phase 22: Series Detail & Reviews
@@ -113,7 +113,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   3. Meta sidebar shows year, rating, runtime, genre, creator, and italic tagline; "More like this" rail displays related shows
   4. Authenticated user can submit a review with 1-5 star rating (hover labels: Nope/Meh/Fine/Great/A masterpiece) and text body (max 600 chars); reviews persist to Supabase `reviews` table with RLS
   5. All users see reviews in real-time via Supabase Realtime; user's own review displays with a "YOURS" accent indicator
-**Plans**: TBD
+**Plans**: 1/1 complete
 **UI hint**: yes
 
 ### Phase 23: Watch Page
@@ -126,7 +126,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   3. 2-column grid renders main content area alongside a 420px episode sidebar; sidebar includes season selector, episode list with NOW PLAYING badge, and "More like this" rail
   4. Title + action bar displays channel avatar, show info, View series button, and My List/Like/Share pill buttons
   5. Description card shows view count, premiere date, genre, synopsis, and hashtags; prev/next episode cards render in a 2-column grid below the description
-**Plans**: TBD
+**Plans**: 1/1 complete
 **UI hint**: yes
 
 ### Phase 24: Shorts Overlay
@@ -139,7 +139,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   3. Right action rail displays Like (heart toggle), List, and Comment buttons
   4. User can navigate via keyboard (arrows for prev/next, space for pause, M for mute, Esc to close), touch swipe (vertical), and prev/next peek cards flanking the main card
   5. Body scroll is locked while the overlay is open; closing the overlay returns to the browse page scroll position
-**Plans**: TBD
+**Plans**: 1/1 complete
 **UI hint**: yes
 
 ### Phase 25: Auth & Supporting Pages
@@ -152,7 +152,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   3. Search page renders with new design tokens, search input, results grid, and styled empty state
   4. My List page shows watchlist as 2:3 poster cards with remove button and hover scale; Profile page has avatar upload, profile nav tabs, and Go to Admin button
   5. Coming Soon page displays upcoming shows with remind me button; Support page has a contact form (email, topic, message, submit) styled in the editorial design
-**Plans**: TBD
+**Plans**: 1/1 complete
 **UI hint**: yes
 
 ### Phase 26: Admin Visual Refresh
@@ -164,7 +164,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   2. All accent-colored admin elements (active tabs, save buttons, status badges, progress indicators) use electric yellow (#ffcc00)
   3. Admin typography uses Space Grotesk for UI text and JetBrains Mono for labels/metadata; all admin components use 4px border-radius
   4. Every admin CRUD operation (create show, edit episode, upload artwork, archive, restore) works identically to pre-redesign -- visual refresh only, zero functional changes
-**Plans**: TBD
+**Plans**: 1/1 complete
 **UI hint**: yes
 
 ### Phase 27: Responsive Polish
@@ -177,7 +177,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   3. Footer stacks its 5-column grid into a single column on mobile; auth layout stacks from side-by-side to vertical at 900px
   4. Shorts overlay on mobile uses swipe-only navigation (no peek cards flanking the main card)
   5. All pages pass visual QA at breakpoints 1180, 1100, 960, 900, 720, 560, and 420px without layout breaks, text overflow, or unusable touch targets
-**Plans**: TBD
+**Plans**: 1/1 complete
 **UI hint**: yes
 
 ## Dependency Graph (v2.0)
@@ -220,13 +220,13 @@ Phases execute in numeric order: 18 -> 19 -> 20/21/22/23 (parallel eligible) -> 
 | 13. Route Restructure + Auth Safety | v1.1 | 7/7 | Complete | 2026-04-24 |
 | ~~14-17~~ | ~~v1.1~~ | - | Superseded | - |
 | ~~18-26~~ | ~~v1.2~~ | - | Superseded | - |
-| 18. Design Tokens & Typography | v2.0 | 0/0 | Not started | - |
-| 19. Header & Footer Shell | v2.0 | 0/0 | Not started | - |
-| 20. Landing Page | v2.0 | 0/0 | Not started | - |
-| 21. Browse Page | v2.0 | 0/0 | Not started | - |
-| 22. Series Detail & Reviews | v2.0 | 0/0 | Not started | - |
-| 23. Watch Page | v2.0 | 0/0 | Not started | - |
-| 24. Shorts Overlay | v2.0 | 0/0 | Not started | - |
-| 25. Auth & Supporting Pages | v2.0 | 0/0 | Not started | - |
-| 26. Admin Visual Refresh | v2.0 | 0/0 | Not started | - |
-| 27. Responsive Polish | v2.0 | 0/0 | Not started | - |
+| 18. Design Tokens & Typography | v2.0 | 1/1 | Complete | 2026-04-28 |
+| 19. Header & Footer Shell | v2.0 | 2/2 | Complete | 2026-04-28 |
+| 20. Landing Page | v2.0 | 1/1 | Complete | 2026-04-28 |
+| 21. Browse Page | v2.0 | 1/1 | Complete | 2026-04-28 |
+| 22. Series Detail & Reviews | v2.0 | 1/1 | Complete | 2026-04-28 |
+| 23. Watch Page | v2.0 | 1/1 | Complete | 2026-04-28 |
+| 24. Shorts Overlay | v2.0 | 1/1 | Complete | 2026-04-28 |
+| 25. Auth & Supporting Pages | v2.0 | 1/1 | Complete | 2026-04-28 |
+| 26. Admin Visual Refresh | v2.0 | 1/1 | Complete | 2026-04-28 |
+| 27. Responsive Polish | v2.0 | 1/1 | Complete | 2026-04-28 |
