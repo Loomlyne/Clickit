@@ -193,6 +193,7 @@ export const getFeaturedShows = cache(unstable_cache(
       .select('*')
       .eq('featured', true)
       .eq('archived', false)
+      .order('updated_at', { ascending: false })
       .limit(5)
 
     if (!data || data.length === 0) {

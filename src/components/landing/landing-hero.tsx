@@ -37,6 +37,10 @@ function getArtworkUrl(url?: string) {
   return url
 }
 
+function hasHeroArtwork(show: Awaited<ReturnType<typeof getFeaturedShows>>[number]) {
+  return Boolean(getArtworkUrl(show.posterUrl ?? show.heroImageUrl))
+}
+
 export async function LandingHero() {
   // proxy.ts already validated the JWT — getSession() reads the cookie locally
   // without a Supabase auth round-trip. The user is only consumed to pick the
@@ -47,10 +51,10 @@ export async function LandingHero() {
     supabase.auth.getSession(),
   ])
   const user = session?.user ?? null
-  const collage = shows.slice(0, 4)
-  const backdrop = shows[0]?.heroImageUrl || shows[0]?.posterUrl
+  const orderedShows = [...shows].sort((a, b) => Number(hasHeroArtwork(b)) - Number(hasHeroArtwork(a)))
+  const collageShows = orderedShows.slice(0, 4)
+  const backdrop = collageShows[0]?.heroImageUrl || collageShows[0]?.posterUrl
   const ctaHref = user ? '/browse' : '/auth'
-  const collageShows = collage.slice(0, 4)
 
   return (
     <section className="relative -mt-16 min-h-dvh overflow-hidden">
