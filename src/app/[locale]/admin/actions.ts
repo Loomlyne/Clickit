@@ -608,7 +608,7 @@ export async function reorderCategories(categoryIds: string[]): Promise<ActionRe
 
     await logAudit({
       adminUserId: user.id,
-      action: 'reorder',
+      action: 'update',
       entity: 'category',
       diff: { ordered_ids: categoryIds },
     })
