@@ -33,7 +33,6 @@ const BRAND_GLOWS = {
 
 function getArtworkUrl(url?: string) {
   if (!url) return null
-  if (url.includes('picsum.photos') || url.includes('fastly.picsum.photos')) return null
   return url
 }
 
@@ -101,7 +100,7 @@ export async function LandingHero() {
                 className="inline-flex items-center gap-2 whitespace-nowrap rounded border border-[var(--line-2)] px-5 py-3 text-[14px] font-medium text-[var(--text)] transition-all hover:bg-white/[0.04] sm:px-6 sm:py-3.5 sm:text-[15px]"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3" /></svg>
-                Browse the catalog
+                60-second trailer
               </Link>
             </div>
             {/* Stats strip */}
