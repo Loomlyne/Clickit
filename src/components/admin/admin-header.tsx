@@ -5,6 +5,7 @@ import { Menu } from 'lucide-react'
 import { Link } from '@/i18n/navigation'
 import { usePathname } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
+import { ClickitLogo } from '@/components/brand/clickit-logo'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,10 +36,9 @@ export function AdminHeader() {
           <Link
             href="/browse"
             aria-label="Go to browse"
-            className="flex min-h-11 items-center gap-2 font-[family-name:var(--font-ui)] text-lg font-bold tracking-normal text-[var(--text)]"
+            className="flex min-h-11 items-center"
           >
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--primary)]" />
-            CLICKIT
+            <ClickitLogo className="text-[1.4rem]" dotClassName="h-[0.42em] w-[0.42em]" />
           </Link>
         </div>
 

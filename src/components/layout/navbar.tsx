@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, usePathname } from '@/i18n/navigation'
 import { useLenis } from 'lenis/react'
 import { cn } from '@/lib/utils'
+import { ClickitLogo } from '@/components/brand/clickit-logo'
 import { AuthSection } from './auth-section'
 import { MobileNav } from './mobile-nav'
 
@@ -63,10 +64,9 @@ export function Navbar({ initialUser }: NavbarProps) {
       <Link
         href="/"
         aria-label="Clickit Story home"
-        className="flex min-h-11 items-center gap-2 font-[family-name:var(--font-ui)] text-xl font-bold tracking-normal text-[var(--text)]"
+        className="flex min-h-11 items-center"
       >
-        <span className="inline-block h-[7px] w-[7px] rounded-full bg-[var(--primary)]" />
-        CLICKIT
+        <ClickitLogo className="text-[1.55rem]" dotClassName="h-[0.44em] w-[0.44em]" />
       </Link>
 
       {/* Nav links — hidden on mobile, MobileNav handles those */}

@@ -1,5 +1,5 @@
-import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
+import { ClickitLogo } from '@/components/brand/clickit-logo'
 import { getAppConfig } from '@/lib/config'
 
 export async function Footer() {
@@ -16,9 +16,11 @@ export async function Footer() {
         </div>
 
         <Link href="/" aria-label="Clickit Story home" className="block">
-          <h2 className="font-[family-name:var(--font-display)] text-[clamp(64px,14vw,180px)] font-normal leading-[0.82] tracking-normal text-[var(--text)]">
-            Click<em className="italic">it.</em>
-          </h2>
+          <ClickitLogo
+            className="text-[clamp(3.6rem,12vw,8.8rem)]"
+            dotClassName="h-[0.15em] w-[0.15em]"
+            textClassName="text-[0.9em] font-black tracking-[-0.06em]"
+          />
         </Link>
 
         {/* Tagline + newsletter */}
@@ -48,14 +50,7 @@ export async function Footer() {
         <div className="col-span-2 lg:col-span-1">
           <h5 className="sr-only">About</h5>
           <Link href="/" className="mb-4 inline-flex min-h-11 items-center" aria-label="Clickit Story home">
-            <Image
-              src="/brand/Clickit_final_logo.svg"
-              alt="Clickit"
-              width={136}
-              height={56}
-              className="h-10 w-auto"
-              priority
-            />
+            <ClickitLogo className="text-[2rem]" dotClassName="h-[0.42em] w-[0.42em]" />
           </Link>
           <p className="text-[14px] leading-relaxed text-[var(--text-dim)] mb-5">
             A hand-curated streaming home for urban culture, food, design, and travel. No algorithm, no ads — just shows editors stand behind.

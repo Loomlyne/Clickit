@@ -5,6 +5,7 @@ import { Link } from '@/i18n/navigation'
 import { usePathname } from '@/i18n/navigation'
 import { Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ClickitLogo } from '@/components/brand/clickit-logo'
 import {
   Sheet,
   SheetTrigger,
@@ -47,10 +48,9 @@ export function MobileNav({ initialUser }: MobileNavProps = {}) {
             href="/"
             aria-label="Clickit Story home"
             onClick={() => setOpen(false)}
-            className="flex min-h-11 items-center gap-2 font-[family-name:var(--font-ui)] text-xl font-bold tracking-normal text-[var(--text)]"
+            className="flex min-h-11 items-center"
           >
-            <span className="inline-block h-[7px] w-[7px] rounded-full bg-[var(--primary)]" />
-            CLICKIT
+            <ClickitLogo className="text-[1.55rem]" dotClassName="h-[0.44em] w-[0.44em]" />
           </Link>
         </SheetHeader>
 
