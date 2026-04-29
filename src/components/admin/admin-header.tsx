@@ -24,6 +24,7 @@ export function AdminHeader() {
     { label: 'Categories', href: '/admin/categories' },
     { label: 'Shorts', href: '/admin/shorts' },
     { label: 'Reviews', href: '/admin/reviews' },
+    { label: 'Inbox', href: '/admin/inbox' },
     { label: t('archive'), href: '/admin/archive' },
     { label: t('settings'), href: '/admin/settings' },
     { label: t('audit'), href: '/admin/audit' },

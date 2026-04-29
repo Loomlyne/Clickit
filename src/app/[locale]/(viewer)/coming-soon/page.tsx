@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
@@ -64,50 +65,62 @@ export default async function ComingSoonPage() {
         <section className="mx-auto max-w-4xl px-6 pb-16 md:px-12">
           <div className="space-y-0">
             {comingSoonShows.map((show) => (
-              <div
-                key={show.id}
-                className="grid grid-cols-1 gap-6 border-t border-[var(--line)] py-8 md:grid-cols-[320px_1fr_auto] md:gap-10"
-              >
-                {/* Landscape thumbnail */}
-                <div className="w-full overflow-hidden rounded-[4px] bg-[var(--bg-2)] md:w-[320px]">
-                  {show.heroImageUrl || show.posterUrl ? (
-                    <img
-                      src={show.heroImageUrl || show.posterUrl}
-                      alt={show.title}
-                      className="aspect-video w-full object-cover"
-                    />
-                  ) : (
-                    <div className="aspect-video w-full bg-[var(--bg-2)]" />
-                  )}
-                </div>
+              (() => {
+                const thumbnail = show.heroImageUrl || show.posterUrl
 
-                {/* Info */}
-                <div className="flex flex-col justify-center gap-2">
-                  <p
-                    className="mono text-[12px]"
-                    style={{ color: BRAND_COLOR_HEX[show.brandColor] }}
+                return (
+                  <div
+                    key={show.id}
+                    className="grid grid-cols-1 gap-6 border-t border-[var(--line)] py-8 md:grid-cols-[320px_1fr_auto] md:gap-10"
                   >
-                    {show.tagline || show.genre}
-                  </p>
-                  <h2 className="font-display text-[clamp(1.5rem,4vw,44px)] font-normal leading-[1.1] tracking-[-0.02em] text-[var(--text)]">
-                    {show.title}
-                  </h2>
-                  <p className="line-clamp-2 text-[14px] leading-relaxed text-[var(--text-dim)]">
-                    {show.description}
-                  </p>
-                  <p className="mono mt-1 text-[11px] text-[var(--text-mute)]">
-                    {show.genre} &middot; {show.seasonCount}{' '}
-                    {show.seasonCount === 1 ? 'season' : 'seasons'}
-                  </p>
-                </div>
+                    {/* Landscape thumbnail */}
+                    <div className="w-full overflow-hidden rounded-[4px] bg-[var(--bg-2)] md:w-[320px]">
+                      {thumbnail ? (
+                        <Image
+                          src={thumbnail}
+                          alt={show.title}
+                          width={320}
+                          height={180}
+                          className="aspect-video w-full object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="aspect-video w-full bg-[var(--bg-2)]" />
+                      )}
+                    </div>
 
-                {/* Action */}
-                <div className="flex items-center">
-                  <button className="mono rounded-[4px] border border-[var(--line-2)] bg-transparent px-5 py-2.5 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]">
-                    Remind me
-                  </button>
-                </div>
-              </div>
+                    {/* Info */}
+                    <div className="flex flex-col justify-center gap-2">
+                      <p
+                        className="mono text-[12px]"
+                        style={{ color: BRAND_COLOR_HEX[show.brandColor] }}
+                      >
+                        {show.tagline || show.genre}
+                      </p>
+                      <h2 className="font-display text-[clamp(1.5rem,4vw,44px)] font-normal leading-[1.1] tracking-[-0.02em] text-[var(--text)]">
+                        {show.title}
+                      </h2>
+                      <p className="line-clamp-2 text-[14px] leading-relaxed text-[var(--text-dim)]">
+                        {show.description}
+                      </p>
+                      <p className="mono mt-1 text-[11px] text-[var(--text-mute)]">
+                        {show.genre} &middot; {show.seasonCount}{' '}
+                        {show.seasonCount === 1 ? 'season' : 'seasons'}
+                      </p>
+                    </div>
+
+                    {/* Action */}
+                    <div className="flex items-center">
+                      <Link
+                        href={`/updates?show=${encodeURIComponent(show.slug)}`}
+                        className="mono rounded-[4px] border border-[var(--line-2)] bg-transparent px-5 py-2.5 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]"
+                      >
+                        Remind me
+                      </Link>
+                    </div>
+                  </div>
+                )
+              })()
             ))}
           </div>
         </section>

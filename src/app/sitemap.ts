@@ -59,6 +59,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry(base, '/', now, 'daily', 1.0),
     entry(base, '/browse', now, 'daily', 0.9),
     entry(base, '/coming-soon', now, 'weekly', 0.5),
+    entry(base, '/membership', now, 'weekly', 0.5),
+    entry(base, '/updates', now, 'weekly', 0.5),
+    entry(base, '/about', now, 'monthly', 0.4),
+    entry(base, '/creators', now, 'monthly', 0.4),
+    entry(base, '/press', now, 'monthly', 0.4),
+    entry(base, '/support', now, 'weekly', 0.5),
   ]
 
   const showEntries: MetadataRoute.Sitemap = [...streaming, ...comingSoon].map((show) =>

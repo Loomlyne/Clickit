@@ -135,9 +135,12 @@ export default async function BrowsePage({
         <p className="mx-auto mb-6 max-w-[520px] text-[15px] text-[var(--text-dim)] sm:text-base">
           Two months free, four profiles, 4K streaming, and early access to every new release.
         </p>
-        <button className="min-h-[44px] rounded-[4px] bg-primary px-[26px] py-3.5 text-[15px] font-medium text-primary-foreground transition-[transform,background] duration-[120ms] hover:bg-white active:translate-y-px">
-          Upgrade now
-        </button>
+        <Link
+          href="/membership"
+          className="inline-flex min-h-[44px] items-center rounded-[4px] bg-primary px-[26px] py-3.5 text-[15px] font-medium text-primary-foreground transition-[transform,background] duration-[120ms] hover:bg-white active:translate-y-px"
+        >
+          See membership details
+        </Link>
       </section>
     </div>
   )

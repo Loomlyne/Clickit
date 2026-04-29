@@ -28,7 +28,7 @@ export default async function SupportPage() {
   const rightFaq = faqItems.slice(4)
 
   return (
-    <div className="px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-8 md:px-12">
+    <div id="support-top" className="px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-8 md:px-12">
       <div className="grid gap-px overflow-hidden rounded-[6px] border border-[var(--line)] bg-[var(--line)] lg:grid-cols-[1.05fr_0.95fr]">
         {/* Left — info panel */}
         <div className="bg-[var(--bg-1)] p-6 sm:p-8 lg:p-10">
@@ -91,7 +91,7 @@ export default async function SupportPage() {
           className="mt-8 min-h-[44px]"
           asChild
         >
-          <a href="#top">{t('contactHeading')}</a>
+          <a href="#contact-form">{t('contactHeading')}</a>
         </Button>
       </section>
     </div>

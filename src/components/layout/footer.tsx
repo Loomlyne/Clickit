@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { getAppConfig } from '@/lib/config'
+import { NewsletterSignupForm } from '@/components/layout/newsletter-signup-form'
 
 export async function Footer() {
   const { footer } = await getAppConfig()
@@ -29,20 +30,11 @@ export async function Footer() {
         {/* Tagline + newsletter */}
         <div className="mt-10 flex flex-col justify-between gap-10 md:flex-row md:items-end">
           <p className="font-display m-0 max-w-[420px] text-[16px] italic leading-relaxed text-[var(--text-dim)]">
-            A channel for people who still like to watch one thing, all the way through.
+            {footer.tagline || 'A channel for people who still like to watch one thing, all the way through.'}
           </p>
           <div className="max-w-sm w-full">
-            <div className="mono mb-2" style={{ letterSpacing: '0.14em' }}>The dispatch · weekly, short</div>
-            <div className="flex items-center border-b border-[var(--line-2)]">
-              <input
-                type="email"
-                placeholder="your@email.com"
-                className="flex-1 bg-transparent py-3 text-sm text-[var(--text)] placeholder:text-[var(--text-mute)] outline-none"
-              />
-              <button className="flex min-h-11 min-w-11 items-center justify-center px-2 py-3 text-[var(--text-dim)] transition-colors hover:text-[var(--accent)]" aria-label="Submit newsletter signup">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-              </button>
-            </div>
+            <div className="mono mb-2" style={{ letterSpacing: '0.14em' }}>The dispatch, weekly, short</div>
+            <NewsletterSignupForm source="footer" />
           </div>
         </div>
       </div>
@@ -112,9 +104,9 @@ export async function Footer() {
         <div>
           <h5 className="mono mb-4 font-medium text-[var(--text-dim)]">Company</h5>
           <ul className="flex flex-col gap-0.5">
-            <li><span className="inline-flex min-h-11 cursor-pointer items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">About</span></li>
-            <li><span className="inline-flex min-h-11 cursor-pointer items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Creators</span></li>
-            <li><span className="inline-flex min-h-11 cursor-pointer items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Press</span></li>
+            <li><Link href="/about" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">About</Link></li>
+            <li><Link href="/creators" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Creators</Link></li>
+            <li><Link href="/press" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Press</Link></li>
             <li><Link href="/support" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Help &amp; support</Link></li>
           </ul>
         </div>
@@ -124,7 +116,7 @@ export async function Footer() {
           <h5 className="mono mb-4 font-medium text-[var(--text-dim)]">Account</h5>
           <ul className="flex flex-col gap-0.5">
             <li><Link href="/profile" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Profile</Link></li>
-            <li><Link href="/profile" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Settings</Link></li>
+            <li><Link href="/profile#account-settings" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Settings</Link></li>
             <li><Link href="/auth" className="inline-flex min-h-11 items-center text-[14px] text-[var(--text)] transition-colors hover:text-[var(--accent)]">Sign in</Link></li>
           </ul>
         </div>

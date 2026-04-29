@@ -23,3 +23,20 @@
 **Archive:** `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v1.0-REQUIREMENTS.md`
 
 ---
+
+## v2.1 UX Fixes (In Progress: started 2026-04-29)
+
+**Scope:** Support + newsletter submission flows, CTA repair, route and anchor repair, company pages
+**Planned phases:** 4 phases, 31 end-state verification
+**Status:** Implementation in progress
+
+**Target outcomes:**
+
+1. Support messages persist in Supabase, show real validation states, and attempt email delivery to `contact@clickitstory.com`
+2. Newsletter signup works from the footer and updates flow, stores subscriptions in Supabase, and attempts email delivery through Resend
+3. Dead or misleading CTAs are replaced with real destinations across landing, browse, coming soon, support, profile, and footer
+4. `About`, `Creators`, and `Press` exist as real localized viewer routes and footer links
+
+**Planned archive:** `.planning/milestones/v2.1-ROADMAP.md`, `.planning/milestones/v2.1-REQUIREMENTS.md`
+
+---

@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Full Visual Redesign
-status: complete
-stopped_at: v2.0 milestone complete, TypeScript scope fixed; ESLint and Next CLI still stall during package imports
-last_updated: "2026-04-29T06:36:00+04:00"
-last_activity: 2026-04-29 -- v2.0 verification cleanup
+milestone: v2.1
+milestone_name: UX Fixes
+status: in_progress
+stopped_at: v2.1 implementation in progress, pending typecheck, Supabase migration push, Vercel deploy, and live audit
+last_updated: "2026-04-29T18:30:00+04:00"
+last_activity: 2026-04-29 -- v2.1 support/newsletter/CTA/company-page implementation
 progress:
-  total_phases: 10
-  completed_phases: 10
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
+  total_phases: 4
+  completed_phases: 0
+  total_plans: 4
+  completed_plans: 0
+  percent: 35
 ---
 
 # Project State
@@ -21,33 +21,27 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-24)
 
 **Core value:** Viewers enter, discover a show, pick an episode, watch immediately -- premium streaming experience for CIT originals.
-**Current focus:** Milestone v2.0 -- Full Visual Redesign complete
+**Current focus:** Milestone v2.1 -- UX Fixes
 
 ## Current Position
 
-Phase: 27 of 27 (Responsive Polish) -- complete
-Plan: 27-01
-Status: Complete
-Last activity: 2026-04-28 -- v2.0 autonomous close-out
+Phase: 28 of 31 (Contact and Notification Infrastructure)
+Plan: 28-01
+Status: In progress
+Last activity: 2026-04-29 -- persistence and CTA wiring landed locally
 
-Progress: [██████████] 100%
+Progress: [███.......] 35%
 
-## Roadmap Summary (v2.0)
+## Roadmap Summary (v2.1)
 
-10 phases (18-27), 83 requirements, fine granularity
+4 phases (28-31), UX closure milestone
 
-| Phase | Scope | Reqs |
-|-------|-------|------|
-| 18 | Design Tokens & Typography | 6 |
-| 19 | Header & Footer Shell | 11 |
-| 20 | Landing Page | 8 |
-| 21 | Browse Page | 9 |
-| 22 | Series Detail & Reviews | 11 |
-| 23 | Watch Page | 8 |
-| 24 | Shorts Overlay | 6 |
-| 25 | Auth & Supporting Pages | 12 |
-| 26 | Admin Visual Refresh | 5 |
-| 27 | Responsive Polish | 7 |
+| Phase | Scope |
+|-------|-------|
+| 28 | Contact and notification infrastructure |
+| 29 | CTA and route repair |
+| 30 | Company pages |
+| 31 | Verification and live audit |
 
 ## Accumulated Context
 
@@ -63,12 +57,12 @@ Progress: [██████████] 100%
 - Auth safety: 6 latent breaks fixed (cookie merge, locale-aware redirects, OAuth callback)
 - Phases 14-17 superseded by v2.0 -- will redo on new components in v2.1
 
-### v2.0 design source
+### v2.1 target surfaces
 
-- Claude Design handoff bundle at /tmp/clickit-design/clickit/project/
-- styles.css (~3800 lines), 8 JSX screens, data.jsx, app.jsx, auth.jsx
-- Old design backed up at git tag design-backup-2026-04-24 (commit 212bc5b)
-- New design system: Newsreader + Space Grotesk + JetBrains Mono, #ffcc00 accent, 4px radii
+- Support form
+- Footer newsletter
+- Landing, browse, coming soon, profile, support, footer CTA repairs
+- Company pages and admin inbox
 
 ## Decisions Made
 
@@ -77,12 +71,11 @@ Progress: [██████████] 100%
 - **2026-04-24:** Shorts built with placeholder data from existing shows
 - **2026-04-24:** Admin portal visual refresh only -- functionality unchanged
 - **2026-04-24:** Arabic/RTL for new components deferred to v2.1
-- **2026-04-24:** Responsive polish is final phase (touches all pages)
+- **2026-04-29:** Support and newsletter must persist to Supabase and degrade gracefully when email delivery is unavailable
+- **2026-04-29:** Dead or misleading CTAs should become reachable flows, not placeholders
 
 ## Session Continuity
 
 Last session: 2026-04-29
-Stopped at: v2.0 complete; TypeScript config scope repaired, test suite passed, ESLint and Next CLI still stall during package imports
+Stopped at: v2.1 implementation in progress; verification and deployment not done yet
 Resume file: None
-
-**Completed Milestone:** v2.0 Full Visual Redesign, 11 plans, 2026-04-28

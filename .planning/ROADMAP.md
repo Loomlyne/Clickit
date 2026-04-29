@@ -6,6 +6,7 @@
 - ✅ **v1.1 Full Bilingual UI (AR/EN)** -- Phases 12-13 shipped; Phases 14-17 superseded by v2.0
 - ~~v1.2 Editorial Feature Parity~~ -- Superseded by v2.0 (editorial design IS the main design now)
 - ✅ **v2.0 Full Visual Redesign** -- Phases 18-27 (completed 2026-04-28)
+- 🚧 **v2.1 UX Fixes** -- Phases 28-31 in progress (started 2026-04-29)
 
 ## Phases
 

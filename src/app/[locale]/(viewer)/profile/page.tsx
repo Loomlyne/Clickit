@@ -67,7 +67,7 @@ export default async function ProfilePage() {
           isAdmin={isAdmin}
         />
 
-        <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
+        <div id="account-settings" className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
           <h3 className="font-display mb-4 text-lg font-semibold tracking-[-0.02em] text-white">
             {t('accountHeading')}
           </h3>
@@ -116,7 +116,7 @@ export default async function ProfilePage() {
           ) : (
             <p className="text-sm text-[var(--text-mute)] py-6 text-center">
               {t('myListEmpty')}.{' '}
-              <Link href="/series" className="text-[var(--text-dim)] hover:text-white underline">
+              <Link href="/browse" className="text-[var(--text-dim)] hover:text-white underline">
                 {locale === 'ar' ? 'تصفح البرامج' : 'Browse shows'}
               </Link>
             </p>
