@@ -33,6 +33,7 @@ const BRAND_GLOWS = {
 
 function getArtworkUrl(url?: string) {
   if (!url) return null
+  if (url.includes('picsum.photos') || url.includes('fastly.picsum.photos')) return null
   return url
 }
 
