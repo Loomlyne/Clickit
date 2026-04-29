@@ -8,6 +8,7 @@ import { DEFAULT_LOCALE, pickLocalized, type Locale } from '@/lib/locale'
 export type DbShow = Database['public']['Tables']['shows']['Row']
 export type DbSeason = Database['public']['Tables']['seasons']['Row']
 export type DbEpisode = Database['public']['Tables']['episodes']['Row']
+export type DbCategory = Database['public']['Tables']['categories']['Row']
 
 // Map DB show to the shape viewer components expect
 export type ViewShow = {
@@ -30,6 +31,19 @@ export type ViewShow = {
   heroVideoMobileType?: 'mp4' | 'youtube'
   imdbRating?: number
   platformRating?: number
+}
+
+export type ViewCategory = {
+  id: string
+  nameEn: string
+  nameAr: string
+  slug: string
+  icon: string | null
+  sortOrder: number
+}
+
+export type CategoryRail = ViewCategory & {
+  shows: ViewShow[]
 }
 
 export function mapShow(db: DbShow, locale: Locale = DEFAULT_LOCALE): ViewShow {
@@ -58,6 +72,17 @@ export function mapShow(db: DbShow, locale: Locale = DEFAULT_LOCALE): ViewShow {
     heroVideoType: (db.hero_video_type as ViewShow['heroVideoType']) ?? undefined,
     heroVideoMobileUrl: db.hero_video_mobile_url ?? undefined,
     heroVideoMobileType: (db.hero_video_mobile_type as ViewShow['heroVideoMobileType']) ?? undefined,
+  }
+}
+
+export function mapCategory(db: DbCategory): ViewCategory {
+  return {
+    id: db.id,
+    nameEn: db.name_en,
+    nameAr: db.name_ar,
+    slug: db.slug,
+    icon: db.icon,
+    sortOrder: db.sort_order,
   }
 }
 
@@ -218,6 +243,68 @@ export const getComingSoonShows = unstable_cache(
   },
   ['coming-soon-shows'],
   { revalidate: 3600, tags: ['shows'] } // 1 hr
+)
+
+export const getCategories = unstable_cache(
+  async (): Promise<ViewCategory[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('categories')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true })
+
+    return (data ?? []).map(mapCategory)
+  },
+  ['categories'],
+  { revalidate: 3600, tags: ['categories'] }
+)
+
+export const getCategoryRails = unstable_cache(
+  async (): Promise<CategoryRail[]> => {
+    const supabase = createPublicClient()
+    const [categories, assignments] = await Promise.all([
+      getCategories(),
+      supabase
+        .from('show_categories')
+        .select('category_id, shows!inner(*)')
+        .eq('shows.archived', false)
+        .in('shows.status', ['now-streaming', 'coming-soon']),
+    ])
+
+    const showsByCategory = new Map<string, Array<DbShow>>()
+    for (const row of (assignments.data ?? []) as Array<{ category_id: string; shows: DbShow | DbShow[] | null }>) {
+      const show = Array.isArray(row.shows) ? row.shows[0] : row.shows
+      if (!show) continue
+      const existing = showsByCategory.get(row.category_id) ?? []
+      existing.push(show)
+      showsByCategory.set(row.category_id, existing)
+    }
+
+    return categories
+      .map((category) => {
+        const shows = (showsByCategory.get(category.id) ?? [])
+          .sort((a, b) => b.created_at.localeCompare(a.created_at))
+          .map((show) => mapShow(show))
+
+        return {
+          ...category,
+          shows,
+        }
+      })
+      .filter((category) => category.shows.length > 0)
+  },
+  ['category-rails'],
+  { revalidate: 3600, tags: ['categories', 'shows'] }
+)
+
+export const getCategoryRailBySlug = unstable_cache(
+  async (slug: string): Promise<CategoryRail | null> => {
+    const rails = await getCategoryRails()
+    return rails.find((rail) => rail.slug === slug) ?? null
+  },
+  ['category-rail-by-slug'],
+  { revalidate: 3600, tags: ['categories', 'shows'] }
 )
 
 export type NewEpisodeItem = ViewEpisode & {

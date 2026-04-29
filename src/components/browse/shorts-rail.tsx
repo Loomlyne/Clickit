@@ -31,6 +31,9 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
     document.head.appendChild(link)
   }
 
+  const getThumbnailUrl = (short: ViewShort) =>
+    short.thumbnailUrl || `https://i.ytimg.com/vi/${short.youtubeVideoId}/hq720.jpg`
+
   return (
     <>
       {/* Warm YouTube CDNs as soon as the rail mounts — React 19 hoists to <head> */}
@@ -59,9 +62,9 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
               className="group relative shrink-0 cursor-pointer overflow-hidden rounded-[8px] bg-[var(--bg-2)]"
               style={{ width: 180, aspectRatio: '9/16' }}
             >
-              {s.thumbnailUrl ? (
+              {getThumbnailUrl(s) ? (
                 <Image
-                  src={s.thumbnailUrl}
+                  src={getThumbnailUrl(s)}
                   alt={s.title}
                   fill
                   sizes="180px"

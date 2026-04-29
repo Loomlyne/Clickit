@@ -12,8 +12,6 @@ interface ShortsOverlayProps {
 
 export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlayProps) {
   const [idx, setIdx] = useState(startIndex)
-  const [liked, setLiked] = useState<Set<string>>(new Set())
-  const [saved, setSaved] = useState<Set<string>>(new Set())
   const [paused, setPaused] = useState(false)
   const [muted, setMuted] = useState(true)
   const [progress, setProgress] = useState(0)
@@ -104,24 +102,6 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
     touchStart.current = null
   }
 
-  const toggleLike = () => {
-    setLiked((s) => {
-      const n = new Set(s)
-      if (n.has(current.id)) n.delete(current.id); else n.add(current.id)
-      return n
-    })
-  }
-
-  const isLiked = liked.has(current.id)
-  const isSaved = saved.has(current.id)
-  const toggleSaved = () => {
-    setSaved((s) => {
-      const n = new Set(s)
-      if (n.has(current.id)) n.delete(current.id); else n.add(current.id)
-      return n
-    })
-  }
-
   return (
     <div
       className="fixed inset-0 z-[500] flex items-center justify-center"
@@ -202,7 +182,7 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
         >
           <iframe
             key={current.youtubeVideoId}
-            src={`https://www.youtube.com/embed/${current.youtubeVideoId}?autoplay=${paused ? 0 : 1}&loop=1&playlist=${current.youtubeVideoId}&controls=0&modestbranding=1&rel=0&playsinline=1&mute=${muted ? 1 : 0}`}
+            src={`https://www.youtube-nocookie.com/embed/${current.youtubeVideoId}?autoplay=${paused ? 0 : 1}&loop=1&playlist=${current.youtubeVideoId}&controls=0&modestbranding=1&rel=0&playsinline=1&mute=${muted ? 1 : 0}&iv_load_policy=3&fs=0&disablekb=1`}
             className="absolute inset-0 h-full w-full"
             allow="autoplay; encrypted-media"
             allowFullScreen
@@ -235,8 +215,11 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
             </button>
           )}
 
+          <div className="pointer-events-none absolute right-0 top-0 z-20 h-full w-8 bg-gradient-to-l from-black/55 to-transparent" />
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 h-12 bg-gradient-to-t from-black/72 to-transparent" />
+
           {/* Bottom info overlay */}
-          <div className="pointer-events-none absolute bottom-4 left-4 right-16 z-10">
+          <div className="pointer-events-none absolute bottom-4 left-4 right-4 z-10">
             <div className="mb-2 flex items-center gap-2.5">
               <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[var(--bg-3)] text-[11px] font-medium text-white">
                 {current.thumbnailUrl ? (
@@ -265,49 +248,6 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
               </div>
             )}
           </div>
-
-          {/* Right action rail */}
-          <div className="absolute bottom-20 right-3 z-10 flex flex-col items-center gap-5">
-            <button className={`flex flex-col items-center gap-1 ${isLiked ? 'text-red-500' : 'text-white/80'}`} onClick={toggleLike}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
-              <span className="mono text-[9px]">{isLiked ? 'Liked' : 'Like'}</span>
-            </button>
-            <button className={`flex flex-col items-center gap-1 ${isSaved ? 'text-[var(--primary)]' : 'text-white/80'}`} onClick={toggleSaved}>
-              <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>
-              <span className="mono text-[9px]">List</span>
-            </button>
-            <button className="flex flex-col items-center gap-1 text-white/80">
-              <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" /></svg>
-              <span className="mono text-[9px]">Comment</span>
-            </button>
-            <button className="flex flex-col items-center gap-1 text-white/80" onClick={() => setMuted((value) => !value)}>
-              <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" />{muted && <path d="M23 9l-6 6M17 9l6 6" />}</svg>
-              <span className="mono text-[9px]">{muted ? 'Muted' : 'Sound'}</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="pointer-events-auto relative z-30 flex w-full items-center justify-center gap-3 lg:hidden">
-          <button
-            type="button"
-            className="flex min-w-[132px] items-center justify-center gap-2 rounded-full border border-[var(--line-2)] bg-black/50 px-5 py-3 text-sm font-medium text-white/85 backdrop-blur-md transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-35"
-            onClick={goPrev}
-            aria-label="Previous short"
-            disabled={!hasPrev}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-            <span>Back</span>
-          </button>
-          <button
-            type="button"
-            className="flex min-w-[132px] items-center justify-center gap-2 rounded-full border border-[var(--line-2)] bg-white/12 px-5 py-3 text-sm font-medium text-white backdrop-blur-md transition-colors hover:bg-white/18 disabled:cursor-not-allowed disabled:opacity-35"
-            onClick={goNext}
-            aria-label="Next short"
-            disabled={!hasNext}
-          >
-            <span>Next</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-          </button>
         </div>
       </div>
 

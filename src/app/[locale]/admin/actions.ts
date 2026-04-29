@@ -119,11 +119,54 @@ const showSchema = z
     hero_video_type: z.enum(['mp4', 'youtube']).optional().nullable(),
     hero_video_mobile_url: optionalUrl,
     hero_video_mobile_type: z.enum(['mp4', 'youtube']).optional().nullable(),
+    category_ids: z.array(z.string().uuid()).default([]),
   })
   .superRefine((data, ctx) => {
     heroVideoInvariant('hero_video_url', 'hero_video_type')(data, ctx)
     heroVideoInvariant('hero_video_mobile_url', 'hero_video_mobile_type')(data, ctx)
   })
+
+const categorySchema = z.object({
+  name_en: z.string().trim().min(1, 'English name is required').max(80),
+  name_ar: z.string().trim().min(1, 'Arabic name is required').max(80),
+  slug: z.string().trim().min(1, 'Slug is required').max(80),
+  icon: z.string().trim().max(40).optional().nullable(),
+  sort_order: z.number().int().min(0).default(0),
+})
+
+function bumpCatalogCache() {
+  revalidatePath('/admin')
+  revalidatePath('/admin/categories')
+  revalidatePath('/browse')
+  updateTag('shows')
+  updateTag('categories')
+}
+
+async function syncShowCategories(
+  admin: ReturnType<typeof createAdminClient>,
+  showId: string,
+  categoryIds: string[],
+) {
+  const uniqueCategoryIds = [...new Set(categoryIds)]
+
+  const { error: deleteError } = await admin
+    .from('show_categories')
+    .delete()
+    .eq('show_id', showId)
+
+  if (deleteError) throw deleteError
+
+  if (uniqueCategoryIds.length === 0) return
+
+  const { error: insertError } = await admin
+    .from('show_categories')
+    .insert(uniqueCategoryIds.map((categoryId) => ({
+      show_id: showId,
+      category_id: categoryId,
+    })))
+
+  if (insertError) throw insertError
+}
 
 const seasonSchema = z.object({
   show_id: z.string().uuid(),
@@ -157,7 +200,7 @@ export async function createShow(
     const parsed = showSchema.parse(data)
     const admin = createAdminClient()
 
-    const { id, ...rest } = parsed
+    const { id, category_ids, ...rest } = parsed
     const insertData = id ? { id, ...rest } : rest
 
     const { data: show, error } = await admin
@@ -168,16 +211,17 @@ export async function createShow(
 
     if (error) return { success: false, error: error.message }
 
+    await syncShowCategories(admin, show.id, category_ids)
+
     await logAudit({
       adminUserId: user.id,
       action: 'create',
       entity: 'show',
       entityId: show.id,
-      diff: { data: { title: show.title, slug: show.slug, status: show.status } },
+      diff: { data: { title: show.title, slug: show.slug, status: show.status, category_ids } },
     })
 
-    revalidatePath('/admin')
-    updateTag('shows')
+    bumpCatalogCache()
     return { success: true, data: show }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
@@ -194,8 +238,7 @@ export async function updateShow(
     const parsed = showSchema.parse(data)
     const admin = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id: _parsedId, ...updateData } = parsed
+    const { id: _parsedId, category_ids, ...updateData } = parsed
 
     const { data: show, error } = await admin
       .from('shows')
@@ -206,17 +249,18 @@ export async function updateShow(
 
     if (error) return { success: false, error: error.message }
 
+    await syncShowCategories(admin, id, category_ids)
+
     await logAudit({
       adminUserId: user.id,
       action: 'update',
       entity: 'show',
       entityId: id,
-      diff: { changed: Object.keys(updateData), title: show.title },
+      diff: { changed: [...Object.keys(updateData), 'category_ids'], title: show.title },
     })
 
-    revalidatePath('/admin')
+    bumpCatalogCache()
     revalidatePath(`/admin/shows/${id}`)
-    updateTag('shows')
     return { success: true, data: show }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
@@ -249,8 +293,7 @@ export async function archiveShow(id: string): Promise<ActionResult> {
       entityId: id,
     })
 
-    revalidatePath('/admin')
-    updateTag('shows')
+    bumpCatalogCache()
     updateTag('episodes')
     return { success: true }
   } catch (err) {
@@ -335,9 +378,8 @@ async function _restoreShow(
       .update({ archived: false })
       .eq('show_id', id)
 
-    revalidatePath('/admin')
+    bumpCatalogCache()
     revalidatePath('/admin/archive')
-    updateTag('shows')
     updateTag('episodes')
     return { success: true }
 }
@@ -437,12 +479,145 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
     })
 
     revalidatePath('/admin/archive')
-    updateTag('shows')
+    bumpCatalogCache()
     updateTag('episodes')
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Failed to delete show' }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Category Actions
+// ---------------------------------------------------------------------------
+
+export async function createCategory(
+  data: z.input<typeof categorySchema>,
+): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const parsed = categorySchema.parse(data)
+    const admin = createAdminClient()
+
+    const { data: category, error } = await admin
+      .from('categories')
+      .insert(parsed)
+      .select()
+      .single()
+
+    if (error) return { success: false, error: error.message }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'create',
+      entity: 'category',
+      entityId: category.id,
+      diff: { data: { name_en: category.name_en, slug: category.slug } },
+    })
+
+    bumpCatalogCache()
+    return { success: true, data: category }
+  } catch (err) {
+    console.error('[admin/categories] create failed', err)
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to create category' }
+  }
+}
+
+export async function updateCategory(
+  id: string,
+  data: z.input<typeof categorySchema>,
+): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const parsed = categorySchema.parse(data)
+    const admin = createAdminClient()
+
+    const { data: category, error } = await admin
+      .from('categories')
+      .update(parsed)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) return { success: false, error: error.message }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'update',
+      entity: 'category',
+      entityId: id,
+      diff: { changed: Object.keys(parsed), slug: category.slug },
+    })
+
+    bumpCatalogCache()
+    return { success: true, data: category }
+  } catch (err) {
+    console.error('[admin/categories] update failed', err)
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to update category' }
+  }
+}
+
+export async function deleteCategory(id: string): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const admin = createAdminClient()
+
+    const { data: category } = await admin
+      .from('categories')
+      .select('name_en, slug')
+      .eq('id', id)
+      .single()
+
+    const { error } = await admin
+      .from('categories')
+      .delete()
+      .eq('id', id)
+
+    if (error) return { success: false, error: error.message }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'delete',
+      entity: 'category',
+      entityId: id,
+      diff: { name_en: category?.name_en, slug: category?.slug },
+    })
+
+    bumpCatalogCache()
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/categories] delete failed', err)
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to delete category' }
+  }
+}
+
+export async function reorderCategories(categoryIds: string[]): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const admin = createAdminClient()
+
+    await Promise.all(
+      categoryIds.map((id, index) =>
+        admin
+          .from('categories')
+          .update({ sort_order: index })
+          .eq('id', id)
+      )
+    )
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'reorder',
+      entity: 'category',
+      diff: { ordered_ids: categoryIds },
+    })
+
+    bumpCatalogCache()
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/categories] reorder failed', err)
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to reorder categories' }
   }
 }
 

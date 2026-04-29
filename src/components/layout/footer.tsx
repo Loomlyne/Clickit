@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { getAppConfig } from '@/lib/config'
 
@@ -42,13 +43,19 @@ export async function Footer() {
       </div>
 
       {/* 5-column grid */}
-      <div className="grid grid-cols-1 gap-10 border-b border-[var(--line)] px-4 pb-10 pt-12 sm:grid-cols-2 sm:px-6 md:grid-cols-[1.2fr_repeat(4,1fr)] md:gap-12 md:px-12">
+      <div className="grid grid-cols-2 gap-10 border-b border-[var(--line)] px-4 pb-10 pt-12 sm:px-6 lg:grid-cols-[1.2fr_repeat(4,1fr)] lg:gap-12 lg:px-12">
         {/* About column */}
-        <div className="sm:col-span-2 md:col-span-1">
+        <div className="col-span-2 lg:col-span-1">
           <h5 className="sr-only">About</h5>
-          <Link href="/" className="mb-4 flex min-h-11 items-center gap-2 font-[family-name:var(--font-ui)] text-lg font-bold tracking-normal text-[var(--text)]" aria-label="Clickit Story home">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--primary)]" />
-            CLICKIT
+          <Link href="/" className="mb-4 inline-flex min-h-11 items-center" aria-label="Clickit Story home">
+            <Image
+              src="/brand/Clickit_final_logo.svg"
+              alt="Clickit"
+              width={136}
+              height={56}
+              className="h-10 w-auto"
+              priority
+            />
           </Link>
           <p className="text-[14px] leading-relaxed text-[var(--text-dim)] mb-5">
             A hand-curated streaming home for urban culture, food, design, and travel. No algorithm, no ads — just shows editors stand behind.

@@ -116,6 +116,7 @@ export type Database = {
           name_en: string
           slug: string
           sort_order: number
+          updated_at: string
         }
         Insert: {
           created_at?: string
@@ -125,6 +126,7 @@ export type Database = {
           name_en: string
           slug: string
           sort_order?: number
+          updated_at?: string
         }
         Update: {
           created_at?: string
@@ -134,6 +136,7 @@ export type Database = {
           name_en?: string
           slug?: string
           sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -404,14 +407,17 @@ export type Database = {
       show_categories: {
         Row: {
           category_id: string
+          created_at: string
           show_id: string
         }
         Insert: {
           category_id: string
+          created_at?: string
           show_id: string
         }
         Update: {
           category_id?: string
+          created_at?: string
           show_id?: string
         }
         Relationships: [
@@ -420,6 +426,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "show_categories_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
             referencedColumns: ["id"]
           },
         ]
