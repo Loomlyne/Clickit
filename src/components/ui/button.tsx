@@ -5,7 +5,7 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-[4px] text-[13.5px] font-medium whitespace-nowrap transition-[transform,background,border-color] duration-[120ms] ease-[var(--ease)] outline-none active:scale-[0.97] active:duration-75 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-0)] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 border border-transparent",
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-[8px] text-[13.5px] font-medium whitespace-nowrap transition-[transform,background,border-color] duration-[120ms] ease-[var(--ease)] outline-none active:scale-[0.97] active:duration-75 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-0)] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 border border-transparent",
   {
     variants: {
       variant: {
