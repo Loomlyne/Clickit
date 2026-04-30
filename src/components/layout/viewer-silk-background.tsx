@@ -10,7 +10,7 @@ export function ViewerSilkBackground() {
         position: 'fixed',
         inset: 0,
         zIndex: 0,
-        opacity: 0.40,
+        opacity: 0.05,
         pointerEvents: 'none',
       }}
     >
