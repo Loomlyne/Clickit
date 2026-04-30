@@ -56,8 +56,8 @@ export function AdminHeader() {
       return () => window.cancelIdleCallback(idleId)
     }
 
-    const timeoutId = window.setTimeout(warmRoutes, 250)
-    return () => window.clearTimeout(timeoutId)
+    const timeoutId = setTimeout(warmRoutes, 250)
+    return () => clearTimeout(timeoutId)
   }, [pathname, tabs, router])
 
   return (
