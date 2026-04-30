@@ -24,6 +24,7 @@ import { StatusBadge } from '@/components/admin/status-badge'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { EmptyState } from '@/components/admin/empty-state'
 import { EpisodeFormDrawer } from '@/components/admin/episode-form-drawer'
+import { AdminTableShell } from '@/components/admin/admin-shell'
 import { reorderEpisode, updateEpisode, archiveEpisode } from '@/app/[locale]/admin/actions'
 import type { Database } from '@/lib/database.types'
 
@@ -97,7 +98,7 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="overflow-hidden rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)]">
+      <AdminTableShell>
         <Table>
           <TableHeader>
             <TableRow className="bg-transparent">
@@ -111,7 +112,7 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
           </TableHeader>
           <TableBody>
             {optimisticEpisodes.map((episode, index) => (
-              <TableRow key={episode.id} className="group transition-colors hover:bg-[var(--bg-2)]">
+              <TableRow key={episode.id}>
                 <TableCell className="font-mono text-xs text-muted-foreground">
                   #{episode.episode_number}
                 </TableCell>
@@ -126,7 +127,7 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {episode.youtube_video_id ? (
-                    <span className="inline-block max-w-[80px] truncate rounded-full border border-[var(--line)] bg-[var(--bg-2)] px-2 py-1 text-xs font-mono">
+                    <span className="inline-block max-w-[80px] truncate rounded-full border border-white/8 bg-white/[0.03] px-2 py-1 text-xs font-mono">
                       {episode.youtube_video_id}
                     </span>
                   ) : (
@@ -188,7 +189,7 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
             ))}
           </TableBody>
         </Table>
-      </div>
+      </AdminTableShell>
 
       <EpisodeFormDrawer
         open={drawerOpen}

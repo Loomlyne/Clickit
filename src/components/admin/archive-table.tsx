@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/tooltip'
 import { EmptyState } from '@/components/admin/empty-state'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
+import { AdminPanel, AdminTableShell } from '@/components/admin/admin-shell'
 import { restoreShow, deleteShowPermanently, resolveConflictsAndRestore } from '@/app/[locale]/admin/actions'
 import type { EpisodeConflict } from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
@@ -141,13 +142,13 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-5 md:p-6">
+      <AdminPanel>
         <div className="flex items-center justify-between pb-4 text-sm text-muted-foreground">
           <span>{shows.length} {isArabic ? 'برنامج مؤرشف' : (shows.length === 1 ? 'archived show' : 'archived shows')}</span>
           <span>{isArabic ? 'الأحدث أولاً' : 'Newest changes first'}</span>
         </div>
 
-        <div className="overflow-hidden rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)]">
+        <AdminTableShell>
           <Table>
             <TableHeader>
               <TableRow className="bg-transparent">
@@ -203,8 +204,8 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
               ))}
             </TableBody>
           </Table>
-        </div>
-      </div>
+        </AdminTableShell>
+      </AdminPanel>
 
       <ConfirmDialog
         open={deleteDialogOpen}

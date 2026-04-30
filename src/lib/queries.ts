@@ -274,7 +274,7 @@ export const getCategoryRails = unstable_cache(
     ])
 
     const showsByCategory = new Map<string, Array<DbShow>>()
-    for (const row of (assignments.data ?? []) as Array<{ category_id: string; shows: DbShow | DbShow[] | null }>) {
+    for (const row of ((assignments.data ?? []) as unknown as Array<{ category_id: string; shows: DbShow | DbShow[] | null }>)) {
       const show = Array.isArray(row.shows) ? row.shows[0] : row.shows
       if (!show) continue
       const existing = showsByCategory.get(row.category_id) ?? []
@@ -927,7 +927,7 @@ export function mapShort(db: DbShort): ViewShort {
     thumbnailUrl: db.thumbnail_url,
     durationSeconds: db.duration_seconds,
     genre: db.genre,
-    sortOrder: db.sort_order,
+    sortOrder: db.sort_order ?? 0,
     expiresAt: db.expires_at,
   }
 }

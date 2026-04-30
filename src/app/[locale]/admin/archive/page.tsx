@@ -2,6 +2,7 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { AlertTriangle } from 'lucide-react'
 import { ArchiveTable } from '@/components/admin/archive-table'
+import { AdminPanel } from '@/components/admin/admin-shell'
 
 export default async function ArchivePage() {
   const supabase = await createClient()
@@ -19,7 +20,7 @@ export default async function ArchivePage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-6 md:p-8">
+      <AdminPanel className="p-6 md:p-8">
         <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
           {isArabic ? 'لوحة الإدارة' : 'Admin Console'}
         </p>
@@ -33,7 +34,7 @@ export default async function ArchivePage() {
             </p>
           </div>
 
-          <div className="flex max-w-md items-start gap-3 rounded-[6px] border border-yellow-500/20 bg-yellow-500/8 px-4 py-4">
+          <div className="flex max-w-md items-start gap-3 rounded-lg border border-yellow-500/20 bg-yellow-500/8 px-4 py-4">
             <AlertTriangle className="mt-0.5 size-5 shrink-0 text-yellow-400" />
             <div className="text-sm">
               <p className="font-medium text-yellow-100">
@@ -45,7 +46,7 @@ export default async function ArchivePage() {
             </div>
           </div>
         </div>
-      </div>
+      </AdminPanel>
 
       <ArchiveTable shows={shows ?? []} />
     </div>

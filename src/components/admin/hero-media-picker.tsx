@@ -119,7 +119,7 @@ export function HeroMediaPicker({
   const hasContent = !!(currentImageUrl || currentVideoUrl)
 
   return (
-    <div className="space-y-3 rounded-[6px] border border-white/8 bg-[var(--bg-2)] p-4">
+    <div className="space-y-3 rounded-lg border border-white/8 bg-white/[0.02] p-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium">{label}</p>
         {hasContent && (
@@ -132,7 +132,7 @@ export function HeroMediaPicker({
 
       {/* Current preview */}
       {hasContent && (
-        <div className="relative overflow-hidden rounded-[6px] border border-[var(--line)] bg-black">
+        <div className="relative overflow-hidden rounded-lg border border-white/8 bg-black">
           {currentVideoType === 'mp4' && currentVideoUrl ? (
             <video src={currentVideoUrl} muted autoPlay loop playsInline className="h-32 w-full object-cover" />
           ) : currentVideoType === 'youtube' && currentVideoUrl ? (() => {
@@ -170,19 +170,19 @@ export function HeroMediaPicker({
 
       {/* Mode content */}
       {uploading ? (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-[6px] border border-dashed border-white/12 bg-[var(--bg-2)] p-6">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6">
           <Loader2 className="size-5 animate-spin text-muted-foreground" />
           <p className="text-sm text-muted-foreground">{isArabic ? 'جارٍ الرفع…' : 'Uploading…'}</p>
         </div>
       ) : mode === 'image' ? (
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[6px] border border-dashed border-white/12 bg-[var(--bg-2)] p-6 transition-colors hover:border-white/20">
+        <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6 transition-colors hover:border-white/20">
           <Upload className="size-5 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">{isArabic ? 'انقر لرفع صورة' : 'Click to upload image'}</p>
           <p className="text-xs text-muted-foreground">{imageHint}</p>
           <input ref={fileInputRef} type="file" accept="image/webp,image/png,image/jpeg" className="hidden" onChange={handleImageUpload} />
         </label>
       ) : mode === 'mp4' ? (
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[6px] border border-dashed border-white/12 bg-[var(--bg-2)] p-6 transition-colors hover:border-white/20">
+        <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6 transition-colors hover:border-white/20">
           <Upload className="size-5 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">{isArabic ? 'انقر لرفع MP4' : 'Click to upload MP4'}</p>
           <p className="text-xs text-muted-foreground">{videoHint}</p>
@@ -195,7 +195,7 @@ export function HeroMediaPicker({
             placeholder="https://www.youtube.com/watch?v=..."
             value={youtubeInput}
             onChange={(e) => setYoutubeInput(e.target.value)}
-            className="flex-1 rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2.5 text-sm text-white placeholder:text-muted-foreground focus:border-white/20 focus:outline-none"
+            className="flex-1 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-muted-foreground focus:border-white/20 focus:outline-none"
           />
           <Button type="button" size="sm" onClick={handleYoutubeSave} disabled={!youtubeInput.trim()}>
             {isArabic ? 'تعيين' : 'Set'}

@@ -1,6 +1,19 @@
 import type { Metadata } from 'next'
 import { getLocale, getTranslations } from 'next-intl/server'
 
+import {
+  AdminPageHeader,
+  AdminPanel,
+  AdminTableShell,
+} from '@/components/admin/admin-shell'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -78,71 +91,68 @@ export default async function AuditLogPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="font-display text-2xl font-semibold tracking-[-0.02em] text-white">
-          {t('heading')}
-        </h1>
-        <p className="mt-1 text-sm text-white/56">
-          {t('description')}
-        </p>
-      </header>
+      <AdminPageHeader title={t('heading')} description={t('description')} />
 
       {error && (
-        <div className="rounded-[6px] border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200">
+        <AdminPanel className="border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200">
           {t('errorHeading')}: {error.message}
-        </div>
+        </AdminPanel>
       )}
 
       {typedRows.length === 0 && !error && (
-        <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-8 text-center text-sm text-white/56">
+        <AdminPanel className="text-muted-foreground p-8 text-center text-sm">
           {t('emptyDescription')}
-        </div>
+        </AdminPanel>
       )}
 
       {typedRows.length > 0 && (
-        <div className="overflow-hidden rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)]">
-          <table className="w-full text-sm">
-            <thead className="border-b border-[var(--line)] bg-[var(--bg-2)] text-start text-xs uppercase tracking-[0.12em] text-white/48">
-              <tr>
-                <th className="px-4 py-3 font-medium">{t('whenColumn')}</th>
-                <th className="px-4 py-3 font-medium">{t('actionColumn')}</th>
-                <th className="px-4 py-3 font-medium">{t('entityColumn')}</th>
-                <th className="px-4 py-3 font-medium">{t('detailsColumn')}</th>
-              </tr>
-            </thead>
-            <tbody>
+        <AdminTableShell>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('whenColumn')}</TableHead>
+                <TableHead>{t('actionColumn')}</TableHead>
+                <TableHead>{t('entityColumn')}</TableHead>
+                <TableHead>{t('detailsColumn')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {typedRows.map((row) => (
-                <tr key={row.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02]">
-                  <td className="px-4 py-3 text-white/64" title={row.created_at}>
+                <TableRow key={row.id}>
+                  <TableCell className="text-white/64" title={row.created_at}>
                     {formatRelative(row.created_at, isArabic)}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     <span
                       className={`inline-flex rounded-[4px] border px-2 py-0.5 text-xs font-medium ${
-                        ACTION_STYLES[row.action_type] ?? 'bg-white/5 text-white/70 border-[var(--line)]'
+                        ACTION_STYLES[row.action_type] ??
+                        'border-white/8 bg-white/5 text-white/70'
                       }`}
                     >
                       {row.action_type}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-white/80">
+                  </TableCell>
+                  <TableCell className="text-white/80">
                     {row.entity_type}
                     {row.entity_id && (
                       <span className="ms-2 font-mono text-[10px] text-white/40">
-                        {row.entity_id.slice(0, 8)}…
+                        {row.entity_id.slice(0, 8)}...
                       </span>
                     )}
-                  </td>
-                  <td className="max-w-xl px-4 py-3 font-mono text-[11px] text-white/56">
-                    <span className="block truncate" title={formatDiff(row.diff)}>
+                  </TableCell>
+                  <TableCell className="max-w-xl font-mono text-[11px] text-white/56">
+                    <span
+                      className="block truncate"
+                      title={formatDiff(row.diff)}
+                    >
                       {formatDiff(row.diff)}
                     </span>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </AdminTableShell>
       )}
     </div>
   )

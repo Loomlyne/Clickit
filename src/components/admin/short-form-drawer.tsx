@@ -88,7 +88,7 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
         thumbnail_url: editingShort.thumbnail_url ?? '',
         duration_seconds: editingShort.duration_seconds,
         genre: editingShort.genre ?? '',
-        sort_order: editingShort.sort_order,
+        sort_order: editingShort.sort_order ?? 0,
         expires_at: editingShort.expires_at
           ? new Date(editingShort.expires_at).toISOString().slice(0, 16)
           : '',

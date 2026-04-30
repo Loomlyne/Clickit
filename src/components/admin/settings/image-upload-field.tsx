@@ -76,7 +76,7 @@ export function ImageUploadField({
       {url && (
         <div className="flex items-start gap-4">
           <div
-            className={`relative overflow-hidden rounded-[6px] border border-[var(--line)] bg-black/40 ${previewClassName}`}
+            className={`relative overflow-hidden rounded-lg border border-white/8 bg-black/40 ${previewClassName}`}
           >
             {/* next/image with unoptimized for cache-busted dynamic URLs */}
             <Image
@@ -101,12 +101,12 @@ export function ImageUploadField({
       )}
 
       {busy ? (
-        <div className="flex items-center gap-2 rounded-[6px] border border-dashed border-white/12 bg-[var(--bg-2)] px-4 py-3 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] px-4 py-3 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
           {isArabic ? 'جارٍ العمل…' : 'Working…'}
         </div>
       ) : (
-        <label className="flex cursor-pointer items-center gap-2 rounded-[6px] border border-dashed border-white/12 bg-[var(--bg-2)] px-4 py-3 text-sm text-muted-foreground transition-colors hover:border-white/20 hover:text-foreground">
+        <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] px-4 py-3 text-sm text-muted-foreground transition-colors hover:border-white/20 hover:text-foreground">
           <Upload className="size-4" />
           <span>{url ? (isArabic ? 'استبدال الصورة' : 'Replace image') : (isArabic ? 'رفع صورة' : 'Upload image')}</span>
           <input

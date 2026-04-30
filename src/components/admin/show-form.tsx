@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { AdminPanel } from '@/components/admin/admin-shell'
 import { ArtworkUploadZone } from '@/components/admin/artwork-upload-zone'
 import { HeroMediaPicker } from '@/components/admin/hero-media-picker'
 import { generateSlug } from '@/lib/slug'
@@ -71,10 +72,10 @@ const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-6">
+    <AdminPanel className="p-6">
       <h3 className="mono mb-5 text-[var(--text-mute)]">{title}</h3>
       <div className="space-y-5">{children}</div>
-    </div>
+    </AdminPanel>
   )
 }
 
@@ -242,7 +243,7 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
 
         <Field label="Categories">
           {categories.length === 0 ? (
-            <div className="rounded-[6px] border border-dashed border-[var(--line)] px-4 py-3 text-sm text-muted-foreground">
+            <div className="rounded-lg border border-dashed border-white/12 px-4 py-3 text-sm text-muted-foreground">
               Create categories first in Admin, Categories.
             </div>
           ) : (
@@ -252,7 +253,7 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
                 return (
                   <label
                     key={category.id}
-                    className="flex min-h-11 cursor-pointer items-center gap-3 rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2.5 transition-colors hover:border-white/16"
+                    className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2.5 transition-colors hover:border-white/16"
                   >
                     <Checkbox
                       checked={checked}
@@ -380,7 +381,7 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
       </Section>
 
       {/* Submit */}
-      <div className="flex items-center justify-end gap-3 rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] px-6 py-4">
+      <AdminPanel className="flex items-center justify-end gap-3 px-6 py-4">
         <Button
           type="button"
           variant="outline"
@@ -391,7 +392,7 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
         <Button type="submit" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? 'Saving...' : isEdit ? 'Save Show' : 'Create Show'}
         </Button>
-      </div>
+      </AdminPanel>
     </form>
   )
 }

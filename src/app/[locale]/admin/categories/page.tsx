@@ -1,4 +1,5 @@
 import { CategoriesManager } from '@/components/admin/categories-manager'
+import { AdminPageHeader } from '@/components/admin/admin-shell'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function CategoriesPage() {
@@ -9,15 +10,16 @@ export default async function CategoriesPage() {
       .select('*')
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true }),
-    supabase
-      .from('show_categories')
-      .select('category_id'),
+    supabase.from('show_categories').select('category_id'),
   ])
 
-  const assignmentCounts = (assignments ?? []).reduce<Record<string, number>>((acc, row) => {
-    acc[row.category_id] = (acc[row.category_id] ?? 0) + 1
-    return acc
-  }, {})
+  const assignmentCounts = (assignments ?? []).reduce<Record<string, number>>(
+    (acc, row) => {
+      acc[row.category_id] = (acc[row.category_id] ?? 0) + 1
+      return acc
+    },
+    {}
+  )
 
   const categoriesWithCounts = (categories ?? []).map((category) => ({
     ...category,
@@ -26,13 +28,11 @@ export default async function CategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Browse</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">Categories</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Curate the browse rails, control their order, and assign shows from the show editor.
-        </p>
-      </div>
+      <AdminPageHeader
+        eyebrow="Browse"
+        title="Categories"
+        description="Curate the browse rails, control their order, and assign shows from the show editor."
+      />
 
       <CategoriesManager initialCategories={categoriesWithCounts} />
     </div>

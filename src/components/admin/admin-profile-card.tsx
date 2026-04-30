@@ -1,5 +1,6 @@
 import { Link } from '@/i18n/navigation'
 import { User, Settings } from 'lucide-react'
+import { AdminPanel } from '@/components/admin/admin-shell'
 
 interface AdminProfileCardProps {
   email: string
@@ -9,7 +10,7 @@ interface AdminProfileCardProps {
 
 export function AdminProfileCard({ email, displayName, avatarUrl }: AdminProfileCardProps) {
   return (
-    <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-5">
+    <AdminPanel className="p-5">
       <div className="flex items-center gap-4">
         {avatarUrl ? (
           <img
@@ -30,12 +31,12 @@ export function AdminProfileCard({ email, displayName, avatarUrl }: AdminProfile
         </div>
         <Link
           href="/profile"
-          className="flex items-center gap-1.5 rounded-[4px] border border-[var(--line)] px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          className="flex items-center gap-1.5 rounded-[8px] border border-white/8 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           <Settings className="size-3" />
           Profile
         </Link>
       </div>
-    </div>
+    </AdminPanel>
   )
 }

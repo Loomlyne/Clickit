@@ -17,6 +17,7 @@ import { EpisodesTable } from '@/components/admin/episodes-table'
 import { SeasonFormDrawer } from '@/components/admin/season-form-drawer'
 import { EpisodeFormDrawer } from '@/components/admin/episode-form-drawer'
 import { EmptyState } from '@/components/admin/empty-state'
+import { AdminPanel } from '@/components/admin/admin-shell'
 import {
   createSeason,
   updateSeason,
@@ -94,7 +95,7 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
   return (
     <TooltipProvider delayDuration={300}>
       <Tabs defaultValue={defaultTab} className="space-y-4">
-        <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-5 md:p-6">
+        <AdminPanel>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
@@ -139,13 +140,13 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
             })}
             </TabsList>
           </div>
-        </div>
+        </AdminPanel>
 
         {seasons.map((season) => {
           const seasonEpisodes = episodesBySeason[season.id] ?? []
           return (
             <TabsContent key={season.id} value={season.id}>
-              <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-5 md:p-6">
+              <AdminPanel>
                 <div className="mb-4 flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
                     {seasonEpisodes.length} {isArabic ? 'حلقة' : (seasonEpisodes.length === 1 ? 'episode' : 'episodes')}
@@ -161,7 +162,7 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
                   seasonId={season.id}
                   nextEpisodeNumber={(maxEpisodeNumberBySeason[season.id] ?? 0) + 1}
                 />
-              </div>
+              </AdminPanel>
             </TabsContent>
           )
         })}

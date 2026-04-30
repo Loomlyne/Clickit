@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server'
 import { getAppConfig } from '@/lib/config'
 import { createClient } from '@/lib/supabase/server'
 import { SettingsTabs } from '@/components/admin/settings/settings-tabs'
+import { AdminPageHeader } from '@/components/admin/admin-shell'
 
 /**
  * Admin settings — site-wide control center.
@@ -35,12 +36,7 @@ export default async function AdminSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-[-0.03em] text-white">{t('heading')}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t('description')}
-        </p>
-      </header>
+      <AdminPageHeader title={t('heading')} description={t('description')} />
 
       <SettingsTabs config={config} hasYouTubeKey={hasYouTubeKey} />
     </div>

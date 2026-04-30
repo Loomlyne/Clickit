@@ -140,44 +140,6 @@ export type Database = {
         }
         Relationships: []
       }
-      show_cast: {
-        Row: {
-          id: string
-          show_id: string
-          name: string
-          role: string | null
-          image_url: string | null
-          sort_order: number
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          show_id: string
-          name: string
-          role?: string | null
-          image_url?: string | null
-          sort_order?: number
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          show_id?: string
-          name?: string
-          role?: string | null
-          image_url?: string | null
-          sort_order?: number
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "show_cast_show_id_fkey"
-            columns: ["show_id"]
-            isOneToOne: false
-            referencedRelation: "shows"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       email_notifications: {
         Row: {
           created_at: string
@@ -367,86 +329,30 @@ export type Database = {
         }
         Relationships: []
       }
-      support_messages: {
-        Row: {
-          created_at: string
-          email: string
-          id: string
-          message: string
-          name: string
-          notification_error: string | null
-          notification_status: string
-          phone: string | null
-          responded_at: string | null
-          responded_by: string | null
-          status: string
-          subject: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          id?: string
-          message: string
-          name: string
-          notification_error?: string | null
-          notification_status?: string
-          phone?: string | null
-          responded_at?: string | null
-          responded_by?: string | null
-          status?: string
-          subject: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          id?: string
-          message?: string
-          name?: string
-          notification_error?: string | null
-          notification_status?: string
-          phone?: string | null
-          responded_at?: string | null
-          responded_by?: string | null
-          status?: string
-          subject?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "support_messages_responded_by_fkey"
-            columns: ["responded_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       reviews: {
         Row: {
-          id: string
-          show_id: string
-          user_id: string
-          stars: number
           body: string
           created_at: string
+          id: string
+          show_id: string
+          stars: number
+          user_id: string
         }
         Insert: {
-          id?: string
-          show_id: string
-          user_id: string
-          stars: number
           body: string
           created_at?: string
+          id?: string
+          show_id: string
+          stars: number
+          user_id: string
         }
         Update: {
-          id?: string
-          show_id?: string
-          user_id?: string
-          stars?: number
           body?: string
           created_at?: string
+          id?: string
+          show_id?: string
+          stars?: number
+          user_id?: string
         }
         Relationships: [
           {
@@ -454,6 +360,13 @@ export type Database = {
             columns: ["show_id"]
             isOneToOne: false
             referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -499,6 +412,89 @@ export type Database = {
           },
         ]
       }
+      shorts: {
+        Row: {
+          archived: boolean | null
+          channel_name: string | null
+          created_at: string | null
+          duration_seconds: number | null
+          expires_at: string | null
+          genre: string | null
+          id: string
+          sort_order: number | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string | null
+          youtube_video_id: string
+        }
+        Insert: {
+          archived?: boolean | null
+          channel_name?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          expires_at?: string | null
+          genre?: string | null
+          id?: string
+          sort_order?: number | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string | null
+          youtube_video_id: string
+        }
+        Update: {
+          archived?: boolean | null
+          channel_name?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          expires_at?: string | null
+          genre?: string | null
+          id?: string
+          sort_order?: number | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string | null
+          youtube_video_id?: string
+        }
+        Relationships: []
+      }
+      show_cast: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string | null
+          name: string
+          role: string | null
+          show_id: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          role?: string | null
+          show_id: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          role?: string | null
+          show_id?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "show_cast_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       show_categories: {
         Row: {
           category_id: string
@@ -523,59 +519,7 @@ export type Database = {
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "show_categories_show_id_fkey"
-            columns: ["show_id"]
-            isOneToOne: false
-            referencedRelation: "shows"
-            referencedColumns: ["id"]
-          },
         ]
-      }
-      shorts: {
-        Row: {
-          id: string
-          youtube_video_id: string
-          title: string
-          channel_name: string | null
-          thumbnail_url: string | null
-          duration_seconds: number | null
-          genre: string | null
-          sort_order: number
-          expires_at: string | null
-          archived: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          youtube_video_id: string
-          title: string
-          channel_name?: string | null
-          thumbnail_url?: string | null
-          duration_seconds?: number | null
-          genre?: string | null
-          sort_order?: number
-          expires_at?: string | null
-          archived?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          youtube_video_id?: string
-          title?: string
-          channel_name?: string | null
-          thumbnail_url?: string | null
-          duration_seconds?: number | null
-          genre?: string | null
-          sort_order?: number
-          expires_at?: string | null
-          archived?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
       shows: {
         Row: {
@@ -669,6 +613,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      support_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          notification_error: string | null
+          notification_status: string
+          phone: string | null
+          responded_at: string | null
+          responded_by: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          notification_error?: string | null
+          notification_status?: string
+          phone?: string | null
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          notification_error?: string | null
+          notification_status?: string
+          phone?: string | null
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_favorites: {
         Row: {

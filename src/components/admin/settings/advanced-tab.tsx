@@ -138,7 +138,7 @@ export function AdvancedTab({ config }: { config: AppConfig }) {
           ? 'مشرف واحد في v1 — معرّف المستخدم أدناه هو الحساب الوحيد المسموح له بالتعديل. تواصل مع المطوّر لنقل الملكية.'
           : 'Single-admin v1 — the user ID below is the only account allowed to edit. Contact the developer to transfer ownership.'}
       >
-        <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] px-4 py-3 font-mono text-xs text-muted-foreground">
+        <div className="rounded-lg border border-white/8 bg-white/[0.02] px-4 py-3 font-mono text-xs text-muted-foreground">
           {isArabic ? 'المشرف المسجّل حالياً يُدير هذا الموقع.' : 'Currently signed-in admin manages this site.'}
         </div>
       </SettingsCard>
@@ -156,7 +156,7 @@ function FlagRow({
   onChange: (v: boolean) => void
 }) {
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-[6px] border border-white/8 bg-[var(--bg-2)] px-4 py-3 transition-colors hover:border-white/16">
+    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-lg border border-white/8 bg-white/[0.02] px-4 py-3 transition-colors hover:border-white/16">
       <div className="flex items-start gap-3">
         <span className="mt-0.5 flex size-8 items-center justify-center rounded-full bg-white/[0.06] text-white/70">
           {meta.icon}

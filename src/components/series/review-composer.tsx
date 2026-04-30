@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 
 interface Review {
@@ -26,28 +27,37 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
   const [hoverStars, setHoverStars] = useState(0)
   const [draftText, setDraftText] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  async function loadReviews(supabase = createClient()) {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('id, show_id, user_id, stars, body, created_at, profiles:profiles!reviews_user_id_fkey(display_name, avatar_url)')
+      .eq('show_id', showId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('[review-composer] load failed', error)
+      setLoadError(error.message)
+      return
+    }
+
+    setReviews(data as unknown as Review[])
+    setLoadError(null)
+  }
 
   // Fetch reviews + subscribe to real-time
   useEffect(() => {
     const supabase = createClient()
-
-    async function load() {
-      const { data } = await supabase
-        .from('reviews')
-        .select('*, profiles(display_name, avatar_url)')
-        .eq('show_id', showId)
-        .order('created_at', { ascending: false })
-      if (data) setReviews(data as unknown as Review[])
-    }
-
-    load()
+    void loadReviews(supabase)
 
     const channel = supabase
       .channel(`reviews:${showId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'reviews', filter: `show_id=eq.${showId}` },
-        () => { load() }
+        () => { void loadReviews(supabase) }
       )
       .subscribe()
 
@@ -57,6 +67,7 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
   const submitReview = async () => {
     if (!userId || !draftText.trim() || draftStars === 0) return
     setSubmitting(true)
+    setSubmitError(null)
     const supabase = createClient()
     const { error } = await supabase.from('reviews').insert({
       show_id: showId,
@@ -66,11 +77,15 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
     })
     if (error) {
       console.error('[review-composer] insert failed', error)
+      setSubmitError(error.message)
+      toast.error(error.message)
       setSubmitting(false)
       return
     }
+
     setDraftStars(0)
     setDraftText('')
+    await loadReviews(supabase)
     setSubmitting(false)
   }
 
@@ -124,6 +139,12 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
             maxLength={600}
           />
 
+          {submitError && (
+            <div className="mt-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+              {submitError}
+            </div>
+          )}
+
           <div className="flex items-center justify-between mt-3">
             <span className="mono text-[11px] text-[var(--text-mute)]">{draftText.length} / 600</span>
             <div className="flex gap-2">
@@ -143,6 +164,12 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {loadError && (
+        <div className="mb-5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          Reviews could not be loaded. {loadError}
         </div>
       )}
 

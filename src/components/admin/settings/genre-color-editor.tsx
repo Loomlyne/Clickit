@@ -97,7 +97,7 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
           return (
             <div
               key={genre}
-              className="flex items-center justify-between gap-3 rounded-[6px] border border-white/8 bg-[var(--bg-2)] px-3 py-2"
+              className="flex items-center justify-between gap-3 rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2"
             >
               <span className="text-sm font-medium text-white">{genre}</span>
               <div className="flex items-center gap-1">

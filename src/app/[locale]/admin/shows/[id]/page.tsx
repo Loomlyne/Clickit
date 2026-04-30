@@ -1,12 +1,11 @@
 import { getLocale, getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import { Link } from '@/i18n/navigation'
-import { ArrowLeft } from 'lucide-react'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { SeasonTabs } from '@/components/admin/season-tabs'
 import { EditShowButton } from '@/components/admin/edit-show-button'
 import { CastEditor } from '@/components/admin/cast-editor'
+import { AdminBackLink, AdminPanel } from '@/components/admin/admin-shell'
 import { Badge } from '@/components/ui/badge'
 import type { Database } from '@/lib/database.types'
 
@@ -35,7 +34,13 @@ export default async function ShowDetailPage({
 
   if (!show) notFound()
 
-  const [{ data: seasons }, { data: episodes }, { data: allEpisodes }, { data: castMembers }, { data: showCategories }] = await Promise.all([
+  const [
+    { data: seasons },
+    { data: episodes },
+    { data: allEpisodes },
+    { data: castMembers },
+    { data: showCategories },
+  ] = await Promise.all([
     supabase
       .from('seasons')
       .select('*')
@@ -63,8 +68,12 @@ export default async function ShowDetailPage({
   ])
 
   const categories = (showCategories ?? []).flatMap((row: any) => {
-    const category = Array.isArray(row.categories) ? row.categories[0] : row.categories
-    return category ? [{ id: row.category_id, name: category.name_en, slug: category.slug }] : []
+    const category = Array.isArray(row.categories)
+      ? row.categories[0]
+      : row.categories
+    return category
+      ? [{ id: row.category_id, name: category.name_en, slug: category.slug }]
+      : []
   })
 
   const episodesBySeason: Record<string, Episode[]> = {}
@@ -86,33 +95,33 @@ export default async function ShowDetailPage({
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/admin"
-        className="inline-flex items-center gap-1.5 rounded-[4px] border border-[var(--line)] bg-[var(--bg-2)] px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="size-4 rtl:scale-x-[-1]" />
-        {tDash('allShows')}
-      </Link>
+      <AdminBackLink href="/admin">{tDash('allShows')}</AdminBackLink>
 
-      <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-6 md:p-8">
+      <AdminPanel className="p-6 md:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+            <p className="text-muted-foreground text-xs tracking-[0.24em] uppercase">
               {tShows('showDetail')}
             </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+            <h1 className="text-foreground mt-3 text-3xl font-semibold tracking-tight">
               {show.title}
             </h1>
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-3 text-sm">
               <span>{show.genre}</span>
               <span>·</span>
-              <span>{show.episode_count} {tShows('episodes')}</span>
+              <span>
+                {show.episode_count} {tShows('episodes')}
+              </span>
               <span>·</span>
-              <span>{(seasons ?? []).length} {tShows('seasons')}</span>
+              <span>
+                {(seasons ?? []).length} {tShows('seasons')}
+              </span>
               {show.broadcast_day && (
                 <>
                   <span>·</span>
-                  <span>{show.broadcast_day} {show.broadcast_time}</span>
+                  <span>
+                    {show.broadcast_day} {show.broadcast_time}
+                  </span>
                 </>
               )}
             </div>
@@ -125,24 +134,24 @@ export default async function ShowDetailPage({
                 ))}
               </div>
             )}
-            <p className="mt-4 max-w-3xl text-sm leading-7 text-muted-foreground md:text-base">
+            <p className="text-muted-foreground mt-4 max-w-3xl text-sm leading-7 md:text-base">
               {show.description}
             </p>
           </div>
-          <div className="flex flex-col items-start gap-3 rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] px-4 py-4">
-            <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+          <div className="flex flex-col items-start gap-3 rounded-lg border border-white/8 bg-white/[0.03] px-4 py-4">
+            <span className="text-muted-foreground text-xs tracking-[0.18em] uppercase">
               {tShows('publishingState')}
             </span>
             <StatusBadge status={show.status} />
             <EditShowButton show={show} />
           </div>
         </div>
-      </div>
+      </AdminPanel>
 
       {/* Cast & Crew */}
-      <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-6 md:p-8">
+      <AdminPanel className="p-6 md:p-8">
         <CastEditor showId={id} cast={castMembers ?? []} />
-      </div>
+      </AdminPanel>
 
       <SeasonTabs
         seasons={seasons ?? []}

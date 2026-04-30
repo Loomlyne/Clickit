@@ -1,10 +1,9 @@
 import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
+import { adminPanelClass } from '@/components/admin/admin-shell'
 
 /**
- * Shared editorial card used for every settings section.
- * Uses the editorial design system tokens:
- *   rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-6 md:p-8
+ * Shared admin panel used for every settings section.
  */
 export function SettingsCard({
   title,
@@ -22,7 +21,8 @@ export function SettingsCard({
   return (
     <section
       className={cn(
-        'rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-6 md:p-8',
+        adminPanelClass,
+        'p-6 md:p-8',
         className
       )}
     >

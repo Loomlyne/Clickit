@@ -1,4 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
+import { AdminPanel, AdminTableShell, AdminToolbar } from '@/components/admin/admin-shell'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 export default async function AdminInboxPage() {
   const supabase = await createClient()
@@ -18,62 +27,62 @@ export default async function AdminInboxPage() {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-1)]">
-        <div className="border-b border-[var(--line)] px-6 py-4">
-          <h2 className="font-display text-[26px] tracking-[-0.03em] text-[var(--text)]">Support messages</h2>
+      <AdminPanel className="p-0">
+        <div className="p-5 md:p-6">
+          <AdminToolbar eyebrow="Inbox" title="Support messages" />
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="bg-[var(--bg-2)] text-[var(--text-mute)]">
-              <tr>
-                <th className="px-6 py-3 font-medium">From</th>
-                <th className="px-6 py-3 font-medium">Subject</th>
-                <th className="px-6 py-3 font-medium">Status</th>
-                <th className="px-6 py-3 font-medium">Email</th>
-              </tr>
-            </thead>
-            <tbody>
+        <AdminTableShell className="rounded-none border-x-0 border-b-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>From</TableHead>
+                <TableHead>Subject</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Email</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {(supportMessages ?? []).map((message) => (
-                <tr key={message.id} className="border-t border-[var(--line)]">
-                  <td className="px-6 py-4 text-[var(--text)]">{message.name}</td>
-                  <td className="px-6 py-4 text-[var(--text-dim)]">{message.subject}</td>
-                  <td className="px-6 py-4 text-[var(--text-dim)]">{message.status} / {message.notification_status}</td>
-                  <td className="px-6 py-4 text-[var(--text-dim)]">{message.email}</td>
-                </tr>
+                <TableRow key={message.id}>
+                  <TableCell className="text-foreground">{message.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{message.subject}</TableCell>
+                  <TableCell className="text-muted-foreground">{message.status} / {message.notification_status}</TableCell>
+                  <TableCell className="text-muted-foreground">{message.email}</TableCell>
+                </TableRow>
               ))}
               {(supportMessages ?? []).length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-[var(--text-mute)]">
+                <TableRow>
+                  <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
                     No support messages yet.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            </TableBody>
+          </Table>
+        </AdminTableShell>
+      </AdminPanel>
 
-      <section className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-1)]">
-        <div className="border-b border-[var(--line)] px-6 py-4">
-          <h2 className="font-display text-[26px] tracking-[-0.03em] text-[var(--text)]">Newsletter subscribers</h2>
+      <AdminPanel className="p-0">
+        <div className="p-5 md:p-6">
+          <AdminToolbar eyebrow="Inbox" title="Newsletter subscribers" />
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="bg-[var(--bg-2)] text-[var(--text-mute)]">
-              <tr>
-                <th className="px-6 py-3 font-medium">Email</th>
-                <th className="px-6 py-3 font-medium">Source</th>
-                <th className="px-6 py-3 font-medium">Status</th>
-                <th className="px-6 py-3 font-medium">Interests</th>
-              </tr>
-            </thead>
-            <tbody>
+        <AdminTableShell className="rounded-none border-x-0 border-b-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Email</TableHead>
+                <TableHead>Source</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Interests</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {(newsletterSubscribers ?? []).map((subscriber) => (
-                <tr key={subscriber.id} className="border-t border-[var(--line)]">
-                  <td className="px-6 py-4 text-[var(--text)]">{subscriber.email}</td>
-                  <td className="px-6 py-4 text-[var(--text-dim)]">{subscriber.source}</td>
-                  <td className="px-6 py-4 text-[var(--text-dim)]">{subscriber.status} / {subscriber.notification_status}</td>
-                  <td className="px-6 py-4 text-[var(--text-dim)]">
+                <TableRow key={subscriber.id}>
+                  <TableCell className="text-foreground">{subscriber.email}</TableCell>
+                  <TableCell className="text-muted-foreground">{subscriber.source}</TableCell>
+                  <TableCell className="text-muted-foreground">{subscriber.status} / {subscriber.notification_status}</TableCell>
+                  <TableCell className="text-muted-foreground">
                     {Array.isArray(subscriber.interests) && subscriber.interests.length > 0
                       ? subscriber.interests.map((item) => {
                         if (typeof item !== 'object' || item === null) return null
@@ -82,20 +91,20 @@ export default async function AdminInboxPage() {
                         return title || slug
                       }).filter(Boolean).join(', ')
                       : 'General newsletter'}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
               {(newsletterSubscribers ?? []).length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-[var(--text-mute)]">
+                <TableRow>
+                  <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
                     No newsletter subscribers yet.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            </TableBody>
+          </Table>
+        </AdminTableShell>
+      </AdminPanel>
     </div>
   )
 }

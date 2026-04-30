@@ -1,13 +1,22 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { ArrowDown, ArrowUp, Pencil, Trash2, X } from 'lucide-react'
+import { Fragment, useMemo, useState } from 'react'
+import { ArrowDown, ArrowUp, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { createCategory, deleteCategory, reorderCategories, updateCategory } from '@/app/[locale]/admin/actions'
+import { AdminPanel, AdminTableShell, AdminToolbar } from '@/components/admin/admin-shell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { generateSlug } from '@/lib/slug'
 import type { Database } from '@/lib/database.types'
 
@@ -19,41 +28,139 @@ type CategoryDraft = {
   name_en: string
   name_ar: string
   slug: string
-  icon: string
 }
+
+type EditorState =
+  | { mode: 'create' }
+  | { mode: 'edit'; categoryId: string }
+  | null
 
 const EMPTY_DRAFT: CategoryDraft = {
   name_en: '',
   name_ar: '',
   slug: '',
-  icon: '',
+}
+
+function CategoryEditor({
+  draft,
+  saving,
+  editing,
+  onCancel,
+  onSubmit,
+  onDraftChange,
+}: {
+  draft: CategoryDraft
+  saving: boolean
+  editing: boolean
+  onCancel: () => void
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => Promise<void>
+  onDraftChange: React.Dispatch<React.SetStateAction<CategoryDraft>>
+}) {
+  return (
+    <form onSubmit={onSubmit} className="rounded-lg border border-white/8 bg-white/[0.02] p-4 md:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            {editing ? 'Edit category' : 'New category'}
+          </p>
+          <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
+            {editing ? 'Update category' : 'Create category'}
+          </h3>
+        </div>
+        <Button type="button" variant="ghost" size="icon-sm" onClick={onCancel} aria-label="Close category editor">
+          <X className="size-4" />
+        </Button>
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-[1fr_1fr_0.9fr]">
+        <div className="space-y-1.5">
+          <Label htmlFor="category-name-en">English name</Label>
+          <Input
+            id="category-name-en"
+            value={draft.name_en}
+            onChange={(event) => {
+              const name_en = event.target.value
+              onDraftChange((current) => ({
+                ...current,
+                name_en,
+                slug: editing ? current.slug : generateSlug(name_en),
+              }))
+            }}
+            placeholder="Documentary"
+            required
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="category-name-ar">Arabic name</Label>
+          <Input
+            id="category-name-ar"
+            dir="rtl"
+            value={draft.name_ar}
+            onChange={(event) => onDraftChange((current) => ({ ...current, name_ar: event.target.value }))}
+            placeholder="وثائقي"
+            required
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="category-slug">Slug</Label>
+          <Input
+            id="category-slug"
+            value={draft.slug}
+            onChange={(event) => onDraftChange((current) => ({ ...current, slug: generateSlug(event.target.value) }))}
+            placeholder="documentary"
+            required
+          />
+        </div>
+      </div>
+
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <Button type="submit" disabled={saving}>
+          {saving ? 'Saving...' : editing ? 'Save category' : 'Create category'}
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </form>
+  )
 }
 
 export function CategoriesManager({ initialCategories }: { initialCategories: CategoryRecord[] }) {
   const [categories, setCategories] = useState(initialCategories)
   const [draft, setDraft] = useState<CategoryDraft>(EMPTY_DRAFT)
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editorState, setEditorState] = useState<EditorState>(null)
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const editingCategory = useMemo(
-    () => categories.find((category) => category.id === editingId) ?? null,
-    [categories, editingId]
+    () => editorState?.mode === 'edit'
+      ? categories.find((category) => category.id === editorState.categoryId) ?? null
+      : null,
+    [categories, editorState]
   )
 
-  function resetForm() {
+  const isCreateOpen = editorState?.mode === 'create'
+  const editingId = editingCategory?.id ?? null
+
+  function resetEditor() {
     setDraft(EMPTY_DRAFT)
-    setEditingId(null)
+    setEditorState(null)
+  }
+
+  function startCreate() {
+    setDraft(EMPTY_DRAFT)
+    setEditorState({ mode: 'create' })
   }
 
   function startEdit(category: CategoryRecord) {
-    setEditingId(category.id)
     setDraft({
       name_en: category.name_en,
       name_ar: category.name_ar,
       slug: category.slug,
-      icon: category.icon ?? '',
     })
+    setEditorState({ mode: 'edit', categoryId: category.id })
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -61,8 +168,8 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
     setSaving(true)
 
     const payload = {
-      ...draft,
-      icon: draft.icon.trim() || null,
+      name_en: draft.name_en.trim(),
+      name_ar: draft.name_ar.trim(),
       slug: draft.slug.trim() || generateSlug(draft.name_en),
       sort_order: editingCategory?.sort_order ?? categories.length,
     }
@@ -89,7 +196,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
       toast.success('Category created')
     }
 
-    resetForm()
+    resetEditor()
   }
 
   async function handleDelete(id: string) {
@@ -103,7 +210,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
     }
 
     setCategories((current) => current.filter((category) => category.id !== id))
-    if (editingId === id) resetForm()
+    if (editingId === id) resetEditor()
     toast.success('Category deleted')
   }
 
@@ -130,163 +237,134 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-      <form onSubmit={handleSubmit} className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-6">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              {editingId ? 'Edit category' : 'New category'}
-            </p>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
-              {editingId ? 'Update category' : 'Create category'}
-            </h2>
-          </div>
-          {editingId && (
-            <Button type="button" variant="ghost" size="icon-sm" onClick={resetForm} aria-label="Cancel editing">
-              <X className="size-4" />
+    <AdminPanel className="p-0">
+      <div className="p-5 md:p-6">
+        <AdminToolbar
+          eyebrow="Browse categories"
+          title="Category order and assignments"
+          description="Curate the browse rails and keep category membership manually controlled from the show editor."
+          actions={
+            <Button type="button" onClick={startCreate}>
+              <Plus className="size-4" />
+              Add category
             </Button>
-          )}
-        </div>
-
-        <div className="mt-6 space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="category-name-en">English name</Label>
-            <Input
-              id="category-name-en"
-              value={draft.name_en}
-              onChange={(event) => {
-                const name_en = event.target.value
-                setDraft((current) => ({
-                  ...current,
-                  name_en,
-                  slug: editingId ? current.slug : generateSlug(name_en),
-                }))
-              }}
-              placeholder="Documentary"
-              required
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="category-name-ar">Arabic name</Label>
-            <Input
-              id="category-name-ar"
-              dir="rtl"
-              value={draft.name_ar}
-              onChange={(event) => setDraft((current) => ({ ...current, name_ar: event.target.value }))}
-              placeholder="وثائقي"
-              required
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="category-slug">Slug</Label>
-            <Input
-              id="category-slug"
-              value={draft.slug}
-              onChange={(event) => setDraft((current) => ({ ...current, slug: generateSlug(event.target.value) }))}
-              placeholder="documentary"
-              required
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="category-icon">Eyebrow text or icon</Label>
-            <Input
-              id="category-icon"
-              value={draft.icon}
-              onChange={(event) => setDraft((current) => ({ ...current, icon: event.target.value }))}
-              placeholder="Featured picks"
-            />
-          </div>
-        </div>
-
-        <div className="mt-6 flex items-center gap-3">
-          <Button type="submit" disabled={saving}>
-            {saving ? 'Saving...' : editingId ? 'Save category' : 'Create category'}
-          </Button>
-          {editingId && (
-            <Button type="button" variant="outline" onClick={resetForm}>
-              Cancel
-            </Button>
-          )}
-        </div>
-      </form>
-
-      <div className="rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] p-6">
-        <div className="flex items-end justify-between gap-4 border-b border-white/8 pb-5">
-          <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Browse categories</p>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground">Category order and assignments</h2>
-          </div>
+          }
+        >
           <div className="text-sm text-muted-foreground">{categories.length} categories</div>
-        </div>
-
-        <div className="mt-5 space-y-3">
-          {categories.length === 0 && (
-            <div className="rounded-[6px] border border-dashed border-[var(--line)] px-4 py-8 text-center text-sm text-muted-foreground">
-              No categories yet.
-            </div>
-          )}
-
-          {categories.map((category, index) => (
-            <div
-              key={category.id}
-              className="flex flex-col gap-4 rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)] px-4 py-4 lg:flex-row lg:items-center lg:justify-between"
-            >
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-base font-medium text-foreground">{category.name_en}</span>
-                  <span className="text-xs text-muted-foreground">/{category.slug}</span>
-                </div>
-                <div className="mt-1 text-sm text-muted-foreground">{category.name_ar}</div>
-                <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  <span>{category.icon || 'No eyebrow text'}</span>
-                  <span>{category.showCount} assigned shows</span>
-                  <span>Order {category.sort_order + 1}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  disabled={index === 0}
-                  onClick={() => handleMove(category.id, 'up')}
-                  aria-label={`Move ${category.name_en} up`}
-                >
-                  <ArrowUp className="size-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  disabled={index === categories.length - 1}
-                  onClick={() => handleMove(category.id, 'down')}
-                  aria-label={`Move ${category.name_en} down`}
-                >
-                  <ArrowDown className="size-4" />
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => startEdit(category)}>
-                  <Pencil className="size-3.5" />
-                  Edit
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  disabled={deletingId === category.id}
-                  onClick={() => handleDelete(category.id)}
-                >
-                  <Trash2 className="size-3.5" />
-                  {deletingId === category.id ? 'Deleting...' : 'Delete'}
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+        </AdminToolbar>
       </div>
-    </div>
+
+      <AdminTableShell className="rounded-none border-x-0 border-b-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Category</TableHead>
+              <TableHead className="hidden md:table-cell">Arabic name</TableHead>
+              <TableHead className="w-32">Assigned</TableHead>
+              <TableHead className="w-24">Order</TableHead>
+              <TableHead className="w-52 text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isCreateOpen && (
+              <TableRow>
+                <TableCell colSpan={5} className="whitespace-normal bg-white/[0.015]">
+                  <CategoryEditor
+                    draft={draft}
+                    saving={saving}
+                    editing={false}
+                    onCancel={resetEditor}
+                    onSubmit={handleSubmit}
+                    onDraftChange={setDraft}
+                  />
+                </TableCell>
+              </TableRow>
+            )}
+
+            {categories.length === 0 && !isCreateOpen && (
+              <TableRow>
+                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
+                  No categories yet.
+                </TableCell>
+              </TableRow>
+            )}
+
+            {categories.map((category, index) => {
+              const isEditingRow = editorState?.mode === 'edit' && editorState.categoryId === category.id
+
+              return (
+                <Fragment key={category.id}>
+                  <TableRow>
+                    <TableCell>
+                      <div className="min-w-[180px]">
+                        <div className="font-medium text-foreground">{category.name_en}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">/{category.slug}</div>
+                        <div className="mt-1 text-xs text-muted-foreground md:hidden">{category.name_ar}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden text-muted-foreground md:table-cell">{category.name_ar}</TableCell>
+                    <TableCell className="text-muted-foreground">{category.showCount}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">#{category.sort_order + 1}</TableCell>
+                    <TableCell>
+                      <div className="flex min-w-[190px] items-center justify-end gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          disabled={index === 0}
+                          onClick={() => handleMove(category.id, 'up')}
+                          aria-label={`Move ${category.name_en} up`}
+                        >
+                          <ArrowUp className="size-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          disabled={index === categories.length - 1}
+                          onClick={() => handleMove(category.id, 'down')}
+                          aria-label={`Move ${category.name_en} down`}
+                        >
+                          <ArrowDown className="size-4" />
+                        </Button>
+                        <Button type="button" variant="ghost" size="icon-sm" onClick={() => startEdit(category)} aria-label={`Edit ${category.name_en}`}>
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          className="text-red-400 hover:text-red-300"
+                          disabled={deletingId === category.id}
+                          onClick={() => handleDelete(category.id)}
+                          aria-label={`Delete ${category.name_en}`}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+
+                  {isEditingRow && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="whitespace-normal bg-white/[0.015]">
+                        <CategoryEditor
+                          draft={draft}
+                          saving={saving}
+                          editing
+                          onCancel={resetEditor}
+                          onSubmit={handleSubmit}
+                          onDraftChange={setDraft}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </Fragment>
+              )
+            })}
+          </TableBody>
+        </Table>
+      </AdminTableShell>
+    </AdminPanel>
   )
 }

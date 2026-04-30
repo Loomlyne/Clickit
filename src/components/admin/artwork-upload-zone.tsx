@@ -99,7 +99,7 @@ export function ArtworkUploadZone({
     return (
       <div className="space-y-2">
         <p className="text-sm font-medium">{label}</p>
-        <div className="flex flex-col items-center justify-center gap-2 rounded-[6px] border border-dashed border-white/12 bg-[var(--bg-2)] p-6">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
           <p className="text-sm text-muted-foreground">{isArabic ? 'جارٍ الرفع…' : 'Uploading...'}</p>
         </div>
@@ -112,7 +112,7 @@ export function ArtworkUploadZone({
     return (
       <div className="space-y-2">
         <p className="text-sm font-medium">{label}</p>
-        <div className="relative overflow-hidden rounded-[6px] border border-[var(--line)] bg-[var(--bg-2)]">
+        <div className="relative overflow-hidden rounded-lg border border-white/8 bg-white/[0.02]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={previewUrl}
@@ -158,7 +158,7 @@ export function ArtworkUploadZone({
   return (
     <div className="space-y-2">
       <p className="text-sm font-medium">{label}</p>
-      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[6px] border border-dashed border-white/12 bg-[var(--bg-2)] p-6 transition-colors hover:border-white/20">
+      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6 transition-colors hover:border-white/20">
         <Upload className="size-6 text-muted-foreground" />
         <p className="text-sm text-muted-foreground">{isArabic ? 'انقر للرفع' : 'Click to upload'}</p>
         <p className="text-xs text-muted-foreground">{aspectHint}</p>

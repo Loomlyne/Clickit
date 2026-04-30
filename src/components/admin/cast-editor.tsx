@@ -137,7 +137,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
 
       {/* Add form */}
       {formOpen && (
-        <div className="mb-4 rounded border border-[var(--line)] bg-[var(--bg-1)] p-4 space-y-3">
+        <div className="mb-4 space-y-3 rounded-lg border border-white/8 bg-white/[0.02] p-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-start">
             <div className="flex justify-center md:block">
               <div className="relative">
@@ -229,7 +229,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
           {cast.map((c) => (
             <div
               key={c.id}
-              className="group relative rounded border border-[var(--line)] bg-[var(--bg-1)] p-3 text-center"
+              className="group relative rounded-lg border border-white/8 bg-white/[0.02] p-3 text-center"
             >
               {/* Avatar */}
               {c.image_url ? (
@@ -268,7 +268,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
         </div>
       ) : (
         !formOpen && (
-          <div className="rounded border border-dashed border-[var(--line)] py-8 text-center text-sm text-muted-foreground">
+          <div className="rounded-lg border border-dashed border-white/12 py-8 text-center text-sm text-muted-foreground">
             No cast members yet
           </div>
         )
