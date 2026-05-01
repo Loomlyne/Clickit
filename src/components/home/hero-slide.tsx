@@ -92,7 +92,7 @@ export function HeroSlide({ show, isActive, firstEpisodeId, isMobile, reducedMot
           {firstEpisodeId && show.status === 'streaming' ? (
             <Link
               href={`/watch/${firstEpisodeId}`}
-              className="btn inline-flex items-center gap-2 rounded-[4px] bg-primary px-[26px] py-3.5 text-[15px] font-medium text-primary-foreground transition-[transform,background] duration-[120ms] hover:bg-white active:translate-y-px"
+              className="btn inline-flex items-center gap-2 whitespace-nowrap rounded-[4px] bg-primary px-[26px] py-3.5 text-[15px] font-medium text-primary-foreground transition-[transform,background] duration-[120ms] hover:bg-white active:translate-y-px"
             >
               <Play className="size-4 fill-current" /> Continue watching
             </Link>

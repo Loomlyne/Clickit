@@ -121,7 +121,7 @@ export default async function BrowsePage({
       {/* Bottom CTA — matches handoff inline section */}
       <section
         className="mx-4 my-10 rounded-[8px] border border-[var(--line)] p-6 text-center sm:mx-6 sm:p-12 md:mx-10 md:my-[60px] md:p-20"
-        style={{ background: 'linear-gradient(180deg, var(--bg-1), var(--bg-2))' }}
+        style={{ background: 'linear-gradient(180deg, var(--bg-2), var(--bg-3))' }}
       >
         <div className="mono mb-3.5" style={{ color: 'var(--accent)', letterSpacing: '0.18em' }}>
           Upgrade · Annual plan

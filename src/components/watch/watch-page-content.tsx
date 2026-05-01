@@ -175,7 +175,7 @@ export function WatchPageContent({
           </div>
 
           {/* Description card — matches handoff .yt-desc */}
-          <div className="mb-6 rounded-[4px] border border-[var(--line)] bg-[var(--bg-1)] p-3.5 sm:p-4">
+          <div className="mb-6 rounded-[4px] border border-[var(--line)] bg-[var(--bg-2)] p-3.5 sm:p-4">
             <div className="mono mb-2.5 flex flex-wrap gap-3 text-[10.5px] sm:gap-3.5 sm:text-xs" style={{ letterSpacing: '0.12em' }}>
               <span style={{ color: 'var(--accent)' }}>{show.genre}</span>
               {episode.duration && <span className="text-[var(--text-dim)]">{episode.duration} {isArabic ? 'دقيقة' : 'min'}</span>}
@@ -192,7 +192,7 @@ export function WatchPageContent({
         </div>
 
         {/* Right: episode sidebar — matches handoff .yt-side */}
-        <aside className="min-w-0">
+        <aside className="min-w-0 rounded-[8px] bg-[var(--bg-1)] p-4 lg:p-5">
           <div className="flex items-center justify-between gap-2.5 mb-3">
             <div>
               <div className="mono mb-1 text-[var(--text-mute)]">
