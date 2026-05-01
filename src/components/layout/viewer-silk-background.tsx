@@ -1,6 +1,6 @@
 'use client'
 
-import { Silk } from '@/components/ui/silk'
+import Silk from '@/components/Silk'
 
 export function ViewerSilkBackground() {
   return (
@@ -10,8 +10,10 @@ export function ViewerSilkBackground() {
         position: 'fixed',
         inset: 0,
         zIndex: 0,
-        opacity: 0.1,
+        opacity: 0.15,
         pointerEvents: 'none',
+        width: '100%',
+        height: '100%',
       }}
     >
       <Silk speed={5} scale={1.1} color="#3B82F6" noiseIntensity={1.7} rotation={0} />
