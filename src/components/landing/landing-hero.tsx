@@ -68,8 +68,7 @@ export async function LandingHero() {
         className="absolute inset-0"
         aria-hidden="true"
         style={{
-          background:
-            'radial-gradient(ellipse at 20% 40%, transparent 0%, rgba(10,10,10,0.8) 60%), linear-gradient(180deg, transparent 0%, var(--bg-0) 100%)',
+          background: 'linear-gradient(180deg, transparent 60%, var(--bg-0) 100%)',
         }}
       />
 
