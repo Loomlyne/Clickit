@@ -16,12 +16,16 @@ export default async function ViewerLayout({ children }: { children: React.React
     <>
       <ViewerSilkBackground />
       <SmoothScroll>
-        <Navbar
-          initialUser={user ? { id: user.id, email: user.email ?? '' } : null}
-        />
-        <div className="pt-16">
-          <PageTransition>{children}</PageTransition>
+        {/* z-[2] wrapper pushes all content above the fixed silk (z-1) */}
+        <div className="relative z-[2]">
+          <Navbar
+            initialUser={user ? { id: user.id, email: user.email ?? '' } : null}
+          />
+          <div className="pt-16">
+            <PageTransition>{children}</PageTransition>
+          </div>
         </div>
+        {/* Footer sits below z-[2] so silk (z-1) renders above it */}
         <Footer />
       </SmoothScroll>
     </>
