@@ -52,25 +52,10 @@ export async function LandingHero() {
   const user = session?.user ?? null
   const orderedShows = [...shows].sort((a, b) => Number(hasHeroArtwork(b)) - Number(hasHeroArtwork(a)))
   const collageShows = orderedShows.slice(0, 4)
-  const backdrop = collageShows[0]?.heroImageUrl || collageShows[0]?.posterUrl
   const ctaHref = user ? '/browse' : '/auth'
 
   return (
     <section className="relative -mt-16 min-h-dvh overflow-hidden">
-      {/* Background image with grain */}
-      {backdrop && (
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-[0.08] grayscale-[30%]"
-          style={{ backgroundImage: `url(${backdrop})` }}
-        />
-      )}
-      <div
-        className="absolute inset-0"
-        aria-hidden="true"
-        style={{
-          background: 'linear-gradient(180deg, transparent 60%, var(--bg-0) 100%)',
-        }}
-      />
 
       {/* Content grid */}
       <div className="relative flex min-h-dvh items-center px-4 pt-28 pb-16 sm:px-6 md:px-10 md:pt-32 md:pb-20">
