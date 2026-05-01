@@ -13,15 +13,17 @@ export default async function ViewerLayout({ children }: { children: React.React
   const user = session?.user ?? null
 
   return (
-    <SmoothScroll>
+    <>
       <ViewerSilkBackground />
-      <Navbar
-        initialUser={user ? { id: user.id, email: user.email ?? '' } : null}
-      />
-      <div className="pt-16">
-        <PageTransition>{children}</PageTransition>
-      </div>
-      <Footer />
-    </SmoothScroll>
+      <SmoothScroll>
+        <Navbar
+          initialUser={user ? { id: user.id, email: user.email ?? '' } : null}
+        />
+        <div className="pt-16">
+          <PageTransition>{children}</PageTransition>
+        </div>
+        <Footer />
+      </SmoothScroll>
+    </>
   )
 }
