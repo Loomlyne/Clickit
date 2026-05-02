@@ -113,10 +113,10 @@ export async function LandingHero() {
                 const theme = BRAND_GLOWS[show.brandColor]
                 const artwork = getArtworkUrl(show.posterUrl ?? show.heroImageUrl)
                 const positions = [
-                  { top: '0%',    left: '6%',  width: '42%', rotate: '-8deg', zIndex: 3 },
-                  { top: '8%',    right: '0%', width: '37%', rotate: '10deg', zIndex: 2 },
-                  { bottom: '0%', left: '0%',  width: '40%', rotate: '5deg',  zIndex: 4 },
-                  { bottom: '8%', right: '6%', width: '38%', rotate: '-7deg', zIndex: 1 },
+                  { top: '0%', left: '10%', width: '44%', rotate: '-3deg', zIndex: 3 },
+                  { top: '8%', right: '0%', width: '38%', rotate: '4deg', zIndex: 2 },
+                  { bottom: '4%', left: '0%', width: '40%', rotate: '2deg', zIndex: 4 },
+                  { bottom: '14%', right: '10%', width: '36%', rotate: '-5deg', zIndex: 1 },
                 ] as const
                 const current = positions[index]
                 if (!current) return null
