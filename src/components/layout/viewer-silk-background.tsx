@@ -11,7 +11,7 @@ export function ViewerSilkBackground() {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 1,
+        zIndex: 0,
         opacity: 0.12,
         mixBlendMode: 'screen',
         pointerEvents: 'none',
