@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import { getAppConfig } from '@/lib/config'
 import { extractYouTubeId } from '@/lib/youtube'
 
+// Fallback cinematic reel — admin can override via Settings → Branding → Hero video
+const FALLBACK_YT_ID = 'Nk2jlxVX8g8'
+
 export async function LandingHero() {
   const supabase = await createClient()
   const [{ data: { session } }, config] = await Promise.all([
@@ -12,8 +15,8 @@ export async function LandingHero() {
   const ctaHref = session?.user ? '/browse' : '/auth'
 
   const { heroVideoUrl, heroVideoType } = config
-  const ytId = heroVideoType === 'youtube' && heroVideoUrl ? extractYouTubeId(heroVideoUrl) : null
-  const hasVideo = heroVideoType === 'mp4' ? Boolean(heroVideoUrl) : Boolean(ytId)
+  const adminYtId = heroVideoType === 'youtube' && heroVideoUrl ? extractYouTubeId(heroVideoUrl) : null
+  const ytId = adminYtId ?? (heroVideoType === 'mp4' ? null : FALLBACK_YT_ID)
 
   return (
     <section className="relative -mt-16 min-h-dvh overflow-hidden">
@@ -29,23 +32,25 @@ export async function LandingHero() {
         />
       )}
 
-      {/* YouTube background — scaled iframe trick: covers any viewport at 16:9 */}
+      {/* YouTube background — scaled iframe covers any viewport at 16:9 */}
       {ytId && (
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <iframe
-            src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&disablekb=1`}
+            src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&cc_load_policy=0`}
             allow="autoplay; encrypted-media"
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-            style={{ width: '177.78vh', height: '56.25vw', minWidth: '100%', minHeight: '100%' }}
+            style={{ width: '177.78vh', height: '56.25vw', minWidth: '110%', minHeight: '110%' }}
             title="Hero background video"
           />
         </div>
       )}
 
-      {/* Dark overlay so text stays legible over video */}
-      {hasVideo && (
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/25" />
-      )}
+      {/* Dark gradient — always on; bottom solid black masks YouTube logo */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/20" />
+
+      {/* Corner masks: kill any residual YouTube UI at edges */}
+      <div className="pointer-events-none absolute bottom-0 right-0 h-20 w-48 bg-black" />
+      <div className="pointer-events-none absolute top-0 left-0 h-20 w-48 bg-black" />
 
       <div className="relative flex min-h-dvh items-center px-4 pt-28 pb-16 sm:px-6 md:px-10 md:pt-32 md:pb-20">
         <div className="mx-auto w-full max-w-[1400px]">
