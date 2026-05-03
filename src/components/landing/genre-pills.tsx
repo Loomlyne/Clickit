@@ -1,9 +1,25 @@
 import { Link } from '@/i18n/navigation'
 import { getDistinctGenres } from '@/lib/queries'
 
+const GENRE_COLORS: Record<string, string> = {
+  'Business':     '#8d9cff',
+  'Cooking':      '#ffb46e',
+  'Documentary':  '#c592ff',
+  'Health':       '#77d586',
+  'Kids':         '#f8d86f',
+  'Morning Show': '#ff8b82',
+  'Music':        '#c592ff',
+  'Travel':       '#8d9cff',
+  'Comedy':       '#f8d86f',
+  'Poetry':       '#c592ff',
+  'Cinema':       '#ff8b82',
+  'Tech':         '#8d9cff',
+}
+
+const DEFAULT_COLOR = '#8d9cff'
+
 export async function GenrePills() {
   const genres = await getDistinctGenres()
-
   if (genres.length === 0) return null
 
   return (
@@ -12,28 +28,20 @@ export async function GenrePills() {
       <h2 className="font-[family-name:var(--font-display)] text-[clamp(36px,5vw,64px)] font-normal leading-none tracking-[-0.02em] mb-12">
         Pick a pillar.
       </h2>
-      <div className="grid grid-cols-2 gap-px border border-[var(--line)] bg-[var(--line)] md:grid-cols-3">
-        {genres.map((genre, index) => (
-          <Link
-            key={genre}
-            href={`/browse?genre=${encodeURIComponent(genre)}`}
-            className={[
-              'group flex min-h-[220px] flex-col justify-between bg-[var(--bg-0)] p-6 transition-colors duration-200 hover:bg-[var(--bg-1)] md:min-h-[260px] md:p-8',
-              genres.length % 2 === 1 && index === genres.length - 1 ? 'col-span-2' : '',
-              genres.length % 3 === 1 && index === genres.length - 1 ? 'md:col-span-3' : '',
-            ].filter(Boolean).join(' ')}
-          >
-            <div className="font-[family-name:var(--font-display)] text-[clamp(28px,3vw,40px)] leading-none tracking-[-0.02em] transition-colors duration-200 group-hover:text-[var(--primary)]">
+      <div className="flex flex-wrap gap-2.5">
+        {genres.map((genre) => {
+          const color = GENRE_COLORS[genre] ?? DEFAULT_COLOR
+          return (
+            <Link
+              key={genre}
+              href={`/browse?genre=${encodeURIComponent(genre)}`}
+              className="mono rounded px-3.5 py-1.5 text-[12px] tracking-[0.08em] uppercase transition-all duration-150 hover:opacity-70"
+              style={{ border: `1px solid ${color}`, color }}
+            >
               {genre}
-            </div>
-            <div className="flex items-end justify-between">
-              <span className="mono">{genre}</span>
-              <span className="text-xl text-[var(--text-mute)] transition-transform duration-200 group-hover:translate-x-1.5 group-hover:text-[var(--primary)]">
-                →
-              </span>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          )
+        })}
       </div>
     </section>
   )
