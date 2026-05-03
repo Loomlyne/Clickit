@@ -122,7 +122,7 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
         {hasPrev && (
           <iframe
             key={`prewarm-prev-${shorts[idx - 1].youtubeVideoId}`}
-            src={`https://www.youtube.com/embed/${shorts[idx - 1].youtubeVideoId}?autoplay=0&controls=0&mute=1&playsinline=1`}
+            src={`https://www.youtube.com/embed/${shorts[idx - 1].youtubeVideoId}?autoplay=0&controls=1&mute=1&playsinline=1`}
             tabIndex={-1}
             title=""
           />
@@ -130,7 +130,7 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
         {hasNext && (
           <iframe
             key={`prewarm-next-${shorts[idx + 1].youtubeVideoId}`}
-            src={`https://www.youtube.com/embed/${shorts[idx + 1].youtubeVideoId}?autoplay=0&controls=0&mute=1&playsinline=1`}
+            src={`https://www.youtube.com/embed/${shorts[idx + 1].youtubeVideoId}?autoplay=0&controls=1&mute=1&playsinline=1`}
             tabIndex={-1}
             title=""
           />
@@ -182,9 +182,9 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
         >
           <iframe
             key={current.youtubeVideoId}
-            src={`https://www.youtube-nocookie.com/embed/${current.youtubeVideoId}?autoplay=${paused ? 0 : 1}&loop=1&playlist=${current.youtubeVideoId}&controls=0&modestbranding=1&rel=0&playsinline=1&mute=${muted ? 1 : 0}&iv_load_policy=3&fs=0&disablekb=1`}
+            src={`https://www.youtube.com/embed/${current.youtubeVideoId}?autoplay=1&loop=1&playlist=${current.youtubeVideoId}&controls=1&modestbranding=1&rel=0&playsinline=1&mute=${muted ? 1 : 0}&iv_load_policy=3`}
             className="absolute inset-0 h-full w-full"
-            allow="autoplay; encrypted-media"
+            allow="autoplay; encrypted-media; picture-in-picture"
             allowFullScreen
             title={current.title}
           />

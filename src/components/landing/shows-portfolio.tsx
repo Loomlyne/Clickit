@@ -1,9 +1,15 @@
 import { Link } from '@/i18n/navigation'
-import { getFeaturedShows, getFeaturedShorts } from '@/lib/queries'
+import { getFeaturedShows, getFeaturedShorts, getShortsForBrowse } from '@/lib/queries'
 import { FeaturedShortsStrip } from './featured-shorts-strip'
 
 export async function ShowsPortfolio() {
-  const [shows, shorts] = await Promise.all([getFeaturedShows(), getFeaturedShorts()])
+  const [shows, featured, all] = await Promise.all([
+    getFeaturedShows(),
+    getFeaturedShorts(),
+    getShortsForBrowse(),
+  ])
+  // Use featured if any are starred, otherwise fall back to first 8 browse shorts
+  const shorts = featured.length > 0 ? featured : all.slice(0, 8)
   const display = shows.slice(0, 4)
 
   if (display.length === 0) return null
