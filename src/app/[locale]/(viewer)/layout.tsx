@@ -4,6 +4,7 @@ import { Footer } from '@/components/layout/footer'
 import { SmoothScroll } from '@/components/providers/smooth-scroll'
 import { PageTransition } from '@/components/layout/page-transition'
 import { ViewerSilkBackground } from '@/components/layout/viewer-silk-background'
+import { MarqueeTicker } from '@/components/landing/marquee-ticker'
 
 export default async function ViewerLayout({ children }: { children: React.ReactNode }) {
   // Use getSession() instead of getUser() — middleware already validated the JWT
@@ -18,6 +19,7 @@ export default async function ViewerLayout({ children }: { children: React.React
       <SmoothScroll>
         {/* z-[2] wrapper pushes all content above the fixed silk (z-1) */}
         <div className="relative z-[2]">
+          <MarqueeTicker />
           <Navbar
             initialUser={user ? { id: user.id, email: user.email ?? '' } : null}
           />
