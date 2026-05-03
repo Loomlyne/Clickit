@@ -20,10 +20,6 @@ const FAQS = [
     a: 'All content is original, produced by Spacelight Studios FZ LLC from Yas Creative Hub, Abu Dhabi.',
   },
   {
-    q: 'Is there Arabic content?',
-    a: 'Yes — all shows are bilingual (Arabic and English). The platform UI supports both languages.',
-  },
-  {
     q: 'How many shows are available?',
     a: 'We currently have 15 original programs spanning travel, health, music, comedy, cooking, kids, poetry, cinema, tech, and more.',
   },
