@@ -45,12 +45,8 @@ export async function LandingHero() {
         </div>
       )}
 
-      {/* Dark gradient — always on; bottom solid black masks YouTube logo */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/20" />
-
-      {/* Corner masks: kill any residual YouTube UI at edges */}
-      <div className="pointer-events-none absolute bottom-0 right-0 h-20 w-48 bg-black" />
-      <div className="pointer-events-none absolute top-0 left-0 h-20 w-48 bg-black" />
+      {/* Gradient — solid at bottom (hides YT logo), fades to transparent at top */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black from-10% via-black/50 via-40% to-transparent" />
 
       <div className="relative flex min-h-dvh items-end px-4 pt-28 pb-16 sm:px-6 md:px-10 md:pb-20">
         <div className="w-full max-w-[560px]">
