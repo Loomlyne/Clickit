@@ -1,13 +1,52 @@
 import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getAppConfig } from '@/lib/config'
+import { extractYouTubeId } from '@/lib/youtube'
 
 export async function LandingHero() {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+  const [{ data: { session } }, config] = await Promise.all([
+    supabase.auth.getSession(),
+    getAppConfig(),
+  ])
   const ctaHref = session?.user ? '/browse' : '/auth'
+
+  const { heroVideoUrl, heroVideoType } = config
+  const ytId = heroVideoType === 'youtube' && heroVideoUrl ? extractYouTubeId(heroVideoUrl) : null
+  const hasVideo = heroVideoType === 'mp4' ? Boolean(heroVideoUrl) : Boolean(ytId)
 
   return (
     <section className="relative -mt-16 min-h-dvh overflow-hidden">
+      {/* MP4 background */}
+      {heroVideoType === 'mp4' && heroVideoUrl && (
+        <video
+          src={heroVideoUrl}
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
+
+      {/* YouTube background — scaled iframe trick: covers any viewport at 16:9 */}
+      {ytId && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&disablekb=1`}
+            allow="autoplay; encrypted-media"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{ width: '177.78vh', height: '56.25vw', minWidth: '100%', minHeight: '100%' }}
+            title="Hero background video"
+          />
+        </div>
+      )}
+
+      {/* Dark overlay so text stays legible over video */}
+      {hasVideo && (
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/25" />
+      )}
+
       <div className="relative flex min-h-dvh items-center px-4 pt-28 pb-16 sm:px-6 md:px-10 md:pt-32 md:pb-20">
         <div className="mx-auto w-full max-w-[1400px]">
           <div>
