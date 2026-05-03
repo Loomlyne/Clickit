@@ -1,5 +1,7 @@
 'use client'
 
+import { usePathname } from '@/i18n/navigation'
+
 const MARQUEE_ITEMS = [
   { tag: 'NEW', text: 'Original shows · premiering now' },
   { tag: 'LIVE', text: 'Streaming from Abu Dhabi' },
@@ -8,6 +10,10 @@ const MARQUEE_ITEMS = [
 ]
 
 export function MarqueeTicker() {
+  const pathname = usePathname()
+  // Hide on landing so the full-screen hero video isn't broken by the dark ticker bar
+  if (pathname === '/' || pathname === '') return null
+
   return (
     <div className="overflow-hidden border-y border-[var(--line)] bg-[var(--bg-0)] py-3">
       <div className="flex animate-[marqueeScroll_30s_linear_infinite] whitespace-nowrap">
