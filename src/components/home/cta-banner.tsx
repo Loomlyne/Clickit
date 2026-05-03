@@ -13,11 +13,7 @@ export async function CtaBanner() {
           style={{ backgroundImage: `url(${backdrop})` }}
         />
       )}
-      <div
-        className="absolute inset-0"
-        style={{ background: 'radial-gradient(ellipse at center, transparent, var(--bg-0))' }}
-      />
-      <div className="relative mx-auto max-w-[720px]">
+<div className="relative mx-auto max-w-[720px]">
         <div className="mono mb-3.5 text-[var(--primary)]">Start the beta</div>
         <h2 className="font-[family-name:var(--font-display)] text-[clamp(40px,6vw,80px)] font-normal leading-none tracking-[-0.02em] mb-6">
           Seven days free. Cancel in the app.
