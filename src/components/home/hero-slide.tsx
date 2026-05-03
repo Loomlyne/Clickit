@@ -2,14 +2,12 @@
 // Sharp, minimal: eyebrow + title + meta + synopsis + 3 buttons
 'use client'
 
-import { motion } from 'motion/react'
 import { Link } from '@/i18n/navigation'
 import { Play, Info } from 'lucide-react'
 
 import { CinematicBackdrop } from '@/components/primitives/cinematic-backdrop'
 import type { ViewShow } from '@/lib/queries'
 import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
-import { CINEMA_EASE } from '@/lib/cinema'
 
 interface HeroSlideProps {
   show: ViewShow
@@ -23,13 +21,7 @@ export function HeroSlide({ show, isActive, firstEpisodeId, isMobile, reducedMot
   const brandColorHex = BRAND_COLOR_HEX[show.brandColor]
 
   return (
-    <motion.div
-      className="absolute inset-0"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: isActive ? 1 : 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.6, ease: CINEMA_EASE }}
-    >
+    <div className="absolute inset-0">
       {/* Background image with cinematic bloom */}
       <CinematicBackdrop
         brandColor={brandColorHex}
@@ -109,6 +101,6 @@ export function HeroSlide({ show, isActive, firstEpisodeId, isMobile, reducedMot
           </Link>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
