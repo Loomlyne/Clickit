@@ -1,13 +1,14 @@
 // Hero banner — matches handoff .hero (78vh, vertical dots on right)
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useReducedMotion } from 'motion/react'
 
 import type { ViewShow } from '@/lib/queries'
 import { HeroSlide } from '@/components/home/hero-slide'
 
 const INTERVAL = 2500
+const SLIDE_DURATION = 600
 const SLIDE_EASE = 'cubic-bezier(0.77, 0, 0.175, 1)'
 
 interface HeroBannerProps {
@@ -18,23 +19,46 @@ interface HeroBannerProps {
 export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
   const shouldReduceMotion = useReducedMotion()
+
+  const n = shows.length
+  // Clone first slide at end — seamless infinite forward loop
+  const extShows = useMemo(() => [...shows, shows[0]], [shows])
+  const extN = extShows.length
 
   useEffect(() => {
     if (isPaused || shouldReduceMotion) return
     const timer = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % shows.length)
+      setActiveIndex((prev) => prev + 1)
     }, INTERVAL)
     return () => clearInterval(timer)
-  }, [isPaused, shouldReduceMotion, shows.length])
+  }, [isPaused, shouldReduceMotion])
+
+  // After landing on the clone (index n), jump back to real index 0 with no transition
+  useEffect(() => {
+    if (activeIndex < n) return
+    const id = setTimeout(() => {
+      setIsResetting(true)
+      setActiveIndex(0)
+    }, SLIDE_DURATION + 20)
+    return () => clearTimeout(id)
+  }, [activeIndex, n])
+
+  // Re-enable transition two frames after the instant reset so no visual jump fires
+  useEffect(() => {
+    if (!isResetting) return
+    const raf = requestAnimationFrame(() =>
+      requestAnimationFrame(() => setIsResetting(false))
+    )
+    return () => cancelAnimationFrame(raf)
+  }, [isResetting])
 
   const handleBlur = useCallback((e: React.FocusEvent) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsPaused(false)
     }
   }, [])
-
-  const n = shows.length
 
   return (
     <div
@@ -44,20 +68,19 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
       onFocus={() => setIsPaused(true)}
       onBlur={handleBlur}
     >
-      {/* Track — all slides side-by-side, pure translateX on advance */}
       <div
         style={{
           display: 'flex',
-          width: `${n * 100}%`,
+          width: `${extN * 100}%`,
           height: '100%',
-          transform: `translateX(-${(activeIndex / n) * 100}%)`,
-          transition: shouldReduceMotion ? 'none' : `transform 0.6s ${SLIDE_EASE}`,
+          transform: `translateX(-${(activeIndex / extN) * 100}%)`,
+          transition: isResetting || shouldReduceMotion ? 'none' : `transform 0.6s ${SLIDE_EASE}`,
         }}
       >
-        {shows.map(({ show, firstEpisodeId }) => (
+        {extShows.map(({ show, firstEpisodeId }, i) => (
           <div
-            key={show.id}
-            style={{ position: 'relative', width: `${100 / n}%`, flexShrink: 0, height: '100%' }}
+            key={`${show.id}-${i}`}
+            style={{ position: 'relative', width: `${100 / extN}%`, flexShrink: 0, height: '100%' }}
           >
             <HeroSlide
               show={show}
@@ -71,7 +94,7 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
       </div>
 
       <div className="sr-only" aria-live="polite">
-        Now showing: {shows[activeIndex].show.title}
+        Now showing: {shows[activeIndex % n].show.title}
       </div>
     </div>
   )
