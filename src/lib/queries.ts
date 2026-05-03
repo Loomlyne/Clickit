@@ -916,6 +916,7 @@ export type ViewShort = {
   genre: string | null
   sortOrder: number
   expiresAt: string | null
+  isFeatured: boolean
 }
 
 export function mapShort(db: DbShort): ViewShort {
@@ -929,8 +930,27 @@ export function mapShort(db: DbShort): ViewShort {
     genre: db.genre,
     sortOrder: db.sort_order ?? 0,
     expiresAt: db.expires_at,
+    isFeatured: db.is_featured ?? false,
   }
 }
+
+export const getFeaturedShorts = unstable_cache(
+  async (): Promise<ViewShort[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('shorts')
+      .select('*')
+      .eq('is_featured', true)
+      .eq('archived', false)
+      .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
+      .order('sort_order', { ascending: true })
+      .limit(12)
+
+    return (data ?? []).map(mapShort)
+  },
+  ['featured-shorts'],
+  { revalidate: 900, tags: ['shorts'] }
+)
 
 export const getShortsForBrowse = unstable_cache(
   async (): Promise<ViewShort[]> => {

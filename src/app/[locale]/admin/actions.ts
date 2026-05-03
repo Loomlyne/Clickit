@@ -1722,6 +1722,27 @@ export async function updateShort(
   }
 }
 
+export async function toggleShortFeatured(
+  id: string,
+  featured: boolean,
+): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('shorts')
+      .update({ is_featured: featured } as never)
+      .eq('id', id)
+    if (error) return { success: false, error: error.message }
+    revalidatePath('/admin/shorts')
+    updateTag('shorts')
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/shorts] toggle featured failed', err)
+    return { success: false, error: err instanceof Error ? err.message : 'Failed' }
+  }
+}
+
 export async function deleteShort(id: string): Promise<ActionResult> {
   try {
     const user = await assertAdmin()

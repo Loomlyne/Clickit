@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Plus, Search, Trash2, Pencil, ExternalLink } from 'lucide-react'
+import { Plus, Search, Trash2, Pencil, ExternalLink, Star } from 'lucide-react'
 
 import {
   Table,
@@ -20,7 +20,7 @@ import {
   AdminTableShell,
   AdminToolbar,
 } from '@/components/admin/admin-shell'
-import { deleteShort } from '@/app/[locale]/admin/actions'
+import { deleteShort, toggleShortFeatured } from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
 import type { Database } from '@/lib/database.types'
 
@@ -36,6 +36,7 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingShort, setDeletingShort] = useState<Short | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
 
   const filtered = useMemo(() => {
@@ -59,6 +60,18 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
       toast.success('Short deleted')
     } else {
       toast.error(result.error || 'Failed to delete')
+    }
+  }
+
+  const handleToggleFeatured = async (s: Short) => {
+    setTogglingId(s.id)
+    const next = !s.is_featured
+    const result = await toggleShortFeatured(s.id, next)
+    setTogglingId(null)
+    if (result.success) {
+      toast.success(next ? 'Marked as featured' : 'Removed from featured')
+    } else {
+      toast.error(result.error || 'Failed to update')
     }
   }
 
@@ -141,6 +154,7 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                   <TableHead>Genre</TableHead>
                   <TableHead>Order</TableHead>
                   <TableHead>Expires</TableHead>
+                  <TableHead className="w-20 text-center">Featured</TableHead>
                   <TableHead className="w-24 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -193,6 +207,18 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                       >
                         {formatExpiry(s.expires_at)}
                       </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`size-8 ${s.is_featured ? 'text-yellow-400 hover:text-yellow-300' : 'text-muted-foreground hover:text-yellow-400'}`}
+                        disabled={togglingId === s.id}
+                        onClick={() => handleToggleFeatured(s)}
+                        title={s.is_featured ? 'Remove from featured' : 'Mark as featured'}
+                      >
+                        <Star className={`size-3.5 ${s.is_featured ? 'fill-yellow-400' : ''}`} />
+                      </Button>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">

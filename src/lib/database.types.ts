@@ -421,6 +421,7 @@ export type Database = {
           expires_at: string | null
           genre: string | null
           id: string
+          is_featured: boolean
           sort_order: number | null
           thumbnail_url: string | null
           title: string
@@ -435,6 +436,7 @@ export type Database = {
           expires_at?: string | null
           genre?: string | null
           id?: string
+          is_featured?: boolean
           sort_order?: number | null
           thumbnail_url?: string | null
           title: string
@@ -449,6 +451,7 @@ export type Database = {
           expires_at?: string | null
           genre?: string | null
           id?: string
+          is_featured?: boolean
           sort_order?: number | null
           thumbnail_url?: string | null
           title?: string
