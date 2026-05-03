@@ -117,31 +117,6 @@ export default async function BrowsePage({
           </div>
         </section>
       )}
-
-      {/* Bottom CTA — matches handoff inline section */}
-      <section
-        className="mx-4 my-10 rounded-[8px] border border-[var(--line)] p-6 text-center sm:mx-6 sm:p-12 md:mx-10 md:my-[60px] md:p-20"
-        style={{ background: 'linear-gradient(180deg, var(--bg-2), var(--bg-3))' }}
-      >
-        <div className="mono mb-3.5" style={{ color: 'var(--accent)', letterSpacing: '0.18em' }}>
-          Upgrade · Annual plan
-        </div>
-        <h2
-          className="font-display m-0 mb-3.5 font-normal text-[clamp(28px,5vw,48px)]"
-          style={{ letterSpacing: '-0.02em' }}
-        >
-          Save 30% with a yearly plan.
-        </h2>
-        <p className="mx-auto mb-6 max-w-[520px] text-[15px] text-[var(--text-dim)] sm:text-base">
-          Two months free, four profiles, 4K streaming, and early access to every new release.
-        </p>
-        <Link
-          href="/membership"
-          className="inline-flex min-h-[44px] items-center rounded-[4px] bg-primary px-[26px] py-3.5 text-[15px] font-medium text-primary-foreground transition-[transform,background] duration-[120ms] hover:bg-white active:translate-y-px"
-        >
-          See membership details
-        </Link>
-      </section>
     </div>
   )
 }

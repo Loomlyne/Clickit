@@ -10,7 +10,6 @@ import {
 
 import type { ViewShow } from '@/lib/queries'
 import { HeroSlide } from '@/components/home/hero-slide'
-import { HeroDots } from '@/components/home/rotation-indicator'
 
 const INTERVAL = 2000
 
@@ -61,14 +60,6 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
           />
         </AnimatePresence>
 
-        {/* Vertical dots — right side, matching handoff .hero-dots */}
-        <HeroDots
-          activeIndex={activeIndex}
-          total={shows.length}
-          intervalMs={INTERVAL}
-          isPaused={isPaused}
-          onSelect={setActiveIndex}
-        />
       </MotionConfig>
 
       <div className="sr-only" aria-live="polite">
