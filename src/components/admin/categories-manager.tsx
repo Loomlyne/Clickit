@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { cn } from '@/lib/utils'
 import { generateSlug } from '@/lib/slug'
 import type { Database } from '@/lib/database.types'
 
@@ -28,6 +29,7 @@ type CategoryDraft = {
   name_en: string
   name_ar: string
   slug: string
+  color: string | null
 }
 
 type EditorState =
@@ -39,6 +41,135 @@ const EMPTY_DRAFT: CategoryDraft = {
   name_en: '',
   name_ar: '',
   slug: '',
+  color: null,
+}
+
+const PALETTE: { hex: string; label: string }[] = [
+  { hex: '#2C3569', label: 'Blue' },
+  { hex: '#9F54A0', label: 'Purple' },
+  { hex: '#50A258', label: 'Green' },
+  { hex: '#DB3F34', label: 'Red' },
+  { hex: '#EA8C2E', label: 'Orange' },
+  { hex: '#F8C623', label: 'Yellow' },
+  { hex: '#8D9CFF', label: 'Blue light' },
+  { hex: '#C592FF', label: 'Purple light' },
+  { hex: '#77D586', label: 'Green light' },
+  { hex: '#FF8B82', label: 'Red light' },
+  { hex: '#FFB46E', label: 'Orange light' },
+  { hex: '#F8D86F', label: 'Yellow light' },
+]
+
+const HEX_RE = /^#[0-9a-fA-F]{6}$/
+
+function ColorPicker({
+  value,
+  onChange,
+}: {
+  value: string | null
+  onChange: (color: string | null) => void
+}) {
+  const [rawInput, setRawInput] = useState(value ?? '')
+
+  useEffect(() => {
+    setRawInput(value ?? '')
+  }, [value])
+
+  const isValidHex = HEX_RE.test(rawInput)
+  const previewColor = isValidHex ? rawInput : null
+
+  function selectSwatch(hex: string) {
+    const upper = hex.toUpperCase()
+    setRawInput(upper)
+    onChange(upper)
+  }
+
+  function handleTextChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value
+    setRawInput(raw)
+    if (HEX_RE.test(raw)) onChange(raw.toUpperCase())
+  }
+
+  function handleNativeColor(e: React.ChangeEvent<HTMLInputElement>) {
+    const hex = e.target.value.toUpperCase()
+    setRawInput(hex)
+    onChange(hex)
+  }
+
+  return (
+    <div className="space-y-3">
+      <Label>Category color</Label>
+
+      {/* Swatch grid — 6 dark brand + 6 light */}
+      <div className="flex flex-wrap gap-2">
+        {PALETTE.map(({ hex, label }) => {
+          const selected = value?.toUpperCase() === hex.toUpperCase()
+          return (
+            <button
+              key={hex}
+              type="button"
+              title={label}
+              onClick={() => selectSwatch(hex)}
+              aria-label={label}
+              className={cn(
+                'size-7 rounded-full transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60',
+                selected && 'ring-2 ring-white ring-offset-2 ring-offset-[#0d0d0d]',
+              )}
+              style={{ background: hex }}
+            />
+          )
+        })}
+      </div>
+
+      {/* Hex input row */}
+      <div className="flex items-center gap-2">
+        {/* OS color wheel trigger */}
+        <div className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-md border border-white/15">
+          <div
+            className="size-full"
+            style={{
+              background: previewColor
+                ?? 'conic-gradient(from 0deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)',
+            }}
+          />
+          <input
+            type="color"
+            value={previewColor ?? '#000000'}
+            onChange={handleNativeColor}
+            className="absolute inset-0 cursor-pointer opacity-0"
+            aria-label="Open color picker"
+          />
+        </div>
+
+        <Input
+          value={rawInput}
+          onChange={handleTextChange}
+          placeholder="#F8C623"
+          maxLength={7}
+          className="w-32 font-mono text-sm"
+          aria-label="Hex color value"
+          spellCheck={false}
+        />
+
+        {value && (
+          <button
+            type="button"
+            onClick={() => { onChange(null); setRawInput('') }}
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Clear
+          </button>
+        )}
+
+        {previewColor && (
+          <span
+            className="size-5 shrink-0 rounded-full border border-white/15"
+            style={{ background: previewColor }}
+            aria-hidden
+          />
+        )}
+      </div>
+    </div>
+  )
 }
 
 function CategoryEditor({
@@ -115,6 +246,13 @@ function CategoryEditor({
         </div>
       </div>
 
+      <div className="mt-5 rounded-lg border border-white/8 bg-white/[0.02] p-4">
+        <ColorPicker
+          value={draft.color}
+          onChange={(color) => onDraftChange((current) => ({ ...current, color }))}
+        />
+      </div>
+
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
         <Button type="submit" disabled={saving}>
           {saving ? 'Saving...' : editing ? 'Save category' : 'Create category'}
@@ -159,6 +297,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
       name_en: category.name_en,
       name_ar: category.name_ar,
       slug: category.slug,
+      color: category.color ?? null,
     })
     setEditorState({ mode: 'edit', categoryId: category.id })
   }
@@ -172,6 +311,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
       name_ar: draft.name_ar.trim(),
       slug: draft.slug.trim() || generateSlug(draft.name_en),
       sort_order: editingCategory?.sort_order ?? categories.length,
+      color: draft.color ?? null,
     }
 
     const result = editingId
@@ -297,7 +437,16 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
                   <TableRow>
                     <TableCell>
                       <div className="min-w-[180px]">
-                        <div className="font-medium text-foreground">{category.name_en}</div>
+                        <div className="flex items-center gap-2">
+                          {category.color && (
+                            <span
+                              className="size-2.5 shrink-0 rounded-full"
+                              style={{ background: category.color }}
+                              aria-hidden
+                            />
+                          )}
+                          <span className="font-medium text-foreground">{category.name_en}</span>
+                        </div>
                         <div className="mt-1 text-xs text-muted-foreground">/{category.slug}</div>
                         <div className="mt-1 text-xs text-muted-foreground md:hidden">{category.name_ar}</div>
                       </div>

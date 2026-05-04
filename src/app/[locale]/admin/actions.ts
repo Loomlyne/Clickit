@@ -131,6 +131,7 @@ const categorySchema = z.object({
   name_ar: z.string().trim().min(1, 'Arabic name is required').max(80),
   slug: z.string().trim().min(1, 'Slug is required').max(80),
   icon: z.string().trim().max(40).optional().nullable(),
+  color: z.string().trim().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
   sort_order: z.number().int().min(0).default(0),
 })
 
