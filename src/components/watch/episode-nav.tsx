@@ -13,7 +13,7 @@ interface EpisodeNavProps {
 }
 
 const baseClasses =
-  'flex-1 min-h-[44px] rounded-[8px] border border-[var(--line)] bg-[var(--bg-2)] p-3.5 transition-[background,border-color,transform] duration-150'
+  'flex-1 min-h-[44px] rounded-[14px] border border-[var(--line)] bg-[var(--bg-2)] p-3.5 transition-[background,border-color,transform] duration-150'
 
 const enabledClasses =
   'group text-[var(--text-dim)] hover:bg-[var(--bg-3)] hover:border-[var(--line-2)] hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'

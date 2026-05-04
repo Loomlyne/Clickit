@@ -95,7 +95,7 @@ export function AdminHeader() {
                 onTouchStart={() => prefetchRoute(tab.href)}
                 prefetch
                 className={cn(
-                  'rounded-[16px] px-4 py-2 text-sm font-medium transition-all',
+                  'rounded-[24px] px-4 py-2 text-sm font-medium transition-all',
                   isActive
                     ? 'bg-[var(--primary)] text-[var(--primary-foreground)]'
                     : 'text-muted-foreground hover:text-foreground'

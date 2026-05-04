@@ -80,7 +80,7 @@ export function SignupForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 md:space-y-4">
       {serverError && (
-        <div className="rounded-[8px] px-4 py-3 text-sm bg-[#DB3F34]/10 border border-[#DB3F34]/25 text-red-300">
+        <div className="rounded-[14px] px-4 py-3 text-sm bg-[#DB3F34]/10 border border-[#DB3F34]/25 text-red-300">
           <div className="flex gap-2.5 items-start">
             <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
             <span>{serverError}</span>
@@ -124,7 +124,7 @@ export function SignupForm() {
           {[1, 2, 3, 4].map((level) => (
             <span
               key={level}
-              className={`h-1 rounded-[8px] ${passwordScore >= level ? 'bg-[var(--primary)]' : 'bg-[var(--bg-3)]'}`}
+              className={`h-1 rounded-[14px] ${passwordScore >= level ? 'bg-[var(--primary)]' : 'bg-[var(--bg-3)]'}`}
             />
           ))}
         </div>
@@ -172,7 +172,7 @@ export function SignupForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-[8px] bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full rounded-[14px] bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isSubmitting ? t('signUpButton') + '…' : t('signUpButton')}
       </button>

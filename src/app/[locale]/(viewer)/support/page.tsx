@@ -29,7 +29,7 @@ export default async function SupportPage() {
 
   return (
     <div id="support-top" className="px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-8 md:px-12">
-      <div className="grid gap-px overflow-hidden rounded-[12px] border border-[var(--line)] bg-[var(--line)] lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid gap-px overflow-hidden rounded-[18px] border border-[var(--line)] bg-[var(--line)] lg:grid-cols-[1.05fr_0.95fr]">
         {/* Left — info panel */}
         <div className="bg-[var(--bg-1)] p-6 sm:p-8 lg:p-10">
           <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--text-mute)] sm:mb-4">{t('pageTitle')}</p>

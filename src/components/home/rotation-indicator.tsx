@@ -29,7 +29,7 @@ export function HeroDots({
         <div
           key={index}
           onClick={() => onSelect(index)}
-          className="relative w-[3px] cursor-pointer overflow-hidden rounded-[4px] bg-white/20 transition-all duration-200 ease-[var(--ease)]"
+          className="relative w-[3px] cursor-pointer overflow-hidden rounded-[8px] bg-white/20 transition-all duration-200 ease-[var(--ease)]"
           style={{ height: index === activeIndex ? 60 : 28 }}
         >
           {index === activeIndex && (

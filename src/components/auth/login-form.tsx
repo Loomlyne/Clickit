@@ -98,7 +98,7 @@ export function LoginForm() {
         </button>
 
         {resetSent ? (
-          <div className="rounded-[8px] px-4 py-4 text-sm bg-[#50A258]/10 border border-[#50A258]/25 text-green-300">
+          <div className="rounded-[14px] px-4 py-4 text-sm bg-[#50A258]/10 border border-[#50A258]/25 text-green-300">
             <p className="font-medium">{t('resetEmailSent')}</p>
             <p className="mt-1 text-white/52">
               {t('resetEmailDescription')}
@@ -107,7 +107,7 @@ export function LoginForm() {
         ) : (
           <form onSubmit={forgotForm.handleSubmit(onForgot)} className="space-y-3 md:space-y-4">
             {serverError && (
-              <div className="rounded-[8px] px-4 py-3 text-sm bg-[#DB3F34]/10 border border-[#DB3F34]/25 text-red-300">
+              <div className="rounded-[14px] px-4 py-3 text-sm bg-[#DB3F34]/10 border border-[#DB3F34]/25 text-red-300">
                 <div className="flex gap-2.5 items-start">
                   <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                   <span>{serverError}</span>
@@ -130,7 +130,7 @@ export function LoginForm() {
             <button
               type="submit"
               disabled={forgotForm.formState.isSubmitting}
-              className="w-full rounded-[8px] bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-[14px] bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {forgotForm.formState.isSubmitting ? t('resetButton') + '…' : t('resetButton')}
             </button>
@@ -143,7 +143,7 @@ export function LoginForm() {
   return (
     <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-3 md:space-y-4">
       {serverError && (
-        <div className="rounded-[8px] px-4 py-3 text-sm bg-[#DB3F34]/10 border border-[#DB3F34]/25 text-red-300">
+        <div className="rounded-[14px] px-4 py-3 text-sm bg-[#DB3F34]/10 border border-[#DB3F34]/25 text-red-300">
           <div className="flex gap-2.5 items-start">
             <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
             <span>{serverError}</span>
@@ -192,7 +192,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={loginForm.formState.isSubmitting}
-        className="w-full rounded-[8px] bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full rounded-[14px] bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loginForm.formState.isSubmitting ? t('signInButton') + '…' : t('signInButton')}
       </button>
@@ -208,14 +208,14 @@ export function LoginForm() {
         <button
           type="button"
           onClick={() => toast.info(t('googleSSOComingSoon'))}
-          className="inline-flex items-center justify-center rounded-[8px] border border-[var(--line)] bg-[var(--bg-2)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--bg-3)]"
+          className="inline-flex items-center justify-center rounded-[14px] border border-[var(--line)] bg-[var(--bg-2)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--bg-3)]"
         >
           Google
         </button>
         <button
           type="button"
           onClick={() => toast.info(t('appleSSOComingSoon'))}
-          className="inline-flex items-center justify-center rounded-[8px] border border-[var(--line)] bg-[var(--bg-2)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--bg-3)]"
+          className="inline-flex items-center justify-center rounded-[14px] border border-[var(--line)] bg-[var(--bg-2)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--bg-3)]"
         >
           Apple
         </button>

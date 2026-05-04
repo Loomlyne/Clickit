@@ -22,7 +22,7 @@ export function ReviewsSection({ reviews }: ReviewsSectionProps) {
       <h2 className="font-display text-xl font-medium text-foreground">Reviews</h2>
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
         {reviews.map((review) => (
-          <Card key={review.id} className="rounded-[8px] border border-[var(--line)] bg-[var(--bg-1)]">
+          <Card key={review.id} className="rounded-[14px] border border-[var(--line)] bg-[var(--bg-1)]">
             <CardContent className="p-4">
               <div className="flex items-center gap-1">
                 {Array.from({ length: 5 }).map((_, i) => (

@@ -18,7 +18,7 @@ export default function SpacingPage() {
         </p>
         <div className="mt-6 space-y-4">
           {spacingTokens.map((token) => (
-            <div key={token.name} className="flex items-center gap-4 rounded-[36px] border border-white/10 bg-black/20 px-4 py-4">
+            <div key={token.name} className="flex items-center gap-4 rounded-full border border-white/10 bg-black/20 px-4 py-4">
               <span className="w-10 font-mono text-sm text-muted-foreground">
                 {token.name}
               </span>
@@ -40,8 +40,8 @@ export default function SpacingPage() {
             Radius rules
           </h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-[22px] border border-white/10 bg-black/20 p-5 text-sm text-muted-foreground">12px for buttons and inputs</div>
-            <div className="rounded-[36px] border border-white/10 bg-black/20 p-5 text-sm text-muted-foreground">20px for nested cards</div>
+            <div className="rounded-[32px] border border-white/10 bg-black/20 p-5 text-sm text-muted-foreground">12px for buttons and inputs</div>
+            <div className="rounded-full border border-white/10 bg-black/20 p-5 text-sm text-muted-foreground">20px for nested cards</div>
             <div className="rounded-full border border-white/10 bg-black/20 p-5 text-sm text-muted-foreground">28px for page-level panels</div>
           </div>
         </div>
@@ -54,7 +54,7 @@ export default function SpacingPage() {
             44px remains the floor for mobile interactions. Dense admin layouts can be visually tighter, but active targets should still meet touch requirements.
           </p>
           <div className="mt-6 flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-[22px] border-2 border-dashed border-primary/60 bg-black/20">
+            <div className="flex h-11 w-11 items-center justify-center rounded-[32px] border-2 border-dashed border-primary/60 bg-black/20">
               <span className="font-mono text-xs text-muted-foreground">44</span>
             </div>
             <span className="font-mono text-sm text-muted-foreground">44 x 44px minimum</span>

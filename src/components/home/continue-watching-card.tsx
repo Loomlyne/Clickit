@@ -16,7 +16,7 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
   return (
     <Link
       href={`/watch/${item.episodeId}`}
-      className="poster group relative block flex-shrink-0 cursor-pointer overflow-hidden rounded-[12px] bg-[var(--bg-2)] transition-transform duration-[250ms] ease-[var(--ease)] hover:-translate-y-1 hover:z-[2]"
+      className="poster group relative block flex-shrink-0 cursor-pointer overflow-hidden rounded-[18px] bg-[var(--bg-2)] transition-transform duration-[250ms] ease-[var(--ease)] hover:-translate-y-1 hover:z-[2]"
       style={{ width: 'var(--landscape-w)', aspectRatio: '16 / 9' }}
     >
       {thumbnailUrl ? (
@@ -38,7 +38,7 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
           {item.showTitle} · S{item.seasonNumber} E{item.episodeNumber}
         </div>
         <div className="mt-2.5 flex gap-1.5">
-          <span className="inline-flex items-center gap-1.5 rounded-[8px] bg-primary px-3 py-[7px] text-[12.5px] font-medium text-primary-foreground">
+          <span className="inline-flex items-center gap-1.5 rounded-[14px] bg-primary px-3 py-[7px] text-[12.5px] font-medium text-primary-foreground">
             <Play className="size-3 fill-current" /> Continue
           </span>
         </div>

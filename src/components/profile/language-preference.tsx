@@ -50,14 +50,14 @@ export function LanguagePreference({ current }: { current: Locale }) {
             onClick={() => select(locale)}
             disabled={isPending}
             className={cn(
-              'relative flex-1 rounded-[8px] border p-4 text-start transition-all duration-200 disabled:opacity-60',
+              'relative flex-1 rounded-[14px] border p-4 text-start transition-all duration-200 disabled:opacity-60',
               active
                 ? 'border-[var(--line-2)] bg-[var(--bg-2)]'
                 : 'border-[var(--line)] bg-[var(--bg-1)] hover:border-[var(--line-2)] hover:bg-[var(--bg-2)]'
             )}
           >
             {active && (
-              <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-[4px] bg-[var(--accent-yellow)]">
+              <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-[8px] bg-[var(--accent-yellow)]">
                 <Check className="h-3 w-3 text-[var(--accent-yellow-fg)]" strokeWidth={2.5} />
               </span>
             )}

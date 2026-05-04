@@ -74,7 +74,7 @@ export default async function ComingSoonPage() {
                     className="grid grid-cols-1 gap-6 border-t border-[var(--line)] py-8 md:grid-cols-[320px_1fr_auto] md:gap-10"
                   >
                     {/* Landscape thumbnail */}
-                    <div className="w-full overflow-hidden rounded-[8px] bg-[var(--bg-2)] md:w-[320px]">
+                    <div className="w-full overflow-hidden rounded-[14px] bg-[var(--bg-2)] md:w-[320px]">
                       {thumbnail ? (
                         <Image
                           src={thumbnail}
@@ -113,7 +113,7 @@ export default async function ComingSoonPage() {
                     <div className="flex items-center">
                       <Link
                         href={`/updates?show=${encodeURIComponent(show.slug)}`}
-                        className="mono rounded-[8px] border border-[var(--line-2)] bg-transparent px-5 py-2.5 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]"
+                        className="mono rounded-[14px] border border-[var(--line-2)] bg-transparent px-5 py-2.5 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]"
                       >
                         Remind me
                       </Link>
@@ -136,7 +136,7 @@ export default async function ComingSoonPage() {
             <Link href="/" className="mt-6 inline-block">
               <Button
                 variant="outline"
-                className="mono rounded-[8px] border-[var(--line-2)] text-[12px]"
+                className="mono rounded-[14px] border-[var(--line-2)] text-[12px]"
               >
                 {tCommon('browseShows')}
               </Button>

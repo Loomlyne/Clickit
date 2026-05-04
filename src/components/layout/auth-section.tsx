@@ -74,13 +74,13 @@ export function AuthSection({ initialUser, isLanding }: AuthSectionProps) {
         <>
           <Link
             href="/auth"
-            className="inline-flex items-center justify-center rounded-[8px] px-3 py-[7px] text-[12.5px] font-medium border border-[var(--line-2)] text-[var(--text)] transition-all duration-150 hover:bg-white/[0.04]"
+            className="inline-flex items-center justify-center rounded-[14px] px-3 py-[7px] text-[12.5px] font-medium border border-[var(--line-2)] text-[var(--text)] transition-all duration-150 hover:bg-white/[0.04]"
           >
             Sign in
           </Link>
           <Link
             href="/auth"
-            className="inline-flex items-center justify-center rounded-[8px] px-3 py-[7px] text-[12.5px] font-medium bg-[var(--primary)] text-[var(--primary-foreground)] transition-all duration-150 hover:bg-white"
+            className="inline-flex items-center justify-center rounded-[14px] px-3 py-[7px] text-[12.5px] font-medium bg-[var(--primary)] text-[var(--primary-foreground)] transition-all duration-150 hover:bg-white"
           >
             Start free
           </Link>
