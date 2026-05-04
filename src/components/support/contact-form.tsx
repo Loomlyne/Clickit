@@ -100,19 +100,20 @@ export function ContactForm() {
 
       <div>
         <Label htmlFor="subject">{t('subjectLabel')}</Label>
-        <Input id="subject" placeholder={t('subjectPlaceholder')} className="mt-1.5" {...register('subject')} />
+        <Input id="subject" placeholder={t('subjectPlaceholder')} className="mt-1.5 rounded-[20px]" {...register('subject')} />
         {errors.subject && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.subject.message as never)}</p>}
       </div>
 
       <div>
         <Label htmlFor="message">{t('messageLabel')}</Label>
-        <Textarea id="message" placeholder={t('messagePlaceholder')} rows={5} className="mt-1.5" {...register('message')} />
+        <Textarea id="message" placeholder={t('messagePlaceholder')} rows={5} className="mt-1.5 rounded-[20px]" {...register('message')} />
         {errors.message && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.message.message as never)}</p>}
       </div>
 
-      <div className="flex items-start gap-2">
+      <div className="flex items-start justify-start gap-2">
         <Checkbox
           id="terms"
+          className="size-[23px]"
           checked={termsValue}
           onCheckedChange={(checked) => setValue('terms', checked === true)}
         />

@@ -80,15 +80,6 @@ export function WatchPageContent({
             E{String(episode.episodeNumber).padStart(2, '0')} · {episode.title}
           </span>
         </div>
-        {/* Right-side links — desktop only */}
-        <div className="ms-auto hidden gap-2 md:flex">
-          <Link href="/browse" className="inline-flex items-center rounded-full border border-[var(--line-2)] px-3 py-[7px] text-[12.5px] transition-colors hover:bg-white/[0.04]">
-            {isArabic ? 'تصفح' : 'Browse'}
-          </Link>
-          <Link href={`/series/${show.slug}`} className="inline-flex items-center rounded-full border border-[var(--line-2)] px-3 py-[7px] text-[12.5px] transition-colors hover:bg-white/[0.04]">
-            {isArabic ? 'العودة للمسلسل' : 'Back to show'}
-          </Link>
-        </div>
       </div>
 
       {/* Main grid — matches handoff .yt-layout */}

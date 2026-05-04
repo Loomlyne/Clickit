@@ -64,9 +64,6 @@ export function EpisodeNav({ prev, next }: EpisodeNavProps) {
             <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
               {t('next')}
             </span>
-            <span className="block text-sm font-bold text-foreground truncate">
-              {next.title}
-            </span>
           </div>
           <ChevronRight className="size-5 flex-shrink-0 rtl:scale-x-[-1]" />
         </Link>

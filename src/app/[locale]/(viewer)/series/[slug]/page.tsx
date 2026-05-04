@@ -8,7 +8,6 @@ import { SeriesDetailHero } from '@/components/series/series-detail-hero'
 import { SeriesDetailContent } from '@/components/series/series-detail-content'
 import { ReviewComposer } from '@/components/series/review-composer'
 import { ContentRail } from '@/components/home/content-rail'
-import { CtaBanner } from '@/components/home/cta-banner'
 import {
   getShowBySlug,
   getSeasonsByShowId,
@@ -194,9 +193,6 @@ export default async function SeriesDetailPage({ params }: Props) {
         </div>
       )}
 
-      <div className="mt-12 pb-8">
-        <CtaBanner />
-      </div>
     </div>
   )
 }
