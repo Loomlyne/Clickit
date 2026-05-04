@@ -20,7 +20,7 @@ export default function DesignSystemLayout({
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-4 pb-20 pt-10 md:px-8">
-        <header className="rounded-full border border-white/10 bg-white/[0.04] p-6 shadow-[0_28px_100px_rgba(0,0,0,0.28)] md:p-8">
+        <header className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_28px_100px_rgba(0,0,0,0.28)] md:p-8">
           <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
             Clickit Design System
           </p>
