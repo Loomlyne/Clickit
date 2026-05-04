@@ -481,6 +481,8 @@ html[lang="ar"] [class*="tracking-["] {
   /* Rails */
   .rail {
     padding: 20px 16px 8px;
+    /* cards use inline style width: var(--landscape-w); override to fill grid columns */
+    --landscape-w: 100%;
   }
   .rail-title {
     font-size: 20px;
