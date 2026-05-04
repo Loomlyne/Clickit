@@ -40,3 +40,20 @@
 **Planned archive:** `.planning/milestones/v2.1-ROADMAP.md`, `.planning/milestones/v2.1-REQUIREMENTS.md`
 
 ---
+
+## v2.2 Immersive Watch (In Progress: started 2026-05-05)
+
+**Scope:** Full watch page redesign — fullscreen-first video, swipe-up episode tray
+**Planned phases:** 3 phases (32–34), 15 requirements
+**Status:** Planning
+
+**Target outcomes:**
+
+1. Watch page opens with video filling 100% viewport — no Navbar, Footer, or layout chrome
+2. Auto-hide top overlay (back, title, actions, prev/next arrows) fades in on interaction, out after 3s idle
+3. Persistent peek handle at viewport bottom; swipe-up reveals Vaul bottom sheet with full episode list
+4. Episode tray: season selector tabs + scrollable vertical list; tap to navigate; player keeps playing
+
+**Planned archive:** `.planning/milestones/v2.2-ROADMAP.md`, `.planning/milestones/v2.2-REQUIREMENTS.md`
+
+---

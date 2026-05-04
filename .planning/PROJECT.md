@@ -17,44 +17,30 @@ Viewers enter the platform, discover a show, pick an episode, and watch immediat
 
 The platform is live with the full viewer experience (cinematic home page, series browsing, watch page with autoplay, personalization) and admin dashboard (show/season/episode CRUD, artwork upload, archive management). All 15 CIT programs are seeded. Content is served from Supabase with Postgres FTS search and RLS security.
 
-## Current Milestone: v2.0 Full Visual Redesign
+## Current Milestone: v2.2 Immersive Watch
 
-**Goal:** Replace the entire UI with a new editorial design system — Newsreader (serif display), Space Grotesk (UI sans), JetBrains Mono (mono labels), electric yellow (#ffcc00) accent on near-black (#0a0a0a) backgrounds — across ALL viewer pages and the admin portal. Add Shorts overlay, review composer with real-time DB, and marquee ticker. Nothing from the old visual design survives.
+**Goal:** Rebuild the watch page as a fullscreen-first experience — video fills the entire viewport on load with zero UI chrome visible; scrolling/swiping up from the bottom edge reveals an episode tray showing all episodes in the season.
 
-**User framing (verbatim):** "i want allllll design i send to you all pages sections, features available to be planned and implemented... dont keep anything from the old design, also as because you have the design system i want you to apply it on the admin portal also"
-
-**Design source:** Claude Design handoff bundle at `/tmp/clickit-design/clickit/project/` — styles.css (~3800 lines), 8 JSX screen files, data.jsx, app.jsx, auth.jsx. Backup of old design at git tag `design-backup-2026-04-24`.
+**User framing (verbatim):** "i want the video to open on full screen from the start and nothing will appear. but also when i am watching the video on full screen and i scroll from down to up then the next episodes of the show will appear"
 
 **Target features:**
-- New design tokens: fonts (Newsreader, Space Grotesk, JetBrains Mono), colors (#0a0a0a base, #ffcc00 accent), radii (4px), motion (cubic-bezier(0.2,0.8,0.2,1))
-- Redesigned Header: dot logo + "CLICKIT" text, nav links, sign in/start free buttons, no search bar
-- Redesigned Footer: editorial "Click*it.*" wordmark, newsletter signup, 5-column grid, social icons, live status
-- Landing page: editorial split hero (copy + poster collage), scrolling marquee, stats bar, show grid, "Why Clickit" features, genre tiles, FAQ accordion, CTA banner
-- Browse page: full-bleed hero carousel with dot indicators, continue watching rail, Shorts/Reels section (9:16 cards), landscape show cards, bottom CTA
-- Series detail: cinematic hero, cast row, season tabs, episode list with hover-play, review composer with star rating (persisted to Supabase, real-time), meta sidebar, "More like this" rail
-- Watch page: YouTube-style layout (player on top, title+actions, prev/next cards, episode sidebar)
-- Shorts overlay: full-screen vertical reel viewer (9:16), segmented progress, creator info, action rail, keyboard+swipe nav
-- Auth redesign: split-screen layout (editorial hero left, form right), OAuth, password strength meter
-- Supporting pages restyled: Search, My List, Profile (with admin button), Coming Soon, Support
-- Admin portal: same design tokens applied (backgrounds, accent, fonts, radii) — functionality unchanged
-- Mobile responsive: breakpoints at 1180, 1100, 960, 900, 720, 560, 420px
+- Watch route in its own `(watch)/` route group — no Navbar, Footer, Silk background, or MarqueeTicker
+- Video fills 100dvw × 100dvh on load (`h-dvh` + `min-h-svh`, not `100vh`)
+- Auto-hide top chrome (back button, title, S/E badge, watchlist/like/share) — 3s idle fade
+- Edge-anchored prev/next arrows, fade with chrome
+- Persistent 24px peek handle at viewport bottom (show name + episode counter)
+- Vaul-based bottom sheet with 3 snap points (peek / 50dvh / 95dvh)
+- Tray: season selector tabs + scrollable vertical episode list (thumb + S/E + title + duration + progress bar)
+- Player keeps playing while tray open; `loadVideoById()` for episode switches (no iframe remount)
 
-**New DB table:** `reviews` — user reviews with star rating, persisted to Supabase, visible to all users in real-time via Supabase Realtime
-
-**Superseded milestones:**
-- v1.1 Phases 14-17 (RTL CSS + translations on old components) — superseded, will redo on new components
-- v1.2 Editorial Feature Parity — superseded, editorial design IS now the main design
-
-**What carries over from v1.1:**
-- Phases 12-13 (i18n infrastructure, route restructure, auth safety) — all still valid
-- next-intl routing, locale-aware navigation, proxy.ts cookie merge — unchanged
+**Stack additions:** Zero. All capabilities in existing stack (motion, vaul/shadcn Drawer, CSS dvh).
 
 **Explicit exclusions:**
-- Arabic/RTL for new components — deferred to v2.1
-- Tweaks panel from prototype — prototyping tool only, not production
-- Self-hosted video — YouTube embeds stay
-- AI recommendations — not enough content
-- Translation of new component strings — deferred to v2.1
+- Custom video scrubber (YouTube ToS)
+- Hiding YouTube native controls (ToS violation)
+- Tray covering the player (ToS: can't obscure controls)
+- Swipe-left/right for next episode (iOS swipe-back collision)
+- Ambient glow, PiP, Theater Mode (deferred to v2.3)
 
 ## Requirements
 
@@ -82,12 +68,11 @@ The platform is live with the full viewer experience (cinematic home page, serie
 - ✓ Catalog-aware empty states and browse redirect — v1.0
 - ✓ Profile page with watchlist preview and watch history — v1.0
 
-### Active (v1.1 — in progress)
+### Active (v2.2 — in progress)
 
-- [ ] Global Layout + RTL CSS (Phase 14) — Cairo font, logical-property migration, directional icons, Embla RTL
-- [ ] Viewer Pages Translation (Phase 15) — 13 viewer pages fully translated via useTranslations()
-- [ ] Admin Pages Translation (Phase 16) — 5 admin views operable in Arabic
-- [ ] Content + Polish (Phase 17) — dynamic strings, metadata, BiDi guards, human review
+- [ ] Watch Route Isolation & Fullscreen Shell (Phase 32) — WATCH-01..06
+- [ ] Auto-Hide Chrome Layer (Phase 33) — CHROME-01, CHROME-02
+- [ ] Episode Tray (Phase 34) — TRAY-01..07
 
 ### Validated (v1.1)
 
@@ -246,4 +231,4 @@ This document evolves at phase transitions and milestone boundaries.
 5. All milestone decisions added to Key Decisions
 
 ---
-*Last updated: 2026-04-24 — Phase 13 complete (UAT 8/8), v1.1 routing + auth requirements validated, advancing to Phase 14*
+*Last updated: 2026-05-05 — v2.2 Immersive Watch started, 3 phases (32–34), 15 requirements, roadmap ready*
