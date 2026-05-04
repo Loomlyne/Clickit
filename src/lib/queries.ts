@@ -39,6 +39,7 @@ export type ViewCategory = {
   nameAr: string
   slug: string
   icon: string | null
+  color: string | null
   sortOrder: number
 }
 
@@ -82,6 +83,7 @@ export function mapCategory(db: DbCategory): ViewCategory {
     nameAr: db.name_ar,
     slug: db.slug,
     icon: db.icon,
+    color: db.color ?? null,
     sortOrder: db.sort_order,
   }
 }

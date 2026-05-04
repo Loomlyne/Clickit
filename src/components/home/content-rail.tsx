@@ -10,6 +10,7 @@ import type { ViewShow } from '@/lib/queries'
 interface ContentRailProps {
   title: string
   eyebrow?: string
+  accentColor?: string
   shows: ViewShow[]
   minCards?: number
   seeAllHref?: string
@@ -18,6 +19,7 @@ interface ContentRailProps {
 export function ContentRail({
   title,
   eyebrow,
+  accentColor,
   shows,
   minCards = 6,
   seeAllHref,
@@ -31,7 +33,14 @@ export function ContentRail({
       {/* Rail header */}
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          {eyebrow && <div className="mono mb-1.5">{eyebrow}</div>}
+          {eyebrow && (
+            <div
+              className="mono mb-1.5"
+              style={accentColor ? { color: accentColor } : undefined}
+            >
+              {eyebrow}
+            </div>
+          )}
           <h2 className="font-display m-0 text-[26px]">{title}</h2>
         </div>
         {seeAllHref ? (

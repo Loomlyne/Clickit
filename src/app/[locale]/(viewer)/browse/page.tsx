@@ -78,9 +78,17 @@ export default async function BrowsePage({
 
       {activeCategory && (
         <section className="px-10 pt-6">
-          <div className="flex flex-col gap-3 rounded-[8px] border border-[var(--line)] bg-[var(--bg-2)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div
+            className="flex flex-col gap-3 rounded-[8px] border border-[var(--line)] bg-[var(--bg-2)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between"
+            style={activeCategory.color ? { borderLeftColor: activeCategory.color, borderLeftWidth: '3px' } : undefined}
+          >
             <div>
-              <div className="mono mb-1.5">{locale === 'ar' ? 'التصنيف النشط' : 'Active category'}</div>
+              <div
+                className="mono mb-1.5"
+                style={activeCategory.color ? { color: activeCategory.color } : undefined}
+              >
+                {locale === 'ar' ? 'التصنيف النشط' : 'Active category'}
+              </div>
               <h2 className="font-display text-[24px]">
                 {locale === 'ar' ? activeCategory.nameAr : activeCategory.nameEn}
               </h2>
@@ -100,6 +108,7 @@ export default async function BrowsePage({
           key={category.id}
           title={locale === 'ar' ? category.nameAr : category.nameEn}
           eyebrow={category.icon || (locale === 'ar' ? 'مختارات حسب التصنيف' : 'Curated category picks')}
+          accentColor={category.color ?? undefined}
           shows={category.shows}
           seeAllHref={`/browse?category=${encodeURIComponent(category.slug)}`}
         />

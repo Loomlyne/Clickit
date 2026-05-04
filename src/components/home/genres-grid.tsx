@@ -1,62 +1,30 @@
 import { getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
-import { getDistinctGenres } from '@/lib/queries'
+import { getCategories } from '@/lib/queries'
 import { getAppConfig } from '@/lib/config'
 import { SectionHeader } from '@/components/primitives/section-header'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 
-// Fallback palette — used when a genre has no admin override in genre_config.
-const GENRE_COLORS: Record<string, string> = {
-  Entertainment: '#9F54A0',
-  Documentary: '#2C3569',
-  Health: '#50A258',
-  Tech: '#2C3569',
-  Kids: '#F8C623',
-  Music: '#9F54A0',
-  Comedy: '#EA8C2E',
-  Cooking: '#DB3F34',
-  Travel: '#50A258',
-  Poetry: '#9F54A0',
-  Cinema: '#DB3F34',
-  Drama: '#9F54A0',
-  Talk: '#2C3569',
-  Business: '#50A258',
-  Quiz: '#F8C623',
-  Podcast: '#9F54A0',
-}
+const DEFAULT_COLOR = '#2C3569'
 
 export async function GenresGrid() {
-  const [genres, config, locale] = await Promise.all([getDistinctGenres(), getAppConfig(), getLocale()])
+  const [categories, config, locale] = await Promise.all([getCategories(), getAppConfig(), getLocale()])
   const isArabic = locale === 'ar'
 
-  // Honor admin feature flag.
   if (!config.flags.showGenresGrid) return null
-  if (genres.length === 0) return null
-
-  // Admin overrides take precedence; hidden genres are filtered out entirely.
-  const visibleGenres = genres.filter((g) => !config.genreConfig[g]?.hidden)
-
-  // Apply admin-configured ordering (undefined order = keep default position).
-  const orderedGenres = [...visibleGenres].sort((a, b) => {
-    const orderA = config.genreConfig[a]?.order ?? Number.POSITIVE_INFINITY
-    const orderB = config.genreConfig[b]?.order ?? Number.POSITIVE_INFINITY
-    return orderA - orderB
-  })
-
-  if (orderedGenres.length === 0) return null
+  if (categories.length === 0) return null
 
   return (
     <ScrollReveal>
       <section className="pt-1">
         <SectionHeader title={isArabic ? 'تصفح حسب النوع' : 'Browse by Genre'} />
         <div className="scrollbar-hide flex gap-3 overflow-x-auto px-6 py-2 md:px-12">
-          {orderedGenres.map((genre) => {
-            const override = config.genreConfig[genre]?.color
-            const color = override ?? GENRE_COLORS[genre] ?? '#2C3569'
+          {categories.map((category) => {
+            const color = category.color ?? DEFAULT_COLOR
             return (
               <Link
-                key={genre}
-                href={`/browse?genre=${encodeURIComponent(genre)}`}
+                key={category.slug}
+                href={`/browse?category=${encodeURIComponent(category.slug)}`}
                 className="group flex-shrink-0"
               >
                 <div
@@ -70,7 +38,7 @@ export async function GenresGrid() {
                     className="whitespace-nowrap text-sm font-medium"
                     style={{ color }}
                   >
-                    {genre}
+                    {isArabic ? category.nameAr : category.nameEn}
                   </span>
                 </div>
               </Link>
