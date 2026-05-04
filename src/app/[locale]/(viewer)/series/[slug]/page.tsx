@@ -66,13 +66,20 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   const show = mapShow(dbShow, locale)
 
-  // Fetch seasons + all episodes + cast in parallel
-  const supabasePublic = await createClient()
-  const [seasons, allEpisodes, { data: castMembers }] = await Promise.all([
+  // Fetch seasons + episodes + cast + session + streaming catalog all in parallel.
+  // getSession() is a fast cookie read (~5ms) but was previously awaited sequentially
+  // after the 3-way DB fetch. Moving it into the same Promise.all means user-specific
+  // data and "more like this" can be resolved in a single follow-up wave.
+  const supabase = await createClient()
+  const [seasons, allEpisodes, { data: castMembers }, { data: { session } }, allStreaming, t] = await Promise.all([
     getSeasonsByShowId(dbShow.id),
     getEpisodesByShowId(dbShow.id),
-    supabasePublic.from('show_cast').select('*').eq('show_id', dbShow.id).order('sort_order'),
+    supabase.from('show_cast').select('*').eq('show_id', dbShow.id).order('sort_order'),
+    supabase.auth.getSession(),
+    getStreamingShows(),
+    getTranslations('show'),
   ])
+  const user = session?.user ?? null
 
   const viewSeasons = seasons.map((s) => mapSeason(s, locale))
 
@@ -97,30 +104,18 @@ export default async function SeriesDetailPage({ params }: Props) {
     }
   }
 
-  // User watchlist state + episode progress.
-  // proxy.ts already validated the JWT — getSession() reads the cookie locally.
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user ?? null
-  const [inWatchlist, isLiked] = user
+  // User-specific data: watchlist, liked, and episode progress all in one parallel wave.
+  // allEpisodeIds is in-memory (no query) so it's safe to compute here.
+  const allEpisodeIds = Object.values(viewEpisodesBySeason).flat().map(e => e.id)
+  const [inWatchlist, isLiked, episodesProgressMap] = user
     ? await Promise.all([
         getShowWatchlistState(user.id, dbShow.id),
         getShowLikeState(user.id, dbShow.id),
+        getEpisodesProgress(user.id, allEpisodeIds),
       ])
-    : [false, false]
+    : [false, false, {} as Record<string, { progressPercent: number; completed: boolean }>]
 
-  // Batch-fetch episode progress for logged-in user
-  let episodesProgressMap: Record<string, { progressPercent: number; completed: boolean }> = {}
-  if (user) {
-    const allEpisodeIds = Object.values(viewEpisodesBySeason).flat().map(e => e.id)
-    episodesProgressMap = await getEpisodesProgress(user.id, allEpisodeIds)
-  }
-
-  // More like this — same genre shows
-  const allStreaming = await getStreamingShows()
   const moreLikeThis = allStreaming.filter((s) => s.genre === show.genre && s.id !== show.id)
-
-  const t = await getTranslations('show')
 
   return (
     <div>

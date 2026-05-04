@@ -30,18 +30,10 @@ export default async function ProfilePage() {
     return redirect({ href: '/auth', locale })
   }
 
-  // Fetch profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('display_name, avatar_url')
-    .eq('id', user.id)
-    .single()
-
-  // Check if admin
-  const { data: config } = await supabase
-    .from('app_config')
-    .select('admin_user_id')
-    .single()
+  const [{ data: profile }, { data: config }] = await Promise.all([
+    supabase.from('profiles').select('display_name, avatar_url').eq('id', user.id).single(),
+    supabase.from('app_config').select('admin_user_id').single(),
+  ])
 
   const isAdmin = config?.admin_user_id === user.id
 

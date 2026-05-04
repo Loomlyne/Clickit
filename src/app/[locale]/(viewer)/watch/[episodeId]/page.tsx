@@ -45,7 +45,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function WatchPage({ params }: Props) {
   const { episodeId } = await params
-  const [data, locale] = await Promise.all([getEpisodeById(episodeId), getLocale()])
+
+  // proxy.ts already validated the JWT — getSession() reads the cookie locally (~5ms).
+  // Run session fetch in parallel with episode data + locale so progress can be
+  // fetched in the same wave as the episode query, not after it.
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user ?? null
+
+  const [data, locale, progressRow] = await Promise.all([
+    getEpisodeById(episodeId),
+    getLocale(),
+    user ? getEpisodeProgress(user.id, episodeId) : Promise.resolve(null),
+  ])
 
   if (!data) notFound()
 
@@ -64,19 +76,8 @@ export default async function WatchPage({ params }: Props) {
   const viewPrev = prev ? mapEpisode(prev, locale) : null
   const viewNext = next ? mapEpisode(next, locale) : null
 
-  // Fetch user and saved progress for resume.
-  // proxy.ts already validated the JWT — getSession() reads the cookie locally.
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user ?? null
-
-  let initialProgressSeconds = 0
-  if (user) {
-    const progress = await getEpisodeProgress(user.id, episodeId)
-    if (progress && !progress.completed) {
-      initialProgressSeconds = progress.progressSeconds
-    }
-  }
+  const initialProgressSeconds =
+    progressRow && !progressRow.completed ? progressRow.progressSeconds : 0
 
   return (
     <div className="watch-page-wrap -mt-16">

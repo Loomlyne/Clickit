@@ -32,8 +32,12 @@ export default async function BrowsePage({
   const params = await searchParams
   const categorySlug = params?.category?.trim() || null
 
-  const [featured, streaming, comingSoon, shorts, isMobile, locale, categoryRails, activeCategory] = await Promise.all([
-    getFeaturedShows(),
+  // Stage 1: featured alone — fast cached query, needed for stage 2 IDs
+  const featured = await getFeaturedShows()
+
+  // Stage 2: everything else in parallel, including first-episode map which
+  // now runs alongside the heavy catalog queries instead of after them
+  const [streaming, comingSoon, shorts, isMobile, locale, categoryRails, activeCategory, firstEpisodeMap] = await Promise.all([
     getStreamingShows(),
     getComingSoonShows(),
     getShortsForBrowse(),
@@ -41,6 +45,7 @@ export default async function BrowsePage({
     getLocale(),
     getCategoryRails(),
     categorySlug ? getCategoryRailBySlug(categorySlug) : Promise.resolve(null),
+    getFirstEpisodesForShows(featured.map(s => s.id)),
   ])
 
   if (streaming.length === 0 && comingSoon.length === 0) {
@@ -51,7 +56,6 @@ export default async function BrowsePage({
     ? (activeCategory ? [activeCategory] : [])
     : categoryRails
 
-  const firstEpisodeMap = await getFirstEpisodesForShows(featured.map(s => s.id))
   const featuredWithEpisodes = featured.map((show) => ({
     show,
     firstEpisodeId: firstEpisodeMap[show.id],
