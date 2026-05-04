@@ -31,7 +31,7 @@ export function PortraitShowCard({ show, initialSaved, userId }: PortraitShowCar
 
       <Link
         href={`/series/${show.slug}`}
-        className="poster relative block flex-shrink-0 cursor-pointer overflow-hidden rounded-[6px] bg-[var(--bg-2)] transition-transform duration-[250ms] ease-[var(--ease)] group-hover:-translate-y-1 group-hover:z-[2]"
+        className="poster relative block flex-shrink-0 cursor-pointer overflow-hidden rounded-[12px] bg-[var(--bg-2)] transition-transform duration-[250ms] ease-[var(--ease)] group-hover:-translate-y-1 group-hover:z-[2]"
         style={{ width: 'var(--poster-w)', aspectRatio: '2 / 3' }}
       >
         {show.posterUrl ? (
@@ -55,7 +55,7 @@ export function PortraitShowCard({ show, initialSaved, userId }: PortraitShowCar
               : (show.seasonCount === 1 ? 'season' : 'seasons')}
           </div>
           <div className="mt-2.5 flex gap-1.5">
-            <span className="inline-flex items-center gap-1.5 rounded-[4px] bg-primary px-3 py-[7px] text-[12.5px] font-medium text-primary-foreground">
+            <span className="inline-flex items-center gap-1.5 rounded-[8px] bg-primary px-3 py-[7px] text-[12.5px] font-medium text-primary-foreground">
               <Play className="size-3 fill-current" /> Play
             </span>
           </div>
@@ -63,7 +63,7 @@ export function PortraitShowCard({ show, initialSaved, userId }: PortraitShowCar
 
         {/* New badge */}
         {show.status === 'streaming' && show.episodeCount <= 3 && (
-          <div className="absolute left-2.5 top-2.5 rounded-[2px] bg-primary px-2 py-1 font-[family-name:var(--font-mono)] text-[9.5px] font-semibold uppercase tracking-[0.14em] text-primary-foreground">
+          <div className="absolute left-2.5 top-2.5 rounded-[4px] bg-primary px-2 py-1 font-[family-name:var(--font-mono)] text-[9.5px] font-semibold uppercase tracking-[0.14em] text-primary-foreground">
             New
           </div>
         )}

@@ -45,25 +45,25 @@ const typographyRoles = [
 export default function TypographyPage() {
   return (
     <div className="space-y-8">
-      <section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
+      <section className="rounded-full border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
         <h2 className="text-2xl font-semibold tracking-tight text-foreground">Type system</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
-          <div className="rounded-[22px] border border-white/10 bg-black/20 p-5">
+          <div className="rounded-[40px] border border-white/10 bg-black/20 p-5">
             <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Family</p>
             <p className="mt-3 text-lg text-foreground">Inter</p>
           </div>
-          <div className="rounded-[22px] border border-white/10 bg-black/20 p-5">
+          <div className="rounded-[40px] border border-white/10 bg-black/20 p-5">
             <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Weights</p>
             <p className="mt-3 text-lg text-foreground">400, 500, 600, 700</p>
           </div>
-          <div className="rounded-[22px] border border-white/10 bg-black/20 p-5">
+          <div className="rounded-[40px] border border-white/10 bg-black/20 p-5">
             <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Rule</p>
             <p className="mt-3 text-lg text-foreground">No decorative display font in the primary UI.</p>
           </div>
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
+      <section className="rounded-full border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
         <h2 className="text-2xl font-semibold tracking-tight text-foreground">Scale</h2>
         <div className="mt-8 space-y-8">
         {typographyRoles.map((role) => (

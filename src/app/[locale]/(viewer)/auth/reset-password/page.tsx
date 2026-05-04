@@ -40,7 +40,7 @@ export default async function ResetPasswordPage() {
         </div>
 
         <div
-          className="rounded-[28px] border border-white/10 p-8 backdrop-blur-xl"
+          className="rounded-full border border-white/10 p-8 backdrop-blur-xl"
           style={{
             background: 'rgba(12, 15, 21, 0.88)',
             boxShadow: '0 32px 90px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.04)',

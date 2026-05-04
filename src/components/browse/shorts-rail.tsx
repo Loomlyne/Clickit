@@ -59,7 +59,7 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
               onClick={() => setOverlayIdx(i)}
               onMouseEnter={() => prefetchShort(s.youtubeVideoId)}
               onTouchStart={() => prefetchShort(s.youtubeVideoId)}
-              className="group relative shrink-0 cursor-pointer overflow-hidden rounded-[8px] bg-[var(--bg-2)]"
+              className="group relative shrink-0 cursor-pointer overflow-hidden rounded-[16px] bg-[var(--bg-2)]"
               style={{ width: 180, aspectRatio: '9/16' }}
             >
               {getThumbnailUrl(s) ? (
@@ -76,7 +76,7 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
               <div className="absolute inset-0 bg-gradient-to-b from-transparent from-[50%] to-[rgba(0,0,0,0.9)]" />
               {/* SHORT badge */}
               <div
-                className="absolute left-2.5 top-2.5 rounded-[2px] px-1.5 py-[3px]"
+                className="absolute left-2.5 top-2.5 rounded-[4px] px-1.5 py-[3px]"
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,

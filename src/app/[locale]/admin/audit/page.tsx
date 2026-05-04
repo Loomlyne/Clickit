@@ -124,7 +124,7 @@ export default async function AuditLogPage() {
                   </TableCell>
                   <TableCell>
                     <span
-                      className={`inline-flex rounded-[4px] border px-2 py-0.5 text-xs font-medium ${
+                      className={`inline-flex rounded-[8px] border px-2 py-0.5 text-xs font-medium ${
                         ACTION_STYLES[row.action_type] ??
                         'border-white/8 bg-white/5 text-white/70'
                       }`}

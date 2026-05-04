@@ -84,18 +84,18 @@ export function HeroSlide({ show, isActive, firstEpisodeId, isMobile, reducedMot
           {firstEpisodeId && show.status === 'streaming' ? (
             <Link
               href={`/watch/${firstEpisodeId}`}
-              className="btn inline-flex items-center gap-2 whitespace-nowrap rounded-[4px] bg-primary px-[26px] py-3.5 text-[15px] font-medium text-primary-foreground transition-[transform,background] duration-[120ms] hover:bg-white active:translate-y-px"
+              className="btn inline-flex items-center gap-2 whitespace-nowrap rounded-[8px] bg-primary px-[26px] py-3.5 text-[15px] font-medium text-primary-foreground transition-[transform,background] duration-[120ms] hover:bg-white active:translate-y-px"
             >
               <Play className="size-4 fill-current" /> Continue watching
             </Link>
           ) : (
-            <span className="inline-flex items-center gap-2 rounded-[4px] bg-white/[0.08] border border-white/[0.08] px-[26px] py-3.5 text-[15px] font-medium text-white/50 backdrop-blur-[8px] cursor-not-allowed">
+            <span className="inline-flex items-center gap-2 rounded-[8px] bg-white/[0.08] border border-white/[0.08] px-[26px] py-3.5 text-[15px] font-medium text-white/50 backdrop-blur-[8px] cursor-not-allowed">
               Coming Soon
             </span>
           )}
           <Link
             href={`/series/${show.slug}`}
-            className="inline-flex items-center gap-2 rounded-[4px] bg-white/[0.08] border border-white/[0.08] px-[26px] py-3.5 text-[15px] font-medium text-white backdrop-blur-[8px] transition-[transform,background,border-color] duration-[120ms] hover:bg-white/[0.14] hover:border-[var(--line-2)] active:translate-y-px"
+            className="inline-flex items-center gap-2 rounded-[8px] bg-white/[0.08] border border-white/[0.08] px-[26px] py-3.5 text-[15px] font-medium text-white backdrop-blur-[8px] transition-[transform,background,border-color] duration-[120ms] hover:bg-white/[0.14] hover:border-[var(--line-2)] active:translate-y-px"
           >
             <Info className="size-4" /> More info
           </Link>

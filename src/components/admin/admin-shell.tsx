@@ -89,7 +89,7 @@ export function AdminBackLink({
     <Link
       href={href}
       className={cn(
-        'text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 rounded-[8px] border border-white/8 bg-white/[0.03] px-4 py-2 text-sm transition-colors hover:border-white/16 hover:bg-white/[0.05]',
+        'text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 rounded-[16px] border border-white/8 bg-white/[0.03] px-4 py-2 text-sm transition-colors hover:border-white/16 hover:bg-white/[0.05]',
         className
       )}
     >

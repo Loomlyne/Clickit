@@ -177,7 +177,7 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
       {/* Main card — YouTube Short embed */}
       <div className="flex w-full max-w-[380px] flex-col items-center gap-3 px-4 lg:px-0">
         <div
-          className="relative w-full overflow-hidden rounded-[4px] shadow-[0_40px_120px_rgba(0,0,0,0.6)]"
+          className="relative w-full overflow-hidden rounded-[8px] shadow-[0_40px_120px_rgba(0,0,0,0.6)]"
           style={{ aspectRatio: '9/16' }}
         >
           <iframe
@@ -237,7 +237,7 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
               <span className="mono text-[11px] text-white/80">
                 {current.channelName || current.title.toLowerCase().replace(/[^a-z]/g, '').slice(0, 14)}
               </span>
-              <button className="pointer-events-auto rounded-[4px] bg-white px-2 py-1 text-[10px] font-medium text-black">
+              <button className="pointer-events-auto rounded-[8px] bg-white px-2 py-1 text-[10px] font-medium text-black">
                 Follow
               </button>
             </div>

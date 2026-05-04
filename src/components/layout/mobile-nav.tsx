@@ -33,7 +33,7 @@ export function MobileNav({ initialUser }: MobileNavProps = {}) {
     <Sheet open={open} onOpenChange={setOpen} modal={false}>
       <SheetTrigger
         aria-label="Open navigation menu"
-        className="flex size-11 items-center justify-center rounded-[4px] border border-[var(--line)] bg-[var(--bg-2)] text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white md:hidden"
+        className="flex size-11 items-center justify-center rounded-[8px] border border-[var(--line)] bg-[var(--bg-2)] text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white md:hidden"
       >
         <Menu className="size-5" />
       </SheetTrigger>
@@ -70,7 +70,7 @@ export function MobileNav({ initialUser }: MobileNavProps = {}) {
                 href={href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  'flex min-h-[48px] items-center rounded-[4px] px-4 text-[15px] font-medium tracking-normal transition-colors',
+                  'flex min-h-[48px] items-center rounded-[8px] px-4 text-[15px] font-medium tracking-normal transition-colors',
                   isActive
                     ? 'bg-white/[0.08] text-white'
                     : 'text-white/56 hover:bg-white/[0.04] hover:text-white'

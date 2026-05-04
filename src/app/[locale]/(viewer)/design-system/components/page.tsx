@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 export default function ComponentsPage() {
   return (
     <div className="space-y-8">
-      <section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
+      <section className="rounded-full border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
         <h2 className="text-2xl font-semibold tracking-tight text-foreground">Buttons</h2>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
           Primary actions feel bright and decisive. Secondary actions recede into the dark shell. Ghost usage stays limited to local row actions and low-risk controls.
@@ -52,7 +52,7 @@ export default function ComponentsPage() {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+        <div className="rounded-full border border-white/10 bg-white/[0.04] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
           <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Empty state</p>
           <p className="mt-4 text-2xl font-semibold tracking-tight text-foreground">No saved shows yet</p>
           <p className="mt-3 max-w-sm text-sm leading-7 text-muted-foreground">
@@ -63,7 +63,7 @@ export default function ComponentsPage() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-red-500/20 bg-red-500/6 p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+        <div className="rounded-full border border-red-500/20 bg-red-500/6 p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
           <p className="text-xs uppercase tracking-[0.24em] text-red-100/80">Error state</p>
           <p className="mt-4 text-2xl font-semibold tracking-tight text-red-50">Playback failed</p>
           <p className="mt-3 max-w-sm text-sm leading-7 text-red-100/75">

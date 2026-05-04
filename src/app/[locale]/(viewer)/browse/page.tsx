@@ -83,7 +83,7 @@ export default async function BrowsePage({
       {activeCategory && (
         <section className="px-10 pt-6">
           <div
-            className="flex flex-col gap-3 rounded-[8px] border border-[var(--line)] bg-[var(--bg-2)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-3 rounded-[16px] border border-[var(--line)] bg-[var(--bg-2)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between"
             style={activeCategory.color ? { borderLeftColor: activeCategory.color, borderLeftWidth: '3px' } : undefined}
           >
             <div>
@@ -120,7 +120,7 @@ export default async function BrowsePage({
 
       {categorySlug && !activeCategory && (
         <section className="px-10 pt-8">
-          <div className="rounded-[8px] border border-[var(--line)] bg-[var(--bg-2)] px-5 py-6 text-center">
+          <div className="rounded-[16px] border border-[var(--line)] bg-[var(--bg-2)] px-5 py-6 text-center">
             <div className="mono mb-2 text-[var(--text-mute)]">
               {locale === 'ar' ? 'التصنيف غير موجود' : 'Category not found'}
             </div>
