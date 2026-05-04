@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { createShort, updateShort } from '@/app/[locale]/admin/actions'
+import { extractYouTubeId } from '@/lib/youtube'
 import type { Database } from '@/lib/database.types'
 
 type Short = Database['public']['Tables']['shorts']['Row']
@@ -76,6 +77,14 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
 
   const thumbnailUrl = watch('thumbnail_url')
   const videoId = watch('youtube_video_id')
+  const youtubeUrl = watch('youtube_url')
+
+  // Auto-extract video ID from URL without needing the API
+  useEffect(() => {
+    if (!youtubeUrl) return
+    const id = extractYouTubeId(youtubeUrl)
+    if (id) setValue('youtube_video_id', id)
+  }, [youtubeUrl, setValue])
 
   // Populate form when editing
   useEffect(() => {
@@ -213,8 +222,16 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
             </div>
           )}
 
-          {/* Hidden video ID */}
-          <input type="hidden" {...register('youtube_video_id')} />
+          {/* Video ID — shown so admin can verify extraction worked */}
+          {videoId && (
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Video ID (auto-extracted)</Label>
+              <Input value={videoId} readOnly className="font-mono text-xs opacity-60" {...register('youtube_video_id')} />
+            </div>
+          )}
+          {!videoId && youtubeUrl && (
+            <p className="text-sm text-red-400">Could not extract video ID — check the URL format.</p>
+          )}
 
           {/* Title */}
           <div className="space-y-2">
