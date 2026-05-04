@@ -1,218 +1,78 @@
-# Requirements — v2.0 Full Visual Redesign
+# Requirements — v2.2 Immersive Watch
 
-**Milestone:** v2.0
-**Total:** 83 requirements across 13 categories
-**Generated:** 2026-04-24
+**Milestone:** v2.2
+**Total:** 15 requirements across 3 categories
+**Generated:** 2026-05-05
 
-## v2.0 Requirements
+---
 
-### Design System (DSYS)
-- [ ] **DSYS-01**: Platform uses Newsreader (serif) for display headlines, Space Grotesk (sans) for UI text, JetBrains Mono for labels/metadata
-- [ ] **DSYS-02**: Platform uses near-black (#0a0a0a) background with electric yellow (#ffcc00) accent color
-- [ ] **DSYS-03**: All components use 4px border-radius (down from 11.2px)
-- [ ] **DSYS-04**: CSS custom properties define surface layers (--bg-0 through --bg-4), text tiers (--text, --text-dim, --text-mute), line colors, and motion easing
-- [ ] **DSYS-05**: Utility classes .mono, .serif, .label available for editorial typography patterns
-- [ ] **DSYS-06**: Global resets applied (::selection accent, thin scrollbars, button/a/img base)
+## Watch Player
 
-### Header (HEAD)
-- [ ] **HEAD-01**: Header displays logo with yellow dot indicator + "CLICKIT" text
-- [ ] **HEAD-02**: Header shows nav links (Browse, Coming Soon, Support) when authenticated
-- [ ] **HEAD-03**: Header shows anchor nav (Why Clickit, Shows, FAQ) on landing page
-- [ ] **HEAD-04**: Header shows Sign in + Start free buttons when unauthenticated, avatar when authenticated
-- [ ] **HEAD-05**: Header is sticky with backdrop blur, transparent on landing, solid on scroll
-- [ ] **HEAD-06**: No search bar in header
+- [ ] **WATCH-01**: Watch route lives in its own route group (`(watch)/`) — no Navbar, Footer, Silk background, or MarqueeTicker rendered
+- [ ] **WATCH-02**: Video fills 100dvw × 100dvh on load — zero layout chrome visible on entry
+- [ ] **WATCH-03**: `h-dvh` + `min-h-svh` CSS units used (not `100vh`) to prevent iOS Safari toolbar clipping
+- [ ] **WATCH-04**: YouTube `controls=1` — native seek, volume, captions, cast preserved; no custom controls overlay
+- [ ] **WATCH-05**: Episode switches use `player.loadVideoById()` — iframe is never remounted; progress tracking stays live
+- [ ] **WATCH-06**: Continue-watching 10s progress writes work in the fullscreen layout (no regression from existing behavior)
 
-### Footer (FOOT)
-- [ ] **FOOT-01**: Footer displays editorial "Click*it.*" wordmark with serif typography
-- [ ] **FOOT-02**: Footer has newsletter email signup with inline confirmation
-- [ ] **FOOT-03**: Footer has 5-column grid (About, Watch, Discover, Company, Account) with working nav links
-- [ ] **FOOT-04**: Footer displays social icons (Instagram, X, YouTube, Letterboxd, RSS)
-- [ ] **FOOT-05**: Footer bottom bar shows copyright, live status dot, legal links, locale indicator
+## Auto-Hide Chrome
 
-### Landing Page (LAND)
-- [ ] **LAND-01**: Landing hero uses editorial split layout — copy left (eyebrow, serif title, subtitle, 2 CTAs, 3 stats) + poster collage right (4 rotated show posters + "Now playing" tag)
-- [ ] **LAND-02**: Scrolling marquee ticker below hero with show announcements
-- [ ] **LAND-03**: Stats bar displays 4 metrics in a grid with border separators
-- [ ] **LAND-04**: Show grid displays 4 featured shows with 2:3 posters and hover scale effect
-- [ ] **LAND-05**: "Why Clickit" section uses split layout with numbered feature blocks
-- [ ] **LAND-06**: Genre tiles display in 3-column grid with hover effects and accent arrow
-- [ ] **LAND-07**: FAQ accordion with CSS grid animation and rotating plus icon
-- [ ] **LAND-08**: CTA banner with backdrop image, gradient scrim, and signup buttons
+- [ ] **CHROME-01**: Top overlay (back button, show title, S/E badge, watchlist + like + share) fades in on tap/pointer-move, fades out after 3s idle; uses `pointer-events: none` when hidden so YouTube controls remain tappable
+- [ ] **CHROME-02**: Left/right edge-anchored prev/next episode arrow buttons (positioned at 50% viewport height), fade with chrome, hidden when no prev/next episode exists
 
-### Browse Page (BRWS)
-- [ ] **BRWS-01**: Browse hero is a full-bleed auto-rotating carousel with backdrop zoom animation
-- [ ] **BRWS-02**: Hero content shows eyebrow, serif title, meta row, synopsis, and 3 action buttons (Continue watching, More info, My list)
-- [ ] **BRWS-03**: Hero has vertical dot indicators with fill animation synced to rotation interval
-- [ ] **BRWS-04**: Continue Watching rail displays landscape cards with progress bars
-- [ ] **BRWS-05**: Shorts/Reels section shows 9:16 vertical cards with SHORT badge, play overlay, and view counts
-- [ ] **BRWS-06**: Clicking a short opens the Shorts overlay
-- [ ] **BRWS-07**: Now Streaming and Coming Soon rails use landscape show cards
-- [ ] **BRWS-08**: Bottom CTA banner for upgrade/annual plan
-- [ ] **BRWS-09**: Show cards default to landscape (16:9) orientation with hover lift + image scale
+## Episode Tray
 
-### Series Detail (SERS)
-- [ ] **SERS-01**: Series hero is 72vh with full-bleed backdrop, gradient scrims, and content bottom-left
-- [ ] **SERS-02**: Cast row displays scrollable 140px photo cards with name and role
-- [ ] **SERS-03**: Season tabs with accent underline for active tab
-- [ ] **SERS-04**: Episode list shows grid with episode number, thumbnail with play overlay, info, and runtime
-- [ ] **SERS-05**: Meta sidebar displays year, rating, runtime, genre, creator, and italic tagline
-- [ ] **SERS-06**: "More like this" rail shows related shows
+- [ ] **TRAY-01**: Peek handle (24px pill strip) always visible at viewport bottom — shows show name + episode counter (e.g. "Last Call · Ep 3 of 12") — acts as tap target to open tray on desktop
+- [ ] **TRAY-02**: Swipe-up gesture (mobile) / clicking peek handle (desktop) opens the episode tray; swipe-down or backdrop tap closes it to peek state
+- [ ] **TRAY-03**: Tray has 3 snap points — closed/peek (0%), half (50dvh, 3–4 episode rows visible + player compressed above), full (95dvh, full episode list scrollable)
+- [ ] **TRAY-04**: Tray header shows show title + season selector tabs (all seasons); switching season tab updates the episode list below without page navigation
+- [ ] **TRAY-05**: Episode list is a scrollable vertical list — each row: 16:9 thumbnail, S/E badge, episode title, duration, mini continue-watching progress bar
+- [ ] **TRAY-06**: Currently-playing episode row is visually distinguished (background highlight + indicator)
+- [ ] **TRAY-07**: Tapping any episode row navigates to that episode immediately; tray closes after selection on mobile
 
-### Reviews (REVW)
-- [ ] **REVW-01**: User can submit a review with 1-5 star rating and text body (max 600 chars)
-- [ ] **REVW-02**: Reviews are stored in Supabase `reviews` table with RLS policies
-- [ ] **REVW-03**: All reviews are visible to all users in real-time via Supabase Realtime
-- [ ] **REVW-04**: User's own reviews display with "YOURS" accent indicator
-- [ ] **REVW-05**: Star rating has hover labels (Nope, Meh, Fine, Great, A masterpiece)
+---
 
-### Watch Page (WTCH)
-- [ ] **WTCH-01**: Watch page uses YouTube-style layout — player on top, scrollable content below
-- [ ] **WTCH-02**: Sticky header with back button, clickable breadcrumb (show > season > episode), and nav buttons
-- [ ] **WTCH-03**: 2-column grid: main content + 420px episode sidebar (collapses at 1180px)
-- [ ] **WTCH-04**: Title + action bar with channel avatar, show info, View series button, My List/Like/Share pill buttons
-- [ ] **WTCH-05**: Description card with view count, premiere date, genre, synopsis, and hashtags
-- [ ] **WTCH-06**: Prev/next episode cards in 2-column grid
-- [ ] **WTCH-07**: Episode sidebar with season selector, episode list with NOW PLAYING badge, and "More like this"
-- [ ] **WTCH-08**: YouTube IFrame API player preserved with restyled chrome
+## Future Requirements (Deferred to v2.3)
 
-### Shorts Overlay (SHRT)
-- [ ] **SHRT-01**: Full-screen vertical reel viewer opens from browse shorts section
-- [ ] **SHRT-02**: Main card displays 9:16 aspect ratio with segmented progress bar auto-advancing over 20s
-- [ ] **SHRT-03**: Bottom info shows creator avatar, handle, Follow button, title, tagline, and meta
-- [ ] **SHRT-04**: Right action rail with Like (heart toggle), List, and Comment buttons
-- [ ] **SHRT-05**: Navigation via keyboard (arrows, space, M, Esc), touch swipe (vertical), and prev/next peek cards
-- [ ] **SHRT-06**: Body scroll locked while overlay is open
+- Theater Mode button (requestFullscreen, desktop only — iOS doesn't support on iframes)
+- Ambient brand-color glow behind player (per-show color)
+- Picture-in-picture button (desktop Chrome)
+- Tray snap-point persistence per session (zustand + sessionStorage)
+- Tray episode search/filter (useful when seasons have 50+ episodes)
+- Episode thumbnail prefetch on tray open
 
-### Auth (AUTH)
-- [ ] **AUTH-01**: Auth page uses split-screen layout — editorial hero left + form right
-- [ ] **AUTH-02**: Hero side shows backdrop image, quote testimonial, 3 stats, logo + badge
-- [ ] **AUTH-03**: Form side has Sign in/Sign up toggle tabs with serif title
-- [ ] **AUTH-04**: OAuth buttons for Google and Apple
-- [ ] **AUTH-05**: Password strength meter (4 bars) on signup
-- [ ] **AUTH-06**: Remember me, forgot password, terms checkbox controls
-- [ ] **AUTH-07**: Wired to existing Supabase Auth (signInWithOAuth, signInWithPassword, signUp)
-
-### Supporting Pages (SUPP)
-- [ ] **SUPP-01**: Search page with search input, results grid, and empty state
-- [ ] **SUPP-02**: My List page with watchlist grid (2:3 cards, remove button, hover scale)
-- [ ] **SUPP-03**: Profile page with avatar upload, profile nav tabs, Go to Admin button
-- [ ] **SUPP-04**: Coming Soon page with upcoming shows list and remind me button
-- [ ] **SUPP-05**: Support page with contact form (email, topic, message, submit)
-
-### Admin Portal (ADMN)
-- [ ] **ADMN-01**: Admin uses new background colors (#0a0a0a, #121212, #1a1a1a)
-- [ ] **ADMN-02**: Admin uses electric yellow (#ffcc00) as accent color
-- [ ] **ADMN-03**: Admin typography uses Space Grotesk for UI, JetBrains Mono for labels
-- [ ] **ADMN-04**: Admin components use 4px border-radius
-- [ ] **ADMN-05**: All admin functionality unchanged — visual refresh only
-
-### Responsive (RESP)
-- [ ] **RESP-01**: Mobile header collapses nav
-- [ ] **RESP-02**: Landing hero stacks to single column at 960px
-- [ ] **RESP-03**: Content rails use smaller poster widths on mobile
-- [ ] **RESP-04**: Watch page collapses to single column at 1180px
-- [ ] **RESP-05**: Footer stacks columns on mobile
-- [ ] **RESP-06**: Shorts overlay uses swipe-only on mobile (no peek cards)
-- [ ] **RESP-07**: Auth layout stacks at 900px
-
-## Future Requirements
-
-*None — full scope included in v2.0*
+---
 
 ## Out of Scope
 
-- Arabic/RTL for new components — deferred to v2.1
-- Tweaks panel from prototype — prototyping tool, not production
-- Self-hosted video — YouTube embeds stay
-- AI recommendations — not enough content
-- Translation of new component strings to Arabic — deferred to v2.1
-- Shorts connected to real YouTube Shorts API — placeholder data for now
-- Review moderation/admin controls — deferred
+| Item | Reason |
+|---|---|
+| Custom video scrubber | YouTube ToS: must not obscure player controls; rebuild cost weeks |
+| Hiding YouTube native controls (`controls=0`) | ToS violation — required minimum functionality |
+| Tray covering the player (overlay pattern) | ToS: any overlay on the iframe is a violation |
+| Swipe-left/right for next episode | Collides with iOS system swipe-back gesture |
+| Comments / reviews inside tray | Out of scope per PROJECT.md; reviews live on series page |
+| Autoplay on page load | YouTube policy — user must initiate first play |
+| Screen orientation lock | Breaks user agency and accessibility |
+
+---
 
 ## Traceability
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| DSYS-01 | Phase 18 | Pending |
-| DSYS-02 | Phase 18 | Pending |
-| DSYS-03 | Phase 18 | Pending |
-| DSYS-04 | Phase 18 | Pending |
-| DSYS-05 | Phase 18 | Pending |
-| DSYS-06 | Phase 18 | Pending |
-| HEAD-01 | Phase 19 | Pending |
-| HEAD-02 | Phase 19 | Pending |
-| HEAD-03 | Phase 19 | Pending |
-| HEAD-04 | Phase 19 | Pending |
-| HEAD-05 | Phase 19 | Pending |
-| HEAD-06 | Phase 19 | Pending |
-| FOOT-01 | Phase 19 | Pending |
-| FOOT-02 | Phase 19 | Pending |
-| FOOT-03 | Phase 19 | Pending |
-| FOOT-04 | Phase 19 | Pending |
-| FOOT-05 | Phase 19 | Pending |
-| LAND-01 | Phase 20 | Pending |
-| LAND-02 | Phase 20 | Pending |
-| LAND-03 | Phase 20 | Pending |
-| LAND-04 | Phase 20 | Pending |
-| LAND-05 | Phase 20 | Pending |
-| LAND-06 | Phase 20 | Pending |
-| LAND-07 | Phase 20 | Pending |
-| LAND-08 | Phase 20 | Pending |
-| BRWS-01 | Phase 21 | Pending |
-| BRWS-02 | Phase 21 | Pending |
-| BRWS-03 | Phase 21 | Pending |
-| BRWS-04 | Phase 21 | Pending |
-| BRWS-05 | Phase 21 | Pending |
-| BRWS-06 | Phase 21 | Pending |
-| BRWS-07 | Phase 21 | Pending |
-| BRWS-08 | Phase 21 | Pending |
-| BRWS-09 | Phase 21 | Pending |
-| SERS-01 | Phase 22 | Pending |
-| SERS-02 | Phase 22 | Pending |
-| SERS-03 | Phase 22 | Pending |
-| SERS-04 | Phase 22 | Pending |
-| SERS-05 | Phase 22 | Pending |
-| SERS-06 | Phase 22 | Pending |
-| REVW-01 | Phase 22 | Pending |
-| REVW-02 | Phase 22 | Pending |
-| REVW-03 | Phase 22 | Pending |
-| REVW-04 | Phase 22 | Pending |
-| REVW-05 | Phase 22 | Pending |
-| WTCH-01 | Phase 23 | Pending |
-| WTCH-02 | Phase 23 | Pending |
-| WTCH-03 | Phase 23 | Pending |
-| WTCH-04 | Phase 23 | Pending |
-| WTCH-05 | Phase 23 | Pending |
-| WTCH-06 | Phase 23 | Pending |
-| WTCH-07 | Phase 23 | Pending |
-| WTCH-08 | Phase 23 | Pending |
-| SHRT-01 | Phase 24 | Pending |
-| SHRT-02 | Phase 24 | Pending |
-| SHRT-03 | Phase 24 | Pending |
-| SHRT-04 | Phase 24 | Pending |
-| SHRT-05 | Phase 24 | Pending |
-| SHRT-06 | Phase 24 | Pending |
-| AUTH-01 | Phase 25 | Pending |
-| AUTH-02 | Phase 25 | Pending |
-| AUTH-03 | Phase 25 | Pending |
-| AUTH-04 | Phase 25 | Pending |
-| AUTH-05 | Phase 25 | Pending |
-| AUTH-06 | Phase 25 | Pending |
-| AUTH-07 | Phase 25 | Pending |
-| SUPP-01 | Phase 25 | Pending |
-| SUPP-02 | Phase 25 | Pending |
-| SUPP-03 | Phase 25 | Pending |
-| SUPP-04 | Phase 25 | Pending |
-| SUPP-05 | Phase 25 | Pending |
-| ADMN-01 | Phase 26 | Pending |
-| ADMN-02 | Phase 26 | Pending |
-| ADMN-03 | Phase 26 | Pending |
-| ADMN-04 | Phase 26 | Pending |
-| ADMN-05 | Phase 26 | Pending |
-| RESP-01 | Phase 27 | Pending |
-| RESP-02 | Phase 27 | Pending |
-| RESP-03 | Phase 27 | Pending |
-| RESP-04 | Phase 27 | Pending |
-| RESP-05 | Phase 27 | Pending |
-| RESP-06 | Phase 27 | Pending |
-| RESP-07 | Phase 27 | Pending |
+| Requirement | Phase |
+|---|---|
+| WATCH-01 | Phase 32 |
+| WATCH-02 | Phase 32 |
+| WATCH-03 | Phase 32 |
+| WATCH-04 | Phase 32 |
+| WATCH-05 | Phase 32 |
+| WATCH-06 | Phase 32 |
+| CHROME-01 | Phase 33 |
+| CHROME-02 | Phase 33 |
+| TRAY-01 | Phase 34 |
+| TRAY-02 | Phase 34 |
+| TRAY-03 | Phase 34 |
+| TRAY-04 | Phase 34 |
+| TRAY-05 | Phase 34 |
+| TRAY-06 | Phase 34 |
+| TRAY-07 | Phase 34 |
