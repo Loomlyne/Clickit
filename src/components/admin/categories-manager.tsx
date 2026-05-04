@@ -44,21 +44,6 @@ const EMPTY_DRAFT: CategoryDraft = {
   color: null,
 }
 
-const PALETTE: { hex: string; label: string }[] = [
-  { hex: '#2C3569', label: 'Blue' },
-  { hex: '#9F54A0', label: 'Purple' },
-  { hex: '#50A258', label: 'Green' },
-  { hex: '#DB3F34', label: 'Red' },
-  { hex: '#EA8C2E', label: 'Orange' },
-  { hex: '#F8C623', label: 'Yellow' },
-  { hex: '#8D9CFF', label: 'Blue light' },
-  { hex: '#C592FF', label: 'Purple light' },
-  { hex: '#77D586', label: 'Green light' },
-  { hex: '#FF8B82', label: 'Red light' },
-  { hex: '#FFB46E', label: 'Orange light' },
-  { hex: '#F8D86F', label: 'Yellow light' },
-]
-
 const HEX_RE = /^#[0-9a-fA-F]{6}$/
 
 function ColorPicker({
@@ -77,12 +62,6 @@ function ColorPicker({
   const isValidHex = HEX_RE.test(rawInput)
   const previewColor = isValidHex ? rawInput : null
 
-  function selectSwatch(hex: string) {
-    const upper = hex.toUpperCase()
-    setRawInput(upper)
-    onChange(upper)
-  }
-
   function handleTextChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value
     setRawInput(raw)
@@ -99,28 +78,6 @@ function ColorPicker({
     <div className="space-y-3">
       <Label>Category color</Label>
 
-      {/* Swatch grid — 6 dark brand + 6 light */}
-      <div className="flex flex-wrap gap-2">
-        {PALETTE.map(({ hex, label }) => {
-          const selected = value?.toUpperCase() === hex.toUpperCase()
-          return (
-            <button
-              key={hex}
-              type="button"
-              title={label}
-              onClick={() => selectSwatch(hex)}
-              aria-label={label}
-              className={cn(
-                'size-7 rounded-full transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60',
-                selected && 'ring-2 ring-white ring-offset-2 ring-offset-[#0d0d0d]',
-              )}
-              style={{ background: hex }}
-            />
-          )
-        })}
-      </div>
-
-      {/* Hex input row */}
       <div className="flex items-center gap-2">
         {/* OS color wheel trigger */}
         <div className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-md border border-white/15">
@@ -246,7 +203,13 @@ function CategoryEditor({
         </div>
       </div>
 
-      <div className="mt-5 rounded-lg border border-white/8 bg-white/[0.02] p-4">
+      <div
+        className={cn(
+          'mt-5 rounded-lg border border-white/8 bg-white/[0.02] p-4 transition-[border-left-color]',
+          draft.color && 'border-l-[3px]',
+        )}
+        style={draft.color ? { borderLeftColor: draft.color } : undefined}
+      >
         <ColorPicker
           value={draft.color}
           onChange={(color) => onDraftChange((current) => ({ ...current, color }))}
@@ -400,6 +363,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
             <TableRow>
               <TableHead>Category</TableHead>
               <TableHead className="hidden md:table-cell">Arabic name</TableHead>
+              <TableHead className="hidden w-36 md:table-cell">Color</TableHead>
               <TableHead className="w-32">Assigned</TableHead>
               <TableHead className="w-24">Order</TableHead>
               <TableHead className="w-52 text-right">Actions</TableHead>
@@ -408,7 +372,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
           <TableBody>
             {isCreateOpen && (
               <TableRow>
-                <TableCell colSpan={5} className="whitespace-normal bg-white/[0.015]">
+                <TableCell colSpan={6} className="whitespace-normal bg-white/[0.015]">
                   <CategoryEditor
                     draft={draft}
                     saving={saving}
@@ -423,7 +387,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
 
             {categories.length === 0 && !isCreateOpen && (
               <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
                   No categories yet.
                 </TableCell>
               </TableRow>
@@ -437,21 +401,25 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
                   <TableRow>
                     <TableCell>
                       <div className="min-w-[180px]">
-                        <div className="flex items-center gap-2">
-                          {category.color && (
-                            <span
-                              className="size-2.5 shrink-0 rounded-full"
-                              style={{ background: category.color }}
-                              aria-hidden
-                            />
-                          )}
-                          <span className="font-medium text-foreground">{category.name_en}</span>
-                        </div>
+                        <div className="font-medium text-foreground">{category.name_en}</div>
                         <div className="mt-1 text-xs text-muted-foreground">/{category.slug}</div>
                         <div className="mt-1 text-xs text-muted-foreground md:hidden">{category.name_ar}</div>
                       </div>
                     </TableCell>
                     <TableCell className="hidden text-muted-foreground md:table-cell">{category.name_ar}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {category.color ? (
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="size-4 shrink-0 rounded-full border border-white/10"
+                            style={{ background: category.color }}
+                          />
+                          <span className="font-mono text-xs text-muted-foreground">{category.color}</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/40">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">{category.showCount}</TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">#{category.sort_order + 1}</TableCell>
                     <TableCell>
@@ -496,7 +464,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
 
                   {isEditingRow && (
                     <TableRow>
-                      <TableCell colSpan={5} className="whitespace-normal bg-white/[0.015]">
+                      <TableCell colSpan={6} className="whitespace-normal bg-white/[0.015]">
                         <CategoryEditor
                           draft={draft}
                           saving={saving}
