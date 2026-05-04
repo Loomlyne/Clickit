@@ -91,7 +91,7 @@ export function AuthSection({ initialUser, isLanding }: AuthSectionProps) {
       <Button
         size="sm"
         variant="outline"
-        className="h-10 rounded px-5 text-sm"
+        className="h-10 rounded-full px-5 text-sm"
         asChild
       >
         <Link href="/auth">{t('signIn')}</Link>

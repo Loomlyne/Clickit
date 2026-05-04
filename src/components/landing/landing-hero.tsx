@@ -66,7 +66,7 @@ export async function LandingHero() {
           <div className="mb-12 md:mb-16">
             <Link
               href={ctaHref}
-              className="inline-flex items-center gap-2 whitespace-nowrap rounded bg-[var(--primary)] px-5 py-3 text-[14px] font-medium text-[var(--primary-foreground)] transition-all hover:bg-white sm:px-6 sm:py-3.5 sm:text-[15px]"
+              className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-[var(--primary)] px-5 py-3 text-[14px] font-medium text-[var(--primary-foreground)] transition-all hover:bg-white sm:px-6 sm:py-3.5 sm:text-[15px]"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3" /></svg>
               Go ahead

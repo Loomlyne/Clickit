@@ -99,7 +99,7 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
 
       {/* Composer (auth'd users only) */}
       {userId && (
-        <div className="mb-8 rounded border border-[var(--line)] bg-[var(--bg-1)] p-5">
+        <div className="mb-8 rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)] p-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] font-[family-name:var(--font-mono)] text-xs font-medium">
               K
@@ -131,7 +131,7 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
           </div>
 
           <textarea
-            className="w-full rounded border border-[var(--line)] bg-[var(--bg-0)] px-3 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-mute)] outline-none focus:border-[var(--primary)] resize-none"
+            className="w-full rounded-[16px] border border-[var(--line)] bg-[var(--bg-0)] px-3 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-mute)] outline-none focus:border-[var(--primary)] resize-none"
             placeholder="What stood out? Episodes you loved, things that dragged..."
             value={draftText}
             onChange={(e) => setDraftText(e.target.value)}
@@ -149,14 +149,14 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
             <span className="mono text-[11px] text-[var(--text-mute)]">{draftText.length} / 600</span>
             <div className="flex gap-2">
               <button
-                className="rounded border border-[var(--line-2)] px-3 py-1.5 text-[12.5px] text-[var(--text)] transition-colors hover:bg-white/[0.04] disabled:opacity-40"
+                className="rounded-full border border-[var(--line-2)] px-3 py-1.5 text-[12.5px] text-[var(--text)] transition-colors hover:bg-white/[0.04] disabled:opacity-40"
                 onClick={() => { setDraftStars(0); setDraftText('') }}
                 disabled={!draftText && !draftStars}
               >
                 Clear
               </button>
               <button
-                className="rounded bg-[var(--primary)] px-3 py-1.5 text-[12.5px] font-medium text-[var(--primary-foreground)] transition-colors hover:bg-white disabled:opacity-40"
+                className="rounded-full bg-[var(--primary)] px-3 py-1.5 text-[12.5px] font-medium text-[var(--primary-foreground)] transition-colors hover:bg-white disabled:opacity-40"
                 onClick={submitReview}
                 disabled={!draftText.trim() || draftStars === 0 || submitting}
               >

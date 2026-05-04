@@ -43,7 +43,7 @@ export function EpisodeRow({
       {/* Thumbnail area — wider: 160px mobile, 180px md+ */}
       <div
         className={cn(
-          'relative aspect-video w-[120px] sm:w-[160px] md:w-[180px] flex-shrink-0 rounded-full overflow-hidden',
+          'relative aspect-video w-[120px] sm:w-[160px] md:w-[180px] flex-shrink-0 rounded-[14px] overflow-hidden',
           isDimmed && 'opacity-45'
         )}
       >
@@ -154,7 +154,7 @@ export function EpisodeRow({
     return (
       <div
         aria-current="true"
-        className="group flex cursor-default items-start gap-4 rounded-full border border-[var(--line)] bg-[var(--bg-1)] p-4"
+        className="group flex cursor-default items-start gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--bg-1)] p-4"
         style={{
           borderInlineStart: `3px solid ${brandColorHex}`,
         }}
@@ -169,7 +169,7 @@ export function EpisodeRow({
       <motion.div whileTap={{ scale: 0.985 }} transition={{ duration: 0.15 }}>
         <Link
           href={`/watch/${episode.id}`}
-          className="group flex cursor-pointer items-start gap-4 rounded-full border border-transparent p-4 transition-colors duration-200 hover:border-[var(--line)] hover:bg-[var(--bg-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="group flex cursor-pointer items-start gap-4 rounded-[20px] border border-transparent p-4 transition-colors duration-200 hover:border-[var(--line)] hover:bg-[var(--bg-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {rowContent}
         </Link>
@@ -180,7 +180,7 @@ export function EpisodeRow({
   return (
     <div
       aria-disabled="true"
-      className="flex cursor-default items-start gap-4 rounded-full p-4"
+      className="flex cursor-default items-start gap-4 rounded-[20px] p-4"
     >
       {rowContent}
     </div>

@@ -24,13 +24,13 @@ export async function CtaBanner() {
         <div className="flex items-center justify-center gap-3">
           <Link
             href="/auth"
-            className="inline-flex items-center rounded bg-[var(--primary)] px-6 py-3.5 text-[15px] font-medium text-[var(--primary-foreground)] transition-all hover:bg-white"
+            className="inline-flex items-center rounded-full bg-[var(--primary)] px-6 py-3.5 text-[15px] font-medium text-[var(--primary-foreground)] transition-all hover:bg-white"
           >
             Create free account
           </Link>
           <Link
             href="/browse"
-            className="inline-flex items-center rounded border border-[var(--line-2)] px-6 py-3.5 text-[15px] font-medium text-[var(--text)] transition-all hover:bg-white/[0.04]"
+            className="inline-flex items-center rounded-full border border-[var(--line-2)] px-6 py-3.5 text-[15px] font-medium text-[var(--text)] transition-all hover:bg-white/[0.04]"
           >
             Take the tour
           </Link>

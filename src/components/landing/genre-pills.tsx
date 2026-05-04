@@ -23,7 +23,7 @@ export async function GenrePills() {
             <Link
               key={category.slug}
               href={`/browse?category=${encodeURIComponent(category.slug)}`}
-              className="mono rounded px-3 py-1 text-[11px] tracking-[0.08em] uppercase transition-opacity duration-150 hover:opacity-60"
+              className="mono rounded-full px-3 py-1 text-[11px] tracking-[0.08em] uppercase transition-opacity duration-150 hover:opacity-60"
               style={{ border: `1px solid ${color}`, color }}
             >
               {isArabic ? category.nameAr : category.nameEn}
