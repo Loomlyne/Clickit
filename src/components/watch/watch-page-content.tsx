@@ -96,7 +96,7 @@ export function WatchPageContent({
         {/* Left: player + metadata */}
         <div className="min-w-0">
           {/* Player frame with v2 radius and shadow */}
-          <div className="relative w-full aspect-video overflow-hidden rounded-full bg-black shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
+          <div className="relative w-full aspect-video overflow-hidden rounded-[16px] bg-black shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
             <YouTubePlayer
               videoId={episode.youtubeId ?? ''}
               brandColor={BRAND_COLOR_BG[show.brandColor]}
@@ -175,7 +175,7 @@ export function WatchPageContent({
           </div>
 
           {/* Description card — matches handoff .yt-desc */}
-          <div className="mb-6 rounded-full border border-[var(--line)] bg-[var(--bg-2)] p-3.5 sm:p-4">
+          <div className="mb-6 rounded-[24px] border border-[var(--line)] bg-[var(--bg-2)] p-3.5 sm:p-4">
             <div className="mono mb-2.5 flex flex-wrap gap-3 text-[10.5px] sm:gap-3.5 sm:text-xs" style={{ letterSpacing: '0.12em' }}>
               <span style={{ color: 'var(--accent)' }}>{show.genre}</span>
               {episode.duration && <span className="text-[var(--text-dim)]">{episode.duration} {isArabic ? 'دقيقة' : 'min'}</span>}
@@ -192,7 +192,7 @@ export function WatchPageContent({
         </div>
 
         {/* Right: episode sidebar — matches handoff .yt-side */}
-        <aside className="min-w-0 rounded-full bg-[var(--bg-1)] p-4 lg:p-5">
+        <aside className="min-w-0 rounded-[24px] bg-[var(--bg-1)] p-4 lg:p-5">
           <div className="flex items-center justify-between gap-2.5 mb-3">
             <div>
               <div className="mono mb-1 text-[var(--text-mute)]">
