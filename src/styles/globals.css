@@ -556,13 +556,6 @@ html[lang="ar"] [class*="tracking-["] {
   }
 }
 
-/* Touch devices — show card overlay always visible (no hover available) */
-@media (hover: none) {
-  .poster-overlay {
-    opacity: 1 !important;
-  }
-}
-
 /* Small mobile */
 @media (max-width: 420px) {
   :root {

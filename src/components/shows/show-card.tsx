@@ -27,7 +27,7 @@ export function ShowCard({ show }: ShowCardProps) {
       )}
 
       {/* Hover overlay */}
-      <div className="poster-overlay absolute inset-0 flex flex-col justify-end bg-gradient-to-b from-transparent from-[40%] to-[rgba(0,0,0,0.85)] p-3.5 opacity-0 transition-opacity duration-200 ease-[var(--ease)] group-hover:opacity-100">
+      <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-b from-transparent from-[40%] to-[rgba(0,0,0,0.85)] p-3.5 transition-opacity duration-200 ease-[var(--ease)] sm:opacity-0 sm:group-hover:opacity-100">
         <h3 className="font-display m-0 mb-0.5 text-[18px] leading-[1.1]">
           {show.title}
         </h3>
