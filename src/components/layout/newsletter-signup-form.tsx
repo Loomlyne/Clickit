@@ -93,7 +93,7 @@ export function NewsletterSignupForm({
           placeholder={isArabic ? 'بريدك الإلكتروني' : 'your@email.com'}
           className={compact
             ? 'flex-1 bg-transparent py-3 text-sm text-[var(--text)] placeholder:text-[var(--text-mute)] outline-none'
-            : 'min-h-11 w-full rounded-[14px] border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-mute)] outline-none'}
+            : 'min-h-11 w-full rounded-full border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-mute)] outline-none'}
           {...register('email')}
         />
         {compact && (
@@ -111,7 +111,7 @@ export function NewsletterSignupForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex min-h-11 items-center justify-center rounded-[14px] bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-white disabled:opacity-60"
+          className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-white disabled:opacity-60"
         >
           {buttonLabel || (isArabic ? 'اشترِك للحصول على التحديثات' : 'Get updates')}
         </button>

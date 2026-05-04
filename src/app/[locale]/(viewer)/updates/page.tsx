@@ -25,7 +25,7 @@ export default async function UpdatesPage({
 
   return (
     <div className="px-4 pb-16 pt-8 sm:px-6 md:px-12">
-      <div className="mx-auto max-w-3xl rounded-[18px] border border-[var(--line)] bg-[var(--bg-1)] p-6 sm:p-10">
+      <div className="mx-auto max-w-3xl rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)] p-6 sm:p-10">
         <p className="mono mb-4 text-[var(--text-mute)]">
           {isArabic ? 'تحديثات Clickit Story' : 'Clickit Story updates'}
         </p>

@@ -59,14 +59,14 @@ export default async function ProfilePage() {
           isAdmin={isAdmin}
         />
 
-        <div id="account-settings" className="rounded-[18px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
+        <div id="account-settings" className="rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
           <h3 className="font-display mb-4 text-lg font-semibold tracking-[-0.02em] text-white">
             {t('accountHeading')}
           </h3>
           <ProfileForm displayName={displayName} />
         </div>
 
-        <div className="rounded-[18px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
+        <div className="rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
           <h3 className="font-display mb-1 text-lg font-semibold tracking-[-0.02em] text-white">
             {t('languageHeading')}
           </h3>
@@ -76,7 +76,7 @@ export default async function ProfilePage() {
           <LanguagePreference current={locale} />
         </div>
 
-        <div className="rounded-[18px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
+        <div className="rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
               {t('myListHeading')}
@@ -115,7 +115,7 @@ export default async function ProfilePage() {
           )}
         </div>
 
-        <div className="rounded-[18px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
+        <div className="rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
               {t('likedHeading')}
@@ -143,7 +143,7 @@ export default async function ProfilePage() {
           )}
         </div>
 
-        <div className="rounded-[18px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
+        <div className="rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
           <h3 className="font-display mb-4 text-lg font-semibold tracking-[-0.02em] text-white">
             {t('historyHeading')}
           </h3>

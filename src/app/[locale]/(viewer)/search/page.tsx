@@ -42,7 +42,7 @@ export default async function SearchPage({ searchParams }: Props) {
               name="q"
               placeholder={t('placeholder')}
               autoFocus
-              className="w-full rounded-[14px] border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
+              className="w-full rounded-full border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
             />
           </form>
         </div>
@@ -65,7 +65,7 @@ export default async function SearchPage({ searchParams }: Props) {
               defaultValue={q}
               autoFocus
               placeholder={t('placeholder')}
-              className="w-full rounded-[14px] border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
+              className="w-full rounded-full border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
             />
           </form>
           <p className="mono mt-4 text-[var(--text-mute)]">{t('minChars')}</p>
@@ -95,7 +95,7 @@ export default async function SearchPage({ searchParams }: Props) {
               defaultValue={q}
               autoFocus
               placeholder={t('placeholder')}
-              className="w-full rounded-[14px] border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
+              className="w-full rounded-full border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
             />
           </form>
 
@@ -109,13 +109,13 @@ export default async function SearchPage({ searchParams }: Props) {
             <div className="mt-6 flex justify-center gap-4">
               <Link
                 href="/search"
-                className="mono rounded-[14px] border border-[var(--line-2)] bg-transparent px-5 py-2.5 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]"
+                className="mono rounded-full border border-[var(--line-2)] bg-transparent px-5 py-2.5 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]"
               >
                 {t('clearSearch')}
               </Link>
               <Link
                 href="/"
-                className="mono rounded-[14px] border border-[var(--line-2)] bg-transparent px-5 py-2.5 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]"
+                className="mono rounded-full border border-[var(--line-2)] bg-transparent px-5 py-2.5 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]"
               >
                 Browse catalog
               </Link>
@@ -140,7 +140,7 @@ export default async function SearchPage({ searchParams }: Props) {
             defaultValue={q}
             autoFocus
             placeholder={t('placeholder')}
-            className="w-full rounded-[14px] border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
+            className="w-full rounded-full border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
           />
         </form>
         <SearchResults query={q} shows={shows} episodes={episodes} />

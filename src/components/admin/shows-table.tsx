@@ -135,7 +135,7 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-11 rounded-[24px] border border-white/8 bg-white/[0.03] px-4 text-sm text-foreground outline-none transition-colors focus:border-white/20"
+              className="h-11 rounded-full border border-white/8 bg-white/[0.03] px-4 text-sm text-foreground outline-none transition-colors focus:border-white/20"
             >
               <option value="all">{isArabic ? 'كل الحالات' : 'All Status'}</option>
               <option value="now-streaming">{isArabic ? 'يُبثّ الآن' : 'Streaming'}</option>

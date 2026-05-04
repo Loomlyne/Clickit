@@ -123,7 +123,7 @@ export function ContactForm() {
       {errors.terms && <p className="text-xs text-brand-red-safe">{tErrors(errors.terms.message as never)}</p>}
 
       {submitState === 'saved_email_failed' && (
-        <p className="rounded-[14px] border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+        <p className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
           {isArabic
             ? 'تم حفظ الرسالة. التنبيه عبر البريد غير مفعّل حالياً.'
             : 'Your message is saved. Email notification is offline right now.'}

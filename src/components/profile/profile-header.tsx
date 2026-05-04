@@ -50,7 +50,7 @@ export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: Profil
         {isAdmin && (
           <Link
             href="/admin"
-            className="flex items-center gap-2 rounded-[14px] border border-[var(--line-2)] bg-[var(--bg-2)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--bg-3)]"
+            className="flex items-center gap-2 rounded-full border border-[var(--line-2)] bg-[var(--bg-2)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--bg-3)]"
           >
             <Shield className="size-4" />
             {tNav('admin')}
@@ -59,7 +59,7 @@ export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: Profil
         <button
           onClick={handleSignOut}
           disabled={signingOut}
-          className="flex items-center gap-2 rounded-[14px] border border-red-500/20 bg-red-500/10 px-5 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-5 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20 disabled:opacity-50"
         >
           <LogOut className="size-4" />
           {signingOut ? (isArabic ? 'جارٍ تسجيل الخروج…' : 'Signing out…') : tCommon('signOut')}

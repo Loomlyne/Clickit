@@ -43,7 +43,7 @@ export function EpisodeRow({
       {/* Thumbnail area — wider: 160px mobile, 180px md+ */}
       <div
         className={cn(
-          'relative aspect-video w-[120px] sm:w-[160px] md:w-[180px] flex-shrink-0 rounded-[14px] overflow-hidden',
+          'relative aspect-video w-[120px] sm:w-[160px] md:w-[180px] flex-shrink-0 rounded-full overflow-hidden',
           isDimmed && 'opacity-45'
         )}
       >
@@ -133,15 +133,15 @@ export function EpisodeRow({
         {/* Resume progress indicator */}
         {isCompleted && (
           <div className="mt-2">
-            <span className="inline-flex items-center rounded-[14px] bg-white/10 px-2.5 py-0.5 text-[11px] text-white/50">
+            <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] text-white/50">
               {isArabic ? 'مُكتمل' : 'Completed'}
             </span>
           </div>
         )}
         {!isCompleted && resumePercent != null && resumePercent > 0 && (
-          <div className="mt-2 h-1 rounded-[8px] bg-white/10 overflow-hidden max-w-[200px]">
+          <div className="mt-2 h-1 rounded-full bg-white/10 overflow-hidden max-w-[200px]">
             <div
-              className="h-full rounded-[8px] transition-all duration-300"
+              className="h-full rounded-full transition-all duration-300"
               style={{ width: `${resumePercent}%`, backgroundColor: brandColorHex }}
             />
           </div>
@@ -154,7 +154,7 @@ export function EpisodeRow({
     return (
       <div
         aria-current="true"
-        className="group flex cursor-default items-start gap-4 rounded-[14px] border border-[var(--line)] bg-[var(--bg-1)] p-4"
+        className="group flex cursor-default items-start gap-4 rounded-full border border-[var(--line)] bg-[var(--bg-1)] p-4"
         style={{
           borderInlineStart: `3px solid ${brandColorHex}`,
         }}
@@ -169,7 +169,7 @@ export function EpisodeRow({
       <motion.div whileTap={{ scale: 0.985 }} transition={{ duration: 0.15 }}>
         <Link
           href={`/watch/${episode.id}`}
-          className="group flex cursor-pointer items-start gap-4 rounded-[14px] border border-transparent p-4 transition-colors duration-200 hover:border-[var(--line)] hover:bg-[var(--bg-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="group flex cursor-pointer items-start gap-4 rounded-full border border-transparent p-4 transition-colors duration-200 hover:border-[var(--line)] hover:bg-[var(--bg-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {rowContent}
         </Link>
@@ -180,7 +180,7 @@ export function EpisodeRow({
   return (
     <div
       aria-disabled="true"
-      className="flex cursor-default items-start gap-4 rounded-[14px] p-4"
+      className="flex cursor-default items-start gap-4 rounded-full p-4"
     >
       {rowContent}
     </div>

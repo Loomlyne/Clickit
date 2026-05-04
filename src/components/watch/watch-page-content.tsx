@@ -82,10 +82,10 @@ export function WatchPageContent({
         </div>
         {/* Right-side links — desktop only */}
         <div className="ms-auto hidden gap-2 md:flex">
-          <Link href="/browse" className="inline-flex items-center rounded-[14px] border border-[var(--line-2)] px-3 py-[7px] text-[12.5px] transition-colors hover:bg-white/[0.04]">
+          <Link href="/browse" className="inline-flex items-center rounded-full border border-[var(--line-2)] px-3 py-[7px] text-[12.5px] transition-colors hover:bg-white/[0.04]">
             {isArabic ? 'تصفح' : 'Browse'}
           </Link>
-          <Link href={`/series/${show.slug}`} className="inline-flex items-center rounded-[14px] border border-[var(--line-2)] px-3 py-[7px] text-[12.5px] transition-colors hover:bg-white/[0.04]">
+          <Link href={`/series/${show.slug}`} className="inline-flex items-center rounded-full border border-[var(--line-2)] px-3 py-[7px] text-[12.5px] transition-colors hover:bg-white/[0.04]">
             {isArabic ? 'العودة للمسلسل' : 'Back to show'}
           </Link>
         </div>
@@ -96,7 +96,7 @@ export function WatchPageContent({
         {/* Left: player + metadata */}
         <div className="min-w-0">
           {/* Player frame with v2 radius and shadow */}
-          <div className="relative w-full aspect-video overflow-hidden rounded-[14px] bg-black shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
+          <div className="relative w-full aspect-video overflow-hidden rounded-full bg-black shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
             <YouTubePlayer
               videoId={episode.youtubeId ?? ''}
               brandColor={BRAND_COLOR_BG[show.brandColor]}
@@ -155,19 +155,19 @@ export function WatchPageContent({
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href={`/series/${show.slug}`}
-                className="inline-flex min-h-10 items-center rounded-[14px] bg-[var(--primary)] px-4 text-[13px] font-medium text-[var(--primary-foreground)] transition-colors hover:bg-white"
+                className="inline-flex min-h-10 items-center rounded-full bg-[var(--primary)] px-4 text-[13px] font-medium text-[var(--primary-foreground)] transition-colors hover:bg-white"
               >
                 {isArabic ? 'عرض المسلسل' : 'View series'}
               </Link>
-              <button className="inline-flex min-h-10 items-center gap-1.5 rounded-[14px] border border-[var(--line-2)] px-3 text-[13px] text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">
+              <button className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-[var(--line-2)] px-3 text-[13px] text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">
                 <ListPlus className="size-4" />
                 {isArabic ? 'قائمتي' : 'My List'}
               </button>
-              <button className="inline-flex min-h-10 items-center gap-1.5 rounded-[14px] border border-[var(--line-2)] px-3 text-[13px] text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">
+              <button className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-[var(--line-2)] px-3 text-[13px] text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">
                 <Heart className="size-4" />
                 {isArabic ? 'إعجاب' : 'Like'}
               </button>
-              <button className="inline-flex min-h-10 items-center gap-1.5 rounded-[14px] border border-[var(--line-2)] px-3 text-[13px] text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">
+              <button className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-[var(--line-2)] px-3 text-[13px] text-[var(--text-dim)] transition-colors hover:text-[var(--text)]">
                 <Share2 className="size-4" />
                 {isArabic ? 'مشاركة' : 'Share'}
               </button>
@@ -175,7 +175,7 @@ export function WatchPageContent({
           </div>
 
           {/* Description card — matches handoff .yt-desc */}
-          <div className="mb-6 rounded-[14px] border border-[var(--line)] bg-[var(--bg-2)] p-3.5 sm:p-4">
+          <div className="mb-6 rounded-full border border-[var(--line)] bg-[var(--bg-2)] p-3.5 sm:p-4">
             <div className="mono mb-2.5 flex flex-wrap gap-3 text-[10.5px] sm:gap-3.5 sm:text-xs" style={{ letterSpacing: '0.12em' }}>
               <span style={{ color: 'var(--accent)' }}>{show.genre}</span>
               {episode.duration && <span className="text-[var(--text-dim)]">{episode.duration} {isArabic ? 'دقيقة' : 'min'}</span>}
@@ -192,7 +192,7 @@ export function WatchPageContent({
         </div>
 
         {/* Right: episode sidebar — matches handoff .yt-side */}
-        <aside className="min-w-0 rounded-[24px] bg-[var(--bg-1)] p-4 lg:p-5">
+        <aside className="min-w-0 rounded-full bg-[var(--bg-1)] p-4 lg:p-5">
           <div className="flex items-center justify-between gap-2.5 mb-3">
             <div>
               <div className="mono mb-1 text-[var(--text-mute)]">

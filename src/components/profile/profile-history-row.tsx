@@ -19,10 +19,10 @@ export async function ProfileHistoryRow({ item }: ProfileHistoryRowProps) {
   return (
     <Link
       href={`/watch/${item.episodeId}`}
-      className="flex items-center gap-4 py-3 border-b border-[var(--line)] last:border-0 hover:bg-[var(--bg-2)] transition-colors rounded-[14px] px-2 -mx-2"
+      className="flex items-center gap-4 py-3 border-b border-[var(--line)] last:border-0 hover:bg-[var(--bg-2)] transition-colors rounded-full px-2 -mx-2"
     >
       {/* Thumbnail */}
-      <div className="w-20 aspect-video rounded-[14px] overflow-hidden flex-shrink-0">
+      <div className="w-20 aspect-video rounded-full overflow-hidden flex-shrink-0">
         <ShowArt brandColor={brandHex} title={item.episodeTitle} aspectRatio="16/9">
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-lg font-black text-white/30">
@@ -43,14 +43,14 @@ export async function ProfileHistoryRow({ item }: ProfileHistoryRowProps) {
       {/* Status */}
       <div className="flex-shrink-0">
         {item.completed ? (
-          <span className="rounded-[14px] bg-[var(--bg-3)] px-2.5 py-1 text-xs text-[var(--text-dim)]">
+          <span className="rounded-full bg-[var(--bg-3)] px-2.5 py-1 text-xs text-[var(--text-dim)]">
             {isArabic ? 'مُكتمل' : 'Completed'}
           </span>
         ) : (
           <div className="w-20">
-            <div className="h-1.5 rounded-[8px] bg-[var(--bg-4)] overflow-hidden">
+            <div className="h-1.5 rounded-full bg-[var(--bg-4)] overflow-hidden">
               <div
-                className="h-full rounded-[8px]"
+                className="h-full rounded-full"
                 style={{ width: `${progressPercent}%`, backgroundColor: brandHex }}
               />
             </div>

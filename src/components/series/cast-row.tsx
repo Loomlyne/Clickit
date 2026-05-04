@@ -25,8 +25,8 @@ export function CastRow({ cast }: CastRowProps) {
             .slice(0, 2)
           return (
             <div key={member.name} className="flex min-w-[80px] flex-col items-center gap-2">
-              <Avatar className="size-20 rounded-[14px]">
-                <AvatarFallback className="rounded-[14px] bg-[var(--bg-2)] text-lg font-medium text-muted-foreground">
+              <Avatar className="size-20 rounded-full">
+                <AvatarFallback className="rounded-full bg-[var(--bg-2)] text-lg font-medium text-muted-foreground">
                   {initials}
                 </AvatarFallback>
               </Avatar>

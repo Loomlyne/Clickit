@@ -60,7 +60,7 @@
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.08);
   --ring: rgba(255, 204, 0, 0.5);
-  --radius: 24px;
+  --radius: 32px;
   --chart-1: #ffcc00;
   --chart-2: #d97757;
   --chart-3: #7c9e6d;
@@ -103,7 +103,7 @@
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.08);
   --ring: rgba(255, 204, 0, 0.5);
-  --radius: 24px;
+  --radius: 32px;
   --chart-1: #ffcc00;
   --chart-2: #d97757;
   --chart-3: #7c9e6d;
@@ -378,7 +378,7 @@ html[lang="ar"] [class*="tracking-["] {
   position: relative;
   width: 168px;
   aspect-ratio: 16/9;
-  border-radius: 18px;
+  border-radius: 24px;
   overflow: hidden;
   background: var(--bg-3);
   flex-shrink: 0;
@@ -392,7 +392,7 @@ html[lang="ar"] [class*="tracking-["] {
   padding: 2px 5px;
   background: rgba(0,0,0,0.85);
   color: #fff;
-  border-radius: 8px;
+  border-radius: 999px;
   letter-spacing: 0.05em;
 }
 .yt-side-now {
@@ -404,7 +404,7 @@ html[lang="ar"] [class*="tracking-["] {
   padding: 3px 6px;
   background: var(--accent);
   color: var(--accent-fg);
-  border-radius: 8px;
+  border-radius: 999px;
   font-weight: 600;
 }
 .yt-side-body { min-width: 0; padding-top: 2px; }

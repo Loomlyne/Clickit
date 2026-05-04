@@ -18,7 +18,7 @@ export function GlowBadge({
 
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-[14px] text-xs font-semibold${pulse ? ' animate-glow-pulse' : ''}${className ? ` ${className}` : ''}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold${pulse ? ' animate-glow-pulse' : ''}${className ? ` ${className}` : ''}`}
       style={{
         background: bg,
         color: color,
