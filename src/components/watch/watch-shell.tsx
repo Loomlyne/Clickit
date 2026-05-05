@@ -6,6 +6,7 @@ import { Link, useRouter } from '@/i18n/navigation'
 import { YouTubePlayer } from '@/components/watch/youtube-player'
 import { AutoplayOverlay } from '@/components/watch/autoplay-overlay'
 import { useProgressTracker } from '@/hooks/use-progress-tracker'
+import { useIdleTimer } from '@/hooks/use-idle-timer'
 import type { ViewEpisode, ViewShow, ViewSeason } from '@/lib/queries'
 import { BRAND_COLOR_BG } from '@/lib/brand-colors'
 
@@ -19,6 +20,8 @@ interface WatchShellProps {
   nextEpisode: ViewEpisode | null
   initialProgressSeconds?: number
   userId?: string | null
+  initialSaved?: boolean      // default false — used by useWatchlist in Plan 02
+  initialLiked?: boolean      // default false — used by useLikes in Plan 02
 }
 
 export function WatchShell({
@@ -31,6 +34,8 @@ export function WatchShell({
   nextEpisode,
   initialProgressSeconds,
   userId,
+  initialSaved = false,
+  initialLiked = false,
 }: WatchShellProps) {
   // currentEpisode in state so Plan 02's handleEpisodeSwitch can update it
   // without remounting the iframe (videoId prop stays frozen at episode.youtubeId)
@@ -38,6 +43,9 @@ export function WatchShell({
   // currentNextEpisode is derived state — recalculated on every episode switch
   // so autoplay always queues the episode after the *current* one, not the initial prop.
   const [currentNextEpisode, setCurrentNextEpisode] = useState(nextEpisode)
+  // currentPrevEpisode mirrors currentNextEpisode — recalculated on every episode switch
+  // so the prev arrow always targets the episode before the *current* one.
+  const [currentPrevEpisode, setCurrentPrevEpisode] = useState(prevEpisode)
   const [playerInstance, setPlayerInstance] = useState<YT.Player | null>(null)
   const [showAutoplay, setShowAutoplay] = useState(false)
 
@@ -52,6 +60,11 @@ export function WatchShell({
   // Plan 02 updates currentEpisode before calling loadVideoById so the hook's
   // save closure targets the new episode immediately.
   const { forceFlush } = useProgressTracker(playerInstance, currentEpisode.id, userId ?? null)
+
+  const { isIdle, resetTimer } = useIdleTimer(3000)
+  // used in Plan 02 — overlay JSX added in 33-02-PLAN.md
+  // currentPrevEpisode and chromeClass consumed by overlay JSX in Plan 02
+  const chromeClass = isIdle ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
 
   // Derive the episode that follows `current` by scanning episodesBySeason.
   // Cross-season: if current is the last episode in its season, returns the
@@ -68,6 +81,20 @@ export function WatchShell({
     return nextSeasonEps[0] ?? null
   }
 
+  // Mirror of findNextEpisode — inverse direction. Cross-season: if current is
+  // the first episode in its season, returns the last episode of the previous season.
+  function findPrevEpisode(current: ViewEpisode): ViewEpisode | null {
+    const seasonEps = episodesBySeason[current.seasonId] ?? []
+    const idx = seasonEps.findIndex((e) => e.id === current.id)
+    if (idx > 0) return seasonEps[idx - 1]
+    const currentSeason = seasons.find((s) => s.id === current.seasonId)
+    if (!currentSeason) return null
+    const prevSeason = seasons.find((s) => s.seasonNumber === currentSeason.seasonNumber - 1)
+    if (!prevSeason) return null
+    const prevSeasonEps = episodesBySeason[prevSeason.id] ?? []
+    return prevSeasonEps[prevSeasonEps.length - 1] ?? null
+  }
+
   function handleEpisodeSwitch(newEpisode: ViewEpisode) {
     if (!playerRef.current || !newEpisode.youtubeId) return
     // 1. Save outgoing position — closure still has old episodeId
@@ -78,6 +105,7 @@ export function WatchShell({
     // 3. Update episode state and recalculate the next pointer
     setCurrentEpisode(newEpisode)
     setCurrentNextEpisode(findNextEpisode(newEpisode))
+    setCurrentPrevEpisode(findPrevEpisode(newEpisode))
     // 4. Swap video without remounting the iframe
     playerRef.current.loadVideoById({
       videoId: newEpisode.youtubeId,
@@ -109,6 +137,10 @@ export function WatchShell({
       className="fixed inset-0 h-dvh min-h-svh overflow-hidden bg-black"
       data-lenis-prevent
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      onPointerMove={resetTimer}
+      onPointerDown={resetTimer}
+      onTouchStart={resetTimer}
+      onKeyDown={resetTimer}
     >
       {/* Player — absolute inset-0 overrides YouTubePlayer's aspect-video container */}
       <div className="absolute inset-0">
@@ -129,8 +161,13 @@ export function WatchShell({
               if (currentNextEpisode) setShowAutoplay(true)
             }
             if (state === 2) {
-              // Paused
+              // Paused — flush progress and force chrome visible
               forceFlush()
+              resetTimer()
+            }
+            if (state === 1) {
+              // Playing/resumed — restart idle countdown
+              resetTimer()
             }
           }}
         />
