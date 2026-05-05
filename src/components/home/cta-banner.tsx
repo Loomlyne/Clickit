@@ -1,8 +1,17 @@
 import { Link } from '@/i18n/navigation'
-import { getFeaturedShows } from '@/lib/queries'
+import { getAppConfig } from '@/lib/config'
+import { getCatalogStage, getFeaturedShows } from '@/lib/queries'
 
 export async function CtaBanner() {
-  const shows = await getFeaturedShows()
+  const [shows, { stage }, config] = await Promise.all([
+    getFeaturedShows(),
+    getCatalogStage(),
+    getAppConfig(),
+  ])
+
+  if (!config.flags.showCtaBanner) return null
+
+  const copy = config.ctaCopy[stage]
   const backdrop = shows[2]?.heroImageUrl || shows[0]?.posterUrl
 
   return (
@@ -18,25 +27,26 @@ export async function CtaBanner() {
         style={{ background: 'radial-gradient(ellipse at center, transparent, var(--bg-0))' }}
       />
       <div className="relative mx-auto max-w-[720px]">
-        <div className="mono mb-3.5 text-[var(--primary)]">Start the beta</div>
+        <div className="mono mb-3.5 text-[var(--primary)]">{copy.label}</div>
         <h2 className="font-[family-name:var(--font-display)] text-[clamp(40px,6vw,80px)] font-normal leading-none tracking-[-0.02em] mb-6">
-          Seven days free. Cancel in the app.
+          {copy.headline}{' '}
+          <span className="text-[var(--text-mute)]">{copy.headlineB}</span>
         </h2>
         <p className="text-[17px] text-[var(--text-dim)] mb-9">
-          No card required. Full catalog. Keep your watchlist if you stick around.
+          {copy.body}
         </p>
         <div className="flex items-center justify-center gap-3">
           <Link
-            href="/auth"
+            href={copy.primaryHref}
             className="inline-flex items-center rounded bg-[var(--primary)] px-6 py-3.5 text-[15px] font-medium text-[var(--primary-foreground)] transition-all hover:bg-white"
           >
-            Create free account
+            {copy.primaryLabel}
           </Link>
           <Link
-            href="/browse"
+            href={copy.secondaryHref}
             className="inline-flex items-center rounded border border-[var(--line-2)] px-6 py-3.5 text-[15px] font-medium text-[var(--text)] transition-all hover:bg-white/[0.04]"
           >
-            Take the tour
+            {copy.secondaryLabel}
           </Link>
         </div>
       </div>

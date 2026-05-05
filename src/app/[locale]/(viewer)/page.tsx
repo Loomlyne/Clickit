@@ -6,8 +6,11 @@ import { WhySection } from '@/components/landing/why-section'
 import { GenrePills } from '@/components/landing/genre-pills'
 import { LandingFaq } from '@/components/landing/landing-faq'
 import { CtaBanner } from '@/components/home/cta-banner'
+import { getAppConfig } from '@/lib/config'
 
 export default async function LandingPage() {
+  const { flags } = await getAppConfig()
+
   return (
     <div>
       <LandingHero />
@@ -16,7 +19,7 @@ export default async function LandingPage() {
       <ShowsPortfolio />
       <WhySection />
       <GenrePills />
-      <LandingFaq />
+      {flags.showFaq && <LandingFaq />}
       <CtaBanner />
     </div>
   )

@@ -2,7 +2,7 @@
 CREATE TABLE reviews (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   show_id UUID REFERENCES shows(id) ON DELETE CASCADE NOT NULL,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
   stars INTEGER CHECK (stars >= 1 AND stars <= 5) NOT NULL,
   body TEXT CHECK (char_length(body) <= 600) NOT NULL,
   created_at TIMESTAMPTZ DEFAULT now() NOT NULL
