@@ -216,7 +216,10 @@ Plans:
   4. When the YouTube player enters a paused state (`onStateChange` state=2), the chrome stays visible and ignores the idle timer until playback resumes
   5. Edge prev/next arrow buttons sit at 50% viewport height on the left/right edges, fade with the top overlay, and disappear entirely on episodes that have no previous (S1E1) or no next (final episode of final season)
   6. Tapping prev/next swaps episodes via `loadVideoById()` -- the player keeps the same iframe and progress tracking continues uninterrupted
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 33-01-PLAN.md -- useIdleTimer hook + currentPrevEpisode state + WatchShell idle wiring
+- [ ] 33-02-PLAN.md -- Top overlay + edge arrows + page.tsx initial watchlist/likes fetch
 **UI hint**: yes
 
 ### Phase 34: Episode Tray
@@ -295,5 +298,5 @@ v2.2: 32 -> 33 -> 34
 | 26. Admin Visual Refresh | v2.0 | 1/1 | Complete | 2026-04-28 |
 | 27. Responsive Polish | v2.0 | 1/1 | Complete | 2026-04-28 |
 | 32. Watch Route Isolation & Fullscreen Shell | v2.2 | 0/0 | Not started | - |
-| 33. Auto-Hide Chrome Layer | v2.2 | 0/0 | Not started | - |
+| 33. Auto-Hide Chrome Layer | v2.2 | 0/2 | Planned | - |
 | 34. Episode Tray | v2.2 | 0/0 | Not started | - |
