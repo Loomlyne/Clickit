@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/server'
 import { WatchShell } from '@/components/watch/watch-shell'
-import { getEpisodeById, getEpisodeProgress, mapShow, mapEpisode, mapSeason } from '@/lib/queries'
+import { getEpisodeById, getEpisodeProgress, mapShow, mapEpisode, mapSeason, getShowWatchlistState, getShowLikeState } from '@/lib/queries'
 import { getLocale } from '@/lib/locale'
 
 interface Props {
@@ -61,6 +61,14 @@ export default async function WatchPage({ params }: Props) {
 
   if (!data) notFound()
 
+  // Second wave — show.id is now available from data
+  const [inWatchlist, isLiked] = user
+    ? await Promise.all([
+        getShowWatchlistState(user.id, data.show.id),
+        getShowLikeState(user.id, data.show.id),
+      ])
+    : [false, false]
+
   const { episode, show, season, seasons, episodesBySeason, prev, next } = data
 
   const viewEpisode = mapEpisode(episode, locale)
@@ -90,6 +98,8 @@ export default async function WatchPage({ params }: Props) {
       nextEpisode={viewNext}
       initialProgressSeconds={initialProgressSeconds}
       userId={user?.id ?? null}
+      initialSaved={inWatchlist}
+      initialLiked={isLiked}
     />
   )
 }
