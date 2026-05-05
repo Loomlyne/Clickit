@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Localize titles + descriptions for shareable previews.
   const ep = mapEpisode(data.episode, locale)
   const show = mapShow(data.show, locale)
-  const canonical = `/watch/${episodeId}`
+  const canonical = `/${locale}/watch/${episodeId}`
   const ogImage = data.episode.youtube_video_id
     ? `https://img.youtube.com/vi/${data.episode.youtube_video_id}/maxresdefault.jpg`
     : data.show.hero_url ?? data.show.poster_url ?? undefined
