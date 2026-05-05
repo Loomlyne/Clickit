@@ -55,7 +55,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 ### 🚧 v2.2 Immersive Watch -- Phases 32-34
 
 - [ ] **Phase 32: Watch Route Isolation & Fullscreen Shell** -- Move watch into `(watch)/` route group; video fills 100dvw × 100dvh on entry with zero chrome; YouTube IFrame API stays alive across episode switches
-- [ ] **Phase 33: Auto-Hide Chrome Layer** -- Top overlay (back/title/badge/actions) and edge prev/next arrows fade in on interaction, fade out after 3s idle, never block YouTube native controls
+- [x] **Phase 33: Auto-Hide Chrome Layer** -- Top overlay (back/title/badge/actions) and edge prev/next arrows fade in on interaction, fade out after 3s idle, never block YouTube native controls (completed 2026-05-05)
 - [ ] **Phase 34: Episode Tray** -- Persistent 24px peek handle plus Vaul bottom sheet with 3 snap points (peek/half/full); season selector tabs + vertical episode list; tap navigates without remounting the player
 
 ## Phase Details
@@ -218,8 +218,8 @@ Plans:
   6. Tapping prev/next swaps episodes via `loadVideoById()` -- the player keeps the same iframe and progress tracking continues uninterrupted
 **Plans**: 2 plans
 Plans:
-- [ ] 33-01-PLAN.md -- useIdleTimer hook + currentPrevEpisode state + WatchShell idle wiring
-- [ ] 33-02-PLAN.md -- Top overlay + edge arrows + page.tsx initial watchlist/likes fetch
+- [x] 33-01-PLAN.md -- useIdleTimer hook + currentPrevEpisode state + WatchShell idle wiring
+- [x] 33-02-PLAN.md -- Top overlay + edge arrows + page.tsx initial watchlist/likes fetch
 **UI hint**: yes
 
 ### Phase 34: Episode Tray
@@ -298,5 +298,5 @@ v2.2: 32 -> 33 -> 34
 | 26. Admin Visual Refresh | v2.0 | 1/1 | Complete | 2026-04-28 |
 | 27. Responsive Polish | v2.0 | 1/1 | Complete | 2026-04-28 |
 | 32. Watch Route Isolation & Fullscreen Shell | v2.2 | 0/0 | Not started | - |
-| 33. Auto-Hide Chrome Layer | v2.2 | 0/2 | Planned | - |
+| 33. Auto-Hide Chrome Layer | v2.2 | 2/2 | Complete   | 2026-05-05 |
 | 34. Episode Tray | v2.2 | 0/0 | Not started | - |

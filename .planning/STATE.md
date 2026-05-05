@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Immersive Watch
-status: roadmap_ready
-last_updated: "2026-05-05T00:00:00.000Z"
-last_activity: 2026-05-05
+status: executing
+stopped_at: v2.2 roadmap created; ready for `/gsd-plan-phase 32`
+last_updated: "2026-05-05T22:46:13.612Z"
+last_activity: 2026-05-05 -- Phase 33 execution started
 progress:
-  total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 13
+  completed_phases: 1
+  total_plans: 4
+  completed_plans: 2
+  percent: 50
 ---
 
 # Project State
@@ -20,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-24)
 
 **Core value:** Viewers enter, discover a show, pick an episode, watch immediately -- premium streaming experience for CIT originals.
-**Current focus:** Milestone v2.2 -- Immersive Watch (fullscreen-first watch page + swipe-up episode tray)
+**Current focus:** Phase 33 — Auto-Hide Chrome Layer
 
 ## Current Position
 
-Phase: 32 (not started)
-Plan: —
-Status: Roadmap created, awaiting plan-phase
-Last activity: 2026-05-05 — v2.2 roadmap drafted (3 phases, 15 requirements mapped)
+Phase: 33 (Auto-Hide Chrome Layer) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 33
+Last activity: 2026-05-05 -- Phase 33 execution started
 
 ## Roadmap Summary (v2.2)
 
