@@ -7,6 +7,10 @@ import { YouTubePlayer } from '@/components/watch/youtube-player'
 import { AutoplayOverlay } from '@/components/watch/autoplay-overlay'
 import { useProgressTracker } from '@/hooks/use-progress-tracker'
 import { useIdleTimer } from '@/hooks/use-idle-timer'
+import { useWatchlist } from '@/hooks/use-watchlist'
+import { useLikes } from '@/hooks/use-likes'
+import { toast } from 'sonner'
+import { ArrowLeft, ChevronLeft, ChevronRight, Bookmark, Heart, Share2 } from 'lucide-react'
 import type { ViewEpisode, ViewShow, ViewSeason } from '@/lib/queries'
 import { BRAND_COLOR_BG } from '@/lib/brand-colors'
 
@@ -62,9 +66,23 @@ export function WatchShell({
   const { forceFlush } = useProgressTracker(playerInstance, currentEpisode.id, userId ?? null)
 
   const { isIdle, resetTimer } = useIdleTimer(3000)
-  // used in Plan 02 — overlay JSX added in 33-02-PLAN.md
-  // currentPrevEpisode and chromeClass consumed by overlay JSX in Plan 02
   const chromeClass = isIdle ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+
+  const { isInList, toggle: toggleWatchlist } = useWatchlist(show.id, initialSaved, userId ?? null)
+  const { isLiked: isShowLiked, toggle: toggleLike } = useLikes(show.id, initialLiked, userId ?? null)
+
+  function handleShare() {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      navigator.share({ url: window.location.href }).catch(() => {/* user dismissed */})
+    } else {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        toast.success('Link copied')
+      })
+    }
+  }
+
+  const currentSeason = seasons.find((s) => s.id === currentEpisode.seasonId)
+  const seasonNumber = currentSeason?.seasonNumber ?? season.seasonNumber
 
   // Derive the episode that follows `current` by scanning episodesBySeason.
   // Cross-season: if current is the last episode in its season, returns the
@@ -173,16 +191,86 @@ export function WatchShell({
         />
       </div>
 
-      {/* Minimal back link — Phase 33 replaces this with full auto-hide chrome */}
-      <div className="absolute top-4 left-4 z-10">
+      {/* Auto-hide chrome — top overlay strip */}
+      <div
+        className={`fixed top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 to-transparent px-4 pt-4 pb-8 flex items-center justify-between transition-opacity duration-200 ease-in-out ${chromeClass}`}
+        aria-hidden={isIdle}
+      >
+        {/* Left: back to show */}
         <Link
           href={`/series/${show.slug}`}
-          className="text-sm text-white/50 hover:text-white transition-colors duration-150"
-          aria-label={isArabic ? 'العودة للمسلسل' : 'Back to show'}
+          className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors duration-150"
+          aria-label={`Back to ${show.title}`}
+          tabIndex={isIdle ? -1 : 0}
         >
-          ← Back
+          <ArrowLeft className="size-5" />
+          {show.title}
         </Link>
+
+        {/* Center: episode title + S/E badge */}
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-sm font-medium text-white leading-none">
+            {currentEpisode.title}
+          </span>
+          <span className="text-xs text-white/50 font-mono leading-none">
+            S{seasonNumber} E{currentEpisode.episodeNumber}
+          </span>
+        </div>
+
+        {/* Right: action buttons */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleWatchlist}
+            className="size-8 flex items-center justify-center text-white/70 hover:text-white transition-colors duration-150"
+            aria-label={isInList ? 'Remove from watchlist' : 'Add to watchlist'}
+            aria-pressed={isInList}
+            tabIndex={isIdle ? -1 : 0}
+          >
+            <Bookmark className={`size-5 ${isInList ? 'fill-white text-white' : ''}`} />
+          </button>
+          <button
+            onClick={toggleLike}
+            className="size-8 flex items-center justify-center text-white/70 hover:text-white transition-colors duration-150"
+            aria-label={isShowLiked ? 'Unlike this show' : 'Like this show'}
+            aria-pressed={isShowLiked}
+            tabIndex={isIdle ? -1 : 0}
+          >
+            <Heart className={`size-5 ${isShowLiked ? 'fill-pink-400 text-pink-400' : ''}`} />
+          </button>
+          <button
+            onClick={handleShare}
+            className="size-8 flex items-center justify-center text-white/70 hover:text-white transition-colors duration-150"
+            aria-label="Share episode"
+            tabIndex={isIdle ? -1 : 0}
+          >
+            <Share2 className="size-5" />
+          </button>
+        </div>
       </div>
+
+      {/* Auto-hide chrome — prev episode arrow */}
+      {currentPrevEpisode && (
+        <button
+          onClick={() => handleEpisodeSwitch(currentPrevEpisode)}
+          className={`fixed left-3 top-1/2 -translate-y-1/2 z-20 size-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-opacity duration-200 ease-in-out ${chromeClass}`}
+          aria-label="Previous episode"
+          tabIndex={isIdle ? -1 : 0}
+        >
+          <ChevronLeft className="size-5 text-white" />
+        </button>
+      )}
+
+      {/* Auto-hide chrome — next episode arrow */}
+      {currentNextEpisode && (
+        <button
+          onClick={() => handleEpisodeSwitch(currentNextEpisode)}
+          className={`fixed right-3 top-1/2 -translate-y-1/2 z-20 size-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-opacity duration-200 ease-in-out ${chromeClass}`}
+          aria-label="Next episode"
+          tabIndex={isIdle ? -1 : 0}
+        >
+          <ChevronRight className="size-5 text-white" />
+        </button>
+      )}
 
       {/* AutoplayOverlay — sibling of player div, not child (cross-origin pointer events) */}
       {showAutoplay && currentNextEpisode && (
