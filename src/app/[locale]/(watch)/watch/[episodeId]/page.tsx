@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/server'
-import { WatchPageContent } from '@/components/watch/watch-page-content'
+import { WatchShell } from '@/components/watch/watch-shell'
 import { getEpisodeById, getEpisodeProgress, mapShow, mapEpisode, mapSeason } from '@/lib/queries'
 import { getLocale } from '@/lib/locale'
 
@@ -80,18 +80,16 @@ export default async function WatchPage({ params }: Props) {
     progressRow && !progressRow.completed ? progressRow.progressSeconds : 0
 
   return (
-    <div className="watch-page-wrap -mt-16">
-      <WatchPageContent
-        episode={viewEpisode}
-        show={viewShow}
-        season={viewSeason}
-        seasons={viewSeasons}
-        episodesBySeason={viewEpisodesBySeason}
-        prevEpisode={viewPrev}
-        nextEpisode={viewNext}
-        initialProgressSeconds={initialProgressSeconds}
-        userId={user?.id ?? null}
-      />
-    </div>
+    <WatchShell
+      episode={viewEpisode}
+      show={viewShow}
+      season={viewSeason}
+      seasons={viewSeasons}
+      episodesBySeason={viewEpisodesBySeason}
+      prevEpisode={viewPrev}
+      nextEpisode={viewNext}
+      initialProgressSeconds={initialProgressSeconds}
+      userId={user?.id ?? null}
+    />
   )
 }
