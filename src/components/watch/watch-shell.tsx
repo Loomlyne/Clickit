@@ -50,6 +50,21 @@ export function WatchShell({
   // save closure targets the new episode immediately.
   const { forceFlush } = useProgressTracker(playerInstance, currentEpisode.id, userId ?? null)
 
+  function handleEpisodeSwitch(newEpisode: ViewEpisode) {
+    if (!playerRef.current || !newEpisode.youtubeId) return
+    // 1. Save outgoing position — closure still has old episodeId
+    forceFlush()
+    // 2. Update state — useProgressTracker rebuilds save() with new episodeId
+    setCurrentEpisode(newEpisode)
+    // 3. Swap video without remounting the iframe
+    playerRef.current.loadVideoById({
+      videoId: newEpisode.youtubeId,
+      startSeconds: 0,
+    })
+    // 4. Sync URL without triggering a Next.js re-render
+    window.history.replaceState(null, '', `/${locale}/watch/${newEpisode.id}`)
+  }
+
   // Bounce back to series if episode has no video
   useEffect(() => {
     if (!episode.youtubeId) {
@@ -113,8 +128,7 @@ export function WatchShell({
           }}
           onPlayNow={() => {
             setShowAutoplay(false)
-            // Plan 02 replaces this router.push with handleEpisodeSwitch (loadVideoById)
-            router.push(`/watch/${nextEpisode.id}`)
+            handleEpisodeSwitch(nextEpisode)
           }}
           onCancel={() => setShowAutoplay(false)}
         />
