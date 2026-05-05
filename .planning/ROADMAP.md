@@ -199,7 +199,10 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   4. Clicking a different episode (from tray or arrow) swaps the video via `loadVideoById()` -- the iframe element is the same DOM node before and after, no flash of black, no reload
   5. Continue-watching progress writes still fire every 10s in the new layout -- pausing the video then refreshing the page resumes within 10s of the last position
   6. Lenis smooth-scroll never hijacks the watch route -- pinch/wheel/touch gestures behave like the native browser, with no scroll-locked feel
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 32-01-PLAN.md — Create (watch)/ route group, bare segment layout, page.tsx migration, WatchShell component (fullscreen shell + initial player wiring)
+- [ ] 32-02-PLAN.md — Add handleEpisodeSwitch (loadVideoById + replaceState), wire AutoplayOverlay, delete WatchPageContent, smoke test
 **UI hint**: yes
 
 ### Phase 33: Auto-Hide Chrome Layer
