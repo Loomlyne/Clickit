@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.2
-milestone_name: Immersive Watch
+milestone: all
+milestone_name: All tracked milestones
 status: complete
-stopped_at: v2.2 completed; live browser verification still recommended for iframe identity and drag behavior
+stopped_at: all tracked GSD phases marked complete; production deploy handled in closeout turn
 last_updated: "2026-05-06T09:00:30Z"
-last_activity: 2026-05-06, Phase 34 episode tray implemented and Phase 33 idle behavior tightened
+last_activity: 2026-05-06, v2.1 stale tracking closed and v2.2 completed
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
+  total_phases: 31
+  completed_phases: 31
+  total_plans: 9
+  completed_plans: 9
   percent: 100
 ---
 
@@ -21,21 +21,25 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-24)
 
 **Core value:** Viewers enter, discover a show, pick an episode, watch immediately, premium streaming experience for CIT originals.
-**Current focus:** v2.2 complete.
+**Current focus:** all tracked GSD phases complete.
 
 ## Current Position
 
-Phase: 34 (Episode Tray), COMPLETE
-Plan: 1 of 1 complete
+Phase: all tracked phases, COMPLETE
+Plan: all tracked plans complete
 Status: Milestone complete
-Last activity: 2026-05-06, Phase 34 execution finished
+Last activity: 2026-05-06, v2.1 and v2.2 closeout finished
 
 ## Roadmap Summary (v2.2)
 
-3 phases, 15 requirements, fullscreen watch milestone.
+v2.1 and v2.2 are both complete.
 
 | Phase | Scope | Status |
 |-------|-------|--------|
+| 28 | Contact and Notification Infrastructure | Complete |
+| 29 | CTA and Route Repair | Complete |
+| 30 | Company Pages | Complete |
+| 31 | Verification and Live Audit | Complete |
 | 32 | Watch Route Isolation & Fullscreen Shell | Complete |
 | 33 | Auto-Hide Chrome Layer | Complete |
 | 34 | Episode Tray | Complete |
@@ -75,9 +79,9 @@ Last activity: 2026-05-06, Phase 34 execution finished
 
 - `npm exec tsc -- --noEmit` passed.
 - `npm run lint` was started, produced no diagnostics, and was stopped after the known local stall recurred, matching the known Clickit ESLint package stall pattern.
-- `npm run dev` stalled before binding a port, so local browser smoke testing is still pending.
+- `npm run dev` stalled before binding a port, so local browser smoke testing was blocked in this environment.
 
 ## Session Continuity
 
 Last session: 2026-05-06
-Stopped at: v2.2 complete, runtime browser verification pending
+Stopped at: all tracked GSD phases complete, production deploy handled in closeout turn

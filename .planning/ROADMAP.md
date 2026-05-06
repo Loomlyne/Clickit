@@ -6,7 +6,7 @@
 - ✅ **v1.1 Full Bilingual UI (AR/EN)** -- Phases 12-13 shipped; Phases 14-17 superseded by v2.0
 - ~~v1.2 Editorial Feature Parity~~ -- Superseded by v2.0 (editorial design IS the main design now)
 - ✅ **v2.0 Full Visual Redesign** -- Phases 18-27 (completed 2026-04-28)
-- 🚧 **v2.1 UX Fixes** -- Phases 28-31 in progress (started 2026-04-29)
+- ✅ **v2.1 UX Fixes** -- Phases 28-31 completed 2026-05-06
 - ✅ **v2.2 Immersive Watch** -- Phases 32-34 completed 2026-05-06
 
 ## Phases
@@ -51,6 +51,13 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 - [x] **Phase 25: Auth & Supporting Pages** -- Split-screen auth, OAuth, password strength meter; search, my list, profile, coming soon, support restyled
 - [x] **Phase 26: Admin Visual Refresh** -- New tokens applied to admin portal (backgrounds, accent, fonts, radii) -- functionality unchanged
 - [x] **Phase 27: Responsive Polish** -- Mobile breakpoints across all pages (header, landing, content rails, watch, footer, shorts, auth)
+
+### ✅ v2.1 UX Fixes -- Phases 28-31
+
+- [x] **Phase 28: Contact and Notification Infrastructure** -- Support and newsletter submissions persist to Supabase, validate server-side, and attempt email notification (completed 2026-05-06)
+- [x] **Phase 29: CTA and Route Repair** -- Dead CTAs now route to browse, membership, updates, profile, or support contact targets (completed 2026-05-06)
+- [x] **Phase 30: Company Pages** -- About, Creators, Press, Membership, and Updates exist as localized viewer routes and footer links resolve to them (completed 2026-05-06)
+- [x] **Phase 31: Verification and Live Audit** -- Source audit completed, TypeScript and unit tests passed, live Vercel deployment tracked separately (completed 2026-05-06)
 
 ### ✅ v2.2 Immersive Watch -- Phases 32-34
 
@@ -299,6 +306,10 @@ v2.2: 32 -> 33 -> 34
 | 25. Auth & Supporting Pages | v2.0 | 1/1 | Complete | 2026-04-28 |
 | 26. Admin Visual Refresh | v2.0 | 1/1 | Complete | 2026-04-28 |
 | 27. Responsive Polish | v2.0 | 1/1 | Complete | 2026-04-28 |
+| 28. Contact and Notification Infrastructure | v2.1 | 1/1 | Complete | 2026-05-06 |
+| 29. CTA and Route Repair | v2.1 | 1/1 | Complete | 2026-05-06 |
+| 30. Company Pages | v2.1 | 1/1 | Complete | 2026-05-06 |
+| 31. Verification and Live Audit | v2.1 | 1/1 | Complete | 2026-05-06 |
 | 32. Watch Route Isolation & Fullscreen Shell | v2.2 | 2/2 | Complete | 2026-05-06 |
 | 33. Auto-Hide Chrome Layer | v2.2 | 2/2 | Complete   | 2026-05-05 |
 | 34. Episode Tray | v2.2 | 1/1 | Complete | 2026-05-06 |
