@@ -120,36 +120,6 @@ export default async function SeriesDetailPage({ params }: Props) {
     <div className="-mt-16">
       <SeriesDetailHero show={show} seasons={viewSeasons} firstEpisodeLabel={firstEpisodeLabel} firstEpisodeId={firstEpisodeId} initialSaved={inWatchlist} initialLiked={isLiked} userId={user?.id ?? null} />
 
-      <div className="mt-8 px-6 md:px-12">
-        <div className="mx-auto max-w-7xl">
-          {viewSeasons.length === 0 ? (
-            <div className="py-16">
-              <p className="text-[11px] font-normal uppercase tracking-[0.28em] text-white/38">
-                {t('seasonsLabel')}
-              </p>
-              <h2 className="font-display mt-2 text-3xl font-semibold text-white">
-                {t('emptyEpisodesHeading')}
-              </h2>
-              <p className="mt-2 text-white/50">{t('emptyEpisodesDescription')}</p>
-              <Link
-                href="/coming-soon"
-                className="mt-4 inline-flex items-center text-sm text-white/60 transition-colors hover:text-white"
-              >
-                {t('comingSoonEyebrow')} &rarr;
-              </Link>
-            </div>
-          ) : (
-            <SeriesDetailContent
-              seasons={viewSeasons}
-              episodesBySeason={viewEpisodesBySeason}
-              showBrandColor={show.brandColor}
-              show={show}
-              progressMap={episodesProgressMap}
-            />
-          )}
-        </div>
-      </div>
-
       {/* Cast */}
       {castMembers && castMembers.length > 0 && (
         <div className="mt-12 px-6 md:px-12">
@@ -179,6 +149,36 @@ export default async function SeriesDetailPage({ params }: Props) {
           </div>
         </div>
       )}
+
+      <div className="mt-8 px-6 md:px-12">
+        <div className="mx-auto max-w-7xl">
+          {viewSeasons.length === 0 ? (
+            <div className="py-16">
+              <p className="text-[11px] font-normal uppercase tracking-[0.28em] text-white/38">
+                {t('seasonsLabel')}
+              </p>
+              <h2 className="font-display mt-2 text-3xl font-semibold text-white">
+                {t('emptyEpisodesHeading')}
+              </h2>
+              <p className="mt-2 text-white/50">{t('emptyEpisodesDescription')}</p>
+              <Link
+                href="/coming-soon"
+                className="mt-4 inline-flex items-center text-sm text-white/60 transition-colors hover:text-white"
+              >
+                {t('comingSoonEyebrow')} &rarr;
+              </Link>
+            </div>
+          ) : (
+            <SeriesDetailContent
+              seasons={viewSeasons}
+              episodesBySeason={viewEpisodesBySeason}
+              showBrandColor={show.brandColor}
+              show={show}
+              progressMap={episodesProgressMap}
+            />
+          )}
+        </div>
+      </div>
 
       {/* Reviews */}
       <div className="mt-12 px-6 md:px-12">
