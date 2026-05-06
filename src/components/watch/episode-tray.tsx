@@ -2,7 +2,7 @@
 
 import { useRef, type TouchEvent, type WheelEvent } from 'react'
 import { Drawer } from 'vaul'
-import { ChevronUp, Play } from 'lucide-react'
+import { ChevronUp, ChevronsUp, Play } from 'lucide-react'
 
 import { ShowArt } from '@/components/primitives/show-art'
 import { cn } from '@/lib/utils'
@@ -102,7 +102,7 @@ export function EpisodeTray({
     >
       <Drawer.Portal>
         <Drawer.Content
-          className="fixed inset-x-0 bottom-0 z-30 mx-auto flex h-[95dvh] max-h-[95dvh] max-w-5xl flex-col rounded-t-[8px] border border-white/10 bg-black/92 text-white shadow-2xl outline-none backdrop-blur-xl"
+          className="fixed inset-x-0 bottom-0 z-30 flex h-[95dvh] max-h-[95dvh] flex-col rounded-t-[8px] border border-white/10 bg-black/92 text-white shadow-2xl outline-none backdrop-blur-xl"
           onWheel={isPeek ? handlePeekWheel : undefined}
           onTouchStart={isPeek ? handlePeekTouchStart : undefined}
           onTouchMove={isPeek ? handlePeekTouchMove : undefined}
@@ -121,24 +121,28 @@ export function EpisodeTray({
             aria-label={isPeek ? 'Open more videos' : 'Episode tray handle'}
           >
             <span className="flex min-w-0 items-center gap-4">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-black">
+                <ChevronsUp className="size-5" />
+              </span>
               <span className="min-w-0">
                 <span className="block text-[26px] font-semibold leading-none tracking-normal text-white sm:text-[30px]">
                   More videos
                 </span>
                 <span className="mt-2 block truncate font-mono text-[11px] text-white/45">
-                  {show.title} · Ep {currentCount} of {allEpisodes.length || currentCount}
+                  Swipe up or click to open · {show.title} · Ep {currentCount} of {allEpisodes.length || currentCount}
                 </span>
               </span>
             </span>
-            <span className="relative flex h-14 w-[88px] shrink-0 items-center justify-center rounded-[16px] border-[3px] border-white bg-white shadow-[0_0_0_1px_rgba(255,255,255,0.25)]">
+            <span className="relative flex h-14 w-[104px] shrink-0 items-center justify-center rounded-[16px] border-[3px] border-white bg-white shadow-[0_0_0_1px_rgba(255,255,255,0.25)]">
               <ShowArt
                 brandColor={brandColor}
                 title={previewEpisode.title}
                 imageUrl={previewThumbnail}
                 className="h-full w-full rounded-[12px]"
               />
-              <span className="absolute -top-5 left-1/2 -translate-x-1/2">
-                <Drawer.Handle className="h-1.5 w-8 rounded-full bg-white/40" />
+              <span className="absolute -top-6 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-black shadow-lg">
+                <Drawer.Handle className="h-1.5 w-5 rounded-full bg-black/35" />
+                Open
               </span>
             </span>
           </div>
@@ -184,8 +188,8 @@ export function EpisodeTray({
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
-              <div className="space-y-2">
+            <div className="min-h-0 flex-1 px-5 py-5 sm:px-8">
+              <div className="flex h-full gap-5 overflow-x-auto overflow-y-hidden pb-5 [scrollbar-color:rgba(255,255,255,0.45)_transparent] [scrollbar-width:thin]">
                 {activeEpisodes.map((episode) => {
                   const isCurrent = episode.id === currentEpisode.id
                   const progress = progressMap[episode.id]
@@ -203,10 +207,10 @@ export function EpisodeTray({
                       }}
                       disabled={episode.status !== 'published' || !episode.youtubeId}
                       className={cn(
-                        'grid w-full grid-cols-[112px_1fr] gap-3 rounded-[8px] border p-2 text-left transition sm:grid-cols-[144px_1fr]',
+                        'group flex h-fit w-[260px] shrink-0 flex-col rounded-[8px] border p-0 text-left transition sm:w-[360px] md:w-[400px]',
                         isCurrent
-                          ? 'border-white/25 bg-white/12'
-                          : 'border-transparent bg-white/[0.03] hover:border-white/12 hover:bg-white/[0.07]',
+                          ? 'border-white/35 bg-white/12'
+                          : 'border-transparent bg-transparent hover:border-white/12',
                         (episode.status !== 'published' || !episode.youtubeId) && 'cursor-not-allowed opacity-45'
                       )}
                       aria-current={isCurrent ? 'true' : undefined}
@@ -215,15 +219,22 @@ export function EpisodeTray({
                         brandColor={brandColor}
                         title={episode.title}
                         imageUrl={thumbnailUrl}
-                        className="rounded-[6px]"
+                        className="w-full rounded-[16px]"
                       >
-                        <div className="flex h-full items-center justify-center bg-black/20">
-                          <Play className="size-5 fill-white text-white opacity-80" />
+                        <div className="flex h-full items-center justify-center bg-black/20 opacity-0 transition group-hover:opacity-100">
+                          <span className="flex size-12 items-center justify-center rounded-full bg-black/65">
+                            <Play className="size-5 fill-white text-white" />
+                          </span>
                         </div>
+                        {episode.duration && (
+                          <div className="absolute bottom-3 right-3 rounded-[6px] bg-black/75 px-2 py-1 text-sm font-semibold text-white">
+                            {episode.duration}:00
+                          </div>
+                        )}
                       </ShowArt>
 
-                      <span className="flex min-w-0 flex-col justify-center">
-                        <span className="flex items-center gap-2">
+                      <span className="mt-4 flex min-w-0 flex-col px-1 pb-2">
+                        <span className="flex min-w-0 items-center gap-2">
                           <span className="rounded-full bg-white/10 px-2 py-0.5 font-mono text-[10px] text-white/55">
                             S{seasons.find((season) => season.id === episode.seasonId)?.seasonNumber ?? 1} E{episode.episodeNumber}
                           </span>
@@ -238,10 +249,6 @@ export function EpisodeTray({
                         </span>
                         <span className="mt-1 line-clamp-1 text-xs text-white/45">
                           {episode.description}
-                        </span>
-                        <span className="mt-2 flex items-center gap-2 text-[11px] text-white/40">
-                          {episode.duration ? `${episode.duration} min` : 'unknown min'}
-                          {progress?.completed && <span>Completed</span>}
                         </span>
                         {!progress?.completed && progress?.progressPercent ? (
                           <span className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
