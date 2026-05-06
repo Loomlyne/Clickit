@@ -117,7 +117,7 @@ export default async function SeriesDetailPage({ params }: Props) {
   const moreLikeThis = allStreaming.filter((s) => s.genre === show.genre && s.id !== show.id)
 
   return (
-    <div>
+    <div className="-mt-16">
       <SeriesDetailHero show={show} seasons={viewSeasons} firstEpisodeLabel={firstEpisodeLabel} firstEpisodeId={firstEpisodeId} initialSaved={inWatchlist} initialLiked={isLiked} userId={user?.id ?? null} />
 
       <div className="mt-8 px-6 md:px-12">
