@@ -28,9 +28,7 @@ export function EntryPreload() {
     <motion.div
       aria-hidden="true"
       className="fixed inset-0 z-[100] grid place-items-center overflow-hidden bg-black"
-      initial={
-        prefersReducedMotion ? { opacity: 1 } : { y: '100%', opacity: 1 }
-      }
+      initial={prefersReducedMotion ? { opacity: 1 } : { y: '0%', opacity: 1 }}
       animate={
         phase === 'exit'
           ? prefersReducedMotion
