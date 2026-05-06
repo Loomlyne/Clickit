@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/server'
 import { WatchShell } from '@/components/watch/watch-shell'
-import { getEpisodeById, getEpisodeProgress, mapShow, mapEpisode, mapSeason, getShowWatchlistState, getShowLikeState } from '@/lib/queries'
+import { getEpisodeById, getEpisodeProgress, getEpisodesProgress, mapShow, mapEpisode, mapSeason, getShowWatchlistState, getShowLikeState } from '@/lib/queries'
 import { getLocale } from '@/lib/locale'
 
 interface Props {
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: ep.description,
     alternates: { canonical },
     openGraph: {
-      title: `${ep.title} — ${show.title}`,
+      title: `${ep.title}, ${show.title}`,
       description: ep.description,
       url: canonical,
       type: 'video.episode',
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${ep.title} — ${show.title}`,
+      title: `${ep.title}, ${show.title}`,
       description: ep.description,
       images: ogImage ? [ogImage] : undefined,
     },
@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function WatchPage({ params }: Props) {
   const { episodeId } = await params
 
-  // proxy.ts already validated the JWT — getSession() reads the cookie locally (~5ms).
+  // proxy.ts already validated the JWT, getSession() reads the cookie locally (~5ms).
   // Run session fetch in parallel with episode data + locale so progress can be
   // fetched in the same wave as the episode query, not after it.
   const supabase = await createClient()
@@ -61,13 +61,16 @@ export default async function WatchPage({ params }: Props) {
 
   if (!data) notFound()
 
-  // Second wave — show.id is now available from data
-  const [inWatchlist, isLiked] = user
+  // Second wave, show.id is now available from data
+  const episodeIds = Object.values(data.episodesBySeason).flat().map((episode) => episode.id)
+
+  const [inWatchlist, isLiked, progressMap] = user
     ? await Promise.all([
         getShowWatchlistState(user.id, data.show.id),
         getShowLikeState(user.id, data.show.id),
+        getEpisodesProgress(user.id, episodeIds),
       ])
-    : [false, false]
+    : [false, false, {}]
 
   const { episode, show, season, seasons, episodesBySeason, prev, next } = data
 
@@ -100,6 +103,7 @@ export default async function WatchPage({ params }: Props) {
       userId={user?.id ?? null}
       initialSaved={inWatchlist}
       initialLiked={isLiked}
+      progressMap={progressMap}
     />
   )
 }

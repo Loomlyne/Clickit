@@ -7,7 +7,7 @@
 - ~~v1.2 Editorial Feature Parity~~ -- Superseded by v2.0 (editorial design IS the main design now)
 - ✅ **v2.0 Full Visual Redesign** -- Phases 18-27 (completed 2026-04-28)
 - 🚧 **v2.1 UX Fixes** -- Phases 28-31 in progress (started 2026-04-29)
-- 🚧 **v2.2 Immersive Watch** -- Phases 32-34 planning (started 2026-05-05)
+- ✅ **v2.2 Immersive Watch** -- Phases 32-34 completed 2026-05-06
 
 ## Phases
 
@@ -52,11 +52,11 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 - [x] **Phase 26: Admin Visual Refresh** -- New tokens applied to admin portal (backgrounds, accent, fonts, radii) -- functionality unchanged
 - [x] **Phase 27: Responsive Polish** -- Mobile breakpoints across all pages (header, landing, content rails, watch, footer, shorts, auth)
 
-### 🚧 v2.2 Immersive Watch -- Phases 32-34
+### ✅ v2.2 Immersive Watch -- Phases 32-34
 
-- [ ] **Phase 32: Watch Route Isolation & Fullscreen Shell** -- Move watch into `(watch)/` route group; video fills 100dvw × 100dvh on entry with zero chrome; YouTube IFrame API stays alive across episode switches
+- [x] **Phase 32: Watch Route Isolation & Fullscreen Shell** -- Move watch into `(watch)/` route group; video fills 100dvw × 100dvh on entry with zero chrome; YouTube IFrame API stays alive across episode switches (completed 2026-05-06)
 - [x] **Phase 33: Auto-Hide Chrome Layer** -- Top overlay (back/title/badge/actions) and edge prev/next arrows fade in on interaction, fade out after 3s idle, never block YouTube native controls (completed 2026-05-05)
-- [ ] **Phase 34: Episode Tray** -- Persistent 24px peek handle plus Vaul bottom sheet with 3 snap points (peek/half/full); season selector tabs + vertical episode list; tap navigates without remounting the player
+- [x] **Phase 34: Episode Tray** -- Persistent 24px peek handle plus Vaul bottom sheet with 3 snap points (peek/half/full); season selector tabs + vertical episode list; tap navigates without remounting the player (completed 2026-05-06)
 
 ## Phase Details
 
@@ -201,8 +201,8 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
   6. Lenis smooth-scroll never hijacks the watch route -- pinch/wheel/touch gestures behave like the native browser, with no scroll-locked feel
 **Plans**: 2 plans
 Plans:
-- [ ] 32-01-PLAN.md — Create (watch)/ route group, bare segment layout, page.tsx migration, WatchShell component (fullscreen shell + initial player wiring)
-- [ ] 32-02-PLAN.md — Add handleEpisodeSwitch (loadVideoById + replaceState), wire AutoplayOverlay, delete WatchPageContent, smoke test
+- [x] 32-01-PLAN.md -- Create (watch)/ route group, bare segment layout, page.tsx migration, WatchShell component (fullscreen shell + initial player wiring)
+- [x] 32-02-PLAN.md -- Add handleEpisodeSwitch (loadVideoById + replaceState), wire AutoplayOverlay, delete WatchPageContent, smoke test
 **UI hint**: yes
 
 ### Phase 33: Auto-Hide Chrome Layer
@@ -233,7 +233,9 @@ Plans:
   4. The tray header shows the show title and a row of season tabs covering all seasons; tapping a different season tab swaps the episode list in place -- no page navigation, the player keeps playing
   5. Each episode row renders a 16:9 thumbnail, S/E badge, episode title, duration, and a mini progress bar reflecting saved continue-watching state; the currently-playing row is highlighted with a distinct background plus indicator
   6. Tapping any episode row navigates to that episode via `loadVideoById()` (no iframe remount); on mobile the tray automatically returns to the peek state after selection so the new episode is immediately watchable
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [x] 34-01-PLAN.md -- Add Vaul tray, snap states, player squeeze behavior, season tabs, episode rows, progress bars, and switch wiring
 **UI hint**: yes
 
 ## Dependency Graph (v2.0)
@@ -297,6 +299,6 @@ v2.2: 32 -> 33 -> 34
 | 25. Auth & Supporting Pages | v2.0 | 1/1 | Complete | 2026-04-28 |
 | 26. Admin Visual Refresh | v2.0 | 1/1 | Complete | 2026-04-28 |
 | 27. Responsive Polish | v2.0 | 1/1 | Complete | 2026-04-28 |
-| 32. Watch Route Isolation & Fullscreen Shell | v2.2 | 0/0 | Not started | - |
+| 32. Watch Route Isolation & Fullscreen Shell | v2.2 | 2/2 | Complete | 2026-05-06 |
 | 33. Auto-Hide Chrome Layer | v2.2 | 2/2 | Complete   | 2026-05-05 |
-| 34. Episode Tray | v2.2 | 0/0 | Not started | - |
+| 34. Episode Tray | v2.2 | 1/1 | Complete | 2026-05-06 |

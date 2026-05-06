@@ -5,6 +5,11 @@ import { useLocale } from 'next-intl'
 import { Link, useRouter } from '@/i18n/navigation'
 import { YouTubePlayer } from '@/components/watch/youtube-player'
 import { AutoplayOverlay } from '@/components/watch/autoplay-overlay'
+import {
+  EpisodeTray,
+  WATCH_TRAY_SNAP_POINTS,
+  type WatchTraySnapPoint,
+} from '@/components/watch/episode-tray'
 import { useProgressTracker } from '@/hooks/use-progress-tracker'
 import { useIdleTimer } from '@/hooks/use-idle-timer'
 import { useWatchlist } from '@/hooks/use-watchlist'
@@ -24,8 +29,9 @@ interface WatchShellProps {
   nextEpisode: ViewEpisode | null
   initialProgressSeconds?: number
   userId?: string | null
-  initialSaved?: boolean      // default false — used by useWatchlist in Plan 02
-  initialLiked?: boolean      // default false — used by useLikes in Plan 02
+  initialSaved?: boolean      // default false, used by useWatchlist in Plan 02
+  initialLiked?: boolean      // default false, used by useLikes in Plan 02
+  progressMap?: Record<string, { progressPercent: number; completed: boolean }>
 }
 
 export function WatchShell({
@@ -40,20 +46,24 @@ export function WatchShell({
   userId,
   initialSaved = false,
   initialLiked = false,
+  progressMap = {},
 }: WatchShellProps) {
   // currentEpisode in state so Plan 02's handleEpisodeSwitch can update it
   // without remounting the iframe (videoId prop stays frozen at episode.youtubeId)
   const [currentEpisode, setCurrentEpisode] = useState(episode)
-  // currentNextEpisode is derived state — recalculated on every episode switch
+  // currentNextEpisode is derived state, recalculated on every episode switch
   // so autoplay always queues the episode after the *current* one, not the initial prop.
   const [currentNextEpisode, setCurrentNextEpisode] = useState(nextEpisode)
-  // currentPrevEpisode mirrors currentNextEpisode — recalculated on every episode switch
+  // currentPrevEpisode mirrors currentNextEpisode, recalculated on every episode switch
   // so the prev arrow always targets the episode before the *current* one.
   const [currentPrevEpisode, setCurrentPrevEpisode] = useState(prevEpisode)
   const [playerInstance, setPlayerInstance] = useState<YT.Player | null>(null)
   const [showAutoplay, setShowAutoplay] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const [activeSeasonId, setActiveSeasonId] = useState(episode.seasonId)
+  const [traySnapPoint, setTraySnapPoint] = useState<WatchTraySnapPoint>(WATCH_TRAY_SNAP_POINTS[0])
 
-  // playerRef seeded here — Plan 02 calls playerRef.current.loadVideoById()
+  // playerRef seeded here, Plan 02 calls playerRef.current.loadVideoById()
   const playerRef = useRef<YT.Player | null>(null)
 
   const router = useRouter()
@@ -65,7 +75,11 @@ export function WatchShell({
   // save closure targets the new episode immediately.
   const { forceFlush } = useProgressTracker(playerInstance, currentEpisode.id, userId ?? null)
 
-  const { isIdle, resetTimer } = useIdleTimer(3000)
+  const { isIdle, resetTimer } = useIdleTimer(3000, {
+    initialIdle: true,
+    startOnMount: false,
+    disabled: isPaused,
+  })
   const chromeClass = isIdle ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
 
   const { isInList, toggle: toggleWatchlist } = useWatchlist(show.id, initialSaved, userId ?? null)
@@ -99,7 +113,7 @@ export function WatchShell({
     return nextSeasonEps[0] ?? null
   }
 
-  // Mirror of findNextEpisode — inverse direction. Cross-season: if current is
+  // Mirror of findNextEpisode, inverse direction. Cross-season: if current is
   // the first episode in its season, returns the last episode of the previous season.
   function findPrevEpisode(current: ViewEpisode): ViewEpisode | null {
     const seasonEps = episodesBySeason[current.seasonId] ?? []
@@ -115,15 +129,17 @@ export function WatchShell({
 
   function handleEpisodeSwitch(newEpisode: ViewEpisode) {
     if (!playerRef.current || !newEpisode.youtubeId) return
-    // 1. Save outgoing position — closure still has old episodeId
+    // 1. Save outgoing position, closure still has old episodeId
     forceFlush()
     // 2. Dismiss overlay if it's visible (e.g. user picks a different episode
-    //    while the 8-second countdown is running — Phase 33 episode drawer path)
+    //    while the 8-second countdown is running, Phase 33 episode drawer path)
     setShowAutoplay(false)
     // 3. Update episode state and recalculate the next pointer
     setCurrentEpisode(newEpisode)
     setCurrentNextEpisode(findNextEpisode(newEpisode))
     setCurrentPrevEpisode(findPrevEpisode(newEpisode))
+    setActiveSeasonId(newEpisode.seasonId)
+    setIsPaused(false)
     // 4. Swap video without remounting the iframe
     playerRef.current.loadVideoById({
       videoId: newEpisode.youtubeId,
@@ -133,7 +149,7 @@ export function WatchShell({
     window.history.replaceState(null, '', `/${locale}/watch/${newEpisode.id}`)
   }
 
-  // Stable callback for AutoplayOverlay — useCallback prevents the overlay's
+  // Stable callback for AutoplayOverlay, useCallback prevents the overlay's
   // useEffect([onPlayNow]) from restarting the 8-second countdown on each render.
   const handlePlayNow = useCallback(() => {
     setShowAutoplay(false)
@@ -150,6 +166,13 @@ export function WatchShell({
 
   if (!episode.youtubeId) return null
 
+  const playerBottom =
+    traySnapPoint === WATCH_TRAY_SNAP_POINTS[2]
+      ? '95dvh'
+      : traySnapPoint === WATCH_TRAY_SNAP_POINTS[1]
+        ? '50dvh'
+        : '24px'
+
   return (
     <div
       className="fixed inset-0 h-dvh min-h-svh overflow-hidden bg-black"
@@ -160,8 +183,11 @@ export function WatchShell({
       onTouchStart={resetTimer}
       onKeyDown={resetTimer}
     >
-      {/* Player — absolute inset-0 overrides YouTubePlayer's aspect-video container */}
-      <div className="absolute inset-0">
+      {/* Player */}
+      <div
+        className="absolute left-0 right-0 top-0 transition-[bottom] duration-300 ease-out [&>div]:h-full [&>div]:min-h-0 [&>div]:aspect-auto"
+        style={{ bottom: playerBottom }}
+      >
         <YouTubePlayer
           videoId={episode.youtubeId}
           brandColor={BRAND_COLOR_BG[show.brandColor]}
@@ -175,23 +201,26 @@ export function WatchShell({
           onStateChange={(state) => {
             if (state === 0) {
               // Video ended
+              setIsPaused(false)
               forceFlush()
               if (currentNextEpisode) setShowAutoplay(true)
             }
             if (state === 2) {
-              // Paused — flush progress and force chrome visible
+              // Paused, flush progress and force chrome visible
+              setIsPaused(true)
               forceFlush()
               resetTimer()
             }
             if (state === 1) {
-              // Playing/resumed — restart idle countdown
+              // Playing/resumed, restart idle countdown
+              setIsPaused(false)
               resetTimer()
             }
           }}
         />
       </div>
 
-      {/* Auto-hide chrome — top overlay strip */}
+      {/* Auto-hide chrome, top overlay strip */}
       <div
         className={`fixed top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 to-transparent px-4 pt-4 pb-8 flex items-center justify-between transition-opacity duration-200 ease-in-out ${chromeClass}`}
         aria-hidden={isIdle}
@@ -248,7 +277,7 @@ export function WatchShell({
         </div>
       </div>
 
-      {/* Auto-hide chrome — prev episode arrow */}
+      {/* Auto-hide chrome, prev episode arrow */}
       {currentPrevEpisode && (
         <button
           onClick={() => handleEpisodeSwitch(currentPrevEpisode)}
@@ -260,7 +289,7 @@ export function WatchShell({
         </button>
       )}
 
-      {/* Auto-hide chrome — next episode arrow */}
+      {/* Auto-hide chrome, next episode arrow */}
       {currentNextEpisode && (
         <button
           onClick={() => handleEpisodeSwitch(currentNextEpisode)}
@@ -272,7 +301,7 @@ export function WatchShell({
         </button>
       )}
 
-      {/* AutoplayOverlay — sibling of player div, not child (cross-origin pointer events) */}
+      {/* AutoplayOverlay, sibling of player div, not child (cross-origin pointer events) */}
       {showAutoplay && currentNextEpisode && (
         <AutoplayOverlay
           nextEpisode={{
@@ -285,6 +314,19 @@ export function WatchShell({
           onCancel={() => setShowAutoplay(false)}
         />
       )}
+
+      <EpisodeTray
+        show={show}
+        seasons={seasons}
+        episodesBySeason={episodesBySeason}
+        currentEpisode={currentEpisode}
+        activeSeasonId={activeSeasonId}
+        activeSnapPoint={traySnapPoint}
+        progressMap={progressMap}
+        onSeasonChange={setActiveSeasonId}
+        onSnapPointChange={setTraySnapPoint}
+        onEpisodeSelect={handleEpisodeSwitch}
+      />
     </div>
   )
 }
