@@ -171,7 +171,7 @@ export function WatchShell({
       ? '95dvh'
       : traySnapPoint === WATCH_TRAY_SNAP_POINTS[1]
         ? '50dvh'
-        : '24px'
+        : '104px'
 
   return (
     <div

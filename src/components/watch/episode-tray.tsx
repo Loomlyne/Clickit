@@ -1,5 +1,6 @@
 'use client'
 
+import { useRef, type TouchEvent, type WheelEvent } from 'react'
 import { Drawer } from 'vaul'
 import { ChevronUp, Play } from 'lucide-react'
 
@@ -8,7 +9,7 @@ import { cn } from '@/lib/utils'
 import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 import type { ViewEpisode, ViewSeason, ViewShow } from '@/lib/queries'
 
-export const WATCH_TRAY_SNAP_POINTS = ['24px', 0.5, 0.95] as const
+export const WATCH_TRAY_SNAP_POINTS = ['104px', 0.5, 0.95] as const
 export type WatchTraySnapPoint = (typeof WATCH_TRAY_SNAP_POINTS)[number]
 
 type EpisodeProgress = {
@@ -41,15 +42,42 @@ export function EpisodeTray({
   onSnapPointChange,
   onEpisodeSelect,
 }: EpisodeTrayProps) {
+  const touchStartY = useRef<number | null>(null)
   const brandColor = BRAND_COLOR_HEX[show.brandColor] ?? '#2C3569'
   const allEpisodes = seasons.flatMap((season) => episodesBySeason[season.id] ?? [])
   const currentIndex = allEpisodes.findIndex((episode) => episode.id === currentEpisode.id)
   const currentCount = currentIndex === -1 ? currentEpisode.episodeNumber : currentIndex + 1
   const activeEpisodes = episodesBySeason[activeSeasonId] ?? []
   const isPeek = activeSnapPoint === WATCH_TRAY_SNAP_POINTS[0]
+  const previewEpisode = allEpisodes[currentIndex + 1] ?? currentEpisode
+  const previewThumbnail = previewEpisode.youtubeId
+    ? `https://img.youtube.com/vi/${previewEpisode.youtubeId}/hqdefault.jpg`
+    : undefined
 
   function expandTray() {
     onSnapPointChange(WATCH_TRAY_SNAP_POINTS[1])
+  }
+
+  function handlePeekWheel(event: WheelEvent<HTMLDivElement>) {
+    if (event.deltaY > 8) {
+      event.preventDefault()
+      expandTray()
+    }
+  }
+
+  function handlePeekTouchStart(event: TouchEvent<HTMLDivElement>) {
+    touchStartY.current = event.touches[0]?.clientY ?? null
+  }
+
+  function handlePeekTouchMove(event: TouchEvent<HTMLDivElement>) {
+    if (touchStartY.current == null) return
+    const currentY = event.touches[0]?.clientY
+    if (currentY == null) return
+    if (touchStartY.current - currentY > 24) {
+      event.preventDefault()
+      expandTray()
+      touchStartY.current = null
+    }
   }
 
   return (
@@ -73,21 +101,47 @@ export function EpisodeTray({
       noBodyStyles
     >
       <Drawer.Portal>
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-30 mx-auto flex h-[95dvh] max-h-[95dvh] max-w-5xl flex-col rounded-t-[8px] border border-white/10 bg-black/92 text-white shadow-2xl outline-none backdrop-blur-xl">
-          <button
-            type="button"
+        <Drawer.Content
+          className="fixed inset-x-0 bottom-0 z-30 mx-auto flex h-[95dvh] max-h-[95dvh] max-w-5xl flex-col rounded-t-[8px] border border-white/10 bg-black/92 text-white shadow-2xl outline-none backdrop-blur-xl"
+          onWheel={isPeek ? handlePeekWheel : undefined}
+          onTouchStart={isPeek ? handlePeekTouchStart : undefined}
+          onTouchMove={isPeek ? handlePeekTouchMove : undefined}
+        >
+          <div
+            role="button"
+            tabIndex={0}
             onClick={expandTray}
-            className="grid h-6 w-full grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-white/10 px-4 text-left"
-            aria-label={isPeek ? 'Open episode tray' : 'Episode tray handle'}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                expandTray()
+              }
+            }}
+            className="grid h-[104px] w-full cursor-pointer grid-cols-[1fr_auto] items-center gap-4 border-b border-white/10 px-5 text-left outline-none transition hover:bg-white/[0.04] focus-visible:bg-white/[0.06] sm:px-8"
+            aria-label={isPeek ? 'Open more videos' : 'Episode tray handle'}
           >
-            <span className="min-w-0 truncate text-[11px] font-medium text-white/60">
-              {show.title}
+            <span className="flex min-w-0 items-center gap-4">
+              <span className="min-w-0">
+                <span className="block text-[26px] font-semibold leading-none tracking-normal text-white sm:text-[30px]">
+                  More videos
+                </span>
+                <span className="mt-2 block truncate font-mono text-[11px] text-white/45">
+                  {show.title} · Ep {currentCount} of {allEpisodes.length || currentCount}
+                </span>
+              </span>
             </span>
-            <Drawer.Handle className="h-1.5 w-12 rounded-full bg-white/35" />
-            <span className="min-w-0 truncate text-right font-mono text-[11px] text-white/45">
-              Ep {currentCount} of {allEpisodes.length || currentCount}
+            <span className="relative flex h-14 w-[88px] shrink-0 items-center justify-center rounded-[16px] border-[3px] border-white bg-white shadow-[0_0_0_1px_rgba(255,255,255,0.25)]">
+              <ShowArt
+                brandColor={brandColor}
+                title={previewEpisode.title}
+                imageUrl={previewThumbnail}
+                className="h-full w-full rounded-[12px]"
+              />
+              <span className="absolute -top-5 left-1/2 -translate-x-1/2">
+                <Drawer.Handle className="h-1.5 w-8 rounded-full bg-white/40" />
+              </span>
             </span>
-          </button>
+          </div>
 
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="border-b border-white/10 px-4 py-4">
