@@ -4,17 +4,25 @@ import { Footer } from '@/components/layout/footer'
 import { SmoothScroll } from '@/components/providers/smooth-scroll'
 import { PageTransition } from '@/components/layout/page-transition'
 import { ViewerSilkBackground } from '@/components/layout/viewer-silk-background'
+import { EntryPreload } from '@/components/layout/entry-preload'
 import { MarqueeTicker } from '@/components/landing/marquee-ticker'
 
-export default async function ViewerLayout({ children }: { children: React.ReactNode }) {
+export default async function ViewerLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   // Use getSession() instead of getUser() — middleware already validated the JWT
   // and refreshed cookies. This avoids a redundant ~50-100ms server round-trip.
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
   const user = session?.user ?? null
 
   return (
     <>
+      <EntryPreload />
       <ViewerSilkBackground />
       <SmoothScroll>
         {/* z-[2] wrapper pushes all content above the fixed silk (z-1) */}
