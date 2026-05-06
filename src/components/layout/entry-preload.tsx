@@ -4,14 +4,14 @@ import Image from 'next/image'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useState } from 'react'
 
-const ease = [0.16, 1, 0.3, 1] as const
+const ease = [0.22, 1, 0.36, 1] as const
 
 export function EntryPreload() {
   const prefersReducedMotion = useReducedMotion()
   const [phase, setPhase] = useState<'enter' | 'exit' | 'done'>('enter')
 
   useEffect(() => {
-    const exitDelay = prefersReducedMotion ? 520 : 1500
+    const exitDelay = prefersReducedMotion ? 460 : 1350
     const timer = window.setTimeout(() => setPhase('exit'), exitDelay)
 
     return () => window.clearTimeout(timer)
@@ -20,7 +20,7 @@ export function EntryPreload() {
   if (phase === 'done') return null
 
   const overlayTransition = {
-    duration: prefersReducedMotion ? 0.28 : phase === 'exit' ? 0.72 : 0.68,
+    duration: prefersReducedMotion ? 0.28 : phase === 'exit' ? 0.82 : 0.36,
     ease,
   }
 
@@ -44,24 +44,21 @@ export function EntryPreload() {
       }}
     >
       <motion.div
-        className="relative h-20 w-52 sm:h-24 sm:w-64"
+        className="relative h-28 w-72 sm:h-36 sm:w-96"
         initial={{
           opacity: 0,
-          scale: prefersReducedMotion ? 1 : 0.92,
-          y: prefersReducedMotion ? 0 : 18,
+          scale: prefersReducedMotion ? 1 : 0.9,
         }}
         animate={
           phase === 'exit'
             ? {
-                opacity: 0,
-                scale: prefersReducedMotion ? 1 : 0.98,
-                y: prefersReducedMotion ? 0 : -36,
+                opacity: prefersReducedMotion ? 0 : 1,
+                scale: prefersReducedMotion ? 1 : 1,
               }
-            : { opacity: 1, scale: 1, y: 0 }
+            : { opacity: 1, scale: 1 }
         }
         transition={{
-          duration: prefersReducedMotion ? 0.24 : phase === 'exit' ? 0.42 : 0.5,
-          delay: phase === 'enter' && !prefersReducedMotion ? 0.48 : 0,
+          duration: prefersReducedMotion ? 0.22 : 0.58,
           ease,
         }}
       >
@@ -70,7 +67,7 @@ export function EntryPreload() {
           alt=""
           fill
           priority
-          sizes="(min-width: 640px) 256px, 208px"
+          sizes="(min-width: 640px) 384px, 288px"
           className="object-contain"
         />
       </motion.div>
