@@ -166,13 +166,6 @@ export function WatchShell({
 
   if (!episode.youtubeId) return null
 
-  const playerBottom =
-    traySnapPoint === WATCH_TRAY_SNAP_POINTS[2]
-      ? '95dvh'
-      : traySnapPoint === WATCH_TRAY_SNAP_POINTS[1]
-        ? '50dvh'
-        : '104px'
-
   return (
     <div
       className="fixed inset-0 h-dvh min-h-svh overflow-hidden bg-black"
@@ -186,7 +179,7 @@ export function WatchShell({
       {/* Player */}
       <div
         className="absolute left-0 right-0 top-0 transition-[bottom] duration-300 ease-out [&>div]:h-full [&>div]:min-h-0 [&>div]:aspect-auto"
-        style={{ bottom: playerBottom }}
+        style={{ bottom: 0 }}
       >
         <YouTubePlayer
           videoId={episode.youtubeId}

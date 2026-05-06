@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 import type { ViewEpisode, ViewSeason, ViewShow } from '@/lib/queries'
 
-export const WATCH_TRAY_SNAP_POINTS = ['104px', 0.5, 0.95] as const
+export const WATCH_TRAY_SNAP_POINTS = ['104px', 0.5] as const
 export type WatchTraySnapPoint = (typeof WATCH_TRAY_SNAP_POINTS)[number]
 
 type EpisodeProgress = {
@@ -43,7 +43,7 @@ export function EpisodeTray({
 }: EpisodeTrayProps) {
   const brandColor = BRAND_COLOR_HEX[show.brandColor] ?? '#2C3569'
   const activeEpisodes = episodesBySeason[activeSeasonId] ?? []
-  const isFullTray = activeSnapPoint === WATCH_TRAY_SNAP_POINTS[2]
+  const isTrayRaised = activeSnapPoint === WATCH_TRAY_SNAP_POINTS[1]
 
   return (
     <Drawer.Root
@@ -56,8 +56,7 @@ export function EpisodeTray({
       setActiveSnapPoint={(snapPoint) => {
         if (
           snapPoint === WATCH_TRAY_SNAP_POINTS[0] ||
-          snapPoint === WATCH_TRAY_SNAP_POINTS[1] ||
-          snapPoint === WATCH_TRAY_SNAP_POINTS[2]
+          snapPoint === WATCH_TRAY_SNAP_POINTS[1]
         ) {
           onSnapPointChange(snapPoint)
         }
@@ -70,8 +69,8 @@ export function EpisodeTray({
           className="fixed inset-x-0 bottom-0 z-30 flex h-[95dvh] max-h-[95dvh] flex-col rounded-t-[8px] border border-white/10 bg-black/92 text-white shadow-2xl outline-none backdrop-blur-xl"
         >
           <div className="flex min-h-0 flex-1 flex-col">
-            <div className="flex items-start justify-center gap-4 border-b border-white/10 px-8 py-0">
-              <div className="flex h-full gap-2 overflow-x-auto pb-1">
+            <div className="flex min-h-[72px] items-center gap-4 border-b border-white/10 bg-black/80 px-4 py-3 backdrop-blur-xl sm:px-8">
+              <div className="flex max-w-[34vw] shrink-0 gap-2 overflow-x-auto pb-1 sm:max-w-none">
                 {seasons.map((season) => (
                   <button
                     key={season.id}
@@ -90,22 +89,22 @@ export function EpisodeTray({
                 ))}
               </div>
 
-              <div className="flex h-full w-full items-center justify-between gap-0">
-                <div className="flex min-w-0 items-center justify-center gap-10">
+              <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+                <div className="grid min-w-0 gap-1 sm:flex sm:items-baseline sm:gap-10">
                   <Drawer.Title className="truncate text-lg font-semibold tracking-normal">
                     {show.title}
                   </Drawer.Title>
-                  <Drawer.Description className="mt-1 truncate text-sm text-white/50">
+                  <Drawer.Description className="truncate text-sm text-white/50">
                     {currentEpisode.title}
                   </Drawer.Description>
                 </div>
                 <button
                   type="button"
-                  onClick={() => onSnapPointChange(isFullTray ? WATCH_TRAY_SNAP_POINTS[1] : WATCH_TRAY_SNAP_POINTS[2])}
+                  onClick={() => onSnapPointChange(isTrayRaised ? WATCH_TRAY_SNAP_POINTS[0] : WATCH_TRAY_SNAP_POINTS[1])}
                   className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 hover:text-white"
-                  aria-label={isFullTray ? 'Lower episode tray' : 'Raise episode tray'}
+                  aria-label={isTrayRaised ? 'Lower episode tray' : 'Raise episode tray'}
                 >
-                  <ChevronUp className={cn('size-4 transition-transform', isFullTray && 'rotate-180')} />
+                  <ChevronUp className={cn('size-4 transition-transform', isTrayRaised && 'rotate-180')} />
                 </button>
               </div>
             </div>
