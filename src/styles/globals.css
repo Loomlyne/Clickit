@@ -28,9 +28,10 @@
   --accent-yellow-fg: #0a0a0a;
 
   /* Type stacks */
-  --font-ui: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  --font-display: "Newsreader", ui-serif, Georgia, serif;
+  --font-app: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-ui: var(--font-app);
+  --font-mono: var(--font-app);
+  --font-display: var(--font-app);
 
   /* Density */
   --rail-gap: 14px;
@@ -120,9 +121,9 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-ui);
-  --font-display: var(--font-display);
-  --font-mono: var(--font-mono);
+  --font-sans: var(--font-app);
+  --font-display: var(--font-app);
+  --font-mono: var(--font-app);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -210,7 +211,7 @@
   body {
     min-height: 100vh;
     background: var(--bg-0);
-    font-family: var(--font-ui);
+    font-family: var(--font-app);
     font-size: 15px;
     line-height: 1.5;
   }
@@ -285,13 +286,13 @@ html::-webkit-scrollbar-thumb:hover {
 
 @layer components {
   .font-display {
-    font-family: var(--font-display);
+    font-family: var(--font-app);
     font-weight: 400;
     letter-spacing: -0.01em;
   }
 
   .mono {
-    font-family: var(--font-mono);
+    font-family: var(--font-app);
     font-size: 11px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -299,13 +300,13 @@ html::-webkit-scrollbar-thumb:hover {
   }
 
   .serif {
-    font-family: var(--font-display);
+    font-family: var(--font-app);
     font-weight: 400;
     letter-spacing: -0.01em;
   }
 
   .label {
-    font-family: var(--font-mono);
+    font-family: var(--font-app);
     font-size: 10.5px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -325,7 +326,7 @@ html::-webkit-scrollbar-thumb:hover {
 
 [dir="rtl"],
 [lang="ar"] {
-  font-family: var(--font-cairo), system-ui, sans-serif;
+  font-family: var(--font-app);
 }
 
 /* RTL-04: strip wide letter-spacing on Arabic pages so glyph joining stays correct.
@@ -387,7 +388,7 @@ html[lang="ar"] [class*="tracking-["] {
 .yt-side-runtime {
   position: absolute;
   right: 6px; bottom: 6px;
-  font-family: var(--font-mono);
+  font-family: var(--font-app);
   font-size: 10px;
   padding: 2px 5px;
   background: rgba(0,0,0,0.85);
@@ -398,7 +399,7 @@ html[lang="ar"] [class*="tracking-["] {
 .yt-side-now {
   position: absolute;
   left: 6px; top: 6px;
-  font-family: var(--font-mono);
+  font-family: var(--font-app);
   font-size: 9px;
   letter-spacing: 0.14em;
   padding: 3px 6px;
@@ -409,7 +410,7 @@ html[lang="ar"] [class*="tracking-["] {
 }
 .yt-side-body { min-width: 0; padding-top: 2px; }
 .yt-side-num {
-  font-family: var(--font-mono);
+  font-family: var(--font-app);
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -418,7 +419,7 @@ html[lang="ar"] [class*="tracking-["] {
 }
 .yt-side-ep.current .yt-side-num { color: var(--accent); }
 .yt-side-title {
-  font-family: var(--font-display);
+  font-family: var(--font-app);
   font-size: 15px;
   font-weight: 500;
   line-height: 1.25;

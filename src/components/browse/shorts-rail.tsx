@@ -78,7 +78,7 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
               <div
                 className="absolute left-2.5 top-2.5 rounded-full px-1.5 py-[3px]"
                 style={{
-                  fontFamily: 'var(--font-mono)',
+                  fontFamily: 'var(--font-app)',
                   fontSize: 9,
                   letterSpacing: '0.14em',
                   background: 'var(--accent)',

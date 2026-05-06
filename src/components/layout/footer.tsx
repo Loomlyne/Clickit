@@ -45,12 +45,6 @@ export async function Footer() {
         <div className="mono flex flex-wrap items-center gap-5 text-[12px] text-[var(--text-mute)]">
           <Link href="/about" className="transition-colors hover:text-[var(--text)]">About</Link>
           <span aria-hidden>·</span>
-          <Link href="/creators" className="transition-colors hover:text-[var(--text)]">Creators</Link>
-          <span aria-hidden>·</span>
-          <Link href="/press" className="transition-colors hover:text-[var(--text)]">Press</Link>
-          <span aria-hidden>·</span>
-          <Link href="/membership" className="transition-colors hover:text-[var(--text)]">Membership</Link>
-          <span aria-hidden>·</span>
           <Link href="/terms" className="transition-colors hover:text-[var(--text)]">Terms of Use</Link>
           <span aria-hidden>·</span>
           <Link href="/privacy" className="transition-colors hover:text-[var(--text)]">Privacy</Link>
