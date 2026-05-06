@@ -11,7 +11,7 @@ export function EntryPreload() {
   const [phase, setPhase] = useState<'enter' | 'exit' | 'done'>('enter')
 
   useEffect(() => {
-    const exitDelay = prefersReducedMotion ? 460 : 1350
+    const exitDelay = prefersReducedMotion ? 680 : 1900
     const timer = window.setTimeout(() => setPhase('exit'), exitDelay)
 
     return () => window.clearTimeout(timer)
@@ -20,7 +20,7 @@ export function EntryPreload() {
   if (phase === 'done') return null
 
   const overlayTransition = {
-    duration: prefersReducedMotion ? 0.28 : phase === 'exit' ? 0.82 : 0.36,
+    duration: prefersReducedMotion ? 0.32 : phase === 'exit' ? 0.98 : 0.36,
     ease,
   }
 
@@ -48,17 +48,19 @@ export function EntryPreload() {
         initial={{
           opacity: 0,
           scale: prefersReducedMotion ? 1 : 0.9,
+          y: prefersReducedMotion ? 0 : 80,
         }}
         animate={
           phase === 'exit'
             ? {
                 opacity: prefersReducedMotion ? 0 : 1,
                 scale: prefersReducedMotion ? 1 : 1,
+                y: 0,
               }
-            : { opacity: 1, scale: 1 }
+            : { opacity: 1, scale: 1, y: 0 }
         }
         transition={{
-          duration: prefersReducedMotion ? 0.22 : 0.58,
+          duration: prefersReducedMotion ? 0.28 : 0.86,
           ease,
         }}
       >
