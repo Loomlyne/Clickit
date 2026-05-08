@@ -32,7 +32,8 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
   }
 
   const getThumbnailUrl = (short: ViewShort) =>
-    short.thumbnailUrl || `https://i.ytimg.com/vi/${short.youtubeVideoId}/hq720.jpg`
+    short.thumbnailUrl ||
+    `https://i.ytimg.com/vi/${short.youtubeVideoId}/hq720.jpg`
 
   return (
     <>
@@ -41,10 +42,9 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
       <link rel="preconnect" href="https://i.ytimg.com" />
       <link rel="preconnect" href="https://s.ytimg.com" />
       <link rel="dns-prefetch" href="https://googlevideo.com" />
-      <section className="rail px-10 pb-3 pt-8">
+      <section className="rail px-10 pt-8 pb-3">
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <div className="mono mb-1.5" style={{ color: 'var(--accent)' }}>Shorts · Connected to YouTube Shorts</div>
             <h2 className="font-display m-0 text-[26px]">Quick bites</h2>
           </div>
           <button className="mono inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 hover:text-[var(--text)]">
@@ -52,7 +52,7 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
           </button>
         </div>
 
-        <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
+        <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-3">
           {shorts.map((s, i) => (
             <div
               key={s.id}
@@ -76,7 +76,7 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
               <div className="absolute inset-0 bg-gradient-to-b from-transparent from-[50%] to-[rgba(0,0,0,0.9)]" />
               {/* SHORT badge */}
               <div
-                className="absolute left-2.5 top-2.5 rounded-full px-1.5 py-[3px]"
+                className="absolute top-2.5 left-2.5 rounded-full px-1.5 py-[3px]"
                 style={{
                   fontFamily: 'var(--font-app)',
                   fontSize: 9,
@@ -88,8 +88,10 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
                 SHORT
               </div>
               {/* Bottom info */}
-              <div className="absolute bottom-3 left-3 right-3">
-                <div className="font-display mb-1 text-[16px] leading-[1.15]">{s.title}</div>
+              <div className="absolute right-3 bottom-3 left-3">
+                <div className="font-display mb-1 text-[16px] leading-[1.15]">
+                  {s.title}
+                </div>
                 <div className="mono" style={{ fontSize: 9 }}>
                   {s.channelName || s.genre || 'Short'}
                   {s.durationSeconds ? ` · ${s.durationSeconds}s` : ''}

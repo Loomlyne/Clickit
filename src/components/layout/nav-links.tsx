@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils'
 
 export const NAV_LINKS = [
   { label: 'Browse', href: '/browse' },
-  { label: 'Coming Soon', href: '/coming-soon' },
   { label: 'Support', href: '/support' },
 ]
 
@@ -23,7 +22,7 @@ export function NavLinks() {
               key={href}
               href={href}
               className={cn(
-                'rounded-full px-3 py-2 whitespace-nowrap text-sm font-medium tracking-[-0.01em] transition-colors',
+                'rounded-full px-3 py-2 text-sm font-medium tracking-[-0.01em] whitespace-nowrap transition-colors',
                 isActive
                   ? 'bg-white/[0.08] text-white'
                   : 'text-white/56 hover:text-white'

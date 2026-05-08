@@ -17,7 +17,13 @@ interface HeroSlideProps {
   reducedMotion?: boolean
 }
 
-export function HeroSlide({ show, isActive, firstEpisodeId, isMobile, reducedMotion }: HeroSlideProps) {
+export function HeroSlide({
+  show,
+  isActive,
+  firstEpisodeId,
+  isMobile,
+  reducedMotion,
+}: HeroSlideProps) {
   const brandColorHex = BRAND_COLOR_HEX[show.brandColor]
 
   return (
@@ -40,7 +46,7 @@ export function HeroSlide({ show, isActive, firstEpisodeId, isMobile, reducedMot
 
       {/* Scrim — matches handoff: left vignette + bottom fade */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="pointer-events-none absolute inset-0"
         style={{
           background: `
             linear-gradient(90deg, rgba(10,10,10,0.9) 0%, rgba(10,10,10,0.5) 40%, transparent 70%),
@@ -50,23 +56,23 @@ export function HeroSlide({ show, isActive, firstEpisodeId, isMobile, reducedMot
       />
 
       {/* Content — positioned bottom-left, max 620px */}
-      <div className="absolute bottom-8 start-5 end-5 max-w-[620px] sm:bottom-20 sm:start-10 sm:end-10">
-        {/* Eyebrow */}
-        <div className="mono mb-2 flex items-center gap-2 sm:mb-3.5 sm:gap-2.5" style={{ color: 'var(--accent)', letterSpacing: '0.18em' }}>
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-          Featured · {show.genre.toUpperCase()}
-        </div>
-
+      <div className="absolute start-5 end-5 bottom-8 max-w-[620px] sm:start-10 sm:end-10 sm:bottom-20">
         {/* Title */}
         <h1
-          className="font-display m-0 mb-3 font-normal leading-[0.95] text-white sm:mb-[18px]"
-          style={{ fontSize: 'clamp(28px, 6vw, 84px)', letterSpacing: '-0.02em' }}
+          className="font-display m-0 mb-3 leading-[0.95] font-normal text-white sm:mb-[18px]"
+          style={{
+            fontSize: 'clamp(28px, 6vw, 84px)',
+            letterSpacing: '-0.02em',
+          }}
         >
           {show.title}
         </h1>
 
         {/* Meta row */}
-        <div className="mono mb-3 flex items-center gap-2 sm:mb-[18px] sm:gap-3.5" style={{ letterSpacing: '0.12em' }}>
+        <div
+          className="mono mb-3 flex items-center gap-2 sm:mb-[18px] sm:gap-3.5"
+          style={{ letterSpacing: '0.12em' }}
+        >
           <span>{show.seasonCount}S</span>
           <span className="inline-block h-[3px] w-[3px] rounded-full bg-[var(--text-mute)]" />
           <span>{show.episodeCount} eps</span>
@@ -75,7 +81,10 @@ export function HeroSlide({ show, isActive, firstEpisodeId, isMobile, reducedMot
         </div>
 
         {/* Synopsis — hidden on mobile */}
-        <p className="m-0 mb-4 hidden max-w-[560px] text-[16px] text-[var(--text-dim)] sm:mb-6 sm:block" style={{ textWrap: 'pretty' }}>
+        <p
+          className="m-0 mb-4 hidden max-w-[560px] text-[16px] text-[var(--text-dim)] sm:mb-6 sm:block"
+          style={{ textWrap: 'pretty' }}
+        >
           {show.description}
         </p>
 
@@ -84,20 +93,20 @@ export function HeroSlide({ show, isActive, firstEpisodeId, isMobile, reducedMot
           {firstEpisodeId && show.status === 'streaming' ? (
             <Link
               href={`/watch/${firstEpisodeId}`}
-              className="btn inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-4 py-2.5 text-[13px] font-medium text-primary-foreground transition-[transform,background] duration-[120ms] hover:bg-white active:translate-y-px sm:gap-2 sm:px-[26px] sm:py-3.5 sm:text-[15px]"
+              className="btn bg-primary text-primary-foreground inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-[13px] font-medium whitespace-nowrap transition-[transform,background] duration-[120ms] hover:bg-white active:translate-y-px sm:gap-2 sm:px-[26px] sm:py-3.5 sm:text-[15px]"
             >
               <Play className="size-3.5 fill-current sm:size-4" />
               <span className="sm:hidden">Play</span>
               <span className="hidden sm:inline">Continue watching</span>
             </Link>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.08] border border-white/[0.08] px-4 py-2.5 text-[13px] font-medium text-white/50 backdrop-blur-[8px] cursor-not-allowed sm:px-[26px] sm:py-3.5 sm:text-[15px]">
+            <span className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.08] px-4 py-2.5 text-[13px] font-medium text-white/50 backdrop-blur-[8px] sm:px-[26px] sm:py-3.5 sm:text-[15px]">
               Coming Soon
             </span>
           )}
           <Link
             href={`/series/${show.slug}`}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.08] border border-white/[0.08] px-4 py-2.5 text-[13px] font-medium text-white backdrop-blur-[8px] transition-[transform,background,border-color] duration-[120ms] hover:bg-white/[0.14] hover:border-[var(--line-2)] active:translate-y-px sm:gap-2 sm:px-[26px] sm:py-3.5 sm:text-[15px]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.08] px-4 py-2.5 text-[13px] font-medium text-white backdrop-blur-[8px] transition-[transform,background,border-color] duration-[120ms] hover:border-[var(--line-2)] hover:bg-white/[0.14] active:translate-y-px sm:gap-2 sm:px-[26px] sm:py-3.5 sm:text-[15px]"
           >
             <Info className="size-3.5 sm:size-4" />
             <span className="sm:hidden">Info</span>

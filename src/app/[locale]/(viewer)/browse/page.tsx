@@ -27,7 +27,9 @@ export default async function BrowsePage({
   // refreshed cookie locally without a Supabase auth round-trip (~5ms vs
   // ~50-150ms for getUser()). Same pattern viewer-layout.tsx uses.
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
   const userId = session?.user?.id ?? null
   const params = await searchParams
   const categorySlug = params?.category?.trim() || null
@@ -37,7 +39,16 @@ export default async function BrowsePage({
 
   // Stage 2: everything else in parallel, including first-episode map which
   // now runs alongside the heavy catalog queries instead of after them
-  const [streaming, comingSoon, shorts, isMobile, locale, categoryRails, activeCategory, firstEpisodeMap] = await Promise.all([
+  const [
+    streaming,
+    comingSoon,
+    shorts,
+    isMobile,
+    locale,
+    categoryRails,
+    activeCategory,
+    firstEpisodeMap,
+  ] = await Promise.all([
     getStreamingShows(),
     getComingSoonShows(),
     getShortsForBrowse(),
@@ -45,7 +56,7 @@ export default async function BrowsePage({
     getLocale(),
     getCategoryRails(),
     categorySlug ? getCategoryRailBySlug(categorySlug) : Promise.resolve(null),
-    getFirstEpisodesForShows(featured.map(s => s.id)),
+    getFirstEpisodesForShows(featured.map((s) => s.id)),
   ])
 
   if (streaming.length === 0 && comingSoon.length === 0) {
@@ -53,7 +64,9 @@ export default async function BrowsePage({
   }
 
   const railsToRender = categorySlug
-    ? (activeCategory ? [activeCategory] : [])
+    ? activeCategory
+      ? [activeCategory]
+      : []
     : categoryRails
 
   const featuredWithEpisodes = featured.map((show) => ({
@@ -74,27 +87,49 @@ export default async function BrowsePage({
       <ShortsRail shorts={shorts} />
 
       {streaming.length > 0 && (
-        <ContentRail title="Now streaming" eyebrow="The full catalog" shows={streaming} seeAllHref="/browse" />
+        <ContentRail
+          title="Now streaming"
+          shows={streaming}
+          seeAllHref="/browse"
+        />
       )}
       {comingSoon.length > 0 && (
-        <ContentRail title="Coming soon" eyebrow="Teasers & release dates" shows={comingSoon} seeAllHref="/coming-soon" />
+        <ContentRail
+          title="Coming soon"
+          eyebrow="Teasers & release dates"
+          shows={comingSoon}
+          seeAllHref="/coming-soon"
+        />
       )}
 
       {activeCategory && (
         <section className="px-10 pt-6">
           <div
             className="flex flex-col gap-3 rounded-full border border-[var(--line)] bg-[var(--bg-2)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between"
-            style={activeCategory.color ? { borderLeftColor: activeCategory.color, borderLeftWidth: '3px' } : undefined}
+            style={
+              activeCategory.color
+                ? {
+                    borderLeftColor: activeCategory.color,
+                    borderLeftWidth: '3px',
+                  }
+                : undefined
+            }
           >
             <div>
               <div
                 className="mono mb-1.5"
-                style={activeCategory.color ? { color: activeCategory.color } : undefined}
+                style={
+                  activeCategory.color
+                    ? { color: activeCategory.color }
+                    : undefined
+                }
               >
                 {locale === 'ar' ? 'التصنيف النشط' : 'Active category'}
               </div>
               <h2 className="font-display text-[24px]">
-                {locale === 'ar' ? activeCategory.nameAr : activeCategory.nameEn}
+                {locale === 'ar'
+                  ? activeCategory.nameAr
+                  : activeCategory.nameEn}
               </h2>
             </div>
             <Link
@@ -111,7 +146,10 @@ export default async function BrowsePage({
         <ContentRail
           key={category.id}
           title={locale === 'ar' ? category.nameAr : category.nameEn}
-          eyebrow={category.icon || (locale === 'ar' ? 'مختارات حسب التصنيف' : 'Curated category picks')}
+          eyebrow={
+            category.icon ||
+            (locale === 'ar' ? 'مختارات حسب التصنيف' : 'Curated category picks')
+          }
           accentColor={category.color ?? undefined}
           shows={category.shows}
           seeAllHref={`/browse?category=${encodeURIComponent(category.slug)}`}
@@ -124,7 +162,10 @@ export default async function BrowsePage({
             <div className="mono mb-2 text-[var(--text-mute)]">
               {locale === 'ar' ? 'التصنيف غير موجود' : 'Category not found'}
             </div>
-            <Link href="/browse" className="inline-flex min-h-11 items-center justify-center text-sm text-[var(--accent)]">
+            <Link
+              href="/browse"
+              className="inline-flex min-h-11 items-center justify-center text-sm text-[var(--accent)]"
+            >
               {locale === 'ar' ? 'العودة إلى التصفح' : 'Back to browse'}
             </Link>
           </div>

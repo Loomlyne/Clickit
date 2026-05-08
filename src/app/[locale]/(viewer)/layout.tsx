@@ -5,7 +5,6 @@ import { SmoothScroll } from '@/components/providers/smooth-scroll'
 import { PageTransition } from '@/components/layout/page-transition'
 import { ViewerSilkBackground } from '@/components/layout/viewer-silk-background'
 import { EntryPreload } from '@/components/layout/entry-preload'
-import { MarqueeTicker } from '@/components/landing/marquee-ticker'
 
 export default async function ViewerLayout({
   children,
@@ -27,7 +26,6 @@ export default async function ViewerLayout({
       <SmoothScroll>
         {/* z-[2] wrapper pushes all content above the fixed silk (z-1) */}
         <div className="relative z-[2]">
-          <MarqueeTicker />
           <Navbar
             initialUser={user ? { id: user.id, email: user.email ?? '' } : null}
           />

@@ -70,10 +70,23 @@ export default async function SeriesDetailPage({ params }: Props) {
   // after the 3-way DB fetch. Moving it into the same Promise.all means user-specific
   // data and "more like this" can be resolved in a single follow-up wave.
   const supabase = await createClient()
-  const [seasons, allEpisodes, { data: castMembers }, { data: { session } }, allStreaming, t] = await Promise.all([
+  const [
+    seasons,
+    allEpisodes,
+    { data: castMembers },
+    {
+      data: { session },
+    },
+    allStreaming,
+    t,
+  ] = await Promise.all([
     getSeasonsByShowId(dbShow.id),
     getEpisodesByShowId(dbShow.id),
-    supabase.from('show_cast').select('*').eq('show_id', dbShow.id).order('sort_order'),
+    supabase
+      .from('show_cast')
+      .select('*')
+      .eq('show_id', dbShow.id)
+      .order('sort_order'),
     supabase.auth.getSession(),
     getStreamingShows(),
     getTranslations('show'),
@@ -86,7 +99,7 @@ export default async function SeriesDetailPage({ params }: Props) {
   const viewEpisodesBySeason: Record<string, ViewEpisode[]> = {}
   for (const season of seasons) {
     viewEpisodesBySeason[season.id] = allEpisodes
-      .filter(e => e.season_id === season.id)
+      .filter((e) => e.season_id === season.id)
       .map((e) => mapEpisode(e, locale))
   }
 
@@ -96,7 +109,9 @@ export default async function SeriesDetailPage({ params }: Props) {
   if (viewSeasons.length > 0) {
     const firstSeason = viewSeasons[0]
     const firstSeasonEpisodes = viewEpisodesBySeason[firstSeason.id] ?? []
-    const firstPublished = firstSeasonEpisodes.find((ep) => ep.status === 'published')
+    const firstPublished = firstSeasonEpisodes.find(
+      (ep) => ep.status === 'published'
+    )
     if (firstPublished) {
       firstEpisodeLabel = `S${firstSeason.seasonNumber} E${firstPublished.episodeNumber}`
       firstEpisodeId = firstPublished.id
@@ -105,29 +120,49 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   // User-specific data: watchlist, liked, and episode progress all in one parallel wave.
   // allEpisodeIds is in-memory (no query) so it's safe to compute here.
-  const allEpisodeIds = Object.values(viewEpisodesBySeason).flat().map(e => e.id)
+  const allEpisodeIds = Object.values(viewEpisodesBySeason)
+    .flat()
+    .map((e) => e.id)
   const [inWatchlist, isLiked, episodesProgressMap] = user
     ? await Promise.all([
         getShowWatchlistState(user.id, dbShow.id),
         getShowLikeState(user.id, dbShow.id),
         getEpisodesProgress(user.id, allEpisodeIds),
       ])
-    : [false, false, {} as Record<string, { progressPercent: number; completed: boolean }>]
+    : [
+        false,
+        false,
+        {} as Record<string, { progressPercent: number; completed: boolean }>,
+      ]
 
-  const moreLikeThis = allStreaming.filter((s) => s.genre === show.genre && s.id !== show.id)
+  const moreLikeThis = allStreaming.filter(
+    (s) => s.genre === show.genre && s.id !== show.id
+  )
 
   return (
     <div className="-mt-16">
-      <SeriesDetailHero show={show} seasons={viewSeasons} firstEpisodeLabel={firstEpisodeLabel} firstEpisodeId={firstEpisodeId} initialSaved={inWatchlist} initialLiked={isLiked} userId={user?.id ?? null} />
+      <SeriesDetailHero
+        show={show}
+        seasons={viewSeasons}
+        firstEpisodeLabel={firstEpisodeLabel}
+        firstEpisodeId={firstEpisodeId}
+        initialSaved={inWatchlist}
+        initialLiked={isLiked}
+        userId={user?.id ?? null}
+      />
 
       {/* Cast */}
       {castMembers && castMembers.length > 0 && (
         <div className="mt-12 px-6 md:px-12">
           <div className="mx-auto max-w-7xl">
-            <div className="label mb-4">Cast &amp; Crew</div>
-            <div className="flex gap-5 overflow-x-auto pb-3 scrollbar-hide">
+            <div className="label mb-4">Cast</div>
+            <div className="scrollbar-hide flex gap-5 overflow-x-auto pb-3">
               {castMembers.map((c) => (
-                <div key={c.id} className="shrink-0 text-center" style={{ width: 100 }}>
+                <div
+                  key={c.id}
+                  className="shrink-0 text-center"
+                  style={{ width: 100 }}
+                >
                   {c.image_url ? (
                     <img
                       src={c.image_url}
@@ -139,9 +174,13 @@ export default async function SeriesDetailPage({ params }: Props) {
                       {c.name.slice(0, 2).toUpperCase()}
                     </div>
                   )}
-                  <div className="text-[13px] font-medium truncate">{c.name}</div>
+                  <div className="truncate text-[13px] font-medium">
+                    {c.name}
+                  </div>
                   {c.role && (
-                    <div className="mono text-[10px] text-[var(--text-mute)] truncate">{c.role}</div>
+                    <div className="mono truncate text-[10px] text-[var(--text-mute)]">
+                      {c.role}
+                    </div>
                   )}
                 </div>
               ))}
@@ -154,13 +193,15 @@ export default async function SeriesDetailPage({ params }: Props) {
         <div className="mx-auto max-w-7xl">
           {viewSeasons.length === 0 ? (
             <div className="py-16">
-              <p className="text-[11px] font-normal uppercase tracking-[0.28em] text-white/38">
+              <p className="text-[11px] font-normal tracking-[0.28em] text-white/38 uppercase">
                 {t('seasonsLabel')}
               </p>
               <h2 className="font-display mt-2 text-3xl font-semibold text-white">
                 {t('emptyEpisodesHeading')}
               </h2>
-              <p className="mt-2 text-white/50">{t('emptyEpisodesDescription')}</p>
+              <p className="mt-2 text-white/50">
+                {t('emptyEpisodesDescription')}
+              </p>
               <Link
                 href="/coming-soon"
                 className="mt-4 inline-flex items-center text-sm text-white/60 transition-colors hover:text-white"
@@ -189,10 +230,12 @@ export default async function SeriesDetailPage({ params }: Props) {
 
       {moreLikeThis.length > 0 && (
         <div className="mt-12 pb-16">
-          <ContentRail title={t('moreLikeThisHeading', { genre: show.genre })} shows={moreLikeThis} />
+          <ContentRail
+            title={t('moreLikeThisHeading', { genre: show.genre })}
+            shows={moreLikeThis}
+          />
         </div>
       )}
-
     </div>
   )
 }

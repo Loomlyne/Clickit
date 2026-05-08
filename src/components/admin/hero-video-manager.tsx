@@ -5,15 +5,26 @@ import { useLocale } from 'next-intl'
 import { Upload, Loader2, Trash2, Link as LinkIcon, Film } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { createHeroVideoUpload, saveHeroVideoUpload, setHeroVideoUrl, removeHeroVideo } from '@/app/[locale]/admin/actions'
+import {
+  createHeroVideoUpload,
+  saveHeroVideoUpload,
+  setHeroVideoUrl,
+  removeHeroVideo,
+} from '@/app/[locale]/admin/actions'
 import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
 
 type VideoConfig = { url: string; type: 'mp4' | 'youtube' } | null
 
-export function HeroVideoManager({ currentVideo }: { currentVideo: VideoConfig }) {
+export function HeroVideoManager({
+  currentVideo,
+}: {
+  currentVideo: VideoConfig
+}) {
   const [video, setVideo] = useState<VideoConfig>(currentVideo)
-  const [mode, setMode] = useState<'mp4' | 'youtube'>(currentVideo?.type ?? 'mp4')
+  const [mode, setMode] = useState<'mp4' | 'youtube'>(
+    currentVideo?.type ?? 'mp4'
+  )
   const [uploading, setUploading] = useState(false)
   const [youtubeInput, setYoutubeInput] = useState(
     currentVideo?.type === 'youtube' ? currentVideo.url : ''
@@ -27,7 +38,11 @@ export function HeroVideoManager({ currentVideo }: { currentVideo: VideoConfig }
     if (!file) return
 
     if (file.size > 50 * 1024 * 1024) {
-      toast.error(isArabic ? 'يجب أن يكون الفيديو أقل من 50 م.ب.' : 'Video must be under 50MB')
+      toast.error(
+        isArabic
+          ? 'يجب أن يكون الفيديو أقل من 50 م.ب.'
+          : 'Video must be under 50MB'
+      )
       return
     }
 
@@ -40,18 +55,25 @@ export function HeroVideoManager({ currentVideo }: { currentVideo: VideoConfig }
       })
 
       if (!uploadTarget.success || !uploadTarget.data) {
-        toast.error(uploadTarget.error ?? (isArabic ? 'فشل الرفع' : 'Upload failed'))
+        toast.error(
+          uploadTarget.error ?? (isArabic ? 'فشل الرفع' : 'Upload failed')
+        )
         return
       }
 
       const supabase = createBrowserSupabaseClient()
       const { error: uploadError } = await supabase.storage
         .from('site-assets')
-        .uploadToSignedUrl(uploadTarget.data.path, uploadTarget.data.token, file, {
-          contentType: 'video/mp4',
-          cacheControl: '3600',
-          upsert: true,
-        })
+        .uploadToSignedUrl(
+          uploadTarget.data.path,
+          uploadTarget.data.token,
+          file,
+          {
+            contentType: 'video/mp4',
+            cacheControl: '3600',
+            upsert: true,
+          }
+        )
 
       if (uploadError) {
         toast.error(uploadError.message)
@@ -90,11 +112,15 @@ export function HeroVideoManager({ currentVideo }: { currentVideo: VideoConfig }
     try {
       const result = await setHeroVideoUrl(youtubeInput.trim())
       if (!result.success) {
-        toast.error(result.error ?? (isArabic ? 'تعذّر الحفظ' : 'Failed to save'))
+        toast.error(
+          result.error ?? (isArabic ? 'تعذّر الحفظ' : 'Failed to save')
+        )
         return
       }
       setVideo({ url: youtubeInput.trim(), type: 'youtube' })
-      toast.success(isArabic ? 'تم حفظ رابط فيديو الهيرو' : 'Hero video URL saved')
+      toast.success(
+        isArabic ? 'تم حفظ رابط فيديو الهيرو' : 'Hero video URL saved'
+      )
     } catch {
       toast.error(isArabic ? 'تعذّر الحفظ' : 'Failed to save')
     } finally {
@@ -107,7 +133,9 @@ export function HeroVideoManager({ currentVideo }: { currentVideo: VideoConfig }
     try {
       const result = await removeHeroVideo()
       if (!result.success) {
-        toast.error(result.error ?? (isArabic ? 'تعذّر الحذف' : 'Failed to remove'))
+        toast.error(
+          result.error ?? (isArabic ? 'تعذّر الحذف' : 'Failed to remove')
+        )
         return
       }
       setVideo(null)
@@ -123,8 +151,15 @@ export function HeroVideoManager({ currentVideo }: { currentVideo: VideoConfig }
   // Current video preview
   const preview = video ? (
     <div className="mb-6 space-y-3">
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/40">
-        {isArabic ? 'الحالي:' : 'Current:'} {video.type === 'mp4' ? (isArabic ? 'ملف MP4' : 'MP4 File') : (isArabic ? 'يوتيوب' : 'YouTube')}
+      <p className="text-xs font-medium tracking-[0.2em] text-white/40 uppercase">
+        {isArabic ? 'الحالي:' : 'Current:'}{' '}
+        {video.type === 'mp4'
+          ? isArabic
+            ? 'ملف MP4'
+            : 'MP4 File'
+          : isArabic
+            ? 'يوتيوب'
+            : 'YouTube'}
       </p>
       <div className="relative overflow-hidden rounded-lg border border-white/8 bg-black">
         {video.type === 'mp4' ? (
@@ -199,14 +234,22 @@ export function HeroVideoManager({ currentVideo }: { currentVideo: VideoConfig }
         <div>
           {uploading ? (
             <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-8">
-              <Loader2 className="size-6 animate-spin text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">{isArabic ? 'جارٍ رفع الفيديو…' : 'Uploading video...'}</p>
+              <Loader2 className="text-muted-foreground size-6 animate-spin" />
+              <p className="text-muted-foreground text-sm">
+                {isArabic ? 'جارٍ رفع الفيديو…' : 'Uploading video...'}
+              </p>
             </div>
           ) : (
             <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-8 transition-colors hover:border-white/20">
-              <Upload className="size-6 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">{isArabic ? 'انقر لرفع MP4' : 'Click to upload MP4'}</p>
-              <p className="text-xs text-muted-foreground">{isArabic ? 'الحد 50 م.ب. · يعمل بدون صوت كخلفية هيرو' : 'Max 50MB · Plays muted as hero background'}</p>
+              <Upload className="text-muted-foreground size-6" />
+              <p className="text-muted-foreground text-sm">
+                {isArabic ? 'انقر لرفع MP4' : 'Click to upload MP4'}
+              </p>
+              <p className="text-muted-foreground text-xs">
+                {isArabic
+                  ? 'الحد 50 م.ب. · يعمل بدون صوت كخلفية هيرو'
+                  : 'Max 50MB · Plays muted as hero background'}
+              </p>
               <input
                 ref={inputRef}
                 type="file"
@@ -227,13 +270,19 @@ export function HeroVideoManager({ currentVideo }: { currentVideo: VideoConfig }
             placeholder="https://www.youtube.com/watch?v=..."
             value={youtubeInput}
             onChange={(e) => setYoutubeInput(e.target.value)}
-            className="flex-1 rounded-lg border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder:text-muted-foreground focus:border-white/20 focus:outline-none"
+            className="placeholder:text-muted-foreground flex-1 rounded-lg border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-white focus:border-white/20 focus:outline-none"
           />
           <Button
             onClick={handleYoutubeSave}
             disabled={uploading || !youtubeInput.trim()}
           >
-            {uploading ? <Loader2 className="size-4 animate-spin" /> : (isArabic ? 'حفظ' : 'Save')}
+            {uploading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : isArabic ? (
+              'حفظ'
+            ) : (
+              'Save'
+            )}
           </Button>
         </div>
       )}

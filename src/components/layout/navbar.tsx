@@ -17,7 +17,8 @@ export function Navbar({ initialUser }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false)
   const [hidden, setHidden] = useState(false)
   const lastScrollY = useRef(0)
-  const isLanding = pathname === '/' || pathname === '' || pathname.startsWith('/auth')
+  const isLanding =
+    pathname === '/' || pathname === '' || pathname.startsWith('/auth')
 
   // Direction-aware show/hide via Lenis. Hide on scroll down, show on scroll up.
   useLenis(({ scroll }) => {
@@ -51,13 +52,18 @@ export function Navbar({ initialUser }: NavbarProps) {
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 flex items-center gap-3 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] md:gap-7 md:px-10 md:pb-[18px] md:pt-[calc(env(safe-area-inset-top)+18px)] border-b backdrop-blur-[18px]',
+        'sticky top-0 z-50 flex items-center gap-3 border-b px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 backdrop-blur-[18px] md:gap-7 md:px-10 md:pt-[calc(env(safe-area-inset-top)+18px)] md:pb-[18px]',
         'transition-[transform,background-color,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform',
         hidden ? '-translate-y-full' : 'translate-y-0',
-        isLanding && !scrolled && 'bg-gradient-to-b from-[rgba(10,10,10,0.8)] to-transparent border-transparent',
-        isLanding && scrolled && 'bg-[rgba(10,10,10,0.96)] border-[var(--line)]',
-        !isLanding && 'bg-[linear-gradient(180deg,rgba(10,10,10,0.95),rgba(10,10,10,0.65))] border-[var(--line)]',
-        !isLanding && scrolled && 'bg-[rgba(10,10,10,0.96)]',
+        isLanding &&
+          !scrolled &&
+          'border-transparent bg-gradient-to-b from-[rgba(10,10,10,0.8)] to-transparent',
+        isLanding &&
+          scrolled &&
+          'border-[var(--line)] bg-[rgba(10,10,10,0.96)]',
+        !isLanding &&
+          'border-[var(--line)] bg-[linear-gradient(180deg,rgba(10,10,10,0.95),rgba(10,10,10,0.65))]',
+        !isLanding && scrolled && 'bg-[rgba(10,10,10,0.96)]'
       )}
       style={{ WebkitBackdropFilter: 'blur(18px)' }}
     >
@@ -77,29 +83,54 @@ export function Navbar({ initialUser }: NavbarProps) {
       </Link>
 
       {/* Nav links — hidden on mobile, MobileNav handles those */}
-      <nav className="hidden md:flex items-center gap-[22px]">
+      <nav className="hidden items-center gap-[22px] md:flex">
         {!isLanding && (
           <>
-            <Link href="/browse" className={navLinkClass(pathname === '/browse')}>Browse</Link>
-            <Link href="/coming-soon" className={navLinkClass(pathname === '/coming-soon')}>Coming Soon</Link>
-            <Link href="/support" className={navLinkClass(pathname === '/support')}>Support</Link>
+            <Link
+              href="/browse"
+              className={navLinkClass(pathname === '/browse')}
+            >
+              Browse
+            </Link>
+            <Link
+              href="/support"
+              className={navLinkClass(pathname === '/support')}
+            >
+              Support
+            </Link>
           </>
         )}
-        {isLanding && (() => {
-          const isHome = pathname === '/' || pathname === ''
-          const prefix = isHome ? '' : '/'
-          return (
-            <>
-              <a href={`${prefix}#features`} className="text-[13.5px] text-[var(--text-dim)] py-1.5 px-0.5 transition-colors duration-150 hover:text-[var(--text)]">Why Clickit</a>
-              <a href={`${prefix}#shows`} className="text-[13.5px] text-[var(--text-dim)] py-1.5 px-0.5 transition-colors duration-150 hover:text-[var(--text)]">Shows</a>
-              <a href={`${prefix}#faq`} className="text-[13.5px] text-[var(--text-dim)] py-1.5 px-0.5 transition-colors duration-150 hover:text-[var(--text)]">FAQ</a>
-            </>
-          )
-        })()}
+        {isLanding &&
+          (() => {
+            const isHome = pathname === '/' || pathname === ''
+            const prefix = isHome ? '' : '/'
+            return (
+              <>
+                <a
+                  href={`${prefix}#features`}
+                  className="px-0.5 py-1.5 text-[13.5px] text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
+                >
+                  Why Clickit
+                </a>
+                <a
+                  href={`${prefix}#shows`}
+                  className="px-0.5 py-1.5 text-[13.5px] text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
+                >
+                  Shows
+                </a>
+                <a
+                  href={`${prefix}#faq`}
+                  className="px-0.5 py-1.5 text-[13.5px] text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
+                >
+                  FAQ
+                </a>
+              </>
+            )
+          })()}
       </nav>
 
       {/* Right side: auth (desktop) */}
-      <div className="ms-auto hidden md:flex items-center gap-3.5">
+      <div className="ms-auto hidden items-center gap-3.5 md:flex">
         <AuthSection initialUser={initialUser} isLanding={isLanding} />
       </div>
 

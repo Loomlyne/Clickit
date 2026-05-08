@@ -51,7 +51,9 @@ export type RestoreResult = ActionResult & {
 
 async function assertAdmin() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
   // Always scope to id=1. Without .eq('id', 1) a hypothetical second row in
@@ -83,7 +85,7 @@ const optionalUrl = z
 // validateYouTubeUrl for why the substring regex alone is not safe for viewer-rendered iframes.
 function heroVideoInvariant(
   urlKey: 'hero_video_url' | 'hero_video_mobile_url',
-  typeKey: 'hero_video_type' | 'hero_video_mobile_type',
+  typeKey: 'hero_video_type' | 'hero_video_mobile_type'
 ) {
   return (data: Record<string, unknown>, ctx: z.RefinementCtx) => {
     const url = data[urlKey]
@@ -103,7 +105,8 @@ function heroVideoInvariant(
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: [urlKey],
-          message: 'Must be a valid youtube.com or youtu.be URL with a video ID',
+          message:
+            'Must be a valid youtube.com or youtu.be URL with a video ID',
         })
       }
     }
@@ -121,7 +124,13 @@ const showSchema = z
     tagline: z.string().optional().nullable(),
     tagline_ar: z.string().optional().nullable(),
     genre: z.string().min(1, 'Genre is required'),
-    brand_color: z.enum(['brand-blue', 'brand-purple', 'brand-green', 'brand-red', 'brand-orange']),
+    brand_color: z.enum([
+      'brand-blue',
+      'brand-purple',
+      'brand-green',
+      'brand-red',
+      'brand-orange',
+    ]),
     status: z.enum(['draft', 'coming-soon', 'now-streaming']),
     broadcast_day: z.string().optional().nullable(),
     broadcast_time: z.string().optional().nullable(),
@@ -137,7 +146,10 @@ const showSchema = z
   })
   .superRefine((data, ctx) => {
     heroVideoInvariant('hero_video_url', 'hero_video_type')(data, ctx)
-    heroVideoInvariant('hero_video_mobile_url', 'hero_video_mobile_type')(data, ctx)
+    heroVideoInvariant('hero_video_mobile_url', 'hero_video_mobile_type')(
+      data,
+      ctx
+    )
   })
 
 const categorySchema = z.object({
@@ -145,7 +157,12 @@ const categorySchema = z.object({
   name_ar: z.string().trim().min(1, 'Arabic name is required').max(80),
   slug: z.string().trim().min(1, 'Slug is required').max(80),
   icon: z.string().trim().max(40).optional().nullable(),
-  color: z.string().trim().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
+  color: z
+    .string()
+    .trim()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional()
+    .nullable(),
   sort_order: z.number().int().min(0).default(0),
 })
 
@@ -160,7 +177,7 @@ function bumpCatalogCache() {
 async function syncShowCategories(
   admin: ReturnType<typeof createAdminClient>,
   showId: string,
-  categoryIds: string[],
+  categoryIds: string[]
 ) {
   const uniqueCategoryIds = [...new Set(categoryIds)]
 
@@ -173,12 +190,12 @@ async function syncShowCategories(
 
   if (uniqueCategoryIds.length === 0) return
 
-  const { error: insertError } = await admin
-    .from('show_categories')
-    .insert(uniqueCategoryIds.map((categoryId) => ({
+  const { error: insertError } = await admin.from('show_categories').insert(
+    uniqueCategoryIds.map((categoryId) => ({
       show_id: showId,
       category_id: categoryId,
-    })))
+    }))
+  )
 
   if (insertError) throw insertError
 }
@@ -208,7 +225,7 @@ const episodeSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export async function createShow(
-  data: z.input<typeof showSchema>,
+  data: z.input<typeof showSchema>
 ): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
@@ -233,20 +250,30 @@ export async function createShow(
       action: 'create',
       entity: 'show',
       entityId: show.id,
-      diff: { data: { title: show.title, slug: show.slug, status: show.status, category_ids } },
+      diff: {
+        data: {
+          title: show.title,
+          slug: show.slug,
+          status: show.status,
+          category_ids,
+        },
+      },
     })
 
     bumpCatalogCache()
     return { success: true, data: show }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to create show' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to create show',
+    }
   }
 }
 
 export async function updateShow(
   id: string,
-  data: z.input<typeof showSchema>,
+  data: z.input<typeof showSchema>
 ): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
@@ -271,7 +298,10 @@ export async function updateShow(
       action: 'update',
       entity: 'show',
       entityId: id,
-      diff: { changed: [...Object.keys(updateData), 'category_ids'], title: show.title },
+      diff: {
+        changed: [...Object.keys(updateData), 'category_ids'],
+        title: show.title,
+      },
     })
 
     bumpCatalogCache()
@@ -279,7 +309,10 @@ export async function updateShow(
     return { success: true, data: show }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to update show' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to update show',
+    }
   }
 }
 
@@ -296,10 +329,7 @@ export async function archiveShow(id: string): Promise<ActionResult> {
     if (showError) return { success: false, error: showError.message }
 
     // Also archive all episodes for this show
-    await admin
-      .from('episodes')
-      .update({ archived: true })
-      .eq('show_id', id)
+    await admin.from('episodes').update({ archived: true }).eq('show_id', id)
 
     await logAudit({
       adminUserId: user.id,
@@ -313,7 +343,10 @@ export async function archiveShow(id: string): Promise<ActionResult> {
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to archive show' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to archive show',
+    }
   }
 }
 
@@ -322,81 +355,84 @@ export async function archiveShow(id: string): Promise<ActionResult> {
 // twice (once for itself, once through a nested restoreShow call).
 async function _restoreShow(
   admin: ReturnType<typeof createAdminClient>,
-  id: string,
+  id: string
 ): Promise<RestoreResult> {
-    // Check for episode number conflicts before restoring
-    const { data: archivedEpisodes } = await admin
-      .from('episodes')
-      .select('id, title, episode_number, season_id')
+  // Check for episode number conflicts before restoring
+  const { data: archivedEpisodes } = await admin
+    .from('episodes')
+    .select('id, title, episode_number, season_id')
+    .eq('show_id', id)
+    .eq('archived', true)
+
+  if (archivedEpisodes && archivedEpisodes.length > 0) {
+    // Get seasons for this show to include season_number in conflict info
+    const { data: seasons } = await admin
+      .from('seasons')
+      .select('id, season_number')
       .eq('show_id', id)
-      .eq('archived', true)
 
-    if (archivedEpisodes && archivedEpisodes.length > 0) {
-      // Get seasons for this show to include season_number in conflict info
-      const { data: seasons } = await admin
-        .from('seasons')
-        .select('id, season_number')
-        .eq('show_id', id)
+    const seasonMap = new Map(
+      seasons?.map((s) => [s.id, s.season_number]) ?? []
+    )
 
-      const seasonMap = new Map(seasons?.map(s => [s.id, s.season_number]) ?? [])
+    // Batch-fetch all visible episodes for the seasons involved in one round
+    // trip. The previous implementation ran one query per archived episode,
+    // so restoring a show with 20 episodes meant 20 sequential DB calls.
+    const involvedSeasonIds = [
+      ...new Set(archivedEpisodes.map((ep) => ep.season_id)),
+    ]
+    const { data: visibleEpisodes } = await admin
+      .from('episodes')
+      .select('season_id, episode_number, title')
+      .in('season_id', involvedSeasonIds)
+      .eq('archived', false)
 
-      // Batch-fetch all visible episodes for the seasons involved in one round
-      // trip. The previous implementation ran one query per archived episode,
-      // so restoring a show with 20 episodes meant 20 sequential DB calls.
-      const involvedSeasonIds = [...new Set(archivedEpisodes.map(ep => ep.season_id))]
-      const { data: visibleEpisodes } = await admin
-        .from('episodes')
-        .select('season_id, episode_number, title')
-        .in('season_id', involvedSeasonIds)
-        .eq('archived', false)
+    // Lookup key: "{seasonId}:{episodeNumber}" → title of the blocker
+    const blockerByKey = new Map<string, string>()
+    for (const ve of visibleEpisodes ?? []) {
+      blockerByKey.set(`${ve.season_id}:${ve.episode_number}`, ve.title)
+    }
 
-      // Lookup key: "{seasonId}:{episodeNumber}" → title of the blocker
-      const blockerByKey = new Map<string, string>()
-      for (const ve of visibleEpisodes ?? []) {
-        blockerByKey.set(`${ve.season_id}:${ve.episode_number}`, ve.title)
-      }
-
-      const conflicts: EpisodeConflict[] = []
-      for (const ep of archivedEpisodes) {
-        const blockerTitle = blockerByKey.get(`${ep.season_id}:${ep.episode_number}`)
-        if (blockerTitle) {
-          conflicts.push({
-            episodeId: ep.id,
-            episodeTitle: ep.title,
-            episodeNumber: ep.episode_number,
-            seasonId: ep.season_id,
-            seasonNumber: seasonMap.get(ep.season_id) ?? 0,
-            conflictingEpisodeTitle: blockerTitle,
-          })
-        }
-      }
-
-      if (conflicts.length > 0) {
-        return {
-          success: false,
-          error: `${conflicts.length} episode(s) have number conflicts with existing episodes.`,
-          conflicts,
-        }
+    const conflicts: EpisodeConflict[] = []
+    for (const ep of archivedEpisodes) {
+      const blockerTitle = blockerByKey.get(
+        `${ep.season_id}:${ep.episode_number}`
+      )
+      if (blockerTitle) {
+        conflicts.push({
+          episodeId: ep.id,
+          episodeTitle: ep.title,
+          episodeNumber: ep.episode_number,
+          seasonId: ep.season_id,
+          seasonNumber: seasonMap.get(ep.season_id) ?? 0,
+          conflictingEpisodeTitle: blockerTitle,
+        })
       }
     }
 
-    // No conflicts — proceed with restore
-    const { error: showError } = await admin
-      .from('shows')
-      .update({ archived: false })
-      .eq('id', id)
+    if (conflicts.length > 0) {
+      return {
+        success: false,
+        error: `${conflicts.length} episode(s) have number conflicts with existing episodes.`,
+        conflicts,
+      }
+    }
+  }
 
-    if (showError) return { success: false, error: showError.message }
+  // No conflicts — proceed with restore
+  const { error: showError } = await admin
+    .from('shows')
+    .update({ archived: false })
+    .eq('id', id)
 
-    await admin
-      .from('episodes')
-      .update({ archived: false })
-      .eq('show_id', id)
+  if (showError) return { success: false, error: showError.message }
 
-    bumpCatalogCache()
-    revalidatePath('/admin/archive')
-    updateTag('episodes')
-    return { success: true }
+  await admin.from('episodes').update({ archived: false }).eq('show_id', id)
+
+  bumpCatalogCache()
+  revalidatePath('/admin/archive')
+  updateTag('episodes')
+  return { success: true }
 }
 
 export async function restoreShow(id: string): Promise<RestoreResult> {
@@ -405,18 +441,26 @@ export async function restoreShow(id: string): Promise<RestoreResult> {
     const admin = createAdminClient()
     const result = await _restoreShow(admin, id)
     if (result.success) {
-      await logAudit({ adminUserId: user.id, action: 'restore', entity: 'show', entityId: id })
+      await logAudit({
+        adminUserId: user.id,
+        action: 'restore',
+        entity: 'show',
+        entityId: id,
+      })
     }
     return result
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to restore show' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to restore show',
+    }
   }
 }
 
 export async function resolveConflictsAndRestore(
   showId: string,
-  fixes: { episodeId: string; newEpisodeNumber: number }[],
+  fixes: { episodeId: string; newEpisodeNumber: number }[]
 ): Promise<RestoreResult> {
   try {
     await assertAdmin()
@@ -434,7 +478,10 @@ export async function resolveConflictsAndRestore(
     )
     const firstError = results.find((r) => r.error)?.error
     if (firstError) {
-      return { success: false, error: `Failed to update episode: ${firstError.message}` }
+      return {
+        success: false,
+        error: `Failed to update episode: ${firstError.message}`,
+      }
     }
 
     // Re-run restore with conflict check (skipping redundant assertAdmin —
@@ -442,7 +489,10 @@ export async function resolveConflictsAndRestore(
     return await _restoreShow(admin, showId)
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to resolve conflicts' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to resolve conflicts',
+    }
   }
 }
 
@@ -453,7 +503,11 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
 
     // Capture show title BEFORE deletion so the audit row has recognizable
     // context (after DELETE the id is all we'd know).
-    const { data: showRow } = await admin.from('shows').select('title, slug').eq('id', id).single()
+    const { data: showRow } = await admin
+      .from('shows')
+      .select('title, slug')
+      .eq('id', id)
+      .single()
 
     // List and delete every file under shows/{id}/ in both buckets.
     // Before versioning landed the stable paths were predictable
@@ -463,7 +517,9 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
     // listing approach works for both legacy stable-path rows and versioned
     // rows — whatever is in the folder gets deleted.
     async function purgeShowFolder(bucket: string) {
-      const { data: files } = await admin.storage.from(bucket).list(`shows/${id}`, { limit: 1000 })
+      const { data: files } = await admin.storage
+        .from(bucket)
+        .list(`shows/${id}`, { limit: 1000 })
       if (!files || files.length === 0) return
       const paths = files
         .filter((f) => f.name && !f.id) // defensive: skip folder entries
@@ -473,15 +529,12 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
       }
     }
     await Promise.all([
-      purgeShowFolder('show-artwork'),  // poster, hero, hero-mobile, logo
-      purgeShowFolder('site-assets'),   // hero videos
+      purgeShowFolder('show-artwork'), // poster, hero, hero-mobile, logo
+      purgeShowFolder('site-assets'), // hero videos
     ])
 
     // Then delete DB record — CASCADE handles seasons/episodes
-    const { error } = await admin
-      .from('shows')
-      .delete()
-      .eq('id', id)
+    const { error } = await admin.from('shows').delete().eq('id', id)
 
     if (error) return { success: false, error: error.message }
 
@@ -499,7 +552,10 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to delete show' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to delete show',
+    }
   }
 }
 
@@ -508,7 +564,7 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
 // ---------------------------------------------------------------------------
 
 export async function createCategory(
-  data: z.input<typeof categorySchema>,
+  data: z.input<typeof categorySchema>
 ): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
@@ -535,13 +591,16 @@ export async function createCategory(
     return { success: true, data: category }
   } catch (err) {
     console.error('[admin/categories] create failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to create category' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to create category',
+    }
   }
 }
 
 export async function updateCategory(
   id: string,
-  data: z.input<typeof categorySchema>,
+  data: z.input<typeof categorySchema>
 ): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
@@ -569,7 +628,10 @@ export async function updateCategory(
     return { success: true, data: category }
   } catch (err) {
     console.error('[admin/categories] update failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to update category' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to update category',
+    }
   }
 }
 
@@ -584,10 +646,7 @@ export async function deleteCategory(id: string): Promise<ActionResult> {
       .eq('id', id)
       .single()
 
-    const { error } = await admin
-      .from('categories')
-      .delete()
-      .eq('id', id)
+    const { error } = await admin.from('categories').delete().eq('id', id)
 
     if (error) return { success: false, error: error.message }
 
@@ -603,21 +662,23 @@ export async function deleteCategory(id: string): Promise<ActionResult> {
     return { success: true }
   } catch (err) {
     console.error('[admin/categories] delete failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to delete category' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to delete category',
+    }
   }
 }
 
-export async function reorderCategories(categoryIds: string[]): Promise<ActionResult> {
+export async function reorderCategories(
+  categoryIds: string[]
+): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
     const admin = createAdminClient()
 
     await Promise.all(
       categoryIds.map((id, index) =>
-        admin
-          .from('categories')
-          .update({ sort_order: index })
-          .eq('id', id)
+        admin.from('categories').update({ sort_order: index }).eq('id', id)
       )
     )
 
@@ -632,7 +693,11 @@ export async function reorderCategories(categoryIds: string[]): Promise<ActionRe
     return { success: true }
   } catch (err) {
     console.error('[admin/categories] reorder failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to reorder categories' }
+    return {
+      success: false,
+      error:
+        err instanceof Error ? err.message : 'Failed to reorder categories',
+    }
   }
 }
 
@@ -641,7 +706,7 @@ export async function reorderCategories(categoryIds: string[]): Promise<ActionRe
 // ---------------------------------------------------------------------------
 
 export async function createSeason(
-  data: z.input<typeof seasonSchema>,
+  data: z.input<typeof seasonSchema>
 ): Promise<ActionResult> {
   try {
     await assertAdmin()
@@ -672,13 +737,16 @@ export async function createSeason(
     return { success: true, data: season }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to create season' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to create season',
+    }
   }
 }
 
 export async function updateSeason(
   id: string,
-  data: Partial<z.input<typeof seasonSchema>>,
+  data: Partial<z.input<typeof seasonSchema>>
 ): Promise<ActionResult> {
   try {
     await assertAdmin()
@@ -700,23 +768,23 @@ export async function updateSeason(
     return { success: true, data: season }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to update season' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to update season',
+    }
   }
 }
 
 export async function deleteSeason(
   id: string,
-  showId: string,
+  showId: string
 ): Promise<ActionResult> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
 
     // Delete season — CASCADE deletes episodes
-    const { error } = await admin
-      .from('seasons')
-      .delete()
-      .eq('id', id)
+    const { error } = await admin.from('seasons').delete().eq('id', id)
 
     if (error) return { success: false, error: error.message }
 
@@ -748,7 +816,10 @@ export async function deleteSeason(
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to delete season' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to delete season',
+    }
   }
 }
 
@@ -757,7 +828,7 @@ export async function deleteSeason(
 // ---------------------------------------------------------------------------
 
 export async function createEpisode(
-  data: z.input<typeof episodeSchema>,
+  data: z.input<typeof episodeSchema>
 ): Promise<ActionResult> {
   try {
     await assertAdmin()
@@ -799,7 +870,10 @@ export async function createEpisode(
       .maybeSingle()
 
     if (visibleConflict) {
-      return { success: false, error: `Episode number ${parsed.episode_number} already exists in this season. Choose a different number.` }
+      return {
+        success: false,
+        error: `Episode number ${parsed.episode_number} already exists in this season. Choose a different number.`,
+      }
     }
 
     const { data: episode, error } = await admin
@@ -810,7 +884,10 @@ export async function createEpisode(
 
     if (error) {
       if (error.code === '23505') {
-        return { success: false, error: `Episode number ${parsed.episode_number} already exists in this season. Choose a different number.` }
+        return {
+          success: false,
+          error: `Episode number ${parsed.episode_number} already exists in this season. Choose a different number.`,
+        }
       }
       return { success: false, error: error.message }
     }
@@ -842,13 +919,16 @@ export async function createEpisode(
     return { success: true, data: episode }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to create episode' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to create episode',
+    }
   }
 }
 
 export async function updateEpisode(
   id: string,
-  data: Partial<z.input<typeof episodeSchema>>,
+  data: Partial<z.input<typeof episodeSchema>>
 ): Promise<ActionResult> {
   try {
     await assertAdmin()
@@ -872,7 +952,10 @@ export async function updateEpisode(
           .maybeSingle()
 
         if (existing) {
-          return { success: false, error: `Episode number ${data.episode_number} already exists in this season. Choose a different number.` }
+          return {
+            success: false,
+            error: `Episode number ${data.episode_number} already exists in this season. Choose a different number.`,
+          }
         }
       }
     }
@@ -886,7 +969,11 @@ export async function updateEpisode(
 
     if (error) {
       if (error.code === '23505') {
-        return { success: false, error: 'This episode number already exists in this season. Choose a different number.' }
+        return {
+          success: false,
+          error:
+            'This episode number already exists in this season. Choose a different number.',
+        }
       }
       return { success: false, error: error.message }
     }
@@ -898,13 +985,16 @@ export async function updateEpisode(
     return { success: true, data: episode }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to update episode' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to update episode',
+    }
   }
 }
 
 export async function archiveEpisode(
   id: string,
-  showId: string,
+  showId: string
 ): Promise<ActionResult> {
   try {
     await assertAdmin()
@@ -934,13 +1024,16 @@ export async function archiveEpisode(
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to archive episode' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to archive episode',
+    }
   }
 }
 
 export async function reorderEpisode(
   episodeId: string,
-  direction: 'up' | 'down',
+  direction: 'up' | 'down'
 ): Promise<ActionResult> {
   try {
     await assertAdmin()
@@ -958,9 +1051,10 @@ export async function reorderEpisode(
     }
 
     // Find adjacent episode
-    const adjacentNumber = direction === 'up'
-      ? current.episode_number - 1
-      : current.episode_number + 1
+    const adjacentNumber =
+      direction === 'up'
+        ? current.episode_number - 1
+        : current.episode_number + 1
 
     const { data: adjacent, error: adjError } = await admin
       .from('episodes')
@@ -997,7 +1091,10 @@ export async function reorderEpisode(
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to reorder episode' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to reorder episode',
+    }
   }
 }
 
@@ -1005,7 +1102,9 @@ export async function reorderEpisode(
 // Artwork Upload / Delete
 // ---------------------------------------------------------------------------
 
-export async function uploadArtwork(formData: FormData): Promise<ActionResult<string>> {
+export async function uploadArtwork(
+  formData: FormData
+): Promise<ActionResult<string>> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
@@ -1015,17 +1114,32 @@ export async function uploadArtwork(formData: FormData): Promise<ActionResult<st
     const slot = formData.get('slot') as string | null
 
     if (!file || !showId || !slot) {
-      console.warn('[uploadArtwork] missing args', { hasFile: !!file, showId, slot })
+      console.warn('[uploadArtwork] missing args', {
+        hasFile: !!file,
+        showId,
+        slot,
+      })
       return { success: false, error: 'Missing file, showId, or slot' }
     }
 
     const ALLOWED_MIME = ['image/webp', 'image/png', 'image/jpeg']
     if (!ALLOWED_MIME.includes(file.type)) {
-      console.warn('[uploadArtwork] bad mime rejected', { showId, slot, mime: file.type })
-      return { success: false, error: 'File must be a WebP, PNG, or JPEG image' }
+      console.warn('[uploadArtwork] bad mime rejected', {
+        showId,
+        slot,
+        mime: file.type,
+      })
+      return {
+        success: false,
+        error: 'File must be a WebP, PNG, or JPEG image',
+      }
     }
     if (file.size > 10 * 1024 * 1024) {
-      console.warn('[uploadArtwork] oversize rejected', { showId, slot, sizeMB: Math.round(file.size / 1024 / 1024) })
+      console.warn('[uploadArtwork] oversize rejected', {
+        showId,
+        slot,
+        sizeMB: Math.round(file.size / 1024 / 1024),
+      })
       return { success: false, error: 'Image must be under 10MB' }
     }
 
@@ -1047,9 +1161,10 @@ export async function uploadArtwork(formData: FormData): Promise<ActionResult<st
     if (file.type !== targetMime) {
       const input = Buffer.from(await file.arrayBuffer())
       const pipeline = sharp(input)
-      const transcoded = ext === 'png'
-        ? await pipeline.png().toBuffer()
-        : await pipeline.webp({ quality: 88 }).toBuffer()
+      const transcoded =
+        ext === 'png'
+          ? await pipeline.png().toBuffer()
+          : await pipeline.webp({ quality: 88 }).toBuffer()
       uploadBody = transcoded
       uploadContentType = targetMime
     }
@@ -1073,7 +1188,10 @@ export async function uploadArtwork(formData: FormData): Promise<ActionResult<st
     return { success: true, data: urlData.publicUrl }
   } catch (err) {
     console.error('[uploadArtwork] failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Upload failed',
+    }
   }
 }
 
@@ -1115,11 +1233,16 @@ export async function createHeroVideoUpload(file: {
     return { success: true, data: { path: data.path, token: data.token } }
   } catch (err) {
     console.error('[createHeroVideoUpload] failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Upload failed',
+    }
   }
 }
 
-export async function saveHeroVideoUpload(path: string): Promise<ActionResult<string>> {
+export async function saveHeroVideoUpload(
+  path: string
+): Promise<ActionResult<string>> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
@@ -1146,11 +1269,16 @@ export async function saveHeroVideoUpload(path: string): Promise<ActionResult<st
     return { success: true, data: publicUrl }
   } catch (err) {
     console.error('[saveHeroVideoUpload] failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Upload failed',
+    }
   }
 }
 
-export async function setHeroVideoUrl(youtubeUrl: string): Promise<ActionResult> {
+export async function setHeroVideoUrl(
+  youtubeUrl: string
+): Promise<ActionResult> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
@@ -1165,7 +1293,11 @@ export async function setHeroVideoUrl(youtubeUrl: string): Promise<ActionResult>
     // new URL() and enforces an allowlist of YouTube hostnames.
     const videoId = validateYouTubeUrl(trimmed)
     if (!videoId) {
-      return { success: false, error: 'Invalid YouTube URL. Must be a youtube.com or youtu.be link with a valid video ID.' }
+      return {
+        success: false,
+        error:
+          'Invalid YouTube URL. Must be a youtube.com or youtu.be link with a valid video ID.',
+      }
     }
 
     // Store canonical form so viewers always get a predictable embed URL.
@@ -1177,7 +1309,10 @@ export async function setHeroVideoUrl(youtubeUrl: string): Promise<ActionResult>
       .eq('id', 1)
 
     if (error) {
-      console.error('[setHeroVideoUrl] db update failed', { videoId, error: error.message })
+      console.error('[setHeroVideoUrl] db update failed', {
+        videoId,
+        error: error.message,
+      })
       return { success: false, error: error.message }
     }
 
@@ -1186,7 +1321,10 @@ export async function setHeroVideoUrl(youtubeUrl: string): Promise<ActionResult>
     return { success: true }
   } catch (err) {
     console.error('[setHeroVideoUrl] failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to save URL' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to save URL',
+    }
   }
 }
 
@@ -1196,9 +1334,7 @@ export async function removeHeroVideo(): Promise<ActionResult> {
     const admin = createAdminClient()
 
     // Try to remove MP4 from storage (ignore errors if not found)
-    await admin.storage
-      .from('site-assets')
-      .remove(['hero/video.mp4'])
+    await admin.storage.from('site-assets').remove(['hero/video.mp4'])
 
     const { error } = await admin
       .from('app_config')
@@ -1212,7 +1348,10 @@ export async function removeHeroVideo(): Promise<ActionResult> {
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to remove video' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to remove video',
+    }
   }
 }
 
@@ -1260,11 +1399,16 @@ export async function createShowVideoUpload(file: {
     return { success: true, data: { path: data.path, token: data.token } }
   } catch (err) {
     console.error('[createShowVideoUpload] failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Upload failed',
+    }
   }
 }
 
-export async function saveShowVideoUpload(path: string): Promise<ActionResult<string>> {
+export async function saveShowVideoUpload(
+  path: string
+): Promise<ActionResult<string>> {
   try {
     await assertAdmin()
 
@@ -1273,11 +1417,16 @@ export async function saveShowVideoUpload(path: string): Promise<ActionResult<st
     }
 
     const admin = createAdminClient()
-    const { data: urlData } = admin.storage.from('site-assets').getPublicUrl(path)
+    const { data: urlData } = admin.storage
+      .from('site-assets')
+      .getPublicUrl(path)
     return { success: true, data: urlData.publicUrl }
   } catch (err) {
     console.error('[saveShowVideoUpload] failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Upload failed',
+    }
   }
 }
 
@@ -1316,7 +1465,11 @@ export async function toggleFeatured(showId: string) {
         .eq('archived', false)
 
       if ((count ?? 0) >= 5) {
-        return { success: false, error: 'Maximum 5 featured shows allowed. Unfeature another show first.' }
+        return {
+          success: false,
+          error:
+            'Maximum 5 featured shows allowed. Unfeature another show first.',
+        }
       }
     }
 
@@ -1333,7 +1486,10 @@ export async function toggleFeatured(showId: string) {
     return { success: true, featured: newFeatured }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to toggle featured' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to toggle featured',
+    }
   }
 }
 
@@ -1345,10 +1501,14 @@ export async function toggleFeatured(showId: string) {
 // Mirrors the hero video action shape above.
 // ---------------------------------------------------------------------------
 
-const urlOrEmpty = z.string().trim().max(500).refine(
-  (v) => v === '' || /^https?:\/\//i.test(v),
-  'Must be empty or a valid URL (http/https)'
-)
+const urlOrEmpty = z
+  .string()
+  .trim()
+  .max(500)
+  .refine(
+    (v) => v === '' || /^https?:\/\//i.test(v),
+    'Must be empty or a valid URL (http/https)'
+  )
 
 const siteMetadataSchema = z.object({
   site_title: z.string().trim().min(1, 'Title is required').max(120),
@@ -1359,10 +1519,14 @@ const siteMetadataSchema = z.object({
 const footerSchema = z.object({
   tagline: z.string().max(300),
   stat: z.string().max(80),
-  contactEmail: z.string().trim().max(120).refine(
-    (v) => v === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
-    'Invalid email'
-  ),
+  contactEmail: z
+    .string()
+    .trim()
+    .max(120)
+    .refine(
+      (v) => v === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+      'Invalid email'
+    ),
   social: z.object({
     instagram: urlOrEmpty,
     x: urlOrEmpty,
@@ -1376,10 +1540,14 @@ const footerSchema = z.object({
   }),
 })
 
-const hrefOrEmpty = z.string().trim().max(500).refine(
-  (v) => v === '' || v.startsWith('/') || /^https?:\/\//i.test(v),
-  'Must be empty, a path (/foo), or a URL'
-)
+const hrefOrEmpty = z
+  .string()
+  .trim()
+  .max(500)
+  .refine(
+    (v) => v === '' || v.startsWith('/') || /^https?:\/\//i.test(v),
+    'Must be empty, a path (/foo), or a URL'
+  )
 
 const ctaStageSchema = z.object({
   label: z.string().max(60),
@@ -1459,7 +1627,10 @@ export async function updateSiteMetadata(
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to save',
+    }
   }
 }
 
@@ -1481,7 +1652,10 @@ export async function updateFooterContent(
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to save',
+    }
   }
 }
 
@@ -1503,7 +1677,10 @@ export async function updateCtaCopy(
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to save',
+    }
   }
 }
 
@@ -1525,7 +1702,10 @@ export async function updateGenreConfig(
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to save',
+    }
   }
 }
 
@@ -1552,12 +1732,18 @@ export async function updateIntegrations(
     const keysTouched = Object.entries(cleaned)
       .filter(([, v]) => v !== null)
       .map(([k]) => k)
-    await auditConfigUpdate(user.id, keysTouched.length ? keysTouched : ['integrations_cleared'])
+    await auditConfigUpdate(
+      user.id,
+      keysTouched.length ? keysTouched : ['integrations_cleared']
+    )
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to save',
+    }
   }
 }
 
@@ -1579,7 +1765,10 @@ export async function updateFeatureFlags(
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to save' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to save',
+    }
   }
 }
 
@@ -1612,17 +1801,25 @@ export async function uploadSiteImage(
       'image/x-icon': 'ico',
     }
     const ext = extMap[mime]
-    if (!ext) return { success: false, error: `Unsupported image type: ${mime}` }
+    if (!ext)
+      return { success: false, error: `Unsupported image type: ${mime}` }
 
-    const path = kind === 'og' ? `settings/og.${ext}` : `settings/favicon.${ext}`
+    const path =
+      kind === 'og' ? `settings/og.${ext}` : `settings/favicon.${ext}`
 
     const { error: uploadError } = await admin.storage
       .from('site-assets')
-      .upload(path, file, { upsert: true, contentType: mime, cacheControl: '3600' })
+      .upload(path, file, {
+        upsert: true,
+        contentType: mime,
+        cacheControl: '3600',
+      })
 
     if (uploadError) return { success: false, error: uploadError.message }
 
-    const { data: urlData } = admin.storage.from('site-assets').getPublicUrl(path)
+    const { data: urlData } = admin.storage
+      .from('site-assets')
+      .getPublicUrl(path)
     // Cache-bust the URL so browsers always pick up the latest upload
     const bustedUrl = `${urlData.publicUrl}?v=${Date.now()}`
 
@@ -1639,7 +1836,10 @@ export async function uploadSiteImage(
     return { success: true, data: bustedUrl }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Upload failed',
+    }
   }
 }
 
@@ -1660,7 +1860,10 @@ export async function removeSiteImage(
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to remove' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to remove',
+    }
   }
 }
 
@@ -1678,7 +1881,10 @@ export async function revalidateAllCache(): Promise<ActionResult> {
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to revalidate' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to revalidate',
+    }
   }
 }
 
@@ -1698,7 +1904,7 @@ const shortSchema = z.object({
 })
 
 export async function createShort(
-  data: z.input<typeof shortSchema>,
+  data: z.input<typeof shortSchema>
 ): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
@@ -1718,7 +1924,9 @@ export async function createShort(
       action: 'create',
       entity: 'short',
       entityId: short.id,
-      diff: { data: { title: short.title, youtube_video_id: short.youtube_video_id } },
+      diff: {
+        data: { title: short.title, youtube_video_id: short.youtube_video_id },
+      },
     })
 
     revalidatePath('/admin/shorts')
@@ -1726,13 +1934,16 @@ export async function createShort(
     return { success: true, data: short }
   } catch (err) {
     console.error('[admin/shorts] create failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to create short' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to create short',
+    }
   }
 }
 
 export async function updateShort(
   id: string,
-  data: z.input<typeof shortSchema>,
+  data: z.input<typeof shortSchema>
 ): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
@@ -1761,13 +1972,16 @@ export async function updateShort(
     return { success: true, data: short }
   } catch (err) {
     console.error('[admin/shorts] update failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to update short' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to update short',
+    }
   }
 }
 
 export async function toggleShortFeatured(
   id: string,
-  featured: boolean,
+  featured: boolean
 ): Promise<ActionResult> {
   try {
     await assertAdmin()
@@ -1782,7 +1996,10 @@ export async function toggleShortFeatured(
     return { success: true }
   } catch (err) {
     console.error('[admin/shorts] toggle featured failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed',
+    }
   }
 }
 
@@ -1791,10 +2008,7 @@ export async function deleteShort(id: string): Promise<ActionResult> {
     const user = await assertAdmin()
     const admin = createAdminClient()
 
-    const { error } = await admin
-      .from('shorts')
-      .delete()
-      .eq('id', id)
+    const { error } = await admin.from('shorts').delete().eq('id', id)
 
     if (error) return { success: false, error: error.message }
 
@@ -1810,7 +2024,10 @@ export async function deleteShort(id: string): Promise<ActionResult> {
     return { success: true }
   } catch (err) {
     console.error('[admin/shorts] delete failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to delete short' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to delete short',
+    }
   }
 }
 
@@ -1823,10 +2040,7 @@ export async function deleteReview(id: string): Promise<ActionResult> {
     const user = await assertAdmin()
     const admin = createAdminClient()
 
-    const { error } = await admin
-      .from('reviews')
-      .delete()
-      .eq('id', id)
+    const { error } = await admin.from('reviews').delete().eq('id', id)
 
     if (error) return { success: false, error: error.message }
 
@@ -1841,7 +2055,10 @@ export async function deleteReview(id: string): Promise<ActionResult> {
     return { success: true }
   } catch (err) {
     console.error('[admin/reviews] delete failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to delete review' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to delete review',
+    }
   }
 }
 
@@ -1858,7 +2075,7 @@ const castSchema = z.object({
 })
 
 export async function addCastMember(
-  data: z.input<typeof castSchema>,
+  data: z.input<typeof castSchema>
 ): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
@@ -1886,12 +2103,15 @@ export async function addCastMember(
     return { success: true, data: cast }
   } catch (err) {
     console.error('[admin/cast] create failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to add cast' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to add cast',
+    }
   }
 }
 
 export async function uploadCastImage(
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionResult<string>> {
   try {
     await assertAdmin()
@@ -1917,22 +2137,34 @@ export async function uploadCastImage(
     }
     const ext = extMap[file.type]
     if (!ext) {
-      return { success: false, error: 'Only PNG, JPEG, or WebP images are allowed' }
+      return {
+        success: false,
+        error: 'Only PNG, JPEG, or WebP images are allowed',
+      }
     }
 
     const path = `shows/${showId}/cast/${Date.now()}.${ext}`
 
     const { error: uploadError } = await admin.storage
       .from('show-artwork')
-      .upload(path, file, { upsert: false, contentType: file.type, cacheControl: '3600' })
+      .upload(path, file, {
+        upsert: false,
+        contentType: file.type,
+        cacheControl: '3600',
+      })
 
     if (uploadError) return { success: false, error: uploadError.message }
 
-    const { data: urlData } = admin.storage.from('show-artwork').getPublicUrl(path)
+    const { data: urlData } = admin.storage
+      .from('show-artwork')
+      .getPublicUrl(path)
     return { success: true, data: `${urlData.publicUrl}?v=${Date.now()}` }
   } catch (err) {
     console.error('[admin/cast] upload failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to upload cast image' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to upload cast image',
+    }
   }
 }
 
@@ -1941,10 +2173,7 @@ export async function deleteCastMember(id: string): Promise<ActionResult> {
     const user = await assertAdmin()
     const admin = createAdminClient()
 
-    const { error } = await admin
-      .from('show_cast')
-      .delete()
-      .eq('id', id)
+    const { error } = await admin.from('show_cast').delete().eq('id', id)
 
     if (error) return { success: false, error: error.message }
 
@@ -1960,6 +2189,9 @@ export async function deleteCastMember(id: string): Promise<ActionResult> {
     return { success: true }
   } catch (err) {
     console.error('[admin/cast] delete failed', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to delete cast' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to delete cast',
+    }
   }
 }
