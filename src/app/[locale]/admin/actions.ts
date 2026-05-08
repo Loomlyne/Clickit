@@ -18,6 +18,20 @@ type ActionResult<T = unknown> = {
   data?: T
 }
 
+export type SignedVideoUploadTarget = {
+  path: string
+  token: string
+}
+
+function isMp4File(file: { name?: string; type?: string }) {
+  const name = file.name?.toLowerCase() ?? ''
+  const type = file.type ?? ''
+  return (
+    type === 'video/mp4' ||
+    (name.endsWith('.mp4') && (!type || type === 'application/octet-stream'))
+  )
+}
+
 export type EpisodeConflict = {
   episodeId: string
   episodeTitle: string
@@ -1074,47 +1088,64 @@ export async function uploadArtwork(formData: FormData): Promise<ActionResult<st
 // Hero Video Management
 // ---------------------------------------------------------------------------
 
-export async function uploadHeroVideo(formData: FormData): Promise<ActionResult<string>> {
+export async function createHeroVideoUpload(file: {
+  name: string
+  size: number
+  type: string
+}): Promise<ActionResult<SignedVideoUploadTarget>> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
 
-    const file = formData.get('file') as File | null
-    if (!file) return { success: false, error: 'No file provided' }
+    if (!isMp4File(file)) {
+      return { success: false, error: 'File must be an MP4 video' }
+    }
 
     if (file.size > 50 * 1024 * 1024) {
       return { success: false, error: 'Video must be under 50MB' }
     }
 
-    const path = `hero/video.mp4`
-
-    const { error } = await admin.storage
+    const path = 'hero/video.mp4'
+    const { data, error } = await admin.storage
       .from('site-assets')
-      .upload(path, file, {
-        upsert: true,
-        contentType: 'video/mp4',
-        cacheControl: '3600',
-      })
+      .createSignedUploadUrl(path, { upsert: true })
 
     if (error) return { success: false, error: error.message }
+
+    return { success: true, data: { path: data.path, token: data.token } }
+  } catch (err) {
+    console.error('[createHeroVideoUpload] failed', err)
+    return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
+  }
+}
+
+export async function saveHeroVideoUpload(path: string): Promise<ActionResult<string>> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    if (path !== 'hero/video.mp4') {
+      return { success: false, error: 'Invalid upload path' }
+    }
 
     const { data: urlData } = admin.storage
       .from('site-assets')
       .getPublicUrl(path)
 
-    // Save URL + type to app_config
-    const { error: dbError } = await admin
+    const publicUrl = `${urlData.publicUrl}?v=${Date.now()}`
+
+    const { error } = await admin
       .from('app_config')
-      .update({ hero_video_url: urlData.publicUrl, hero_video_type: 'mp4' })
+      .update({ hero_video_url: publicUrl, hero_video_type: 'mp4' })
       .eq('id', 1)
 
-    if (dbError) return { success: false, error: dbError.message }
+    if (error) return { success: false, error: error.message }
 
     updateTag('site-config')
     revalidatePath('/')
-    return { success: true, data: urlData.publicUrl }
+    return { success: true, data: publicUrl }
   } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
+    console.error('[saveHeroVideoUpload] failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
   }
 }
@@ -1191,50 +1222,61 @@ export async function removeHeroVideo(): Promise<ActionResult> {
 
 // Uploads MP4 to storage and returns the public URL. Does NOT write to DB —
 // the URL is persisted when the parent form is saved (same pattern as artwork).
-export async function uploadShowVideoFile(formData: FormData): Promise<ActionResult<string>> {
+export async function createShowVideoUpload(file: {
+  name: string
+  size: number
+  type: string
+  showId: string
+  variant: 'desktop' | 'mobile'
+}): Promise<ActionResult<SignedVideoUploadTarget>> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
+    const { name, size, type, showId, variant } = file
 
-    const file = formData.get('file') as File | null
-    const showId = formData.get('showId') as string | null
-    const variant = formData.get('variant') as 'desktop' | 'mobile' | null
-
-    if (!file || !showId || !variant) {
-      console.warn('[uploadShowVideoFile] missing args', { hasFile: !!file, showId, variant })
-      return { success: false, error: 'Missing file, showId, or variant' }
+    if (!showId) {
+      return { success: false, error: 'Missing showId' }
     }
+
     if (variant !== 'desktop' && variant !== 'mobile') {
-      console.warn('[uploadShowVideoFile] invalid variant', { showId, variant })
       return { success: false, error: 'Invalid variant' }
     }
-    if (file.type !== 'video/mp4') {
-      console.warn('[uploadShowVideoFile] non-mp4 rejected', { showId, variant, mime: file.type })
+
+    if (!isMp4File({ name, type })) {
       return { success: false, error: 'File must be an MP4 video' }
     }
-    if (file.size > 50 * 1024 * 1024) {
-      console.warn('[uploadShowVideoFile] oversize rejected', { showId, variant, sizeMB: Math.round(file.size / 1024 / 1024) })
+
+    if (size > 50 * 1024 * 1024) {
       return { success: false, error: 'Video must be under 50MB' }
     }
 
-    // Versioned path: new uploads never overwrite the live DB-referenced asset in-place.
-    // Form state holds the new URL; DB commit happens on Save. Orphans are cleaned up
-    // by the scheduled sweep (see TODOS.md).
     const path = `shows/${showId}/hero-${variant}-${Date.now()}.mp4`
-
-    const { error: uploadError } = await admin.storage
+    const { data, error } = await admin.storage
       .from('site-assets')
-      .upload(path, file, { upsert: false, contentType: 'video/mp4', cacheControl: '3600' })
+      .createSignedUploadUrl(path)
 
-    if (uploadError) {
-      console.error('[uploadShowVideoFile] storage error', { showId, variant, path, error: uploadError.message })
-      return { success: false, error: uploadError.message }
+    if (error) return { success: false, error: error.message }
+
+    return { success: true, data: { path: data.path, token: data.token } }
+  } catch (err) {
+    console.error('[createShowVideoUpload] failed', err)
+    return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
+  }
+}
+
+export async function saveShowVideoUpload(path: string): Promise<ActionResult<string>> {
+  try {
+    await assertAdmin()
+
+    if (!/^shows\/[^/]+\/hero-(desktop|mobile)-\d+\.mp4$/.test(path)) {
+      return { success: false, error: 'Invalid upload path' }
     }
 
+    const admin = createAdminClient()
     const { data: urlData } = admin.storage.from('site-assets').getPublicUrl(path)
     return { success: true, data: urlData.publicUrl }
   } catch (err) {
-    console.error('[uploadShowVideoFile] failed', err)
+    console.error('[saveShowVideoUpload] failed', err)
     return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
   }
 }

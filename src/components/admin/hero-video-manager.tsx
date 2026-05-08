@@ -5,7 +5,8 @@ import { useLocale } from 'next-intl'
 import { Upload, Loader2, Trash2, Link as LinkIcon, Film } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { uploadHeroVideo, setHeroVideoUrl, removeHeroVideo } from '@/app/[locale]/admin/actions'
+import { createHeroVideoUpload, saveHeroVideoUpload, setHeroVideoUrl, removeHeroVideo } from '@/app/[locale]/admin/actions'
+import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
 
 type VideoConfig = { url: string; type: 'mp4' | 'youtube' } | null
@@ -32,14 +33,38 @@ export function HeroVideoManager({ currentVideo }: { currentVideo: VideoConfig }
 
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.set('file', file)
-      const result = await uploadHeroVideo(formData)
-      if (!result.success) {
+      const uploadTarget = await createHeroVideoUpload({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      })
+
+      if (!uploadTarget.success || !uploadTarget.data) {
+        toast.error(uploadTarget.error ?? (isArabic ? 'فشل الرفع' : 'Upload failed'))
+        return
+      }
+
+      const supabase = createBrowserSupabaseClient()
+      const { error: uploadError } = await supabase.storage
+        .from('site-assets')
+        .uploadToSignedUrl(uploadTarget.data.path, uploadTarget.data.token, file, {
+          contentType: 'video/mp4',
+          cacheControl: '3600',
+          upsert: true,
+        })
+
+      if (uploadError) {
+        toast.error(uploadError.message)
+        return
+      }
+
+      const result = await saveHeroVideoUpload(uploadTarget.data.path)
+      if (!result.success || !result.data) {
         toast.error(result.error ?? (isArabic ? 'فشل الرفع' : 'Upload failed'))
         return
       }
-      setVideo({ url: result.data!, type: 'mp4' })
+
+      setVideo({ url: result.data, type: 'mp4' })
       toast.success(isArabic ? 'تم رفع فيديو الهيرو' : 'Hero video uploaded')
     } catch {
       toast.error(isArabic ? 'فشل الرفع' : 'Upload failed')

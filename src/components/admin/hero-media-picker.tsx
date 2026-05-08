@@ -5,7 +5,8 @@ import { useLocale } from 'next-intl'
 import { Upload, Loader2, Trash2, Link as LinkIcon, Film, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { uploadArtwork, uploadShowVideoFile } from '@/app/[locale]/admin/actions'
+import { createShowVideoUpload, saveShowVideoUpload, uploadArtwork } from '@/app/[locale]/admin/actions'
+import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
 
 type Mode = 'image' | 'mp4' | 'youtube'
@@ -79,13 +80,28 @@ export function HeroMediaPicker({
     if (file.size > 50 * 1024 * 1024) { toast.error(isArabic ? 'يجب أن يكون الفيديو أقل من 50 م.ب.' : 'Video must be under 50MB'); return }
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.set('file', file)
-      formData.set('showId', showId)
-      formData.set('variant', variant)
-      const result = await uploadShowVideoFile(formData)
-      if (!result.success) { toast.error(result.error ?? (isArabic ? 'فشل الرفع' : 'Upload failed')); return }
-      onVideoChange({ url: result.data!, type: 'mp4' })
+      const uploadTarget = await createShowVideoUpload({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        showId,
+        variant,
+      })
+      if (!uploadTarget.success || !uploadTarget.data) { toast.error(uploadTarget.error ?? (isArabic ? 'فشل الرفع' : 'Upload failed')); return }
+
+      const supabase = createBrowserSupabaseClient()
+      const { error: uploadError } = await supabase.storage
+        .from('site-assets')
+        .uploadToSignedUrl(uploadTarget.data.path, uploadTarget.data.token, file, {
+          contentType: 'video/mp4',
+          cacheControl: '3600',
+        })
+
+      if (uploadError) { toast.error(uploadError.message); return }
+
+      const result = await saveShowVideoUpload(uploadTarget.data.path)
+      if (!result.success || !result.data) { toast.error(result.error ?? (isArabic ? 'فشل الرفع' : 'Upload failed')); return }
+      onVideoChange({ url: result.data, type: 'mp4' })
       onImageChange(null)
       toast.success(isArabic ? `تم رفع فيديو ${label}` : `${label} video uploaded`)
     } catch {
