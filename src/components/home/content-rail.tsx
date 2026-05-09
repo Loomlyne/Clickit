@@ -3,6 +3,7 @@ import { useLocale } from 'next-intl'
 import { ArrowRight } from 'lucide-react'
 import { Link } from '@/i18n/navigation'
 
+import { DragScroll } from '@/components/primitives/drag-scroll'
 import { ShowCard } from '@/components/shows/show-card'
 import { PlaceholderCard } from '@/components/shows/placeholder-card'
 import type { ViewShow } from '@/lib/queries'
@@ -29,7 +30,7 @@ export function ContentRail({
   const placeholderCount = Math.max(0, minCards - shows.length)
 
   return (
-    <section className="rail px-10 pb-3 pt-8">
+    <section className="rail px-10 pt-8 pb-3">
       {/* Rail header */}
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
@@ -44,25 +45,30 @@ export function ContentRail({
           <h2 className="font-display m-0 text-[26px]">{title}</h2>
         </div>
         {seeAllHref ? (
-          <Link className="mono inline-flex min-h-11 shrink-0 items-center gap-1.5" href={seeAllHref}>
-            {isArabic ? 'عرض الكل' : 'View all'} <ArrowRight className="size-3 rtl:scale-x-[-1]" />
+          <Link
+            className="mono inline-flex min-h-11 shrink-0 items-center gap-1.5"
+            href={seeAllHref}
+          >
+            {isArabic ? 'عرض الكل' : 'View all'}{' '}
+            <ArrowRight className="size-3 rtl:scale-x-[-1]" />
           </Link>
         ) : (
           <span className="mono inline-flex min-h-11 shrink-0 items-center gap-1.5 text-[var(--text-mute)]">
-            {isArabic ? 'عرض الكل' : 'View all'} <ArrowRight className="size-3 rtl:scale-x-[-1]" />
+            {isArabic ? 'عرض الكل' : 'View all'}{' '}
+            <ArrowRight className="size-3 rtl:scale-x-[-1]" />
           </span>
         )}
       </div>
 
       {/* Native scroll track — vertical grid on mobile, horizontal rail on sm+ */}
-      <div className="content-rail-track flex flex-col gap-[var(--rail-gap)] py-1.5 pb-5 sm:flex-row sm:overflow-x-auto sm:scroll-snap-x-mandatory sm:scrollbar-hide">
+      <DragScroll className="content-rail-track sm:scroll-snap-x-mandatory sm:scrollbar-hide flex flex-col gap-[var(--rail-gap)] py-1.5 pb-5 sm:flex-row sm:overflow-x-auto">
         {shows.map((show) => (
           <ShowCard key={show.id} show={show} />
         ))}
         {Array.from({ length: placeholderCount }).map((_, i) => (
           <PlaceholderCard key={`placeholder-${i}`} />
         ))}
-      </div>
+      </DragScroll>
     </section>
   )
 }

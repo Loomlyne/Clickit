@@ -108,14 +108,16 @@ export function AuthSection({ initialUser, isLanding }: AuthSectionProps) {
         await supabase.auth.signOut()
         setUser(null)
         setIsAdmin(false)
-        router.push('/browse')
+        router.push('/watch')
         router.refresh()
       }}
     >
-      <UserAvatar
-        name={user.displayName || user.email}
-        avatarUrl={user.avatarUrl}
-      />
+      <div className="flex items-center gap-2.5">
+        <UserAvatar
+          name={user.displayName || user.email}
+          avatarUrl={user.avatarUrl}
+        />
+      </div>
     </UserDropdown>
   )
 }

@@ -5,6 +5,7 @@ import { useState, useRef } from 'react'
 import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 import type { ViewShort } from '@/lib/queries'
+import { DragScroll } from '@/components/primitives/drag-scroll'
 import { ShortsOverlay } from '@/components/shorts/shorts-overlay'
 
 interface ShortsRailProps {
@@ -52,7 +53,7 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
           </button>
         </div>
 
-        <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-3">
+        <DragScroll className="scrollbar-hide flex gap-5 overflow-x-auto pb-3">
           {shorts.map((s, i) => (
             <div
               key={s.id}
@@ -99,7 +100,7 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
               </div>
             </div>
           ))}
-        </div>
+        </DragScroll>
       </section>
 
       {overlayIdx !== null && (

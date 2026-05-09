@@ -1,5 +1,6 @@
 // Continue Watching Rail — server component, native flex scroll
 import { getLocale } from 'next-intl/server'
+import { DragScroll } from '@/components/primitives/drag-scroll'
 import { getContinueWatchingEpisodes } from '@/lib/queries'
 import { ContinueWatchingCard } from '@/components/home/continue-watching-card'
 
@@ -31,11 +32,11 @@ export async function ContinueWatchingRail({
         </div>
       </div>
 
-      <div className="scrollbar-hide flex gap-[var(--rail-gap)] overflow-x-auto py-1.5 pb-5">
+      <DragScroll className="scrollbar-hide flex gap-[var(--rail-gap)] overflow-x-auto py-1.5 pb-5">
         {items.map((item) => (
           <ContinueWatchingCard key={item.episodeId} item={item} />
         ))}
-      </div>
+      </DragScroll>
     </section>
   )
 }
