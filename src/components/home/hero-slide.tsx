@@ -13,16 +13,20 @@ interface HeroSlideProps {
   show: ViewShow
   isActive: boolean
   firstEpisodeId?: string
+  hasWatched?: boolean
   isMobile?: boolean
   reducedMotion?: boolean
+  onContentHoverChange?: (isHovering: boolean) => void
 }
 
 export function HeroSlide({
   show,
   isActive,
   firstEpisodeId,
+  hasWatched = false,
   isMobile,
   reducedMotion,
+  onContentHoverChange,
 }: HeroSlideProps) {
   const brandColorHex = BRAND_COLOR_HEX[show.brandColor]
 
@@ -56,7 +60,11 @@ export function HeroSlide({
       />
 
       {/* Content — positioned bottom-left, max 620px */}
-      <div className="absolute start-5 end-5 bottom-8 max-w-[620px] sm:start-10 sm:end-10 sm:bottom-20">
+      <div
+        className="absolute start-5 end-5 bottom-8 max-w-[620px] sm:start-10 sm:end-10 sm:bottom-20"
+        onMouseEnter={() => onContentHoverChange?.(true)}
+        onMouseLeave={() => onContentHoverChange?.(false)}
+      >
         {/* Title */}
         <h1
           className="font-display m-0 mb-3 leading-[0.95] font-normal text-white sm:mb-[18px]"
@@ -97,7 +105,9 @@ export function HeroSlide({
             >
               <Play className="size-3.5 fill-current sm:size-4" />
               <span className="sm:hidden">Play</span>
-              <span className="hidden sm:inline">Continue watching</span>
+              <span className="hidden sm:inline">
+                {hasWatched ? 'Continue watching' : 'Watch now'}
+              </span>
             </Link>
           ) : (
             <span className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.08] px-4 py-2.5 text-[13px] font-medium text-white/50 backdrop-blur-[8px] sm:px-[26px] sm:py-3.5 sm:text-[15px]">

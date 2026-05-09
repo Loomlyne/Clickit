@@ -111,8 +111,8 @@ test.describe('Series Detail Page', () => {
     await page.goto('/series/nonexistent-show')
     const heading = page.getByText('Show Not Found')
     await expect(heading).toBeVisible()
-    const browseLink = page.getByRole('link', { name: 'Browse All Series' })
-    await expect(browseLink).toBeVisible()
+    const watchLink = page.getByRole('link', { name: 'Watch All Shows' })
+    await expect(watchLink).toBeVisible()
   })
 
   // Episodes section has accessible landmark

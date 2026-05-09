@@ -34,15 +34,21 @@ export function UserDropdown({ children, onSignOut, isAdmin = false, email }: Us
           {email ?? tNav('profile')}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => router.push('/profile')}>
-          <User className="me-2 size-4" />
+        <DropdownMenuItem
+          className="focus:text-[var(--primary)] data-[highlighted]:text-[var(--primary)] focus:[&_svg]:text-[var(--primary)] data-[highlighted]:[&_svg]:text-[var(--primary)]"
+          onSelect={() => router.push('/profile')}
+        >
+          <User className="me-2 size-4 text-current" />
           {tNav('profile')}
         </DropdownMenuItem>
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => router.push('/admin')}>
-              <Shield className="me-2 size-4" />
+            <DropdownMenuItem
+              className="focus:text-[var(--primary)] data-[highlighted]:text-[var(--primary)] focus:[&_svg]:text-[var(--primary)] data-[highlighted]:[&_svg]:text-[var(--primary)]"
+              onSelect={() => router.push('/admin')}
+            >
+              <Shield className="me-2 size-4 text-current" />
               {tNav('admin')}
             </DropdownMenuItem>
           </>

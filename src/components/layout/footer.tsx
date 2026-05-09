@@ -9,7 +9,7 @@ export async function Footer() {
     <footer className="relative overflow-hidden border-t border-[var(--line)] bg-[var(--bg-1)]">
       {/* Hero wordmark + contact */}
       <div className="relative border-b border-[var(--line)] px-4 pt-[90px] pb-[60px] sm:px-6 md:px-12">
-        <Link href="/" aria-label="Clickit Story home" className="block">
+        <Link href="/watch" aria-label="Clickit Story home" className="block">
           <Image
             src="/brand/Clickit_final_logo.svg"
             alt="Clickit"
@@ -41,10 +41,10 @@ export async function Footer() {
 
       {/* Bottom bar */}
       <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6 md:px-10">
-        <span className="mono text-[12px] text-[var(--text-mute)]">
+        <span className="mono text-[12px] text-[var(--text-dim)]">
           © {new Date().getFullYear()} Clickit Story
         </span>
-        <div className="mono flex flex-wrap items-center gap-5 text-[12px] text-[var(--text-mute)]">
+        <div className="mono flex flex-wrap items-center gap-5 text-[12px] text-[var(--text-dim)]">
           <Link
             href="/terms"
             className="transition-colors hover:text-[var(--text)]"

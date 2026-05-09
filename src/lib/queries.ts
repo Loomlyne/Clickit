@@ -844,6 +844,28 @@ export async function getShowsWatchlistState(userId: string, showIds: string[]):
   return new Set((data ?? []).map((row) => row.show_id))
 }
 
+export async function getWatchedShowIds(
+  userId: string,
+  showIds: string[]
+): Promise<Set<string>> {
+  if (showIds.length === 0) return new Set()
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('watch_progress')
+    .select('episodes!inner(show_id)')
+    .eq('user_id', userId)
+    .gt('progress_seconds', 0)
+    .in('episodes.show_id', showIds)
+
+  const watchedIds = new Set<string>()
+  for (const row of data ?? []) {
+    const showId = (row as any).episodes?.show_id as string | undefined
+    if (showId) watchedIds.add(showId)
+  }
+
+  return watchedIds
+}
+
 // ---------------------------------------------------------------------------
 // Likes queries
 // ---------------------------------------------------------------------------

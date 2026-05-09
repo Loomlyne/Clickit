@@ -13,9 +13,9 @@ import { test, expect } from '@playwright/test'
  */
 
 test.describe('Hero media — viewport-aware rendering', () => {
-  test('browse hero renders at least one media element on desktop', async ({ page }) => {
+  test('watch hero renders at least one media element on desktop', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
-    await page.goto('/browse')
+    await page.goto('/watch')
 
     // The backdrop always renders a solid black base + bloom. Beyond that, the
     // hero should render exactly ONE of: video, youtube iframe, next/image.
@@ -25,14 +25,14 @@ test.describe('Hero media — viewport-aware rendering', () => {
     await expect(videoOrImage).toBeVisible()
   })
 
-  test('browse hero on mobile viewport does not render desktop-only media', async ({ page }) => {
+  test('watch hero on mobile viewport does not render desktop-only media', async ({ page }) => {
     // Pretend to be an iPhone. UA-sniffing in src/lib/device.ts should flip.
     await page.setViewportSize({ width: 375, height: 812 })
     await page.setExtraHTTPHeaders({
       'user-agent':
         'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
     })
-    await page.goto('/browse')
+    await page.goto('/watch')
 
     // Post-fix, the CinematicBackdrop is rendered viewport-aware (single variant).
     // A rendered `<video class="md:hidden">` or similar dual-branch layout would
@@ -43,7 +43,7 @@ test.describe('Hero media — viewport-aware rendering', () => {
   })
 
   test('bloom-only fallback renders when no hero media is configured', async ({ page }) => {
-    await page.goto('/browse')
+    await page.goto('/watch')
     // The hero container always exists even when no media is set. This guards
     // against the resolveHeroMedia(null) branch crashing the render.
     const hero = page.locator('[class*="h-dvh"]').first()
@@ -53,7 +53,7 @@ test.describe('Hero media — viewport-aware rendering', () => {
 
 test.describe('Hero media — YouTube iframe accessibility', () => {
   test('every rendered YouTube iframe has a non-empty title attribute', async ({ page }) => {
-    await page.goto('/browse')
+    await page.goto('/watch')
     const iframes = page.locator('iframe[src*="youtube.com"]')
     const count = await iframes.count()
     for (let i = 0; i < count; i++) {

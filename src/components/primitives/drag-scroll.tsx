@@ -55,6 +55,7 @@ export function DragScroll({ className, children, ...props }: DragScrollProps) {
       delete track.dataset.dragging
     }
     pointerIdRef.current = null
+    dragDistanceRef.current = 0
   }
 
   return (

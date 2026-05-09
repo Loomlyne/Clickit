@@ -14,7 +14,7 @@ export async function LandingHero() {
     },
     config,
   ] = await Promise.all([supabase.auth.getSession(), getAppConfig()])
-  const ctaHref = session?.user ? '/browse' : '/auth'
+  const ctaHref = session?.user ? '/watch' : '/auth'
 
   const { heroVideoUrl, heroVideoType } = config
   const adminYtId =
@@ -84,7 +84,7 @@ export async function LandingHero() {
               >
                 <polygon points="6 3 20 12 6 21 6 3" />
               </svg>
-              Go ahead
+              Watch now
             </Link>
           </div>
         </div>

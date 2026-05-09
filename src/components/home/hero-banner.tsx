@@ -1,7 +1,7 @@
 // Hero banner — matches handoff .hero (78vh, vertical dots on right)
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useReducedMotion } from 'motion/react'
 
 import type { ViewShow } from '@/lib/queries'
@@ -12,7 +12,7 @@ const SLIDE_DURATION = 600
 const SLIDE_EASE = 'cubic-bezier(0.77, 0, 0.175, 1)'
 
 interface HeroBannerProps {
-  shows: Array<{ show: ViewShow; firstEpisodeId?: string }>
+  shows: Array<{ show: ViewShow; firstEpisodeId?: string; hasWatched?: boolean }>
   isMobile?: boolean
 }
 
@@ -28,12 +28,12 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
   const extN = extShows.length
 
   useEffect(() => {
-    if (isPaused || shouldReduceMotion) return
+    if (isPaused) return
     const timer = setInterval(() => {
       setActiveIndex((prev) => prev + 1)
     }, INTERVAL)
     return () => clearInterval(timer)
-  }, [isPaused, shouldReduceMotion])
+  }, [isPaused])
 
   // After landing on the clone (index n), jump back to real index 0 with no transition
   useEffect(() => {
@@ -54,19 +54,9 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
     return () => cancelAnimationFrame(raf)
   }, [isResetting])
 
-  const handleBlur = useCallback((e: React.FocusEvent) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setIsPaused(false)
-    }
-  }, [])
-
   return (
     <div
       className="relative mb-3 overflow-hidden h-[78vh] min-h-[480px] md:min-h-[580px]"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onFocus={() => setIsPaused(true)}
-      onBlur={handleBlur}
     >
       <div
         style={{
@@ -77,7 +67,7 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
           transition: isResetting || shouldReduceMotion ? 'none' : `transform 0.6s ${SLIDE_EASE}`,
         }}
       >
-        {extShows.map(({ show, firstEpisodeId }, i) => (
+        {extShows.map(({ show, firstEpisodeId, hasWatched }, i) => (
           <div
             key={`${show.id}-${i}`}
             style={{ position: 'relative', width: `${100 / extN}%`, flexShrink: 0, height: '100%' }}
@@ -85,9 +75,11 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
             <HeroSlide
               show={show}
               firstEpisodeId={firstEpisodeId}
+              hasWatched={hasWatched}
               isActive={true}
               isMobile={isMobile}
               reducedMotion={shouldReduceMotion ?? false}
+              onContentHoverChange={setIsPaused}
             />
           </div>
         ))}

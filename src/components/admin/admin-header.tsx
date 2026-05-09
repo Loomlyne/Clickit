@@ -65,8 +65,8 @@ export function AdminHeader() {
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 md:gap-4 md:px-8 md:py-4">
         <div className="flex items-center gap-3">
           <Link
-            href="/browse"
-            aria-label="Go to browse"
+            href="/watch"
+            aria-label="Go to watch"
             className="flex min-h-11 items-center"
           >
             <Image

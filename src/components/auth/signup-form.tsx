@@ -73,7 +73,7 @@ export function SignupForm() {
     await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
 
     toast.success(t('accountCreated'))
-    router.push('/browse')
+    router.push('/watch')
     router.refresh()
   }
 

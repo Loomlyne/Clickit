@@ -1,15 +1,7 @@
-import { LandingHero } from '@/components/landing/landing-hero'
-import { ShowsPortfolio } from '@/components/landing/shows-portfolio'
-import { GenrePills } from '@/components/landing/genre-pills'
-import { LandingFaq } from '@/components/landing/landing-faq'
+import { getLocale } from 'next-intl/server'
+import { redirect } from '@/i18n/navigation'
 
-export default async function LandingPage() {
-  return (
-    <div>
-      <LandingHero />
-      <ShowsPortfolio />
-      <GenrePills />
-      <LandingFaq />
-    </div>
-  )
+export default async function LocaleRootPage() {
+  const locale = await getLocale()
+  redirect({ href: '/portfolio', locale })
 }

@@ -65,7 +65,7 @@ export function LoginForm() {
     await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
 
     toast.success(t('welcomeBack'))
-    router.push(result.isAdmin ? '/admin' : '/')
+    router.push(result.isAdmin ? '/admin' : '/watch')
     router.refresh()
   }
 

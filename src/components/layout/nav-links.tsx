@@ -5,7 +5,7 @@ import { usePathname } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
 
 export const NAV_LINKS = [
-  { label: 'Browse', href: '/browse' },
+  { label: 'Watch', href: '/watch' },
   { label: 'Support', href: '/support' },
 ]
 

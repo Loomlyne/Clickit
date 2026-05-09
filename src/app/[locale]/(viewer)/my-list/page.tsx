@@ -76,7 +76,7 @@ export default async function MyListPage() {
               {t('emptyDescription')}
             </p>
             <Link
-              href="/"
+              href="/watch"
               className="mono mt-6 inline-block rounded-full border border-[var(--line-2)] bg-transparent px-6 py-3 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]"
             >
               {tCommon('browseShows')}

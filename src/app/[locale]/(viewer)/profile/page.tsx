@@ -108,8 +108,8 @@ export default async function ProfilePage() {
           ) : (
             <p className="text-sm text-[var(--text-mute)] py-6 text-center">
               {t('myListEmpty')}.{' '}
-              <Link href="/browse" className="text-[var(--text-dim)] hover:text-white underline">
-                {locale === 'ar' ? 'تصفح البرامج' : 'Browse shows'}
+              <Link href="/watch" className="text-[var(--text-dim)] hover:text-white underline">
+                {locale === 'ar' ? 'تصفح البرامج' : 'Watch shows'}
               </Link>
             </p>
           )}

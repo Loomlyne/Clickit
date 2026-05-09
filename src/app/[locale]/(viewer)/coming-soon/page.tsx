@@ -133,7 +133,7 @@ export default async function ComingSoonPage() {
             <p className="mt-2 text-[14px] text-[var(--text-dim)]">
               {t('noUpcomingDescription')}
             </p>
-            <Link href="/" className="mt-6 inline-block">
+            <Link href="/watch" className="mt-6 inline-block">
               <Button
                 variant="outline"
                 className="mono rounded-full border-[var(--line-2)] text-[12px]"

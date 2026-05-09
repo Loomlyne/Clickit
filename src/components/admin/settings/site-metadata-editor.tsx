@@ -76,7 +76,7 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
             placeholder={isArabic ? 'موطن بثّ للمسلسلات الأصلية من أبوظبي…' : 'A streaming home for original series from Abu Dhabi…'}
             maxLength={300}
             rows={3}
-            className="md:col-span-2"
+            className="rounded-[12px] md:col-span-2"
           />
         </SettingsField>
 

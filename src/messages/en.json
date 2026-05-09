@@ -21,7 +21,7 @@
     "retry": "Try again",
     "viewAll": "See all",
     "loadMore": "Load more",
-    "browseShows": "Browse Shows",
+    "browseShows": "Watch Shows",
     "signIn": "Sign In",
     "signOut": "Sign out",
     "signUp": "Create account",
@@ -31,7 +31,7 @@
   "nav": {
     "home": "Clickit Story home",
     "profileMenu": "Profile menu",
-    "browse": "Browse",
+    "browse": "Watch",
     "comingSoon": "Coming Soon",
     "myList": "My List",
     "search": "Search",
@@ -85,7 +85,7 @@
     "heroHeadline": "Every Story Clicks.",
     "heroSubheadline": "A cinematic streaming service for Clickit Story originals — travel, music, poetry, cooking, tech, comedy, and more, produced from Abu Dhabi.",
     "heroCta": "Start watching",
-    "heroSecondaryCta": "Browse the catalog",
+    "heroSecondaryCta": "Watch the catalog",
     "benefitsEyebrow": "Why Clickit",
     "benefits": {
       "originals": "15 original programs",
@@ -205,7 +205,7 @@
     "countOne": "{count} show in your list",
     "countMany": "{count} shows in your list",
     "emptyDescription": "Save shows to build your list.",
-    "emptyCta": "Browse Shows",
+    "emptyCta": "Watch Shows",
     "removeConfirm": "Remove from list"
   },
   "comingSoon": {

@@ -30,7 +30,6 @@ export function LandingFaq() {
 
   return (
     <section className="mx-auto max-w-[1400px] px-10 py-24 border-t border-[var(--line)]" id="faq">
-      <div className="mono mb-3.5 text-[var(--text-mute)]">005 · FAQ</div>
       <h2 className="font-[family-name:var(--font-display)] text-[clamp(36px,5vw,64px)] font-normal leading-none tracking-[-0.02em] mb-12">
         Common questions.
       </h2>

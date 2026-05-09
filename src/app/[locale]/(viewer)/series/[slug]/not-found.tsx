@@ -11,7 +11,7 @@ export default function SeriesNotFound() {
         is incorrect.
       </p>
       <Button variant="default" className="mt-8" asChild>
-        <Link href="/">Browse All Shows</Link>
+        <Link href="/watch">Watch All Shows</Link>
       </Button>
     </div>
   )

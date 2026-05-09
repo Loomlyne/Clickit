@@ -24,7 +24,7 @@ export async function GenresGrid() {
             return (
               <Link
                 key={category.slug}
-                href={`/browse?category=${encodeURIComponent(category.slug)}`}
+                href={`/watch?category=${encodeURIComponent(category.slug)}`}
                 className="group flex-shrink-0"
               >
                 <div

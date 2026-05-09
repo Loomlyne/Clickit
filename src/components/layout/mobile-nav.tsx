@@ -45,7 +45,7 @@ export function MobileNav({ initialUser }: MobileNavProps = {}) {
         <SheetHeader className="border-b border-white/[0.06] px-6 py-5">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <Link
-            href="/"
+            href="/watch"
             aria-label="Clickit Story home"
             onClick={() => setOpen(false)}
             className="flex min-h-11 items-center"

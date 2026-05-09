@@ -55,7 +55,7 @@ export function LandingHeroAnimations({ logo }: { logo: React.ReactNode }) {
         transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.55 }}
       >
         <Link
-          href="/browse"
+          href="/watch"
           className="inline-flex items-center rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-[0_16px_40px_rgba(96,115,255,0.28)] transition-colors hover:bg-[#7082ff]"
         >
           {tCommon('browseShows')}

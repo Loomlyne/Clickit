@@ -9,7 +9,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (!user) {
     const locale = await getLocale()
-    return redirect({ href: '/browse', locale })
+    return redirect({ href: '/watch', locale })
   }
 
   // Check if user is admin via app_config table lookup
@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (config?.admin_user_id !== user.id) {
     const locale = await getLocale()
-    return redirect({ href: '/browse', locale })
+    return redirect({ href: '/watch', locale })
   }
 
   return (

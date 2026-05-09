@@ -112,12 +112,16 @@ export function AuthSection({ initialUser, isLanding }: AuthSectionProps) {
         router.refresh()
       }}
     >
-      <div className="flex items-center gap-2.5">
+      <button
+        type="button"
+        className="flex items-center gap-2.5"
+        aria-label="User menu"
+      >
         <UserAvatar
           name={user.displayName || user.email}
           avatarUrl={user.avatarUrl}
         />
-      </div>
+      </button>
     </UserDropdown>
   )
 }

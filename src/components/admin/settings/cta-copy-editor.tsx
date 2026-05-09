@@ -85,6 +85,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                     maxLength={60}
                     value={copy[stage].label}
                     onChange={(e) => patch(stage, { label: e.target.value })}
+                    className="rounded-[12px]"
                   />
                 </SettingsField>
 
@@ -93,6 +94,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                     maxLength={120}
                     value={copy[stage].headline}
                     onChange={(e) => patch(stage, { headline: e.target.value })}
+                    className="rounded-[12px]"
                   />
                 </SettingsField>
 
@@ -104,6 +106,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                     maxLength={120}
                     value={copy[stage].headlineB}
                     onChange={(e) => patch(stage, { headlineB: e.target.value })}
+                    className="rounded-[12px]"
                   />
                 </SettingsField>
 
@@ -113,6 +116,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                     maxLength={300}
                     value={copy[stage].body}
                     onChange={(e) => patch(stage, { body: e.target.value })}
+                    className="rounded-[12px]"
                   />
                 </SettingsField>
 
@@ -121,13 +125,15 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                     maxLength={60}
                     value={copy[stage].primaryLabel}
                     onChange={(e) => patch(stage, { primaryLabel: e.target.value })}
+                    className="rounded-[12px]"
                   />
                 </SettingsField>
 
-                <SettingsField label={isArabic ? 'رابط الزر الأساسي' : 'Primary button URL'} hint={isArabic ? 'مسار (/browse) أو رابط كامل.' : 'Path (/browse) or full URL.'}>
+                <SettingsField label={isArabic ? 'رابط الزر الأساسي' : 'Primary button URL'} hint={isArabic ? 'مسار (/watch) أو رابط كامل.' : 'Path (/watch) or full URL.'}>
                   <Input
                     value={copy[stage].primaryHref}
                     onChange={(e) => patch(stage, { primaryHref: e.target.value })}
+                    className="rounded-[12px]"
                   />
                 </SettingsField>
 
@@ -136,6 +142,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                     maxLength={60}
                     value={copy[stage].secondaryLabel}
                     onChange={(e) => patch(stage, { secondaryLabel: e.target.value })}
+                    className="rounded-[12px]"
                   />
                 </SettingsField>
 
@@ -143,6 +150,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                   <Input
                     value={copy[stage].secondaryHref}
                     onChange={(e) => patch(stage, { secondaryHref: e.target.value })}
+                    className="rounded-[12px]"
                   />
                 </SettingsField>
               </div>

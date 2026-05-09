@@ -15,7 +15,7 @@ export default function ComponentsPage() {
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-4">
           <Button variant="default">Watch now</Button>
-          <Button variant="outline">Browse catalog</Button>
+          <Button variant="outline">Watch catalog</Button>
           <Button variant="secondary">Secondary action</Button>
           <Button variant="ghost">Row action</Button>
           <Button variant="destructive">Delete</Button>
@@ -59,7 +59,7 @@ export default function ComponentsPage() {
             Empty states stay calm, centered, and action-oriented. They explain what is missing and offer one obvious next step.
           </p>
           <div className="mt-6">
-            <Button variant="outline">Browse shows</Button>
+            <Button variant="outline">Watch shows</Button>
           </div>
         </div>
 

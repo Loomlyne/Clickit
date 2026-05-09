@@ -169,7 +169,7 @@ const categorySchema = z.object({
 function bumpCatalogCache() {
   revalidatePath('/admin')
   revalidatePath('/admin/categories')
-  revalidatePath('/browse')
+  revalidatePath('/watch')
   updateTag('shows')
   updateTag('categories')
 }

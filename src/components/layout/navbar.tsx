@@ -18,7 +18,7 @@ export function Navbar({ initialUser }: NavbarProps) {
   const [hidden, setHidden] = useState(false)
   const lastScrollY = useRef(0)
   const isLanding =
-    pathname === '/' || pathname === '' || pathname.startsWith('/auth')
+    pathname === '/portfolio' || pathname === '' || pathname.startsWith('/auth')
 
   // Direction-aware show/hide via Lenis. Hide on scroll down, show on scroll up.
   useLenis(({ scroll }) => {
@@ -68,15 +68,15 @@ export function Navbar({ initialUser }: NavbarProps) {
       style={{ WebkitBackdropFilter: 'blur(18px)' }}
     >
       <Link
-        href="/"
+        href="/watch"
         aria-label="Clickit Story home"
         className="flex min-h-11 items-center"
       >
         <Image
-          src="/brand/Clickit_final_logo.svg"
+          src="/brand/Clickit_final_logo.CITpng.svg"
           alt="Clickit"
-          width={136}
-          height={56}
+          width={214}
+          height={145}
           className="h-8 w-auto"
           priority
         />
@@ -86,11 +86,8 @@ export function Navbar({ initialUser }: NavbarProps) {
       <nav className="hidden items-center gap-[22px] md:flex">
         {!isLanding && (
           <>
-            <Link
-              href="/browse"
-              className={navLinkClass(pathname === '/browse')}
-            >
-              Browse
+            <Link href="/watch" className={navLinkClass(pathname === '/watch')}>
+              Watch
             </Link>
             <Link
               href="/support"
@@ -102,16 +99,10 @@ export function Navbar({ initialUser }: NavbarProps) {
         )}
         {isLanding &&
           (() => {
-            const isHome = pathname === '/' || pathname === ''
-            const prefix = isHome ? '' : '/'
+            const isPortfolio = pathname === '/portfolio' || pathname === ''
+            const prefix = isPortfolio ? '' : '/portfolio'
             return (
               <>
-                <a
-                  href={`${prefix}#features`}
-                  className="px-0.5 py-1.5 text-[13.5px] text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
-                >
-                  Why Clickit
-                </a>
                 <a
                   href={`${prefix}#shows`}
                   className="px-0.5 py-1.5 text-[13.5px] text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"

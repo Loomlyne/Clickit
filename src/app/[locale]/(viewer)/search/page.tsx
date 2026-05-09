@@ -114,10 +114,10 @@ export default async function SearchPage({ searchParams }: Props) {
                 {t('clearSearch')}
               </Link>
               <Link
-                href="/"
+                href="/watch"
                 className="mono rounded-full border border-[var(--line-2)] bg-transparent px-5 py-2.5 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]"
               >
-                Browse catalog
+                Watch catalog
               </Link>
             </div>
           </div>

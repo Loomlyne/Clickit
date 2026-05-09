@@ -150,7 +150,6 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                 <TableRow>
                   <TableHead className="w-16">Thumb</TableHead>
                   <TableHead>Title</TableHead>
-                  <TableHead>Channel</TableHead>
                   <TableHead>Genre</TableHead>
                   <TableHead>Order</TableHead>
                   <TableHead>Expires</TableHead>
@@ -187,9 +186,6 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                           <ExternalLink className="size-3" />
                         </a>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {s.channel_name || '—'}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {s.genre || '—'}

@@ -29,7 +29,7 @@ export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: Profil
     setSigningOut(true)
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push('/browse')
+    router.push('/watch')
     router.refresh()
   }
 

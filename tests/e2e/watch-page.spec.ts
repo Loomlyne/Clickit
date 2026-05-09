@@ -127,7 +127,7 @@ test.describe('Watch Page', () => {
     await page.goto('/watch/nonexistent-id')
     await expect(page.getByText('Episode Not Found')).toBeVisible()
     await expect(
-      page.getByRole('link', { name: 'Browse All Series' })
+      page.getByRole('link', { name: 'Watch All Shows' })
     ).toBeVisible()
   })
 

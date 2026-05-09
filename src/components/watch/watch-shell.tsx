@@ -15,7 +15,14 @@ import { useIdleTimer } from '@/hooks/use-idle-timer'
 import { useWatchlist } from '@/hooks/use-watchlist'
 import { useLikes } from '@/hooks/use-likes'
 import { toast } from 'sonner'
-import { ArrowLeft, ChevronLeft, ChevronRight, Bookmark, Heart, Share2 } from 'lucide-react'
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Bookmark,
+  Heart,
+  Share2,
+} from 'lucide-react'
 import type { ViewEpisode, ViewShow, ViewSeason } from '@/lib/queries'
 import { BRAND_COLOR_BG } from '@/lib/brand-colors'
 
@@ -29,8 +36,8 @@ interface WatchShellProps {
   nextEpisode: ViewEpisode | null
   initialProgressSeconds?: number
   userId?: string | null
-  initialSaved?: boolean      // default false, used by useWatchlist in Plan 02
-  initialLiked?: boolean      // default false, used by useLikes in Plan 02
+  initialSaved?: boolean // default false, used by useWatchlist in Plan 02
+  initialLiked?: boolean // default false, used by useLikes in Plan 02
   progressMap?: Record<string, { progressPercent: number; completed: boolean }>
 }
 
@@ -61,7 +68,9 @@ export function WatchShell({
   const [showAutoplay, setShowAutoplay] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [activeSeasonId, setActiveSeasonId] = useState(episode.seasonId)
-  const [traySnapPoint, setTraySnapPoint] = useState<WatchTraySnapPoint>(WATCH_TRAY_SNAP_POINTS[0])
+  const [traySnapPoint, setTraySnapPoint] = useState<WatchTraySnapPoint>(
+    WATCH_TRAY_SNAP_POINTS[0]
+  )
 
   // playerRef seeded here, Plan 02 calls playerRef.current.loadVideoById()
   const playerRef = useRef<YT.Player | null>(null)
@@ -73,21 +82,37 @@ export function WatchShell({
   // episodeId must be currentEpisode.id (state), NOT episode.id (initial prop).
   // Plan 02 updates currentEpisode before calling loadVideoById so the hook's
   // save closure targets the new episode immediately.
-  const { forceFlush } = useProgressTracker(playerInstance, currentEpisode.id, userId ?? null)
+  const { forceFlush } = useProgressTracker(
+    playerInstance,
+    currentEpisode.id,
+    userId ?? null
+  )
 
   const { isIdle, resetTimer } = useIdleTimer(3000, {
     initialIdle: true,
     startOnMount: false,
     disabled: isPaused,
   })
-  const chromeClass = isIdle ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+  const chromeClass = isIdle
+    ? 'opacity-0 pointer-events-none'
+    : 'opacity-100 pointer-events-auto'
 
-  const { isInList, toggle: toggleWatchlist } = useWatchlist(show.id, initialSaved, userId ?? null)
-  const { isLiked: isShowLiked, toggle: toggleLike } = useLikes(show.id, initialLiked, userId ?? null)
+  const { isInList, toggle: toggleWatchlist } = useWatchlist(
+    show.id,
+    initialSaved,
+    userId ?? null
+  )
+  const { isLiked: isShowLiked, toggle: toggleLike } = useLikes(
+    show.id,
+    initialLiked,
+    userId ?? null
+  )
 
   function handleShare() {
     if (typeof navigator !== 'undefined' && navigator.share) {
-      navigator.share({ url: window.location.href }).catch(() => {/* user dismissed */})
+      navigator.share({ url: window.location.href }).catch(() => {
+        /* user dismissed */
+      })
     } else {
       navigator.clipboard.writeText(window.location.href).then(() => {
         toast.success('Link copied')
@@ -107,7 +132,9 @@ export function WatchShell({
     if (idx !== -1 && idx < seasonEps.length - 1) return seasonEps[idx + 1]
     const currentSeason = seasons.find((s) => s.id === current.seasonId)
     if (!currentSeason) return null
-    const nextSeason = seasons.find((s) => s.seasonNumber === currentSeason.seasonNumber + 1)
+    const nextSeason = seasons.find(
+      (s) => s.seasonNumber === currentSeason.seasonNumber + 1
+    )
     if (!nextSeason) return null
     const nextSeasonEps = episodesBySeason[nextSeason.id] ?? []
     return nextSeasonEps[0] ?? null
@@ -121,7 +148,9 @@ export function WatchShell({
     if (idx > 0) return seasonEps[idx - 1]
     const currentSeason = seasons.find((s) => s.id === current.seasonId)
     if (!currentSeason) return null
-    const prevSeason = seasons.find((s) => s.seasonNumber === currentSeason.seasonNumber - 1)
+    const prevSeason = seasons.find(
+      (s) => s.seasonNumber === currentSeason.seasonNumber - 1
+    )
     if (!prevSeason) return null
     const prevSeasonEps = episodesBySeason[prevSeason.id] ?? []
     return prevSeasonEps[prevSeasonEps.length - 1] ?? null
@@ -166,10 +195,7 @@ export function WatchShell({
 
   if (!episode.youtubeId) return null
 
-  const playerBottom =
-    traySnapPoint === WATCH_TRAY_SNAP_POINTS[1]
-      ? '50dvh'
-      : WATCH_TRAY_SNAP_POINTS[0]
+  const playerBottom = WATCH_TRAY_SNAP_POINTS[0]
 
   return (
     <div
@@ -183,7 +209,7 @@ export function WatchShell({
     >
       {/* Player */}
       <div
-        className="absolute left-0 right-0 top-0 transition-[bottom] duration-300 ease-out [&>div]:h-full [&>div]:min-h-0 [&>div]:aspect-auto"
+        className="absolute top-0 right-0 left-0 transition-[bottom] duration-300 ease-out [&>div]:aspect-auto [&>div]:h-full [&>div]:min-h-0"
         style={{ bottom: playerBottom }}
       >
         <YouTubePlayer
@@ -220,13 +246,13 @@ export function WatchShell({
 
       {/* Auto-hide chrome, top overlay strip */}
       <div
-        className={`fixed top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/70 to-transparent px-4 pt-4 pb-8 flex items-center justify-between transition-opacity duration-200 ease-in-out ${chromeClass}`}
+        className={`fixed top-0 right-0 left-0 z-20 flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent px-4 pt-4 pb-8 transition-opacity duration-200 ease-in-out ${chromeClass}`}
         aria-hidden={isIdle}
       >
         {/* Left: back to show */}
         <Link
           href={`/series/${show.slug}`}
-          className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors duration-150"
+          className="flex items-center gap-1.5 text-sm text-white/70 transition-colors duration-150 hover:text-white"
           aria-label={`Back to ${show.title}`}
           tabIndex={isIdle ? -1 : 0}
         >
@@ -236,10 +262,10 @@ export function WatchShell({
 
         {/* Center: episode title + S/E badge */}
         <div className="flex flex-col items-center gap-0.5">
-          <span className="text-sm font-medium text-white leading-none">
+          <span className="text-sm leading-none font-medium text-white">
             {currentEpisode.title}
           </span>
-          <span className="text-xs text-white/50 font-mono leading-none">
+          <span className="font-mono text-xs leading-none text-white/50">
             S{seasonNumber} E{currentEpisode.episodeNumber}
           </span>
         </div>
@@ -248,25 +274,29 @@ export function WatchShell({
         <div className="flex items-center gap-3">
           <button
             onClick={toggleWatchlist}
-            className="size-8 flex items-center justify-center text-white/70 hover:text-white transition-colors duration-150"
+            className="flex size-8 items-center justify-center text-white/70 transition-colors duration-150 hover:text-white"
             aria-label={isInList ? 'Remove from watchlist' : 'Add to watchlist'}
             aria-pressed={isInList}
             tabIndex={isIdle ? -1 : 0}
           >
-            <Bookmark className={`size-5 ${isInList ? 'fill-white text-white' : ''}`} />
+            <Bookmark
+              className={`size-5 ${isInList ? 'fill-white text-white' : ''}`}
+            />
           </button>
           <button
             onClick={toggleLike}
-            className="size-8 flex items-center justify-center text-white/70 hover:text-white transition-colors duration-150"
+            className="flex size-8 items-center justify-center text-white/70 transition-colors duration-150 hover:text-white"
             aria-label={isShowLiked ? 'Unlike this show' : 'Like this show'}
             aria-pressed={isShowLiked}
             tabIndex={isIdle ? -1 : 0}
           >
-            <Heart className={`size-5 ${isShowLiked ? 'fill-pink-400 text-pink-400' : ''}`} />
+            <Heart
+              className={`size-5 ${isShowLiked ? 'fill-pink-400 text-pink-400' : ''}`}
+            />
           </button>
           <button
             onClick={handleShare}
-            className="size-8 flex items-center justify-center text-white/70 hover:text-white transition-colors duration-150"
+            className="flex size-8 items-center justify-center text-white/70 transition-colors duration-150 hover:text-white"
             aria-label="Share episode"
             tabIndex={isIdle ? -1 : 0}
           >
@@ -279,7 +309,7 @@ export function WatchShell({
       {currentPrevEpisode && (
         <button
           onClick={() => handleEpisodeSwitch(currentPrevEpisode)}
-          className={`fixed left-3 top-1/2 -translate-y-1/2 z-20 size-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-opacity duration-200 ease-in-out ${chromeClass}`}
+          className={`fixed top-1/2 left-3 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-opacity duration-200 ease-in-out ${chromeClass}`}
           aria-label="Previous episode"
           tabIndex={isIdle ? -1 : 0}
         >
@@ -291,7 +321,7 @@ export function WatchShell({
       {currentNextEpisode && (
         <button
           onClick={() => handleEpisodeSwitch(currentNextEpisode)}
-          className={`fixed right-3 top-1/2 -translate-y-1/2 z-20 size-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-opacity duration-200 ease-in-out ${chromeClass}`}
+          className={`fixed top-1/2 right-3 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-opacity duration-200 ease-in-out ${chromeClass}`}
           aria-label="Next episode"
           tabIndex={isIdle ? -1 : 0}
         >
@@ -305,7 +335,9 @@ export function WatchShell({
           nextEpisode={{
             id: currentNextEpisode.id,
             title: currentNextEpisode.title,
-            seasonNumber: seasons.find((s) => s.id === currentNextEpisode.seasonId)?.seasonNumber ?? 1,
+            seasonNumber:
+              seasons.find((s) => s.id === currentNextEpisode.seasonId)
+                ?.seasonNumber ?? 1,
             episodeNumber: currentNextEpisode.episodeNumber,
           }}
           onPlayNow={handlePlayNow}

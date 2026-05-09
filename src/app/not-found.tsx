@@ -11,10 +11,10 @@ export default function NotFound() {
       </p>
       <div className="mt-8 flex gap-4">
         <Button variant="default" asChild>
-          <Link href="/">Go Home</Link>
+          <Link href="/portfolio">Go Home</Link>
         </Button>
         <Button variant="secondary" asChild>
-          <Link href="/browse">Browse Shows</Link>
+          <Link href="/watch">Watch Shows</Link>
         </Button>
       </div>
     </div>

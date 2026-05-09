@@ -47,6 +47,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
               maxLength={300}
               value={v.tagline}
               onChange={(e) => setV({ ...v, tagline: e.target.value })}
+              className="rounded-[12px]"
             />
           </SettingsField>
           <SettingsField label={isArabic ? 'إحصائية المكتبة' : 'Catalog stat'} hint={isArabic ? 'مثلاً: "15 برنامجاً أصلياً"' : 'e.g. "15 original programs"'}>
@@ -54,6 +55,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
               maxLength={80}
               value={v.stat}
               onChange={(e) => setV({ ...v, stat: e.target.value })}
+              className="rounded-[12px]"
             />
           </SettingsField>
           <SettingsField label={isArabic ? 'البريد الإلكتروني للتواصل' : 'Contact email'} hint={isArabic ? 'اتركه فارغاً للإخفاء.' : 'Leave blank to hide.'}>
@@ -62,6 +64,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
               value={v.contactEmail}
               onChange={(e) => setV({ ...v, contactEmail: e.target.value })}
               placeholder="hello@clickitstory.com"
+              className="rounded-[12px]"
             />
           </SettingsField>
         </div>
@@ -159,6 +162,7 @@ function SocialInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={`https://…/${label.toLowerCase().replace(/[^a-z]/g, '')}`}
+        className="rounded-[12px]"
       />
     </label>
   )

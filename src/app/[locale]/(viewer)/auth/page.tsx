@@ -67,7 +67,7 @@ export default async function AuthPage() {
 
           <div className="mt-4 text-center md:mt-6">
             <Link
-              href="/browse"
+              href="/watch"
               className="inline-flex min-h-11 items-center font-[family-name:var(--font-mono)] text-[13px] tracking-[0.08em] text-[var(--text-mute)] uppercase transition-colors hover:text-[var(--text)]"
             >
               Skip sign in →
