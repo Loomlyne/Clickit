@@ -6,11 +6,11 @@ import { SeasonTabs } from '@/components/admin/season-tabs'
 import { EditShowButton } from '@/components/admin/edit-show-button'
 import { CastEditor } from '@/components/admin/cast-editor'
 import { AdminBackLink, AdminPanel } from '@/components/admin/admin-shell'
-import { Badge } from '@/components/ui/badge'
+import { AdminCategoryBadge } from '@/components/admin/admin-category-badge'
 import type { Database } from '@/lib/database.types'
 
 type Episode = Database['public']['Tables']['episodes']['Row']
-type CategoryJoin = { name_en: string; slug: string }
+type CategoryJoin = { name_en: string; slug: string; color: string | null }
 type ShowCategoryRow = Pick<
   Database['public']['Tables']['show_categories']['Row'],
   'category_id'
@@ -67,7 +67,7 @@ export default async function ShowDetailPage({
       .order('sort_order', { ascending: true }),
     supabase
       .from('show_categories')
-      .select('category_id, categories!inner(name_en, slug)')
+      .select('category_id, categories!inner(name_en, slug, color)')
       .eq('show_id', id),
   ])
 
@@ -76,7 +76,12 @@ export default async function ShowDetailPage({
       ? row.categories[0]
       : row.categories
     return category
-      ? [{ id: row.category_id, name: category.name_en, slug: category.slug }]
+      ? [{
+          id: row.category_id,
+          name: category.name_en,
+          slug: category.slug,
+          color: category.color ?? null,
+        }]
       : []
   })
 
@@ -132,9 +137,7 @@ export default async function ShowDetailPage({
             {categories.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">
                 {categories.map((category) => (
-                  <Badge key={category.id} variant="secondary">
-                    {category.name}
-                  </Badge>
+                  <AdminCategoryBadge key={category.id} name={category.name} color={category.color} />
                 ))}
               </div>
             )}

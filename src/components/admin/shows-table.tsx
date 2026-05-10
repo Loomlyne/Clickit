@@ -25,7 +25,14 @@ import { AdminMetric, AdminPanel, AdminTableShell } from '@/components/admin/adm
 import { StatusBadge } from '@/components/admin/status-badge'
 import { EmptyState } from '@/components/admin/empty-state'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
-import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { AdminCategoryBadge } from '@/components/admin/admin-category-badge'
 import { archiveShow, toggleFeatured } from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
 import type { Database } from '@/lib/database.types'
@@ -34,7 +41,7 @@ type Show = Database['public']['Tables']['shows']['Row']
 
 interface ShowsTableProps {
   shows: Show[]
-  categoriesByShowId: Record<string, { name: string; slug: string }[]>
+  categoriesByShowId: Record<string, { name: string; slug: string; color: string | null }[]>
 }
 
 export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
@@ -122,28 +129,31 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
               {isArabic ? 'البرامج النشطة' : 'Active shows'}
             </h2>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative min-w-[240px] flex-1">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder={isArabic ? 'بحث في البرامج…' : 'Search shows...'}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="ps-9"
-              />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:justify-end lg:gap-3">
+            <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="relative min-w-[240px] flex-1">
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder={isArabic ? 'بحث في البرامج…' : 'Search shows...'}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="ps-9"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full min-w-[180px] sm:w-[200px] shrink-0 rounded-full border-white/8 bg-white/[0.03]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{isArabic ? 'كل الحالات' : 'All Status'}</SelectItem>
+                  <SelectItem value="now-streaming">{isArabic ? 'يُبثّ الآن' : 'Streaming'}</SelectItem>
+                  <SelectItem value="coming-soon">{isArabic ? 'قريباً' : 'Coming Soon'}</SelectItem>
+                  <SelectItem value="draft">{isArabic ? 'مسودة' : 'Draft'}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-11 rounded-full border border-white/8 bg-white/[0.03] px-4 text-sm text-foreground outline-none transition-colors focus:border-white/20"
-            >
-              <option value="all">{isArabic ? 'كل الحالات' : 'All Status'}</option>
-              <option value="now-streaming">{isArabic ? 'يُبثّ الآن' : 'Streaming'}</option>
-              <option value="coming-soon">{isArabic ? 'قريباً' : 'Coming Soon'}</option>
-              <option value="draft">{isArabic ? 'مسودة' : 'Draft'}</option>
-            </select>
-            <Link href="/admin/shows/new">
-              <Button className="shrink-0">
+            <Link href="/admin/shows/new" className="shrink-0">
+              <Button className="w-full sm:w-auto">
                 <Plus className="me-1.5 size-4" />
                 {tDash('createShow')}
               </Button>
@@ -185,9 +195,11 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                     {(categoriesByShowId[show.id] ?? []).length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {categoriesByShowId[show.id].map((category) => (
-                          <Badge key={`${show.id}-${category.slug}`} variant="secondary">
-                            {category.name}
-                          </Badge>
+                          <AdminCategoryBadge
+                            key={`${show.id}-${category.slug}`}
+                            name={category.name}
+                            color={category.color}
+                          />
                         ))}
                       </div>
                     )}

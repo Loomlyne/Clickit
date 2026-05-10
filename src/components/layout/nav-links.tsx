@@ -15,6 +15,15 @@ export const NOW_LIVE = {
   href: '/watch#now-streaming' as const,
 }
 
+export function liveNavHref(configuredUrl: string | null | undefined) {
+  const trimmed = configuredUrl?.trim()
+  return trimmed ? trimmed : NOW_LIVE.href
+}
+
+export function liveNavIsExternal(href: string) {
+  return href.startsWith('http://') || href.startsWith('https://')
+}
+
 export function NavLinks() {
   const pathname = usePathname()
 

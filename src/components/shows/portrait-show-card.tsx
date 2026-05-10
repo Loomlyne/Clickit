@@ -34,9 +34,9 @@ export function PortraitShowCard({ show, initialSaved, userId }: PortraitShowCar
         className="poster relative block flex-shrink-0 cursor-pointer overflow-hidden rounded-[24px] bg-[var(--bg-2)] transition-transform duration-[250ms] ease-[var(--ease)] group-hover:-translate-y-1 group-hover:z-[2]"
         style={{ width: 'var(--poster-w)', aspectRatio: '2 / 3' }}
       >
-        {show.posterUrl ? (
+        {show.posterUrl || show.heroImageUrl ? (
           <img
-            src={show.posterUrl}
+            src={show.posterUrl ?? show.heroImageUrl}
             alt={show.title}
             className="h-full w-full object-cover transition-transform duration-[400ms] ease-[var(--ease)] group-hover:scale-[1.04]"
           />

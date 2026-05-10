@@ -3,7 +3,7 @@ import { ShowsTable } from '@/components/admin/shows-table'
 import { AdminProfileCard } from '@/components/admin/admin-profile-card'
 import type { Database } from '@/lib/database.types'
 
-type CategoryJoin = { name_en: string; slug: string }
+type CategoryJoin = { name_en: string; slug: string; color: string | null }
 type ShowCategoryRow = Pick<
   Database['public']['Tables']['show_categories']['Row'],
   'show_id'
@@ -27,16 +27,20 @@ export default async function AdminPage() {
       .single(),
     supabase
       .from('show_categories')
-      .select('show_id, categories!inner(name_en, slug)'),
+      .select('show_id, categories!inner(name_en, slug, color)'),
   ])
 
   const categoriesByShowId = (showCategories as ShowCategoryRow[] | null ?? []).reduce<
-    Record<string, { name: string; slug: string }[]>
+    Record<string, { name: string; slug: string; color: string | null }[]>
   >((acc, row) => {
     const category = Array.isArray(row.categories) ? row.categories[0] : row.categories
     if (!category) return acc
     if (!acc[row.show_id]) acc[row.show_id] = []
-    acc[row.show_id].push({ name: category.name_en, slug: category.slug })
+    acc[row.show_id].push({
+      name: category.name_en,
+      slug: category.slug,
+      color: category.color ?? null,
+    })
     return acc
   }, {})
 

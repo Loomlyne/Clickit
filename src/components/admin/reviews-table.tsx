@@ -30,8 +30,8 @@ interface ReviewRow {
   stars: number
   body: string
   created_at: string
-  profiles?: { display_name: string | null; avatar_url: string | null }
-  shows?: { title: string; slug: string }
+  profiles?: { display_name: string | null; avatar_url: string | null } | null
+  shows?: { title: string; slug: string } | null
 }
 
 interface ReviewsTableProps {

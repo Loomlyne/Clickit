@@ -157,6 +157,12 @@ const categorySchema = z.object({
   name_ar: z.string().trim().min(1, 'Arabic name is required').max(80),
   slug: z.string().trim().min(1, 'Slug is required').max(80),
   icon: z.string().trim().max(40).optional().nullable(),
+  cover_url: z
+    .string()
+    .max(2000)
+    .nullish()
+    .transform((v) => (!v || v.trim() === '' ? null : v.trim()))
+    .refine((v) => v === null || /^https?:\/\/\S+$/.test(v), 'Must be a valid URL'),
   color: z
     .string()
     .trim()
@@ -1517,6 +1523,18 @@ const siteMetadataSchema = z.object({
   site_tagline: z.string().trim().min(1, 'Tagline is required').max(120),
 })
 
+const liveStreamUrlSchema = z.object({
+  live_stream_url: z
+    .string()
+    .max(500)
+    .nullish()
+    .transform((v) => (!v || v.trim() === '' ? null : v.trim()))
+    .refine(
+      (v) => v === null || validateYouTubeUrl(v) !== null,
+      'Must be empty or a valid YouTube URL'
+    ),
+})
+
 const footerSchema = z.object({
   tagline: z.string().max(300),
   stat: z.string().max(80),
@@ -1618,6 +1636,31 @@ async function auditConfigUpdate(adminUserId: string, changedKeys: string[]) {
     entity: 'app_config',
     diff: { keys: changedKeys },
   })
+}
+
+export async function updateLiveStreamUrl(
+  input: z.input<typeof liveStreamUrlSchema>
+): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const parsed = liveStreamUrlSchema.parse(input)
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('app_config')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ live_stream_url: parsed.live_stream_url } as any)
+      .eq('id', 1)
+    if (error) return { success: false, error: error.message }
+    await auditConfigUpdate(user.id, ['live_stream_url'])
+    bumpSiteConfigCache()
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to save',
+    }
+  }
 }
 
 export async function updateSiteMetadata(

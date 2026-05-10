@@ -1,10 +1,10 @@
 'use client'
 
 import { Fragment, useEffect, useMemo, useState } from 'react'
-import { ArrowDown, ArrowUp, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { createCategory, deleteCategory, reorderCategories, updateCategory } from '@/app/[locale]/admin/actions'
+import { createCategory, deleteCategory, updateCategory } from '@/app/[locale]/admin/actions'
 import { AdminPanel, AdminTableShell, AdminToolbar } from '@/components/admin/admin-shell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,6 +30,7 @@ type CategoryDraft = {
   name_ar: string
   slug: string
   color: string | null
+  cover_url: string | null
 }
 
 type EditorState =
@@ -42,6 +43,7 @@ const EMPTY_DRAFT: CategoryDraft = {
   name_ar: '',
   slug: '',
   color: null,
+  cover_url: null,
 }
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/
@@ -79,7 +81,6 @@ function ColorPicker({
       <Label>Category color</Label>
 
       <div className="flex items-center gap-2">
-        {/* OS color wheel trigger */}
         <div className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-md border border-white/15">
           <div
             className="size-full"
@@ -203,6 +204,22 @@ function CategoryEditor({
         </div>
       </div>
 
+      <div className="mt-5 space-y-1.5">
+        <Label htmlFor="category-cover-url">Cover image URL</Label>
+        <Input
+          id="category-cover-url"
+          type="url"
+          value={draft.cover_url ?? ''}
+          onChange={(e) => onDraftChange((c) => ({
+            ...c,
+            cover_url: e.target.value === '' ? null : e.target.value,
+          }))}
+          placeholder="https://…"
+          className="font-mono text-sm md:max-w-xl"
+        />
+        <p className="text-xs text-muted-foreground">Optional. HTTPS image URL for admin thumbnail and future rails.</p>
+      </div>
+
       <div
         className={cn(
           'mt-5 rounded-lg border border-white/8 bg-white/[0.02] p-4 transition-[border-left-color]',
@@ -225,6 +242,24 @@ function CategoryEditor({
         </Button>
       </div>
     </form>
+  )
+}
+
+function CoverThumb({ url }: { url: string | null }) {
+  if (!url) {
+    return (
+      <div className="flex size-[52px] shrink-0 items-center justify-center rounded-md border border-dashed border-white/10 bg-white/[0.02] text-[10px] text-muted-foreground/50">
+        —
+      </div>
+    )
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={url}
+      alt=""
+      className="size-[52px] shrink-0 rounded-md border border-white/10 object-cover"
+    />
   )
 }
 
@@ -261,6 +296,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
       name_ar: category.name_ar,
       slug: category.slug,
       color: category.color ?? null,
+      cover_url: category.cover_url ?? null,
     })
     setEditorState({ mode: 'edit', categoryId: category.id })
   }
@@ -275,6 +311,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
       slug: draft.slug.trim() || generateSlug(draft.name_en),
       sort_order: editingCategory?.sort_order ?? categories.length,
       color: draft.color ?? null,
+      cover_url: draft.cover_url?.trim() ? draft.cover_url.trim() : null,
     }
 
     const result = editingId
@@ -317,34 +354,12 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
     toast.success('Category deleted')
   }
 
-  async function handleMove(id: string, direction: 'up' | 'down') {
-    const currentIndex = categories.findIndex((category) => category.id === id)
-    const nextIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
-    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= categories.length) return
-
-    const next = [...categories]
-    const [moved] = next.splice(currentIndex, 1)
-    next.splice(nextIndex, 0, moved)
-
-    const reordered = next.map((category, index) => ({ ...category, sort_order: index }))
-    setCategories(reordered)
-
-    const result = await reorderCategories(reordered.map((category) => category.id))
-    if (!result.success) {
-      toast.error(result.error ?? 'Failed to reorder categories')
-      setCategories(categories)
-      return
-    }
-
-    toast.success('Category order updated')
-  }
-
   return (
     <AdminPanel className="p-0">
       <div className="p-5 md:p-6">
         <AdminToolbar
           eyebrow="Browse categories"
-          title="Category order and assignments"
+          title="Categories and assignments"
           description="Curate the browse rails and keep category membership manually controlled from the show editor."
           actions={
             <Button type="button" onClick={startCreate}>
@@ -361,12 +376,12 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-16">Cover</TableHead>
               <TableHead>Category</TableHead>
               <TableHead className="hidden md:table-cell">Arabic name</TableHead>
               <TableHead className="hidden w-36 md:table-cell">Color</TableHead>
               <TableHead className="w-32">Assigned</TableHead>
-              <TableHead className="w-24">Order</TableHead>
-              <TableHead className="w-52 text-right">Actions</TableHead>
+              <TableHead className="w-44 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -393,12 +408,15 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
               </TableRow>
             )}
 
-            {categories.map((category, index) => {
+            {categories.map((category) => {
               const isEditingRow = editorState?.mode === 'edit' && editorState.categoryId === category.id
 
               return (
                 <Fragment key={category.id}>
                   <TableRow>
+                    <TableCell className="align-middle">
+                      <CoverThumb url={category.cover_url} />
+                    </TableCell>
                     <TableCell>
                       <div className="min-w-[180px]">
                         <div className="font-medium text-foreground">{category.name_en}</div>
@@ -421,29 +439,8 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">{category.showCount}</TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">#{category.sort_order + 1}</TableCell>
                     <TableCell>
-                      <div className="flex min-w-[190px] items-center justify-end gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          disabled={index === 0}
-                          onClick={() => handleMove(category.id, 'up')}
-                          aria-label={`Move ${category.name_en} up`}
-                        >
-                          <ArrowUp className="size-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          disabled={index === categories.length - 1}
-                          onClick={() => handleMove(category.id, 'down')}
-                          aria-label={`Move ${category.name_en} down`}
-                        >
-                          <ArrowDown className="size-4" />
-                        </Button>
+                      <div className="flex min-w-[120px] items-center justify-end gap-1">
                         <Button type="button" variant="ghost" size="icon-sm" onClick={() => startEdit(category)} aria-label={`Edit ${category.name_en}`}>
                           <Pencil className="size-4" />
                         </Button>

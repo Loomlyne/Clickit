@@ -57,6 +57,7 @@ export type Database = {
           hero_video_type: string | null
           hero_video_url: string | null
           id: number
+          live_stream_url: string | null
           meta_pixel_id: string | null
           og_image_url: string | null
           site_description: string | null
@@ -78,6 +79,7 @@ export type Database = {
           hero_video_type?: string | null
           hero_video_url?: string | null
           id?: number
+          live_stream_url?: string | null
           meta_pixel_id?: string | null
           og_image_url?: string | null
           site_description?: string | null
@@ -99,6 +101,7 @@ export type Database = {
           hero_video_type?: string | null
           hero_video_url?: string | null
           id?: number
+          live_stream_url?: string | null
           meta_pixel_id?: string | null
           og_image_url?: string | null
           site_description?: string | null
@@ -113,6 +116,7 @@ export type Database = {
       categories: {
         Row: {
           color: string | null
+          cover_url: string | null
           created_at: string
           icon: string | null
           id: string
@@ -124,6 +128,7 @@ export type Database = {
         }
         Insert: {
           color?: string | null
+          cover_url?: string | null
           created_at?: string
           icon?: string | null
           id?: string
@@ -135,6 +140,7 @@ export type Database = {
         }
         Update: {
           color?: string | null
+          cover_url?: string | null
           created_at?: string
           icon?: string | null
           id?: string

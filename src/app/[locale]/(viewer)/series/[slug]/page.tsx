@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
@@ -157,9 +158,12 @@ export default async function SeriesDetailPage({ params }: Props) {
                   style={{ width: 100 }}
                 >
                   {c.image_url ? (
-                    <img
+                    <Image
                       src={c.image_url}
                       alt={c.name}
+                      width={80}
+                      height={80}
+                      unoptimized
                       className="mx-auto mb-2 h-20 w-20 rounded-full object-cover"
                     />
                   ) : (

@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { UserAvatar } from './user-avatar'
 import { UserDropdown } from './user-dropdown'
 import { createClient } from '@/lib/supabase/client'
+import { User, LogOut, Shield } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface UserState {
   email: string
@@ -19,10 +21,12 @@ interface UserState {
 interface AuthSectionProps {
   initialUser?: { id: string; email: string } | null
   isLanding?: boolean
+  layout?: 'default' | 'sheet'
 }
 
-export function AuthSection({ initialUser, isLanding }: AuthSectionProps) {
+export function AuthSection({ initialUser, isLanding, layout = 'default' }: AuthSectionProps) {
   const t = useTranslations('common')
+  const tNav = useTranslations('nav')
   const router = useRouter()
   const [user, setUser] = useState<UserState | null>(
     initialUser
@@ -35,7 +39,6 @@ export function AuthSection({ initialUser, isLanding }: AuthSectionProps) {
     const supabase = createClient()
 
     async function loadUser(userId: string, email: string) {
-      // Fetch profile + admin check in parallel
       const [profileRes, configRes] = await Promise.all([
         supabase.from('profiles').select('display_name, avatar_url').eq('id', userId).single(),
         supabase.from('app_config').select('admin_user_id').single(),
@@ -50,12 +53,10 @@ export function AuthSection({ initialUser, isLanding }: AuthSectionProps) {
       setIsAdmin(configRes.data?.admin_user_id === userId)
     }
 
-    // Get initial session
     supabase.auth.getUser().then(({ data: { user: u } }) => {
       if (u) loadUser(u.id, u.email ?? '')
     })
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         loadUser(session.user.id, session.user.email ?? '')
@@ -68,7 +69,28 @@ export function AuthSection({ initialUser, isLanding }: AuthSectionProps) {
     return () => subscription.unsubscribe()
   }, [])
 
+  async function signOut() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    setUser(null)
+    setIsAdmin(false)
+    router.push('/watch')
+    router.refresh()
+  }
+
   if (!user) {
+    if (layout === 'sheet') {
+      return (
+        <Button
+          size="default"
+          variant="outline"
+          className="h-11 w-full rounded-full text-[14px]"
+          asChild
+        >
+          <Link href="/auth">{t('signIn')}</Link>
+        </Button>
+      )
+    }
     if (isLanding) {
       return (
         <>
@@ -99,18 +121,49 @@ export function AuthSection({ initialUser, isLanding }: AuthSectionProps) {
     )
   }
 
+  if (layout === 'sheet') {
+    return (
+      <div className="flex w-full flex-col gap-3">
+        <p className="truncate px-0.5 text-xs text-muted-foreground" title={user.email}>
+          {user.email}
+        </p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <Button variant="outline" className="h-11 rounded-full justify-center gap-2" asChild>
+            <Link href="/profile" onClick={() => router.refresh()}>
+              <User className="size-4" />
+              {tNav('profile')}
+            </Link>
+          </Button>
+          {isAdmin && (
+            <Button variant="outline" className="h-11 rounded-full justify-center gap-2" asChild>
+              <Link href="/admin">
+                <Shield className="size-4" />
+                {tNav('admin')}
+              </Link>
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            className={cn(
+              'h-11 rounded-full justify-center gap-2 border-brand-red-safe/40 text-brand-red-safe hover:bg-brand-red-safe/10 hover:text-brand-red-safe',
+              isAdmin ? 'sm:col-span-2' : '',
+            )}
+            type="button"
+            onClick={() => { void signOut() }}
+          >
+            <LogOut className="size-4" />
+            {t('signOut')}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <UserDropdown
       email={user.email}
       isAdmin={isAdmin}
-      onSignOut={async () => {
-        const supabase = createClient()
-        await supabase.auth.signOut()
-        setUser(null)
-        setIsAdmin(false)
-        router.push('/watch')
-        router.refresh()
-      }}
+      onSignOut={signOut}
     >
       <button
         type="button"
