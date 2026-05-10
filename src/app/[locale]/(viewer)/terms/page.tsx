@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Link } from '@/i18n/navigation'
 
 export const metadata: Metadata = {
   title: 'Terms of Use | Clickit Story',
@@ -35,7 +36,13 @@ export default function TermsPage() {
         </section>
         <section>
           <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">6. Contact</h2>
-          <p>Questions about these terms? Reach us via the <a href="/support" className="text-[var(--primary)] hover:underline">support page</a>.</p>
+          <p>
+            Questions about these terms? Reach us via the{' '}
+            <Link href="/support" className="text-[var(--primary)] hover:underline">
+              support page
+            </Link>
+            .
+          </p>
         </section>
         <p className="mono text-[11px] text-[var(--text-mute)] pt-8 border-t border-[var(--line)]">
           Last updated: May 2026 · Spacelight Studios FZ LLC, Yas Creative Hub, Abu Dhabi, UAE

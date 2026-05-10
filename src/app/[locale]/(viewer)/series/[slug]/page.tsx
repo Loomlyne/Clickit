@@ -65,18 +65,12 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   const show = mapShow(dbShow, locale)
 
-  // Fetch seasons + episodes + cast + session + streaming catalog all in parallel.
-  // getSession() is a fast cookie read (~5ms) but was previously awaited sequentially
-  // after the 3-way DB fetch. Moving it into the same Promise.all means user-specific
-  // data and "more like this" can be resolved in a single follow-up wave.
   const supabase = await createClient()
   const [
     seasons,
     allEpisodes,
     { data: castMembers },
-    {
-      data: { session },
-    },
+    { data: { user } },
     allStreaming,
     t,
   ] = await Promise.all([
@@ -87,11 +81,10 @@ export default async function SeriesDetailPage({ params }: Props) {
       .select('*')
       .eq('show_id', dbShow.id)
       .order('sort_order'),
-    supabase.auth.getSession(),
+    supabase.auth.getUser(),
     getStreamingShows(),
     getTranslations('show'),
   ])
-  const user = session?.user ?? null
 
   const viewSeasons = seasons.map((s) => mapSeason(s, locale))
 

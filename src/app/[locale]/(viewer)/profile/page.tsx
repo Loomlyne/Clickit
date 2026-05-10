@@ -20,10 +20,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ProfilePage() {
-  // proxy.ts already validated the JWT — getSession() reads the cookie locally.
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user ?? null
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     const locale = await getIntlLocale()

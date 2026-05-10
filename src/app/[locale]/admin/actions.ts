@@ -281,6 +281,7 @@ export async function updateShow(
     const admin = createAdminClient()
 
     const { id: _parsedId, category_ids, ...updateData } = parsed
+    void _parsedId
 
     const { data: show, error } = await admin
       .from('shows')
@@ -1579,6 +1580,16 @@ const featureFlagsSchema = z.object({
   comingSoonMode: z.boolean(),
 })
 
+const topTickerItemSchema = z.object({
+  tag: z.string().trim().max(24),
+  text: z.string().trim().max(240),
+})
+
+const topTickerSchema = z.object({
+  enabled: z.boolean(),
+  items: z.array(topTickerItemSchema).max(12),
+})
+
 const genreConfigSchema = z.record(
   z.string(),
   z.object({
@@ -1761,6 +1772,46 @@ export async function updateFeatureFlags(
       .eq('id', 1)
     if (error) return { success: false, error: error.message }
     await auditConfigUpdate(user.id, ['feature_flags'])
+    bumpSiteConfigCache()
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to save',
+    }
+  }
+}
+
+export async function updateTopTicker(
+  input: z.input<typeof topTickerSchema>
+): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const parsed = topTickerSchema.parse(input)
+    const items = parsed.items
+      .map((row) => ({
+        tag: row.tag.trim(),
+        text: row.text.trim(),
+      }))
+      .filter((row) => row.tag.length > 0 && row.text.length > 0)
+
+    if (parsed.enabled && items.length === 0) {
+      return {
+        success: false,
+        error: 'Add at least one ticker line with tag and text, or turn the ticker off.',
+      }
+    }
+
+    const payload = { enabled: parsed.enabled, items }
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('app_config')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ top_ticker: payload } as any)
+      .eq('id', 1)
+    if (error) return { success: false, error: error.message }
+    await auditConfigUpdate(user.id, ['top_ticker'])
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {

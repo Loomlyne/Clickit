@@ -46,20 +46,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function WatchPage({ params }: Props) {
   const { episodeId } = await params
 
-  // proxy.ts already validated the JWT, getSession() reads the cookie locally (~5ms).
-  // Run session fetch in parallel with episode data + locale so progress can be
-  // fetched in the same wave as the episode query, not after it.
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user ?? null
-
-  const [data, locale, progressRow] = await Promise.all([
+  const [data, locale, authResult] = await Promise.all([
     getEpisodeById(episodeId),
     getLocale(),
-    user ? getEpisodeProgress(user.id, episodeId) : Promise.resolve(null),
+    supabase.auth.getUser(),
   ])
-
   if (!data) notFound()
+
+  const user = authResult.data.user ?? null
+  const progressRow = user
+    ? await getEpisodeProgress(user.id, episodeId)
+    : null
 
   // Second wave, show.id is now available from data
   const episodeIds = Object.values(data.episodesBySeason).flat().map((episode) => episode.id)

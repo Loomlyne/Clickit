@@ -35,8 +35,7 @@ export function SeriesDetailHero({
   const t = useTranslations('show')
   const locale = useLocale()
   const isArabic = locale === 'ar'
-  const mobileBackdropUrl = show.posterUrl ?? show.heroImageUrl
-  const desktopBackdropUrl = show.heroImageUrl ?? show.posterUrl
+  const backdropSrc = show.heroImageUrl ?? show.posterUrl
 
   useEffect(() => {
     let ticking = false
@@ -79,26 +78,15 @@ export function SeriesDetailHero({
 
       <div className="relative h-[72vh] min-h-[460px] overflow-hidden md:min-h-[520px]">
         <div className="absolute inset-0 bg-black" />
-        {mobileBackdropUrl && (
+        {backdropSrc && (
           <Image
-            src={mobileBackdropUrl}
+            src={backdropSrc}
             alt=""
             fill
             priority
             aria-hidden
             sizes="100vw"
-            className="object-cover object-center opacity-80 md:hidden"
-          />
-        )}
-        {desktopBackdropUrl && (
-          <Image
-            src={desktopBackdropUrl}
-            alt=""
-            fill
-            priority
-            aria-hidden
-            sizes="100vw"
-            className="hidden object-cover object-center opacity-80 md:block"
+            className="object-cover object-center opacity-80"
           />
         )}
 

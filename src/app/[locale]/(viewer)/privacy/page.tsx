@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Link } from '@/i18n/navigation'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | Clickit Story',
@@ -23,7 +24,13 @@ export default function PrivacyPage() {
         </section>
         <section>
           <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">3. Video Streaming</h2>
-          <p>Content is delivered via YouTube embeds. When you watch a video, YouTube's own privacy policy applies to that playback session. We recommend reviewing <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="text-[var(--primary)] hover:underline">Google's Privacy Policy</a>.</p>
+          <p>
+            Content is delivered via YouTube embeds. When you watch a video, YouTube&apos;s own privacy policy applies to that playback session. We recommend reviewing{' '}
+            <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="text-[var(--primary)] hover:underline">
+              Google&apos;s Privacy Policy
+            </a>
+            .
+          </p>
         </section>
         <section>
           <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">4. Data Storage</h2>
@@ -31,7 +38,13 @@ export default function PrivacyPage() {
         </section>
         <section>
           <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">5. Your Rights</h2>
-          <p>You may request deletion of your account and associated data at any time via the <a href="/support" className="text-[var(--primary)] hover:underline">support page</a>.</p>
+          <p>
+            You may request deletion of your account and associated data at any time via the{' '}
+            <Link href="/support" className="text-[var(--primary)] hover:underline">
+              support page
+            </Link>
+            .
+          </p>
         </section>
         <section>
           <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">6. Cookies</h2>

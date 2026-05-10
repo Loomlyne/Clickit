@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAppConfig } from '@/lib/config'
@@ -8,13 +9,11 @@ const FALLBACK_YT_ID = 'Nk2jlxVX8g8'
 
 export async function LandingHero() {
   const supabase = await createClient()
-  const [
-    {
-      data: { session },
-    },
-    config,
-  ] = await Promise.all([supabase.auth.getSession(), getAppConfig()])
-  const ctaHref = session?.user ? '/watch' : '/auth'
+  const [{ data: { user } }, config] = await Promise.all([
+    supabase.auth.getUser(),
+    getAppConfig(),
+  ])
+  const ctaHref = user ? '/watch' : '/auth'
 
   const { heroVideoUrl, heroVideoType } = config
   const adminYtId =
@@ -60,11 +59,13 @@ export async function LandingHero() {
 
       <div className="relative flex min-h-dvh items-end px-4 pt-28 pb-16 sm:px-6 md:px-10 md:pb-20">
         <div className="w-full max-w-[560px]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src="/brand/Clickit_final_logo.svg"
             alt="Clickit Story"
-            className="mb-6 w-48 sm:w-56 md:w-64"
+            width={280}
+            height={72}
+            priority
+            className="mb-6 h-auto w-48 sm:w-56 md:w-64"
           />
           <p className="mb-9 text-[17px] leading-relaxed text-[var(--text-dim)]">
             A hand-curated channel for urban culture, food, design and travel.

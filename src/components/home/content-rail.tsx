@@ -15,6 +15,8 @@ interface ContentRailProps {
   shows: ViewShow[]
   minCards?: number
   seeAllHref?: string
+  /** When set, wraps the rail in a section with this id (e.g. watch-page anchor). */
+  sectionId?: string
 }
 
 export function ContentRail({
@@ -24,13 +26,14 @@ export function ContentRail({
   shows,
   minCards = 6,
   seeAllHref,
+  sectionId,
 }: ContentRailProps) {
   const locale = useLocale()
   const isArabic = locale === 'ar'
   const placeholderCount = Math.max(0, minCards - shows.length)
 
   return (
-    <section className="rail px-10 pt-8 pb-3">
+    <section id={sectionId} className="rail px-10 pt-8 pb-3">
       {/* Rail header */}
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
@@ -61,7 +64,10 @@ export function ContentRail({
       </div>
 
       {/* Native scroll track — vertical grid on mobile, horizontal rail on sm+ */}
-      <DragScroll className="content-rail-track sm:scroll-snap-x-mandatory sm:scrollbar-hide flex flex-col gap-[var(--rail-gap)] py-1.5 pb-5 sm:flex-row sm:overflow-x-auto">
+      <DragScroll
+        touchMode="responsive"
+        className="content-rail-track sm:scroll-snap-x-mandatory sm:scrollbar-hide flex flex-col gap-[var(--rail-gap)] py-1.5 pb-5 sm:flex-row sm:overflow-x-auto"
+      >
         {shows.map((show) => (
           <ShowCard key={show.id} show={show} />
         ))}

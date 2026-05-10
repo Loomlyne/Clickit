@@ -62,6 +62,7 @@ export type Database = {
           site_description: string | null
           site_tagline: string | null
           site_title: string | null
+          top_ticker: Json
           updated_at: string
           youtube_api_key: string | null
         }
@@ -82,6 +83,7 @@ export type Database = {
           site_description?: string | null
           site_tagline?: string | null
           site_title?: string | null
+          top_ticker?: Json
           updated_at?: string
           youtube_api_key?: string | null
         }
@@ -102,6 +104,7 @@ export type Database = {
           site_description?: string | null
           site_tagline?: string | null
           site_title?: string | null
+          top_ticker?: Json
           updated_at?: string
           youtube_api_key?: string | null
         }

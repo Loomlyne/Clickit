@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import Image from 'next/image'
 import type { ViewShort } from '@/lib/queries'
 import { ShortsOverlay } from '@/components/shorts/shorts-overlay'
 
@@ -38,11 +39,12 @@ export function FeaturedShortsGrid({ shorts }: { shorts: ViewShort[] }) {
             className="group relative cursor-pointer overflow-hidden rounded-[20px] bg-[var(--bg-2)]"
             style={{ aspectRatio: '9/16' }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={thumb(s)}
               alt={s.title}
-              className="h-full w-full object-cover transition-transform duration-400 ease-[var(--ease)] group-hover:scale-105"
+              fill
+              sizes="(max-width: 767px) 50vw, 25vw"
+              className="object-cover transition-transform duration-400 ease-[var(--ease)] group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-b from-transparent from-40% to-black/85" />
 

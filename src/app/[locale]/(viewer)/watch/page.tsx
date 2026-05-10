@@ -23,19 +23,15 @@ export default async function WatchPage({
 }: {
   searchParams?: Promise<{ category?: string }>
 }) {
-  // proxy.ts already validated the JWT this request — getSession() reads the
-  // refreshed cookie locally without a Supabase auth round-trip (~5ms vs
-  // ~50-150ms for getUser()). Same pattern viewer-layout.tsx uses.
   const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  const userId = session?.user?.id ?? null
   const params = await searchParams
   const categorySlug = params?.category?.trim() || null
 
-  // Stage 1: featured alone — fast cached query, needed for stage 2 IDs
-  const featured = await getFeaturedShows()
+  const [{ data: { user } }, featured] = await Promise.all([
+    supabase.auth.getUser(),
+    getFeaturedShows(),
+  ])
+  const userId = user?.id ?? null
 
   // Stage 2: everything else in parallel, including first-episode map which
   // now runs alongside the heavy catalog queries instead of after them
@@ -99,6 +95,7 @@ export default async function WatchPage({
 
       {streaming.length > 0 && (
         <ContentRail
+          sectionId="now-streaming"
           title="Now streaming"
           shows={streaming}
           seeAllHref="/watch"

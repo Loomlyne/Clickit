@@ -10,6 +10,13 @@ import { Badge } from '@/components/ui/badge'
 import type { Database } from '@/lib/database.types'
 
 type Episode = Database['public']['Tables']['episodes']['Row']
+type CategoryJoin = { name_en: string; slug: string }
+type ShowCategoryRow = Pick<
+  Database['public']['Tables']['show_categories']['Row'],
+  'category_id'
+> & {
+  categories: CategoryJoin | CategoryJoin[] | null
+}
 
 export default async function ShowDetailPage({
   params,
@@ -18,13 +25,10 @@ export default async function ShowDetailPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
-  const [t, tDash, tShows, locale] = await Promise.all([
-    getTranslations('admin.showForm'),
+  const [tDash, tShows] = await Promise.all([
     getTranslations('admin.dashboard'),
     getTranslations('admin.shows'),
-    getLocale(),
   ])
-  const isArabic = locale === 'ar'
 
   const { data: show } = await supabase
     .from('shows')
@@ -67,7 +71,7 @@ export default async function ShowDetailPage({
       .eq('show_id', id),
   ])
 
-  const categories = (showCategories ?? []).flatMap((row: any) => {
+  const categories = (showCategories as ShowCategoryRow[] | null ?? []).flatMap((row) => {
     const category = Array.isArray(row.categories)
       ? row.categories[0]
       : row.categories

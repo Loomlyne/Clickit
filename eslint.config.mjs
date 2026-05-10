@@ -9,6 +9,10 @@ const eslintConfig = defineConfig([
   prettier,
   globalIgnores([
     '.next/**',
+    '.vercel/**',
+    '**/.vercel/**',
+    '.claude/**',
+    '**/.claude/**',
     'out/**',
     'build/**',
     '.planning/**',

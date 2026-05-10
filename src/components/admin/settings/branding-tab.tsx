@@ -5,7 +5,6 @@ import type { AppConfig } from '@/lib/config'
 import { HeroVideoManager } from '@/components/admin/hero-video-manager'
 import { SettingsCard } from './settings-card'
 import { ImageUploadField } from './image-upload-field'
-import { GenreColorEditor } from './genre-color-editor'
 
 export function BrandingTab({ config }: { config: AppConfig }) {
   const locale = useLocale()
@@ -57,8 +56,6 @@ export function BrandingTab({ config }: { config: AppConfig }) {
           hint={isArabic ? 'PNG أو ICO أو SVG. الحد 1 م.ب. استخدم صورة مربّعة.' : 'PNG, ICO, or SVG. Max 1MB. Use a square image.'}
         />
       </SettingsCard>
-
-      <GenreColorEditor initial={config.genreConfig} />
     </>
   )
 }

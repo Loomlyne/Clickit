@@ -1,6 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { ShowsTable } from '@/components/admin/shows-table'
 import { AdminProfileCard } from '@/components/admin/admin-profile-card'
+import type { Database } from '@/lib/database.types'
+
+type CategoryJoin = { name_en: string; slug: string }
+type ShowCategoryRow = Pick<
+  Database['public']['Tables']['show_categories']['Row'],
+  'show_id'
+> & {
+  categories: CategoryJoin | CategoryJoin[] | null
+}
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -21,7 +30,9 @@ export default async function AdminPage() {
       .select('show_id, categories!inner(name_en, slug)'),
   ])
 
-  const categoriesByShowId = (showCategories ?? []).reduce<Record<string, { name: string; slug: string }[]>>((acc, row: any) => {
+  const categoriesByShowId = (showCategories as ShowCategoryRow[] | null ?? []).reduce<
+    Record<string, { name: string; slug: string }[]>
+  >((acc, row) => {
     const category = Array.isArray(row.categories) ? row.categories[0] : row.categories
     if (!category) return acc
     if (!acc[row.show_id]) acc[row.show_id] = []

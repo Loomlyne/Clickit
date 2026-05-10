@@ -20,8 +20,8 @@ export default async function UpdatesPage({
   const showSlug = params?.show?.trim() || undefined
 
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const defaultEmail = session?.user?.email ?? ''
+  const { data: { user } } = await supabase.auth.getUser()
+  const defaultEmail = user?.email ?? ''
 
   return (
     <div className="px-4 pb-16 pt-8 sm:px-6 md:px-12">

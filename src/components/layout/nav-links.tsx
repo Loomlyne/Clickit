@@ -9,6 +9,12 @@ export const NAV_LINKS = [
   { label: 'Support', href: '/support' },
 ]
 
+/** Deep-link to the live rail on the watch page (anchor id on ContentRail). */
+export const NOW_LIVE = {
+  label: 'Now Live',
+  href: '/watch#now-streaming' as const,
+}
+
 export function NavLinks() {
   const pathname = usePathname()
 

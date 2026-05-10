@@ -57,6 +57,16 @@ export type FeatureFlags = {
   comingSoonMode: boolean
 }
 
+export type TopTickerItem = {
+  tag: string
+  text: string
+}
+
+export type TopTickerConfig = {
+  enabled: boolean
+  items: TopTickerItem[]
+}
+
 export type AppConfig = {
   // Branding / SEO
   siteTitle: string
@@ -76,6 +86,8 @@ export type AppConfig = {
   metaPixelId: string | null
   // Feature flags
   flags: FeatureFlags
+  // Viewer chrome — scrolling news bar above navbar
+  topTicker: TopTickerConfig
 }
 
 // ---------------------------------------------------------------------------
@@ -134,6 +146,16 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   comingSoonMode: false,
 }
 
+export const DEFAULT_TOP_TICKER: TopTickerConfig = {
+  enabled: true,
+  items: [
+    { tag: 'NEW', text: 'Original shows · premiering now' },
+    { tag: 'LIVE', text: 'Streaming from Abu Dhabi' },
+    { tag: 'SHORT', text: 'Quick bites · 90-second cuts' },
+    { tag: 'EST 2026', text: 'Clickit · Hand-picked, no algorithm' },
+  ],
+}
+
 // ---------------------------------------------------------------------------
 // getAppConfig() — cached public read.
 //
@@ -155,16 +177,15 @@ export const getAppConfig = cache(unstable_cache(
     // deliberately omitted.
     const { data } = await supabase
       .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .select(
-        'site_title, site_description, site_tagline, og_image_url, favicon_url, hero_video_url, hero_video_type, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags' as string
+        'site_title, site_description, site_tagline, og_image_url, favicon_url, hero_video_url, hero_video_type, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker' as string
       )
       .eq('id', 1)
       .single<RawConfigRow>()
 
     return mapConfig(data)
   },
-  ['app-config-v1'],
+  ['app-config-v2'],
   { revalidate: 900, tags: ['site-config'] } // 15 min
 ))
 
@@ -187,6 +208,7 @@ type RawConfigRow = {
   google_analytics_id: string | null
   meta_pixel_id: string | null
   feature_flags: unknown
+  top_ticker: unknown
 } | null
 
 function mapConfig(row: RawConfigRow): AppConfig {
@@ -204,6 +226,7 @@ function mapConfig(row: RawConfigRow): AppConfig {
     googleAnalyticsId: row?.google_analytics_id ?? null,
     metaPixelId: row?.meta_pixel_id ?? null,
     flags: mergeFlags(row?.feature_flags),
+    topTicker: mergeTopTicker(row?.top_ticker),
   }
 }
 
@@ -264,6 +287,27 @@ function mergeFlags(v: unknown): FeatureFlags {
     showCtaBanner: v.showCtaBanner !== false,
     showFaq: v.showFaq !== false,
     comingSoonMode: v.comingSoonMode === true,
+  }
+}
+
+function mergeTopTicker(v: unknown): TopTickerConfig {
+  if (!isObject(v)) return DEFAULT_TOP_TICKER
+  const enabled = v.enabled !== false
+  const rawItems = v.items
+  const items: TopTickerItem[] = []
+  if (Array.isArray(rawItems)) {
+    for (const entry of rawItems) {
+      if (!isObject(entry)) continue
+      const tagRaw = typeof entry.tag === 'string' ? entry.tag.trim() : ''
+      const textRaw = typeof entry.text === 'string' ? entry.text.trim() : ''
+      const tag = tagRaw.slice(0, 24)
+      const text = textRaw.slice(0, 240)
+      if (tag && text) items.push({ tag, text })
+    }
+  }
+  return {
+    enabled,
+    items: items.length > 0 ? items : DEFAULT_TOP_TICKER.items,
   }
 }
 
