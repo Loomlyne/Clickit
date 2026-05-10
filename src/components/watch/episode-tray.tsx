@@ -67,6 +67,7 @@ export function EpisodeTray({
       <Drawer.Portal>
         <Drawer.Content
           onMouseEnter={() => onSnapPointChange(WATCH_TRAY_SNAP_POINTS[1])}
+          onMouseLeave={() => onSnapPointChange(WATCH_TRAY_SNAP_POINTS[0])}
           className="fixed inset-x-0 bottom-0 z-30 flex h-[95dvh] max-h-[95dvh] flex-col rounded-t-[8px] border border-white/10 bg-black/92 text-white shadow-2xl backdrop-blur-xl outline-none"
         >
           <div className="flex min-h-0 flex-1 flex-col">

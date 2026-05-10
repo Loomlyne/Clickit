@@ -5,7 +5,6 @@ import { Footer } from '@/components/layout/footer'
 import { SmoothScroll } from '@/components/providers/smooth-scroll'
 import { PageTransition } from '@/components/layout/page-transition'
 import { ViewerSilkBackground } from '@/components/layout/viewer-silk-background'
-import { EntryPreload } from '@/components/layout/entry-preload'
 import { MarqueeTicker } from '@/components/landing/marquee-ticker'
 
 export default async function ViewerLayout({
@@ -25,7 +24,6 @@ export default async function ViewerLayout({
 
   return (
     <>
-      <EntryPreload />
       <ViewerSilkBackground />
       <SmoothScroll>
         {/* z-[2] wrapper pushes all content above the fixed silk (z-1) */}

@@ -2,21 +2,66 @@
 
 import Image from 'next/image'
 import { motion, useReducedMotion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
+const STORAGE_KEY = 'clickit-entry-preload-at'
+
+const THREE_HOURS_MS = 3 * 60 * 60 * 1000
+
+function isSameLocalCalendarDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  )
+}
+
+function shouldRunPreload(): boolean {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return true
+    const lastTime = Number.parseInt(raw, 10)
+    if (Number.isNaN(lastTime)) return true
+
+    const now = Date.now()
+    const last = new Date(lastTime)
+    const today = new Date()
+    const firstVisitOfLocalDay = !isSameLocalCalendarDay(last, today)
+    const threeHoursPassed = now - lastTime >= THREE_HOURS_MS
+
+    return firstVisitOfLocalDay || threeHoursPassed
+  } catch {
+    return true
+  }
+}
+
+function recordPreloadCompleted() {
+  try {
+    localStorage.setItem(STORAGE_KEY, String(Date.now()))
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
 export function EntryPreload() {
   const prefersReducedMotion = useReducedMotion()
+  const [runPreload, setRunPreload] = useState<boolean | null>(null)
   const [phase, setPhase] = useState<'enter' | 'exit' | 'done'>('enter')
 
+  useLayoutEffect(() => {
+    setRunPreload(shouldRunPreload())
+  }, [])
+
   useEffect(() => {
+    if (runPreload !== true) return
     const exitDelay = prefersReducedMotion ? 680 : 1900
     const timer = window.setTimeout(() => setPhase('exit'), exitDelay)
-
     return () => window.clearTimeout(timer)
-  }, [prefersReducedMotion])
+  }, [prefersReducedMotion, runPreload])
 
+  if (runPreload !== true) return null
   if (phase === 'done') return null
 
   const overlayTransition = {
@@ -40,7 +85,10 @@ export function EntryPreload() {
       }
       transition={overlayTransition}
       onAnimationComplete={() => {
-        if (phase === 'exit') setPhase('done')
+        if (phase === 'exit') {
+          recordPreloadCompleted()
+          setPhase('done')
+        }
       }}
     >
       <motion.div
