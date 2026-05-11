@@ -1,7 +1,10 @@
+import { Suspense } from 'react'
+
 import { getLocale } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
 import { HeroBanner } from '@/components/home/hero-banner'
+import { FeaturedHeroWithWatched } from '@/components/home/featured-hero-with-watched'
 import { ContentRail } from '@/components/home/content-rail'
 import { ContinueWatchingRail } from '@/components/home/continue-watching-rail'
 import { ShortsRail } from '@/components/browse/shorts-rail'
@@ -13,7 +16,6 @@ import {
   getCategoryRails,
   getCategoryRailBySlug,
   getFirstEpisodesForShows,
-  getWatchedShowIds,
   getShortsForBrowse,
 } from '@/lib/queries'
 import { getIsMobile } from '@/lib/device'
@@ -65,27 +67,32 @@ export default async function WatchPage({
       : []
     : categoryRails
 
-  const featuredWithEpisodes = featured.map((show) => ({
+  const featuredFallbackShows = featured.map((show) => ({
     show,
     firstEpisodeId: firstEpisodeMap[show.id],
     hasWatched: false,
   }))
 
-  if (userId && featuredWithEpisodes.length > 0) {
-    const watchedShowIds = await getWatchedShowIds(
-      userId,
-      featuredWithEpisodes.map(({ show }) => show.id)
-    )
-    for (const entry of featuredWithEpisodes) {
-      entry.hasWatched = watchedShowIds.has(entry.show.id)
-    }
-  }
-
   return (
     <div>
-      {featuredWithEpisodes.length > 0 && (
+      {featured.length > 0 && (
         <div className="-mt-16">
-          <HeroBanner shows={featuredWithEpisodes} isMobile={isMobile} />
+          {userId ? (
+            <Suspense
+              fallback={
+                <HeroBanner shows={featuredFallbackShows} isMobile={isMobile} />
+              }
+            >
+              <FeaturedHeroWithWatched
+                userId={userId}
+                featured={featured}
+                firstEpisodeMap={firstEpisodeMap}
+                isMobile={isMobile}
+              />
+            </Suspense>
+          ) : (
+            <HeroBanner shows={featuredFallbackShows} isMobile={isMobile} />
+          )}
         </div>
       )}
 

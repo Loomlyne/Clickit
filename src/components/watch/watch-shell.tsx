@@ -1,9 +1,9 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { Link, useRouter } from '@/i18n/navigation'
-import { YouTubePlayer } from '@/components/watch/youtube-player'
 import { AutoplayOverlay } from '@/components/watch/autoplay-overlay'
 import {
   EpisodeTray,
@@ -25,6 +25,22 @@ import {
 } from 'lucide-react'
 import type { ViewEpisode, ViewShow, ViewSeason } from '@/lib/queries'
 import { BRAND_COLOR_BG } from '@/lib/brand-colors'
+
+const YouTubePlayer = dynamic(
+  () =>
+    import('@/components/watch/youtube-player').then((m) => ({
+      default: m.YouTubePlayer,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex h-full min-h-0 w-full flex-1 items-center justify-center bg-black"
+        aria-hidden
+      />
+    ),
+  }
+)
 
 interface WatchShellProps {
   episode: ViewEpisode

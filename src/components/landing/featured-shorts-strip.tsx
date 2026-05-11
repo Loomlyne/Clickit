@@ -29,7 +29,7 @@ export function FeaturedShortsGrid({ shorts }: { shorts: ViewShort[] }) {
       <link rel="preconnect" href="https://www.youtube.com" />
       <link rel="preconnect" href="https://i.ytimg.com" />
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5" data-lenis-prevent>
         {shorts.map((s, i) => (
           <div
             key={s.id}
@@ -46,7 +46,7 @@ export function FeaturedShortsGrid({ shorts }: { shorts: ViewShort[] }) {
               sizes="(max-width: 767px) 50vw, 25vw"
               className="object-cover transition-transform duration-400 ease-[var(--ease)] group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent from-40% to-black/85" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent from-40% to-black/85" />
 
             {/* SHORT badge */}
             <div

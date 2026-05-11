@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { motion, useReducedMotion } from 'motion/react'
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -49,17 +49,26 @@ export function EntryPreload() {
   const prefersReducedMotion = useReducedMotion()
   const [runPreload, setRunPreload] = useState<boolean | null>(null)
   const [phase, setPhase] = useState<'enter' | 'exit' | 'done'>('enter')
+  const phaseRef = useRef(phase)
+  phaseRef.current = phase
 
   useLayoutEffect(() => {
-    setRunPreload(shouldRunPreload())
+    const run = shouldRunPreload()
+    setRunPreload(run)
   }, [])
 
   useEffect(() => {
     if (runPreload !== true) return
     const exitDelay = prefersReducedMotion ? 680 : 1900
-    const timer = window.setTimeout(() => setPhase('exit'), exitDelay)
+    const timer = window.setTimeout(() => {
+      setPhase('exit')
+    }, exitDelay)
     return () => window.clearTimeout(timer)
   }, [prefersReducedMotion, runPreload])
+
+  useEffect(() => {
+    if (runPreload !== true) return
+  }, [phase, runPreload])
 
   if (runPreload !== true) return null
   if (phase === 'done') return null
@@ -72,7 +81,7 @@ export function EntryPreload() {
   return (
     <motion.div
       aria-hidden="true"
-      className="fixed inset-0 z-[100] grid place-items-center overflow-hidden bg-black"
+      className="pointer-events-none fixed inset-0 z-[100] grid place-items-center overflow-hidden bg-black"
       initial={prefersReducedMotion ? { opacity: 1 } : { y: '0%', opacity: 1 }}
       animate={
         phase === 'exit'
@@ -85,14 +94,14 @@ export function EntryPreload() {
       }
       transition={overlayTransition}
       onAnimationComplete={() => {
-        if (phase === 'exit') {
+        if (phaseRef.current === 'exit') {
           recordPreloadCompleted()
           setPhase('done')
         }
       }}
     >
       <motion.div
-        className="relative h-28 w-72 sm:h-36 sm:w-96"
+        className="pointer-events-none relative h-28 w-72 sm:h-36 sm:w-96"
         initial={{
           opacity: 0,
           scale: prefersReducedMotion ? 1 : 0.9,
@@ -118,7 +127,7 @@ export function EntryPreload() {
           fill
           priority
           sizes="(min-width: 640px) 384px, 288px"
-          className="object-contain"
+          className="pointer-events-none object-contain"
         />
       </motion.div>
     </motion.div>

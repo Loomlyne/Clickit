@@ -24,7 +24,7 @@ export async function LandingHero() {
 
   return (
     <section className="relative -mt-16 min-h-dvh overflow-hidden">
-      {/* MP4 background */}
+      {/* MP4 background — pass-through so CTA/navigation stay clickable (H2) */}
       {heroVideoType === 'mp4' && heroVideoUrl && (
         <video
           src={heroVideoUrl}
@@ -32,7 +32,7 @@ export async function LandingHero() {
           muted
           loop
           playsInline
-          className="absolute inset-0 h-full w-full object-cover"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         />
       )}
 
@@ -55,7 +55,7 @@ export async function LandingHero() {
       )}
 
       {/* Gradient — solid at bottom (hides YT logo), fades to transparent at top */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black from-10% via-black/50 via-40% to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black from-10% via-black/50 via-40% to-transparent" />
 
       <div className="relative flex min-h-dvh items-end px-4 pt-28 pb-16 sm:px-6 md:px-10 md:pb-20">
         <div className="w-full max-w-[560px]">

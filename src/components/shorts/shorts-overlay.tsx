@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import type { ViewShort } from '@/lib/queries'
 
@@ -102,9 +103,10 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
     touchStart.current = null
   }
 
-  return (
+  const shell = (
     <div
-      className="fixed inset-0 z-[500] flex items-center justify-center"
+      className="fixed inset-0 z-[600] flex items-center justify-center"
+      data-lenis-prevent
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
@@ -269,4 +271,6 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
       </div>
     </div>
   )
+
+  return createPortal(shell, document.body)
 }

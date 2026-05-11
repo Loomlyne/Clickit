@@ -28,12 +28,12 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
   const extN = extShows.length
 
   useEffect(() => {
-    if (isPaused) return
+    if (isPaused || shouldReduceMotion) return
     const timer = setInterval(() => {
       setActiveIndex((prev) => prev + 1)
     }, INTERVAL)
     return () => clearInterval(timer)
-  }, [isPaused])
+  }, [isPaused, shouldReduceMotion])
 
   // After landing on the clone (index n), jump back to real index 0 with no transition
   useEffect(() => {

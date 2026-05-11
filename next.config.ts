@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
+import bundleAnalyzer from '@next/bundle-analyzer'
 import { withBotId } from 'botid/next/config'
 import createNextIntlPlugin from 'next-intl/plugin'
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+})
 
 // next-intl v4 plugin: wires src/i18n/request.ts into the Next.js build so
 // getMessages() / setRequestLocale() resolve at render time. Required once any
@@ -69,4 +74,4 @@ const nextConfig: NextConfig = {
 // requests carry a verifiable bot-score header. Server Actions gate on
 // checkBotId() before touching Supabase (see the auth actions under
 // src/app/[locale]/(viewer)/auth/actions.ts).
-export default withBotId(withNextIntl(nextConfig));
+export default withBundleAnalyzer(withBotId(withNextIntl(nextConfig)));

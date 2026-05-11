@@ -22,7 +22,7 @@ export function WatchlistToggleButton({
   initialSaved = false,
   userId,
 }: WatchlistToggleButtonProps) {
-  const { isInList, toggle, isLoading } = useWatchlist(showId, initialSaved, userId)
+  const { isInList, toggle } = useWatchlist(showId, initialSaved, userId)
   const justAddedRef = useRef(false)
   const t = useTranslations('show')
 
@@ -74,7 +74,6 @@ export function WatchlistToggleButton({
     return (
       <motion.button
         onClick={handleClick}
-        disabled={isLoading}
         whileTap={{ scale: 0.85 }}
         aria-label={isInList ? t('removeFromList') : t('addToList')}
         className={cn(
@@ -92,7 +91,6 @@ export function WatchlistToggleButton({
   return (
     <motion.button
       onClick={() => handleClick()}
-      disabled={isLoading}
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.9 }}
       aria-label={isInList ? t('removeFromList') : t('addToList')}

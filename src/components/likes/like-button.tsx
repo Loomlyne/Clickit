@@ -26,7 +26,7 @@ interface LikeButtonProps {
 }
 
 export function LikeButton({ showId, initialLiked = false, userId }: LikeButtonProps) {
-  const { isLiked, toggle, isLoading } = useLikes(showId, initialLiked, userId)
+  const { isLiked, toggle } = useLikes(showId, initialLiked, userId)
   const justLikedRef = useRef(false)
   const t = useTranslations('show')
 
@@ -38,7 +38,6 @@ export function LikeButton({ showId, initialLiked = false, userId }: LikeButtonP
   return (
     <motion.button
       onClick={handleClick}
-      disabled={isLoading}
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.9 }}
       aria-label={isLiked ? t('unlike') : t('like')}
