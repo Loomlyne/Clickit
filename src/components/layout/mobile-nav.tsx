@@ -13,7 +13,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { NAV_LINKS, NOW_LIVE, liveNavHref, liveNavIsExternal } from './nav-links'
+import { NAV_LINKS } from './nav-links'
 import { AuthSection } from './auth-section'
 
 interface MobileNavProps {
@@ -52,10 +52,10 @@ export function MobileNav({ initialUser, liveStreamUrl }: MobileNavProps = {}) {
             className="flex min-h-11 items-center"
           >
             <Image
-              src="/brand/Clickit_final_logo.svg"
+              src="/brand/Clickit_final_logo.CITpng.svg"
               alt="Clickit"
-              width={136}
-              height={56}
+              width={214}
+              height={145}
               className="h-8 w-auto"
               priority
             />
@@ -63,36 +63,6 @@ export function MobileNav({ initialUser, liveStreamUrl }: MobileNavProps = {}) {
         </SheetHeader>
 
         <nav aria-label="Mobile navigation" className="flex flex-col gap-1 px-4 py-4">
-          {(() => {
-            const liveHref = liveNavHref(liveStreamUrl)
-            const external = liveNavIsExternal(liveHref)
-            const pillClass =
-              'mb-1 flex min-h-[48px] items-center gap-3 rounded-full bg-[linear-gradient(135deg,#dc2626_0%,#b91c1c_100%)] px-4 text-[15px] font-semibold text-white shadow-sm ring-1 ring-white/15'
-            const inner = (
-              <>
-                <span className="relative flex size-2.5 shrink-0" aria-hidden>
-                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-white/90 opacity-60" />
-                  <span className="relative inline-flex size-2.5 rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.9)]" />
-                </span>
-                {NOW_LIVE.label}
-              </>
-            )
-            return external ? (
-              <a
-                href={liveHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setOpen(false)}
-                className={pillClass}
-              >
-                {inner}
-              </a>
-            ) : (
-              <Link href={liveHref} onClick={() => setOpen(false)} className={pillClass}>
-                {inner}
-              </Link>
-            )
-          })()}
           {NAV_LINKS.map(({ label, href }) => {
             const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
             return (

@@ -84,6 +84,35 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
         />
       </Link>
 
+      {/* Mobile: keep "Now Live" near the logo */}
+      {!isLanding &&
+        (() => {
+          const liveHref = liveNavHref(liveStreamUrl)
+          const external = liveNavIsExternal(liveHref)
+          const pillClass = cn(
+            'md:hidden inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-semibold tracking-tight text-white shadow-sm transition-[transform,box-shadow,background-color] duration-200 hover:brightness-110 active:scale-[0.98]',
+            'bg-[linear-gradient(135deg,#dc2626_0%,#b91c1c_100%)] ring-1 ring-white/15'
+          )
+          const inner = (
+            <>
+              <span className="relative flex size-2 shrink-0" aria-hidden>
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-white/90 opacity-60" />
+                <span className="relative inline-flex size-2 rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.9)]" />
+              </span>
+              {NOW_LIVE.label}
+            </>
+          )
+          return external ? (
+            <a href={liveHref} target="_blank" rel="noopener noreferrer" className={pillClass}>
+              {inner}
+            </a>
+          ) : (
+            <Link href={liveHref} className={pillClass}>
+              {inner}
+            </Link>
+          )
+        })()}
+
       {/* Nav links — hidden on mobile, MobileNav handles those */}
       <nav className="hidden items-center gap-[22px] md:flex">
         {!isLanding && (
