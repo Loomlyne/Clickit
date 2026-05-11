@@ -4,8 +4,10 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { useTranslations } from 'next-intl'
+
 import { createCategory, deleteCategory, updateCategory } from '@/app/[locale]/admin/actions'
-import { AdminPanel, AdminTableShell, AdminToolbar } from '@/components/admin/admin-shell'
+import { AdminPanel, AdminTableShell } from '@/components/admin/admin-shell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,7 +32,6 @@ type CategoryDraft = {
   name_ar: string
   slug: string
   color: string | null
-  cover_url: string | null
 }
 
 type EditorState =
@@ -43,7 +44,6 @@ const EMPTY_DRAFT: CategoryDraft = {
   name_ar: '',
   slug: '',
   color: null,
-  cover_url: null,
 }
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/
@@ -204,22 +204,6 @@ function CategoryEditor({
         </div>
       </div>
 
-      <div className="mt-5 space-y-1.5">
-        <Label htmlFor="category-cover-url">Cover image URL</Label>
-        <Input
-          id="category-cover-url"
-          type="url"
-          value={draft.cover_url ?? ''}
-          onChange={(e) => onDraftChange((c) => ({
-            ...c,
-            cover_url: e.target.value === '' ? null : e.target.value,
-          }))}
-          placeholder="https://…"
-          className="font-mono text-sm md:max-w-xl"
-        />
-        <p className="text-xs text-muted-foreground">Optional. HTTPS image URL for admin thumbnail and future rails.</p>
-      </div>
-
       <div
         className={cn(
           'mt-5 rounded-lg border border-white/8 bg-white/[0.02] p-4 transition-[border-left-color]',
@@ -245,25 +229,8 @@ function CategoryEditor({
   )
 }
 
-function CoverThumb({ url }: { url: string | null }) {
-  if (!url) {
-    return (
-      <div className="flex size-[52px] shrink-0 items-center justify-center rounded-md border border-dashed border-white/10 bg-white/[0.02] text-[10px] text-muted-foreground/50">
-        —
-      </div>
-    )
-  }
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={url}
-      alt=""
-      className="size-[52px] shrink-0 rounded-md border border-white/10 object-cover"
-    />
-  )
-}
-
 export function CategoriesManager({ initialCategories }: { initialCategories: CategoryRecord[] }) {
+  const t = useTranslations('admin.dashboard')
   const [categories, setCategories] = useState(initialCategories)
   const [draft, setDraft] = useState<CategoryDraft>(EMPTY_DRAFT)
   const [editorState, setEditorState] = useState<EditorState>(null)
@@ -296,7 +263,6 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
       name_ar: category.name_ar,
       slug: category.slug,
       color: category.color ?? null,
-      cover_url: category.cover_url ?? null,
     })
     setEditorState({ mode: 'edit', categoryId: category.id })
   }
@@ -311,7 +277,6 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
       slug: draft.slug.trim() || generateSlug(draft.name_en),
       sort_order: editingCategory?.sort_order ?? categories.length,
       color: draft.color ?? null,
-      cover_url: draft.cover_url?.trim() ? draft.cover_url.trim() : null,
     }
 
     const result = editingId
@@ -356,27 +321,25 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
 
   return (
     <AdminPanel className="p-0">
-      <div className="p-5 md:p-6">
-        <AdminToolbar
-          eyebrow="Browse categories"
-          title="Categories and assignments"
-          description="Curate the browse rails and keep category membership manually controlled from the show editor."
-          actions={
-            <Button type="button" onClick={startCreate}>
-              <Plus className="size-4" />
-              Add category
-            </Button>
-          }
-        >
-          <div className="text-sm text-muted-foreground">{categories.length} categories</div>
-        </AdminToolbar>
+      <div className="flex flex-col gap-3 border-b border-white/8 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-4 md:px-6">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+            {t('categories')}
+          </h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {t('categoryCountLabel', { count: categories.length })}
+          </p>
+        </div>
+        <Button type="button" className="w-full shrink-0 sm:w-auto" onClick={startCreate}>
+          <Plus className="size-4" />
+          Add category
+        </Button>
       </div>
 
       <AdminTableShell className="rounded-none border-x-0 border-b-0">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-16">Cover</TableHead>
               <TableHead>Category</TableHead>
               <TableHead className="hidden md:table-cell">Arabic name</TableHead>
               <TableHead className="hidden w-36 md:table-cell">Color</TableHead>
@@ -387,7 +350,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
           <TableBody>
             {isCreateOpen && (
               <TableRow>
-                <TableCell colSpan={6} className="whitespace-normal bg-white/[0.015]">
+                <TableCell colSpan={5} className="whitespace-normal bg-white/[0.015]">
                   <CategoryEditor
                     draft={draft}
                     saving={saving}
@@ -402,7 +365,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
 
             {categories.length === 0 && !isCreateOpen && (
               <TableRow>
-                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
                   No categories yet.
                 </TableCell>
               </TableRow>
@@ -414,9 +377,6 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
               return (
                 <Fragment key={category.id}>
                   <TableRow>
-                    <TableCell className="align-middle">
-                      <CoverThumb url={category.cover_url} />
-                    </TableCell>
                     <TableCell>
                       <div className="min-w-[180px]">
                         <div className="font-medium text-foreground">{category.name_en}</div>
@@ -461,7 +421,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
 
                   {isEditingRow && (
                     <TableRow>
-                      <TableCell colSpan={6} className="whitespace-normal bg-white/[0.015]">
+                      <TableCell colSpan={5} className="whitespace-normal bg-white/[0.015]">
                         <CategoryEditor
                           draft={draft}
                           saving={saving}

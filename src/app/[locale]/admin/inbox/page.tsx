@@ -1,5 +1,7 @@
+import { getTranslations } from 'next-intl/server'
+
 import { createClient } from '@/lib/supabase/server'
-import { AdminPanel, AdminTableShell, AdminToolbar } from '@/components/admin/admin-shell'
+import { AdminPanel, AdminTableShell } from '@/components/admin/admin-shell'
 import {
   Table,
   TableBody,
@@ -10,7 +12,11 @@ import {
 } from '@/components/ui/table'
 
 export default async function AdminInboxPage() {
-  const supabase = await createClient()
+  const [supabase, tDash, t] = await Promise.all([
+    createClient(),
+    getTranslations('admin.dashboard'),
+    getTranslations('admin.inboxPage'),
+  ])
 
   const [{ data: supportMessages }, { data: newsletterSubscribers }] = await Promise.all([
     supabase
@@ -28,17 +34,20 @@ export default async function AdminInboxPage() {
   return (
     <div className="space-y-8">
       <AdminPanel className="p-0">
-        <div className="p-5 md:p-6">
-          <AdminToolbar eyebrow="Inbox" title="Support messages" />
+        <div className="flex flex-col gap-1 border-b border-white/8 px-4 py-3 sm:px-5 sm:py-4 md:px-6">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+            {tDash('inbox')}
+          </h2>
+          <p className="text-sm text-muted-foreground">{t('supportSubtitle')}</p>
         </div>
         <AdminTableShell className="rounded-none border-x-0 border-b-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>From</TableHead>
-                <TableHead>Subject</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Email</TableHead>
+                <TableHead>{t('colFrom')}</TableHead>
+                <TableHead>{t('colSubject')}</TableHead>
+                <TableHead>{t('colStatus')}</TableHead>
+                <TableHead>{t('colEmail')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -53,7 +62,7 @@ export default async function AdminInboxPage() {
               {(supportMessages ?? []).length === 0 && (
                 <TableRow>
                   <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
-                    No support messages yet.
+                    {t('emptySupport')}
                   </TableCell>
                 </TableRow>
               )}
@@ -63,17 +72,20 @@ export default async function AdminInboxPage() {
       </AdminPanel>
 
       <AdminPanel className="p-0">
-        <div className="p-5 md:p-6">
-          <AdminToolbar eyebrow="Inbox" title="Newsletter subscribers" />
+        <div className="flex flex-col gap-1 border-b border-white/8 px-4 py-3 sm:px-5 sm:py-4 md:px-6">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+            {tDash('inbox')}
+          </h2>
+          <p className="text-sm text-muted-foreground">{t('newsletterSubtitle')}</p>
         </div>
         <AdminTableShell className="rounded-none border-x-0 border-b-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Interests</TableHead>
+                <TableHead>{t('colEmail')}</TableHead>
+                <TableHead>{t('colSource')}</TableHead>
+                <TableHead>{t('colStatus')}</TableHead>
+                <TableHead>{t('colInterests')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -90,14 +102,14 @@ export default async function AdminInboxPage() {
                         const slug = 'slug' in item && typeof item.slug === 'string' ? item.slug : null
                         return title || slug
                       }).filter(Boolean).join(', ')
-                      : 'General newsletter'}
+                      : t('generalNewsletter')}
                   </TableCell>
                 </TableRow>
               ))}
               {(newsletterSubscribers ?? []).length === 0 && (
                 <TableRow>
                   <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
-                    No newsletter subscribers yet.
+                    {t('emptyNewsletter')}
                   </TableCell>
                 </TableRow>
               )}

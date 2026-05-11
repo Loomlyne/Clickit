@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Plus, Search, Trash2, Pencil, ExternalLink, Star } from 'lucide-react'
 
 import {
@@ -18,7 +19,6 @@ import { ShortFormDrawer } from '@/components/admin/short-form-drawer'
 import {
   AdminPanel,
   AdminTableShell,
-  AdminToolbar,
 } from '@/components/admin/admin-shell'
 import { deleteShort, toggleShortFeatured } from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
@@ -31,6 +31,10 @@ interface ShortsTableProps {
 }
 
 export function ShortsTable({ shorts }: ShortsTableProps) {
+  const tDash = useTranslations('admin.dashboard')
+  const t = useTranslations('admin.shorts')
+  const tCommon = useTranslations('common')
+  const locale = useLocale()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingShort, setEditingShort] = useState<Short | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -57,9 +61,9 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
     setDeleting(false)
     setDeleteDialogOpen(false)
     if (result.success) {
-      toast.success('Short deleted')
+      toast.success(t('toastDeleted'))
     } else {
-      toast.error(result.error || 'Failed to delete')
+      toast.error(result.error || t('toastDeleteFailed'))
     }
   }
 
@@ -69,9 +73,9 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
     const result = await toggleShortFeatured(s.id, next)
     setTogglingId(null)
     if (result.success) {
-      toast.success(next ? 'Marked as featured' : 'Removed from featured')
+      toast.success(next ? t('toastFeaturedOn') : t('toastFeaturedOff'))
     } else {
-      toast.error(result.error || 'Failed to update')
+      toast.error(result.error || t('toastFeaturedFailed'))
     }
   }
 
@@ -79,11 +83,11 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
     s.expires_at && new Date(s.expires_at) < new Date()
 
   const formatExpiry = (expiresAt: string | null) => {
-    if (!expiresAt) return 'Never'
+    if (!expiresAt) return t('expiryNever')
     const d = new Date(expiresAt)
     const now = new Date()
-    if (d < now) return 'Expired'
-    return d.toLocaleDateString('en-AE', {
+    if (d < now) return t('expiryExpired')
+    return d.toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-AE', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -94,40 +98,44 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
     <>
       {/* Header */}
       <AdminPanel className="p-0">
-        <div className="p-5 md:p-6">
-          <AdminToolbar
-            eyebrow="Browse"
-            title="Quick Bites"
-            description={`YouTube Shorts that appear on the browse page. ${shorts.length} total.`}
-            actions={
-              <Button
-                onClick={() => {
-                  setEditingShort(null)
-                  setDrawerOpen(true)
-                }}
-                className="gap-2"
-              >
-                <Plus className="size-4" />
-                Add Short
-              </Button>
-            }
-          >
-            <div className="relative min-w-[240px] flex-1">
+        <div className="flex flex-col gap-3 border-b border-white/8 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-4 md:px-6">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+              {tDash('shorts')}
+            </h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {tDash('totalCountLabel', { count: shorts.length })}
+            </p>
+          </div>
+
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+            <div className="relative w-full min-w-0 sm:w-[280px]">
               <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
               <Input
-                placeholder="Search shorts..."
+                placeholder={t('searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
               />
             </div>
-          </AdminToolbar>
+
+            <Button
+              onClick={() => {
+                setEditingShort(null)
+                setDrawerOpen(true)
+              }}
+              className="w-full gap-2 sm:w-auto"
+            >
+              <Plus className="size-4" />
+              {t('addShort')}
+            </Button>
+          </div>
         </div>
 
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center border-t border-white/8 px-5 py-16 text-center md:px-6">
             <p className="text-muted-foreground mb-4">
-              {search ? 'No shorts match your search' : 'No shorts yet'}
+              {search ? t('emptySearch') : t('empty')}
             </p>
             {!search && (
               <Button
@@ -139,7 +147,7 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                 className="gap-2"
               >
                 <Plus className="size-4" />
-                Add your first short
+                {t('addFirstShort')}
               </Button>
             )}
           </div>
@@ -148,13 +156,12 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-16">Thumb</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Genre</TableHead>
-                  <TableHead>Order</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead className="w-20 text-center">Featured</TableHead>
-                  <TableHead className="w-24 text-right">Actions</TableHead>
+                  <TableHead className="w-16">{t('colThumb')}</TableHead>
+                  <TableHead>{t('colTitle')}</TableHead>
+                  <TableHead>{t('colGenre')}</TableHead>
+                  <TableHead>{t('colExpires')}</TableHead>
+                  <TableHead className="w-20 text-center">{t('colFeatured')}</TableHead>
+                  <TableHead className="w-24 text-right">{t('colActions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -190,9 +197,6 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                     <TableCell className="text-muted-foreground">
                       {s.genre || '—'}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {s.sort_order}
-                    </TableCell>
                     <TableCell>
                       <span
                         className={
@@ -211,7 +215,9 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                         className={`size-8 ${s.is_featured ? 'text-yellow-400 hover:text-yellow-300' : 'text-muted-foreground hover:text-yellow-400'}`}
                         disabled={togglingId === s.id}
                         onClick={() => handleToggleFeatured(s)}
-                        title={s.is_featured ? 'Remove from featured' : 'Mark as featured'}
+                        title={
+                          s.is_featured ? t('featuredRemove') : t('featuredMark')
+                        }
                       >
                         <Star className={`size-3.5 ${s.is_featured ? 'fill-yellow-400' : ''}`} />
                       </Button>
@@ -261,9 +267,11 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        title="Delete short"
-        description={`Permanently delete "${deletingShort?.title}"? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('deleteTitle')}
+        description={t('deleteDescription', {
+          title: deletingShort?.title ?? '',
+        })}
+        confirmLabel={tCommon('delete')}
         destructive
         loading={deleting}
         onConfirm={handleDelete}

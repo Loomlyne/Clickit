@@ -116,7 +116,6 @@ export type Database = {
       categories: {
         Row: {
           color: string | null
-          cover_url: string | null
           created_at: string
           icon: string | null
           id: string
@@ -128,7 +127,6 @@ export type Database = {
         }
         Insert: {
           color?: string | null
-          cover_url?: string | null
           created_at?: string
           icon?: string | null
           id?: string
@@ -140,7 +138,6 @@ export type Database = {
         }
         Update: {
           color?: string | null
-          cover_url?: string | null
           created_at?: string
           icon?: string | null
           id?: string

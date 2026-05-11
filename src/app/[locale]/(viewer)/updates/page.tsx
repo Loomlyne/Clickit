@@ -35,8 +35,8 @@ export default async function UpdatesPage({
         <p className="mt-4 max-w-2xl text-[16px] leading-7 text-[var(--text-dim)]">
           {showSlug
             ? (isArabic
-                ? `سنرسل لك تحديثات عند اقتراب إطلاق ${showSlug.replaceAll('-', ' ')} وأي أخبار مرتبطة به.`
-                : `We’ll send you updates when ${showSlug.replaceAll('-', ' ')} gets closer to release, plus any related announcements.`)
+                ? `سنرسل لك تحديثات عند اقتراب إطلاق ${showSlug.replace(/-/g, ' ')} وأي أخبار مرتبطة به.`
+                : `We’ll send you updates when ${showSlug.replace(/-/g, ' ')} gets closer to release, plus any related announcements.`)
             : (isArabic
                 ? 'اشترك للحصول على أخبار الإطلاق، الإصدارات الجديدة، والتحديثات التحريرية.'
                 : 'Subscribe for launch news, new-release drops, and editorial updates.')}
@@ -45,7 +45,7 @@ export default async function UpdatesPage({
           <NewsletterSignupForm
             source={showSlug ? 'coming-soon' : 'updates-page'}
             interestSlug={showSlug}
-            interestTitle={showSlug ? showSlug.replaceAll('-', ' ') : undefined}
+            interestTitle={showSlug ? showSlug.replace(/-/g, ' ') : undefined}
             defaultEmail={defaultEmail}
             buttonLabel={isArabic ? 'أرسل لي التحديثات' : 'Send me updates'}
             compact={false}

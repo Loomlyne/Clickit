@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslations } from 'next-intl'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
@@ -22,19 +23,18 @@ import type { Database } from '@/lib/database.types'
 
 type Short = Database['public']['Tables']['shorts']['Row']
 
-const formSchema = z.object({
-  youtube_url: z.string().min(1, 'YouTube URL is required'),
-  youtube_video_id: z.string().min(1),
-  title: z.string().min(1, 'Title is required'),
-  channel_name: z.string().optional().nullable(),
-  thumbnail_url: z.string().optional().nullable(),
-  duration_seconds: z.number().optional().nullable(),
-  genre: z.string().optional().nullable(),
-  sort_order: z.number().optional(),
-  expires_at: z.string().optional().nullable(),
-})
-
-type FormData = z.infer<typeof formSchema>
+function buildFormSchema(t: (key: string) => string) {
+  return z.object({
+    youtube_url: z.string().min(1, t('youtubeRequired')),
+    youtube_video_id: z.string().min(1),
+    title: z.string().min(1, t('titleRequired')),
+    channel_name: z.string().optional().nullable(),
+    thumbnail_url: z.string().optional().nullable(),
+    duration_seconds: z.number().optional().nullable(),
+    genre: z.string().optional().nullable(),
+    expires_at: z.string().optional().nullable(),
+  })
+}
 
 const GENRES = [
   'Travel', 'Health', 'Music', 'Comedy', 'Cooking',
@@ -48,6 +48,11 @@ interface ShortFormDrawerProps {
 }
 
 export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormDrawerProps) {
+  const t = useTranslations('admin.shortForm')
+  const tCommon = useTranslations('common')
+  const formSchema = useMemo(() => buildFormSchema(t), [t])
+  type FormData = z.infer<typeof formSchema>
+
   const isEditing = !!editingShort
   const [fetching, setFetching] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -70,7 +75,6 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
       thumbnail_url: '',
       duration_seconds: null,
       genre: '',
-      sort_order: 0,
       expires_at: '',
     },
   })
@@ -97,7 +101,6 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
         thumbnail_url: editingShort.thumbnail_url ?? '',
         duration_seconds: editingShort.duration_seconds,
         genre: editingShort.genre ?? '',
-        sort_order: editingShort.sort_order ?? 0,
         expires_at: editingShort.expires_at
           ? new Date(editingShort.expires_at).toISOString().slice(0, 16)
           : '',
@@ -111,7 +114,6 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
         thumbnail_url: '',
         duration_seconds: null,
         genre: '',
-        sort_order: 0,
         expires_at: '',
       })
     }
@@ -127,7 +129,7 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
       const res = await fetch(`/api/youtube-meta?url=${encodeURIComponent(url)}`)
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        toast.error(body.error || 'Failed to fetch video data')
+        toast.error(body.error || t('toastMetaFailed'))
         setFetching(false)
         return
       }
@@ -137,9 +139,9 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
       setValue('channel_name', meta.channelTitle)
       setValue('thumbnail_url', meta.thumbnail)
       setValue('duration_seconds', meta.durationSeconds)
-      toast.success('Metadata loaded')
+      toast.success(t('toastMetaLoaded'))
     } catch {
-      toast.error('Failed to fetch video data')
+      toast.error(t('toastMetaFailed'))
     }
     setFetching(false)
   }
@@ -155,7 +157,7 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
 
     const actionData = {
       ...payload,
-      sort_order: payload.sort_order ?? 0,
+      sort_order: isEditing ? (editingShort?.sort_order ?? 0) : 0,
       expires_at: expiresAt,
     }
     const result = isEditing
@@ -165,10 +167,10 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
     setSaving(false)
 
     if (result.success) {
-      toast.success(isEditing ? 'Short updated' : 'Short added')
+      toast.success(isEditing ? t('toastUpdated') : t('toastSaved'))
       onOpenChange(false)
     } else {
-      toast.error(result.error || 'Failed to save')
+      toast.error(result.error || t('toastSaveFailed'))
     }
   }
 
@@ -176,17 +178,17 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="sm:max-w-xl w-full p-0 flex flex-col">
         <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
-          <SheetTitle>{isEditing ? 'Edit Short' : 'Add Short'}</SheetTitle>
+          <SheetTitle>{isEditing ? t('editTitle') : t('addTitle')}</SheetTitle>
         </SheetHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {/* YouTube URL + Fetch */}
           <div className="space-y-2">
-            <Label htmlFor="youtube_url">YouTube Shorts URL</Label>
+            <Label htmlFor="youtube_url">{t('youtubeUrlLabel')}</Label>
             <div className="flex gap-2">
               <Input
                 id="youtube_url"
-                placeholder="https://youtube.com/shorts/..."
+                placeholder={t('youtubeUrlPlaceholder')}
                 {...register('youtube_url')}
                 className="flex-1"
               />
@@ -197,7 +199,7 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
                 disabled={fetching}
                 className="shrink-0"
               >
-                {fetching ? <Loader2 className="size-4 animate-spin" /> : 'Fetch'}
+                {fetching ? <Loader2 className="size-4 animate-spin" /> : t('fetch')}
               </Button>
             </div>
             {errors.youtube_url && (
@@ -210,13 +212,18 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
             <div className="flex items-start gap-4 rounded-lg border border-white/8 bg-white/[0.02] p-3">
               <img
                 src={thumbnailUrl}
-                alt="Thumbnail"
+                alt={t('thumbnailAlt')}
                 className="h-20 w-auto rounded object-cover"
               />
               <div className="text-xs text-muted-foreground space-y-1">
-                <div>Video ID: <code className="text-foreground">{videoId}</code></div>
+                <div>
+                  {t('videoIdLabel')}{' '}
+                  <code className="text-foreground">{videoId}</code>
+                </div>
                 {watch('duration_seconds') && (
-                  <div>Duration: {watch('duration_seconds')}s</div>
+                  <div>
+                    {t('durationLabel')} {watch('duration_seconds')}s
+                  </div>
                 )}
               </div>
             </div>
@@ -225,17 +232,19 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
           {/* Video ID — shown so admin can verify extraction worked */}
           {videoId && (
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Video ID (auto-extracted)</Label>
+              <Label className="text-xs text-muted-foreground">
+                {t('videoIdReadonlyLabel')}
+              </Label>
               <Input value={videoId} readOnly className="font-mono text-xs opacity-60" {...register('youtube_video_id')} />
             </div>
           )}
           {!videoId && youtubeUrl && (
-            <p className="text-sm text-red-400">Could not extract video ID — check the URL format.</p>
+            <p className="text-sm text-red-400">{t('extractError')}</p>
           )}
 
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">{t('titleLabel')}</Label>
             <Input id="title" {...register('title')} />
             {errors.title && (
               <p className="text-sm text-red-400">{errors.title.message}</p>
@@ -244,47 +253,36 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
 
           {/* Channel */}
           <div className="space-y-2">
-            <Label htmlFor="channel_name">Channel</Label>
+            <Label htmlFor="channel_name">{t('channelLabel')}</Label>
             <Input id="channel_name" {...register('channel_name')} />
           </div>
 
-          {/* Genre + Sort in a row */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Genre */}
+          <div className="space-y-2">
             <div className="space-y-2">
-              <Label htmlFor="genre">Genre</Label>
+              <Label htmlFor="genre">{t('genreLabel')}</Label>
               <select
                 id="genre"
                 {...register('genre')}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <option value="">None</option>
+                <option value="">{t('genreNone')}</option>
                 {GENRES.map((g) => (
                   <option key={g} value={g}>{g}</option>
                 ))}
               </select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="sort_order">Sort Order</Label>
-              <Input
-                id="sort_order"
-                type="number"
-                {...register('sort_order', { valueAsNumber: true })}
-              />
-              <p className="text-xs text-muted-foreground">Lower = first</p>
-            </div>
           </div>
 
           {/* Expiration */}
           <div className="space-y-2">
-            <Label htmlFor="expires_at">Expires At</Label>
+            <Label htmlFor="expires_at">{t('expiresLabel')}</Label>
             <Input
               id="expires_at"
               type="datetime-local"
               {...register('expires_at')}
             />
-            <p className="text-xs text-muted-foreground">
-              Leave empty for no expiration. Short disappears after this date.
-            </p>
+            <p className="text-xs text-muted-foreground">{t('expiresHint')}</p>
           </div>
         </form>
 
@@ -294,16 +292,16 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
             {saving ? (
               <Loader2 className="size-4 animate-spin" />
             ) : isEditing ? (
-              'Save Changes'
+              t('save')
             ) : (
-              'Add Short'
+              t('add')
             )}
           </Button>
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
           >
-            Cancel
+            {tCommon('cancel')}
           </Button>
         </div>
       </SheetContent>

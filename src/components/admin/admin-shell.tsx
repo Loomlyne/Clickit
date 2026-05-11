@@ -99,53 +99,6 @@ export function AdminBackLink({
   )
 }
 
-export function AdminToolbar({
-  eyebrow,
-  title,
-  description,
-  actions,
-  children,
-  className,
-}: {
-  eyebrow?: string
-  title: string
-  description?: string
-  actions?: ReactNode
-  children?: ReactNode
-  className?: string
-}) {
-  return (
-    <div
-      className={cn(
-        'flex flex-col gap-4 border-b border-white/8 pb-5 lg:flex-row lg:items-end lg:justify-between',
-        className
-      )}
-    >
-      <div>
-        {eyebrow && (
-          <p className="text-muted-foreground text-xs tracking-[0.18em] uppercase">
-            {eyebrow}
-          </p>
-        )}
-        <h2 className="text-foreground mt-2 text-xl font-semibold tracking-tight">
-          {title}
-        </h2>
-        {description && (
-          <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">
-            {description}
-          </p>
-        )}
-      </div>
-      {(actions || children) && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          {children}
-          {actions}
-        </div>
-      )}
-    </div>
-  )
-}
-
 export function AdminMetric({
   label,
   value,

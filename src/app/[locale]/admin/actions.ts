@@ -157,12 +157,6 @@ const categorySchema = z.object({
   name_ar: z.string().trim().min(1, 'Arabic name is required').max(80),
   slug: z.string().trim().min(1, 'Slug is required').max(80),
   icon: z.string().trim().max(40).optional().nullable(),
-  cover_url: z
-    .string()
-    .max(2000)
-    .nullish()
-    .transform((v) => (!v || v.trim() === '' ? null : v.trim()))
-    .refine((v) => v === null || /^https?:\/\/\S+$/.test(v), 'Must be a valid URL'),
   color: z
     .string()
     .trim()

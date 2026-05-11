@@ -1,5 +1,4 @@
 import { CategoriesManager } from '@/components/admin/categories-manager'
-import { AdminPageHeader } from '@/components/admin/admin-shell'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function CategoriesPage() {
@@ -28,12 +27,6 @@ export default async function CategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        eyebrow="Browse"
-        title="Categories"
-        description="Curate the browse rails, control their order, and assign shows from the show editor."
-      />
-
       <CategoriesManager initialCategories={categoriesWithCounts} />
     </div>
   )

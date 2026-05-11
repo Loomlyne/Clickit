@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Search, Trash2, ExternalLink } from 'lucide-react'
 import { Link } from '@/i18n/navigation'
 
@@ -18,7 +19,6 @@ import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import {
   AdminPanel,
   AdminTableShell,
-  AdminToolbar,
 } from '@/components/admin/admin-shell'
 import { deleteReview } from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
@@ -40,6 +40,10 @@ interface ReviewsTableProps {
 }
 
 export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
+  const tDash = useTranslations('admin.dashboard')
+  const t = useTranslations('admin.reviews')
+  const tCommon = useTranslations('common')
+  const locale = useLocale()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingReview, setDeletingReview] = useState<ReviewRow | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -63,9 +67,9 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
     setDeleting(false)
     setDeleteDialogOpen(false)
     if (result.success) {
-      toast.success('Review deleted')
+      toast.success(t('toastDeleted'))
     } else {
-      toast.error(result.error || 'Failed to delete')
+      toast.error(result.error || t('toastDeleteFailed'))
     }
   }
 
@@ -91,34 +95,37 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
     <>
       {/* Header */}
       <AdminPanel className="p-0">
-        <div className="p-5 md:p-6">
-          <AdminToolbar
-            eyebrow="Moderation"
-            title="Reviews"
-            description={`User reviews across all shows. ${reviews.length} total.`}
-          >
-            <div className="relative min-w-[240px] flex-1">
-              <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-              <Input
-                placeholder="Search reviews..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-          </AdminToolbar>
+        <div className="flex flex-col gap-3 border-b border-white/8 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-4 md:px-6">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+              {tDash('reviews')}
+            </h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {tDash('totalCountLabel', { count: reviews.length })}
+            </p>
+          </div>
+
+          <div className="relative w-full min-w-0 sm:w-[320px]">
+            <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+            <Input
+              placeholder={t('searchPlaceholder')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
 
         {loadError && (
           <div className="mx-5 mb-5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 md:mx-6">
-            Reviews could not be loaded completely. {loadError}
+            {t('loadErrorPrefix')} {loadError}
           </div>
         )}
 
         {filtered.length === 0 ? (
           <div className="border-t border-white/8 px-5 py-16 text-center md:px-6">
             <p className="text-muted-foreground">
-              {search ? 'No reviews match your search' : 'No reviews yet'}
+              {search ? t('emptySearch') : t('empty')}
             </p>
           </div>
         ) : (
@@ -126,12 +133,12 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Show</TableHead>
-                  <TableHead>Rating</TableHead>
-                  <TableHead className="max-w-[300px]">Review</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="w-16 text-right">Actions</TableHead>
+                  <TableHead>{t('colUser')}</TableHead>
+                  <TableHead>{t('colShow')}</TableHead>
+                  <TableHead>{t('colRating')}</TableHead>
+                  <TableHead className="max-w-[300px]">{t('colReview')}</TableHead>
+                  <TableHead>{t('colDate')}</TableHead>
+                  <TableHead className="w-16 text-right">{t('colActions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -145,7 +152,7 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
                             .toUpperCase()}
                         </div>
                         <span className="text-sm">
-                          {r.profiles?.display_name || 'Anonymous'}
+                          {r.profiles?.display_name || t('anonymous')}
                         </span>
                       </div>
                     </TableCell>
@@ -154,7 +161,7 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
                         href={`/series/${r.shows?.slug}`}
                         className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-sm"
                       >
-                        {r.shows?.title || 'Unknown'}
+                        {r.shows?.title || t('unknownShow')}
                         <ExternalLink className="size-3" />
                       </Link>
                     </TableCell>
@@ -167,10 +174,13 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
                       </p>
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      {new Date(r.created_at).toLocaleDateString('en-AE', {
+                      {new Date(r.created_at).toLocaleDateString(
+                        locale === 'ar' ? 'ar-AE' : 'en-AE',
+                        {
                         month: 'short',
                         day: 'numeric',
-                      })}
+                        }
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
@@ -197,9 +207,12 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        title="Delete review"
-        description={`Delete this review by ${deletingReview?.profiles?.display_name || 'Anonymous'}? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('deleteTitle')}
+        description={t('deleteDescription', {
+          name:
+            deletingReview?.profiles?.display_name || t('anonymous'),
+        })}
+        confirmLabel={tCommon('delete')}
         destructive
         loading={deleting}
         onConfirm={handleDelete}
