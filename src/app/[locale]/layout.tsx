@@ -6,6 +6,7 @@ import Script from 'next/script'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Geist } from 'next/font/google'
+import localFont from 'next/font/local'
 
 import '@/styles/globals.css'
 import { Toaster } from 'sonner'
@@ -18,6 +19,15 @@ const geistSans = Geist({
   subsets: ['latin'],
   variable: '--font-geist-sans',
   weight: ['300', '400', '500', '600', '700', '800'],
+  display: 'swap',
+})
+
+const lbc = localFont({
+  src: [
+    { path: '../../fonts/lbc-regular.ttf', weight: '400', style: 'normal' },
+    { path: '../../fonts/lbc-bold.ttf', weight: '700', style: 'normal' },
+  ],
+  variable: '--font-lbc',
   display: 'swap',
 })
 
@@ -91,7 +101,11 @@ export default async function LocaleLayout({
   const dir = dirFor(locale as Locale)
 
   return (
-    <html lang={locale} dir={dir} className={`dark ${geistSans.variable}`}>
+    <html
+      lang={locale}
+      dir={dir}
+      className={['dark', geistSans.variable, locale === 'ar' ? lbc.variable : null].filter(Boolean).join(' ')}
+    >
       <body className="bg-background text-foreground font-sans antialiased selection:bg-primary/70 selection:text-primary-foreground">
         <a
           href="#main"

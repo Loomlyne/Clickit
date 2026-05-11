@@ -190,6 +190,14 @@
   --color-text-muted: #6e6e6b;
 }
 
+/* Arabic locale: LBC for all stacks (body, display, mono-like slots). See --font-lbc in [locale]/layout.tsx */
+html[lang='ar'] {
+  --font-app: var(--font-lbc), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-ui: var(--font-app);
+  --font-display: var(--font-app);
+  --font-mono: var(--font-app);
+}
+
 /* ═══════════════════════════════════════════════════
    Base Layer
    ═══════════════════════════════════════════════════ */
