@@ -339,6 +339,48 @@
       "emptyNewsletter": "لا يوجد مشتركون بعد.",
       "generalNewsletter": "نشرة عامة"
     },
+    "categories": {
+      "addCategory": "إضافة تصنيف",
+      "colCategory": "التصنيف",
+      "colArabicName": "الاسم بالعربية",
+      "colColor": "اللون",
+      "colAssigned": "المعيّن",
+      "colActions": "إجراءات",
+      "empty": "لا توجد تصنيفات بعد.",
+      "eyebrowEdit": "تعديل التصنيف",
+      "eyebrowNew": "تصنيف جديد",
+      "titleEdit": "تحديث التصنيف",
+      "titleNew": "إنشاء تصنيف",
+      "closeEditorAria": "إغلاق محرر التصنيف",
+      "englishNameLabel": "الاسم بالإنجليزية",
+      "arabicNameLabel": "الاسم بالعربية",
+      "slugLabel": "المعرّف (Slug)",
+      "placeholderEnglish": "Documentary",
+      "placeholderArabic": "وثائقي",
+      "placeholderSlug": "documentary",
+      "saving": "جاري الحفظ…",
+      "saveCategory": "حفظ التصنيف",
+      "createCategory": "إنشاء التصنيف",
+      "toastSaveFailed": "فشل حفظ التصنيف",
+      "toastUpdated": "تم تحديث التصنيف",
+      "toastCreated": "تم إنشاء التصنيف",
+      "toastDeleteFailed": "فشل حذف التصنيف",
+      "toastDeleted": "تم حذف التصنيف",
+      "colorPickerOpen": "فتح منتقي الألوان",
+      "colorHexAria": "قيمة اللون السداسية",
+      "colorClear": "مسح",
+      "editAria": "تعديل {name}",
+      "deleteAria": "حذف {name}"
+    },
+    "newShow": {
+      "backToShows": "العودة إلى البرامج",
+      "description": "أدخل التفاصيل لإضافة برنامج جديد إلى المنصة."
+    },
+    "editShow": {
+      "backToShow": "العودة إلى {title}",
+      "title": "تعديل البرنامج",
+      "description": "تعديل \"{title}\""
+    },
     "shortForm": {
       "addTitle": "إضافة قصيرة",
       "editTitle": "تعديل القصيرة",

@@ -334,6 +334,48 @@
       "emptyNewsletter": "No newsletter subscribers yet.",
       "generalNewsletter": "General newsletter"
     },
+    "categories": {
+      "addCategory": "Add category",
+      "colCategory": "Category",
+      "colArabicName": "Arabic name",
+      "colColor": "Color",
+      "colAssigned": "Assigned",
+      "colActions": "Actions",
+      "empty": "No categories yet.",
+      "eyebrowEdit": "Edit category",
+      "eyebrowNew": "New category",
+      "titleEdit": "Update category",
+      "titleNew": "Create category",
+      "closeEditorAria": "Close category editor",
+      "englishNameLabel": "English name",
+      "arabicNameLabel": "Arabic name",
+      "slugLabel": "Slug",
+      "placeholderEnglish": "Documentary",
+      "placeholderArabic": "وثائقي",
+      "placeholderSlug": "documentary",
+      "saving": "Saving…",
+      "saveCategory": "Save category",
+      "createCategory": "Create category",
+      "toastSaveFailed": "Failed to save category",
+      "toastUpdated": "Category updated",
+      "toastCreated": "Category created",
+      "toastDeleteFailed": "Failed to delete category",
+      "toastDeleted": "Category deleted",
+      "colorPickerOpen": "Open color picker",
+      "colorHexAria": "Hex color value",
+      "colorClear": "Clear",
+      "editAria": "Edit {name}",
+      "deleteAria": "Delete {name}"
+    },
+    "newShow": {
+      "backToShows": "Back to Shows",
+      "description": "Fill in the details to add a new show to the platform."
+    },
+    "editShow": {
+      "backToShow": "Back to {title}",
+      "title": "Edit Show",
+      "description": "Editing \"{title}\""
+    },
     "shortForm": {
       "addTitle": "Add Short",
       "editTitle": "Edit Short",

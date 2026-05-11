@@ -55,6 +55,7 @@ function ColorPicker({
   value: string | null
   onChange: (color: string | null) => void
 }) {
+  const t = useTranslations('admin.categories')
   const [rawInput, setRawInput] = useState(value ?? '')
 
   useEffect(() => {
@@ -94,7 +95,7 @@ function ColorPicker({
             value={previewColor ?? '#000000'}
             onChange={handleNativeColor}
             className="absolute inset-0 cursor-pointer opacity-0"
-            aria-label="Open color picker"
+            aria-label={t('colorPickerOpen')}
           />
         </div>
 
@@ -104,7 +105,7 @@ function ColorPicker({
           placeholder="#F8C623"
           maxLength={7}
           className="w-32 font-mono text-sm"
-          aria-label="Hex color value"
+          aria-label={t('colorHexAria')}
           spellCheck={false}
         />
 
@@ -114,7 +115,7 @@ function ColorPicker({
             onClick={() => { onChange(null); setRawInput('') }}
             className="text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
-            Clear
+            {t('colorClear')}
           </button>
         )}
 
@@ -145,25 +146,33 @@ function CategoryEditor({
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => Promise<void>
   onDraftChange: React.Dispatch<React.SetStateAction<CategoryDraft>>
 }) {
+  const t = useTranslations('admin.categories')
+  const tCommon = useTranslations('common')
   return (
     <form onSubmit={onSubmit} className="rounded-lg border border-white/8 bg-white/[0.02] p-4 md:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            {editing ? 'Edit category' : 'New category'}
+            {editing ? t('eyebrowEdit') : t('eyebrowNew')}
           </p>
           <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
-            {editing ? 'Update category' : 'Create category'}
+            {editing ? t('titleEdit') : t('titleNew')}
           </h3>
         </div>
-        <Button type="button" variant="ghost" size="icon-sm" onClick={onCancel} aria-label="Close category editor">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={onCancel}
+          aria-label={t('closeEditorAria')}
+        >
           <X className="size-4" />
         </Button>
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-[1fr_1fr_0.9fr]">
         <div className="space-y-1.5">
-          <Label htmlFor="category-name-en">English name</Label>
+          <Label htmlFor="category-name-en">{t('englishNameLabel')}</Label>
           <Input
             id="category-name-en"
             value={draft.name_en}
@@ -175,30 +184,30 @@ function CategoryEditor({
                 slug: editing ? current.slug : generateSlug(name_en),
               }))
             }}
-            placeholder="Documentary"
+            placeholder={t('placeholderEnglish')}
             required
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="category-name-ar">Arabic name</Label>
+          <Label htmlFor="category-name-ar">{t('arabicNameLabel')}</Label>
           <Input
             id="category-name-ar"
             dir="rtl"
             value={draft.name_ar}
             onChange={(event) => onDraftChange((current) => ({ ...current, name_ar: event.target.value }))}
-            placeholder="وثائقي"
+            placeholder={t('placeholderArabic')}
             required
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="category-slug">Slug</Label>
+          <Label htmlFor="category-slug">{t('slugLabel')}</Label>
           <Input
             id="category-slug"
             value={draft.slug}
             onChange={(event) => onDraftChange((current) => ({ ...current, slug: generateSlug(event.target.value) }))}
-            placeholder="documentary"
+            placeholder={t('placeholderSlug')}
             required
           />
         </div>
@@ -219,10 +228,10 @@ function CategoryEditor({
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
         <Button type="submit" disabled={saving}>
-          {saving ? 'Saving...' : editing ? 'Save category' : 'Create category'}
+          {saving ? t('saving') : editing ? t('saveCategory') : t('createCategory')}
         </Button>
         <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
+          {tCommon('cancel')}
         </Button>
       </div>
     </form>
@@ -231,6 +240,7 @@ function CategoryEditor({
 
 export function CategoriesManager({ initialCategories }: { initialCategories: CategoryRecord[] }) {
   const t = useTranslations('admin.dashboard')
+  const tCat = useTranslations('admin.categories')
   const [categories, setCategories] = useState(initialCategories)
   const [draft, setDraft] = useState<CategoryDraft>(EMPTY_DRAFT)
   const [editorState, setEditorState] = useState<EditorState>(null)
@@ -286,7 +296,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
     setSaving(false)
 
     if (!result.success || !result.data) {
-      toast.error(result.error ?? 'Failed to save category')
+      toast.error(result.error ?? tCat('toastSaveFailed'))
       return
     }
 
@@ -295,10 +305,10 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
       setCategories((current) => current.map((category) => (
         category.id === editingId ? nextCategory : category
       )))
-      toast.success('Category updated')
+      toast.success(tCat('toastUpdated'))
     } else {
       setCategories((current) => [...current, nextCategory].sort((a, b) => a.sort_order - b.sort_order))
-      toast.success('Category created')
+      toast.success(tCat('toastCreated'))
     }
 
     resetEditor()
@@ -310,13 +320,13 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
     setDeletingId(null)
 
     if (!result.success) {
-      toast.error(result.error ?? 'Failed to delete category')
+      toast.error(result.error ?? tCat('toastDeleteFailed'))
       return
     }
 
     setCategories((current) => current.filter((category) => category.id !== id))
     if (editingId === id) resetEditor()
-    toast.success('Category deleted')
+    toast.success(tCat('toastDeleted'))
   }
 
   return (
@@ -332,7 +342,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
         </div>
         <Button type="button" className="w-full shrink-0 sm:w-auto" onClick={startCreate}>
           <Plus className="size-4" />
-          Add category
+          {tCat('addCategory')}
         </Button>
       </div>
 
@@ -340,11 +350,11 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Category</TableHead>
-              <TableHead className="hidden md:table-cell">Arabic name</TableHead>
-              <TableHead className="hidden w-36 md:table-cell">Color</TableHead>
-              <TableHead className="w-32">Assigned</TableHead>
-              <TableHead className="w-44 text-right">Actions</TableHead>
+              <TableHead>{tCat('colCategory')}</TableHead>
+              <TableHead className="hidden md:table-cell">{tCat('colArabicName')}</TableHead>
+              <TableHead className="hidden w-36 md:table-cell">{tCat('colColor')}</TableHead>
+              <TableHead className="w-32">{tCat('colAssigned')}</TableHead>
+              <TableHead className="w-44 text-right">{tCat('colActions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -366,7 +376,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
             {categories.length === 0 && !isCreateOpen && (
               <TableRow>
                 <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
-                  No categories yet.
+                  {tCat('empty')}
                 </TableCell>
               </TableRow>
             )}
@@ -401,7 +411,13 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
                     <TableCell className="text-muted-foreground">{category.showCount}</TableCell>
                     <TableCell>
                       <div className="flex min-w-[120px] items-center justify-end gap-1">
-                        <Button type="button" variant="ghost" size="icon-sm" onClick={() => startEdit(category)} aria-label={`Edit ${category.name_en}`}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => startEdit(category)}
+                          aria-label={tCat('editAria', { name: category.name_en })}
+                        >
                           <Pencil className="size-4" />
                         </Button>
                         <Button
@@ -411,7 +427,7 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
                           className="text-red-400 hover:text-red-300"
                           disabled={deletingId === category.id}
                           onClick={() => handleDelete(category.id)}
-                          aria-label={`Delete ${category.name_en}`}
+                          aria-label={tCat('deleteAria', { name: category.name_en })}
                         >
                           <Trash2 className="size-4" />
                         </Button>

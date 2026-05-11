@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { ShowForm } from '@/components/admin/show-form'
@@ -11,7 +12,7 @@ export default async function EditShowPage({
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: show }, { data: categories }, { data: showCategories }] =
+  const [{ data: show }, { data: categories }, { data: showCategories }, tEdit] =
     await Promise.all([
       supabase.from('shows').select('*').eq('id', id).single(),
       supabase
@@ -20,6 +21,7 @@ export default async function EditShowPage({
         .order('sort_order', { ascending: true })
         .order('created_at', { ascending: true }),
       supabase.from('show_categories').select('category_id').eq('show_id', id),
+      getTranslations('admin.editShow'),
     ])
 
   if (!show) notFound()
@@ -27,12 +29,12 @@ export default async function EditShowPage({
   return (
     <div className="space-y-6">
       <AdminBackLink href={`/admin/shows/${id}`}>
-        Back to {show.title}
+        {tEdit('backToShow', { title: show.title })}
       </AdminBackLink>
 
       <AdminPageHeader
-        title="Edit Show"
-        description={`Editing "${show.title}"`}
+        title={tEdit('title')}
+        description={tEdit('description', { title: show.title })}
       />
 
       <ShowForm

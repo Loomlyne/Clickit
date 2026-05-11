@@ -153,6 +153,7 @@ export function EpisodeRow({
   if (isPublished && isCurrentEpisode) {
     return (
       <div
+        id={`episode-${episode.id}`}
         aria-current="true"
         className="group flex cursor-default items-start gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--bg-1)] p-4"
         style={{
@@ -168,6 +169,7 @@ export function EpisodeRow({
     return (
       <motion.div whileTap={{ scale: 0.985 }} transition={{ duration: 0.15 }}>
         <Link
+          id={`episode-${episode.id}`}
           href={`/watch/${episode.id}`}
           className="group flex cursor-pointer items-start gap-4 rounded-[20px] border border-transparent p-4 transition-colors duration-200 hover:border-[var(--line)] hover:bg-[var(--bg-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >

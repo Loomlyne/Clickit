@@ -3,6 +3,7 @@ import { getAppConfig } from '@/lib/config'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { SmoothScroll } from '@/components/providers/smooth-scroll'
+import { ViewerScrollPersistence } from '@/components/providers/viewer-scroll-persistence'
 import { PageTransition } from '@/components/layout/page-transition'
 import { ViewerSilkBackground } from '@/components/layout/viewer-silk-background'
 import { MarqueeTicker } from '@/components/landing/marquee-ticker'
@@ -26,6 +27,7 @@ export default async function ViewerLayout({
     <>
       <ViewerSilkBackground />
       <SmoothScroll>
+        <ViewerScrollPersistence />
         {/* z-[2] wrapper pushes all content above the fixed silk (z-1) */}
         <div className="relative z-[2]">
           <MarqueeTicker ticker={config.topTicker} />
