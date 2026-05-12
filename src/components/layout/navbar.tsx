@@ -117,9 +117,6 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
       <nav className="hidden items-center gap-[22px] md:flex">
         {!isLanding && (
           <>
-            <Link href="/watch" className={navLinkClass(pathname === '/watch')}>
-              Watch
-            </Link>
             {(() => {
               const liveHref = liveNavHref(liveStreamUrl)
               const external = liveNavIsExternal(liveHref)
@@ -146,6 +143,9 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
                 </Link>
               )
             })()}
+            <Link href="/watch" className={navLinkClass(pathname === '/watch')}>
+              Watch
+            </Link>
             <Link
               href="/support"
               className={navLinkClass(pathname === '/support')}

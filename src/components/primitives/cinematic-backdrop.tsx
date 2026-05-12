@@ -120,7 +120,7 @@ export function CinematicBackdrop({
   const mobileUsesDesktopVideo = !mobileHasVideo && desktopHasVideo
 
   return (
-    <div className={`absolute inset-0 overflow-hidden${className ? ` ${className}` : ''}`}>
+    <div className={`pointer-events-none absolute inset-0 overflow-hidden${className ? ` ${className}` : ''}`}>
       {/* Layer 1: solid black base */}
       <div className="absolute inset-0 bg-black" />
 

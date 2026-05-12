@@ -103,7 +103,7 @@ export default async function WatchPage({
       {streaming.length > 0 && (
         <ContentRail
           sectionId="now-streaming"
-          title="Now streaming"
+          title="PROGRAMS"
           shows={streaming}
           seeAllHref="/watch"
         />

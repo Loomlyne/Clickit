@@ -105,8 +105,8 @@ export function WatchShell({
   )
 
   const { isIdle, resetTimer } = useIdleTimer(3000, {
-    initialIdle: true,
-    startOnMount: false,
+    initialIdle: false,
+    startOnMount: true,
     disabled: isPaused,
   })
   const chromeClass = isIdle
