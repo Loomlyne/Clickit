@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import { mapAuthError } from '@/lib/auth-errors'
 import { signInAction } from '@/app/[locale]/(viewer)/auth/actions'
 
