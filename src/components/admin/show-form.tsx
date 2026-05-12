@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Lock } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { useRouter } from '@/i18n/navigation'
 
 import { Input } from '@/components/ui/input'
@@ -146,9 +146,22 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
   const watchedTitle = form.watch('title')
   useEffect(() => {
     if (!isEdit && watchedTitle) {
-      form.setValue('slug', generateSlug(watchedTitle))
+      form.setValue(
+        'slug',
+        generateSlug(watchedTitle, `show-${generatedId.slice(0, 8)}`)
+      )
     }
-  }, [watchedTitle, isEdit, form])
+  }, [watchedTitle, isEdit, form, generatedId])
+
+  function regenerateSlug() {
+    const title = form.getValues('title')
+    const id = isEdit ? show.id : generatedId
+    form.setValue(
+      'slug',
+      generateSlug(title ?? '', `show-${id.slice(0, 8)}`),
+      { shouldDirty: true, shouldValidate: true }
+    )
+  }
 
   async function onSubmit(data: ShowFormData) {
     const normalized: ShowFormData & { id?: string } = {
@@ -203,15 +216,18 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
         </div>
 
         <Field label="Slug" required error={errors.slug?.message}>
-          <div className="relative">
-            <Input
-              {...form.register('slug')}
-              disabled={isEdit}
-              className={isEdit ? 'pe-8 opacity-70' : ''}
-            />
-            {isEdit && <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />}
+          <div className="flex gap-2">
+            <Input {...form.register('slug')} className="flex-1" />
+            <button
+              type="button"
+              onClick={regenerateSlug}
+              className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+              title="Regenerate slug from title"
+            >
+              <RefreshCw className="size-3.5" /> Regen
+            </button>
           </div>
-          {!isEdit && <p className="text-xs text-muted-foreground mt-1">Auto-generated from title</p>}
+          <p className="text-xs text-muted-foreground mt-1">Auto-generated from title. Editable.</p>
         </Field>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">

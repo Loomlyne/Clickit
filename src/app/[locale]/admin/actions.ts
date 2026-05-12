@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { validateYouTubeUrl } from '@/lib/youtube'
 import { logAudit } from '@/lib/audit'
+import { generateSlug } from '@/lib/slug'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -282,6 +283,17 @@ export async function updateShow(
 
     const { id: _parsedId, category_ids, ...updateData } = parsed
     void _parsedId
+
+    // Defense: normalize the slug; if it strips to empty (e.g. user typed only
+    // non-ASCII chars), regenerate from title; if title also empties, fall back
+    // to the show's id prefix. Prevents save with a slug that would 404.
+    const normalizedSlug = generateSlug(
+      updateData.slug,
+      generateSlug(updateData.title ?? '', `show-${id.slice(0, 8)}`)
+    )
+    if (normalizedSlug && normalizedSlug !== updateData.slug) {
+      updateData.slug = normalizedSlug
+    }
 
     const { data: show, error } = await admin
       .from('shows')

@@ -1,9 +1,22 @@
-export function generateSlug(title: string): string {
-  return title
+const SLUG_MAX_LENGTH = 60
+
+export function generateSlug(title: string, fallback?: string): string {
+  const base = title
     .toLowerCase()
     .trim()
-    .replace(/[^\w\s-]/g, '') // Remove non-word chars (also strips Arabic)
-    .replace(/\s+/g, '-')     // Replace spaces with hyphens
-    .replace(/-+/g, '-')      // Collapse multiple hyphens
-    .replace(/^-|-$/g, '')    // Trim leading/trailing hyphens
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, SLUG_MAX_LENGTH)
+    .replace(/-+$/, '')
+  return base || fallback || ''
+}
+
+export function dedupeSlug(base: string, takenSlugs: Set<string>): string {
+  if (!takenSlugs.has(base)) return base
+  for (let i = 2; ; i++) {
+    const candidate = `${base}-${i}`
+    if (!takenSlugs.has(candidate)) return candidate
+  }
 }
