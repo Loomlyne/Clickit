@@ -38,8 +38,6 @@ export function DragScroll({
     startXRef.current = event.clientX
     startScrollLeftRef.current = track.scrollLeft
     dragDistanceRef.current = 0
-    track.setPointerCapture(event.pointerId)
-    track.dataset.dragging = 'true'
   }
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
@@ -53,6 +51,18 @@ export function DragScroll({
       dragDistanceRef.current,
       Math.abs(deltaX)
     )
+
+    // Defer pointer capture until the user actually drags past the threshold.
+    // Capturing on pointerdown reroutes the synthetic click event to this track
+    // and prevents child onClick / Link navigation from firing.
+    if (
+      dragDistanceRef.current > DRAG_THRESHOLD &&
+      !track.hasPointerCapture(event.pointerId)
+    ) {
+      track.setPointerCapture(event.pointerId)
+      track.dataset.dragging = 'true'
+    }
+
     track.scrollLeft = startScrollLeftRef.current - deltaX
   }
 
