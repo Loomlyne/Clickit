@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -41,8 +41,6 @@ export function SeasonFormDrawer({
   const t = useTranslations('admin.seasonForm')
   const tCommon = useTranslations('common')
   const tErrors = useTranslations('errors')
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
 
   const form = useForm<SeasonFormData>({
     resolver: zodResolver(seasonFormSchema),
@@ -78,11 +76,11 @@ export function SeasonFormDrawer({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="sm:max-w-md w-full p-0 flex flex-col">
         <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
-          <SheetTitle className="text-lg">{isEdit ? (isArabic ? 'تعديل الموسم' : 'Edit Season') : t('createSeason')}</SheetTitle>
+          <SheetTitle className="text-lg">{isEdit ? t('editSeason') : t('createSeason')}</SheetTitle>
           <p className="text-sm text-muted-foreground">
             {isEdit
-              ? (isArabic ? `تعديل "${season.title}"` : `Editing "${season.title}"`)
-              : (isArabic ? `الموسم #${nextSeasonNumber}` : `Season #${nextSeasonNumber}`)}
+              ? t('editingSeason', { title: season.title })
+              : t('seasonNumberDescription', { number: nextSeasonNumber })}
           </p>
         </SheetHeader>
 
@@ -90,7 +88,7 @@ export function SeasonFormDrawer({
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
             <div className="space-y-1.5">
               <Label className="text-sm">{t('titleLabel')}<span className="text-destructive ms-0.5">*</span></Label>
-              <Input {...form.register('title')} placeholder={isArabic ? 'مثلاً: الموسم الأول' : 'e.g., Season 1'} />
+              <Input {...form.register('title')} placeholder={t('titlePlaceholder')} />
               {errors.title && <p className="text-xs text-destructive">{tErrors(errors.title.message as never)}</p>}
             </div>
 
@@ -112,7 +110,7 @@ export function SeasonFormDrawer({
               onClick={() => onOpenChange(false)}
               className="rounded-full border border-white/20 bg-transparent px-5 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5"
             >
-              {isArabic ? 'تجاهل التغييرات' : 'Discard Changes'}
+              {t('discardChanges')}
             </button>
             <button
               type="submit"
@@ -120,7 +118,7 @@ export function SeasonFormDrawer({
               className="rounded-full bg-white px-6 py-2 text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:opacity-50"
             >
               {form.formState.isSubmitting
-                ? (isArabic ? 'جارٍ الحفظ…' : 'Saving...')
+                ? t('savingLabel')
                 : isEdit
                   ? t('saveSeason')
                   : t('createSeason')}

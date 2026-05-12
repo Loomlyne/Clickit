@@ -46,7 +46,7 @@ export default function TypographyPage() {
   return (
     <div className="space-y-8">
       <section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">Type system</h2>
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">{'Type system'}</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           <div className="rounded-[28px] border border-white/10 bg-black/20 p-5">
             <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Titles · all locales</p>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import { Plus, Trash2, Loader2, Camera, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +19,8 @@ interface CastEditorProps {
 }
 
 export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
+  const t = useTranslations('admin.castEditor')
+  const tCommon = useTranslations('common')
   const [cast, setCast] = useState(initialCast)
   const [adding, setAdding] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
@@ -55,7 +58,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
       const uploadResult = await uploadCastImage(formData)
       if (!uploadResult.success) {
         setAdding(false)
-        toast.error(uploadResult.error || 'Failed to upload image')
+        toast.error(uploadResult.error || t('toastImageUploadFailed'))
         return
       }
       uploadedImageUrl = uploadResult.data ?? null
@@ -72,9 +75,9 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
     if (result.success && result.data) {
       setCast((prev) => [...prev, result.data as CastMember])
       resetForm()
-      toast.success('Cast member added')
+      toast.success(t('toastMemberAdded'))
     } else {
-      toast.error(result.error || 'Failed to add')
+      toast.error(result.error || t('toastAddFailed'))
     }
   }
 
@@ -82,12 +85,12 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
     const file = event.target.files?.[0]
     if (!file) return
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-      toast.error('Only PNG, JPEG, or WebP images are allowed')
+      toast.error(t('toastInvalidImage'))
       event.target.value = ''
       return
     }
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image must be under 2MB')
+      toast.error(t('toastImageTooLarge'))
       event.target.value = ''
       return
     }
@@ -111,9 +114,9 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
     setDeletingId(null)
     if (result.success) {
       setCast((prev) => prev.filter((c) => c.id !== id))
-      toast.success('Cast member removed')
+      toast.success(t('toastMemberRemoved'))
     } else {
-      toast.error(result.error || 'Failed to remove')
+      toast.error(result.error || t('toastRemoveFailed'))
     }
   }
 
@@ -121,8 +124,8 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-medium">Cast &amp; Crew</h3>
-          <p className="text-xs text-muted-foreground">{cast.length} members</p>
+          <h3 className="text-sm font-medium">{t('heading')}</h3>
+          <p className="text-xs text-muted-foreground">{t('membersCount', { count: cast.length })}</p>
         </div>
         <Button
           variant="outline"
@@ -131,7 +134,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
           className="gap-1.5"
         >
           <Plus className="size-3.5" />
-          Add
+          {t('add')}
         </Button>
       </div>
 
@@ -150,7 +153,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
                   {imagePreview ? (
                     <Image
                       src={imagePreview}
-                      alt="Cast member preview"
+                      alt={t('previewAlt')}
                       fill
                       unoptimized
                       className="object-cover"
@@ -173,7 +176,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
                     type="button"
                     onClick={clearImage}
                     className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white transition-colors hover:bg-black"
-                    aria-label="Remove image"
+                    aria-label={t('removeImageAria')}
                   >
                     <X className="size-3.5" />
                   </button>
@@ -190,34 +193,34 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
 
             <div className="grid flex-1 gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
-                <Label className="text-xs">Name *</Label>
+                <Label className="text-xs">{t('nameLabel')}</Label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Ahmed Al Mansoori"
+                  placeholder={t('namePlaceholder')}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Role</Label>
+                <Label className="text-xs">{t('roleLabel')}</Label>
                 <Input
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  placeholder="e.g. Host, Director"
+                  placeholder={t('rolePlaceholder')}
                 />
               </div>
               <div className="md:col-span-2">
                 <p className="text-xs text-[var(--text-mute)]">
-                  Upload image, PNG, JPEG, or WebP, max 2MB
+                  {t('uploadHint')}
                 </p>
               </div>
             </div>
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleAdd} disabled={!name.trim() || adding}>
-              {adding ? <Loader2 className="size-3.5 animate-spin" /> : 'Add member'}
+              {adding ? <Loader2 className="size-3.5 animate-spin" /> : t('addMember')}
             </Button>
             <Button size="sm" variant="ghost" onClick={resetForm}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
           </div>
         </div>
@@ -269,7 +272,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
       ) : (
         !formOpen && (
           <div className="rounded-lg border border-dashed border-white/12 py-8 text-center text-sm text-muted-foreground">
-            No cast members yet
+            {t('empty')}
           </div>
         )
       )}

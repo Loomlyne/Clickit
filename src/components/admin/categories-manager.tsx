@@ -79,7 +79,7 @@ function ColorPicker({
 
   return (
     <div className="space-y-3">
-      <Label>Category color</Label>
+      <Label>{t('colorLabel')}</Label>
 
       <div className="flex items-center gap-2">
         <div className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-md border border-white/15">

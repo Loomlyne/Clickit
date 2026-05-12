@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -19,8 +19,7 @@ type Values = {
 export function SiteMetadataEditor({ initial }: { initial: Values }) {
   const [values, setValues] = useState<Values>(initial)
   const [saving, setSaving] = useState(false)
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('admin.settings')
 
   const dirty =
     values.site_title !== initial.site_title ||
@@ -36,28 +35,26 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
       site_tagline: values.site_tagline,
     })
     setSaving(false)
-    if (result.success) toast.success(isArabic ? 'تم حفظ بيانات الموقع' : 'Site metadata saved')
-    else toast.error(result.error ?? (isArabic ? 'تعذّر الحفظ' : 'Failed to save'))
+    if (result.success) toast.success(t('siteMetadataSaved'))
+    else toast.error(result.error ?? t('saveFailed'))
   }
 
   return (
     <SettingsCard
-      title={isArabic ? 'بيانات الموقع' : 'Site metadata'}
-      description={isArabic
-        ? 'يتحكّم في عنوان علامة تبويب المتصفح ووصف محركات البحث والشعار تحت اللوغو.'
-        : 'Controls the browser tab title, search-engine description, and the tagline under the logo.'}
+      title={t('siteMetadataTitle')}
+      description={t('siteMetadataDescription')}
     >
       <form onSubmit={onSave} className="grid gap-4 md:grid-cols-2">
-        <SettingsField label={isArabic ? 'عنوان الموقع' : 'Site title'} hint={isArabic ? 'يظهر في <title> وعلامات تبويب المتصفح.' : 'Shown in <title> and browser tabs.'}>
+        <SettingsField label={t('siteTitleLabel')} hint={t('siteTitleHint')}>
           <Input
             value={values.site_title}
             onChange={(e) => setValues((v) => ({ ...v, site_title: e.target.value }))}
-            placeholder="Clickit Story"
+            placeholder={t('siteTitlePlaceholder')}
             maxLength={120}
           />
         </SettingsField>
 
-        <SettingsField label={isArabic ? 'شعار الموقع' : 'Site tagline'} hint={isArabic ? 'جملة قصيرة تظهر بجانب اللوغو.' : 'Short hook shown next to the logo.'}>
+        <SettingsField label={t('siteTaglineLabel')} hint={t('siteTaglineHint')}>
           <Input
             value={values.site_tagline}
             onChange={(e) => setValues((v) => ({ ...v, site_tagline: e.target.value }))}
@@ -67,13 +64,13 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
         </SettingsField>
 
         <SettingsField
-          label={isArabic ? 'وصف SEO' : 'SEO description'}
-          hint={isArabic ? 'يُستخدم في meta description + معاينة Open Graph (150-300 حرف مثالي).' : 'Used in meta description + Open Graph preview (150-300 chars ideal).'}
+          label={t('seoDescriptionLabel')}
+          hint={t('seoDescriptionHint')}
         >
           <Textarea
             value={values.site_description}
             onChange={(e) => setValues((v) => ({ ...v, site_description: e.target.value }))}
-            placeholder={isArabic ? 'موطن بثّ للمسلسلات الأصلية من أبوظبي…' : 'A streaming home for original series from Abu Dhabi…'}
+            placeholder={t('seoDescriptionPlaceholder')}
             maxLength={300}
             rows={3}
             className="rounded-[12px] md:col-span-2"
@@ -82,7 +79,7 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
 
         <div className="flex items-center justify-end md:col-span-2">
           <Button type="submit" disabled={!dirty || saving}>
-            {saving ? <Loader2 className="size-4 animate-spin" /> : (isArabic ? 'حفظ البيانات' : 'Save metadata')}
+            {saving ? <Loader2 className="size-4 animate-spin" /> : t('saveMetadata')}
           </Button>
         </div>
       </form>

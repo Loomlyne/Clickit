@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Play } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -55,6 +56,7 @@ export function YouTubePlayer({
   onStateChange,
   onError,
 }: YouTubePlayerProps) {
+  const t = useTranslations('player')
   const containerRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<YT.Player | null>(null)
 
@@ -120,18 +122,18 @@ export function YouTubePlayer({
   // Error message content
   function getErrorMessage(code: number): string {
     if (code === 101 || code === 150) {
-      return 'This video is currently unavailable. Try again later.'
+      return t('errorVideoUnavailableRetry')
     }
     if (code === 100) {
-      return 'Video not found. It may have been removed.'
+      return t('errorVideoNotFound')
     }
-    return 'Something went wrong loading this video. Please refresh the page.'
+    return t('errorPlayerRefresh')
   }
 
   return (
     <div
       role="region"
-      aria-label="Video player"
+      aria-label={t('videoPlayerAria')}
       className="relative w-full aspect-video min-h-[200px] bg-black"
     >
       {/* Loading state — absolute overlay */}

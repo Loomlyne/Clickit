@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -28,14 +29,14 @@ import { createShow, updateShow } from '@/app/[locale]/admin/actions'
 import type { Database } from '@/lib/database.types'
 
 const showFormSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  title: z.string().min(1, 'titleRequired'),
   title_ar: z.string().optional().nullable(),
-  slug: z.string().min(1, 'Slug is required'),
-  description: z.string().min(1, 'Description is required'),
+  slug: z.string().min(1, 'slugRequired'),
+  description: z.string().min(1, 'descriptionRequired'),
   description_ar: z.string().optional().nullable(),
   tagline: z.string().optional().nullable(),
   tagline_ar: z.string().optional().nullable(),
-  genre: z.string().min(1, 'Genre is required'),
+  genre: z.string().min(1, 'genreRequired'),
   brand_color: z.enum(['brand-blue', 'brand-purple', 'brand-green', 'brand-red', 'brand-orange']),
   status: z.enum(['draft', 'coming-soon', 'now-streaming']),
   broadcast_day: z.string().optional().nullable(),
@@ -55,20 +56,22 @@ type ShowFormData = z.infer<typeof showFormSchema>
 type DbShow = Database['public']['Tables']['shows']['Row']
 type Category = Database['public']['Tables']['categories']['Row']
 
+const BRAND_COLORS = [
+  { value: 'brand-blue', key: 'colorBlue', hex: '#2C3569' },
+  { value: 'brand-purple', key: 'colorPurple', hex: '#9F54A0' },
+  { value: 'brand-green', key: 'colorGreen', hex: '#50A258' },
+  { value: 'brand-red', key: 'colorRed', hex: '#DB3F34' },
+  { value: 'brand-orange', key: 'colorOrange', hex: '#EA8C2E' },
+]
+
 const GENRES = [
   'Travel', 'Health', 'Music', 'Comedy', 'Cooking',
   'Kids', 'Poetry', 'Cinema', 'Tech', 'Entertainment', 'Culture',
 ]
 
-const BRAND_COLORS = [
-  { value: 'brand-blue', label: 'Blue', hex: '#2C3569' },
-  { value: 'brand-purple', label: 'Purple', hex: '#9F54A0' },
-  { value: 'brand-green', label: 'Green', hex: '#50A258' },
-  { value: 'brand-red', label: 'Red', hex: '#DB3F34' },
-  { value: 'brand-orange', label: 'Orange', hex: '#EA8C2E' },
+const DAYS = [
+  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
 ]
-
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -131,6 +134,9 @@ interface ShowFormProps {
 export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowFormProps) {
   const isEdit = !!show
   const router = useRouter()
+  const t = useTranslations('admin.showForm')
+  const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
 
   const generatedId = useMemo(() => {
     if (isEdit) return show.id
@@ -185,10 +191,10 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
       : await createShow(normalized)
 
     if (result.success) {
-      toast.success(isEdit ? 'Show updated' : 'Show created')
+      toast.success(isEdit ? t('showUpdated') : t('showCreated'))
       router.push(isEdit ? `/admin/shows/${show.id}` : '/admin')
     } else {
-      toast.error(result.error || 'Failed to save')
+      toast.error(result.error || t('toastSaveFailed'))
     }
   }
 
@@ -204,63 +210,62 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-      {/* Basic Info */}
-      <Section title="Basic Info">
+      <Section title={t('basicInfoTab')}>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          <Field label="Title" required error={errors.title?.message}>
+          <Field label={t('titleLabel')} required error={errors.title?.message ? tErrors(errors.title.message as never) : undefined}>
             <Input {...form.register('title')} placeholder="e.g., Last Call" />
           </Field>
-          <Field label="Title (Arabic)">
+          <Field label={t('titleArLabel')}>
             <Input dir="rtl" {...form.register('title_ar')} />
           </Field>
         </div>
 
-        <Field label="Slug" required error={errors.slug?.message}>
+        <Field label={t('slugLabel')} required error={errors.slug?.message ? tErrors(errors.slug.message as never) : undefined}>
           <div className="flex gap-2">
             <Input {...form.register('slug')} className="flex-1" />
             <button
               type="button"
               onClick={regenerateSlug}
               className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-              title="Regenerate slug from title"
+              title={t('regenerateSlugTitle')}
             >
-              <RefreshCw className="size-3.5" /> Regen
+              <RefreshCw className="size-3.5" /> {t('regenerateSlug')}
             </button>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">Auto-generated from title. Editable.</p>
+          <p className="text-xs text-muted-foreground mt-1">{t('slugHint')}</p>
         </Field>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          <Field label="Genre" required error={errors.genre?.message}>
+          <Field label={t('genreLabel')} required error={errors.genre?.message ? tErrors(errors.genre.message as never) : undefined}>
             <Select
               value={form.watch('genre')}
               onValueChange={(val) => form.setValue('genre', val, { shouldValidate: true })}
             >
-              <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t('selectPlaceholder')} /></SelectTrigger>
               <SelectContent>
-                {GENRES.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                {GENRES.map((g) => <SelectItem key={g} value={g}>{t(`genre${g}` as never)}</SelectItem>)}
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Status" required>
+          <Field label={t('statusLabel')} required>
             <Select
               value={form.watch('status')}
               onValueChange={(val) => form.setValue('status', val as ShowFormData['status'], { shouldValidate: true })}
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="coming-soon">Coming Soon</SelectItem>
-                <SelectItem value="now-streaming">Now Streaming</SelectItem>
+                <SelectItem value="draft">{t('statusDraft')}</SelectItem>
+                <SelectItem value="coming-soon">{t('statusComingSoon')}</SelectItem>
+                <SelectItem value="now-streaming">{t('statusNowStreaming')}</SelectItem>
               </SelectContent>
             </Select>
           </Field>
         </div>
 
-        <Field label="Categories">
+        <Field label={t('categoriesLabel')}>
           {categories.length === 0 ? (
             <div className="rounded-lg border border-dashed border-white/12 px-4 py-3 text-sm text-muted-foreground">
-              Create categories first in Admin, Categories.
+              {t('categoriesEmpty')}
             </div>
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
@@ -287,27 +292,25 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
         </Field>
       </Section>
 
-      {/* Description */}
-      <Section title="Description">
-        <Field label="Description" required error={errors.description?.message}>
-          <Textarea rows={4} {...form.register('description')} placeholder="What is this show about?" />
+      <Section title={t('descriptionSection')}>
+        <Field label={t('descriptionLabel')} required error={errors.description?.message ? tErrors(errors.description.message as never) : undefined}>
+          <Textarea rows={4} {...form.register('description')} placeholder={t('descriptionPlaceholder')} />
         </Field>
-        <Field label="Description (Arabic)">
+        <Field label={t('descriptionArLabel')}>
           <Textarea rows={4} dir="rtl" {...form.register('description_ar')} />
         </Field>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          <Field label="Tagline">
-            <Input {...form.register('tagline')} placeholder="Short hook" />
+          <Field label={t('taglineLabel')}>
+            <Input {...form.register('tagline')} placeholder={t('taglinePlaceholder')} />
           </Field>
-          <Field label="Tagline (Arabic)">
+          <Field label={t('taglineArLabel')}>
             <Input dir="rtl" {...form.register('tagline_ar')} />
           </Field>
         </div>
       </Section>
 
-      {/* Branding */}
-      <Section title="Branding">
-        <Field label="Brand Color">
+      <Section title={t('brandingSection')}>
+        <Field label={t('brandColorLabel')}>
           <div className="flex gap-2">
             {BRAND_COLORS.map((c) => (
               <button
@@ -321,7 +324,7 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
                 }`}
               >
                 <span className="size-8 rounded-full" style={{ backgroundColor: c.hex }} />
-                <span className="text-[10px] text-muted-foreground">{c.label}</span>
+                <span className="text-[10px] text-muted-foreground">{t(c.key as never)}</span>
               </button>
             ))}
           </div>
@@ -333,22 +336,21 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
             currentUrl={form.watch('poster_url') || null}
             onUploadComplete={(url) => form.setValue('poster_url', url)}
             onDelete={() => form.setValue('poster_url', '')}
-            label="Poster" aspectHint="2:3 · card artwork"
+            label={t('posterLabel')} aspectHint={t('posterAspectHint')}
           />
           <ArtworkUploadZone
             showId={generatedId} slot="logo"
             currentUrl={form.watch('logo_url') || null}
             onUploadComplete={(url) => form.setValue('logo_url', url)}
             onDelete={() => form.setValue('logo_url', '')}
-            label="Logo" aspectHint="PNG · transparent"
+            label={t('logoLabel')} aspectHint={t('logoAspectHint')}
           />
         </div>
       </Section>
 
-      {/* Hero Media */}
-      <Section title="Hero Media">
+      <Section title={t('heroMediaSection')}>
         <p className="text-xs text-muted-foreground -mt-2">
-          Media for the browse hero. Pick one source per screen size — image, MP4, or YouTube link.
+          {t('heroMediaHint')}
         </p>
         <HeroMediaPicker
           showId={generatedId}
@@ -376,37 +378,35 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
         />
       </Section>
 
-      {/* Schedule */}
-      <Section title="Schedule">
+      <Section title={t('scheduleSection')}>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          <Field label="Broadcast Day">
+          <Field label={t('broadcastDayLabel')}>
             <Select
               value={form.watch('broadcast_day') ?? ''}
               onValueChange={(val) => form.setValue('broadcast_day', val || null)}
             >
-              <SelectTrigger><SelectValue placeholder="Select day" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t('selectDayPlaceholder')} /></SelectTrigger>
               <SelectContent>
-                {DAYS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                {DAYS.map((d) => <SelectItem key={d} value={d}>{t(`day${d}` as never)}</SelectItem>)}
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Broadcast Time">
+          <Field label={t('broadcastTimeLabel')}>
             <Input type="time" {...form.register('broadcast_time')} />
           </Field>
         </div>
       </Section>
 
-      {/* Submit */}
       <AdminPanel className="flex items-center justify-end gap-3 px-6 py-4">
         <Button
           type="button"
           variant="outline"
           onClick={() => router.push(isEdit ? `/admin/shows/${show.id}` : '/admin')}
         >
-          Cancel
+          {tCommon('cancel')}
         </Button>
         <Button type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? 'Saving...' : isEdit ? 'Save Show' : 'Create Show'}
+          {form.formState.isSubmitting ? t('savingLabel') : isEdit ? t('saveShow') : t('createShowCta')}
         </Button>
       </AdminPanel>
     </form>

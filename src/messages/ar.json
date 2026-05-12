@@ -32,7 +32,9 @@
     "signUp": "إنشاء حساب",
     "brand": "كلِك إت ستوري",
     "tagline": "كل قصة تنقر.",
-    "clear": "مسح"
+    "clear": "مسح",
+    "previousSlide": "الشريحة السابقة",
+    "nextSlide": "الشريحة التالية"
   },
   "nav": {
     "home": "الصفحة الرئيسية لكلِك إت ستوري",
@@ -212,6 +214,10 @@
     "errorVideoPrivate": "هذا الفيديو خاص أو مُقيَّد.",
     "errorVideoEmbedBlocked": "التشغيل معطّل لهذا الفيديو.",
     "errorGeneric": "حدث خطأ ما في المشغّل. حدّث الصفحة لإعادة المحاولة.",
+    "errorVideoUnavailableRetry": "هذا الفيديو غير متاح حالياً. حاول لاحقاً.",
+    "errorVideoNotFound": "الفيديو غير موجود. ربما تمت إزالته.",
+    "errorPlayerRefresh": "حدث خطأ أثناء تحميل الفيديو. يُرجى تحديث الصفحة.",
+    "videoPlayerAria": "مشغّل الفيديو",
     "keyboardSpacePause": "مسطرة المسافة للتشغيل/الإيقاف",
     "keyboardArrowSkip": "أسهم لوحة المفاتيح للتخطي",
     "episodeListHeading": "في هذا الموسم"
@@ -243,7 +249,9 @@
     "backToShow": "العودة إلى {title}",
     "nowPlayingBadge": "الآن",
     "previousShort": "القصيرة السابقة",
-    "nextShort": "القصيرة التالية"
+    "nextShort": "القصيرة التالية",
+    "shortsMobileHint": "اسحب أو استخدم الأزرار",
+    "shortsDesktopHint": "الأسهم، المسافة، M، Esc"
   },
   "search": {
     "heading": "بحث",
@@ -400,7 +408,10 @@
     "heading": "الصفحة غير موجودة",
     "description": "لم نتمكن من العثور على ما كنت تبحث عنه.",
     "goHome": "العودة للرئيسية",
-    "watchShows": "تصفح البرامج"
+    "watchShows": "تصفح البرامج",
+    "showHeading": "البرنامج غير موجود",
+    "showDescription": "لم نتمكن من العثور على هذا المسلسل. ربما تمت إزالته أو الرابط غير صحيح.",
+    "watchAllShows": "مشاهدة كل البرامج"
   },
   "legal": {
     "eyebrow": "قانوني",
@@ -937,6 +948,7 @@
       "siteMetadataSaved": "تم حفظ بيانات الموقع",
       "siteMetadataTitle": "بيانات الموقع",
       "siteMetadataDescription": "يتحكّم في عنوان علامة تبويب المتصفح ووصف محركات البحث والشعار تحت اللوغو.",
+      "siteTitlePlaceholder": "Clickit Story",
       "siteTitleHint": "يظهر في <title> وعلامات تبويب المتصفح.",
       "siteTaglineLabel": "شعار الموقع",
       "siteTaglineHint": "جملة قصيرة تظهر بجانب اللوغو.",
@@ -1065,7 +1077,8 @@
       "deleting": "جارٍ الحذف…",
       "loading": "جارٍ التحميل…",
       "noEpisodes": "لا توجد حلقات بعد",
-      "noShows": "لا توجد برامج بعد"
+      "noShows": "لا توجد برامج بعد",
+      "adminNavAria": "الإدارة"
     },
     "heroMedia": {
       "desktopHero": "هيرو سطح المكتب",

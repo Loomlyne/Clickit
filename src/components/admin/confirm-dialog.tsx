@@ -1,6 +1,6 @@
 'use client'
 
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import {
   Dialog,
   DialogContent,
@@ -33,8 +33,7 @@ export function ConfirmDialog({
   loading = false,
 }: ConfirmDialogProps) {
   const tCommon = useTranslations('common')
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('admin.confirmDialog')
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -55,7 +54,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             disabled={loading}
           >
-            {loading ? (isArabic ? 'جارٍ المعالجة…' : 'Processing...') : confirmLabel}
+            {loading ? t('processing') : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

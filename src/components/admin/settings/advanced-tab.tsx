@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import {
   Loader2,
@@ -28,36 +28,32 @@ type FlagMeta = {
   warning?: string
 }
 
-function getFlags(isArabic: boolean): FlagMeta[] {
+function getFlags(t: ReturnType<typeof useTranslations>): FlagMeta[] {
   return [
     {
       key: 'showGenresGrid',
-      title: isArabic ? 'إظهار قسم "تصفح حسب النوع"' : 'Show "Browse by Genre" section',
-      description: isArabic ? 'شريط الأنواع الأفقي في الصفحة الرئيسية.' : 'The horizontal genre rail on the landing page.',
+      title: t('flagGenresTitle'),
+      description: t('flagGenresDescription'),
       icon: <LayoutGrid className="size-4" />,
     },
     {
       key: 'showCtaBanner',
-      title: isArabic ? 'إظهار لافتة الدعوة للإجراء' : 'Show CTA banner',
-      description: isArabic ? 'كتلة الدعوة للإجراء كاملة العرض. النص قابل للتعديل في تبويب عام.' : 'The full-bleed call-to-action block. Copy editable in General tab.',
+      title: t('flagCtaTitle'),
+      description: t('flagCtaDescription'),
       icon: <Megaphone className="size-4" />,
     },
     {
       key: 'showFaq',
-      title: isArabic ? 'إظهار قسم الأسئلة المتكررة' : 'Show FAQ section',
-      description: isArabic ? 'كتلة الأسئلة المتكررة القابلة للتوسيع قرب أسفل الصفحة الرئيسية.' : 'The expandable FAQ block near the bottom of the landing page.',
+      title: t('flagFaqTitle'),
+      description: t('flagFaqDescription'),
       icon: <HelpCircle className="size-4" />,
     },
     {
       key: 'comingSoonMode',
-      title: isArabic ? 'وضع قريباً' : 'Coming-soon mode',
-      description: isArabic
-        ? 'يُخفي كامل الموقع خلف شاشة استقبال. فقط /admin و /auth يبقيان متاحَين. الزوار غير الإداريين يُعاد توجيههم إلى /coming-soon.'
-        : 'Gate the whole site behind a splash page. Only /admin and /auth stay accessible. Non-admin visitors are redirected to /coming-soon.',
+      title: t('flagComingSoonTitle'),
+      description: t('flagComingSoonDescription'),
       icon: <Moon className="size-4" />,
-      warning: isArabic
-        ? 'يُخفي كامل المكتبة العامة. شغّله فقط قبل الإطلاق أو أثناء الصيانة.'
-        : 'Hides the entire public catalog. Only turn on before launch or during maintenance.',
+      warning: t('flagComingSoonWarning'),
     },
   ]
 }
@@ -66,9 +62,8 @@ export function AdvancedTab({ config }: { config: AppConfig }) {
   const [flags, setFlags] = useState<FeatureFlags>(config.flags)
   const [saving, setSaving] = useState(false)
   const [revalidating, setRevalidating] = useState(false)
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
-  const FLAGS = getFlags(isArabic)
+  const t = useTranslations('admin.settings')
+  const FLAGS = getFlags(t)
 
   const dirty = JSON.stringify(flags) !== JSON.stringify(config.flags)
 
@@ -76,26 +71,26 @@ export function AdvancedTab({ config }: { config: AppConfig }) {
     setSaving(true)
     const result = await updateFeatureFlags(flags)
     setSaving(false)
-    if (result.success) toast.success(isArabic ? 'تم حفظ أعلام الميزات' : 'Feature flags saved')
-    else toast.error(result.error ?? (isArabic ? 'تعذّر الحفظ' : 'Failed to save'))
+    if (result.success) toast.success(t('featureFlagsSaved'))
+    else toast.error(result.error ?? t('saveFailed'))
   }
 
   async function onRevalidate() {
     setRevalidating(true)
     const result = await revalidateAllCache()
     setRevalidating(false)
-    if (result.success) toast.success(isArabic ? 'تم تحديث الذاكرة المؤقتة — حدّث الموقع للتحقّق' : 'Cache refreshed — reload the site to verify')
-    else toast.error(result.error ?? (isArabic ? 'تعذّر التحديث' : 'Failed to revalidate'))
+    if (result.success) toast.success(t('cacheRefreshed'))
+    else toast.error(result.error ?? t('revalidateFailed'))
   }
 
   return (
     <>
       <SettingsCard
-        title={isArabic ? 'أعلام الميزات' : 'Feature flags'}
-        description={isArabic ? 'أظهر أو أخفِ أقسام الصفحة الرئيسية دون نشر كود.' : 'Show or hide landing-page sections without shipping code.'}
+        title={t('featureFlagsTitle')}
+        description={t('featureFlagsDescription')}
         action={
           <Button size="sm" onClick={onSave} disabled={!dirty || saving}>
-            {saving ? <Loader2 className="size-4 animate-spin" /> : (isArabic ? 'حفظ الأعلام' : 'Save flags')}
+            {saving ? <Loader2 className="size-4 animate-spin" /> : t('saveFlags')}
           </Button>
         }
       >
@@ -112,10 +107,8 @@ export function AdvancedTab({ config }: { config: AppConfig }) {
       </SettingsCard>
 
       <SettingsCard
-        title={isArabic ? 'الذاكرة المؤقتة' : 'Cache'}
-        description={isArabic
-          ? 'أجبر الصفحات العامة على إعادة جلب البرامج والحلقات وإعدادات الموقع. استخدمه بعد تعديلات قاعدة البيانات المجمّعة أو إذا بدا شيء قديماً.'
-          : 'Force the public pages to re-fetch shows, episodes, and site config. Use this after bulk DB edits or if something looks stale.'}
+        title={t('cacheTitle')}
+        description={t('cacheDescription')}
       >
         <Button
           variant="outline"
@@ -128,18 +121,16 @@ export function AdvancedTab({ config }: { config: AppConfig }) {
           ) : (
             <RefreshCw className="size-4" />
           )}
-          {isArabic ? 'تحديث كل الذاكرات المؤقتة' : 'Revalidate all caches'}
+          {t('revalidateAllCaches')}
         </Button>
       </SettingsCard>
 
       <SettingsCard
-        title={isArabic ? 'حساب المشرف' : 'Admin account'}
-        description={isArabic
-          ? 'مشرف واحد في v1 — معرّف المستخدم أدناه هو الحساب الوحيد المسموح له بالتعديل. تواصل مع المطوّر لنقل الملكية.'
-          : 'Single-admin v1 — the user ID below is the only account allowed to edit. Contact the developer to transfer ownership.'}
+        title={t('adminAccountTitle')}
+        description={t('adminAccountDescription')}
       >
         <div className="rounded-lg border border-white/8 bg-white/[0.02] px-4 py-3 font-mono text-xs text-muted-foreground">
-          {isArabic ? 'المشرف المسجّل حالياً يُدير هذا الموقع.' : 'Currently signed-in admin manages this site.'}
+          {t('adminAccountCurrent')}
         </div>
       </SettingsCard>
     </>

@@ -12,7 +12,7 @@ export default function SpacingPage() {
   return (
     <div className="space-y-8">
       <section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">Spacing scale</h2>
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">{'Spacing scale'}</h2>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
           The system uses a 4px rhythm, but the redesign leans most heavily on 16, 24, 32, and 48 for cards, section spacing, and dense admin layout.
         </p>

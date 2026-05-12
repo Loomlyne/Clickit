@@ -1,4 +1,5 @@
 import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import { User, Settings } from 'lucide-react'
 import { AdminPanel } from '@/components/admin/admin-shell'
 
@@ -9,6 +10,8 @@ interface AdminProfileCardProps {
 }
 
 export function AdminProfileCard({ email, displayName, avatarUrl }: AdminProfileCardProps) {
+  const t = useTranslations('admin.profileCard')
+  const tProfile = useTranslations('profile')
   return (
     <AdminPanel className="p-5">
       <div className="flex items-center gap-4">
@@ -25,7 +28,7 @@ export function AdminProfileCard({ email, displayName, avatarUrl }: AdminProfile
         )}
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium truncate">
-            {displayName || 'Admin'}
+            {displayName || t('fallbackName')}
           </div>
           <div className="mono text-[11px] text-muted-foreground truncate">{email}</div>
         </div>
@@ -34,7 +37,7 @@ export function AdminProfileCard({ email, displayName, avatarUrl }: AdminProfile
           className="flex items-center gap-1.5 rounded-full border border-white/8 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           <Settings className="size-3" />
-          Profile
+          {tProfile('title')}
         </Link>
       </div>
     </AdminPanel>

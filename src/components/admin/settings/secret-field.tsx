@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { Eye, EyeOff } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 
@@ -30,8 +30,7 @@ export function SecretField({
 }) {
   const [reveal, setReveal] = useState(false)
   const [replacing, setReplacing] = useState(!hasSavedValue)
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('admin.settings')
 
   if (hasSavedValue && !replacing) {
     return (
@@ -49,7 +48,7 @@ export function SecretField({
           }}
           className="shrink-0 text-xs font-medium uppercase tracking-wider text-white/60 underline-offset-4 hover:text-white hover:underline"
         >
-          {isArabic ? 'استبدال' : 'Replace'}
+          {t('replace')}
         </button>
       </div>
     )
@@ -70,7 +69,7 @@ export function SecretField({
         type="button"
         onClick={() => setReveal((r) => !r)}
         className="shrink-0 text-white/60 hover:text-white"
-        aria-label={reveal ? (isArabic ? 'إخفاء القيمة' : 'Hide value') : (isArabic ? 'إظهار القيمة' : 'Reveal value')}
+        aria-label={reveal ? t('hideValue') : t('revealValue')}
       >
         {reveal ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
       </button>

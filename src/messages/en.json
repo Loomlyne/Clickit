@@ -1,4 +1,9 @@
 {
+  "_meta": {
+    "_review_status": "draft",
+    "_review_source": "LLM-drafted 2026-04-22 + extended 2026-05-12, English source parity metadata",
+    "_reviewer": "pending human review"
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",
@@ -27,7 +32,9 @@
     "signUp": "Create account",
     "brand": "Clickit Story",
     "tagline": "Every Story Clicks.",
-    "clear": "Clear"
+    "clear": "Clear",
+    "previousSlide": "Previous slide",
+    "nextSlide": "Next slide"
   },
   "nav": {
     "home": "Clickit Story home",
@@ -207,6 +214,10 @@
     "errorVideoPrivate": "This video is private or restricted.",
     "errorVideoEmbedBlocked": "Playback disabled for this video.",
     "errorGeneric": "Something went wrong with the player. Refresh the page to retry.",
+    "errorVideoUnavailableRetry": "This video is currently unavailable. Try again later.",
+    "errorVideoNotFound": "Video not found. It may have been removed.",
+    "errorPlayerRefresh": "Something went wrong loading this video. Please refresh the page.",
+    "videoPlayerAria": "Video player",
     "keyboardSpacePause": "Space to play/pause",
     "keyboardArrowSkip": "Arrow keys to skip",
     "episodeListHeading": "In this season"
@@ -238,7 +249,9 @@
     "backToShow": "Back to {title}",
     "nowPlayingBadge": "Now",
     "previousShort": "Previous short",
-    "nextShort": "Next short"
+    "nextShort": "Next short",
+    "shortsMobileHint": "Swipe or use buttons",
+    "shortsDesktopHint": "Arrows, Space, M, Esc"
   },
   "search": {
     "heading": "Search",
@@ -395,7 +408,10 @@
     "heading": "Page Not Found",
     "description": "We couldn't find what you were looking for.",
     "goHome": "Go Home",
-    "watchShows": "Watch Shows"
+    "watchShows": "Watch Shows",
+    "showHeading": "Show Not Found",
+    "showDescription": "We couldn't find that series. It may have been removed or the link is incorrect.",
+    "watchAllShows": "Watch All Shows"
   },
   "legal": {
     "eyebrow": "Legal",
@@ -932,6 +948,7 @@
       "siteMetadataSaved": "Site metadata saved",
       "siteMetadataTitle": "Site metadata",
       "siteMetadataDescription": "Controls the browser tab title, search-engine description, and the tagline under the logo.",
+      "siteTitlePlaceholder": "Clickit Story",
       "siteTitleHint": "Shown in <title> and browser tabs.",
       "siteTaglineLabel": "Site tagline",
       "siteTaglineHint": "Short hook shown next to the logo.",
@@ -1060,7 +1077,8 @@
       "deleting": "Deleting…",
       "loading": "Loading…",
       "noEpisodes": "No episodes yet",
-      "noShows": "No shows yet"
+      "noShows": "No shows yet",
+      "adminNavAria": "Admin"
     },
     "heroMedia": {
       "desktopHero": "Desktop Hero",

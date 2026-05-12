@@ -269,8 +269,8 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
 
       {/* Hint — adapts to viewport */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 mono text-[10px] text-white/30">
-        <span className="lg:hidden">Swipe or use buttons</span>
-        <span className="hidden lg:inline">Arrows · Space · M · Esc</span>
+        <span className="lg:hidden">{t('shortsMobileHint')}</span>
+        <span className="hidden lg:inline">{t('shortsDesktopHint')}</span>
       </div>
     </div>
   )

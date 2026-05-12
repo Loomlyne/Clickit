@@ -1,6 +1,6 @@
 // Section header — matches handoff rail-header pattern
 // Mono eyebrow + serif title + "View all" link
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { ArrowRight } from 'lucide-react'
 
@@ -17,8 +17,7 @@ export function SectionHeader({
   seeAllHref,
   className,
 }: SectionHeaderProps) {
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const tCommon = useTranslations('common')
 
   return (
     <div className={`mb-4 flex items-start justify-between gap-4 px-10${className ? ` ${className}` : ''}`}>
@@ -32,7 +31,7 @@ export function SectionHeader({
           href={seeAllHref}
           className="mono inline-flex min-h-11 shrink-0 items-center gap-1.5"
         >
-          {isArabic ? 'عرض الكل' : 'View all'}
+          {tCommon('viewAll')}
           <ArrowRight className="size-3 rtl:scale-x-[-1]" />
         </Link>
       )}

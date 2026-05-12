@@ -1,6 +1,6 @@
 'use client'
 
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { adminPanelClass } from '@/components/admin/admin-shell'
 
 export function EmptyState({
@@ -12,12 +12,11 @@ export function EmptyState({
   body: string
   action?: React.ReactNode
 }) {
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('admin.emptyState')
   return (
     <div className={`${adminPanelClass} flex flex-col items-center justify-center px-6 py-16 text-center`}>
       <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
-        {isArabic ? 'حالة فارغة' : 'Empty State'}
+        {t('defaultLabel')}
       </p>
       <h3 className="mt-4 text-[22px] font-semibold tracking-tight text-foreground">
         {heading}

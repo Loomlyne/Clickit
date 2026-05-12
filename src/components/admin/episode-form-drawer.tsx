@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -76,13 +76,11 @@ export function EpisodeFormDrawer({
   const t = useTranslations('admin.episodeForm')
   const tCommon = useTranslations('common')
   const tErrors = useTranslations('errors')
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
 
   const STATUS_OPTIONS = [
-    { value: 'draft' as const, label: t('statusDraft'), desc: isArabic ? 'غير مرئية للزوار' : 'Not visible to viewers' },
-    { value: 'coming-soon' as const, label: t('statusScheduled'), desc: isArabic ? 'مرئية ولكن غير قابلة للتشغيل' : 'Visible but not playable' },
-    { value: 'published' as const, label: t('statusPublished'), desc: isArabic ? 'مباشرة وقابلة للتشغيل' : 'Live and playable' },
+    { value: 'draft' as const, label: t('statusDraft'), desc: t('statusDraftDesc') },
+    { value: 'coming-soon' as const, label: t('statusScheduled'), desc: t('statusScheduledDesc') },
+    { value: 'published' as const, label: t('statusPublished'), desc: t('statusPublishedDesc') },
   ]
 
   const form = useForm<EpisodeFormData>({
@@ -130,10 +128,10 @@ export function EpisodeFormDrawer({
       if (seconds && seconds > 0) {
         const minutes = Math.round(seconds / 60)
         form.setValue('duration', minutes, { shouldDirty: true })
-        toast.success(isArabic ? `تم الكشف عن المدة: ${minutes} دقيقة` : `Duration auto-detected: ${minutes} min`)
+        toast.success(t('durationDetected', { minutes }))
       }
     })
-  }, [watchedVideoId, form])
+  }, [watchedVideoId, form, t])
 
   async function onSubmit(data: EpisodeFormData) {
     const normalized = {
@@ -160,26 +158,25 @@ export function EpisodeFormDrawer({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="sm:max-w-xl w-full p-0 flex flex-col">
         <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
-          <SheetTitle className="text-lg">{isEdit ? (isArabic ? 'تعديل الحلقة' : 'Edit Episode') : (isArabic ? 'إنشاء حلقة' : 'Create Episode')}</SheetTitle>
+          <SheetTitle className="text-lg">{isEdit ? t('editEpisode') : t('createEpisode')}</SheetTitle>
           <p className="text-sm text-muted-foreground">
             {isEdit
-              ? (isArabic ? `تعديل "${episode.title}"` : `Editing "${episode.title}"`)
-              : (isArabic ? `الحلقة #${nextEpisodeNumber}` : `Episode #${nextEpisodeNumber}`)}
+              ? t('editingEpisode', { title: episode.title })
+              : t('episodeNumberDescription', { number: nextEpisodeNumber })}
           </p>
         </SheetHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-8">
 
-            {/* EPISODE INFO */}
-            <Section title={isArabic ? 'معلومات الحلقة' : 'Episode Info'}>
+            <Section title={t('sectionInfo')}>
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
                   <Field label={t('titleLabel')} required error={errors.title?.message ? tErrors(errors.title.message as never) : undefined}>
-                    <Input {...form.register('title')} placeholder={isArabic ? 'عنوان الحلقة' : 'Episode title'} />
+                    <Input {...form.register('title')} placeholder={t('episodeTitlePlaceholder')} />
                   </Field>
                 </div>
-                <Field label={isArabic ? 'رقم الحلقة' : 'Episode #'} required error={errors.episode_number?.message ? tErrors(errors.episode_number.message as never) : undefined}>
+                <Field label={t('episodeNumberLabel')} required error={errors.episode_number?.message ? tErrors(errors.episode_number.message as never) : undefined}>
                   <Input type="number" min={1} {...form.register('episode_number', { valueAsNumber: true })} />
                 </Field>
               </div>
@@ -214,14 +211,13 @@ export function EpisodeFormDrawer({
                 <Field label={t('durationLabel')} error={errors.duration?.message ? tErrors(errors.duration.message as never) : undefined}>
                   <div className="relative">
                     <Input type="number" min={1} placeholder="25" {...form.register('duration', { valueAsNumber: true })} className="pe-10" />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{isArabic ? 'د' : 'min'}</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{t('durationUnit')}</span>
                   </div>
                 </Field>
               </div>
             </Section>
 
-            {/* CONTENT */}
-            <Section title={isArabic ? 'المحتوى' : 'Content'}>
+            <Section title={t('sectionContent')}>
               <Field label={t('youtubeUrlLabel')}>
                 <Controller
                   name="youtube_video_id"
@@ -262,7 +258,7 @@ export function EpisodeFormDrawer({
               </Field>
 
               <Field label={t('descriptionLabel')} required error={errors.description?.message ? tErrors(errors.description.message as never) : undefined}>
-                <Textarea rows={5} {...form.register('description')} placeholder={isArabic ? 'ما الذي يحدث في هذه الحلقة؟' : 'What happens in this episode?'} />
+                <Textarea rows={5} {...form.register('description')} placeholder={t('descriptionPlaceholder')} />
               </Field>
 
               <Field label={t('descriptionArLabel')}>
@@ -278,17 +274,17 @@ export function EpisodeFormDrawer({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              {isArabic ? 'تجاهل التغييرات' : 'Discard Changes'}
+              {t('discardChanges')}
             </Button>
             <Button
               type="submit"
               disabled={form.formState.isSubmitting}
             >
               {form.formState.isSubmitting
-                ? (isArabic ? 'جارٍ الحفظ…' : 'Saving...')
+                ? t('savingLabel')
                 : isEdit
                   ? t('saveEpisode')
-                  : (isArabic ? 'إنشاء حلقة' : 'Create Episode')}
+                  : t('createEpisode')}
             </Button>
           </div>
         </form>
@@ -320,8 +316,7 @@ function YouTubeFetchButton({
   onFetched: (meta: YouTubeMeta) => void
 }) {
   const [loading, setLoading] = useState(false)
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('admin.episodeForm')
 
   async function onClick() {
     setLoading(true)
@@ -329,21 +324,19 @@ function YouTubeFetchButton({
       const url = `https://www.youtube.com/watch?v=${videoId}`
       const res = await fetch(`/api/youtube-meta?url=${encodeURIComponent(url)}`)
       if (res.status === 503) {
-        toast.error(isArabic ? 'لم يُعدّ مفتاح YouTube API' : 'No YouTube API key configured', {
-          description: isArabic
-            ? 'أضف مفتاحاً من الإعدادات ← التكاملات لتمكين الملء التلقائي.'
-            : 'Add one under Settings → Integrations to enable auto-fill.',
+        toast.error(t('toastNoYoutubeKey'), {
+          description: t('toastNoYoutubeKeyDescription'),
         })
         return
       }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        toast.error(body.error ?? (isArabic ? 'تعذّر الجلب من يوتيوب' : 'Failed to fetch from YouTube'))
+        toast.error(body.error ?? t('toastFetchFailed'))
         return
       }
       const meta: YouTubeMeta = await res.json()
       onFetched(meta)
-      toast.success(isArabic ? 'تم جلب العنوان والوصف والمدة من يوتيوب' : 'Fetched title, description, and duration from YouTube')
+      toast.success(t('toastFetchSuccess'))
     } finally {
       setLoading(false)
     }
@@ -361,7 +354,7 @@ function YouTubeFetchButton({
       ) : (
         <Sparkles className="size-3" />
       )}
-      {isArabic ? 'جلب العنوان والوصف من يوتيوب' : 'Fetch title & description from YouTube'}
+      {t('fetchYoutubeMetadata')}
     </button>
   )
 }

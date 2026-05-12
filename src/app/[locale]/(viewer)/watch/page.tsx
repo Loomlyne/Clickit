@@ -162,7 +162,7 @@ export default async function WatchPage({
       {railsToRender.map((category) => (
         <ContentRail
           key={category.id}
-          title={locale === 'ar' ? category.nameAr : category.nameEn}
+          title={{ ar: category.nameAr, en: category.nameEn }[locale] ?? category.nameEn}
           eyebrow={category.icon || t('railCuratedEyebrow')}
           accentColor={category.color ?? undefined}
           shows={category.shows}

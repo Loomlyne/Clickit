@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition, useOptimistic } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { Pencil, ChevronUp, ChevronDown, Archive } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -39,9 +39,8 @@ interface EpisodesTableProps {
 
 export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }: EpisodesTableProps) {
   const t = useTranslations('admin.episodeForm')
+  const tTable = useTranslations('admin.episodesTable')
   const tCommon = useTranslations('common')
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
   const [isPending, startTransition] = useTransition()
   const [editEpisode, setEditEpisode] = useState<Episode | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -93,7 +92,7 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
   }
 
   if (episodes.length === 0) {
-    return <EmptyState heading={isArabic ? 'لا توجد حلقات' : 'No Episodes'} body={isArabic ? 'أضف حلقة إلى هذا الموسم.' : 'Add an episode to this season.'} />
+    return <EmptyState heading={tTable('emptyHeading')} body={tTable('emptyBody')} />
   }
 
   return (
@@ -105,9 +104,9 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
               <TableHead className="w-12">#</TableHead>
               <TableHead>{t('titleLabel')}</TableHead>
               <TableHead className="hidden w-20 sm:table-cell">{t('durationLabel')}</TableHead>
-              <TableHead className="hidden w-24 md:table-cell">{isArabic ? 'يوتيوب' : 'YouTube'}</TableHead>
+              <TableHead className="hidden w-24 md:table-cell">{tTable('youtubeColumn')}</TableHead>
               <TableHead className="w-[100px]">{t('statusLabel')}</TableHead>
-              <TableHead className="w-32 text-end">{isArabic ? 'الإجراءات' : 'Actions'}</TableHead>
+              <TableHead className="w-32 text-end">{tTable('actionsColumn')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -119,11 +118,11 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
                 <TableCell>
                   <span className="font-medium">{episode.title}</span>
                   <span className="mt-0.5 block text-xs text-muted-foreground sm:hidden">
-                    {episode.duration ? `${episode.duration} ${isArabic ? 'دقيقة' : 'min'}` : ''}
+                    {episode.duration ? t('durationMinutes', { minutes: episode.duration }) : ''}
                   </span>
                 </TableCell>
                 <TableCell className="hidden text-muted-foreground sm:table-cell">
-                  {episode.duration ? `${episode.duration} ${isArabic ? 'دقيقة' : 'min'}` : '---'}
+                  {episode.duration ? t('durationMinutes', { minutes: episode.duration }) : '---'}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {episode.youtube_video_id ? (
@@ -131,7 +130,7 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
                       {episode.youtube_video_id}
                     </span>
                   ) : (
-                    <span className="text-xs text-muted-foreground">{isArabic ? 'لا يوجد فيديو' : 'No video'}</span>
+                    <span className="text-xs text-muted-foreground">{tTable('noVideo')}</span>
                   )}
                 </TableCell>
                 <TableCell>
@@ -141,7 +140,7 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
                   <div className="flex items-center justify-end gap-0.5">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon-xs" onClick={() => handleEdit(episode)} aria-label={isArabic ? `تعديل ${episode.title}` : `Edit ${episode.title}`}>
+                        <Button variant="ghost" size="icon-xs" onClick={() => handleEdit(episode)} aria-label={tTable('editEpisodeAria', { title: episode.title })}>
                           <Pencil />
                         </Button>
                       </TooltipTrigger>
@@ -154,12 +153,12 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
                           size="icon-xs"
                           onClick={() => handleReorder(episode.id, 'up')}
                           disabled={isPending || index === 0}
-                          aria-label={isArabic ? 'نقل لأعلى' : 'Move up'}
+                          aria-label={tTable('moveUp')}
                         >
                           <ChevronUp />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>{isArabic ? 'نقل لأعلى' : 'Move up'}</TooltipContent>
+                      <TooltipContent>{tTable('moveUp')}</TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -168,20 +167,20 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
                           size="icon-xs"
                           onClick={() => handleReorder(episode.id, 'down')}
                           disabled={isPending || index === optimisticEpisodes.length - 1}
-                          aria-label={isArabic ? 'نقل لأسفل' : 'Move down'}
+                          aria-label={tTable('moveDown')}
                         >
                           <ChevronDown />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>{isArabic ? 'نقل لأسفل' : 'Move down'}</TooltipContent>
+                      <TooltipContent>{tTable('moveDown')}</TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon-xs" onClick={() => setArchiveTarget(episode)} aria-label={isArabic ? `أرشفة ${episode.title}` : `Archive ${episode.title}`}>
+                        <Button variant="ghost" size="icon-xs" onClick={() => setArchiveTarget(episode)} aria-label={tTable('archiveEpisodeAria', { title: episode.title })}>
                           <Archive />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>{isArabic ? 'أرشفة' : 'Archive'}</TooltipContent>
+                      <TooltipContent>{tTable('archiveTooltip')}</TooltipContent>
                     </Tooltip>
                   </div>
                 </TableCell>
@@ -207,11 +206,11 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
       <ConfirmDialog
         open={!!archiveTarget}
         onOpenChange={(open) => { if (!open) setArchiveTarget(null) }}
-        title={isArabic ? 'أرشفة الحلقة' : 'Archive Episode'}
+        title={tTable('archiveEpisodeTitle')}
         description={isArabic
           ? `سيُخفي هذا "${archiveTarget?.title ?? 'هذه الحلقة'}" عن الزوار.`
           : `This will hide "${archiveTarget?.title ?? 'this episode'}" from viewers.`}
-        confirmLabel={isArabic ? 'أرشفة الحلقة' : 'Archive Episode'}
+        confirmLabel={tTable('archiveEpisodeTitle')}
         onConfirm={handleArchiveConfirm}
         destructive
         loading={archiveLoading}

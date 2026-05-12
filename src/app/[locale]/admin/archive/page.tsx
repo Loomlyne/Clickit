@@ -1,4 +1,4 @@
-import { getLocale, getTranslations } from 'next-intl/server'
+import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { AlertTriangle } from 'lucide-react'
 import { ArchiveTable } from '@/components/admin/archive-table'
@@ -6,11 +6,7 @@ import { AdminPanel } from '@/components/admin/admin-shell'
 
 export default async function ArchivePage() {
   const supabase = await createClient()
-  const [t, locale] = await Promise.all([
-    getTranslations('admin.archive'),
-    getLocale(),
-  ])
-  const isArabic = locale === 'ar'
+  const t = await getTranslations('admin.archive')
 
   const { data: shows } = await supabase
     .from('shows')
@@ -22,7 +18,7 @@ export default async function ArchivePage() {
     <div className="space-y-6">
       <AdminPanel className="p-6 md:p-8">
         <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
-          {isArabic ? 'لوحة الإدارة' : 'Admin Console'}
+          {t('adminConsole')}
         </p>
         <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
@@ -38,7 +34,7 @@ export default async function ArchivePage() {
             <AlertTriangle className="mt-0.5 size-5 shrink-0 text-yellow-400" />
             <div className="text-sm">
               <p className="font-medium text-yellow-100">
-                {isArabic ? 'البرامج المؤرشفة مخفية عن الزوار' : 'Archived shows are hidden from viewers'}
+                {t('hiddenWarningTitle')}
               </p>
               <p className="mt-1 text-yellow-100/65">
                 {t('warning')}

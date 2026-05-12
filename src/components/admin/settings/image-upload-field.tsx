@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import Image from 'next/image'
 import { Upload, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -31,14 +31,13 @@ export function ImageUploadField({
   const [url, setUrl] = useState<string | null>(currentUrl)
   const [busy, setBusy] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('admin.settings')
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     if (file.size > maxMb * 1024 * 1024) {
-      toast.error(isArabic ? `يجب أن تكون الصورة أقل من ${maxMb} م.ب.` : `Image must be under ${maxMb}MB`)
+      toast.error(t('imageTooLarge', { max: maxMb }))
       return
     }
     setBusy(true)
@@ -48,11 +47,11 @@ export function ImageUploadField({
       fd.set('kind', kind)
       const result = await uploadSiteImage(fd)
       if (!result.success) {
-        toast.error(result.error ?? (isArabic ? 'فشل الرفع' : 'Upload failed'))
+        toast.error(result.error ?? t('uploadFailed'))
         return
       }
       setUrl(result.data ?? null)
-      toast.success(isArabic ? 'تم الرفع' : 'Uploaded')
+      toast.success(t('uploaded'))
     } finally {
       setBusy(false)
       if (inputRef.current) inputRef.current.value = ''
@@ -64,11 +63,11 @@ export function ImageUploadField({
     const result = await removeSiteImage(kind)
     setBusy(false)
     if (!result.success) {
-      toast.error(result.error ?? (isArabic ? 'تعذّر الحذف' : 'Failed to remove'))
+      toast.error(result.error ?? t('removeFailed'))
       return
     }
     setUrl(null)
-    toast.success(isArabic ? 'تم الحذف' : 'Removed')
+    toast.success(t('removed'))
   }
 
   return (
@@ -95,7 +94,7 @@ export function ImageUploadField({
             disabled={busy}
           >
             <Trash2 className="me-2 size-4" />
-            {isArabic ? 'حذف' : 'Remove'}
+            {t('remove')}
           </Button>
         </div>
       )}
@@ -103,12 +102,12 @@ export function ImageUploadField({
       {busy ? (
         <div className="flex items-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] px-4 py-3 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
-          {isArabic ? 'جارٍ العمل…' : 'Working…'}
+          {t('working')}
         </div>
       ) : (
         <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] px-4 py-3 text-sm text-muted-foreground transition-colors hover:border-white/20 hover:text-foreground">
           <Upload className="size-4" />
-          <span>{url ? (isArabic ? 'استبدال الصورة' : 'Replace image') : (isArabic ? 'رفع صورة' : 'Upload image')}</span>
+          <span>{url ? t('replaceImage') : t('uploadImage')}</span>
           <input
             ref={inputRef}
             type="file"

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -19,29 +19,28 @@ import { SettingsCard, SettingsField } from './settings-card'
 
 type Stage = keyof CtaCopy // 'zero' | 'growing' | 'full'
 
-function getStageLabels(isArabic: boolean): Record<Stage, string> {
+function getStageLabels(t: ReturnType<typeof useTranslations>): Record<Stage, string> {
   return {
-    zero: isArabic ? 'قبل الإطلاق (مكتبة فارغة)' : 'Pre-launch (empty catalog)',
-    growing: isArabic ? 'مكتبة متنامية' : 'Growing catalog',
-    full: isArabic ? 'مكتبة ممتلئة' : 'Full catalog',
+    zero: t('stageZero'),
+    growing: t('stageGrowing'),
+    full: t('stageFull'),
   }
 }
 
-function getStageHints(isArabic: boolean): Record<Stage, string> {
+function getStageHints(t: ReturnType<typeof useTranslations>): Record<Stage, string> {
   return {
-    zero: isArabic ? 'يُعرض عند عدم نشر أي برنامج — نبرة تشويق / ما قبل الإطلاق.' : 'Shown when zero shows are published — teaser / pre-launch tone.',
-    growing: isArabic ? 'يُعرض بعد إطلاق أول برامج قليلة مع بقاء المكتبة صغيرة.' : 'Shown once the first few shows ship but the catalog is still small.',
-    full: isArabic ? 'يُعرض عندما تصبح المكتبة غنية — ابدأ بما يمكن للزوار مشاهدته.' : 'Shown when the catalog is robust — lead with what visitors can watch.',
+    zero: t('stageZeroHint'),
+    growing: t('stageGrowingHint'),
+    full: t('stageFullHint'),
   }
 }
 
 export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
   const [copy, setCopy] = useState<CtaCopy>(initial)
   const [saving, setSaving] = useState(false)
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
-  const STAGE_LABELS = getStageLabels(isArabic)
-  const STAGE_HINTS = getStageHints(isArabic)
+  const t = useTranslations('admin.settings')
+  const STAGE_LABELS = getStageLabels(t)
+  const STAGE_HINTS = getStageHints(t)
 
   const dirty = JSON.stringify(copy) !== JSON.stringify(initial)
 
@@ -50,8 +49,8 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
     setSaving(true)
     const result = await updateCtaCopy(copy)
     setSaving(false)
-    if (result.success) toast.success(isArabic ? 'تم حفظ نص الدعوة للإجراء' : 'CTA copy saved')
-    else toast.error(result.error ?? (isArabic ? 'تعذّر الحفظ' : 'Failed to save'))
+    if (result.success) toast.success(t('ctaCopySaved'))
+    else toast.error(result.error ?? t('saveFailed'))
   }
 
   function patch(stage: Stage, patch: Partial<CtaStageCopy>) {
@@ -60,10 +59,8 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
 
   return (
     <SettingsCard
-      title={isArabic ? 'نص لافتة الدعوة للإجراء' : 'CTA banner copy'}
-      description={isArabic
-        ? 'كتلة الدعوة للإجراء كاملة العرض في الصفحة الرئيسية. عدّل كل متغيّر حسب مرحلة المكتبة بشكل منفصل — الموقع يختار تلقائياً حسب عدد البرامج المنشورة.'
-        : 'The full-bleed call-to-action block on the landing page. Edit each catalog-stage variant separately — the site auto-picks based on how many shows are published.'}
+      title={t('ctaCopyTitle')}
+      description={t('ctaCopyDescription')}
     >
       <form onSubmit={onSave} className="space-y-6">
         <Tabs defaultValue="growing" className="gap-4">
@@ -80,7 +77,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
               <p className="text-xs text-muted-foreground">{STAGE_HINTS[stage]}</p>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <SettingsField label={isArabic ? 'نص الحاجب' : 'Eyebrow label'} hint={isArabic ? 'سطر صغير أحرف كبيرة فوق العنوان.' : 'Tiny uppercase line above the headline.'}>
+                <SettingsField label={t('eyebrowLabel')} hint={t('eyebrowHint')}>
                   <Input
                     maxLength={60}
                     value={copy[stage].label}
@@ -89,7 +86,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                   />
                 </SettingsField>
 
-                <SettingsField label={isArabic ? 'العنوان (غامق)' : 'Headline (bold)'}>
+                <SettingsField label={t('headlineLabel')}>
                   <Input
                     maxLength={120}
                     value={copy[stage].headline}
@@ -99,8 +96,8 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                 </SettingsField>
 
                 <SettingsField
-                  label={isArabic ? 'استكمال العنوان (خافت)' : 'Headline continuation (dimmed)'}
-                  hint={isArabic ? 'يظهر بأسلوب تباين أقل بعد الجزء الغامق.' : 'Appears in lower-contrast style after the bold part.'}
+                  label={t('headlineContinuationLabel')}
+                  hint={t('headlineContinuationHint')}
                 >
                   <Input
                     maxLength={120}
@@ -110,7 +107,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                   />
                 </SettingsField>
 
-                <SettingsField label={isArabic ? 'النص' : 'Body'}>
+                <SettingsField label={t('bodyLabel')}>
                   <Textarea
                     rows={2}
                     maxLength={300}
@@ -120,7 +117,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                   />
                 </SettingsField>
 
-                <SettingsField label={isArabic ? 'نص الزر الأساسي' : 'Primary button text'}>
+                <SettingsField label={t('primaryButtonTextLabel')}>
                   <Input
                     maxLength={60}
                     value={copy[stage].primaryLabel}
@@ -129,7 +126,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                   />
                 </SettingsField>
 
-                <SettingsField label={isArabic ? 'رابط الزر الأساسي' : 'Primary button URL'} hint={isArabic ? 'مسار (/watch) أو رابط كامل.' : 'Path (/watch) or full URL.'}>
+                <SettingsField label={t('primaryButtonUrlLabel')} hint={t('buttonUrlHint')}>
                   <Input
                     value={copy[stage].primaryHref}
                     onChange={(e) => patch(stage, { primaryHref: e.target.value })}
@@ -137,7 +134,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                   />
                 </SettingsField>
 
-                <SettingsField label={isArabic ? 'نص الرابط الثانوي' : 'Secondary link text'}>
+                <SettingsField label={t('secondaryLinkTextLabel')}>
                   <Input
                     maxLength={60}
                     value={copy[stage].secondaryLabel}
@@ -146,7 +143,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                   />
                 </SettingsField>
 
-                <SettingsField label={isArabic ? 'رابط الرابط الثانوي' : 'Secondary link URL'}>
+                <SettingsField label={t('secondaryLinkUrlLabel')}>
                   <Input
                     value={copy[stage].secondaryHref}
                     onChange={(e) => patch(stage, { secondaryHref: e.target.value })}
@@ -160,7 +157,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
 
         <div className="flex items-center justify-end">
           <Button type="submit" disabled={!dirty || saving}>
-            {saving ? <Loader2 className="size-4 animate-spin" /> : (isArabic ? 'حفظ نص الدعوة' : 'Save CTA copy')}
+            {saving ? <Loader2 className="size-4 animate-spin" /> : t('saveCtaCopy')}
           </Button>
         </div>
       </form>

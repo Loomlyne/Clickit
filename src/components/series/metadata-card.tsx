@@ -1,4 +1,5 @@
 import { Star } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -9,6 +10,7 @@ interface MetadataCardProps {
 }
 
 export function MetadataCard({ show }: MetadataCardProps) {
+  const t = useTranslations('show')
   return (
     <Card className="sticky top-28 rounded-[28px] border border-[var(--line)] bg-[var(--bg-1)]">
       <CardContent className="p-6 space-y-4">
@@ -36,21 +38,21 @@ export function MetadataCard({ show }: MetadataCardProps) {
         <Separator />
 
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-text-muted">Genre</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-text-muted">{t('genreLabel')}</p>
           <Badge variant="secondary" className="mt-1">{show.genre}</Badge>
         </div>
 
         <Separator />
 
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-text-muted">Seasons</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-text-muted">{t('seasonsLabel')}</p>
           <p className="mt-1 text-sm text-foreground">{show.seasonCount}</p>
         </div>
 
         <Separator />
 
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-text-muted">Episodes</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-text-muted">{t('episodesLabel')}</p>
           <p className="mt-1 text-sm text-foreground">{show.episodeCount}</p>
         </div>
       </CardContent>

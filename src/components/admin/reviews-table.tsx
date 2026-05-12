@@ -175,7 +175,7 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
                       {new Date(r.created_at).toLocaleDateString(
-                        locale === 'ar' ? 'ar-AE' : 'en-AE',
+                        { ar: 'ar-AE', en: 'en-AE' }[locale] ?? 'en-AE',
                         {
                         month: 'short',
                         day: 'numeric',

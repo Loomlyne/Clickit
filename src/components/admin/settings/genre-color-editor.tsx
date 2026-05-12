@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -54,8 +54,7 @@ const KNOWN_GENRES = [
 export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
   const [config, setConfig] = useState<GenreConfig>(initial)
   const [saving, setSaving] = useState(false)
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('admin.settings')
 
   const dirty = JSON.stringify(config) !== JSON.stringify(initial)
 
@@ -63,8 +62,8 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
     setSaving(true)
     const result = await updateGenreConfig(config)
     setSaving(false)
-    if (result.success) toast.success(isArabic ? 'تم حفظ ألوان الأنواع' : 'Genre colors saved')
-    else toast.error(result.error ?? (isArabic ? 'تعذّر الحفظ' : 'Failed to save'))
+    if (result.success) toast.success(t('genreColorsSaved'))
+    else toast.error(result.error ?? t('saveFailed'))
   }
 
   function setColor(genre: string, color: string | undefined) {
@@ -81,13 +80,11 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
 
   return (
     <SettingsCard
-      title={isArabic ? 'ألوان الأنواع' : 'Genre colors'}
-      description={isArabic
-        ? 'استبدل لون التمييز المستخدم لكل بطاقة نوع في الصفحة الرئيسية. الأنواع بدون استبدال تعود إلى اللوحة الافتراضية.'
-        : 'Override the accent color used for each genre card on the landing page. Genres without an override fall back to the default palette.'}
+      title={t('genreColorsTitle')}
+      description={t('genreColorsDescription')}
       action={
         <Button size="sm" onClick={onSave} disabled={!dirty || saving}>
-          {saving ? <Loader2 className="size-4 animate-spin" /> : (isArabic ? 'حفظ' : 'Save')}
+          {saving ? <Loader2 className="size-4 animate-spin" /> : t('saveButtonShort')}
         </Button>
       }
     >
@@ -115,7 +112,7 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
                 ))}
                 <button
                   type="button"
-                  title={isArabic ? 'إلغاء الاستبدال' : 'Clear override'}
+                  title={t('clearOverride')}
                   onClick={() => setColor(genre, undefined)}
                   className={`ms-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider transition-colors ${
                     active
@@ -123,7 +120,7 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
                       : 'text-white/30'
                   }`}
                 >
-                  {isArabic ? 'افتراضي' : 'Default'}
+                  {t('defaultLabel')}
                 </button>
               </div>
             </div>

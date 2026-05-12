@@ -1,4 +1,4 @@
-import { getLocale, getTranslations } from 'next-intl/server'
+import { getTranslations } from 'next-intl/server'
 import { PortraitShowCard } from '@/components/shows/portrait-show-card'
 import { EpisodeRow } from '@/components/series/episode-row'
 import type { ViewShow, ViewEpisode } from '@/lib/queries'
@@ -15,14 +15,12 @@ interface SearchResultsProps {
 
 export async function SearchResults({ query, shows, episodes }: SearchResultsProps) {
   const total = shows.length + episodes.length
-  const [t, locale] = await Promise.all([getTranslations('search'), getLocale()])
-  const isArabic = locale === 'ar'
+  const t = await getTranslations('search')
 
   return (
     <>
       <p className="mono text-[var(--text-mute)]">
-        {total} {isArabic ? (total === 1 ? 'نتيجة' : 'نتيجة') : (total === 1 ? 'result' : 'results')}{' '}
-        for &ldquo;{query}&rdquo;
+        {t('resultsSummary', { total, query })}
       </p>
 
       <div className="mt-10 space-y-12">

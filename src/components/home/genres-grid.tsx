@@ -14,7 +14,6 @@ export async function GenresGrid() {
     getLocale(),
     getTranslations('home'),
   ])
-  const isArabic = locale === 'ar'
 
   if (!config.flags.showGenresGrid) return null
   if (categories.length === 0) return null
@@ -26,6 +25,10 @@ export async function GenresGrid() {
         <div className="scrollbar-hide flex gap-3 overflow-x-auto px-6 py-2 md:px-12">
           {categories.map((category) => {
             const color = category.color ?? DEFAULT_COLOR
+            const categoryNameByLocale: Record<string, string> = {
+              ar: category.nameAr,
+              en: category.nameEn,
+            }
             return (
               <Link
                 key={category.slug}
@@ -43,7 +46,7 @@ export async function GenresGrid() {
                     className="whitespace-nowrap text-sm font-medium"
                     style={{ color }}
                   >
-                    {isArabic ? category.nameAr : category.nameEn}
+                    {categoryNameByLocale[locale] ?? category.nameEn}
                   </span>
                 </div>
               </Link>

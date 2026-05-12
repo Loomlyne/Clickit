@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
 
@@ -12,8 +12,7 @@ interface YouTubeUrlInputProps {
 }
 
 export function YouTubeUrlInput({ value, onChange, error }: YouTubeUrlInputProps) {
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('admin.youtubeInput')
   // Determine if initial value is a bare video ID (11 chars, no slashes)
   const isVideoId = value && value.length === 11 && !value.includes('/')
   const [rawUrl, setRawUrl] = useState(isVideoId ? '' : value)
@@ -33,13 +32,13 @@ export function YouTubeUrlInput({ value, onChange, error }: YouTubeUrlInputProps
       setRawUrl(value)
       const id = extractYouTubeId(value)
       setExtractedId(id)
-      setValidationError(id ? null : (isArabic ? 'تعذّر استخراج معرّف الفيديو من هذا الرابط' : 'Could not extract video ID from this URL'))
+      setValidationError(id ? null : t('extractError'))
     } else {
       setRawUrl('')
       setExtractedId(null)
       setValidationError(null)
     }
-  }, [value])
+  }, [value, t])
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const url = e.target.value
@@ -59,7 +58,7 @@ export function YouTubeUrlInput({ value, onChange, error }: YouTubeUrlInputProps
       setValidationError(null)
       onChange(id, url)
     } else {
-      setValidationError(isArabic ? 'تعذّر استخراج معرّف الفيديو من هذا الرابط' : 'Could not extract video ID from this URL')
+      setValidationError(t('extractError'))
       onChange(null, url)
     }
   }
@@ -69,7 +68,7 @@ export function YouTubeUrlInput({ value, onChange, error }: YouTubeUrlInputProps
       <Input
         value={rawUrl}
         onChange={handleChange}
-        placeholder={isArabic ? 'الصق رابط يوتيوب (مثلاً: youtube.com/watch?v=...)' : 'Paste YouTube URL (e.g., youtube.com/watch?v=...)'}
+        placeholder={t('placeholder')}
         aria-invalid={!!(error || validationError)}
       />
       {(error || validationError) && (
@@ -80,13 +79,13 @@ export function YouTubeUrlInput({ value, onChange, error }: YouTubeUrlInputProps
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={getYouTubeThumbnailUrl(extractedId)}
-            alt="Video thumbnail"
+            alt={t('thumbnailAlt')}
             width={120}
             height={68}
             className="rounded border border-border"
           />
           <span className="text-sm text-muted-foreground">
-            {isArabic ? 'المعرّف:' : 'ID:'} {extractedId}
+            {t('idLabel')} {extractedId}
           </span>
         </div>
       )}

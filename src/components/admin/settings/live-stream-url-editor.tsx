@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -12,8 +12,7 @@ import { SettingsCard, SettingsField } from './settings-card'
 export function LiveStreamUrlEditor({ initialUrl }: { initialUrl: string | null }) {
   const [value, setValue] = useState(initialUrl ?? '')
   const [saving, setSaving] = useState(false)
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('admin.settings')
 
   const dirty = value !== (initialUrl ?? '')
 
@@ -25,25 +24,21 @@ export function LiveStreamUrlEditor({ initialUrl }: { initialUrl: string | null 
     })
     setSaving(false)
     if (result.success) {
-      toast.success(isArabic ? 'تم حفظ رابط البث' : 'Live stream URL saved')
+      toast.success(t('liveStreamSaved'))
     } else {
-      toast.error(result.error ?? (isArabic ? 'تعذّر الحفظ' : 'Failed to save'))
+      toast.error(result.error ?? t('saveFailed'))
     }
   }
 
   return (
     <SettingsCard
-      title={isArabic ? 'البث المباشر' : 'Live stream (YouTube URL)'}
-      description={isArabic
-        ? 'يظهر زر «يُبث الآن» في شريط التنقل ويفتح الرابط في نافذة جديدة.'
-        : 'The red “Now Live” control in the navbar uses this URL in a new tab. Leave empty to keep the default link to the watch page rail.'}
+      title={t('liveStreamTitle')}
+      description={t('liveStreamDescription')}
     >
       <form onSubmit={onSave} className="grid gap-4">
         <SettingsField
-          label={isArabic ? 'رابط يوتيوب' : 'YouTube URL'}
-          hint={isArabic
-            ? 'يجب أن يكون الرابط من youtube.com أو youtu.be مع معرف فيديو صالح.'
-            : 'Must be a full YouTube watch, live, shorts, or embed URL (validated host + video id).'}
+          label={t('youtubeUrlLabel')}
+          hint={t('liveStreamHint')}
         >
           <Input
             value={value}
@@ -55,7 +50,7 @@ export function LiveStreamUrlEditor({ initialUrl }: { initialUrl: string | null 
         </SettingsField>
         <div className="flex justify-end">
           <Button type="submit" disabled={!dirty || saving}>
-            {saving ? <Loader2 className="size-4 animate-spin" /> : (isArabic ? 'حفظ' : 'Save live URL')}
+            {saving ? <Loader2 className="size-4 animate-spin" /> : t('saveLiveUrl')}
           </Button>
         </div>
       </form>

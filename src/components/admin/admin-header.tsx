@@ -31,6 +31,7 @@ export function AdminHeader() {
   const router = useRouter()
   const t = useTranslations('admin.dashboard')
   const tNav = useTranslations('nav')
+  const tAdmin = useTranslations('admin.common')
   const prefetched = useRef(new Set<string>())
 
   const navGroups = useMemo<AdminNavGroup[]>(
@@ -124,7 +125,7 @@ export function AdminHeader() {
         <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
           <Link
             href="/watch"
-            aria-label="Go to watch"
+            aria-label={tNav('watch')}
             className="flex min-h-10 min-w-0 items-center sm:min-h-11"
           >
             <Image
@@ -140,7 +141,7 @@ export function AdminHeader() {
 
         {/* Tablet / desktop: grouped clusters, wrap + scroll fallback for narrow widths */}
         <nav
-          aria-label="Admin"
+          aria-label={tAdmin('adminNavAria')}
           className="hidden min-h-[44px] min-w-0 flex-1 md:flex md:items-center md:justify-center"
         >
           <div className="flex max-w-full flex-wrap items-center justify-center gap-2 overflow-x-auto overscroll-x-contain py-0.5 [scrollbar-width:thin] lg:flex-nowrap lg:gap-3 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15">

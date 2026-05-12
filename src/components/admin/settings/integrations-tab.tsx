@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Loader2, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -23,8 +23,7 @@ export function IntegrationsTab({
   const [yt, setYt] = useState('')
   const [savedHasYouTube, setSavedHasYouTube] = useState(hasYouTubeKey)
   const [saving, setSaving] = useState(false)
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('admin.settings')
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault()
@@ -40,11 +39,11 @@ export function IntegrationsTab({
     })
     setSaving(false)
     if (result.success) {
-      toast.success(isArabic ? 'تم حفظ التكاملات' : 'Integrations saved')
+      toast.success(t('integrationsSaved'))
       if (yt !== '') setSavedHasYouTube(true)
       else if (yt === '' && !savedHasYouTube) setSavedHasYouTube(false)
     } else {
-      toast.error(result.error ?? (isArabic ? 'تعذّر الحفظ' : 'Failed to save'))
+      toast.error(result.error ?? t('saveFailed'))
     }
   }
 
@@ -52,13 +51,11 @@ export function IntegrationsTab({
     <form onSubmit={onSave} className="space-y-6">
       <SettingsCard
         title="Google Analytics"
-        description={isArabic
-          ? 'الصق معرّف القياس GA4 لتفعيل تتبّع مشاهدات الصفحة في الصفحة الرئيسية وصفحات التصفح.'
-          : 'Paste your GA4 measurement ID to enable page-view tracking on the landing and browse pages.'}
+        description={t('googleAnalyticsDescription')}
       >
         <SettingsField
-          label={isArabic ? 'معرّف القياس' : 'Measurement ID'}
-          hint={isArabic ? 'الصيغة: G-XXXXXXXXXX. ستجده في Analytics ← Admin ← Data Streams.' : 'Format: G-XXXXXXXXXX. Find it in Analytics → Admin → Data Streams.'}
+          label={t('measurementIdLabel')}
+          hint={t('measurementIdHint')}
         >
           <Input
             value={ga}
@@ -72,11 +69,9 @@ export function IntegrationsTab({
 
       <SettingsCard
         title="Meta Pixel"
-        description={isArabic
-          ? 'تتبّع التحويلات وبناء جماهير إعادة الاستهداف لحملات إنستغرام / فيسبوك.'
-          : 'Track conversions and build retargeting audiences for Instagram / Facebook campaigns.'}
+        description={t('metaPixelDescription')}
       >
-        <SettingsField label={isArabic ? 'معرّف البيكسل' : 'Pixel ID'} hint={isArabic ? 'معرّف رقمي فقط (بدون أقواس أو علامات اقتباس).' : 'Numeric ID only (no brackets or quotes).'}>
+        <SettingsField label={t('pixelIdLabel')} hint={t('pixelIdHint')}>
           <Input
             value={pixel}
             onChange={(e) => setPixel(e.target.value)}
@@ -89,9 +84,7 @@ export function IntegrationsTab({
 
       <SettingsCard
         title="YouTube Data API"
-        description={isArabic
-          ? 'اختياري. عند الضبط، يحصل نموذج الحلقة على زر "جلب من يوتيوب" يملأ العنوان والصورة المصغّرة والمدة تلقائياً من أي رابط يوتيوب.'
-          : "Optional. When set, the episode form gets a 'Fetch from YouTube' button that auto-fills title, thumbnail, and duration from any YouTube URL."}
+        description={t('youtubeApiDescription')}
         action={
           <a
             href="https://console.cloud.google.com/apis/credentials"
@@ -99,14 +92,14 @@ export function IntegrationsTab({
             rel="noreferrer"
             className="inline-flex items-center gap-1 text-xs font-medium text-white/60 hover:text-white"
           >
-            {isArabic ? 'احصل على مفتاح' : 'Get a key'}
+            {t('getKey')}
             <ExternalLink className="size-3" />
           </a>
         }
       >
         <SettingsField
-          label={isArabic ? 'مفتاح API' : 'API key'}
-          hint={isArabic ? 'مخزّن بأمان. فقط مسارات الخادم يمكنها قراءة هذه القيمة.' : 'Stored securely. Only server-side routes can read this value.'}
+          label={t('apiKeyLabel')}
+          hint={t('apiKeyHint')}
         >
           <SecretField
             value={yt}
@@ -119,7 +112,7 @@ export function IntegrationsTab({
 
       <div className="flex items-center justify-end">
         <Button type="submit" disabled={saving}>
-          {saving ? <Loader2 className="size-4 animate-spin" /> : (isArabic ? 'حفظ التكاملات' : 'Save integrations')}
+          {saving ? <Loader2 className="size-4 animate-spin" /> : t('saveIntegrations')}
         </Button>
       </div>
     </form>

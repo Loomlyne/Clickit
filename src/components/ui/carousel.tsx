@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useLocale } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from "embla-carousel-react"
@@ -53,7 +53,7 @@ function Carousel({
   ...props
 }: React.ComponentProps<"div"> & CarouselProps) {
   const locale = useLocale()
-  const direction: 'ltr' | 'rtl' = locale === 'ar' ? 'rtl' : 'ltr'
+  const direction: 'ltr' | 'rtl' = ({ ar: 'rtl', en: 'ltr' } as const)[locale] ?? 'ltr'
   const [carouselRef, api] = useEmblaCarousel(
     {
       ...opts,
@@ -182,6 +182,7 @@ function CarouselPrevious({
   ...props
 }: React.ComponentProps<typeof Button>) {
   const { orientation, scrollPrev, canScrollPrev } = useCarousel()
+  const t = useTranslations('common')
 
   return (
     <Button
@@ -200,7 +201,7 @@ function CarouselPrevious({
       {...props}
     >
       <ArrowLeft className="rtl:scale-x-[-1]" />
-      <span className="sr-only">Previous slide</span>
+      <span className="sr-only">{t('previousSlide')}</span>
     </Button>
   )
 }
@@ -212,6 +213,7 @@ function CarouselNext({
   ...props
 }: React.ComponentProps<typeof Button>) {
   const { orientation, scrollNext, canScrollNext } = useCarousel()
+  const t = useTranslations('common')
 
   return (
     <Button
@@ -230,7 +232,7 @@ function CarouselNext({
       {...props}
     >
       <ArrowRight className="rtl:scale-x-[-1]" />
-      <span className="sr-only">Next slide</span>
+      <span className="sr-only">{t('nextSlide')}</span>
     </Button>
   )
 }

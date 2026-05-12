@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -60,12 +60,12 @@ const GENRES = [
   'Kids', 'Poetry', 'Cinema', 'Tech', 'Entertainment', 'Culture',
 ]
 
-const BRAND_COLORS: { value: string; label: string; hex: string }[] = [
-  { value: 'brand-blue', label: 'Blue', hex: '#2C3569' },
-  { value: 'brand-purple', label: 'Purple', hex: '#9F54A0' },
-  { value: 'brand-green', label: 'Green', hex: '#50A258' },
-  { value: 'brand-red', label: 'Red', hex: '#DB3F34' },
-  { value: 'brand-orange', label: 'Orange', hex: '#EA8C2E' },
+const BRAND_COLORS: { value: string; key: string; hex: string }[] = [
+  { value: 'brand-blue', key: 'colorBlue', hex: '#2C3569' },
+  { value: 'brand-purple', key: 'colorPurple', hex: '#9F54A0' },
+  { value: 'brand-green', key: 'colorGreen', hex: '#50A258' },
+  { value: 'brand-red', key: 'colorRed', hex: '#DB3F34' },
+  { value: 'brand-orange', key: 'colorOrange', hex: '#EA8C2E' },
 ]
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -138,8 +138,6 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
   const t = useTranslations('admin.showForm')
   const tCommon = useTranslations('common')
   const tErrors = useTranslations('errors')
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
 
   const generatedId = useMemo(() => {
     if (!isEdit) return crypto.randomUUID()
@@ -195,11 +193,11 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="sm:max-w-xl w-full p-0 flex flex-col">
         <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
-          <SheetTitle className="text-lg">{isEdit ? (isArabic ? 'تعديل برنامج' : 'Edit Show') : t('createShowCta')}</SheetTitle>
+          <SheetTitle className="text-lg">{isEdit ? t('editShow') : t('createShowCta')}</SheetTitle>
           <p className="text-sm text-muted-foreground">
             {isEdit
-              ? (isArabic ? `تعديل "${show.title}"` : `Editing "${show.title}"`)
-              : (isArabic ? 'املأ التفاصيل لإنشاء برنامج جديد' : 'Fill in the details to create a new show')}
+              ? t('editingShow', { title: show.title })
+              : t('newShowDescription')}
           </p>
         </SheetHeader>
 
@@ -209,7 +207,7 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
             {/* BASIC INFO */}
             <Section title={t('basicInfoTab')}>
               <Field label={t('titleLabel')} required error={errors.title?.message ? tErrors(errors.title.message as never) : undefined}>
-                <Input {...form.register('title')} placeholder={isArabic ? 'مثلاً: Last Call' : 'e.g., Last Call'} />
+                <Input {...form.register('title')} placeholder={t('titlePlaceholder')} />
               </Field>
 
               <Field label={t('titleArLabel')}>
@@ -225,7 +223,7 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
                   />
                   {isEdit && <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />}
                 </div>
-                {!isEdit && <p className="text-xs text-muted-foreground">{isArabic ? 'يُولَّد تلقائياً من العنوان' : 'Auto-generated from title'}</p>}
+                {!isEdit && <p className="text-xs text-muted-foreground">{t('autoSlugHint')}</p>}
               </Field>
 
               <div className="grid grid-cols-2 gap-3">
@@ -234,9 +232,9 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
                     value={form.watch('genre')}
                     onValueChange={(val) => form.setValue('genre', val, { shouldValidate: true })}
                   >
-                    <SelectTrigger><SelectValue placeholder={isArabic ? 'اختر' : 'Select'} /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t('selectPlaceholder')} /></SelectTrigger>
                     <SelectContent>
-                      {GENRES.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                      {GENRES.map((g) => <SelectItem key={g} value={g}>{t(`genre${g}` as never)}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </Field>
@@ -258,9 +256,9 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
             </Section>
 
             {/* DESCRIPTION */}
-            <Section title={isArabic ? 'الوصف' : 'Description'}>
+            <Section title={t('descriptionSection')}>
               <Field label={t('descriptionLabel')} required error={errors.description?.message ? tErrors(errors.description.message as never) : undefined}>
-                <Textarea rows={4} {...form.register('description')} placeholder={isArabic ? 'ما موضوع هذا البرنامج؟' : 'What is this show about?'} />
+                <Textarea rows={4} {...form.register('description')} placeholder={t('descriptionPlaceholder')} />
               </Field>
 
               <Field label={t('descriptionArLabel')}>
@@ -269,7 +267,7 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
 
               <div className="grid grid-cols-2 gap-3">
                 <Field label={t('taglineLabel')}>
-                  <Input {...form.register('tagline')} placeholder={isArabic ? 'جملة قصيرة جذّابة' : 'Short hook'} />
+                  <Input {...form.register('tagline')} placeholder={t('taglinePlaceholder')} />
                 </Field>
                 <Field label={t('taglineArLabel')}>
                   <Input dir="rtl" {...form.register('tagline_ar')} />
@@ -278,7 +276,7 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
             </Section>
 
             {/* BRANDING */}
-            <Section title={isArabic ? 'الهوية البصرية' : 'Branding'}>
+            <Section title={t('brandingSection')}>
               <Field label={t('brandColorLabel')}>
                 <div className="flex gap-2">
                   {BRAND_COLORS.map((c) => (
@@ -293,7 +291,7 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
                       }`}
                     >
                       <span className="size-8 rounded-full" style={{ backgroundColor: c.hex }} />
-                      <span className="text-[10px] text-muted-foreground">{c.label}</span>
+                      <span className="text-[10px] text-muted-foreground">{t(c.key as never)}</span>
                     </button>
                   ))}
                 </div>
@@ -305,24 +303,22 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
                   currentUrl={form.watch('poster_url') || null}
                   onUploadComplete={(url) => form.setValue('poster_url', url)}
                   onDelete={() => form.setValue('poster_url', '')}
-                  label={t('posterLabel')} aspectHint={isArabic ? '٢:٣ · صورة البطاقة' : '2:3 · card artwork'}
+                  label={t('posterLabel')} aspectHint={t('posterAspectHint')}
                 />
                 <ArtworkUploadZone
                   showId={generatedId} slot="logo"
                   currentUrl={form.watch('logo_url') || null}
                   onUploadComplete={(url) => form.setValue('logo_url', url)}
                   onDelete={() => form.setValue('logo_url', '')}
-                  label={t('logoLabel')} aspectHint={isArabic ? 'PNG · شفاف' : 'PNG · transparent'}
+                  label={t('logoLabel')} aspectHint={t('logoAspectHint')}
                 />
               </div>
             </Section>
 
             {/* HERO MEDIA */}
-            <Section title={isArabic ? 'وسائط الهيرو' : 'Hero Media'}>
+            <Section title={t('heroMediaSection')}>
               <p className="text-xs text-muted-foreground -mt-2">
-                {isArabic
-                  ? 'الوسائط لهيرو صفحة التصفح. اختر مصدراً واحداً لكل حجم شاشة — صورة أو MP4 أو رابط يوتيوب. تبديل المصدر يمسح السابق.'
-                  : 'Media for the browse hero. Pick one source per screen size — image, MP4, or YouTube link. Switching source clears the previous one.'}
+                {t('heroMediaSwitchHint')}
               </p>
               <HeroMediaPicker
                 showId={generatedId}
@@ -351,16 +347,16 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
             </Section>
 
             {/* SCHEDULE */}
-            <Section title={isArabic ? 'الجدول' : 'Schedule'}>
+            <Section title={t('scheduleSection')}>
               <div className="grid grid-cols-2 gap-3">
                 <Field label={t('broadcastDayLabel')}>
                   <Select
                     value={form.watch('broadcast_day') ?? ''}
                     onValueChange={(val) => form.setValue('broadcast_day', val || null)}
                   >
-                    <SelectTrigger><SelectValue placeholder={isArabic ? 'اختر اليوم' : 'Select day'} /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t('selectDayPlaceholder')} /></SelectTrigger>
                     <SelectContent>
-                      {DAYS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                      {DAYS.map((d) => <SelectItem key={d} value={d}>{t(`day${d}` as never)}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </Field>
@@ -379,16 +375,16 @@ export function ShowFormDrawer({ open, onOpenChange, show, onSave }: ShowFormDra
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              {isArabic ? 'تجاهل التغييرات' : 'Discard Changes'}
+              {t('discardChanges')}
             </Button>
             <Button
               type="submit"
               disabled={form.formState.isSubmitting}
             >
               {form.formState.isSubmitting
-                ? (isArabic ? 'جارٍ الحفظ…' : 'Saving...')
+                ? t('savingLabel')
                 : isEdit
-                  ? (isArabic ? 'حفظ البرنامج' : 'Save Show')
+                  ? t('saveShow')
                   : t('createShowCta')}
             </Button>
           </div>

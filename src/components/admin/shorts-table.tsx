@@ -87,7 +87,7 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
     const d = new Date(expiresAt)
     const now = new Date()
     if (d < now) return t('expiryExpired')
-    return d.toLocaleDateString(locale === 'ar' ? 'ar-AE' : 'en-AE', {
+    return d.toLocaleDateString(({ ar: 'ar-AE', en: 'en-AE' }[locale] ?? 'en-AE'), {
       month: 'short',
       day: 'numeric',
       year: 'numeric',

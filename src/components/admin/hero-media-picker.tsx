@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import {
   Upload,
   Loader2,
@@ -50,33 +50,14 @@ export function HeroMediaPicker({
     currentVideoType === 'youtube' ? (currentVideoUrl ?? '') : ''
   )
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('admin.heroMedia')
 
   const label =
-    variant === 'desktop'
-      ? isArabic
-        ? 'هيرو سطح المكتب'
-        : 'Desktop Hero'
-      : isArabic
-        ? 'هيرو الجوّال'
-        : 'Mobile Hero'
+    variant === 'desktop' ? t('desktopHero') : t('mobileHero')
   const imageHint =
-    variant === 'desktop'
-      ? isArabic
-        ? '16:9 أفقي · 1920×1080'
-        : '16:9 landscape · 1920×1080'
-      : isArabic
-        ? '9:16 عمودي · 1080×1920'
-        : '9:16 portrait · 1080×1920'
+    variant === 'desktop' ? t('desktopImageHint') : t('mobileImageHint')
   const videoHint =
-    variant === 'desktop'
-      ? isArabic
-        ? 'أفقي · 1920×1080 · الحجم المُستهدف ≤8 م.ب. لتشغيل سريع على الجوّال · الحد 50 م.ب.'
-        : 'Landscape · 1920×1080 · Target ≤8 MB for fast mobile playback · Max 50MB'
-      : isArabic
-        ? 'عمودي · 1080×1920 · الحجم المُستهدف ≤8 م.ب. لتشغيل سريع على الجوّال · الحد 50 م.ب.'
-        : 'Portrait · 1080×1920 · Target ≤8 MB for fast mobile playback · Max 50MB'
+    variant === 'desktop' ? t('desktopVideoHint') : t('mobileVideoHint')
   const imageSlot = variant === 'desktop' ? 'hero' : 'hero-mobile'
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -84,9 +65,7 @@ export function HeroMediaPicker({
     if (!file) return
     if (file.size > 10 * 1024 * 1024) {
       toast.error(
-        isArabic
-          ? 'يجب أن تكون الصورة أقل من 10 م.ب.'
-          : 'Image must be under 10MB'
+        t('imageTooLarge')
       )
       return
     }
@@ -98,16 +77,14 @@ export function HeroMediaPicker({
       formData.set('slot', imageSlot)
       const result = await uploadArtwork(formData)
       if (!result.success) {
-        toast.error(result.error ?? (isArabic ? 'فشل الرفع' : 'Upload failed'))
+        toast.error(result.error ?? t('uploadFailed'))
         return
       }
       onImageChange(result.data!)
       onVideoChange(null)
-      toast.success(
-        isArabic ? `تم رفع صورة ${label}` : `${label} image uploaded`
-      )
+      toast.success(t('uploadHeroSuccess', { label }))
     } catch {
-      toast.error(isArabic ? 'فشل الرفع' : 'Upload failed')
+      toast.error(t('uploadFailed'))
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -119,9 +96,7 @@ export function HeroMediaPicker({
     if (!file) return
     if (file.size > 50 * 1024 * 1024) {
       toast.error(
-        isArabic
-          ? 'يجب أن يكون الفيديو أقل من 50 م.ب.'
-          : 'Video must be under 50MB'
+        t('videoTooLarge')
       )
       return
     }
@@ -136,7 +111,7 @@ export function HeroMediaPicker({
       })
       if (!uploadTarget.success || !uploadTarget.data) {
         toast.error(
-          uploadTarget.error ?? (isArabic ? 'فشل الرفع' : 'Upload failed')
+          uploadTarget.error ?? t('uploadFailed')
         )
         return
       }
@@ -161,16 +136,14 @@ export function HeroMediaPicker({
 
       const result = await saveShowVideoUpload(uploadTarget.data.path)
       if (!result.success || !result.data) {
-        toast.error(result.error ?? (isArabic ? 'فشل الرفع' : 'Upload failed'))
+        toast.error(result.error ?? t('uploadFailed'))
         return
       }
       onVideoChange({ url: result.data, type: 'mp4' })
       onImageChange(null)
-      toast.success(
-        isArabic ? `تم رفع فيديو ${label}` : `${label} video uploaded`
-      )
+      toast.success(t('uploadVideoSuccess', { label }))
     } catch {
-      toast.error(isArabic ? 'فشل الرفع' : 'Upload failed')
+      toast.error(t('uploadFailed'))
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -179,18 +152,16 @@ export function HeroMediaPicker({
 
   function handleYoutubeSave() {
     if (!youtubeInput.trim()) {
-      toast.error(isArabic ? 'الصق رابط يوتيوب' : 'Paste a YouTube URL')
+      toast.error(t('pasteYoutubePrompt'))
       return
     }
     if (!extractYouTubeId(youtubeInput)) {
-      toast.error(isArabic ? 'رابط يوتيوب غير صالح' : 'Invalid YouTube URL')
+      toast.error(t('invalidYoutube'))
       return
     }
     onVideoChange({ url: youtubeInput.trim(), type: 'youtube' })
     onImageChange(null)
-    toast.success(
-      isArabic ? `تم تعيين رابط يوتيوب لـ ${label}` : `${label} YouTube URL set`
-    )
+    toast.success(t('youtubeSetSuccess', { label }))
   }
 
   // Clear nulls the form state only. We do NOT delete the storage file here — the
@@ -202,7 +173,7 @@ export function HeroMediaPicker({
     onImageChange(null)
     onVideoChange(null)
     setYoutubeInput('')
-    toast.success(isArabic ? `تم مسح ${label}` : `${label} cleared`)
+    toast.success(t('removeSuccess', { label }))
   }
 
   const hasContent = !!(currentImageUrl || currentVideoUrl)
@@ -220,7 +191,7 @@ export function HeroMediaPicker({
             disabled={uploading}
           >
             <Trash2 className="me-1.5 size-3.5" />
-            {isArabic ? 'مسح' : 'Clear'}
+            {t('clearButton')}
           </Button>
         )}
       </div>
@@ -275,7 +246,7 @@ export function HeroMediaPicker({
           >
             {m === 'image' && (
               <>
-                <ImageIcon className="size-3.5" /> {isArabic ? 'صورة' : 'Image'}
+                <ImageIcon className="size-3.5" /> {t('imageMode')}
               </>
             )}
             {m === 'mp4' && (
@@ -286,7 +257,7 @@ export function HeroMediaPicker({
             {m === 'youtube' && (
               <>
                 <LinkIcon className="size-3.5" />{' '}
-                {isArabic ? 'يوتيوب' : 'YouTube'}
+                {t('youtubeMode')}
               </>
             )}
           </button>
@@ -298,14 +269,14 @@ export function HeroMediaPicker({
         <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6">
           <Loader2 className="text-muted-foreground size-5 animate-spin" />
           <p className="text-muted-foreground text-sm">
-            {isArabic ? 'جارٍ الرفع…' : 'Uploading…'}
+            {t('uploadingVideo')}
           </p>
         </div>
       ) : mode === 'image' ? (
         <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6 transition-colors hover:border-white/20">
           <Upload className="text-muted-foreground size-5" />
           <p className="text-muted-foreground text-sm">
-            {isArabic ? 'انقر لرفع صورة' : 'Click to upload image'}
+            {t('clickToUploadImage')}
           </p>
           <p className="text-muted-foreground text-xs">{imageHint}</p>
           <input
@@ -320,7 +291,7 @@ export function HeroMediaPicker({
         <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6 transition-colors hover:border-white/20">
           <Upload className="text-muted-foreground size-5" />
           <p className="text-muted-foreground text-sm">
-            {isArabic ? 'انقر لرفع MP4' : 'Click to upload MP4'}
+            {t('clickToUploadMp4')}
           </p>
           <p className="text-muted-foreground text-xs">{videoHint}</p>
           <input
@@ -346,7 +317,7 @@ export function HeroMediaPicker({
             onClick={handleYoutubeSave}
             disabled={!youtubeInput.trim()}
           >
-            {isArabic ? 'تعيين' : 'Set'}
+            {t('setButton')}
           </Button>
         </div>
       )}

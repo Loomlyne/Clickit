@@ -64,7 +64,7 @@ export default function ColorsPage() {
           <div className="mt-6 rounded-[28px] border border-white/10 bg-background p-5">
             <div className="rounded-[28px] border border-white/10 bg-card p-5">
               <div className="rounded-[28px] border border-white/10 bg-secondary p-5">
-                <p className="font-mono text-xs text-muted-foreground">Nested elevation stays subtle.</p>
+                <p className="font-mono text-xs text-muted-foreground">{'Nested elevation stays subtle.'}</p>
               </div>
             </div>
           </div>

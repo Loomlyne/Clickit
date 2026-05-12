@@ -49,6 +49,7 @@ interface ShortFormDrawerProps {
 
 export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormDrawerProps) {
   const t = useTranslations('admin.shortForm')
+  const tShowForm = useTranslations('admin.showForm')
   const tCommon = useTranslations('common')
   const formSchema = useMemo(() => buildFormSchema(t), [t])
   type FormData = z.infer<typeof formSchema>
@@ -268,7 +269,7 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
               >
                 <option value="">{t('genreNone')}</option>
                 {GENRES.map((g) => (
-                  <option key={g} value={g}>{g}</option>
+                  <option key={g} value={g}>{tShowForm(`genre${g}` as never)}</option>
                 ))}
               </select>
             </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import type { ViewSeason } from '@/lib/queries'
 
@@ -16,8 +16,7 @@ export function SeasonSelector({
   onSeasonChange,
 }: SeasonSelectorProps) {
   const activeSeasonNumber = seasons.find((s) => s.id === activeSeason)?.seasonNumber ?? 1
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('show')
 
   return (
     <div>
@@ -33,12 +32,12 @@ export function SeasonSelector({
                 : 'text-[var(--text-mute)] hover:text-white border-transparent'
             )}
           >
-            {isArabic ? `الموسم ${season.seasonNumber}` : `S${season.seasonNumber}`}
+            {t('seasonShortLabel', { number: season.seasonNumber })}
           </button>
         ))}
       </div>
       <span className="sr-only" aria-live="polite">
-        {isArabic ? `عرض الموسم ${activeSeasonNumber}` : `Showing Season ${activeSeasonNumber}`}
+        {t('showingSeason', { number: activeSeasonNumber })}
       </span>
     </div>
   )

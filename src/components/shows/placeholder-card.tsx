@@ -1,6 +1,8 @@
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 export function PlaceholderCard() {
+  const t = useTranslations('show')
   return (
     <div
       aria-hidden="true"
@@ -10,7 +12,7 @@ export function PlaceholderCard() {
       style={{ width: 'var(--landscape-w)', aspectRatio: '16 / 9' }}
     >
       <div className="flex h-full w-full items-center justify-center">
-        <span className="mono">Coming Soon</span>
+        <span className="mono">{t('comingSoonBadge')}</span>
       </div>
     </div>
   )

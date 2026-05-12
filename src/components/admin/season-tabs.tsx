@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { Plus, Pencil } from 'lucide-react'
 import { useRouter } from '@/i18n/navigation'
 
@@ -39,8 +39,7 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
   const router = useRouter()
   const tSeason = useTranslations('admin.seasonForm')
   const tEpisode = useTranslations('admin.episodeForm')
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('admin.seasonTabs')
   const [seasonDrawerOpen, setSeasonDrawerOpen] = useState(false)
   const [editSeason, setEditSeason] = useState<Season | null>(null)
   const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false)
@@ -65,12 +64,12 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
     return (
       <div>
         <EmptyState
-          heading={isArabic ? 'لا توجد مواسم' : 'No Seasons'}
-          body={isArabic ? 'أنشئ موسماً لإضافة الحلقات.' : 'Create a season to start adding episodes.'}
+          heading={t('emptyHeading')}
+          body={t('empty')}
           action={
             <Button onClick={handleAddSeason}>
               <Plus className="me-1.5 size-4" />
-              {isArabic ? 'إضافة موسم' : 'Add Season'}
+              {tSeason('addSeason')}
             </Button>
           }
         />
@@ -99,15 +98,15 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
-                {isArabic ? 'المواسم' : 'Seasons'}
+                {t('seasonsHeading')}
               </p>
               <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
-                {isArabic ? 'إدارة الحلقات' : 'Episode management'}
+                {t('episodeManagementHeading')}
               </h2>
             </div>
             <Button variant="outline" size="sm" onClick={handleAddSeason}>
               <Plus className="me-1 size-4" />
-              {isArabic ? 'إضافة موسم' : 'Add Season'}
+              {tSeason('addSeason')}
             </Button>
           </div>
 
@@ -128,12 +127,12 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
                           handleEditSeason(season)
                         }}
                         className="ms-0.5 rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                        aria-label={isArabic ? `تعديل ${season.title}` : `Edit ${season.title}`}
+                        aria-label={t('editSeasonAria', { title: season.title })}
                       >
                         <Pencil className="size-3" />
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent>{isArabic ? 'تعديل الموسم' : 'Edit season'}</TooltipContent>
+                    <TooltipContent>{t('editSeasonTooltip')}</TooltipContent>
                   </Tooltip>
                 </TabsTrigger>
               )
@@ -149,7 +148,7 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
               <AdminPanel>
                 <div className="mb-4 flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
-                    {seasonEpisodes.length} {isArabic ? 'حلقة' : (seasonEpisodes.length === 1 ? 'episode' : 'episodes')}
+                    {t('episodeCount', { count: seasonEpisodes.length })}
                   </p>
                   <Button size="sm" onClick={() => handleAddEpisode(season.id)}>
                     <Plus className="me-1 size-4" />
