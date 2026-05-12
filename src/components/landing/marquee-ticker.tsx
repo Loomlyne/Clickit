@@ -23,10 +23,14 @@ export function MarqueeTicker({ ticker }: MarqueeTickerProps) {
   if (!ticker.enabled || ticker.items.length === 0) return null
 
   return (
-    <div className="overflow-hidden border-y border-[var(--line)] bg-[var(--bg-0)] py-3">
-      <div className="flex animate-[marqueeScroll_30s_linear_infinite] whitespace-nowrap">
+    <div className="marquee-ticker overflow-hidden border-y border-[var(--line)] bg-[var(--bg-0)] py-3">
+      <div className="marquee-track flex w-max whitespace-nowrap will-change-transform">
         {[0, 1].map((dup) => (
-          <span key={dup} className="flex items-center gap-10 pe-10">
+          <span
+            key={dup}
+            aria-hidden={dup === 1 ? 'true' : undefined}
+            className="flex shrink-0 items-center gap-10 pe-10"
+          >
             {ticker.items.map((m, i) => (
               <span key={`${dup}-${i}`} className="flex items-center gap-3">
                 <b className="mono text-[var(--primary)]">◆ {m.tag}</b>
@@ -37,9 +41,19 @@ export function MarqueeTicker({ ticker }: MarqueeTickerProps) {
         ))}
       </div>
       <style>{`
-        @keyframes marqueeScroll {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
+        .marquee-ticker .marquee-track {
+          animation: cit-marquee 40s linear infinite;
+          backface-visibility: hidden;
+        }
+        .marquee-ticker:hover .marquee-track {
+          animation-play-state: paused;
+        }
+        @keyframes cit-marquee {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-50%, 0, 0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .marquee-ticker .marquee-track { animation: none; }
         }
       `}</style>
     </div>
