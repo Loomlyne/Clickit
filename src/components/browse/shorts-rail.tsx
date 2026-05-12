@@ -3,6 +3,7 @@
 
 import { useState, useRef } from 'react'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import { ArrowRight } from 'lucide-react'
 import type { ViewShort } from '@/lib/queries'
 import { DragScroll } from '@/components/primitives/drag-scroll'
@@ -13,6 +14,7 @@ interface ShortsRailProps {
 }
 
 export function ShortsRail({ shorts }: ShortsRailProps) {
+  const t = useTranslations('watch')
   const [overlayIdx, setOverlayIdx] = useState<number | null>(null)
   // Track which video IDs we've already pre-warmed so hover doesn't spam.
   const prefetched = useRef<Set<string>>(new Set())
@@ -46,10 +48,10 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
       <section className="rail px-10 pt-8 pb-3">
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-display m-0 text-[26px] uppercase">SHORT CLICK</h2>
+            <h2 className="font-display m-0 text-[26px] uppercase">{t('shortClickHeading')}</h2>
           </div>
           <button className="mono inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 hover:text-[var(--text)]">
-            View all <ArrowRight className="size-3" />
+            {t('viewAll')} <ArrowRight className="size-3" />
           </button>
         </div>
 
@@ -86,7 +88,7 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
                   color: 'var(--accent-fg)',
                 }}
               >
-                SHORT
+                {t('shortBadge')}
               </div>
               {/* Bottom info */}
               <div className="absolute right-3 bottom-3 left-3">
@@ -94,7 +96,7 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
                   {s.title}
                 </div>
                 <div className="mono" style={{ fontSize: 9 }}>
-                  {s.channelName || s.genre || 'Short'}
+                  {s.channelName || s.genre || t('shortFallback')}
                   {s.durationSeconds ? ` · ${s.durationSeconds}s` : ''}
                 </div>
               </div>

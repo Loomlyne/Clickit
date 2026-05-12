@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 
@@ -19,9 +20,9 @@ interface ReviewComposerProps {
   userId: string | null
 }
 
-const STAR_LABELS = ['', 'Nope', 'Meh', 'Fine', 'Great', 'A masterpiece']
-
 export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
+  const t = useTranslations('reviews')
+  const STAR_LABELS = ['', t('starNope'), t('starMeh'), t('starFine'), t('starGreat'), t('starMasterpiece')]
   const [reviews, setReviews] = useState<Review[]>([])
   const [draftStars, setDraftStars] = useState(0)
   const [hoverStars, setHoverStars] = useState(0)
@@ -94,7 +95,7 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
   return (
     <div>
       <div className="label mb-4">
-        Reviews · {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+        {t('heading')} · {reviews.length === 1 ? t('countOne', { count: reviews.length }) : t('countMany', { count: reviews.length })}
       </div>
 
       {/* Composer (auth'd users only) */}
@@ -105,7 +106,7 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
               K
             </div>
             <div className="flex-1">
-              <div className="text-sm font-medium">Your review</div>
+              <div className="text-sm font-medium">{t('yourReview')}</div>
             </div>
           </div>
 
@@ -117,7 +118,7 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
                 className="p-0.5 transition-colors"
                 onMouseEnter={() => setHoverStars(n)}
                 onClick={() => setDraftStars(n)}
-                aria-label={`${n} stars`}
+                aria-label={t('starsAria', { n })}
                 style={{ color: activeStars >= n ? 'var(--primary)' : 'var(--text-mute)' }}
               >
                 <svg width="22" height="22" viewBox="0 0 24 24" fill={activeStars >= n ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
@@ -126,13 +127,13 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
               </button>
             ))}
             <span className="mono ms-2 text-[var(--text-dim)]">
-              {activeStars > 0 ? STAR_LABELS[activeStars] : 'Tap to rate'}
+              {activeStars > 0 ? STAR_LABELS[activeStars] : t('tapToRate')}
             </span>
           </div>
 
           <textarea
             className="w-full rounded-[16px] border border-[var(--line)] bg-[var(--bg-0)] px-3 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-mute)] outline-none focus:border-[var(--primary)] resize-none"
-            placeholder="What stood out? Episodes you loved, things that dragged..."
+            placeholder={t('composerPlaceholder')}
             value={draftText}
             onChange={(e) => setDraftText(e.target.value)}
             rows={3}
@@ -153,14 +154,14 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
                 onClick={() => { setDraftStars(0); setDraftText('') }}
                 disabled={!draftText && !draftStars}
               >
-                Clear
+                {t('clear')}
               </button>
               <button
                 className="rounded-full bg-[var(--primary)] px-3 py-1.5 text-[12.5px] font-medium text-[var(--primary-foreground)] transition-colors hover:bg-white disabled:opacity-40"
                 onClick={submitReview}
                 disabled={!draftText.trim() || draftStars === 0 || submitting}
               >
-                {submitting ? 'Posting...' : 'Post review'}
+                {submitting ? t('posting') : t('postReview')}
               </button>
             </div>
           </div>
@@ -169,7 +170,7 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
 
       {loadError && (
         <div className="mb-5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          Reviews could not be loaded. {loadError}
+          {t('loadError', { error: loadError ?? '' })}
         </div>
       )}
 
@@ -177,7 +178,7 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
       <div className="space-y-0">
         {reviews.map((r) => {
           const isMine = r.user_id === userId
-          const name = r.profiles?.display_name || 'Anonymous'
+          const name = r.profiles?.display_name || t('anonymous')
           const initials = name.slice(0, 2).toUpperCase()
 
           return (
@@ -196,7 +197,7 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
                   <div>
                     <div className="text-[13px] font-medium">
                       {name}
-                      {isMine && <span className="mono ms-2 text-[10px] text-[var(--primary)]">YOURS</span>}
+                      {isMine && <span className="mono ms-2 text-[10px] text-[var(--primary)]">{t('yoursBadge')}</span>}
                     </div>
                     <div className="mono text-[10px] text-[var(--text-mute)]">
                       {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
@@ -217,7 +218,7 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
         })}
         {reviews.length === 0 && (
           <div className="py-10 text-center text-[var(--text-mute)]">
-            No reviews yet. Be the first to share your thoughts.
+            {t('emptyMessage')}
           </div>
         )}
       </div>

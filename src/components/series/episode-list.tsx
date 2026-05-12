@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/button'
 import { EpisodeRow } from '@/components/series/episode-row'
@@ -25,22 +25,23 @@ export function EpisodeList({
   const [visibleCount, setVisibleCount] = useState(CHUNK_SIZE)
   const visibleEpisodes = episodes.slice(0, visibleCount)
   const hasMore = visibleCount < episodes.length
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const tEp = useTranslations('episode')
+  const tShow = useTranslations('show')
+  const tAdmin = useTranslations('admin.common')
 
   if (episodes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-        <h3 className="text-xl font-bold text-foreground">{isArabic ? 'لا توجد حلقات بعد' : 'No Episodes Yet'}</h3>
+        <h3 className="text-xl font-bold text-foreground">{tAdmin('noEpisodes')}</h3>
         <p className="mt-2 text-sm text-muted-foreground">
-          {isArabic ? 'لم تُضف حلقات هذا الموسم بعد. عد قريباً.' : 'Episodes for this season haven\u2019t been added yet. Check back soon.'}
+          {tShow('emptyEpisodesDescription')}
         </p>
       </div>
     )
   }
 
   return (
-    <section aria-label={isArabic ? 'الحلقات' : 'Episodes'} className="px-4">
+    <section aria-label={tShow('episodesLabel')} className="px-4">
       <div className="space-y-3 md:space-y-4">
         {visibleEpisodes.map((ep) => {
           const progress = progressMap?.[ep.id]
@@ -63,7 +64,7 @@ export function EpisodeList({
           className="mt-6 mx-auto block"
           onClick={() => setVisibleCount((c) => c + CHUNK_SIZE)}
         >
-          {isArabic ? 'عرض المزيد من الحلقات' : 'Load More Episodes'}
+          {tEp('loadMore')}
         </Button>
       )}
     </section>

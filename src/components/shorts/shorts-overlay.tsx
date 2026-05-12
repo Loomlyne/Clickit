@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import type { ViewShort } from '@/lib/queries'
 
 interface ShortsOverlayProps {
@@ -12,6 +13,8 @@ interface ShortsOverlayProps {
 }
 
 export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlayProps) {
+  const t = useTranslations('watch')
+  const tCommon = useTranslations('common')
   const [idx, setIdx] = useState(startIndex)
   const [paused, setPaused] = useState(false)
   const [muted, setMuted] = useState(true)
@@ -148,7 +151,7 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
         <button
           onClick={onClose}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line-2)] text-[var(--text)] transition-colors hover:bg-white/10"
-          aria-label="Close"
+          aria-label={tCommon('close')}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
         </button>
@@ -170,7 +173,7 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
         <button
           className="absolute left-6 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--line-2)] bg-black/40 text-white/80 backdrop-blur-md transition-all duration-200 hover:scale-110 hover:border-white/40 hover:bg-white/10 hover:text-white lg:left-10 lg:flex"
           onClick={goPrev}
-          aria-label="Previous short"
+          aria-label={t('previousShort')}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
         </button>
@@ -196,7 +199,7 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
               type="button"
               className="absolute inset-y-0 left-0 z-20 w-1/3 bg-transparent"
               onClick={goPrev}
-              aria-label="Previous short"
+              aria-label={t('previousShort')}
             >
               <span className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/35 text-white/75 opacity-0 backdrop-blur-md transition-opacity hover:opacity-100 lg:left-4">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
@@ -209,7 +212,7 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
               type="button"
               className="absolute inset-y-0 right-0 z-20 w-1/3 bg-transparent"
               onClick={goNext}
-              aria-label="Next short"
+              aria-label={t('nextShort')}
             >
               <span className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/35 text-white/75 opacity-0 backdrop-blur-md transition-opacity hover:opacity-100 lg:right-4">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
@@ -258,7 +261,7 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
         <button
           className="absolute right-6 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--line-2)] bg-black/40 text-white/80 backdrop-blur-md transition-all duration-200 hover:scale-110 hover:border-white/40 hover:bg-white/10 hover:text-white lg:right-10 lg:flex"
           onClick={goNext}
-          aria-label="Next short"
+          aria-label={t('nextShort')}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
         </button>

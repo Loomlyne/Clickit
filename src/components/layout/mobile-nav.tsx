@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { usePathname } from '@/i18n/navigation'
 import { Menu } from 'lucide-react'
@@ -13,7 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { NAV_LINKS } from './nav-links'
+import { NAV_LINK_HREFS } from './nav-links'
 import { AuthSection } from './auth-section'
 
 interface MobileNavProps {
@@ -21,9 +22,10 @@ interface MobileNavProps {
   liveStreamUrl?: string | null
 }
 
-export function MobileNav({ initialUser, liveStreamUrl }: MobileNavProps = {}) {
+export function MobileNav({ initialUser }: MobileNavProps = {}) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
+  const t = useTranslations('nav')
 
   // Auto-close when route changes
   useEffect(() => {
@@ -33,7 +35,7 @@ export function MobileNav({ initialUser, liveStreamUrl }: MobileNavProps = {}) {
   return (
     <Sheet open={open} onOpenChange={setOpen} modal={false}>
       <SheetTrigger
-        aria-label="Open navigation menu"
+        aria-label={t('openMenu')}
         className="flex size-11 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--bg-2)] text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white md:hidden"
       >
         <Menu className="size-5" />
@@ -44,10 +46,10 @@ export function MobileNav({ initialUser, liveStreamUrl }: MobileNavProps = {}) {
         className="flex w-full flex-col rounded-b-[4px] border-x-0 border-t-0 p-0"
       >
         <SheetHeader className="border-b border-white/[0.06] px-6 py-5">
-          <SheetTitle className="sr-only">Navigation</SheetTitle>
+          <SheetTitle className="sr-only">{t('navLabel')}</SheetTitle>
           <Link
             href="/watch"
-            aria-label="Clickit Story home"
+            aria-label={t('home')}
             onClick={() => setOpen(false)}
             className="flex min-h-11 items-center"
           >
@@ -62,8 +64,8 @@ export function MobileNav({ initialUser, liveStreamUrl }: MobileNavProps = {}) {
           </Link>
         </SheetHeader>
 
-        <nav aria-label="Mobile navigation" className="flex flex-col gap-1 px-4 py-4">
-          {NAV_LINKS.map(({ label, href }) => {
+        <nav aria-label={t('mobileNavLabel')} className="flex flex-col gap-1 px-4 py-4">
+          {NAV_LINK_HREFS.map(({ key, href }) => {
             const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
             return (
               <Link
@@ -77,7 +79,7 @@ export function MobileNav({ initialUser, liveStreamUrl }: MobileNavProps = {}) {
                     : 'text-white/56 hover:bg-white/[0.04] hover:text-white'
                 )}
               >
-                {label}
+                {t(key)}
               </Link>
             )
           })}

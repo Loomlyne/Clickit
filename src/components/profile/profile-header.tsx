@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
 import { Shield, LogOut } from 'lucide-react'
@@ -19,8 +19,7 @@ export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: Profil
   const router = useRouter()
   const tNav = useTranslations('nav')
   const tCommon = useTranslations('common')
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const tProfile = useTranslations('profile')
   const [signingOut, setSigningOut] = useState(false)
 
   const initial = (displayName || email || '?').charAt(0).toUpperCase()
@@ -38,9 +37,9 @@ export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: Profil
       <AvatarUpload currentUrl={avatarUrl} fallbackInitial={initial} />
 
       <div className="flex flex-col items-center gap-1 sm:items-start sm:flex-1">
-        <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-[var(--text-mute)]">{isArabic ? 'الحساب' : 'Account'}</p>
+        <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-[var(--text-mute)]">{tProfile('accountEyebrow')}</p>
         <h1 className="font-display text-3xl font-semibold tracking-[-0.04em] text-white">
-          {displayName || (isArabic ? 'حسابك' : 'Your Account')}
+          {displayName || tProfile('yourAccount')}
         </h1>
         <p className="text-sm text-[var(--text-dim)]">{email}</p>
       </div>
@@ -62,7 +61,7 @@ export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: Profil
           className="flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-5 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20 disabled:opacity-50"
         >
           <LogOut className="size-4" />
-          {signingOut ? (isArabic ? 'جارٍ تسجيل الخروج…' : 'Signing out…') : tCommon('signOut')}
+          {signingOut ? tProfile('signingOut') : tCommon('signOut')}
         </button>
       </div>
     </div>

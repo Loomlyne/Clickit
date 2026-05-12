@@ -36,12 +36,13 @@ export default async function ProfilePage() {
   const isAdmin = config?.admin_user_id === user.id
 
   // Fetch personalization data
-  const [watchlistShows, likedShows, recentlyWatched, locale, t] = await Promise.all([
+  const [watchlistShows, likedShows, recentlyWatched, locale, t, tCommon] = await Promise.all([
     getWatchlistShows(user.id),
     getLikedShows(user.id),
     getRecentlyWatched(user.id),
     getLocale(),
     getTranslations('profile'),
+    getTranslations('common'),
   ])
 
   const displayName = profile?.display_name ?? ''
@@ -107,7 +108,7 @@ export default async function ProfilePage() {
             <p className="text-sm text-[var(--text-mute)] py-6 text-center">
               {t('myListEmpty')}.{' '}
               <Link href="/watch" className="text-[var(--text-dim)] hover:text-white underline">
-                {locale === 'ar' ? 'تصفح البرامج' : 'Watch shows'}
+                {tCommon('browseShows')}
               </Link>
             </p>
           )}

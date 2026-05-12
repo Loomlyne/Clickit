@@ -1,15 +1,20 @@
 import Image from 'next/image'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getAppConfig } from '@/lib/config'
 
 export async function Footer() {
-  const { footer } = await getAppConfig()
+  const [{ footer }, t, tNav] = await Promise.all([
+    getAppConfig(),
+    getTranslations('footer'),
+    getTranslations('nav'),
+  ])
 
   return (
     <footer className="relative overflow-hidden border-t border-[var(--line)] bg-[var(--bg-1)]">
       {/* Hero wordmark + contact */}
       <div className="relative border-b border-[var(--line)] px-4 pt-[90px] pb-[60px] sm:px-6 md:px-12">
-        <Link href="/watch" aria-label="Clickit Story home" className="block">
+        <Link href="/watch" aria-label={tNav('home')} className="block">
           <Image
             src="/brand/Clickit_final_logo.svg"
             alt="Clickit"
@@ -22,18 +27,17 @@ export async function Footer() {
 
         <div className="mt-10 flex flex-col justify-between gap-10 md:flex-row md:items-end">
           <p className="font-display m-0 max-w-[420px] text-[16px] leading-relaxed text-[var(--text-dim)] italic">
-            {footer.tagline ||
-              'A channel for people who still like to watch one thing, all the way through.'}
+            {footer.tagline || t('fallbackTagline')}
           </p>
           <div className="w-full max-w-sm">
             <div className="mono mb-3" style={{ letterSpacing: '0.14em' }}>
-              Direct contact
+              {t('directContact')}
             </div>
             <Link
               href="/support#contact-form"
               className="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-[var(--line)] bg-[var(--text)] px-5 text-sm font-semibold text-[var(--bg-0)] transition-colors hover:bg-[var(--accent)]"
             >
-              Open contact
+              {t('openContact')}
             </Link>
           </div>
         </div>
@@ -49,21 +53,21 @@ export async function Footer() {
             href="/terms"
             className="transition-colors hover:text-[var(--text)]"
           >
-            Terms of Use
+            {t('termsOfUse')}
           </Link>
           <span aria-hidden>·</span>
           <Link
             href="/privacy"
             className="transition-colors hover:text-[var(--text)]"
           >
-            Privacy
+            {t('privacy')}
           </Link>
           <span aria-hidden>·</span>
           <Link
             href="/support"
             className="transition-colors hover:text-[var(--text)]"
           >
-            Support
+            {t('support')}
           </Link>
         </div>
       </div>

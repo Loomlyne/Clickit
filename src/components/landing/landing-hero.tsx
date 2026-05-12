@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAppConfig } from '@/lib/config'
@@ -9,9 +10,10 @@ const FALLBACK_YT_ID = 'Nk2jlxVX8g8'
 
 export async function LandingHero() {
   const supabase = await createClient()
-  const [{ data: { user } }, config] = await Promise.all([
+  const [{ data: { user } }, config, t] = await Promise.all([
     supabase.auth.getUser(),
     getAppConfig(),
+    getTranslations('landing'),
   ])
   const ctaHref = user ? '/watch' : '/auth'
 
@@ -24,7 +26,6 @@ export async function LandingHero() {
 
   return (
     <section className="relative -mt-16 min-h-dvh overflow-hidden">
-      {/* MP4 background — pass-through so CTA/navigation stay clickable (H2) */}
       {heroVideoType === 'mp4' && heroVideoUrl && (
         <video
           src={heroVideoUrl}
@@ -36,7 +37,6 @@ export async function LandingHero() {
         />
       )}
 
-      {/* YouTube background — 16:9 cover: wide screens use vw-based height, tall screens use vh-based width */}
       {ytId && (
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <iframe
@@ -49,12 +49,11 @@ export async function LandingHero() {
               minHeight: '100dvh',
               minWidth: '177.78dvh',
             }}
-            title="Hero background video"
+            title={t('heroBackgroundTitle')}
           />
         </div>
       )}
 
-      {/* Gradient — solid at bottom (hides YT logo), fades to transparent at top */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black from-10% via-black/50 via-40% to-transparent" />
 
       <div className="relative flex min-h-dvh items-end px-4 pt-28 pb-16 sm:px-6 md:px-10 md:pb-20">
@@ -68,9 +67,7 @@ export async function LandingHero() {
             className="mb-6 h-auto w-48 sm:w-56 md:w-64"
           />
           <p className="mb-9 text-[17px] leading-relaxed text-[var(--text-dim)]">
-            A hand-curated channel for urban culture, food, design and travel.
-            No ads, no algorithm — just the shows editors love, from creators
-            you&apos;ve never heard of.
+            {t('heroDescription')}
           </p>
           <div className="mb-12 md:mb-16">
             <Link
@@ -85,7 +82,7 @@ export async function LandingHero() {
               >
                 <polygon points="6 3 20 12 6 21 6 3" />
               </svg>
-              Watch now
+              {t('heroCta')}
             </Link>
           </div>
         </div>

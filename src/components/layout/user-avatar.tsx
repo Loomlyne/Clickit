@@ -2,6 +2,7 @@
 'use client'
 
 import { forwardRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 interface UserAvatarProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -11,10 +12,11 @@ interface UserAvatarProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 
 export const UserAvatar = forwardRef<HTMLButtonElement, UserAvatarProps>(
   function UserAvatar({ name, avatarUrl, className, ...props }, ref) {
+    const t = useTranslations('nav')
     return (
       <button
         ref={ref}
-        aria-label="User menu"
+        aria-label={t('userMenu')}
         className={cn(
           'flex size-[30px] items-center justify-center overflow-hidden rounded-full',
           'border border-[var(--line-2)] bg-gradient-to-br from-[#c8a04a] to-[#d97757]',

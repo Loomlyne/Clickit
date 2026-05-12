@@ -1,37 +1,23 @@
 'use client'
 
 import { useState } from 'react'
-
-const FAQS = [
-  {
-    q: 'What is Clickit?',
-    a: 'Clickit is a curated streaming service for original shows produced in Abu Dhabi. Every show is hand-picked by our editors.',
-  },
-  {
-    q: 'How much does it cost?',
-    a: 'Clickit is free during open beta. No subscription required — just sign up and start watching.',
-  },
-  {
-    q: 'Which devices are supported?',
-    a: 'Any modern browser on desktop, tablet, or mobile. Our shows stream via YouTube for maximum compatibility.',
-  },
-  {
-    q: 'Where does the content come from?',
-    a: 'All content is original, produced by Spacelight Studios FZ LLC from Yas Creative Hub, Abu Dhabi.',
-  },
-  {
-    q: 'How many shows are available?',
-    a: 'We currently have 15 original programs spanning travel, health, music, comedy, cooking, kids, poetry, cinema, tech, and more.',
-  },
-]
+import { useTranslations } from 'next-intl'
 
 export function LandingFaq() {
+  const t = useTranslations('landing')
+  const FAQS = [
+    { q: t('faq1Q'), a: t('faq1A') },
+    { q: t('faq2Q'), a: t('faq2A') },
+    { q: t('faq3Q'), a: t('faq3A') },
+    { q: t('faq4Q'), a: t('faq4A') },
+    { q: t('faq5Q'), a: t('faq5A') },
+  ]
   const [openIdx, setOpenIdx] = useState(0)
 
   return (
     <section className="mx-auto max-w-[1400px] px-10 py-24 border-t border-[var(--line)]" id="faq">
       <h2 className="font-[family-name:var(--font-display)] text-[clamp(36px,5vw,64px)] font-normal leading-none tracking-[-0.02em] mb-12">
-        Common questions.
+        {t('faqHeading')}
       </h2>
       <div className="mx-auto max-w-[860px]">
         {FAQS.map((f, i) => (

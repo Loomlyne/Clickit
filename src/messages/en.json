@@ -26,7 +26,8 @@
     "signOut": "Sign out",
     "signUp": "Create account",
     "brand": "Clickit Story",
-    "tagline": "Every Story Clicks."
+    "tagline": "Every Story Clicks.",
+    "clear": "Clear"
   },
   "nav": {
     "home": "Clickit Story home",
@@ -36,7 +37,25 @@
     "myList": "My List",
     "search": "Search",
     "profile": "Profile",
-    "admin": "Admin"
+    "admin": "Admin",
+    "watch": "Watch",
+    "support": "Support",
+    "shows": "Shows",
+    "faq": "FAQ",
+    "nowLive": "Now Live",
+    "openMenu": "Open navigation menu",
+    "mobileNavLabel": "Mobile navigation",
+    "navLabel": "Site navigation",
+    "breadcrumb": "Breadcrumb",
+    "userMenu": "User menu"
+  },
+  "footer": {
+    "directContact": "Direct contact",
+    "openContact": "Open contact",
+    "termsOfUse": "Terms of Use",
+    "privacy": "Privacy",
+    "support": "Support",
+    "fallbackTagline": "A channel for people who still like to watch one thing, all the way through."
   },
   "auth": {
     "accessHeading": "Clickit access",
@@ -79,7 +98,21 @@
     "hidePassword": "Hide password",
     "callbackError": "Could not verify your identity",
     "googleSSOComingSoon": "Google SSO coming soon",
-    "appleSSOComingSoon": "Apple SSO coming soon"
+    "appleSSOComingSoon": "Apple SSO coming soon",
+    "tabSignIn": "Sign In",
+    "tabSignUp": "Sign Up",
+    "skipSignIn": "Skip sign in",
+    "welcomeBackHeading": "Welcome back.",
+    "welcomeBackSubheading": "Resume watching. New here? Sign up below.",
+    "quote": "Finally, a place where one thing plays all the way through — no \"because you watched\", no \"skip in 5\".",
+    "quoteAttribution": "Early beta subscriber",
+    "landingSignIn": "Sign in",
+    "landingStartFree": "Start free",
+    "strengthWeak": "weak",
+    "strengthGood": "good",
+    "strengthStrong": "strong",
+    "strengthLabel": "Strength · {level}",
+    "passwordStrengthAria": "Password strength"
   },
   "home": {
     "heroHeadline": "Every Story Clicks.",
@@ -103,13 +136,23 @@
       "creatorsLabel": "Creators"
     },
     "genresEyebrow": "Browse by genre",
-    "genresHeading": "Find your next favorite",
+    "genresHeading": "Browse by Genre",
     "faqEyebrow": "Frequently asked",
     "faqHeading": "Questions, answered",
     "ctaEyebrow": "Start now",
     "ctaHeading": "Pick a show. Press play.",
     "ctaDescription": "Every Clickit Story original, in one premium streaming home.",
-    "ctaButton": "Explore the catalog"
+    "ctaButton": "Explore the catalog",
+    "play": "Play",
+    "watchNow": "Watch now",
+    "continueWatching": "Continue watching",
+    "comingSoonBadge": "Coming Soon",
+    "info": "Info",
+    "moreInfo": "More info",
+    "seasonCount": "{count}S",
+    "episodeCount": "{count} eps",
+    "newEpisodesEyebrow": "Fresh from the studio",
+    "newEpisodesHeading": "New Episodes"
   },
   "show": {
     "seasonsLabel": "Seasons",
@@ -142,7 +185,13 @@
     "moreLikeThisHeading": "More {genre} shows",
     "seasonDrawerTitle": "Pick an episode",
     "scrollDown": "Scroll to see more",
-    "seasonSelectorLabel": "Select season"
+    "seasonSelectorLabel": "Select season",
+    "seasonOne": "Season",
+    "seasonMany": "Seasons",
+    "episodeOne": "Episode",
+    "episodeMany": "Episodes",
+    "watchLabel": "Watch {label}",
+    "comingSoonBadge": "Coming Soon"
   },
   "player": {
     "autoplayCountdown": "Next episode in {seconds}s",
@@ -159,6 +208,35 @@
     "keyboardSpacePause": "Space to play/pause",
     "keyboardArrowSkip": "Arrow keys to skip",
     "episodeListHeading": "In this season"
+  },
+  "watch": {
+    "railPrograms": "PROGRAMS",
+    "railComingSoon": "Coming soon",
+    "railComingSoonEyebrow": "Teasers & release dates",
+    "railCuratedEyebrow": "Curated category picks",
+    "viewAll": "View all",
+    "continueWatchingHeading": "Continue Watching",
+    "shortClickHeading": "SHORT CLICK",
+    "shortBadge": "SHORT",
+    "shortFallback": "Short",
+    "activeCategory": "Active category",
+    "clearFilter": "Clear filter",
+    "categoryNotFound": "Category not found",
+    "backToWatch": "Back to watch",
+    "linkCopied": "Link copied",
+    "addToWatchlist": "Add to watchlist",
+    "removeFromWatchlist": "Remove from watchlist",
+    "likeShow": "Like this show",
+    "unlikeShow": "Unlike this show",
+    "shareEpisode": "Share episode",
+    "previousEpisode": "Previous episode",
+    "nextEpisode": "Next episode",
+    "raiseTray": "Raise episode tray",
+    "lowerTray": "Lower episode tray",
+    "backToShow": "Back to {title}",
+    "nowPlayingBadge": "Now",
+    "previousShort": "Previous short",
+    "nextShort": "Next short"
   },
   "search": {
     "heading": "Search",
@@ -197,7 +275,18 @@
     "historySeeAll": "See full history",
     "adminBadge": "Admin",
     "watchedAgo": "Watched {distance} ago",
-    "progressLabel": "{percent}%"
+    "progressLabel": "{percent}%",
+    "yourAccount": "Your Account",
+    "savingLabel": "Saving",
+    "savedLabel": "Saved",
+    "nameInputPlaceholder": "Your name",
+    "historyCompleted": "Completed",
+    "avatarUpdated": "Profile picture updated",
+    "avatarUploadFailed": "Upload failed",
+    "accountEyebrow": "Account",
+    "signingOut": "Signing out…",
+    "avatarTooLarge": "Image must be under 2MB",
+    "avatarPicAlt": "Profile"
   },
   "myList": {
     "pageTitle": "My List",
@@ -206,7 +295,9 @@
     "countMany": "{count} shows in your list",
     "emptyDescription": "Save shows to build your list.",
     "emptyCta": "Watch Shows",
-    "removeConfirm": "Remove from list"
+    "removeConfirm": "Remove from list",
+    "eyebrow": "Your watchlist",
+    "emptyHeading": "Nothing here yet."
   },
   "comingSoon": {
     "pageTitle": "Coming Soon",
@@ -221,7 +312,12 @@
     "noNewEpisodesDescription": "Check back for scheduling updates.",
     "releaseDateLabel": "Arrives {date}",
     "splashHeading": "Something special is launching soon",
-    "splashDescription": "Clickit Story is preparing for launch. Check back shortly."
+    "splashDescription": "Clickit Story is preparing for launch. Check back shortly.",
+    "eyebrowYear": "Coming soon · 2026",
+    "releasingHeading": "What we're releasing next.",
+    "seasonOne": "season",
+    "seasonMany": "seasons",
+    "remindMe": "Remind me"
   },
   "support": {
     "pageTitle": "Support",
@@ -239,7 +335,157 @@
     "submitButton": "Send message",
     "messageSent": "Message sent! We'll get back to you within 24 hours.",
     "termsAccept": "I agree to be contacted about my request",
-    "faqHeading": "Frequently Asked Questions"
+    "faqHeading": "Frequently Asked Questions",
+    "phoneOptional": "Phone (optional)",
+    "phonePlaceholder": "+971 XX XXX XXXX",
+    "savedEmailFailedToast": "Your message was saved, but email delivery is offline right now. The team can still review it in admin.",
+    "savedEmailFailedInline": "Your message is saved. Email notification is offline right now."
+  },
+  "newsletter": {
+    "placeholder": "your@email.com",
+    "submitAria": "Submit newsletter signup",
+    "defaultButton": "Get updates",
+    "errSubscribe": "Could not subscribe right now.",
+    "statusSent": "You are subscribed.",
+    "statusUpdated": "Your update reminder is set.",
+    "statusAlreadySubscribed": "You are already subscribed.",
+    "statusOfflineSaved": "Your signup was saved, but email delivery is offline right now.",
+    "invalidEmail": "Enter a valid email address."
+  },
+  "landing": {
+    "studioPresents": "Spacelight Studios Presents",
+    "heroDescription": "A hand-curated channel for urban culture, food, design and travel. No ads, no algorithm — just the shows editors love, from creators you've never heard of.",
+    "heroCta": "Watch now",
+    "heroBackgroundTitle": "Hero background video",
+    "portfolioHeading": "The ones worth your time.",
+    "whyEyebrow": "003 · Why Clickit",
+    "whyHeading": "Slow TV for fast cities.",
+    "why01Heading": "Editors, not algorithms.",
+    "why01Body": "Every show on Clickit is picked by a human. You won't find a recommendation engine pushing you toward six more things about the same thing.",
+    "why02Heading": "Independent creators, proper budget.",
+    "why02Body": "We partner with filmmakers directly and pay them per stream, not per view-time. That means 35-minute episodes that take 35 minutes to watch.",
+    "why03Heading": "Original content from Abu Dhabi.",
+    "why03Body": "Travel, health, music, comedy, cooking, kids, poetry, cinema, tech — 15 original programs produced from the UAE by Spacelight Studios.",
+    "faqHeading": "Common questions.",
+    "faq1Q": "What is Clickit?",
+    "faq1A": "Clickit is a curated streaming service for original shows produced in Abu Dhabi. Every show is hand-picked by our editors.",
+    "faq2Q": "How much does it cost?",
+    "faq2A": "Clickit is free during open beta. No subscription required — just sign up and start watching.",
+    "faq3Q": "Which devices are supported?",
+    "faq3A": "Any modern browser on desktop, tablet, or mobile. Our shows stream via YouTube for maximum compatibility.",
+    "faq4Q": "Where does the content come from?",
+    "faq4A": "All content is original, produced by Spacelight Studios FZ LLC from Yas Creative Hub, Abu Dhabi.",
+    "faq5Q": "How many shows are available?",
+    "faq5A": "We currently have 15 original programs spanning travel, health, music, comedy, cooking, kids, poetry, cinema, tech, and more.",
+    "statOriginal": "Original shows",
+    "statEpisodes": "Episodes streaming",
+    "statAbuDhabi": "Abu Dhabi produced",
+    "statFree": "No subscription",
+    "ctaEyebrow": "Start the beta",
+    "ctaHeading": "Seven days free. Cancel in the app.",
+    "ctaBody": "No card required. Full catalog. Keep your watchlist if you stick around.",
+    "ctaCreateFree": "Create free account",
+    "ctaTour": "Take the tour"
+  },
+  "notFound": {
+    "code": "404",
+    "heading": "Page Not Found",
+    "description": "We couldn't find what you were looking for.",
+    "goHome": "Go Home",
+    "watchShows": "Watch Shows"
+  },
+  "legal": {
+    "eyebrow": "Legal",
+    "lastUpdated": "Last updated: May 2026 · Spacelight Studios FZ LLC, Yas Creative Hub, Abu Dhabi, UAE",
+    "privacyTitle": "Privacy Policy",
+    "privacyMetaTitle": "Privacy Policy | Clickit Story",
+    "privacyMetaDescription": "Privacy policy for the Clickit Story streaming platform.",
+    "privacy1Heading": "1. Information We Collect",
+    "privacy1Body": "We collect information you provide when creating an account (email address), and usage data such as watch history and saved lists. We do not sell your personal data.",
+    "privacy2Heading": "2. How We Use It",
+    "privacy2Body": "Your data is used solely to operate the platform — to remember your progress, maintain your watchlist, and improve the service. We do not use your data to serve targeted advertisements.",
+    "privacy3Heading": "3. Video Streaming",
+    "privacy3BodyBefore": "Content is delivered via YouTube embeds. When you watch a video, YouTube's own privacy policy applies to that playback session. We recommend reviewing ",
+    "privacy3LinkLabel": "Google's Privacy Policy",
+    "privacy3BodyAfter": ".",
+    "privacy4Heading": "4. Data Storage",
+    "privacy4Body": "Account data is stored securely via Supabase (hosted on AWS infrastructure in the EU region). Passwords are never stored in plain text.",
+    "privacy5Heading": "5. Your Rights",
+    "privacy5BodyBefore": "You may request deletion of your account and associated data at any time via the ",
+    "privacy5LinkLabel": "support page",
+    "privacy5BodyAfter": ".",
+    "privacy6Heading": "6. Cookies",
+    "privacy6Body": "We use session cookies strictly necessary for authentication. No third-party advertising cookies are set by Clickit Story.",
+    "termsTitle": "Terms of Use",
+    "termsMetaTitle": "Terms of Use | Clickit Story",
+    "termsMetaDescription": "Terms of use for the Clickit Story streaming platform.",
+    "terms1Heading": "1. Acceptance",
+    "terms1Body": "By accessing or using the Clickit Story platform, you agree to be bound by these Terms of Use. If you do not agree, do not use the platform.",
+    "terms2Heading": "2. Platform Access",
+    "terms2Body": "Clickit Story grants you a limited, non-exclusive, non-transferable licence to access and stream content on the platform for personal, non-commercial use.",
+    "terms3Heading": "3. Content",
+    "terms3Body": "All content on Clickit Story is owned by or licensed to Spacelight Studios FZ LLC. You may not copy, reproduce, distribute, or create derivative works from any content without express written permission.",
+    "terms4Heading": "4. User Accounts",
+    "terms4Body": "You are responsible for maintaining the confidentiality of your account credentials. Clickit Story reserves the right to suspend or terminate accounts that violate these terms.",
+    "terms5Heading": "5. Changes",
+    "terms5Body": "We may update these terms at any time. Continued use of the platform after changes constitutes acceptance of the revised terms.",
+    "terms6Heading": "6. Contact",
+    "terms6BodyBefore": "Questions about these terms? Reach us via the ",
+    "terms6LinkLabel": "support page",
+    "terms6BodyAfter": "."
+  },
+  "about": {
+    "metaTitle": "About | Clickit Story",
+    "metaDescription": "About Clickit Story and the editorial point of view behind the platform.",
+    "eyebrow": "About Clickit Story",
+    "title": "A viewing platform built by editorial taste, not an algorithm.",
+    "intro": "Clickit Story brings original programming from Abu Dhabi into a calmer, more intentional viewing environment. The thesis is simple: less noise, clearer selection, and a tone that respects the viewer's time.",
+    "section1Heading": "Editorial first",
+    "section1Body": "The platform is programmed like a magazine or a channel, with attention to pacing, mood, and discovery order instead of overwhelming the viewer with an overcrowded interface.",
+    "section2Heading": "Built from Abu Dhabi",
+    "section2Body": "The programming starts from the city but does not stay narrow. Travel, food, health, music, and design appear here as adjacent lenses on the region.",
+    "section3Heading": "Complete viewing",
+    "section3Body": "The product is designed to encourage complete viewing of an episode or season, with clear navigation, saved progress, and room to discover what comes next without noise.",
+    "ctaLabel": "Contact the team"
+  },
+  "updates": {
+    "metaTitle": "Updates | Clickit Story",
+    "metaDescription": "Get launch, release, and coming-soon updates from Clickit Story.",
+    "eyebrow": "Clickit Story updates",
+    "heading": "Stay close to upcoming releases.",
+    "descriptionGeneric": "Subscribe for launch news, new-release drops, and editorial updates.",
+    "descriptionForShow": "We'll send you updates when {showTitle} gets closer to release, plus any related announcements.",
+    "buttonLabel": "Send me updates"
+  },
+  "reviews": {
+    "heading": "Reviews",
+    "countOne": "{count} review",
+    "countMany": "{count} reviews",
+    "addYour": "Add Your Review",
+    "yourReview": "Your review",
+    "tapToRate": "Tap to rate",
+    "starNope": "Nope",
+    "starMeh": "Meh",
+    "starFine": "Fine",
+    "starGreat": "Great",
+    "starMasterpiece": "A masterpiece",
+    "starsAria": "{n} stars",
+    "composerPlaceholder": "What stood out? Episodes you loved, things that dragged...",
+    "postReview": "Post review",
+    "posting": "Posting...",
+    "clear": "Clear",
+    "loadError": "Reviews could not be loaded. {error}",
+    "anonymous": "Anonymous",
+    "yoursBadge": "YOURS",
+    "emptyMessage": "No reviews yet. Be the first to share your thoughts."
+  },
+  "episode": {
+    "loadMore": "Load More Episodes",
+    "minutesAbbr": "{duration} min",
+    "minutesEmpty": "-- min",
+    "comingSoonBadge": "Coming Soon",
+    "draftBadge": "Draft",
+    "completedBadge": "Completed"
   },
   "faq": {
     "q1Question": "What is Clickit Story?",
@@ -365,7 +611,8 @@
       "colorHexAria": "Hex color value",
       "colorClear": "Clear",
       "editAria": "Edit {name}",
-      "deleteAria": "Delete {name}"
+      "deleteAria": "Delete {name}",
+      "colorLabel": "Category color"
     },
     "newShow": {
       "backToShows": "Back to Shows",
@@ -438,14 +685,17 @@
       "archiveShow": "Archive show",
       "required": "Required",
       "statusDraft": "Draft",
-      "statusNowStreaming": "Now streaming",
-      "statusComingSoon": "Coming soon",
+      "statusNowStreaming": "Now Streaming",
+      "statusComingSoon": "Coming Soon",
       "statusCreated": "Show created",
       "statusUpdated": "Show updated",
       "showCreated": "Show created",
       "showUpdated": "Show updated",
       "showArchived": "Show archived",
-      "showDeleted": "Show permanently deleted"
+      "showDeleted": "Show permanently deleted",
+      "descriptionPlaceholder": "What is this show about?",
+      "taglinePlaceholder": "Short hook",
+      "toastSaveFailed": "Failed to save"
     },
     "seasonForm": {
       "createSeason": "Create Season",
@@ -474,6 +724,18 @@
       "statusDraft": "Draft",
       "statusPublished": "Published",
       "statusScheduled": "Scheduled",
+      "statusDraftDesc": "Not visible to viewers",
+      "statusScheduledDesc": "Visible but not playable",
+      "statusPublishedDesc": "Live and playable",
+      "sectionInfo": "Episode Info",
+      "sectionContent": "Content",
+      "episodeTitlePlaceholder": "Episode title",
+      "descriptionPlaceholder": "What happens in this episode?",
+      "discardChanges": "Discard Changes",
+      "savingLabel": "Saving...",
+      "createEpisode": "Create Episode",
+      "toastFetchFailed": "Failed to fetch from YouTube",
+      "toastFetchSuccess": "Fetched title, description, and duration from YouTube",
       "saveEpisode": "Save episode",
       "deleteEpisode": "Delete episode",
       "archiveEpisode": "Archive episode",
@@ -527,7 +789,14 @@
       "restoredToast": "Show restored",
       "deletedToast": "Show permanently deleted",
       "conflictHeading": "Episode number conflicts",
-      "conflictDescription": "Episodes in the active catalog share numbers with the archived show. Resolve before restoring."
+      "conflictDescription": "Episodes in the active catalog share numbers with the archived show. Resolve before restoring.",
+      "newestFirst": "Newest changes first",
+      "restoring": "Restoring...",
+      "restoreTooltip": "Restore show and all episodes",
+      "deleteTooltip": "Permanently delete - cannot be undone",
+      "deletePermanentlyTitle": "Permanently Delete Show",
+      "fixing": "Fixing...",
+      "fixAndRestore": "Fix & Restore"
     },
     "audit": {
       "pageTitle": "Audit Log",
@@ -556,6 +825,60 @@
       "loading": "Loading…",
       "noEpisodes": "No episodes yet",
       "noShows": "No shows yet"
+    },
+    "heroMedia": {
+      "desktopHero": "Desktop Hero",
+      "mobileHero": "Mobile Hero",
+      "replaceButton": "Replace",
+      "deleteButton": "Delete",
+      "clearButton": "Clear",
+      "youtubeLabel": "YouTube",
+      "clickToUpload": "Click to upload image",
+      "uploadFailed": "Upload failed",
+      "uploadHeroSuccess": "Hero video uploaded",
+      "pasteYoutubePrompt": "Paste a YouTube URL",
+      "invalidYoutube": "Invalid YouTube URL",
+      "saveFailed": "Failed to save",
+      "savedSuccess": "Hero video URL saved",
+      "removeFailed": "Failed to remove",
+      "removeSuccess": "Hero video removed",
+      "removeButton": "Remove Video",
+      "uploadingVideo": "Uploading video...",
+      "youtubeUrlLabel": "YouTube URL"
+    },
+    "episodesTable": {
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "archiveTooltip": "Archive",
+      "archiveEpisodeTitle": "Archive Episode"
+    },
+    "seasonTabs": {
+      "empty": "Create a season to start adding episodes.",
+      "seasonsHeading": "Seasons",
+      "episodeManagementHeading": "Episode management",
+      "editSeasonTooltip": "Edit season"
+    },
+    "castEditor": {
+      "toastImageUploadFailed": "Failed to upload image",
+      "toastMemberAdded": "Cast member added",
+      "toastAddFailed": "Failed to add",
+      "toastInvalidImage": "Only PNG, JPEG, or WebP images are allowed",
+      "toastMemberRemoved": "Cast member removed",
+      "toastRemoveFailed": "Failed to remove"
+    },
+    "confirmDialog": {
+      "processing": "Processing..."
+    },
+    "emptyState": {
+      "defaultLabel": "Empty State"
+    },
+    "artwork": {
+      "uploadFailedToast": "Upload failed. Please try again.",
+      "replaceButton": "Replace",
+      "deleteButton": "Delete"
+    },
+    "profileCard": {
+      "fallbackName": "Admin"
     }
   },
   "errors": {

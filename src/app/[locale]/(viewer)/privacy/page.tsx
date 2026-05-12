@@ -1,57 +1,62 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy | Clickit Story',
-  description: 'Privacy policy for the Clickit Story streaming platform.',
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('legal')
+  return {
+    title: t('privacyMetaTitle'),
+    description: t('privacyMetaDescription'),
+  }
 }
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const t = await getTranslations('legal')
   return (
     <main className="mx-auto max-w-[860px] px-4 py-24 sm:px-6 md:px-10">
-      <div className="mono mb-4 text-[var(--text-mute)]">Legal</div>
+      <div className="mono mb-4 text-[var(--text-mute)]">{t('eyebrow')}</div>
       <h1 className="font-[family-name:var(--font-display)] text-[clamp(36px,5vw,64px)] font-normal leading-none tracking-[-0.02em] mb-12">
-        Privacy Policy
+        {t('privacyTitle')}
       </h1>
       <div className="prose prose-invert max-w-none space-y-8 text-[15px] leading-relaxed text-[var(--text-dim)]">
         <section>
-          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">1. Information We Collect</h2>
-          <p>We collect information you provide when creating an account (email address), and usage data such as watch history and saved lists. We do not sell your personal data.</p>
+          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">{t('privacy1Heading')}</h2>
+          <p>{t('privacy1Body')}</p>
         </section>
         <section>
-          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">2. How We Use It</h2>
-          <p>Your data is used solely to operate the platform — to remember your progress, maintain your watchlist, and improve the service. We do not use your data to serve targeted advertisements.</p>
+          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">{t('privacy2Heading')}</h2>
+          <p>{t('privacy2Body')}</p>
         </section>
         <section>
-          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">3. Video Streaming</h2>
+          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">{t('privacy3Heading')}</h2>
           <p>
-            Content is delivered via YouTube embeds. When you watch a video, YouTube&apos;s own privacy policy applies to that playback session. We recommend reviewing{' '}
+            {t('privacy3BodyBefore')}
             <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="text-[var(--primary)] hover:underline">
-              Google&apos;s Privacy Policy
+              {t('privacy3LinkLabel')}
             </a>
-            .
+            {t('privacy3BodyAfter')}
           </p>
         </section>
         <section>
-          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">4. Data Storage</h2>
-          <p>Account data is stored securely via Supabase (hosted on AWS infrastructure in the EU region). Passwords are never stored in plain text.</p>
+          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">{t('privacy4Heading')}</h2>
+          <p>{t('privacy4Body')}</p>
         </section>
         <section>
-          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">5. Your Rights</h2>
+          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">{t('privacy5Heading')}</h2>
           <p>
-            You may request deletion of your account and associated data at any time via the{' '}
+            {t('privacy5BodyBefore')}
             <Link href="/support" className="text-[var(--primary)] hover:underline">
-              support page
+              {t('privacy5LinkLabel')}
             </Link>
-            .
+            {t('privacy5BodyAfter')}
           </p>
         </section>
         <section>
-          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">6. Cookies</h2>
-          <p>We use session cookies strictly necessary for authentication. No third-party advertising cookies are set by Clickit Story.</p>
+          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-normal text-[var(--text)] mb-3">{t('privacy6Heading')}</h2>
+          <p>{t('privacy6Body')}</p>
         </section>
         <p className="mono text-[11px] text-[var(--text-mute)] pt-8 border-t border-[var(--line)]">
-          Last updated: May 2026 · Spacelight Studios FZ LLC, Yas Creative Hub, Abu Dhabi, UAE
+          {t('lastUpdated')}
         </p>
       </div>
     </main>

@@ -1,3 +1,6 @@
+'use client'
+
+import { useTranslations } from 'next-intl'
 import { Star } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -15,11 +18,12 @@ interface ReviewsSectionProps {
 }
 
 export function ReviewsSection({ reviews }: ReviewsSectionProps) {
+  const t = useTranslations('reviews')
   if (reviews.length === 0) return null
 
   return (
     <section className="px-6 md:px-12 mt-10">
-      <h2 className="font-display text-xl font-medium text-foreground">Reviews</h2>
+      <h2 className="font-display text-xl font-medium text-foreground">{t('heading')}</h2>
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
         {reviews.map((review) => (
           <Card key={review.id} className="rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)]">
@@ -50,7 +54,7 @@ export function ReviewsSection({ reviews }: ReviewsSectionProps) {
         ))}
       </div>
       <Button variant="secondary" className="mt-6" disabled>
-        Add Your Review
+        {t('addYour')}
       </Button>
     </section>
   )

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "_review_status": "draft",
-    "_review_source": "LLM-drafted 2026-04-22, Netflix MENA MSA style (Modern Standard Arabic, Western numerals, informal-professional tone, UAE market)",
+    "_review_source": "LLM-drafted 2026-04-22 + extended 2026-05-12, Netflix MENA MSA style (Modern Standard Arabic, Western numerals, informal-professional tone, UAE market)",
     "_reviewer": "pending human review — POLISH-06 waived for v1.1 ship per user directive"
   },
   "common": {
@@ -31,7 +31,8 @@
     "signOut": "تسجيل الخروج",
     "signUp": "إنشاء حساب",
     "brand": "كلِك إت ستوري",
-    "tagline": "كل قصة تنقر."
+    "tagline": "كل قصة تنقر.",
+    "clear": "مسح"
   },
   "nav": {
     "home": "الصفحة الرئيسية لكلِك إت ستوري",
@@ -41,7 +42,25 @@
     "myList": "قائمتي",
     "search": "بحث",
     "profile": "الملف الشخصي",
-    "admin": "لوحة الإدارة"
+    "admin": "لوحة الإدارة",
+    "watch": "شاهد",
+    "support": "الدعم",
+    "shows": "البرامج",
+    "faq": "الأسئلة الشائعة",
+    "nowLive": "مباشر الآن",
+    "openMenu": "فتح قائمة التنقل",
+    "mobileNavLabel": "تنقل الجوّال",
+    "navLabel": "تنقل الموقع",
+    "breadcrumb": "مسار التنقل",
+    "userMenu": "قائمة المستخدم"
+  },
+  "footer": {
+    "directContact": "تواصل مباشر",
+    "openContact": "فتح التواصل",
+    "termsOfUse": "شروط الاستخدام",
+    "privacy": "الخصوصية",
+    "support": "الدعم",
+    "fallbackTagline": "قناة لمن لا يزال يحب أن يشاهد شيئاً واحداً، من البداية إلى النهاية."
   },
   "auth": {
     "accessHeading": "الدخول إلى كلِك إت",
@@ -84,7 +103,21 @@
     "hidePassword": "إخفاء كلمة المرور",
     "callbackError": "تعذّر التحقق من هويتك",
     "googleSSOComingSoon": "تسجيل الدخول عبر جوجل قريباً",
-    "appleSSOComingSoon": "تسجيل الدخول عبر آبل قريباً"
+    "appleSSOComingSoon": "تسجيل الدخول عبر آبل قريباً",
+    "tabSignIn": "تسجيل الدخول",
+    "tabSignUp": "إنشاء حساب",
+    "skipSignIn": "تخطّي تسجيل الدخول",
+    "welcomeBackHeading": "أهلاً بعودتك.",
+    "welcomeBackSubheading": "تابع المشاهدة. جديد هنا؟ سجّل أدناه.",
+    "quote": "أخيراً، مكان يُعرض فيه شيء واحد من البداية إلى النهاية — بدون «لأنك شاهدت»، ولا «تخطّي خلال 5».",
+    "quoteAttribution": "مشترك في النسخة التجريبية المبكرة",
+    "landingSignIn": "تسجيل الدخول",
+    "landingStartFree": "ابدأ مجاناً",
+    "strengthWeak": "ضعيفة",
+    "strengthGood": "جيدة",
+    "strengthStrong": "قوية",
+    "strengthLabel": "القوة · {level}",
+    "passwordStrengthAria": "قوة كلمة المرور"
   },
   "home": {
     "heroHeadline": "كل قصة تنقر.",
@@ -108,13 +141,23 @@
       "creatorsLabel": "مبدعون"
     },
     "genresEyebrow": "تصفح حسب النوع",
-    "genresHeading": "اعثر على ما يعجبك",
+    "genresHeading": "تصفح حسب النوع",
     "faqEyebrow": "أسئلة متكررة",
     "faqHeading": "الأسئلة، بإجاباتها",
     "ctaEyebrow": "ابدأ الآن",
     "ctaHeading": "اختر برنامجاً. اضغط تشغيل.",
     "ctaDescription": "كل إنتاجات كلِك إت ستوري الأصلية، في منصة بثّ واحدة.",
-    "ctaButton": "استكشف المكتبة"
+    "ctaButton": "استكشف المكتبة",
+    "play": "تشغيل",
+    "watchNow": "شاهد الآن",
+    "continueWatching": "تابع المشاهدة",
+    "comingSoonBadge": "قريباً",
+    "info": "تفاصيل",
+    "moreInfo": "المزيد من التفاصيل",
+    "seasonCount": "{count} موسم",
+    "episodeCount": "{count} حلقة",
+    "newEpisodesEyebrow": "اختيار كلِك إت",
+    "newEpisodesHeading": "حلقات جديدة"
   },
   "show": {
     "seasonsLabel": "المواسم",
@@ -147,7 +190,13 @@
     "moreLikeThisHeading": "المزيد من برامج {genre}",
     "seasonDrawerTitle": "اختر حلقة",
     "scrollDown": "مرّر لأسفل للمزيد",
-    "seasonSelectorLabel": "اختر الموسم"
+    "seasonSelectorLabel": "اختر الموسم",
+    "seasonOne": "موسم",
+    "seasonMany": "مواسم",
+    "episodeOne": "حلقة",
+    "episodeMany": "حلقات",
+    "watchLabel": "شاهد {label}",
+    "comingSoonBadge": "قريباً"
   },
   "player": {
     "autoplayCountdown": "الحلقة التالية خلال {seconds} ثانية",
@@ -164,6 +213,35 @@
     "keyboardSpacePause": "مسطرة المسافة للتشغيل/الإيقاف",
     "keyboardArrowSkip": "أسهم لوحة المفاتيح للتخطي",
     "episodeListHeading": "في هذا الموسم"
+  },
+  "watch": {
+    "railPrograms": "البرامج",
+    "railComingSoon": "قريباً",
+    "railComingSoonEyebrow": "العروض الدعائية ومواعيد الإصدار",
+    "railCuratedEyebrow": "مختارات حسب التصنيف",
+    "viewAll": "عرض الكل",
+    "continueWatchingHeading": "تابع المشاهدة",
+    "shortClickHeading": "كلِك قصيرة",
+    "shortBadge": "قصيرة",
+    "shortFallback": "قصيرة",
+    "activeCategory": "التصنيف النشط",
+    "clearFilter": "مسح الفلتر",
+    "categoryNotFound": "التصنيف غير موجود",
+    "backToWatch": "العودة إلى المشاهدة",
+    "linkCopied": "تم نسخ الرابط",
+    "addToWatchlist": "إضافة إلى قائمة المشاهدة",
+    "removeFromWatchlist": "إزالة من قائمة المشاهدة",
+    "likeShow": "أعجبني هذا البرنامج",
+    "unlikeShow": "إلغاء الإعجاب",
+    "shareEpisode": "مشاركة الحلقة",
+    "previousEpisode": "الحلقة السابقة",
+    "nextEpisode": "الحلقة التالية",
+    "raiseTray": "رفع لوحة الحلقات",
+    "lowerTray": "إخفاء لوحة الحلقات",
+    "backToShow": "العودة إلى {title}",
+    "nowPlayingBadge": "الآن",
+    "previousShort": "القصيرة السابقة",
+    "nextShort": "القصيرة التالية"
   },
   "search": {
     "heading": "بحث",
@@ -202,7 +280,18 @@
     "historySeeAll": "عرض السجل الكامل",
     "adminBadge": "مشرف",
     "watchedAgo": "شوهد قبل {distance}",
-    "progressLabel": "{percent}%"
+    "progressLabel": "{percent}%",
+    "yourAccount": "حسابك",
+    "savingLabel": "جارٍ الحفظ",
+    "savedLabel": "تم الحفظ",
+    "nameInputPlaceholder": "اسمك",
+    "historyCompleted": "مُكتمل",
+    "avatarUpdated": "تم تحديث الصورة الشخصية",
+    "avatarUploadFailed": "فشل الرفع",
+    "accountEyebrow": "الحساب",
+    "signingOut": "جارٍ تسجيل الخروج…",
+    "avatarTooLarge": "يجب أن تكون الصورة أقل من 2 م.ب.",
+    "avatarPicAlt": "الصورة الشخصية"
   },
   "myList": {
     "pageTitle": "قائمتي",
@@ -211,7 +300,9 @@
     "countMany": "{count} برنامج في قائمتك",
     "emptyDescription": "احفظ البرامج لبناء قائمتك.",
     "emptyCta": "تصفح البرامج",
-    "removeConfirm": "إزالة من القائمة"
+    "removeConfirm": "إزالة من القائمة",
+    "eyebrow": "قائمتك",
+    "emptyHeading": "قائمتك فارغة."
   },
   "comingSoon": {
     "pageTitle": "قريباً",
@@ -226,7 +317,12 @@
     "noNewEpisodesDescription": "عد لاحقاً للاطلاع على تحديثات الجدول.",
     "releaseDateLabel": "يصدر في {date}",
     "splashHeading": "شيء مميز قادم قريباً",
-    "splashDescription": "كلِك إت ستوري يستعدّ للإطلاق. عد قريباً."
+    "splashDescription": "كلِك إت ستوري يستعدّ للإطلاق. عد قريباً.",
+    "eyebrowYear": "قريباً · 2026",
+    "releasingHeading": "ما الذي سنطلقه قريباً.",
+    "seasonOne": "موسم",
+    "seasonMany": "مواسم",
+    "remindMe": "ذكّرني"
   },
   "support": {
     "pageTitle": "الدعم",
@@ -244,7 +340,157 @@
     "submitButton": "إرسال الرسالة",
     "messageSent": "تم إرسال الرسالة! سنردّ عليك خلال 24 ساعة.",
     "termsAccept": "أوافق على أن يتم التواصل معي بخصوص طلبي",
-    "faqHeading": "الأسئلة المتكررة"
+    "faqHeading": "الأسئلة المتكررة",
+    "phoneOptional": "الهاتف (اختياري)",
+    "phonePlaceholder": "+971 XX XXX XXXX",
+    "savedEmailFailedToast": "تم حفظ رسالتك، لكن البريد غير مفعّل حالياً. سنراجعها من لوحة الإدارة.",
+    "savedEmailFailedInline": "تم حفظ الرسالة. التنبيه عبر البريد غير مفعّل حالياً."
+  },
+  "newsletter": {
+    "placeholder": "بريدك الإلكتروني",
+    "submitAria": "إرسال الاشتراك في النشرة",
+    "defaultButton": "اشترِك للحصول على التحديثات",
+    "errSubscribe": "تعذّر الاشتراك حالياً.",
+    "statusSent": "تم الاشتراك بنجاح.",
+    "statusUpdated": "تم تحديث تفضيلاتك.",
+    "statusAlreadySubscribed": "أنت مشترك بالفعل.",
+    "statusOfflineSaved": "تم حفظ اشتراكك، لكن البريد غير مفعّل حالياً.",
+    "invalidEmail": "أدخل بريداً إلكترونياً صالحاً."
+  },
+  "landing": {
+    "studioPresents": "Spacelight Studios تُقدّم",
+    "heroDescription": "قناة منسّقة يدوياً للثقافة الحضرية والطعام والتصميم والسفر. بلا إعلانات ولا خوارزميات — فقط البرامج التي يحبها المحررون، من مبدعين لم تسمع بهم من قبل.",
+    "heroCta": "شاهد الآن",
+    "heroBackgroundTitle": "فيديو خلفية الواجهة",
+    "portfolioHeading": "البرامج التي تستحق وقتك.",
+    "whyEyebrow": "003 · لماذا كلِك إت",
+    "whyHeading": "تلفزيون متمهّل لمدن سريعة.",
+    "why01Heading": "محررون، لا خوارزميات.",
+    "why01Body": "كل برنامج في كلِك إت يختاره إنسان. لن تجد محرك توصيات يدفعك نحو ستة أشياء أخرى عن الموضوع نفسه.",
+    "why02Heading": "مبدعون مستقلون، بميزانية حقيقية.",
+    "why02Body": "نتشارك مع صنّاع الأفلام مباشرة وندفع لهم لكل مشاهدة، لا لكل دقيقة. هذا يعني حلقات من 35 دقيقة تستغرق 35 دقيقة فعلاً.",
+    "why03Heading": "محتوى أصلي من أبوظبي.",
+    "why03Body": "سفر، صحة، موسيقى، كوميديا، طبخ، أطفال، شعر، سينما، تقنية — 15 برنامجاً أصلياً منتجاً من الإمارات بواسطة Spacelight Studios.",
+    "faqHeading": "أسئلة شائعة.",
+    "faq1Q": "ما هو كلِك إت؟",
+    "faq1A": "كلِك إت منصة بثّ منسّقة لبرامج أصلية منتجة في أبوظبي. كل برنامج مختار يدوياً من قبل محررينا.",
+    "faq2Q": "كم تكلفته؟",
+    "faq2A": "كلِك إت مجاني خلال النسخة التجريبية المفتوحة. لا اشتراك مطلوب — فقط سجّل وابدأ المشاهدة.",
+    "faq3Q": "ما الأجهزة المدعومة؟",
+    "faq3A": "أي متصفح حديث على الكمبيوتر أو اللوحي أو الجوّال. تُبثّ برامجنا عبر يوتيوب لتوافق أقصى.",
+    "faq4Q": "من أين يأتي المحتوى؟",
+    "faq4A": "كل المحتوى أصلي، من إنتاج Spacelight Studios FZ LLC من ياس للإبداع في أبوظبي.",
+    "faq5Q": "كم برنامجاً متاحاً؟",
+    "faq5A": "لدينا حالياً 15 برنامجاً أصلياً تشمل السفر والصحة والموسيقى والكوميديا والطبخ والأطفال والشعر والسينما والتقنية والمزيد.",
+    "statOriginal": "برامج أصلية",
+    "statEpisodes": "حلقات معروضة",
+    "statAbuDhabi": "إنتاج أبوظبي",
+    "statFree": "بدون اشتراك",
+    "ctaEyebrow": "ابدأ التجربة",
+    "ctaHeading": "سبعة أيام مجاناً. ألغِ متى شئت.",
+    "ctaBody": "بدون بطاقة. مكتبة كاملة. احتفظ بقائمتك إذا قررت البقاء.",
+    "ctaCreateFree": "أنشئ حساباً مجانياً",
+    "ctaTour": "جولة سريعة"
+  },
+  "notFound": {
+    "code": "404",
+    "heading": "الصفحة غير موجودة",
+    "description": "لم نتمكن من العثور على ما كنت تبحث عنه.",
+    "goHome": "العودة للرئيسية",
+    "watchShows": "تصفح البرامج"
+  },
+  "legal": {
+    "eyebrow": "قانوني",
+    "lastUpdated": "آخر تحديث: مايو 2026 · Spacelight Studios FZ LLC، ياس للإبداع، أبوظبي، الإمارات",
+    "privacyTitle": "سياسة الخصوصية",
+    "privacyMetaTitle": "سياسة الخصوصية | كلِك إت ستوري",
+    "privacyMetaDescription": "سياسة الخصوصية لمنصة كلِك إت ستوري للبثّ.",
+    "privacy1Heading": "1. المعلومات التي نجمعها",
+    "privacy1Body": "نجمع المعلومات التي تقدّمها عند إنشاء حساب (عنوان البريد الإلكتروني)، وبيانات الاستخدام مثل سجل المشاهدة والقوائم المحفوظة. لا نبيع بياناتك الشخصية.",
+    "privacy2Heading": "2. كيف نستخدمها",
+    "privacy2Body": "تُستخدم بياناتك حصراً لتشغيل المنصة — لتذكّر تقدّمك، والحفاظ على قائمة المشاهدة، وتحسين الخدمة. لا نستخدم بياناتك لعرض إعلانات موجّهة.",
+    "privacy3Heading": "3. بثّ الفيديو",
+    "privacy3BodyBefore": "يُقدَّم المحتوى عبر تضمينات يوتيوب. عند مشاهدة فيديو، تنطبق سياسة الخصوصية الخاصة بيوتيوب على جلسة التشغيل تلك. نوصي بمراجعة ",
+    "privacy3LinkLabel": "سياسة خصوصية جوجل",
+    "privacy3BodyAfter": ".",
+    "privacy4Heading": "4. تخزين البيانات",
+    "privacy4Body": "تُخزَّن بيانات الحساب بأمان عبر Supabase (المستضافة على بنية AWS التحتية في منطقة الاتحاد الأوروبي). لا تُخزَّن كلمات المرور أبداً كنصّ صريح.",
+    "privacy5Heading": "5. حقوقك",
+    "privacy5BodyBefore": "يمكنك طلب حذف حسابك والبيانات المرتبطة به في أي وقت عبر ",
+    "privacy5LinkLabel": "صفحة الدعم",
+    "privacy5BodyAfter": ".",
+    "privacy6Heading": "6. ملفات تعريف الارتباط",
+    "privacy6Body": "نستخدم ملفات تعريف ارتباط الجلسة الضرورية للمصادقة فقط. لا تُستخدم ملفات تعريف ارتباط إعلانية من طرف ثالث في كلِك إت ستوري.",
+    "termsTitle": "شروط الاستخدام",
+    "termsMetaTitle": "شروط الاستخدام | كلِك إت ستوري",
+    "termsMetaDescription": "شروط استخدام منصة كلِك إت ستوري للبثّ.",
+    "terms1Heading": "1. القبول",
+    "terms1Body": "بدخولك إلى منصة كلِك إت ستوري أو استخدامها، فإنك توافق على الالتزام بشروط الاستخدام هذه. إذا لم توافق، فلا تستخدم المنصة.",
+    "terms2Heading": "2. الوصول إلى المنصة",
+    "terms2Body": "تمنحك كلِك إت ستوري ترخيصاً محدوداً وغير حصري وغير قابل للنقل للوصول إلى المحتوى وبثّه على المنصة للاستخدام الشخصي وغير التجاري.",
+    "terms3Heading": "3. المحتوى",
+    "terms3Body": "كل المحتوى على كلِك إت ستوري مملوك لـ Spacelight Studios FZ LLC أو مرخّص لها. لا يجوز لك نسخ أو إعادة إنتاج أو توزيع أو إنشاء أعمال مشتقة من أي محتوى دون إذن خطّي صريح.",
+    "terms4Heading": "4. حسابات المستخدمين",
+    "terms4Body": "أنت مسؤول عن الحفاظ على سرّية بيانات اعتماد حسابك. تحتفظ كلِك إت ستوري بالحق في تعليق أو إنهاء الحسابات التي تنتهك هذه الشروط.",
+    "terms5Heading": "5. التغييرات",
+    "terms5Body": "قد نُحدِّث هذه الشروط في أي وقت. استمرارك في استخدام المنصة بعد التغييرات يُعدّ قبولاً للشروط المعدّلة.",
+    "terms6Heading": "6. التواصل",
+    "terms6BodyBefore": "أسئلة حول هذه الشروط؟ تواصل معنا عبر ",
+    "terms6LinkLabel": "صفحة الدعم",
+    "terms6BodyAfter": "."
+  },
+  "about": {
+    "metaTitle": "من نحن | كلِك إت ستوري",
+    "metaDescription": "عن كلِك إت ستوري ووجهة النظر التحريرية وراء المنصة.",
+    "eyebrow": "من نحن",
+    "title": "منصة مشاهدة مبنية بذائقة تحريرية، لا بخوارزمية.",
+    "intro": "كلِك إت ستوري يجمع برامج أصلية من أبوظبي ضمن تجربة مشاهدة هادئة ومقصودة. الفكرة بسيطة: عرض أقل، اختيار أوضح، ونبرة تحترم وقت المشاهد.",
+    "section1Heading": "التحرير أولاً",
+    "section1Body": "نبرمج المنصة كما تُبرمج مجلة أو قناة، مع اهتمام بالإيقاع، المزاج، وتسلسل الاكتشاف، بدلاً من إغراق المشاهد في واجهة مزدحمة.",
+    "section2Heading": "من أبوظبي",
+    "section2Body": "المحتوى ينطلق من المدينة، لكنه لا يقتصر عليها. السفر، الطعام، الصحة، الموسيقى، والتصميم تظهر هنا كعدسات متجاورة على المنطقة.",
+    "section3Heading": "مشاهدة كاملة",
+    "section3Body": "التجربة مصممة لتشجيع المشاهدة الكاملة للحلقة أو الموسم، مع انتقالات واضحة وحفظ للتقدم ومساحة لاكتشاف ما يلي بدون ضوضاء.",
+    "ctaLabel": "تواصل مع الفريق"
+  },
+  "updates": {
+    "metaTitle": "التحديثات | كلِك إت ستوري",
+    "metaDescription": "احصل على تحديثات الإطلاق والإصدارات والقادم من كلِك إت ستوري.",
+    "eyebrow": "تحديثات كلِك إت ستوري",
+    "heading": "ابقَ قريباً من الإصدارات القادمة.",
+    "descriptionGeneric": "اشترك للحصول على أخبار الإطلاق، الإصدارات الجديدة، والتحديثات التحريرية.",
+    "descriptionForShow": "سنرسل لك تحديثات عند اقتراب إطلاق {showTitle} وأي أخبار مرتبطة به.",
+    "buttonLabel": "أرسل لي التحديثات"
+  },
+  "reviews": {
+    "heading": "المراجعات",
+    "countOne": "{count} مراجعة",
+    "countMany": "{count} مراجعة",
+    "addYour": "أضف مراجعتك",
+    "yourReview": "مراجعتك",
+    "tapToRate": "اضغط للتقييم",
+    "starNope": "لا",
+    "starMeh": "عادي",
+    "starFine": "جيد",
+    "starGreat": "ممتاز",
+    "starMasterpiece": "تحفة",
+    "starsAria": "{n} نجوم",
+    "composerPlaceholder": "ما الذي لفت انتباهك؟ الحلقات التي أحببتها، أو ما لم يعجبك...",
+    "postReview": "نشر المراجعة",
+    "posting": "جارٍ النشر...",
+    "clear": "مسح",
+    "loadError": "تعذّر تحميل المراجعات. {error}",
+    "anonymous": "مجهول",
+    "yoursBadge": "مراجعتك",
+    "emptyMessage": "لا توجد مراجعات بعد. كن أول من يشارك رأيه."
+  },
+  "episode": {
+    "loadMore": "عرض المزيد من الحلقات",
+    "minutesAbbr": "{duration} دقيقة",
+    "minutesEmpty": "-- دقيقة",
+    "comingSoonBadge": "قريباً",
+    "draftBadge": "مسودة",
+    "completedBadge": "مُكتمل"
   },
   "faq": {
     "q1Question": "ما هو كلِك إت ستوري؟",
@@ -370,7 +616,8 @@
       "colorHexAria": "قيمة اللون السداسية",
       "colorClear": "مسح",
       "editAria": "تعديل {name}",
-      "deleteAria": "حذف {name}"
+      "deleteAria": "حذف {name}",
+      "colorLabel": "لون التصنيف"
     },
     "newShow": {
       "backToShows": "العودة إلى البرامج",
@@ -450,7 +697,10 @@
       "showCreated": "تم إنشاء البرنامج",
       "showUpdated": "تم تحديث البرنامج",
       "showArchived": "تمت أرشفة البرنامج",
-      "showDeleted": "تم حذف البرنامج نهائياً"
+      "showDeleted": "تم حذف البرنامج نهائياً",
+      "descriptionPlaceholder": "ما هذا البرنامج؟",
+      "taglinePlaceholder": "شعار قصير",
+      "toastSaveFailed": "فشل الحفظ"
     },
     "seasonForm": {
       "createSeason": "إنشاء موسم",
@@ -479,6 +729,18 @@
       "statusDraft": "مسودة",
       "statusPublished": "منشور",
       "statusScheduled": "مجدول",
+      "statusDraftDesc": "غير مرئية للزوار",
+      "statusScheduledDesc": "مرئية ولكن غير قابلة للتشغيل",
+      "statusPublishedDesc": "مباشرة وقابلة للتشغيل",
+      "sectionInfo": "معلومات الحلقة",
+      "sectionContent": "المحتوى",
+      "episodeTitlePlaceholder": "عنوان الحلقة",
+      "descriptionPlaceholder": "ما الذي يحدث في هذه الحلقة؟",
+      "discardChanges": "تجاهل التغييرات",
+      "savingLabel": "جارٍ الحفظ…",
+      "createEpisode": "إنشاء حلقة",
+      "toastFetchFailed": "تعذّر الجلب من يوتيوب",
+      "toastFetchSuccess": "تم جلب العنوان والوصف والمدة من يوتيوب",
       "saveEpisode": "حفظ الحلقة",
       "deleteEpisode": "حذف الحلقة",
       "archiveEpisode": "أرشفة الحلقة",
@@ -532,7 +794,14 @@
       "restoredToast": "تمت استعادة البرنامج",
       "deletedToast": "تم حذف البرنامج نهائياً",
       "conflictHeading": "تعارض في أرقام الحلقات",
-      "conflictDescription": "تتشارك حلقات في المكتبة النشطة الأرقام مع البرنامج المؤرشف. يُرجى حل التعارض قبل الاستعادة."
+      "conflictDescription": "تتشارك حلقات في المكتبة النشطة الأرقام مع البرنامج المؤرشف. يُرجى حل التعارض قبل الاستعادة.",
+      "newestFirst": "الأحدث أولاً",
+      "restoring": "جارٍ الاستعادة…",
+      "restoreTooltip": "استعادة البرنامج وكل الحلقات",
+      "deleteTooltip": "حذف نهائي — لا يمكن التراجع",
+      "deletePermanentlyTitle": "حذف البرنامج نهائياً",
+      "fixing": "جارٍ الإصلاح…",
+      "fixAndRestore": "إصلاح واستعادة"
     },
     "audit": {
       "pageTitle": "سجل التدقيق",
@@ -561,6 +830,60 @@
       "loading": "جارٍ التحميل…",
       "noEpisodes": "لا توجد حلقات بعد",
       "noShows": "لا توجد برامج بعد"
+    },
+    "heroMedia": {
+      "desktopHero": "هيرو سطح المكتب",
+      "mobileHero": "هيرو الجوّال",
+      "replaceButton": "استبدال",
+      "deleteButton": "حذف",
+      "clearButton": "مسح",
+      "youtubeLabel": "يوتيوب",
+      "clickToUpload": "انقر لرفع صورة",
+      "uploadFailed": "فشل الرفع",
+      "uploadHeroSuccess": "تم رفع فيديو الهيرو",
+      "pasteYoutubePrompt": "الصق رابط يوتيوب",
+      "invalidYoutube": "رابط يوتيوب غير صالح",
+      "saveFailed": "تعذّر الحفظ",
+      "savedSuccess": "تم حفظ رابط فيديو الهيرو",
+      "removeFailed": "تعذّر الحذف",
+      "removeSuccess": "تم حذف فيديو الهيرو",
+      "removeButton": "حذف الفيديو",
+      "uploadingVideo": "جارٍ رفع الفيديو…",
+      "youtubeUrlLabel": "رابط يوتيوب"
+    },
+    "episodesTable": {
+      "moveUp": "نقل لأعلى",
+      "moveDown": "نقل لأسفل",
+      "archiveTooltip": "أرشفة",
+      "archiveEpisodeTitle": "أرشفة الحلقة"
+    },
+    "seasonTabs": {
+      "empty": "أنشئ موسماً لإضافة الحلقات.",
+      "seasonsHeading": "المواسم",
+      "episodeManagementHeading": "إدارة الحلقات",
+      "editSeasonTooltip": "تعديل الموسم"
+    },
+    "castEditor": {
+      "toastImageUploadFailed": "فشل رفع الصورة",
+      "toastMemberAdded": "تمت إضافة عضو الطاقم",
+      "toastAddFailed": "فشل الإضافة",
+      "toastInvalidImage": "يُسمح فقط بصور PNG أو JPEG أو WebP",
+      "toastMemberRemoved": "تمت إزالة عضو الطاقم",
+      "toastRemoveFailed": "فشل الإزالة"
+    },
+    "confirmDialog": {
+      "processing": "جارٍ المعالجة…"
+    },
+    "emptyState": {
+      "defaultLabel": "حالة فارغة"
+    },
+    "artwork": {
+      "uploadFailedToast": "فشل الرفع. يُرجى المحاولة مرة أخرى.",
+      "replaceButton": "استبدال",
+      "deleteButton": "حذف"
+    },
+    "profileCard": {
+      "fallbackName": "مشرف"
     }
   },
   "errors": {

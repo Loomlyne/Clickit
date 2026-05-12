@@ -1,4 +1,4 @@
-import { getLocale } from 'next-intl/server'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { ShowArt } from '@/components/primitives/show-art'
 import type { RecentlyWatchedItem } from '@/lib/queries'
@@ -13,8 +13,7 @@ export async function ProfileHistoryRow({ item }: ProfileHistoryRowProps) {
   const progressPercent = item.durationSeconds > 0
     ? Math.min(Math.round((item.progressSeconds / item.durationSeconds) * 100), 100)
     : 0
-  const locale = await getLocale()
-  const isArabic = locale === 'ar'
+  const t = await getTranslations('profile')
 
   return (
     <Link
@@ -44,7 +43,7 @@ export async function ProfileHistoryRow({ item }: ProfileHistoryRowProps) {
       <div className="flex-shrink-0">
         {item.completed ? (
           <span className="rounded-full bg-[var(--bg-3)] px-2.5 py-1 text-xs text-[var(--text-dim)]">
-            {isArabic ? 'مُكتمل' : 'Completed'}
+            {t('historyCompleted')}
           </span>
         ) : (
           <div className="w-20">

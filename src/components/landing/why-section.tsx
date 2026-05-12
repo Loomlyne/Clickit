@@ -1,29 +1,21 @@
-const FEATURES = [
-  {
-    n: '01',
-    h: 'Editors, not algorithms.',
-    b: 'Every show on Clickit is picked by a human. You won\'t find a recommendation engine pushing you toward six more things about the same thing.',
-  },
-  {
-    n: '02',
-    h: 'Independent creators, proper budget.',
-    b: 'We partner with filmmakers directly and pay them per stream, not per view-time. That means 35-minute episodes that take 35 minutes to watch.',
-  },
-  {
-    n: '03',
-    h: 'Original content from Abu Dhabi.',
-    b: 'Travel, health, music, comedy, cooking, kids, poetry, cinema, tech — 15 original programs produced from the UAE by Spacelight Studios.',
-  },
-]
+import { getTranslations } from 'next-intl/server'
 
-export function WhySection() {
+export async function WhySection() {
+  const t = await getTranslations('landing')
+
+  const FEATURES = [
+    { n: '01', h: t('why01Heading'), b: t('why01Body') },
+    { n: '02', h: t('why02Heading'), b: t('why02Body') },
+    { n: '03', h: t('why03Heading'), b: t('why03Body') },
+  ]
+
   return (
     <section className="mx-auto max-w-[1400px] px-10 py-24 border-t border-[var(--line)]" id="features">
       <div className="grid grid-cols-1 items-start gap-20 md:grid-cols-2">
         <div>
-          <div className="mono mb-3.5 text-[var(--text-mute)]">003 · Why Clickit</div>
+          <div className="mono mb-3.5 text-[var(--text-mute)]">{t('whyEyebrow')}</div>
           <h2 className="font-[family-name:var(--font-display)] text-[clamp(36px,5vw,64px)] font-normal leading-none tracking-[-0.02em]">
-            Slow TV for fast cities.
+            {t('whyHeading')}
           </h2>
         </div>
         <div className="flex flex-col gap-8">

@@ -1,5 +1,5 @@
 // Continue Watching Rail — server component, native flex scroll
-import { getLocale } from 'next-intl/server'
+import { getTranslations } from 'next-intl/server'
 import { DragScroll } from '@/components/primitives/drag-scroll'
 import { getContinueWatchingEpisodes } from '@/lib/queries'
 import { ContinueWatchingCard } from '@/components/home/continue-watching-card'
@@ -13,21 +13,19 @@ export async function ContinueWatchingRail({
 }: ContinueWatchingRailProps) {
   if (!userId) return null
 
-  const [items, locale] = await Promise.all([
+  const [items, t] = await Promise.all([
     getContinueWatchingEpisodes(userId),
-    getLocale(),
+    getTranslations('watch'),
   ])
 
   if (items.length === 0) return null
-
-  const isArabic = locale === 'ar'
 
   return (
     <section className="rail px-10 pt-8 pb-3">
       <div className="mb-4 flex items-baseline justify-between">
         <div>
           <h2 className="font-display m-0 text-[26px]">
-            {isArabic ? 'تابع المشاهدة' : 'Continue Watching'}
+            {t('continueWatchingHeading')}
           </h2>
         </div>
       </div>

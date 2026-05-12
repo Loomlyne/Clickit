@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/i18n/navigation'
 import { AutoplayOverlay } from '@/components/watch/autoplay-overlay'
 import {
@@ -93,7 +93,7 @@ export function WatchShell({
 
   const router = useRouter()
   const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('watch')
 
   // episodeId must be currentEpisode.id (state), NOT episode.id (initial prop).
   // Plan 02 updates currentEpisode before calling loadVideoById so the hook's
@@ -131,7 +131,7 @@ export function WatchShell({
       })
     } else {
       navigator.clipboard.writeText(window.location.href).then(() => {
-        toast.success('Link copied')
+        toast.success(t('linkCopied'))
       })
     }
   }
@@ -269,7 +269,7 @@ export function WatchShell({
         <Link
           href={`/series/${show.slug}`}
           className="flex items-center gap-1.5 text-sm text-white/70 transition-colors duration-150 hover:text-white"
-          aria-label={`Back to ${show.title}`}
+          aria-label={t('backToShow', { title: show.title })}
           tabIndex={isIdle ? -1 : 0}
         >
           <ArrowLeft className="size-5" />
@@ -291,7 +291,7 @@ export function WatchShell({
           <button
             onClick={toggleWatchlist}
             className="flex size-8 items-center justify-center text-white/70 transition-colors duration-150 hover:text-white"
-            aria-label={isInList ? 'Remove from watchlist' : 'Add to watchlist'}
+            aria-label={isInList ? t('removeFromWatchlist') : t('addToWatchlist')}
             aria-pressed={isInList}
             tabIndex={isIdle ? -1 : 0}
           >
@@ -302,7 +302,7 @@ export function WatchShell({
           <button
             onClick={toggleLike}
             className="flex size-8 items-center justify-center text-white/70 transition-colors duration-150 hover:text-white"
-            aria-label={isShowLiked ? 'Unlike this show' : 'Like this show'}
+            aria-label={isShowLiked ? t('unlikeShow') : t('likeShow')}
             aria-pressed={isShowLiked}
             tabIndex={isIdle ? -1 : 0}
           >
@@ -313,7 +313,7 @@ export function WatchShell({
           <button
             onClick={handleShare}
             className="flex size-8 items-center justify-center text-white/70 transition-colors duration-150 hover:text-white"
-            aria-label="Share episode"
+            aria-label={t('shareEpisode')}
             tabIndex={isIdle ? -1 : 0}
           >
             <Share2 className="size-5" />
@@ -326,7 +326,7 @@ export function WatchShell({
         <button
           onClick={() => handleEpisodeSwitch(currentPrevEpisode)}
           className={`fixed top-1/2 left-3 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-opacity duration-200 ease-in-out ${chromeClass}`}
-          aria-label="Previous episode"
+          aria-label={t('previousEpisode')}
           tabIndex={isIdle ? -1 : 0}
         >
           <ChevronLeft className="size-5 text-white" />
@@ -338,7 +338,7 @@ export function WatchShell({
         <button
           onClick={() => handleEpisodeSwitch(currentNextEpisode)}
           className={`fixed top-1/2 right-3 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-opacity duration-200 ease-in-out ${chromeClass}`}
-          aria-label="Next episode"
+          aria-label={t('nextEpisode')}
           tabIndex={isIdle ? -1 : 0}
         >
           <ChevronRight className="size-5 text-white" />

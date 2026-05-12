@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Drawer } from 'vaul'
 import { ChevronUp, Play } from 'lucide-react'
 
@@ -41,6 +42,7 @@ export function EpisodeTray({
   onSnapPointChange,
   onEpisodeSelect,
 }: EpisodeTrayProps) {
+  const t = useTranslations('watch')
   const brandColor = BRAND_COLOR_HEX[show.brandColor] ?? '#2C3569'
   const activeEpisodes = episodesBySeason[activeSeasonId] ?? []
   const isTrayRaised = activeSnapPoint === WATCH_TRAY_SNAP_POINTS[1]
@@ -111,7 +113,7 @@ export function EpisodeTray({
                   }
                   className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 hover:text-white"
                   aria-label={
-                    isTrayRaised ? 'Lower episode tray' : 'Raise episode tray'
+                    isTrayRaised ? t('lowerTray') : t('raiseTray')
                   }
                 >
                   <ChevronUp
@@ -184,7 +186,7 @@ export function EpisodeTray({
                           </span>
                           {isCurrent && (
                             <span className="rounded-full bg-white px-2 py-0.5 font-mono text-[10px] text-black">
-                              Now
+                              {t('nowPlayingBadge')}
                             </span>
                           )}
                         </span>

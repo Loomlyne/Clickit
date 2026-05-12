@@ -2,6 +2,7 @@
 // Sharp, minimal: eyebrow + title + meta + synopsis + 3 buttons
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { Play, Info } from 'lucide-react'
 
@@ -28,6 +29,7 @@ export function HeroSlide({
   reducedMotion,
   onContentHoverChange,
 }: HeroSlideProps) {
+  const t = useTranslations('home')
   const brandColorHex = BRAND_COLOR_HEX[show.brandColor]
 
   return (
@@ -81,9 +83,9 @@ export function HeroSlide({
           className="mono mb-3 flex items-center gap-2 sm:mb-[18px] sm:gap-3.5"
           style={{ letterSpacing: '0.12em' }}
         >
-          <span>{show.seasonCount}S</span>
+          <span>{t('seasonCount', { count: show.seasonCount })}</span>
           <span className="inline-block h-[3px] w-[3px] rounded-full bg-[var(--text-mute)]" />
-          <span>{show.episodeCount} eps</span>
+          <span>{t('episodeCount', { count: show.episodeCount })}</span>
           <span className="inline-block h-[3px] w-[3px] rounded-full bg-[var(--text-mute)]" />
           <span>{show.genre}</span>
         </div>
@@ -104,14 +106,14 @@ export function HeroSlide({
               className="btn bg-primary text-primary-foreground inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-[13px] font-medium whitespace-nowrap transition-[transform,background] duration-[120ms] hover:bg-white active:translate-y-px sm:gap-2 sm:px-[26px] sm:py-3.5 sm:text-[15px]"
             >
               <Play className="size-3.5 fill-current sm:size-4" />
-              <span className="sm:hidden">Play</span>
+              <span className="sm:hidden">{t('play')}</span>
               <span className="hidden sm:inline">
-                {hasWatched ? 'Continue watching' : 'Watch now'}
+                {hasWatched ? t('continueWatching') : t('watchNow')}
               </span>
             </Link>
           ) : (
             <span className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.08] px-4 py-2.5 text-[13px] font-medium text-white/50 backdrop-blur-[8px] sm:px-[26px] sm:py-3.5 sm:text-[15px]">
-              Coming Soon
+              {t('comingSoonBadge')}
             </span>
           )}
           <Link
@@ -119,8 +121,8 @@ export function HeroSlide({
             className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.08] px-4 py-2.5 text-[13px] font-medium text-white backdrop-blur-[8px] transition-[transform,background,border-color] duration-[120ms] hover:border-[var(--line-2)] hover:bg-white/[0.14] active:translate-y-px sm:gap-2 sm:px-[26px] sm:py-3.5 sm:text-[15px]"
           >
             <Info className="size-3.5 sm:size-4" />
-            <span className="sm:hidden">Info</span>
-            <span className="hidden sm:inline">More info</span>
+            <span className="sm:hidden">{t('info')}</span>
+            <span className="hidden sm:inline">{t('moreInfo')}</span>
           </Link>
         </div>
       </div>

@@ -15,7 +15,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AuthPage() {
-  const shows = await getFeaturedShows()
+  const [shows, t] = await Promise.all([
+    getFeaturedShows(),
+    getTranslations('auth'),
+  ])
   const backdrop = shows[1]?.heroImageUrl || shows[0]?.posterUrl
 
   return (
@@ -41,13 +44,10 @@ export default async function AuthPage() {
           {/* Middle: quote */}
           <div className="flex h-full max-w-md flex-col items-start justify-end">
             <h2 className="mb-4 font-[family-name:var(--font-display)] text-[32px] leading-[1.15] font-normal tracking-[-0.01em] text-white">
-              &ldquo;Finally, a place where{' '}
-              <em className="italic">one thing</em> plays all the way through —
-              no &apos;because you watched&apos;, no &apos;skip in
-              5&apos;.&rdquo;
+              &ldquo;{t('quote')}&rdquo;
             </h2>
             <div className="mono text-[11px] text-white/40">
-              — Early beta subscriber
+              — {t('quoteAttribution')}
             </div>
           </div>
         </div>
@@ -57,10 +57,10 @@ export default async function AuthPage() {
       <div className="flex w-full items-center justify-center bg-[var(--bg-0)] px-5 py-8 sm:px-6 md:py-12 lg:w-1/2 lg:py-16">
         <div className="w-full max-w-[420px]">
           <h1 className="mb-2 font-[family-name:var(--font-display)] text-[32px] font-normal tracking-[-0.01em] md:text-[36px]">
-            Welcome <em className="italic">back.</em>
+            {t('welcomeBackHeading')}
           </h1>
           <p className="mb-6 text-[15px] text-[var(--text-dim)] md:mb-8">
-            Resume watching. New here? Sign up below.
+            {t('welcomeBackSubheading')}
           </p>
 
           <AuthPanel />
@@ -70,7 +70,7 @@ export default async function AuthPage() {
               href="/watch"
               className="inline-flex min-h-11 items-center font-[family-name:var(--font-mono)] text-[13px] tracking-[0.08em] text-[var(--text-mute)] uppercase transition-colors hover:text-[var(--text)]"
             >
-              Skip sign in →
+              {t('skipSignIn')} →
             </Link>
           </div>
         </div>

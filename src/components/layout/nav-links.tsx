@@ -1,23 +1,21 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { usePathname } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
 
-export const NAV_LINKS = [
-  { label: 'Watch', href: '/watch' },
-  { label: 'Support', href: '/support' },
-]
+export const NAV_LINK_HREFS = [
+  { key: 'watch', href: '/watch' },
+  { key: 'support', href: '/support' },
+] as const
 
 /** Deep-link to the live rail on the watch page (anchor id on ContentRail). */
-export const NOW_LIVE = {
-  label: 'Now Live',
-  href: '/watch#now-streaming' as const,
-}
+export const NOW_LIVE_HREF = '/watch#now-streaming' as const
 
 export function liveNavHref(configuredUrl: string | null | undefined) {
   const trimmed = configuredUrl?.trim()
-  return trimmed ? trimmed : NOW_LIVE.href
+  return trimmed ? trimmed : NOW_LIVE_HREF
 }
 
 export function liveNavIsExternal(href: string) {
@@ -26,11 +24,12 @@ export function liveNavIsExternal(href: string) {
 
 export function NavLinks() {
   const pathname = usePathname()
+  const t = useTranslations('nav')
 
   return (
-    <nav aria-label="Site navigation">
+    <nav aria-label={t('navLabel')}>
       <div className="flex items-center gap-1 rounded-full border border-white/8 bg-white/[0.02] p-1.5">
-        {NAV_LINKS.map(({ label, href }) => {
+        {NAV_LINK_HREFS.map(({ key, href }) => {
           const isActive = pathname.startsWith(href)
           return (
             <Link
@@ -43,7 +42,7 @@ export function NavLinks() {
                   : 'text-white/56 hover:text-white'
               )}
             >
-              {label}
+              {t(key)}
             </Link>
           )
         })}

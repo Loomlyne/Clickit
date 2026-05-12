@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import { Link, usePathname } from '@/i18n/navigation'
 import { useLenis } from 'lenis/react'
 import { cn } from '@/lib/utils'
 import { AuthSection } from './auth-section'
 import { MobileNav } from './mobile-nav'
-import { NOW_LIVE, liveNavHref, liveNavIsExternal } from './nav-links'
+import { liveNavHref, liveNavIsExternal } from './nav-links'
 
 interface NavbarProps {
   initialUser?: { id: string; email: string } | null
@@ -16,6 +17,7 @@ interface NavbarProps {
 
 export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
   const pathname = usePathname()
+  const t = useTranslations('nav')
   const [scrolled, setScrolled] = useState(false)
   const [hidden, setHidden] = useState(false)
   const lastScrollY = useRef(0)
@@ -71,7 +73,7 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
     >
       <Link
         href="/watch"
-        aria-label="Clickit Story home"
+        aria-label={t('home')}
         className="flex min-h-11 items-center"
       >
         <Image
@@ -90,16 +92,15 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
           const liveHref = liveNavHref(liveStreamUrl)
           const external = liveNavIsExternal(liveHref)
           const pillClass = cn(
-            'md:hidden inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-semibold tracking-tight text-white shadow-sm transition-[transform,box-shadow,background-color] duration-200 hover:brightness-110 active:scale-[0.98]',
-            'bg-[linear-gradient(135deg,#dc2626_0%,#b91c1c_100%)] ring-1 ring-white/15'
+            'md:hidden inline-flex items-center gap-2 text-[13px] font-semibold tracking-tight text-white transition-opacity duration-200 hover:opacity-80'
           )
           const inner = (
             <>
               <span className="relative flex size-2 shrink-0" aria-hidden>
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-white/90 opacity-60" />
-                <span className="relative inline-flex size-2 rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.9)]" />
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
               </span>
-              {NOW_LIVE.label}
+              {t('nowLive')}
             </>
           )
           return external ? (
@@ -130,7 +131,7 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
                     <span className="absolute inline-flex size-full animate-ping rounded-full bg-white/90 opacity-60" />
                     <span className="relative inline-flex size-2 rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.9)]" />
                   </span>
-                  {NOW_LIVE.label}
+                  {t('nowLive')}
                 </>
               )
               return external ? (
@@ -144,13 +145,13 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
               )
             })()}
             <Link href="/watch" className={navLinkClass(pathname === '/watch')}>
-              Watch
+              {t('watch')}
             </Link>
             <Link
               href="/support"
               className={navLinkClass(pathname === '/support')}
             >
-              Support
+              {t('support')}
             </Link>
           </>
         )}
@@ -164,13 +165,13 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
                   href={`${prefix}#shows`}
                   className="px-0.5 py-1.5 text-[13.5px] uppercase tracking-[0.08em] text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
                 >
-                  Shows
+                  {t('shows')}
                 </a>
                 <a
                   href={`${prefix}#faq`}
                   className="px-0.5 py-1.5 text-[13.5px] uppercase tracking-[0.08em] text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
                 >
-                  FAQ
+                  {t('faq')}
                 </a>
               </>
             )

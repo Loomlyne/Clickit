@@ -1,8 +1,12 @@
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getFeaturedShows } from '@/lib/queries'
 
 export async function CtaBanner() {
-  const shows = await getFeaturedShows()
+  const [shows, t] = await Promise.all([
+    getFeaturedShows(),
+    getTranslations('landing'),
+  ])
   const backdrop = shows[2]?.heroImageUrl || shows[0]?.posterUrl
 
   return (
@@ -13,26 +17,26 @@ export async function CtaBanner() {
           style={{ backgroundImage: `url(${backdrop})` }}
         />
       )}
-<div className="relative mx-auto max-w-[720px]">
-        <div className="mono mb-3.5 text-[var(--primary)]">Start the beta</div>
+      <div className="relative mx-auto max-w-[720px]">
+        <div className="mono mb-3.5 text-[var(--primary)]">{t('ctaEyebrow')}</div>
         <h2 className="font-[family-name:var(--font-display)] text-[clamp(40px,6vw,80px)] font-normal leading-none tracking-[-0.02em] mb-6">
-          Seven days free. Cancel in the app.
+          {t('ctaHeading')}
         </h2>
         <p className="text-[17px] text-[var(--text-dim)] mb-9">
-          No card required. Full catalog. Keep your watchlist if you stick around.
+          {t('ctaBody')}
         </p>
         <div className="flex items-center justify-center gap-3">
           <Link
             href="/auth"
             className="inline-flex items-center rounded-full bg-[var(--primary)] px-6 py-3.5 text-[15px] font-medium text-[var(--primary-foreground)] transition-all hover:bg-white"
           >
-            Create free account
+            {t('ctaCreateFree')}
           </Link>
           <Link
             href="/watch"
             className="inline-flex items-center rounded-full border border-[var(--line-2)] px-6 py-3.5 text-[15px] font-medium text-[var(--text)] transition-all hover:bg-white/[0.04]"
           >
-            Take the tour
+            {t('ctaTour')}
           </Link>
         </div>
       </div>

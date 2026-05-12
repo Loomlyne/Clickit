@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
@@ -28,8 +28,7 @@ export function NewsletterSignupForm({
   buttonLabel,
   compact = true,
 }: NewsletterSignupFormProps) {
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('newsletter')
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const {
     register,
@@ -56,22 +55,18 @@ export function NewsletterSignupForm({
         return
       }
 
-      setStatusMessage(result.message || (isArabic ? 'تعذّر الاشتراك حالياً.' : 'Could not subscribe right now.'))
+      setStatusMessage(result.message || t('errSubscribe'))
       return
     }
 
     if (result.status === 'sent') {
-      setStatusMessage(isArabic ? 'تم الاشتراك بنجاح.' : 'You are subscribed.')
+      setStatusMessage(t('statusSent'))
     } else if (result.status === 'updated_preferences') {
-      setStatusMessage(isArabic ? 'تم تحديث تفضيلاتك.' : 'Your update reminder is set.')
+      setStatusMessage(t('statusUpdated'))
     } else if (result.status === 'already_subscribed') {
-      setStatusMessage(isArabic ? 'أنت مشترك بالفعل.' : 'You are already subscribed.')
+      setStatusMessage(t('statusAlreadySubscribed'))
     } else {
-      setStatusMessage(
-        isArabic
-          ? 'تم حفظ اشتراكك، لكن البريد غير مفعّل حالياً.'
-          : 'Your signup was saved, but email delivery is offline right now.'
-      )
+      setStatusMessage(t('statusOfflineSaved'))
     }
 
     reset({
@@ -90,7 +85,7 @@ export function NewsletterSignupForm({
       <div className={compact ? 'flex items-center border-b border-[var(--line-2)]' : 'space-y-3'}>
         <input
           type="email"
-          placeholder={isArabic ? 'بريدك الإلكتروني' : 'your@email.com'}
+          placeholder={t('placeholder')}
           className={compact
             ? 'flex-1 bg-transparent py-3 text-sm text-[var(--text)] placeholder:text-[var(--text-mute)] outline-none'
             : 'min-h-11 w-full rounded-full border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-mute)] outline-none'}
@@ -101,7 +96,7 @@ export function NewsletterSignupForm({
             type="submit"
             disabled={isSubmitting}
             className="flex min-h-11 min-w-11 items-center justify-center px-2 py-3 text-[var(--text-dim)] transition-colors hover:text-[var(--accent)] disabled:opacity-60"
-            aria-label={buttonLabel || (isArabic ? 'الاشتراك في النشرة' : 'Submit newsletter signup')}
+            aria-label={buttonLabel || t('submitAria')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
           </button>
@@ -113,12 +108,12 @@ export function NewsletterSignupForm({
           disabled={isSubmitting}
           className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-white disabled:opacity-60"
         >
-          {buttonLabel || (isArabic ? 'اشترِك للحصول على التحديثات' : 'Get updates')}
+          {buttonLabel || t('defaultButton')}
         </button>
       )}
       {errors.email?.message && (
         <p className="text-xs text-brand-red-safe">
-          {isArabic ? 'أدخل بريداً إلكترونياً صالحاً.' : 'Enter a valid email address.'}
+          {t('invalidEmail')}
         </p>
       )}
       {statusMessage && (

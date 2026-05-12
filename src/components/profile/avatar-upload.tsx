@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { Camera } from 'lucide-react'
 import { toast } from 'sonner'
 import { uploadAvatar } from '@/app/[locale]/(viewer)/profile/actions'
@@ -16,19 +16,16 @@ export function AvatarUpload({ currentUrl, fallbackInitial }: AvatarUploadProps)
   const objectUrlRef = useRef<string | null>(null)
   const [preview, setPreview] = useState<string | null>(currentUrl)
   const [uploading, setUploading] = useState(false)
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('profile')
 
   async function handleFile(file: File) {
     if (file.size > 2 * 1024 * 1024) {
-      toast.error(isArabic ? 'يجب أن تكون الصورة أقل من 2 م.ب.' : 'Image must be under 2MB')
+      toast.error(t('avatarTooLarge'))
       return
     }
 
-    // Revoke previous blob URL to avoid memory leak
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
 
-    // Show instant preview
     const objectUrl = URL.createObjectURL(file)
     objectUrlRef.current = objectUrl
     setPreview(objectUrl)
@@ -41,11 +38,11 @@ export function AvatarUpload({ currentUrl, fallbackInitial }: AvatarUploadProps)
       URL.revokeObjectURL(objectUrl)
       objectUrlRef.current = null
       setPreview(result.avatarUrl)
-      toast.success(isArabic ? 'تم تحديث الصورة الشخصية' : 'Profile picture updated')
+      toast.success(t('avatarUpdated'))
     } catch (err) {
-      setPreview(currentUrl) // revert on failure
+      setPreview(currentUrl)
       console.error('[avatar-upload] upload failed:', err instanceof Error ? err.message : err)
-      toast.error(isArabic ? 'فشل الرفع' : (err instanceof Error ? err.message : 'Upload failed'))
+      toast.error(t('avatarUploadFailed'))
     } finally {
       setUploading(false)
     }
@@ -60,12 +57,11 @@ export function AvatarUpload({ currentUrl, fallbackInitial }: AvatarUploadProps)
       style={{ background: preview ? undefined : 'linear-gradient(135deg, rgba(96,115,255,0.85), rgba(46,57,121,0.92))' }}
     >
       {preview ? (
-        <img src={preview} alt="Profile" className="size-full object-cover" />
+        <img src={preview} alt={t('avatarPicAlt')} className="size-full object-cover" />
       ) : (
         <span className="text-3xl font-semibold text-white">{fallbackInitial}</span>
       )}
 
-      {/* Hover overlay */}
       <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
         {uploading ? (
           <div className="size-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -82,7 +78,7 @@ export function AvatarUpload({ currentUrl, fallbackInitial }: AvatarUploadProps)
         onChange={(e) => {
           const file = e.target.files?.[0]
           if (file) handleFile(file)
-          e.target.value = '' // allow re-selecting same file
+          e.target.value = ''
         }}
       />
     </button>

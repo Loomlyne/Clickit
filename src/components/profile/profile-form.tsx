@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Check, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -15,8 +15,6 @@ interface ProfileFormProps {
 export function ProfileForm({ displayName }: ProfileFormProps) {
   const t = useTranslations('profile')
   const tCommon = useTranslations('common')
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
   const [name, setName] = useState(displayName)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null)
@@ -34,7 +32,7 @@ export function ProfileForm({ displayName }: ProfileFormProps) {
       toast.error(tCommon('error'))
       setStatus('idle')
     }
-  }, [])
+  }, [tCommon])
 
   function handleChange(value: string) {
     setName(value)
@@ -52,13 +50,13 @@ export function ProfileForm({ displayName }: ProfileFormProps) {
           {status === 'saving' && (
             <span className="flex items-center gap-1.5 text-xs text-[var(--text-mute)]">
               <Loader2 className="size-3 animate-spin" />
-              {isArabic ? 'جارٍ الحفظ' : 'Saving'}
+              {t('savingLabel')}
             </span>
           )}
           {status === 'saved' && (
             <span className="flex items-center gap-1.5 text-xs text-emerald-400/80">
               <Check className="size-3" />
-              {isArabic ? 'تم الحفظ' : 'Saved'}
+              {t('savedLabel')}
             </span>
           )}
         </div>
@@ -66,7 +64,7 @@ export function ProfileForm({ displayName }: ProfileFormProps) {
           id="display-name"
           value={name}
           onChange={(e) => handleChange(e.target.value)}
-          placeholder={isArabic ? 'اسمك' : 'Your name'}
+          placeholder={t('nameInputPlaceholder')}
           className="mt-1.5"
         />
       </div>

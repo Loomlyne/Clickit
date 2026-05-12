@@ -1,4 +1,4 @@
-import { getLocale } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getCategories } from '@/lib/queries'
 import { getAppConfig } from '@/lib/config'
@@ -8,7 +8,12 @@ import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 const DEFAULT_COLOR = '#2C3569'
 
 export async function GenresGrid() {
-  const [categories, config, locale] = await Promise.all([getCategories(), getAppConfig(), getLocale()])
+  const [categories, config, locale, t] = await Promise.all([
+    getCategories(),
+    getAppConfig(),
+    getLocale(),
+    getTranslations('home'),
+  ])
   const isArabic = locale === 'ar'
 
   if (!config.flags.showGenresGrid) return null
@@ -17,7 +22,7 @@ export async function GenresGrid() {
   return (
     <ScrollReveal>
       <section className="pt-1">
-        <SectionHeader title={isArabic ? 'تصفح حسب النوع' : 'Browse by Genre'} />
+        <SectionHeader title={t('genresHeading')} />
         <div className="scrollbar-hide flex gap-3 overflow-x-auto px-6 py-2 md:px-12">
           {categories.map((category) => {
             const color = category.color ?? DEFAULT_COLOR

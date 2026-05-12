@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -28,8 +28,6 @@ type ContactFormData = z.infer<typeof contactSchema>
 export function ContactForm() {
   const t = useTranslations('support')
   const tErrors = useTranslations('errors')
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
   const [submitState, setSubmitState] = useState<'idle' | 'saved_email_failed'>('idle')
   const {
     register,
@@ -65,11 +63,7 @@ export function ContactForm() {
 
     if (result.status === 'saved_email_failed') {
       setSubmitState('saved_email_failed')
-      toast.success(
-        isArabic
-          ? 'تم حفظ رسالتك، لكن البريد غير مفعّل حالياً. سنراجعها من لوحة الإدارة.'
-          : 'Your message was saved, but email delivery is offline right now. The team can still review it in admin.'
-      )
+      toast.success(t('savedEmailFailedToast'))
       reset({ name: '', email: '', phone: '', subject: '', message: '', terms: false })
       return
     }
@@ -94,8 +88,8 @@ export function ContactForm() {
       </div>
 
       <div>
-        <Label htmlFor="phone">{isArabic ? 'الهاتف (اختياري)' : 'Phone (optional)'}</Label>
-        <Input id="phone" type="tel" placeholder="+971 XX XXX XXXX" className="mt-1.5" {...register('phone')} />
+        <Label htmlFor="phone">{t('phoneOptional')}</Label>
+        <Input id="phone" type="tel" placeholder={t('phonePlaceholder')} className="mt-1.5" {...register('phone')} />
       </div>
 
       <div>
@@ -125,9 +119,7 @@ export function ContactForm() {
 
       {submitState === 'saved_email_failed' && (
         <p className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
-          {isArabic
-            ? 'تم حفظ الرسالة. التنبيه عبر البريد غير مفعّل حالياً.'
-            : 'Your message is saved. Email notification is offline right now.'}
+          {t('savedEmailFailedInline')}
         </p>
       )}
 

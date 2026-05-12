@@ -1,5 +1,5 @@
 // Rail — matches handoff .rail with native flex scroll
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { ArrowRight } from 'lucide-react'
 import { Link } from '@/i18n/navigation'
 
@@ -28,8 +28,7 @@ export function ContentRail({
   seeAllHref,
   sectionId,
 }: ContentRailProps) {
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const t = useTranslations('watch')
   const placeholderCount = Math.max(0, minCards - shows.length)
 
   return (
@@ -52,12 +51,12 @@ export function ContentRail({
             className="mono inline-flex min-h-11 shrink-0 items-center gap-1.5"
             href={seeAllHref}
           >
-            {isArabic ? 'عرض الكل' : 'View all'}{' '}
+            {t('viewAll')}{' '}
             <ArrowRight className="size-3 rtl:scale-x-[-1]" />
           </Link>
         ) : (
           <span className="mono inline-flex min-h-11 shrink-0 items-center gap-1.5 text-[var(--text-mute)]">
-            {isArabic ? 'عرض الكل' : 'View all'}{' '}
+            {t('viewAll')}{' '}
             <ArrowRight className="size-3 rtl:scale-x-[-1]" />
           </span>
         )}

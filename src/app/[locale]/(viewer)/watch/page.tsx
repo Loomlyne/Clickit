@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 
-import { getLocale } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
 import { HeroBanner } from '@/components/home/hero-banner'
@@ -46,6 +46,7 @@ export default async function WatchPage({
     categoryRails,
     activeCategory,
     firstEpisodeMap,
+    t,
   ] = await Promise.all([
     getStreamingShows(),
     getComingSoonShows(),
@@ -55,6 +56,7 @@ export default async function WatchPage({
     getCategoryRails(),
     categorySlug ? getCategoryRailBySlug(categorySlug) : Promise.resolve(null),
     getFirstEpisodesForShows(featured.map((s) => s.id)),
+    getTranslations('watch'),
   ])
 
   if (streaming.length === 0 && comingSoon.length === 0) {
@@ -103,15 +105,15 @@ export default async function WatchPage({
       {streaming.length > 0 && (
         <ContentRail
           sectionId="now-streaming"
-          title="PROGRAMS"
+          title={t('railPrograms')}
           shows={streaming}
           seeAllHref="/watch"
         />
       )}
       {comingSoon.length > 0 && (
         <ContentRail
-          title="Coming soon"
-          eyebrow="Teasers & release dates"
+          title={t('railComingSoon')}
+          eyebrow={t('railComingSoonEyebrow')}
           shows={comingSoon}
           seeAllHref="/coming-soon"
         />
@@ -139,7 +141,7 @@ export default async function WatchPage({
                     : undefined
                 }
               >
-                {locale === 'ar' ? 'التصنيف النشط' : 'Active category'}
+                {t('activeCategory')}
               </div>
               <h2 className="font-display text-[24px]">
                 {locale === 'ar'
@@ -151,7 +153,7 @@ export default async function WatchPage({
               href="/watch"
               className="mono inline-flex min-h-11 items-center text-[var(--text-dim)] transition-colors hover:text-[var(--text)]"
             >
-              {locale === 'ar' ? 'مسح الفلتر' : 'Clear filter'}
+              {t('clearFilter')}
             </Link>
           </div>
         </section>
@@ -161,10 +163,7 @@ export default async function WatchPage({
         <ContentRail
           key={category.id}
           title={locale === 'ar' ? category.nameAr : category.nameEn}
-          eyebrow={
-            category.icon ||
-            (locale === 'ar' ? 'مختارات حسب التصنيف' : 'Curated category picks')
-          }
+          eyebrow={category.icon || t('railCuratedEyebrow')}
           accentColor={category.color ?? undefined}
           shows={category.shows}
           seeAllHref={`/watch?category=${encodeURIComponent(category.slug)}`}
@@ -175,13 +174,13 @@ export default async function WatchPage({
         <section className="px-10 pt-8">
           <div className="rounded-full border border-[var(--line)] bg-[var(--bg-2)] px-5 py-6 text-center">
             <div className="mono mb-2 text-[var(--text-mute)]">
-              {locale === 'ar' ? 'التصنيف غير موجود' : 'Category not found'}
+              {t('categoryNotFound')}
             </div>
             <Link
               href="/watch"
               className="inline-flex min-h-11 items-center justify-center text-sm text-[var(--accent)]"
             >
-              {locale === 'ar' ? 'العودة إلى المشاهدة' : 'Back to watch'}
+              {t('backToWatch')}
             </Link>
           </div>
         </section>

@@ -49,10 +49,10 @@ export default async function ComingSoonPage() {
       <div className="px-6 pb-12 pt-16 md:px-12">
         <div className="mx-auto max-w-4xl">
           <p className="mono mb-4 text-[var(--text-mute)]">
-            Coming soon &middot; 2026
+            {t('eyebrowYear')}
           </p>
           <h1 className="font-display text-[clamp(2.5rem,6vw,64px)] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--text)]">
-            What we&rsquo;re releasing next.
+            {t('releasingHeading')}
           </h1>
           <p className="mt-4 max-w-lg text-[var(--text-dim)]">
             {t('description')}
@@ -105,7 +105,7 @@ export default async function ComingSoonPage() {
                       </p>
                       <p className="mono mt-1 text-[11px] text-[var(--text-mute)]">
                         {show.genre} &middot; {show.seasonCount}{' '}
-                        {show.seasonCount === 1 ? 'season' : 'seasons'}
+                        {show.seasonCount === 1 ? t('seasonOne') : t('seasonMany')}
                       </p>
                     </div>
 
@@ -115,7 +115,7 @@ export default async function ComingSoonPage() {
                         href={`/updates?show=${encodeURIComponent(show.slug)}`}
                         className="mono rounded-full border border-[var(--line-2)] bg-transparent px-5 py-2.5 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]"
                       >
-                        Remind me
+                        {t('remindMe')}
                       </Link>
                     </div>
                   </div>

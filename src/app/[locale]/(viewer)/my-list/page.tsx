@@ -23,13 +23,11 @@ export default async function MyListPage() {
     return redirect({ href: '/auth?next=/my-list', locale })
   }
 
-  const [locale, t, tCommon, shows] = await Promise.all([
-    getLocale(),
+  const [t, tCommon, shows] = await Promise.all([
     getTranslations('myList'),
     getTranslations('common'),
     getWatchlistShows(user.id),
   ])
-  const isArabic = locale === 'ar'
 
   return (
     <div className="pb-20">
@@ -37,7 +35,7 @@ export default async function MyListPage() {
       <div className="px-6 pb-12 pt-16 md:px-12">
         <div className="mx-auto max-w-5xl">
           <p className="mono mb-4 text-[var(--text-mute)]">
-            {isArabic ? 'قائمتك' : 'Your watchlist'}
+            {t('eyebrow')}
           </p>
           <h1 className="font-display text-[clamp(2.5rem,5vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--text)]">
             {t('pageTitle')}
@@ -68,7 +66,7 @@ export default async function MyListPage() {
         <div className="mx-auto max-w-5xl px-6 md:px-12">
           <div className="border-t border-[var(--line)] py-24 text-center">
             <h3 className="font-display text-[32px] font-normal leading-[1.1] text-[var(--text)]">
-              {isArabic ? 'قائمتك فارغة' : 'Nothing here yet.'}
+              {t('emptyHeading')}
             </h3>
             <p className="mt-3 text-[14px] text-[var(--text-dim)]">
               {t('emptyDescription')}

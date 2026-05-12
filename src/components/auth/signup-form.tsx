@@ -120,7 +120,7 @@ export function SignupForm() {
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
-        <div className="mt-2 grid grid-cols-4 gap-1.5" aria-label="Password strength">
+        <div className="mt-2 grid grid-cols-4 gap-1.5" aria-label={t('passwordStrengthAria')}>
           {[1, 2, 3, 4].map((level) => (
             <span
               key={level}
@@ -129,7 +129,7 @@ export function SignupForm() {
           ))}
         </div>
         <p className="mono mt-1.5 text-[10px] text-[var(--text-mute)]">
-          Strength · {passwordScore < 2 ? 'weak' : passwordScore < 4 ? 'good' : 'strong'}
+          {t('strengthLabel', { level: passwordScore < 2 ? t('strengthWeak') : passwordScore < 4 ? t('strengthGood') : t('strengthStrong') })}
         </p>
         {errors.password && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.password.message as never)}</p>}
       </div>

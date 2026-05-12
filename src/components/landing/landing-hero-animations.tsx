@@ -1,6 +1,6 @@
 'use client'
 
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { motion } from 'motion/react'
 import { CINEMA_EASE } from '@/lib/cinema'
@@ -8,8 +8,8 @@ import { CINEMA_EASE } from '@/lib/cinema'
 export function LandingHeroAnimations({ logo }: { logo: React.ReactNode }) {
   const t = useTranslations('home')
   const tCommon = useTranslations('common')
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
+  const tLanding = useTranslations('landing')
+  const tShow = useTranslations('show')
   return (
     <>
       <motion.p
@@ -18,15 +18,9 @@ export function LandingHeroAnimations({ logo }: { logo: React.ReactNode }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.1 }}
       >
-        {isArabic ? 'Spacelight Studios تُقدّم' : 'Spacelight Studios Presents'}
+        {tLanding('studioPresents')}
       </motion.p>
 
-      {/*
-        Logo renders immediately as a Server Component child — no motion
-        wrapper. This is intentional: the logo is the LCP element and wrapping
-        it in motion.div with opacity 0→1 pushed LCP from ~900ms to ~2000ms
-        on desktop. The surrounding text still fades in for polish.
-      */}
       {logo}
 
       <motion.p
@@ -82,7 +76,7 @@ export function LandingHeroAnimations({ logo }: { logo: React.ReactNode }) {
         >
           ↓
         </motion.span>
-        <span className="text-[11px] uppercase tracking-[0.22em]">{isArabic ? 'مرّر لاستكشاف المزيد' : 'Scroll to explore'}</span>
+        <span className="text-[11px] uppercase tracking-[0.22em]">{tShow('scrollDown')}</span>
       </motion.div>
     </>
   )

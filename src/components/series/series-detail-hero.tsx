@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import { motion, AnimatePresence, MotionConfig } from 'motion/react'
@@ -33,8 +33,6 @@ export function SeriesDetailHero({
 }: SeriesDetailHeroProps) {
   const [scrolled, setScrolled] = useState(false)
   const t = useTranslations('show')
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
   const backdropSrc = show.heroImageUrl ?? show.posterUrl
 
   useEffect(() => {
@@ -134,17 +132,11 @@ export function SeriesDetailHero({
             <span>·</span>
             <span>
               {seasons.length}{' '}
-              {isArabic
-                ? seasons.length === 1
-                  ? 'موسم'
-                  : 'مواسم'
-                : seasons.length === 1
-                  ? 'Season'
-                  : 'Seasons'}
+              {seasons.length === 1 ? t('seasonOne') : t('seasonMany')}
             </span>
             <span>·</span>
             <span>
-              {show.episodeCount} {isArabic ? 'حلقة' : 'Episodes'}
+              {show.episodeCount} {show.episodeCount === 1 ? t('episodeOne') : t('episodeMany')}
             </span>
             {show.imdbRating && (
               <>
@@ -173,15 +165,13 @@ export function SeriesDetailHero({
                 >
                   &#9654;{' '}
                   {firstEpisodeLabel
-                    ? isArabic
-                      ? `شاهد ${firstEpisodeLabel}`
-                      : `Watch ${firstEpisodeLabel}`
+                    ? t('watchLabel', { label: firstEpisodeLabel })
                     : t('watchNow')}
                 </Link>
               </motion.div>
             ) : (
               <span className="inline-flex cursor-not-allowed items-center rounded-full bg-white/10 px-7 py-3 text-sm font-medium text-white/50">
-                {isArabic ? 'قريباً' : 'Coming Soon'}
+                {t('comingSoonBadge')}
               </span>
             )}
             {userId !== undefined && (

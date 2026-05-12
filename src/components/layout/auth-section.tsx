@@ -27,6 +27,7 @@ interface AuthSectionProps {
 export function AuthSection({ initialUser, isLanding, layout = 'default' }: AuthSectionProps) {
   const t = useTranslations('common')
   const tNav = useTranslations('nav')
+  const tAuth = useTranslations('auth')
   const router = useRouter()
   const [user, setUser] = useState<UserState | null>(
     initialUser
@@ -98,13 +99,13 @@ export function AuthSection({ initialUser, isLanding, layout = 'default' }: Auth
             href="/auth"
             className="inline-flex items-center justify-center rounded-full px-3 py-[7px] text-[12.5px] font-medium border border-[var(--line-2)] text-[var(--text)] transition-all duration-150 hover:bg-white/[0.04]"
           >
-            Sign in
+            {t('signIn')}
           </Link>
           <Link
             href="/auth"
             className="inline-flex items-center justify-center rounded-full px-3 py-[7px] text-[12.5px] font-medium bg-[var(--primary)] text-[var(--primary-foreground)] transition-all duration-150 hover:bg-white"
           >
-            Start free
+            {tAuth('landingStartFree')}
           </Link>
         </>
       )
@@ -168,7 +169,7 @@ export function AuthSection({ initialUser, isLanding, layout = 'default' }: Auth
       <button
         type="button"
         className="flex items-center gap-2.5"
-        aria-label="User menu"
+        aria-label={tNav('userMenu')}
       >
         <UserAvatar
           name={user.displayName || user.email}
