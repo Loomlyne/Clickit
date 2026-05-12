@@ -42,8 +42,16 @@ export type EpisodeConflict = {
   conflictingEpisodeTitle: string
 }
 
+export type ShowRestoreConflict = {
+  title: string
+  slug: string
+  titleConflictTitle?: string
+  slugConflictTitle?: string
+}
+
 export type RestoreResult = ActionResult & {
   conflicts?: EpisodeConflict[]
+  showConflict?: ShowRestoreConflict
 }
 
 // ---------------------------------------------------------------------------
@@ -201,6 +209,67 @@ async function syncShowCategories(
   if (insertError) throw insertError
 }
 
+function normalizeEnglishTitle(title: string) {
+  return title.trim().replace(/\s+/g, ' ').toLowerCase()
+}
+
+function archiveSlugForShow(id: string) {
+  return `archived-${id.slice(0, 8)}`
+}
+
+async function findActiveTitleConflict(
+  admin: ReturnType<typeof createAdminClient>,
+  title: string,
+  excludeId?: string
+) {
+  const normalized = normalizeEnglishTitle(title)
+  const { data, error } = await admin
+    .from('shows')
+    .select('id, title, slug')
+    .eq('archived', false)
+
+  if (error) throw error
+
+  return (data ?? []).find((show) => {
+    return show.id !== excludeId && normalizeEnglishTitle(show.title) === normalized
+  })
+}
+
+async function findActiveSlugConflict(
+  admin: ReturnType<typeof createAdminClient>,
+  slug: string,
+  excludeId?: string
+) {
+  const { data, error } = await admin
+    .from('shows')
+    .select('id, title, slug')
+    .eq('archived', false)
+    .eq('slug', slug)
+
+  if (error) throw error
+
+  return (data ?? []).find((show) => show.id !== excludeId)
+}
+
+async function getActiveShowNamespaceConflict(
+  admin: ReturnType<typeof createAdminClient>,
+  input: { title: string; slug: string; excludeId?: string }
+): Promise<ShowRestoreConflict | null> {
+  const [titleConflict, slugConflict] = await Promise.all([
+    findActiveTitleConflict(admin, input.title, input.excludeId),
+    findActiveSlugConflict(admin, input.slug, input.excludeId),
+  ])
+
+  if (!titleConflict && !slugConflict) return null
+
+  return {
+    title: input.title,
+    slug: input.slug,
+    titleConflictTitle: titleConflict?.title,
+    slugConflictTitle: slugConflict?.title,
+  }
+}
+
 const seasonSchema = z.object({
   show_id: z.string().uuid(),
   title: z.string().min(1, 'Title is required'),
@@ -234,6 +303,28 @@ export async function createShow(
     const admin = createAdminClient()
 
     const { id, category_ids, ...rest } = parsed
+    rest.slug = generateSlug(
+      rest.slug,
+      generateSlug(rest.title, id ? `show-${id.slice(0, 8)}` : undefined)
+    )
+
+    const conflict = await getActiveShowNamespaceConflict(admin, {
+      title: rest.title,
+      slug: rest.slug,
+    })
+    if (conflict?.titleConflictTitle) {
+      return {
+        success: false,
+        error: `An active show already uses the title "${rest.title}".`,
+      }
+    }
+    if (conflict?.slugConflictTitle) {
+      return {
+        success: false,
+        error: `An active show already uses the slug "${rest.slug}".`,
+      }
+    }
+
     const insertData = id ? { id, ...rest } : rest
 
     const { data: show, error } = await admin
@@ -295,6 +386,24 @@ export async function updateShow(
       updateData.slug = normalizedSlug
     }
 
+    const conflict = await getActiveShowNamespaceConflict(admin, {
+      title: updateData.title,
+      slug: updateData.slug,
+      excludeId: id,
+    })
+    if (conflict?.titleConflictTitle) {
+      return {
+        success: false,
+        error: `An active show already uses the title "${updateData.title}".`,
+      }
+    }
+    if (conflict?.slugConflictTitle) {
+      return {
+        success: false,
+        error: `An active show already uses the slug "${updateData.slug}".`,
+      }
+    }
+
     const { data: show, error } = await admin
       .from('shows')
       .update(updateData)
@@ -336,7 +445,7 @@ export async function archiveShow(id: string): Promise<ActionResult> {
 
     const { error: showError } = await admin
       .from('shows')
-      .update({ archived: true })
+      .update({ archived: true, slug: archiveSlugForShow(id) })
       .eq('id', id)
 
     if (showError) return { success: false, error: showError.message }
@@ -370,6 +479,33 @@ async function _restoreShow(
   admin: ReturnType<typeof createAdminClient>,
   id: string
 ): Promise<RestoreResult> {
+  const { data: show, error: showFetchError } = await admin
+    .from('shows')
+    .select('id, title, slug')
+    .eq('id', id)
+    .single()
+
+  if (showFetchError) return { success: false, error: showFetchError.message }
+
+  const generatedSlug = generateSlug(show.title, `show-${id.slice(0, 8)}`)
+  const restoreSlug =
+    show.slug === archiveSlugForShow(id)
+      ? generatedSlug
+      : generateSlug(show.slug, generatedSlug)
+  const showConflict = await getActiveShowNamespaceConflict(admin, {
+    title: show.title,
+    slug: restoreSlug,
+    excludeId: id,
+  })
+
+  if (showConflict) {
+    return {
+      success: false,
+      error: 'Resolve the show title or slug conflict before restoring.',
+      showConflict,
+    }
+  }
+
   // Check for episode number conflicts before restoring
   const { data: archivedEpisodes } = await admin
     .from('episodes')
@@ -435,7 +571,7 @@ async function _restoreShow(
   // No conflicts — proceed with restore
   const { error: showError } = await admin
     .from('shows')
-    .update({ archived: false })
+    .update({ archived: false, slug: restoreSlug })
     .eq('id', id)
 
   if (showError) return { success: false, error: showError.message }
@@ -505,6 +641,96 @@ export async function resolveConflictsAndRestore(
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to resolve conflicts',
+    }
+  }
+}
+
+export async function resolveRestoreConflictsAndRestore(
+  showId: string,
+  data: {
+    title?: string
+    slug?: string
+    episodeFixes?: { episodeId: string; newEpisodeNumber: number }[]
+  }
+): Promise<RestoreResult> {
+  try {
+    const user = await assertAdmin()
+    const admin = createAdminClient()
+
+    if (data.title || data.slug) {
+      const { data: currentShow, error: fetchError } = await admin
+        .from('shows')
+        .select('title, slug')
+        .eq('id', showId)
+        .single()
+
+      if (fetchError) return { success: false, error: fetchError.message }
+
+      const title = (data.title ?? currentShow.title).trim()
+      const slug = generateSlug(
+        data.slug ?? currentShow.slug,
+        generateSlug(title, `show-${showId.slice(0, 8)}`)
+      )
+
+      if (!title) return { success: false, error: 'Title is required.' }
+      if (!slug) return { success: false, error: 'Slug is required.' }
+
+      const showConflict = await getActiveShowNamespaceConflict(admin, {
+        title,
+        slug,
+        excludeId: showId,
+      })
+      if (showConflict) {
+        return {
+          success: false,
+          error: 'Resolve the show title or slug conflict before restoring.',
+          showConflict,
+        }
+      }
+
+      const { error: updateError } = await admin
+        .from('shows')
+        .update({ title, slug })
+        .eq('id', showId)
+
+      if (updateError) return { success: false, error: updateError.message }
+    }
+
+    const fixes = data.episodeFixes ?? []
+    if (fixes.length > 0) {
+      const results = await Promise.all(
+        fixes.map((fix) =>
+          admin
+            .from('episodes')
+            .update({ episode_number: fix.newEpisodeNumber })
+            .eq('id', fix.episodeId)
+        )
+      )
+      const firstError = results.find((r) => r.error)?.error
+      if (firstError) {
+        return {
+          success: false,
+          error: `Failed to update episode: ${firstError.message}`,
+        }
+      }
+    }
+
+    const result = await _restoreShow(admin, showId)
+    if (result.success) {
+      await logAudit({
+        adminUserId: user.id,
+        action: 'restore',
+        entity: 'show',
+        entityId: showId,
+      })
+    }
+    return result
+  } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
+    return {
+      success: false,
+      error:
+        err instanceof Error ? err.message : 'Failed to resolve conflicts',
     }
   }
 }

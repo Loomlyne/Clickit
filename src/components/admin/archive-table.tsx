@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Tooltip,
   TooltipContent,
@@ -31,19 +32,30 @@ import {
 import { EmptyState } from '@/components/admin/empty-state'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { AdminPanel, AdminTableShell } from '@/components/admin/admin-shell'
-import { restoreShow, deleteShowPermanently, resolveConflictsAndRestore } from '@/app/[locale]/admin/actions'
-import type { EpisodeConflict } from '@/app/[locale]/admin/actions'
+import {
+  restoreShow,
+  deleteShowPermanently,
+  resolveRestoreConflictsAndRestore,
+} from '@/app/[locale]/admin/actions'
+import type {
+  EpisodeConflict,
+  ShowRestoreConflict,
+} from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
 import type { Database } from '@/lib/database.types'
 
 type Show = Database['public']['Tables']['shows']['Row']
+const DATE_LOCALES: Record<string, string> = {
+  ar: 'ar-AE-u-nu-latn',
+  en: 'en-US',
+}
 
 interface ArchiveTableProps {
   shows: Show[]
 }
 
 function formatDate(dateString: string, locale: string): string {
-  return new Date(dateString).toLocaleDateString(locale === 'ar' ? 'ar-AE-u-nu-latn' : 'en-US', {
+  return new Date(dateString).toLocaleDateString(DATE_LOCALES[locale] ?? DATE_LOCALES.en, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -54,7 +66,6 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
   const t = useTranslations('admin.archive')
   const tCommon = useTranslations('common')
   const locale = useLocale()
-  const isArabic = locale === 'ar'
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingShow, setDeletingShow] = useState<Show | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -64,6 +75,8 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
   const [conflictDialogOpen, setConflictDialogOpen] = useState(false)
   const [conflictShow, setConflictShow] = useState<Show | null>(null)
   const [conflicts, setConflicts] = useState<EpisodeConflict[]>([])
+  const [showConflict, setShowConflict] = useState<ShowRestoreConflict | null>(null)
+  const [restoreDraft, setRestoreDraft] = useState({ title: '', slug: '' })
   const [fixes, setFixes] = useState<Record<string, number>>({})
   const [resolving, setResolving] = useState(false)
 
@@ -78,13 +91,16 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
     setRestoring(null)
     if (result.success) {
       toast.success(t('restoredToast'))
-    } else if (result.conflicts && result.conflicts.length > 0) {
-      // Open conflict resolution dialog
+    } else if (result.showConflict || (result.conflicts && result.conflicts.length > 0)) {
       setConflictShow(show)
-      setConflicts(result.conflicts)
-      // Pre-fill fixes with current numbers so user sees what needs changing
+      setShowConflict(result.showConflict ?? null)
+      setRestoreDraft({
+        title: result.showConflict?.title ?? show.title,
+        slug: result.showConflict?.slug ?? show.slug,
+      })
+      setConflicts(result.conflicts ?? [])
       const initialFixes: Record<string, number> = {}
-      for (const c of result.conflicts) {
+      for (const c of result.conflicts ?? []) {
         initialFixes[c.episodeId] = c.episodeNumber
       }
       setFixes(initialFixes)
@@ -101,22 +117,33 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
       episodeId,
       newEpisodeNumber,
     }))
-    const result = await resolveConflictsAndRestore(conflictShow.id, fixArray)
+    const result = await resolveRestoreConflictsAndRestore(conflictShow.id, {
+      title: showConflict ? restoreDraft.title : undefined,
+      slug: showConflict ? restoreDraft.slug : undefined,
+      episodeFixes: fixArray,
+    })
     setResolving(false)
     if (result.success) {
       setConflictDialogOpen(false)
       setConflictShow(null)
       setConflicts([])
+      setShowConflict(null)
       toast.success(t('restoredToast'))
-    } else if (result.conflicts && result.conflicts.length > 0) {
-      // Still conflicts after fix attempt — update the dialog
-      setConflicts(result.conflicts)
+    } else if (result.showConflict || (result.conflicts && result.conflicts.length > 0)) {
+      setShowConflict(result.showConflict ?? null)
+      if (result.showConflict) {
+        setRestoreDraft({
+          title: result.showConflict.title,
+          slug: result.showConflict.slug,
+        })
+      }
+      setConflicts(result.conflicts ?? [])
       const newFixes: Record<string, number> = {}
-      for (const c of result.conflicts) {
+      for (const c of result.conflicts ?? []) {
         newFixes[c.episodeId] = fixes[c.episodeId] ?? c.episodeNumber
       }
       setFixes(newFixes)
-      toast.error(isArabic ? 'لا تزال هناك تعارضات — حدّث الأرقام وحاول مجدداً' : 'Some conflicts remain — update the numbers and try again')
+      toast.error(t('conflictsRemainToast'))
     } else {
       toast.error(result.error ?? tCommon('error'))
     }
@@ -144,18 +171,18 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
     <TooltipProvider delayDuration={300}>
       <AdminPanel>
         <div className="flex items-center justify-between pb-4 text-sm text-muted-foreground">
-          <span>{shows.length} {isArabic ? 'برنامج مؤرشف' : (shows.length === 1 ? 'archived show' : 'archived shows')}</span>
-          <span>{isArabic ? 'الأحدث أولاً' : 'Newest changes first'}</span>
+          <span>{t('archivedShowsCount', { count: shows.length })}</span>
+          <span>{t('newestFirst')}</span>
         </div>
 
         <AdminTableShell>
           <Table>
             <TableHeader>
               <TableRow className="bg-transparent">
-                <TableHead>{isArabic ? 'البرنامج' : 'Show'}</TableHead>
-                <TableHead className="hidden w-[100px] sm:table-cell">{isArabic ? 'النوع' : 'Genre'}</TableHead>
-                <TableHead className="hidden w-[130px] md:table-cell">{isArabic ? 'المؤرشفة' : 'Archived'}</TableHead>
-                <TableHead className="w-[180px] text-end">{isArabic ? 'الإجراءات' : 'Actions'}</TableHead>
+                <TableHead>{t('showColumn')}</TableHead>
+                <TableHead className="hidden w-[100px] sm:table-cell">{t('genreColumn')}</TableHead>
+                <TableHead className="hidden w-[130px] md:table-cell">{t('archivedColumn')}</TableHead>
+                <TableHead className="w-[180px] text-end">{t('actionsColumn')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -180,10 +207,10 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                             disabled={restoring === show.id}
                           >
                             <RotateCcw className="me-1 size-3.5" />
-                            {restoring === show.id ? (isArabic ? 'جارٍ الاستعادة…' : 'Restoring...') : t('restoreButton')}
+                            {restoring === show.id ? t('restoring') : t('restoreButton')}
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>{isArabic ? 'استعادة البرنامج وكل الحلقات' : 'Restore show and all episodes'}</TooltipContent>
+                        <TooltipContent>{t('restoreTooltip')}</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -196,7 +223,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                             {tCommon('delete')}
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>{isArabic ? 'حذف نهائي — لا يمكن التراجع' : 'Permanently delete - cannot be undone'}</TooltipContent>
+                        <TooltipContent>{t('deleteTooltip')}</TooltipContent>
                       </Tooltip>
                     </div>
                   </TableCell>
@@ -210,10 +237,8 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        title={isArabic ? 'حذف البرنامج نهائياً' : 'Permanently Delete Show'}
-        description={isArabic
-          ? `سيُحذف "${deletingShow?.title ?? 'هذا البرنامج'}" وكل مواسمه وحلقاته نهائياً. لا يمكن التراجع عن هذا الإجراء.`
-          : `This will permanently delete "${deletingShow?.title ?? 'this show'}" and all its seasons and episodes. This action cannot be undone.`}
+        title={t('deletePermanentlyTitle')}
+        description={t('deletePermanentlyDescription', { title: deletingShow?.title ?? t('thisShow') })}
         confirmLabel={t('deletePermanentlyButton')}
         onConfirm={handleDeleteConfirm}
         destructive
@@ -226,14 +251,58 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="size-5 text-amber-500" />
-              {t('conflictHeading')}
+              {showConflict ? t('showConflictHeading') : t('conflictHeading')}
             </DialogTitle>
             <DialogDescription>
-              {t('conflictDescription')}
+              {showConflict ? t('showConflictDescription') : t('conflictDescription')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2">
+            {showConflict && (
+              <div className="space-y-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="restore-title">{t('titleLabel')}</Label>
+                  <Input
+                    id="restore-title"
+                    value={restoreDraft.title}
+                    onChange={(event) =>
+                      setRestoreDraft((current) => ({
+                        ...current,
+                        title: event.target.value,
+                      }))
+                    }
+                  />
+                  {showConflict.titleConflictTitle && (
+                    <p className="text-xs text-amber-400">
+                      {t('titleConflictWithShow', {
+                        title: showConflict.titleConflictTitle,
+                      })}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="restore-slug">{t('slugLabel')}</Label>
+                  <Input
+                    id="restore-slug"
+                    value={restoreDraft.slug}
+                    onChange={(event) =>
+                      setRestoreDraft((current) => ({
+                        ...current,
+                        slug: event.target.value,
+                      }))
+                    }
+                  />
+                  {showConflict.slugConflictTitle && (
+                    <p className="text-xs text-amber-400">
+                      {t('slugConflictWithShow', {
+                        title: showConflict.slugConflictTitle,
+                      })}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
             {conflicts.map((c) => (
               <div key={c.episodeId} className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
                 <div className="text-sm">
@@ -242,10 +311,10 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                   <span className="text-muted-foreground">{c.episodeTitle}</span>
                 </div>
                 <div className="text-xs text-amber-400">
-                  {isArabic ? `يتعارض مع الحلقة الموجودة: "${c.conflictingEpisodeTitle}"` : `Conflicts with existing episode: "${c.conflictingEpisodeTitle}"`}
+                  {t('conflictsWithEpisode', { title: c.conflictingEpisodeTitle })}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground shrink-0">{isArabic ? 'رقم جديد:' : 'New #:'}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{t('newNumberLabel')}</span>
                   <Input
                     type="number"
                     min={1}
@@ -273,7 +342,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
               onClick={handleResolveAndRestore}
               disabled={resolving}
             >
-              {resolving ? (isArabic ? 'جارٍ الإصلاح…' : 'Fixing...') : (isArabic ? 'إصلاح واستعادة' : 'Fix & Restore')}
+              {resolving ? t('fixing') : t('fixAndRestore')}
             </Button>
           </DialogFooter>
         </DialogContent>

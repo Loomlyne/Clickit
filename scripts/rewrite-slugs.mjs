@@ -5,7 +5,7 @@
 //   node scripts/rewrite-slugs.mjs            # reads .env.local automatically
 //   node scripts/rewrite-slugs.mjs --dry-run  # prints planned changes, writes nothing
 
-import { createClient } from '@supabase/supabase-js'
+import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
@@ -62,6 +62,32 @@ function dedupeSlug(base, takenSlugs) {
   }
 }
 
+function curlJson(path, options = {}) {
+  const method = options.method ?? 'GET'
+  const args = [
+    '--http1.1',
+    '--connect-timeout',
+    '5',
+    '--max-time',
+    '30',
+    '-sS',
+    '-X',
+    method,
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}${path}`,
+    '-H',
+    `apikey: ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+    '-H',
+    `Authorization: Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+    '-H',
+    'Content-Type: application/json',
+  ]
+  if (options.body) {
+    args.push('--data', JSON.stringify(options.body))
+  }
+  const raw = execFileSync('curl', args, { encoding: 'utf8' }).trim()
+  return raw ? JSON.parse(raw) : null
+}
+
 // --- main ------------------------------------------------------------------
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -75,17 +101,8 @@ if (!key) {
 }
 
 const dryRun = process.argv.includes('--dry-run')
-const supabase = createClient(url, key)
 
-const { data: shows, error } = await supabase
-  .from('shows')
-  .select('id, slug, title')
-  .order('created_at', { ascending: true })
-
-if (error) {
-  console.error('Failed to fetch shows:', error.message)
-  process.exit(1)
-}
+const shows = curlJson('/rest/v1/shows?select=id,slug,title&order=created_at.asc')
 
 if (!shows || shows.length === 0) {
   console.log('No shows found. Nothing to do.')
@@ -126,16 +143,17 @@ console.log('\nApplying...')
 let updated = 0
 let failed = 0
 for (const p of changed) {
-  const { error: updateErr } = await supabase
-    .from('shows')
-    .update({ slug: p.new })
-    .eq('id', p.id)
-  if (updateErr) {
+  try {
+    curlJson(`/rest/v1/shows?id=eq.${p.id}`, {
+      method: 'PATCH',
+      body: { slug: p.new },
+    })
+  } catch (updateErr) {
     console.error(`  FAILED ${p.title}: ${updateErr.message}`)
     failed++
-  } else {
-    updated++
+    continue
   }
+  updated++
 }
 
 console.log(`\nDone. ${updated} updated, ${failed} failed.`)
