@@ -52,7 +52,7 @@ export function MobileNav({ initialUser, liveStreamUrl }: MobileNavProps = {}) {
             className="flex min-h-11 items-center"
           >
             <Image
-              src="/brand/Clickit_final_logo.CITpng.svg"
+              src="/brand/Clickit_final_logo.svg"
               alt="Clickit"
               width={214}
               height={145}
@@ -71,7 +71,7 @@ export function MobileNav({ initialUser, liveStreamUrl }: MobileNavProps = {}) {
                 href={href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  'flex min-h-[48px] items-center rounded-full px-4 text-[15px] font-medium tracking-normal transition-colors',
+                  'flex min-h-[48px] items-center rounded-full px-4 text-[15px] font-medium uppercase tracking-[0.08em] transition-colors',
                   isActive
                     ? 'bg-white/[0.08] text-white'
                     : 'text-white/56 hover:bg-white/[0.04] hover:text-white'

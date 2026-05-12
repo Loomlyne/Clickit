@@ -37,7 +37,7 @@ export function NavLinks() {
               key={href}
               href={href}
               className={cn(
-                'rounded-full px-3 py-2 text-sm font-medium tracking-[-0.01em] whitespace-nowrap transition-colors',
+                'rounded-full px-3 py-2 text-sm font-medium uppercase tracking-[0.08em] whitespace-nowrap transition-colors',
                 isActive
                   ? 'bg-white/[0.08] text-white'
                   : 'text-white/56 hover:text-white'

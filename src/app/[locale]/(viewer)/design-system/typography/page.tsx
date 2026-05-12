@@ -1,28 +1,28 @@
 const typographyRoles = [
   {
-    role: 'Display',
-    spec: '56 / 600 / 1.0',
-    sizeClass: 'text-5xl md:text-6xl',
+    role: 'Display (title)',
+    spec: 'LBC · 56 / 600 / 1.0',
+    sizeClass: 'text-5xl md:text-6xl font-display',
     weightClass: 'font-semibold',
     lineHeightClass: 'leading-[0.98]',
     sample: 'Quiet shell. Heroic content.',
   },
   {
-    role: 'Section heading',
-    spec: '32 / 600 / 1.05',
-    sizeClass: 'text-3xl',
+    role: 'Section heading (title)',
+    spec: 'LBC · 32 / 600 / 1.05',
+    sizeClass: 'text-3xl font-display',
     weightClass: 'font-semibold',
     lineHeightClass: 'leading-tight',
     sample: 'Discover original shows',
   },
   {
     role: 'Body',
-    spec: '16 / 400 / 1.7',
+    spec: 'Geist (EN) · GE SS (AR) · 16 / 400 / 1.7',
     sizeClass: 'text-base',
     weightClass: 'font-normal',
     lineHeightClass: 'leading-7',
     sample:
-      'Body copy stays clean, neutral, and airy. Inter is used everywhere so viewer and admin surfaces feel like one product instead of two visual systems.',
+      'Body copy stays clean, neutral, and airy. Geist drives English surfaces and GE SS handles Arabic so both locales feel like one product.',
   },
   {
     role: 'Label',
@@ -49,16 +49,16 @@ export default function TypographyPage() {
         <h2 className="text-2xl font-semibold tracking-tight text-foreground">Type system</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           <div className="rounded-[28px] border border-white/10 bg-black/20 p-5">
-            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Family</p>
-            <p className="mt-3 text-lg text-foreground">Inter</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Titles · all locales</p>
+            <p className="mt-3 text-lg text-foreground font-display">LBC</p>
           </div>
           <div className="rounded-[28px] border border-white/10 bg-black/20 p-5">
-            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Weights</p>
-            <p className="mt-3 text-lg text-foreground">400, 500, 600, 700</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Body · English</p>
+            <p className="mt-3 text-lg text-foreground">Geist</p>
           </div>
           <div className="rounded-[28px] border border-white/10 bg-black/20 p-5">
-            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Rule</p>
-            <p className="mt-3 text-lg text-foreground">No decorative display font in the primary UI.</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Body · Arabic</p>
+            <p className="mt-3 text-lg text-foreground">GE SS</p>
           </div>
         </div>
       </section>

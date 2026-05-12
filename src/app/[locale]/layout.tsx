@@ -5,7 +5,7 @@ import { getMessages, setRequestLocale } from 'next-intl/server'
 import Script from 'next/script'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
-import { Geist } from 'next/font/google'
+import { Geist, Cairo } from 'next/font/google'
 import localFont from 'next/font/local'
 
 import '@/styles/globals.css'
@@ -15,9 +15,9 @@ import { siteUrl } from '@/lib/site-url'
 import { dirFor } from '@/lib/locale'
 import { routing, staticParams, type Locale } from '@/i18n/routing'
 
-const geistSans = Geist({
+const geist = Geist({
   subsets: ['latin'],
-  variable: '--font-geist-sans',
+  variable: '--font-geist',
   weight: ['300', '400', '500', '600', '700', '800'],
   display: 'swap',
 })
@@ -28,6 +28,16 @@ const lbc = localFont({
     { path: '../../fonts/lbc-bold.ttf', weight: '700', style: 'normal' },
   ],
   variable: '--font-lbc',
+  display: 'swap',
+})
+
+// TEMPORARY STAND-IN for GE SS (commercial Boutros font). Cairo is the closest
+// freely-licensed Arabic match. Swap by replacing this block with a localFont
+// import once `src/fonts/ge-ss-regular.ttf` + `ge-ss-bold.ttf` are added.
+const geSS = Cairo({
+  subsets: ['arabic', 'latin'],
+  variable: '--font-ge-ss',
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
 })
 
@@ -104,7 +114,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       dir={dir}
-      className={['dark', geistSans.variable, locale === 'ar' ? lbc.variable : null].filter(Boolean).join(' ')}
+      className={['dark', geist.variable, lbc.variable, geSS.variable].join(' ')}
     >
       <body className="bg-background text-foreground font-sans antialiased selection:bg-primary/70 selection:text-primary-foreground">
         <a

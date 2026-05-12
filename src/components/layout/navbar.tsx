@@ -45,7 +45,7 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
 
   const navLinkClass = (active: boolean) =>
     cn(
-      'text-[13.5px] py-1.5 px-0.5 relative transition-colors duration-150 hover:text-[var(--text)]',
+      'text-[13.5px] py-1.5 px-0.5 relative uppercase tracking-[0.08em] transition-colors duration-150 hover:text-[var(--text)]',
       active
         ? 'text-[var(--text)] after:absolute after:inset-x-0 after:-bottom-1 after:h-0.5 after:bg-[var(--primary)]'
         : 'text-[var(--text-dim)]'
@@ -75,7 +75,7 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
         className="flex min-h-11 items-center"
       >
         <Image
-          src="/brand/Clickit_final_logo.CITpng.svg"
+          src="/brand/Clickit_final_logo.svg"
           alt="Clickit"
           width={214}
           height={145}
@@ -162,13 +162,13 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
               <>
                 <a
                   href={`${prefix}#shows`}
-                  className="px-0.5 py-1.5 text-[13.5px] text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
+                  className="px-0.5 py-1.5 text-[13.5px] uppercase tracking-[0.08em] text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
                 >
                   Shows
                 </a>
                 <a
                   href={`${prefix}#faq`}
-                  className="px-0.5 py-1.5 text-[13.5px] text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
+                  className="px-0.5 py-1.5 text-[13.5px] uppercase tracking-[0.08em] text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
                 >
                   FAQ
                 </a>

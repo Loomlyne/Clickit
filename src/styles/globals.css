@@ -27,11 +27,19 @@
   --accent-yellow: #ffcc00;
   --accent-yellow-fg: #0a0a0a;
 
-  /* Type stacks */
-  --font-app: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Type stacks — 3-font system
+     Titles (all locales): LBC
+     EN body / UI: Geist
+     AR body / UI: GE SS (Cairo as temporary stand-in until real GE SS files land)
+     --font-app + --font-ui are legacy aliases pointing to the active body font. */
+  --font-title: var(--font-lbc), ui-sans-serif, system-ui, sans-serif;
+  --font-en-body: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-ar-body: var(--font-ge-ss), var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+
+  --font-app: var(--font-en-body);
   --font-ui: var(--font-app);
   --font-mono: var(--font-app);
-  --font-display: var(--font-app);
+  --font-display: var(--font-title);
 
   /* Density */
   --rail-gap: 20px;
@@ -122,7 +130,7 @@
 
 @theme inline {
   --font-sans: var(--font-app);
-  --font-display: var(--font-app);
+  --font-display: var(--font-title);
   --font-mono: var(--font-app);
 
   --color-background: var(--background);
@@ -190,12 +198,13 @@
   --color-text-muted: #6e6e6b;
 }
 
-/* Arabic locale: LBC for all stacks (body, display, mono-like slots). See --font-lbc in [locale]/layout.tsx */
+/* Arabic locale: GE SS for body/UI/mono; titles still use LBC via --font-title.
+   See --font-lbc + --font-ge-ss in [locale]/layout.tsx */
 html[lang='ar'] {
-  --font-app: var(--font-lbc), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-app: var(--font-ar-body);
   --font-ui: var(--font-app);
-  --font-display: var(--font-app);
   --font-mono: var(--font-app);
+  --font-display: var(--font-title);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -222,6 +231,23 @@ html[lang='ar'] {
     font-family: var(--font-app);
     font-size: 15px;
     line-height: 1.5;
+  }
+
+  /* Explicit locale body bindings — redundant with --font-app cascade but
+     guarantees the routing even if a child rule resets font-family. */
+  html[lang='en'] body {
+    font-family: var(--font-en-body);
+  }
+
+  html[lang='ar'] body {
+    font-family: var(--font-ar-body);
+  }
+
+  /* All headings use the title font (LBC) regardless of locale. */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-title);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   main {
@@ -293,10 +319,13 @@ html::-webkit-scrollbar-thumb:hover {
    ═══════════════════════════════════════════════════ */
 
 @layer components {
-  .font-display {
-    font-family: var(--font-app);
+  .font-display,
+  .title,
+  .serif {
+    font-family: var(--font-title);
     font-weight: 400;
-    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   .mono {
@@ -305,12 +334,6 @@ html::-webkit-scrollbar-thumb:hover {
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text-dim);
-  }
-
-  .serif {
-    font-family: var(--font-app);
-    font-weight: 400;
-    letter-spacing: -0.01em;
   }
 
   .label {
@@ -427,10 +450,12 @@ html[lang="ar"] [class*="tracking-["] {
 }
 .yt-side-ep.current .yt-side-num { color: var(--accent); }
 .yt-side-title {
-  font-family: var(--font-app);
+  font-family: var(--font-title);
   font-size: 15px;
   font-weight: 500;
   line-height: 1.25;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   margin-bottom: 4px;
   overflow: hidden;
   display: -webkit-box;
