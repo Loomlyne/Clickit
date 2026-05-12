@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { AlertCircle, Eye, EyeOff } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import { mapAuthError } from '@/lib/auth-errors'
 import { signUpAction } from '@/app/[locale]/(viewer)/auth/actions'
 
@@ -59,18 +58,13 @@ export function SignupForm() {
   async function onSubmit(data: SignupFormData) {
     setServerError(null)
 
-    // BotID-gated Server Action. On success we still call the browser-side
-    // supabase client to sync the session cookie locally; see login-form.tsx
-    // comment for the rationale.
+    // BotID-gated Server Action sets the auth cookies server-side.
     const result = await signUpAction(data.email, data.password, data.name)
 
     if (!result.ok) {
       setServerError(mapAuthError(result.error))
       return
     }
-
-    const supabase = createClient()
-    await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
 
     toast.success(t('accountCreated'))
     router.push('/watch')

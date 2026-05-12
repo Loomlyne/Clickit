@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import { mapAuthError } from '@/lib/auth-errors'
 import { signInAction } from '@/app/[locale]/(viewer)/auth/actions'
 
@@ -56,13 +55,6 @@ export function LoginForm() {
       setServerError(mapAuthError(result.error))
       return
     }
-
-    // Server Action only sets the auth cookie on the server side of the request
-    // that reached Vercel. For the browser to pick up the session, we need the
-    // client Supabase helper to sync its local token store too. signInWithPassword
-    // is idempotent — second call with valid creds just refreshes the cached session.
-    const supabase = createClient()
-    await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
 
     toast.success(t('welcomeBack'))
     router.push(result.isAdmin ? '/admin' : '/watch')
