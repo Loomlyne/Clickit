@@ -66,7 +66,7 @@ export function MobileNav({ initialUser }: MobileNavProps = {}) {
 
         <nav aria-label={t('mobileNavLabel')} className="flex flex-col gap-1 px-4 py-4">
           {NAV_LINK_HREFS.map(({ key, href }) => {
-            const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
+            const isActive = pathname.startsWith(href)
             return (
               <Link
                 key={href}
