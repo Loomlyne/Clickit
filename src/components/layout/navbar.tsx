@@ -122,14 +122,13 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
               const liveHref = liveNavHref(liveStreamUrl)
               const external = liveNavIsExternal(liveHref)
               const pillClass = cn(
-                'inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-semibold tracking-tight text-white shadow-sm transition-[transform,box-shadow,background-color] duration-200 hover:brightness-110 active:scale-[0.98]',
-                'bg-[linear-gradient(135deg,#dc2626_0%,#b91c1c_100%)] ring-1 ring-white/15'
+                'inline-flex items-center gap-2 text-[13px] font-semibold tracking-tight text-white transition-opacity duration-200 hover:opacity-80'
               )
               const inner = (
                 <>
                   <span className="relative flex size-2 shrink-0" aria-hidden>
-                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-white/90 opacity-60" />
-                    <span className="relative inline-flex size-2 rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.9)]" />
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75" />
+                    <span className="relative inline-flex size-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
                   </span>
                   {t('nowLive')}
                 </>
