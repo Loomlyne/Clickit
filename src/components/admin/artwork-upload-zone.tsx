@@ -66,7 +66,7 @@ export function ArtworkUploadZone({
       const result = await uploadArtwork(formData)
 
       if (!result.success) {
-        toast.error(t('uploadFailedWithError', { error: result.error }))
+        toast.error(t('uploadFailedWithError', { error: result.error ?? t('uploadFailedToast') }))
         return
       }
 
