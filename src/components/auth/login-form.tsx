@@ -13,7 +13,6 @@ import { Separator } from '@/components/ui/separator'
 import { AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { mapAuthError } from '@/lib/auth-errors'
-import { signInAction } from '@/app/[locale]/(viewer)/auth/actions'
 
 const loginSchema = z.object({
   email: z.string().email('emailInvalid'),
@@ -48,17 +47,26 @@ export function LoginForm() {
   async function onLogin(data: LoginFormData) {
     setServerError(null)
 
-    // Routed through Server Action so BotID can verify the request server-side
-    // before we touch Supabase. Bot-flagged requests fail fast; humans proceed.
-    const result = await signInAction(data.email, data.password)
+    const supabase = createClient()
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    })
 
-    if (!result.ok) {
-      setServerError(mapAuthError(result.error))
+    if (error) {
+      setServerError(mapAuthError(error.message))
       return
     }
 
+    const { data: config } = await supabase
+      .from('app_config')
+      .select('admin_user_id')
+      .eq('id', 1)
+      .single()
+    const isAdmin = config?.admin_user_id === authData.user?.id
+
     toast.success(t('welcomeBack'))
-    router.push(result.isAdmin ? '/admin' : '/watch')
+    router.push(isAdmin ? '/admin' : '/watch')
     router.refresh()
   }
 
