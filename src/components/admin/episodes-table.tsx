@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition, useOptimistic } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Pencil, ChevronUp, ChevronDown, Archive } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -41,6 +41,8 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
   const t = useTranslations('admin.episodeForm')
   const tTable = useTranslations('admin.episodesTable')
   const tCommon = useTranslations('common')
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [isPending, startTransition] = useTransition()
   const [editEpisode, setEditEpisode] = useState<Episode | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
