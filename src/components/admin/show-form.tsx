@@ -22,7 +22,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { AdminPanel } from '@/components/admin/admin-shell'
-import { ArtworkUploadZone } from '@/components/admin/artwork-upload-zone'
 import { HeroMediaPicker } from '@/components/admin/hero-media-picker'
 import { generateSlug } from '@/lib/slug'
 import { createShow, updateShow } from '@/app/[locale]/admin/actions'
@@ -55,14 +54,6 @@ const showFormSchema = z.object({
 type ShowFormData = z.infer<typeof showFormSchema>
 type DbShow = Database['public']['Tables']['shows']['Row']
 type Category = Database['public']['Tables']['categories']['Row']
-
-const BRAND_COLORS = [
-  { value: 'brand-blue', key: 'colorBlue', hex: '#2C3569' },
-  { value: 'brand-purple', key: 'colorPurple', hex: '#9F54A0' },
-  { value: 'brand-green', key: 'colorGreen', hex: '#50A258' },
-  { value: 'brand-red', key: 'colorRed', hex: '#DB3F34' },
-  { value: 'brand-orange', key: 'colorOrange', hex: '#EA8C2E' },
-]
 
 const GENRES = [
   'Travel', 'Health', 'Music', 'Comedy', 'Cooking',
@@ -295,7 +286,12 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
 
       <Section title={t('descriptionSection')}>
         <Field label={t('descriptionLabel')} required error={errors.description?.message ? tErrors(errors.description.message as never) : undefined}>
-          <Textarea rows={4} {...form.register('description')} placeholder={t('descriptionPlaceholder')} />
+          <Textarea
+            rows={4}
+            {...form.register('description')}
+            placeholder={t('descriptionPlaceholder')}
+            className="rounded-[12px]"
+          />
         </Field>
         <Field label={t('descriptionArLabel')}>
           <Textarea rows={4} dir="rtl" {...form.register('description_ar')} />
@@ -307,45 +303,6 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
           <Field label={t('taglineArLabel')}>
             <Input dir="rtl" {...form.register('tagline_ar')} />
           </Field>
-        </div>
-      </Section>
-
-      <Section title={t('brandingSection')}>
-        <Field label={t('brandColorLabel')}>
-          <div className="flex gap-2">
-            {BRAND_COLORS.map((c) => (
-              <button
-                key={c.value}
-                type="button"
-                onClick={() => form.setValue('brand_color', c.value as ShowFormData['brand_color'])}
-                className={`flex flex-col items-center gap-1 rounded-lg p-2 transition-all ${
-                  form.watch('brand_color') === c.value
-                    ? 'ring-2 ring-white bg-white/10'
-                    : 'hover:bg-white/5'
-                }`}
-              >
-                <span className="size-8 rounded-full" style={{ backgroundColor: c.hex }} />
-                <span className="text-[10px] text-muted-foreground">{t(c.key as never)}</span>
-              </button>
-            ))}
-          </div>
-        </Field>
-
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          <ArtworkUploadZone
-            showId={generatedId} slot="poster"
-            currentUrl={form.watch('poster_url') || null}
-            onUploadComplete={(url) => form.setValue('poster_url', url)}
-            onDelete={() => form.setValue('poster_url', '')}
-            label={t('posterLabel')} aspectHint={t('posterAspectHint')}
-          />
-          <ArtworkUploadZone
-            showId={generatedId} slot="logo"
-            currentUrl={form.watch('logo_url') || null}
-            onUploadComplete={(url) => form.setValue('logo_url', url)}
-            onDelete={() => form.setValue('logo_url', '')}
-            label={t('logoLabel')} aspectHint={t('logoAspectHint')}
-          />
         </div>
       </Section>
 

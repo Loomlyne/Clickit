@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import Image from 'next/image'
-import { Eye, Link2, Palette, Tags } from 'lucide-react'
+import { Eye, Palette } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { ShowForm } from '@/components/admin/show-form'
@@ -11,8 +11,6 @@ import { Link } from '@/i18n/navigation'
 import type { Database } from '@/lib/database.types'
 
 type Show = Database['public']['Tables']['shows']['Row']
-type Category = Database['public']['Tables']['categories']['Row']
-
 const brandAccentByColor: Record<string, string> = {
   'brand-blue': '#2C3569',
   'brand-purple': '#9F54A0',
@@ -54,37 +52,12 @@ function EditMediaPreview({ show, accent }: { show: Show; accent: string }) {
   )
 }
 
-function SelectedCategories({
-  categories,
-  emptyLabel,
-}: {
-  categories: Category[]
-  emptyLabel: string
-}) {
-  if (categories.length === 0) {
-    return <p className="text-muted-foreground text-sm">{emptyLabel}</p>
-  }
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      {categories.map((category) => (
-        <span
-          key={category.id}
-          className="text-muted-foreground rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-xs"
-        >
-          {category.name_en}
-        </span>
-      ))}
-    </div>
-  )
-}
-
 export default async function EditShowPage({
   params,
 }: {
   params: Promise<{ locale: string; id: string }>
 }) {
-  const { locale, id } = await params
+  const { id } = await params
   const supabase = await createClient()
 
   const [showResult, categoriesResult, showCategoriesResult, tEdit] =
@@ -112,11 +85,7 @@ export default async function EditShowPage({
   const selectedCategoryIds = (showCategoriesResult.data ?? []).map(
     (row) => row.category_id
   )
-  const selectedCategories = categories.filter((category) =>
-    selectedCategoryIds.includes(category.id)
-  )
   const accent = getBrandAccent(show)
-  const publicUrl = `/${locale}/series/${show.slug}`
 
   return (
     <div className="space-y-5">
@@ -145,9 +114,6 @@ export default async function EditShowPage({
         />
         <div className="relative grid gap-6 p-5 md:p-8 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="min-w-0">
-            <p className="text-muted-foreground text-xs tracking-[0.24em] uppercase">
-              {tEdit('eyebrow')}
-            </p>
             <h1 className="text-foreground mt-3 text-4xl leading-none font-medium tracking-tight md:text-5xl">
               {tEdit('title')}
             </h1>
@@ -165,39 +131,7 @@ export default async function EditShowPage({
         </div>
       </AdminPanel>
 
-      <div className="grid gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
-        <aside className="space-y-5 xl:sticky xl:top-24 xl:self-start">
-          <AdminPanel className="border-[#2e2e2e] bg-[#171717] p-5">
-            <div className="text-muted-foreground flex items-center gap-2">
-              <Link2 className="size-4" />
-              <span className="text-[11px] tracking-[0.18em] uppercase">
-                {tEdit('publicUrlLabel')}
-              </span>
-            </div>
-            <p className="text-foreground mt-3 rounded-lg border border-white/8 bg-[#0f0f0f] px-3 py-2 text-sm break-words">
-              {publicUrl}
-            </p>
-            <p className="text-muted-foreground mt-3 text-xs leading-5">
-              {tEdit('publicUrlHint')}
-            </p>
-          </AdminPanel>
-
-          <AdminPanel className="border-[#2e2e2e] bg-[#171717] p-5">
-            <div className="text-muted-foreground flex items-center gap-2">
-              <Tags className="size-4" />
-              <span className="text-[11px] tracking-[0.18em] uppercase">
-                {tEdit('connectedCategories')}
-              </span>
-            </div>
-            <div className="mt-4">
-              <SelectedCategories
-                categories={selectedCategories}
-                emptyLabel={tEdit('noCategories')}
-              />
-            </div>
-          </AdminPanel>
-        </aside>
-
+      <div>
         <ShowForm
           show={show}
           categories={categories}

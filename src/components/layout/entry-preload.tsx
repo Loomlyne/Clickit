@@ -51,6 +51,7 @@ export function EntryPreload() {
   const phaseRef = useRef(phase)
   phaseRef.current = phase
   const hasTriggeredExitRef = useRef(false)
+  const exitTimerRef = useRef<number | null>(null)
 
   useLayoutEffect(() => {
     const run = shouldRunPreload()
@@ -67,8 +68,12 @@ export function EntryPreload() {
   }, [prefersReducedMotion, runPreload])
 
   useEffect(() => {
-    if (runPreload !== true) return
-  }, [phase, runPreload])
+    return () => {
+      if (exitTimerRef.current !== null) {
+        window.clearTimeout(exitTimerRef.current)
+      }
+    }
+  }, [])
 
   if (runPreload !== true) return null
   if (phase === 'done') return null
@@ -130,10 +135,15 @@ export function EntryPreload() {
           controls={false}
           disablePictureInPicture
           className="pointer-events-none absolute inset-0 h-full w-full object-contain"
+          onCanPlay={(event) => {
+            event.currentTarget.play().catch(() => {})
+          }}
           onEnded={() => {
             if (hasTriggeredExitRef.current) return
             hasTriggeredExitRef.current = true
-            setPhase('exit')
+            exitTimerRef.current = window.setTimeout(() => {
+              setPhase('exit')
+            }, 2000)
           }}
         />
       </motion.div>

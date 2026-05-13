@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useTransition, useOptimistic } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
-import { Pencil, ChevronUp, ChevronDown, Archive } from 'lucide-react'
+import { useOptimistic, useState, useTransition } from 'react'
+import { useTranslations } from 'next-intl'
+import { Archive, ChevronDown, ChevronUp, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -25,7 +25,11 @@ import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { EmptyState } from '@/components/admin/empty-state'
 import { EpisodeFormDrawer } from '@/components/admin/episode-form-drawer'
 import { AdminTableShell } from '@/components/admin/admin-shell'
-import { reorderEpisode, updateEpisode, archiveEpisode } from '@/app/[locale]/admin/actions'
+import {
+  archiveEpisode,
+  reorderEpisode,
+  updateEpisode,
+} from '@/app/[locale]/admin/actions'
 import type { Database } from '@/lib/database.types'
 
 type Episode = Database['public']['Tables']['episodes']['Row']
@@ -37,22 +41,27 @@ interface EpisodesTableProps {
   nextEpisodeNumber: number
 }
 
-export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }: EpisodesTableProps) {
+export function EpisodesTable({
+  episodes,
+  showId,
+  seasonId,
+  nextEpisodeNumber,
+}: EpisodesTableProps) {
   const t = useTranslations('admin.episodeForm')
   const tTable = useTranslations('admin.episodesTable')
   const tCommon = useTranslations('common')
-  const locale = useLocale()
-  const isArabic = locale === 'ar'
   const [isPending, startTransition] = useTransition()
   const [editEpisode, setEditEpisode] = useState<Episode | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [archiveTarget, setArchiveTarget] = useState<Episode | null>(null)
   const [archiveLoading, setArchiveLoading] = useState(false)
 
-  // Optimistic episode list for instant reorder feedback
   const [optimisticEpisodes, setOptimisticEpisodes] = useOptimistic(
     episodes,
-    (state: Episode[], { episodeId, direction }: { episodeId: string; direction: 'up' | 'down' }) => {
+    (
+      state: Episode[],
+      { episodeId, direction }: { episodeId: string; direction: 'up' | 'down' }
+    ) => {
       const idx = state.findIndex((e) => e.id === episodeId)
       if (idx === -1) return state
       const swapIdx = direction === 'up' ? idx - 1 : idx + 1
@@ -64,7 +73,7 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
       next[swapIdx] = { ...next[swapIdx], episode_number: aNum }
       next.sort((a, b) => a.episode_number - b.episode_number)
       return next
-    },
+    }
   )
 
   function handleReorder(episodeId: string, direction: 'up' | 'down') {
@@ -94,7 +103,9 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
   }
 
   if (episodes.length === 0) {
-    return <EmptyState heading={tTable('emptyHeading')} body={tTable('emptyBody')} />
+    return (
+      <EmptyState heading={tTable('emptyHeading')} body={tTable('emptyBody')} />
+    )
   }
 
   return (
@@ -103,51 +114,63 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
         <Table>
           <TableHeader>
             <TableRow className="bg-transparent">
-              <TableHead className="w-12">#</TableHead>
+              <TableHead className="w-16">#</TableHead>
               <TableHead>{t('titleLabel')}</TableHead>
-              <TableHead className="hidden w-20 sm:table-cell">{t('durationLabel')}</TableHead>
-              <TableHead className="hidden w-24 md:table-cell">{tTable('youtubeColumn')}</TableHead>
-              <TableHead className="w-[100px]">{t('statusLabel')}</TableHead>
-              <TableHead className="w-32 text-end">{tTable('actionsColumn')}</TableHead>
+              <TableHead className="hidden w-28 sm:table-cell">
+                {t('durationLabel')}
+              </TableHead>
+              <TableHead className="hidden w-28 md:table-cell">
+                {tTable('youtubeColumn')}
+              </TableHead>
+              <TableHead className="hidden w-28 lg:table-cell">
+                {tTable('orderColumn')}
+              </TableHead>
+              <TableHead className="w-[110px]">{t('statusLabel')}</TableHead>
+              <TableHead className="w-40 text-end">
+                {tTable('actionsColumn')}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {optimisticEpisodes.map((episode, index) => (
-              <TableRow key={episode.id}>
-                <TableCell className="font-mono text-xs text-muted-foreground">
+              <TableRow key={episode.id} className="align-top">
+                <TableCell className="pt-5 font-mono text-xs text-muted-foreground">
                   #{episode.episode_number}
                 </TableCell>
-                <TableCell>
-                  <span className="font-medium">{episode.title}</span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground sm:hidden">
-                    {episode.duration ? t('durationMinutes', { minutes: episode.duration }) : ''}
+                <TableCell className="py-4">
+                  <span className="font-medium text-foreground">{episode.title}</span>
+                  {episode.title_ar && (
+                    <span
+                      dir="rtl"
+                      className="mt-1 block text-sm text-muted-foreground"
+                    >
+                      {episode.title_ar}
+                    </span>
+                  )}
+                  <span className="mt-1 block text-xs text-muted-foreground sm:hidden">
+                    {episode.duration
+                      ? t('durationMinutes', { minutes: episode.duration })
+                      : tTable('missingDuration')}
                   </span>
                 </TableCell>
-                <TableCell className="hidden text-muted-foreground sm:table-cell">
-                  {episode.duration ? t('durationMinutes', { minutes: episode.duration }) : '---'}
+                <TableCell className="hidden pt-5 text-muted-foreground sm:table-cell">
+                  {episode.duration
+                    ? t('durationMinutes', { minutes: episode.duration })
+                    : tTable('missingDuration')}
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
+                <TableCell className="hidden pt-4 md:table-cell">
                   {episode.youtube_video_id ? (
-                    <span className="inline-block max-w-[80px] truncate rounded-full border border-white/8 bg-white/[0.03] px-2 py-1 text-xs font-mono">
+                    <span className="inline-block max-w-[90px] truncate rounded-full border border-white/8 bg-white/[0.03] px-2 py-1 font-mono text-xs">
                       {episode.youtube_video_id}
                     </span>
                   ) : (
-                    <span className="text-xs text-muted-foreground">{tTable('noVideo')}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {tTable('noVideo')}
+                    </span>
                   )}
                 </TableCell>
-                <TableCell>
-                  <StatusBadge status={episode.status} />
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center justify-end gap-0.5">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon-xs" onClick={() => handleEdit(episode)} aria-label={tTable('editEpisodeAria', { title: episode.title })}>
-                          <Pencil />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{tCommon('edit')}</TooltipContent>
-                    </Tooltip>
+                <TableCell className="hidden pt-4 lg:table-cell">
+                  <div className="flex items-center gap-1">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
@@ -168,7 +191,9 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
                           variant="ghost"
                           size="icon-xs"
                           onClick={() => handleReorder(episode.id, 'down')}
-                          disabled={isPending || index === optimisticEpisodes.length - 1}
+                          disabled={
+                            isPending || index === optimisticEpisodes.length - 1
+                          }
                           aria-label={tTable('moveDown')}
                         >
                           <ChevronDown />
@@ -176,14 +201,37 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
                       </TooltipTrigger>
                       <TooltipContent>{tTable('moveDown')}</TooltipContent>
                     </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon-xs" onClick={() => setArchiveTarget(episode)} aria-label={tTable('archiveEpisodeAria', { title: episode.title })}>
-                          <Archive />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{tTable('archiveTooltip')}</TooltipContent>
-                    </Tooltip>
+                  </div>
+                </TableCell>
+                <TableCell className="pt-4">
+                  <StatusBadge status={episode.status} />
+                </TableCell>
+                <TableCell className="pt-4">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(episode)}
+                      aria-label={tTable('editEpisodeAria', {
+                        title: episode.title,
+                      })}
+                    >
+                      <Pencil className="size-3.5 sm:me-1" />
+                      <span className="hidden sm:inline">{tCommon('edit')}</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setArchiveTarget(episode)}
+                      aria-label={tTable('archiveEpisodeAria', {
+                        title: episode.title,
+                      })}
+                    >
+                      <Archive className="size-3.5 sm:me-1" />
+                      <span className="hidden sm:inline">
+                        {tTable('archiveTooltip')}
+                      </span>
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -200,18 +248,26 @@ export function EpisodesTable({ episodes, showId, seasonId, nextEpisodeNumber }:
         seasonId={seasonId}
         nextEpisodeNumber={nextEpisodeNumber}
         onSave={async (data) => {
-          if (!editEpisode) return { success: false, error: 'No episode selected' }
-          return updateEpisode(editEpisode.id, { ...data, show_id: showId, season_id: seasonId })
+          if (!editEpisode) {
+            return { success: false, error: tTable('noEpisodeSelected') }
+          }
+          return updateEpisode(editEpisode.id, {
+            ...data,
+            show_id: showId,
+            season_id: seasonId,
+          })
         }}
       />
 
       <ConfirmDialog
         open={!!archiveTarget}
-        onOpenChange={(open) => { if (!open) setArchiveTarget(null) }}
+        onOpenChange={(open) => {
+          if (!open) setArchiveTarget(null)
+        }}
         title={tTable('archiveEpisodeTitle')}
-        description={isArabic
-          ? `سيُخفي هذا "${archiveTarget?.title ?? 'هذه الحلقة'}" عن الزوار.`
-          : `This will hide "${archiveTarget?.title ?? 'this episode'}" from viewers.`}
+        description={tTable('archiveEpisodeDescription', {
+          title: archiveTarget?.title ?? tTable('thisEpisode'),
+        })}
         confirmLabel={tTable('archiveEpisodeTitle')}
         onConfirm={handleArchiveConfirm}
         destructive

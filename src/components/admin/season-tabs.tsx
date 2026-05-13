@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Plus, Pencil } from 'lucide-react'
 import { useRouter } from '@/i18n/navigation'
 
@@ -35,15 +35,28 @@ interface SeasonTabsProps {
   showId: string
 }
 
-export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason, showId }: SeasonTabsProps) {
+function getSeasonTitle(season: Season, isArabic: boolean) {
+  return isArabic && season.title_ar ? season.title_ar : season.title
+}
+
+export function SeasonTabs({
+  seasons,
+  episodesBySeason,
+  maxEpisodeNumberBySeason,
+  showId,
+}: SeasonTabsProps) {
   const router = useRouter()
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const tSeason = useTranslations('admin.seasonForm')
   const tEpisode = useTranslations('admin.episodeForm')
   const t = useTranslations('admin.seasonTabs')
   const [seasonDrawerOpen, setSeasonDrawerOpen] = useState(false)
   const [editSeason, setEditSeason] = useState<Season | null>(null)
   const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false)
-  const [activeSeasonIdForEpisode, setActiveSeasonIdForEpisode] = useState<string | null>(null)
+  const [activeSeasonIdForEpisode, setActiveSeasonIdForEpisode] = useState<
+    string | null
+  >(null)
 
   function handleAddSeason() {
     setEditSeason(null)
@@ -94,72 +107,82 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
   return (
     <TooltipProvider delayDuration={300}>
       <Tabs defaultValue={defaultTab} className="space-y-4">
-        <AdminPanel>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
-                {t('seasonsHeading')}
-              </p>
-              <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
-                {t('episodeManagementHeading')}
-              </h2>
-            </div>
-            <Button variant="outline" size="sm" onClick={handleAddSeason}>
-              <Plus className="me-1 size-4" />
-              {tSeason('addSeason')}
-            </Button>
-          </div>
-
-          <div className="mt-5 overflow-x-auto">
-            <TabsList>
-            {seasons.map((season) => {
-              const epCount = episodesBySeason[season.id]?.length ?? 0
-              return (
-                <TabsTrigger key={season.id} value={season.id} className="gap-1.5">
-                  {season.title}
-                  <span className="text-xs text-muted-foreground">({epCount})</span>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleEditSeason(season)
-                        }}
-                        className="ms-0.5 rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                        aria-label={t('editSeasonAria', { title: season.title })}
-                      >
-                        <Pencil className="size-3" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t('editSeasonTooltip')}</TooltipContent>
-                  </Tooltip>
-                </TabsTrigger>
-              )
-            })}
-            </TabsList>
-          </div>
-        </AdminPanel>
+        <TabsList className="h-auto flex-wrap justify-start rounded-2xl p-1.5">
+          {seasons.map((season) => {
+            const epCount = episodesBySeason[season.id]?.length ?? 0
+            const title = getSeasonTitle(season, isArabic)
+            return (
+              <TabsTrigger
+                key={season.id}
+                value={season.id}
+                className="min-h-10 gap-2 px-3"
+              >
+                <span className="text-xs text-muted-foreground">
+                  {t('seasonNumber', { number: season.season_number })}
+                </span>
+                <span>{title}</span>
+                <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-xs text-muted-foreground">
+                  {epCount}
+                </span>
+              </TabsTrigger>
+            )
+          })}
+        </TabsList>
 
         {seasons.map((season) => {
           const seasonEpisodes = episodesBySeason[season.id] ?? []
+          const title = getSeasonTitle(season, isArabic)
           return (
             <TabsContent key={season.id} value={season.id}>
-              <AdminPanel>
-                <div className="mb-4 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    {t('episodeCount', { count: seasonEpisodes.length })}
-                  </p>
-                  <Button size="sm" onClick={() => handleAddEpisode(season.id)}>
-                    <Plus className="me-1 size-4" />
-                    {tEpisode('addEpisode')}
-                  </Button>
+              <AdminPanel className="space-y-5 p-5 md:p-6">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="text-muted-foreground text-xs tracking-[0.2em] uppercase">
+                      {t('seasonNumber', { number: season.season_number })}
+                    </p>
+                    <h3 className="text-foreground mt-2 text-xl font-semibold tracking-tight">
+                      {title}
+                    </h3>
+                    {season.title_ar && !isArabic && (
+                      <p dir="rtl" className="text-muted-foreground mt-1 text-sm">
+                        {season.title_ar}
+                      </p>
+                    )}
+                    <p className="text-muted-foreground mt-3 text-sm">
+                      {t('episodeCount', { count: seasonEpisodes.length })}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditSeason(season)}
+                          aria-label={t('editSeasonAria', {
+                            title: season.title,
+                          })}
+                        >
+                          <Pencil className="me-1 size-3.5" />
+                          {t('editSeasonButton')}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{t('editSeasonTooltip')}</TooltipContent>
+                    </Tooltip>
+                    <Button size="sm" onClick={() => handleAddEpisode(season.id)}>
+                      <Plus className="me-1 size-4" />
+                      {tEpisode('addEpisode')}
+                    </Button>
+                  </div>
                 </div>
+
                 <EpisodesTable
                   episodes={seasonEpisodes}
                   showId={showId}
                   seasonId={season.id}
-                  nextEpisodeNumber={(maxEpisodeNumberBySeason[season.id] ?? 0) + 1}
+                  nextEpisodeNumber={
+                    (maxEpisodeNumberBySeason[season.id] ?? 0) + 1
+                  }
                 />
               </AdminPanel>
             </TabsContent>
@@ -167,7 +190,6 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
         })}
       </Tabs>
 
-      {/* Season Form Drawer */}
       <SeasonFormDrawer
         open={seasonDrawerOpen}
         onOpenChange={setSeasonDrawerOpen}
@@ -176,7 +198,10 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
         nextSeasonNumber={seasons.length + 1}
         onSave={async (data) => {
           if (editSeason) {
-            const result = await updateSeason(editSeason.id, { ...data, show_id: showId })
+            const result = await updateSeason(editSeason.id, {
+              ...data,
+              show_id: showId,
+            })
             if (result.success) router.refresh()
             return result
           }
@@ -193,7 +218,9 @@ export function SeasonTabs({ seasons, episodesBySeason, maxEpisodeNumberBySeason
           episode={null}
           showId={showId}
           seasonId={activeSeasonIdForEpisode}
-          nextEpisodeNumber={(maxEpisodeNumberBySeason[activeSeasonIdForEpisode] ?? 0) + 1}
+          nextEpisodeNumber={
+            (maxEpisodeNumberBySeason[activeSeasonIdForEpisode] ?? 0) + 1
+          }
           onSave={async (data) => {
             const result = await createEpisode({
               ...data,
