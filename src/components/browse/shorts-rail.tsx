@@ -48,7 +48,7 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
       <section className="rail px-10 pt-8 pb-3">
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-display m-0 text-[26px] uppercase">{t('shortClickHeading')}</h2>
+            <h2 className="font-display m-0 text-[26px] uppercase tracking-[0.04em]">{t('shortClickHeading')}</h2>
           </div>
           <button className="mono inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 hover:text-[var(--text)]">
             {t('viewAll')} <ArrowRight className="size-3" />

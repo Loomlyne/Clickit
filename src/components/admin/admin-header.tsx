@@ -121,7 +121,7 @@ export function AdminHeader() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/8 bg-[rgba(10,10,10,0.88)] backdrop-blur-[18px] supports-[backdrop-filter]:bg-[rgba(10,10,10,0.72)]">
-      <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3 md:gap-4 md:px-6 md:py-3.5 lg:px-8 lg:py-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-0 px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-3.5 lg:px-8 lg:py-4">
         <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
           <Link
             href="/watch"
@@ -129,7 +129,7 @@ export function AdminHeader() {
             className="flex min-h-10 min-w-0 items-center sm:min-h-11"
           >
             <Image
-              src="/brand/Clickit_final_logo.svg"
+              src="/brand/cit-story.png"
               alt="Clickit"
               width={136}
               height={56}

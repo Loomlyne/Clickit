@@ -5,7 +5,7 @@ import { getMessages, setRequestLocale } from 'next-intl/server'
 import Script from 'next/script'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
-import { Geist, Cairo } from 'next/font/google'
+import { Geist } from 'next/font/google'
 import localFont from 'next/font/local'
 
 import '@/styles/globals.css'
@@ -31,13 +31,12 @@ const lbc = localFont({
   display: 'swap',
 })
 
-// TEMPORARY STAND-IN for GE SS (commercial Boutros font). Cairo is the closest
-// freely-licensed Arabic match. Swap by replacing this block with a localFont
-// import once `src/fonts/ge-ss-regular.ttf` + `ge-ss-bold.ttf` are added.
-const geSS = Cairo({
-  subsets: ['arabic', 'latin'],
+const geSS = localFont({
+  src: [
+    { path: '../../fonts/ge-ss-regular.ttf', weight: '400', style: 'normal' },
+    { path: '../../fonts/ge-ss-bold.ttf', weight: '700', style: 'normal' },
+  ],
   variable: '--font-ge-ss',
-  weight: ['400', '500', '600', '700'],
   display: 'swap',
 })
 

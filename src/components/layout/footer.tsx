@@ -16,7 +16,7 @@ export async function Footer() {
       <div className="relative border-b border-[var(--line)] px-4 pt-[90px] pb-[60px] sm:px-6 md:px-12">
         <Link href="/watch" aria-label={tNav('home')} className="block">
           <Image
-            src="/brand/Clickit_final_logo.svg"
+            src="/brand/cit-story.png"
             alt="Clickit"
             width={486}
             height={199}

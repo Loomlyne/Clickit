@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Link, usePathname } from '@/i18n/navigation'
 import { useLenis } from 'lenis/react'
 import { cn } from '@/lib/utils'
@@ -17,6 +17,7 @@ interface NavbarProps {
 
 export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
   const pathname = usePathname()
+  const locale = useLocale()
   const t = useTranslations('nav')
   const [scrolled, setScrolled] = useState(false)
   const [hidden, setHidden] = useState(false)
@@ -77,7 +78,7 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
         className="flex min-h-11 items-center"
       >
         <Image
-          src="/brand/Clickit_final_logo.svg"
+          src="/brand/cit-story.png"
           alt="Clickit"
           width={214}
           height={145}
@@ -179,11 +180,69 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
 
       {/* Right side: auth (desktop) */}
       <div className="ms-auto hidden items-center gap-3.5 md:flex">
+        <div className="inline-flex items-center rounded-full border border-white/12 bg-white/[0.03] p-1">
+          <Link
+            href={pathname || '/watch'}
+            locale="en"
+            aria-label="Switch to English"
+            className={cn(
+              'rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none tracking-[0.08em] transition-colors duration-150',
+              locale === 'en'
+                ? 'bg-white text-black'
+                : 'text-[var(--text-dim)] hover:text-[var(--text)]'
+            )}
+          >
+            EN
+          </Link>
+          <span className="px-1 text-[10px] text-[var(--text-dim)]">/</span>
+          <Link
+            href={pathname || '/watch'}
+            locale="ar"
+            aria-label="Switch to Arabic"
+            className={cn(
+              'rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none tracking-[0.08em] transition-colors duration-150',
+              locale === 'ar'
+                ? 'bg-white text-black'
+                : 'text-[var(--text-dim)] hover:text-[var(--text)]'
+            )}
+          >
+            AR
+          </Link>
+        </div>
         <AuthSection initialUser={initialUser} isLanding={isLanding} />
       </div>
 
-      {/* Mobile hamburger — only visible on <md: */}
-      <div className="ms-auto md:hidden">
+      {/* Mobile: locale switch + hamburger */}
+      <div className="ms-auto flex items-center gap-2 md:hidden">
+        <div className="inline-flex items-center rounded-full border border-white/12 bg-white/[0.03] p-1">
+          <Link
+            href={pathname || '/watch'}
+            locale="en"
+            aria-label="Switch to English"
+            className={cn(
+              'rounded-full px-2 py-1 text-[10px] font-semibold leading-none tracking-[0.08em] transition-colors duration-150',
+              locale === 'en'
+                ? 'bg-white text-black'
+                : 'text-[var(--text-dim)] hover:text-[var(--text)]'
+            )}
+          >
+            EN
+          </Link>
+          <span className="px-1 text-[10px] text-[var(--text-dim)]">/</span>
+          <Link
+            href={pathname || '/watch'}
+            locale="ar"
+            aria-label="Switch to Arabic"
+            className={cn(
+              'rounded-full px-2 py-1 text-[10px] font-semibold leading-none tracking-[0.08em] transition-colors duration-150',
+              locale === 'ar'
+                ? 'bg-white text-black'
+                : 'text-[var(--text-dim)] hover:text-[var(--text)]'
+            )}
+          >
+            AR
+          </Link>
+        </div>
         <MobileNav initialUser={initialUser} liveStreamUrl={liveStreamUrl} />
       </div>
     </header>

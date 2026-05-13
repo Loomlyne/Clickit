@@ -54,7 +54,7 @@ export function MobileNav({ initialUser }: MobileNavProps = {}) {
             className="flex min-h-11 items-center"
           >
             <Image
-              src="/brand/Clickit_final_logo.svg"
+              src="/brand/cit-story.png"
               alt="Clickit"
               width={214}
               height={145}

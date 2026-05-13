@@ -41,7 +41,7 @@ export default async function SupportPage() {
           </p>
           <div className="mt-8 sm:mt-10" aria-hidden="true">
             <Image
-              src="/brand/Clickit_final_logo.svg"
+              src="/brand/cit-story.png"
               alt=""
               width={100}
               height={28}

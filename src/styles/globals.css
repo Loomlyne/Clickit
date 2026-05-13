@@ -30,7 +30,7 @@
   /* Type stacks — 3-font system
      Titles (all locales): LBC
      EN body / UI: Geist
-     AR body / UI: GE SS (Cairo as temporary stand-in until real GE SS files land)
+     AR body / UI: GE SS
      --font-app + --font-ui are legacy aliases pointing to the active body font. */
   --font-title: var(--font-lbc), ui-sans-serif, system-ui, sans-serif;
   --font-en-body: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
@@ -246,8 +246,6 @@ html[lang='ar'] {
   /* All headings use the title font (LBC) regardless of locale. */
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-title);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
   }
 
   main {
@@ -324,8 +322,6 @@ html::-webkit-scrollbar-thumb:hover {
   .serif {
     font-family: var(--font-title);
     font-weight: 400;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
   }
 
   .mono {

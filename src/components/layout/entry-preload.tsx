@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
@@ -51,6 +50,7 @@ export function EntryPreload() {
   const [phase, setPhase] = useState<'enter' | 'exit' | 'done'>('enter')
   const phaseRef = useRef(phase)
   phaseRef.current = phase
+  const hasTriggeredExitRef = useRef(false)
 
   useLayoutEffect(() => {
     const run = shouldRunPreload()
@@ -59,10 +59,10 @@ export function EntryPreload() {
 
   useEffect(() => {
     if (runPreload !== true) return
-    const exitDelay = prefersReducedMotion ? 680 : 1900
+    if (!prefersReducedMotion) return
     const timer = window.setTimeout(() => {
       setPhase('exit')
-    }, exitDelay)
+    }, 680)
     return () => window.clearTimeout(timer)
   }, [prefersReducedMotion, runPreload])
 
@@ -121,13 +121,20 @@ export function EntryPreload() {
           ease,
         }}
       >
-        <Image
-          src="/brand/Clickit_final_logo.svg"
-          alt=""
-          fill
-          priority
-          sizes="(min-width: 640px) 384px, 288px"
-          className="pointer-events-none object-contain"
+        <video
+          src="/brand/logo-animation.mp4"
+          autoPlay
+          muted
+          playsInline
+          preload="auto"
+          controls={false}
+          disablePictureInPicture
+          className="pointer-events-none absolute inset-0 h-full w-full object-contain"
+          onEnded={() => {
+            if (hasTriggeredExitRef.current) return
+            hasTriggeredExitRef.current = true
+            setPhase('exit')
+          }}
         />
       </motion.div>
     </motion.div>

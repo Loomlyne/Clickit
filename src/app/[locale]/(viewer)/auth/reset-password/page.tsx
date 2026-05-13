@@ -30,7 +30,7 @@ export default async function ResetPasswordPage() {
       <div className="relative z-10 w-full max-w-[440px]">
         <div className="mb-8 flex justify-center">
           <Image
-            src="/brand/Clickit_final_logo.svg"
+            src="/brand/cit-story.png"
             alt="Clickit Story"
             width={140}
             height={40}

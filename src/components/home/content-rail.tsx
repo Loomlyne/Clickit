@@ -44,7 +44,7 @@ export function ContentRail({
               {eyebrow}
             </div>
           )}
-          <h2 className="font-display m-0 text-[26px]">{title}</h2>
+          <h2 className="font-display m-0 text-[26px] uppercase tracking-[0.04em]">{title}</h2>
         </div>
         {seeAllHref ? (
           <Link

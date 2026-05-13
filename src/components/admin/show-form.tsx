@@ -260,36 +260,37 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
               </SelectContent>
             </Select>
           </Field>
+          <div className="md:col-span-2">
+            <Field label={t('categoriesLabel')}>
+              {categories.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-white/12 px-4 py-3 text-sm text-muted-foreground">
+                  {t('categoriesEmpty')}
+                </div>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {categories.map((category) => {
+                    const checked = selectedCategoryIds.includes(category.id)
+                    return (
+                      <label
+                        key={category.id}
+                        className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2.5 transition-colors hover:border-white/16"
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(value) => toggleCategory(category.id, value === true)}
+                        />
+                        <div className="min-w-0">
+                          <div className="text-sm text-foreground">{category.name_en}</div>
+                          <div className="text-xs text-muted-foreground">{category.slug}</div>
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
+            </Field>
+          </div>
         </div>
-
-        <Field label={t('categoriesLabel')}>
-          {categories.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-white/12 px-4 py-3 text-sm text-muted-foreground">
-              {t('categoriesEmpty')}
-            </div>
-          ) : (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {categories.map((category) => {
-                const checked = selectedCategoryIds.includes(category.id)
-                return (
-                  <label
-                    key={category.id}
-                    className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2.5 transition-colors hover:border-white/16"
-                  >
-                    <Checkbox
-                      checked={checked}
-                      onCheckedChange={(value) => toggleCategory(category.id, value === true)}
-                    />
-                    <div className="min-w-0">
-                      <div className="text-sm text-foreground">{category.name_en}</div>
-                      <div className="text-xs text-muted-foreground">{category.slug}</div>
-                    </div>
-                  </label>
-                )
-              })}
-            </div>
-          )}
-        </Field>
       </Section>
 
       <Section title={t('descriptionSection')}>
