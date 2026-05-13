@@ -26,6 +26,9 @@
 
 # debug
 debug-c080c4.log
+src/lib/debug/
+src/app/api/debug-ingest/
+src/app/api/debug-session-log/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -50,6 +53,7 @@ next-env.d.ts
 # editor settings
 .obsidian/
 .planning/.obsidian/
+.cursor/
 
 # test artifacts
 test-results/
