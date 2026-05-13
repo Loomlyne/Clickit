@@ -3,7 +3,7 @@ import Image from 'next/image'
 import type { ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import { CalendarClock, Database, Film, Link2, Layers3 } from 'lucide-react'
+import { CalendarClock, DatabaseIcon, Film, Link2, Layers3 } from 'lucide-react'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { SeasonTabs } from '@/components/admin/season-tabs'
 import { EditShowButton } from '@/components/admin/edit-show-button'
@@ -315,7 +315,7 @@ export default async function ShowDetailPage({
                 value={dateFormatter.format(new Date(show.updated_at))}
               />
               <DetailTile
-                icon={<Database className="size-4" />}
+                icon={<DatabaseIcon className="size-4" />}
                 label={tShows('supabaseLabel')}
                 value={show.id}
               />
