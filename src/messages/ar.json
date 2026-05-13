@@ -640,7 +640,13 @@
     "editShow": {
       "backToShow": "العودة إلى {title}",
       "title": "تعديل البرنامج",
-      "description": "تعديل \"{title}\""
+      "description": "تعديل \"{title}\"",
+      "eyebrow": "تعديل متصل بسوبابيس",
+      "viewShow": "عرض البرنامج",
+      "publicUrlLabel": "الرابط العام",
+      "publicUrlHint": "هذا الرابط يتبع المعرّف المحفوظ ويتحدث عند حفظ البرنامج.",
+      "connectedCategories": "التصنيفات المتصلة",
+      "noCategories": "لا توجد تصنيفات متصلة"
     },
     "shortForm": {
       "addTitle": "إضافة قصيرة",
@@ -707,7 +713,20 @@
       "noSearchMatches": "لا توجد برامج مطابقة لبحثك",
       "archiveDialogTitle": "أرشفة البرنامج",
       "archiveDialogDescription": "سيُخفي هذا \"{title}\" عن الزوار. يمكنك استعادته من قسم الأرشيف.",
-      "thisShow": "هذا البرنامج"
+      "thisShow": "هذا البرنامج",
+      "showWorkspace": "مساحة البرنامج",
+      "editShowDetails": "تعديل التفاصيل",
+      "categoriesLabel": "التصنيفات",
+      "descriptionLabel": "الوصف",
+      "seasonsStat": "المواسم",
+      "episodesStat": "الحلقات",
+      "notScheduled": "غير مجدول",
+      "urlLabel": "الرابط",
+      "updatedLabel": "آخر تحديث",
+      "supabaseLabel": "سوبابيس",
+      "supabaseMediaLabel": "وسائط سوبابيس",
+      "contentLabel": "المحتوى",
+      "castEpisodesLabel": "طاقم العمل والحلقات"
     },
     "showForm": {
       "basicInfoTab": "معلومات أساسية",
@@ -1134,7 +1153,12 @@
       "actionsColumn": "الإجراءات",
       "noVideo": "لا يوجد فيديو",
       "editEpisodeAria": "تعديل {title}",
-      "archiveEpisodeAria": "أرشفة {title}"
+      "archiveEpisodeAria": "أرشفة {title}",
+      "orderColumn": "الترتيب",
+      "missingDuration": "غير محددة",
+      "archiveEpisodeDescription": "سيتم إخفاء \"{title}\" عن الزوار.",
+      "thisEpisode": "هذه الحلقة",
+      "noEpisodeSelected": "لم يتم اختيار حلقة"
     },
     "seasonTabs": {
       "empty": "أنشئ موسماً لإضافة الحلقات.",
@@ -1143,7 +1167,10 @@
       "episodeManagementHeading": "إدارة الحلقات",
       "editSeasonTooltip": "تعديل الموسم",
       "editSeasonAria": "تعديل {title}",
-      "episodeCount": "{count, plural, one {# حلقة} other {# حلقة}}"
+      "episodeCount": "{count, plural, one {# حلقة} other {# حلقة}}",
+      "episodeManagementBody": "إدارة المواسم وكل حلقة مرتبطة بهذا البرنامج.",
+      "seasonNumber": "الموسم {number}",
+      "editSeasonButton": "تعديل الموسم"
     },
     "castEditor": {
       "toastImageUploadFailed": "فشل رفع الصورة",
