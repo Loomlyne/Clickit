@@ -31,7 +31,7 @@ export default function ComponentsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Input placeholder="Search shows, genres, or creators" />
+            <Input placeholder={'Search shows, genres, or creators'} />
             <Input value="viewer@clickit.app" readOnly />
           </CardContent>
         </Card>

@@ -58,7 +58,7 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
           <Input
             value={values.site_tagline}
             onChange={(e) => setValues((v) => ({ ...v, site_tagline: e.target.value }))}
-            placeholder="Every Story Clicks."
+            placeholder={t('siteTaglinePlaceholder')}
             maxLength={120}
           />
         </SettingsField>

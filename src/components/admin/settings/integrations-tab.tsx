@@ -60,7 +60,7 @@ export function IntegrationsTab({
           <Input
             value={ga}
             onChange={(e) => setGa(e.target.value)}
-            placeholder="G-XXXXXXXXXX"
+            placeholder={t('measurementIdPlaceholder')}
             className="font-mono"
             maxLength={40}
           />
@@ -105,7 +105,7 @@ export function IntegrationsTab({
             value={yt}
             onChange={setYt}
             hasSavedValue={savedHasYouTube}
-            placeholder="AIzaSy…"
+            placeholder={t('apiKeyPlaceholder')}
           />
         </SettingsField>
       </SettingsCard>

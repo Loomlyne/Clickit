@@ -113,7 +113,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
                   <Input
                     value={row.tag}
                     maxLength={24}
-                    placeholder="NEW"
+                    placeholder={t('tagPlaceholder')}
                     onChange={(e) =>
                       setRows((rs) =>
                         rs.map((x, i) => (i === index ? { ...x, tag: e.target.value } : x))
