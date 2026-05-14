@@ -29,10 +29,12 @@ export default async function WatchPage({
   const params = await searchParams
   const categorySlug = params?.category?.trim() || null
 
-  const [{ data: { user } }, featured] = await Promise.all([
-    supabase.auth.getUser(),
-    getFeaturedShows(),
-  ])
+  const [
+    {
+      data: { user },
+    },
+    featured,
+  ] = await Promise.all([supabase.auth.getUser(), getFeaturedShows()])
   const userId = user?.id ?? null
 
   // Stage 2: everything else in parallel, including first-episode map which
@@ -113,7 +115,6 @@ export default async function WatchPage({
       {comingSoon.length > 0 && (
         <ContentRail
           title={t('railComingSoon')}
-          eyebrow={t('railComingSoonEyebrow')}
           shows={comingSoon}
           seeAllHref="/coming-soon"
         />
@@ -133,16 +134,6 @@ export default async function WatchPage({
             }
           >
             <div>
-              <div
-                className="mono mb-1.5"
-                style={
-                  activeCategory.color
-                    ? { color: activeCategory.color }
-                    : undefined
-                }
-              >
-                {t('activeCategory')}
-              </div>
               <h2 className="font-display text-[24px]">
                 {locale === 'ar'
                   ? activeCategory.nameAr
@@ -162,9 +153,10 @@ export default async function WatchPage({
       {railsToRender.map((category) => (
         <ContentRail
           key={category.id}
-          title={{ ar: category.nameAr, en: category.nameEn }[locale] ?? category.nameEn}
-          eyebrow={category.icon || t('railCuratedEyebrow')}
-          accentColor={category.color ?? undefined}
+          title={
+            { ar: category.nameAr, en: category.nameEn }[locale] ??
+            category.nameEn
+          }
           shows={category.shows}
           seeAllHref={`/watch?category=${encodeURIComponent(category.slug)}`}
         />

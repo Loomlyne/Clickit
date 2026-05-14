@@ -10,8 +10,6 @@ import type { ViewShow } from '@/lib/queries'
 
 interface ContentRailProps {
   title: string
-  eyebrow?: string
-  accentColor?: string
   shows: ViewShow[]
   minCards?: number
   seeAllHref?: string
@@ -21,8 +19,6 @@ interface ContentRailProps {
 
 export function ContentRail({
   title,
-  eyebrow,
-  accentColor,
   shows,
   minCards = 6,
   seeAllHref,
@@ -36,28 +32,20 @@ export function ContentRail({
       {/* Rail header */}
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          {eyebrow && (
-            <div
-              className="mono mb-1.5"
-              style={accentColor ? { color: accentColor } : undefined}
-            >
-              {eyebrow}
-            </div>
-          )}
-          <h2 className="font-display m-0 text-[26px] uppercase tracking-[0.04em]">{title}</h2>
+          <h2 className="font-display m-0 text-[26px] tracking-[0.04em] uppercase">
+            {title}
+          </h2>
         </div>
         {seeAllHref ? (
           <Link
             className="mono inline-flex min-h-11 shrink-0 items-center gap-1.5"
             href={seeAllHref}
           >
-            {t('viewAll')}{' '}
-            <ArrowRight className="size-3 rtl:scale-x-[-1]" />
+            {t('viewAll')} <ArrowRight className="size-3 rtl:scale-x-[-1]" />
           </Link>
         ) : (
           <span className="mono inline-flex min-h-11 shrink-0 items-center gap-1.5 text-[var(--text-mute)]">
-            {t('viewAll')}{' '}
-            <ArrowRight className="size-3 rtl:scale-x-[-1]" />
+            {t('viewAll')} <ArrowRight className="size-3 rtl:scale-x-[-1]" />
           </span>
         )}
       </div>

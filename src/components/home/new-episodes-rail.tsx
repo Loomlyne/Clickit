@@ -24,9 +24,6 @@ export function NewEpisodesRail({
     <section className="rail px-10 pt-8 pb-3">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <div className="mono mb-1.5">
-            {t('newEpisodesEyebrow')}
-          </div>
           <h2 className="font-display m-0 text-[26px]">
             {t('newEpisodesHeading')}
           </h2>

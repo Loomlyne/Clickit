@@ -1,48 +1,22 @@
 'use client'
 
 import { motion, useReducedMotion } from 'motion/react'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
-const STORAGE_KEY = 'clickit-entry-preload-at'
+const VIDEO_FALLBACK_EXIT_MS = 2400
+const REDUCED_MOTION_EXIT_MS = 680
+const VIDEO_ERROR_EXIT_GRACE_MS = 360
 
-const THREE_HOURS_MS = 3 * 60 * 60 * 1000
-
-function isSameLocalCalendarDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  )
-}
-
-function shouldRunPreload(): boolean {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return true
-    const lastTime = Number.parseInt(raw, 10)
-    if (Number.isNaN(lastTime)) return true
-
-    const now = Date.now()
-    const last = new Date(lastTime)
-    const today = new Date()
-    const firstVisitOfLocalDay = !isSameLocalCalendarDay(last, today)
-    const threeHoursPassed = now - lastTime >= THREE_HOURS_MS
-
-    return firstVisitOfLocalDay || threeHoursPassed
-  } catch {
-    return true
-  }
-}
-
-function recordPreloadCompleted() {
-  try {
-    localStorage.setItem(STORAGE_KEY, String(Date.now()))
-  } catch {
-    // ignore quota / private mode
-  }
-}
+let hasShownPreloadThisDocument = false
 
 export function EntryPreload() {
   const prefersReducedMotion = useReducedMotion()
@@ -51,43 +25,105 @@ export function EntryPreload() {
   const phaseRef = useRef(phase)
   phaseRef.current = phase
   const hasTriggeredExitRef = useRef(false)
-  const exitTimerRef = useRef<number | null>(null)
+  const hasPlaybackStartedRef = useRef(false)
+  const fallbackTimerRef = useRef<number | null>(null)
+  const errorExitTimerRef = useRef<number | null>(null)
+
+  const clearFallbackTimer = useCallback(() => {
+    if (fallbackTimerRef.current === null) return
+    window.clearTimeout(fallbackTimerRef.current)
+    fallbackTimerRef.current = null
+  }, [])
+
+  const clearErrorExitTimer = useCallback(() => {
+    if (errorExitTimerRef.current === null) return
+    window.clearTimeout(errorExitTimerRef.current)
+    errorExitTimerRef.current = null
+  }, [])
+
+  const triggerExit = useCallback(() => {
+    if (hasTriggeredExitRef.current) return
+    hasTriggeredExitRef.current = true
+    clearFallbackTimer()
+    clearErrorExitTimer()
+    setPhase('exit')
+  }, [clearErrorExitTimer, clearFallbackTimer])
+
+  const markPlaybackStarted = useCallback(() => {
+    if (hasPlaybackStartedRef.current) return
+    hasPlaybackStartedRef.current = true
+    clearFallbackTimer()
+    fallbackTimerRef.current = window.setTimeout(() => {
+      triggerExit()
+    }, VIDEO_FALLBACK_EXIT_MS)
+  }, [clearFallbackTimer, triggerExit])
 
   useLayoutEffect(() => {
-    const run = shouldRunPreload()
+    if (hasShownPreloadThisDocument) {
+      setRunPreload(false)
+      return
+    }
+
+    const entries = performance.getEntriesByType('navigation')
+    const nav = entries[0] as PerformanceNavigationTiming | undefined
+    const type = nav?.type ?? 'navigate'
+    const run = type === 'navigate' || type === 'reload'
     setRunPreload(run)
+    if (run) hasShownPreloadThisDocument = true
   }, [])
 
   useEffect(() => {
     if (runPreload !== true) return
     if (!prefersReducedMotion) return
     const timer = window.setTimeout(() => {
-      setPhase('exit')
-    }, 680)
+      triggerExit()
+    }, REDUCED_MOTION_EXIT_MS)
     return () => window.clearTimeout(timer)
-  }, [prefersReducedMotion, runPreload])
+  }, [prefersReducedMotion, runPreload, triggerExit])
 
   useEffect(() => {
     return () => {
-      if (exitTimerRef.current !== null) {
-        window.clearTimeout(exitTimerRef.current)
-      }
+      clearFallbackTimer()
+      clearErrorExitTimer()
     }
-  }, [])
+  }, [clearErrorExitTimer, clearFallbackTimer])
+
+  const isVisible = useMemo(
+    () => runPreload === true && phase !== 'done',
+    [phase, runPreload]
+  )
+
+  useEffect(() => {
+    if (!isVisible) return
+
+    const { body, documentElement } = document
+    const prevHtmlOverflow = documentElement.style.overflow
+    const prevBodyOverflow = body.style.overflow
+
+    documentElement.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+
+    return () => {
+      documentElement.style.overflow = prevHtmlOverflow
+      body.style.overflow = prevBodyOverflow
+    }
+  }, [isVisible])
 
   if (runPreload !== true) return null
   if (phase === 'done') return null
 
   const overlayTransition = {
-    duration: prefersReducedMotion ? 0.32 : phase === 'exit' ? 0.98 : 0.36,
+    duration: prefersReducedMotion ? 0.32 : phase === 'exit' ? 0.98 : 0.68,
     ease,
   }
 
   return (
     <motion.div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-[100] grid place-items-center overflow-hidden bg-black"
-      initial={prefersReducedMotion ? { opacity: 1 } : { y: '0%', opacity: 1 }}
+      className="pointer-events-none fixed inset-0 z-[100] overflow-hidden bg-black"
+      initial={
+        prefersReducedMotion ? { opacity: 1 } : { y: '100%', opacity: 1 }
+      }
       animate={
         phase === 'exit'
           ? prefersReducedMotion
@@ -100,26 +136,23 @@ export function EntryPreload() {
       transition={overlayTransition}
       onAnimationComplete={() => {
         if (phaseRef.current === 'exit') {
-          recordPreloadCompleted()
           setPhase('done')
         }
       }}
     >
       <motion.div
-        className="pointer-events-none relative h-28 w-72 sm:h-36 sm:w-96"
+        className="pointer-events-none absolute inset-0"
         initial={{
           opacity: 0,
           scale: prefersReducedMotion ? 1 : 0.9,
-          y: prefersReducedMotion ? 0 : 80,
         }}
         animate={
           phase === 'exit'
             ? {
                 opacity: prefersReducedMotion ? 0 : 1,
                 scale: prefersReducedMotion ? 1 : 1,
-                y: 0,
               }
-            : { opacity: 1, scale: 1, y: 0 }
+            : { opacity: 1, scale: 1 }
         }
         transition={{
           duration: prefersReducedMotion ? 0.28 : 0.86,
@@ -135,15 +168,20 @@ export function EntryPreload() {
           controls={false}
           disablePictureInPicture
           className="pointer-events-none absolute inset-0 h-full w-full object-contain"
-          onCanPlay={(event) => {
-            event.currentTarget.play().catch(() => {})
+          onLoadedData={(event) => {
+            markPlaybackStarted()
+            event.currentTarget.play().catch(() => {
+              // Browser may reject explicit play() while autoplay is already in flight.
+              // Do not exit immediately, ended/error/fallback will drive lifecycle.
+            })
           }}
-          onEnded={() => {
-            if (hasTriggeredExitRef.current) return
-            hasTriggeredExitRef.current = true
-            exitTimerRef.current = window.setTimeout(() => {
-              setPhase('exit')
-            }, 2000)
+          onPlaying={markPlaybackStarted}
+          onEnded={triggerExit}
+          onError={() => {
+            clearErrorExitTimer()
+            errorExitTimerRef.current = window.setTimeout(() => {
+              triggerExit()
+            }, VIDEO_ERROR_EXIT_GRACE_MS)
           }}
         />
       </motion.div>

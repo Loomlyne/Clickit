@@ -59,7 +59,7 @@ export async function LandingHero() {
       <div className="relative flex min-h-dvh items-end px-4 pt-28 pb-16 sm:px-6 md:px-10 md:pb-20">
         <div className="w-full max-w-[560px]">
           <Image
-            src="/brand/cit-story.png"
+            src="/brand/Clickit_final_logo.svg"
             alt="Clickit Story"
             width={280}
             height={72}
