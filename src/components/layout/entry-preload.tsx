@@ -18,12 +18,14 @@ const entryPreloadConfig = {
 const enterDuration = 0.9
 const exitDuration = 0.9
 const playRetryMs = 250
-const startupFallbackMs = 4500
-const videoSafetyExitMs = 9000
+const enterFallbackMs = 1100
+const startupFallbackMs = 3000
+const hardReleaseMs = 7000
 
 export function EntryPreload() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const hasStartedVideoRef = useRef(false)
+  const [videoStarted, setVideoStarted] = useState(false)
   const [phase, setPhase] = useState<PreloadPhase>('entering')
   const [mediaType, setMediaType] = useState<MediaType>(
     entryPreloadConfig.mediaType
@@ -45,6 +47,24 @@ export function EntryPreload() {
       document.documentElement.style.overflow = previousHtmlOverflow
     }
   }, [phase])
+
+  useEffect(() => {
+    const enterTimer = window.setTimeout(() => {
+      setPhase((currentPhase) =>
+        currentPhase === 'entering' ? 'playing' : currentPhase
+      )
+    }, enterFallbackMs)
+    const releaseTimer = window.setTimeout(() => {
+      setPhase((currentPhase) =>
+        currentPhase === 'done' ? currentPhase : 'exiting'
+      )
+    }, hardReleaseMs)
+
+    return () => {
+      window.clearTimeout(enterTimer)
+      window.clearTimeout(releaseTimer)
+    }
+  }, [])
 
   useEffect(() => {
     if (phase !== 'playing' || mediaType !== 'image') {
@@ -69,6 +89,7 @@ export function EntryPreload() {
     }
 
     hasStartedVideoRef.current = false
+    setVideoStarted(false)
     video.currentTime = 0
 
     const switchToImageFallback = () => {
@@ -89,6 +110,7 @@ export function EntryPreload() {
         .play()
         .then(() => {
           hasStartedVideoRef.current = true
+          setVideoStarted(true)
         })
         .catch(() => {})
     }
@@ -100,14 +122,10 @@ export function EntryPreload() {
         switchToImageFallback()
       }
     }, startupFallbackMs)
-    const safetyExitTimer = window.setTimeout(() => {
-      setPhase('exiting')
-    }, videoSafetyExitMs)
 
     return () => {
       window.clearInterval(retryTimer)
       window.clearTimeout(fallbackTimer)
-      window.clearTimeout(safetyExitTimer)
     }
   }, [mediaSrc, mediaType, phase])
 
@@ -147,37 +165,56 @@ export function EntryPreload() {
       }}
       onAnimationComplete={handleAnimationComplete}
     >
-      {phase !== 'entering' &&
-        (mediaType === 'video' ? (
+      {mediaType === 'video' ? (
+        <>
           <video
             ref={videoRef}
-            className="pointer-events-none h-full w-full object-cover"
+            className={`pointer-events-none h-full w-full object-cover transition-opacity duration-200 ${
+              phase === 'entering' ? 'opacity-0' : 'opacity-100'
+            }`}
             src={mediaSrc}
             muted
             playsInline
-            autoPlay
+            autoPlay={false}
             controls={false}
             disablePictureInPicture
             preload="auto"
             tabIndex={-1}
             onPlaying={() => {
               hasStartedVideoRef.current = true
+              setVideoStarted(true)
+            }}
+            onTimeUpdate={(event) => {
+              if (event.currentTarget.currentTime > 0) {
+                hasStartedVideoRef.current = true
+                setVideoStarted(true)
+              }
             }}
             onEnded={() => setPhase('exiting')}
             onError={handleVideoError}
           />
-        ) : (
-          <div className="relative h-28 w-72 sm:h-36 sm:w-96">
-            <Image
-              src={mediaSrc}
-              alt={entryPreloadConfig.imageAlt ?? ''}
-              fill
-              priority
-              sizes="(min-width: 640px) 384px, 288px"
-              className="object-contain"
-            />
-          </div>
-        ))}
+          {!videoStarted && phase !== 'entering' ? (
+            <PreloadImage src={entryPreloadConfig.imageFallbackSrc} />
+          ) : null}
+        </>
+      ) : (
+        <PreloadImage src={mediaSrc} />
+      )}
     </motion.div>
+  )
+}
+
+function PreloadImage({ src }: { src: string }) {
+  return (
+    <div className="absolute left-1/2 top-1/2 h-28 w-72 -translate-x-1/2 -translate-y-1/2 sm:h-36 sm:w-96">
+      <Image
+        src={src}
+        alt={entryPreloadConfig.imageAlt ?? ''}
+        fill
+        priority
+        sizes="(min-width: 640px) 384px, 288px"
+        className="object-contain"
+      />
+    </div>
   )
 }
