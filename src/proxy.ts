@@ -143,10 +143,10 @@ export const config = {
     /*
      * Catch-all for everything else, excluding:
      * - _next/static, _next/image, favicon.ico
-     * - Static assets (.svg, .png, .jpg, .jpeg, .gif, .webp)
+     * - Static assets (.svg, .png, .jpg, .jpeg, .gif, .webp, .mp4, .webm, .mov, .m4v)
      * /api/* and /auth/callback are NOT excluded here — proxy.ts handles them
      * inline so Supabase session cookies refresh on API + OAuth boundaries.
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm|mov|m4v)$).*)',
   ],
 }
