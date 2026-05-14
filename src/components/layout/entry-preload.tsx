@@ -169,7 +169,7 @@ export function EntryPreload() {
         <>
           <video
             ref={videoRef}
-            className={`pointer-events-none h-full w-full object-cover transition-opacity duration-200 ${
+            className={`pointer-events-none h-auto max-h-[70svh] w-[70vw] max-w-[70vw] object-contain transition-opacity duration-200 ${
               phase === 'entering' ? 'opacity-0' : 'opacity-100'
             }`}
             src={mediaSrc}
@@ -206,13 +206,13 @@ export function EntryPreload() {
 
 function PreloadImage({ src }: { src: string }) {
   return (
-    <div className="absolute left-1/2 top-1/2 h-28 w-72 -translate-x-1/2 -translate-y-1/2 sm:h-36 sm:w-96">
+    <div className="absolute left-1/2 top-1/2 aspect-video w-[70vw] max-w-[70vw] -translate-x-1/2 -translate-y-1/2">
       <Image
         src={src}
         alt={entryPreloadConfig.imageAlt ?? ''}
         fill
         priority
-        sizes="(min-width: 640px) 384px, 288px"
+        sizes="70vw"
         className="object-contain"
       />
     </div>
