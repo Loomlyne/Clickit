@@ -116,7 +116,6 @@ export function EntryPreload() {
     })
   }, [
     phase,
-    prefersReducedMotion,
     runPreload,
     clearErrorExitTimer,
     clearFallbackTimer,
