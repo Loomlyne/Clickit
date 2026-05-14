@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, useReducedMotion } from 'motion/react'
+import { motion } from 'motion/react'
 import {
   useCallback,
   useEffect,
@@ -12,19 +12,18 @@ import {
 
 const ease = [0.22, 1, 0.36, 1] as const
 
-const VIDEO_FALLBACK_EXIT_MS = 2400
-const VIDEO_START_GRACE_MS = 1200
-const REDUCED_MOTION_EXIT_MS = 680
+const VIDEO_FALLBACK_EXIT_MS = 4200
+const VIDEO_START_GRACE_MS = 2200
 const VIDEO_ERROR_EXIT_GRACE_MS = 360
 
 let hasShownPreloadThisDocument = false
 
 export function EntryPreload() {
-  const prefersReducedMotion = useReducedMotion()
   const [runPreload, setRunPreload] = useState<boolean | null>(null)
   const [phase, setPhase] = useState<'enter' | 'play' | 'exit' | 'done'>(
     'enter'
   )
+  const [isVideoReady, setIsVideoReady] = useState(false)
   const phaseRef = useRef(phase)
   phaseRef.current = phase
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -87,17 +86,8 @@ export function EntryPreload() {
 
   useEffect(() => {
     if (runPreload !== true) return
-    if (!prefersReducedMotion) return
-    const timer = window.setTimeout(() => {
-      triggerExit()
-    }, REDUCED_MOTION_EXIT_MS)
-    return () => window.clearTimeout(timer)
-  }, [prefersReducedMotion, runPreload, triggerExit])
-
-  useEffect(() => {
-    if (runPreload !== true) return
-    if (prefersReducedMotion) return
     if (phase !== 'play') return
+    if (!isVideoReady) return
 
     const video = videoRef.current
     if (!video) {
@@ -112,11 +102,7 @@ export function EntryPreload() {
 
     video.muted = true
     video.controls = false
-    if (video.readyState === 0) {
-      video.load()
-    } else {
-      video.currentTime = 0
-    }
+    video.currentTime = 0
 
     startGraceTimerRef.current = window.setTimeout(() => {
       if (!hasPlaybackStartedRef.current) triggerExit()
@@ -135,6 +121,7 @@ export function EntryPreload() {
     clearErrorExitTimer,
     clearFallbackTimer,
     clearStartGraceTimer,
+    isVideoReady,
     triggerExit,
   ])
 
@@ -171,7 +158,7 @@ export function EntryPreload() {
   if (phase === 'done') return null
 
   const overlayTransition = {
-    duration: prefersReducedMotion ? 0.32 : phase === 'exit' ? 0.98 : 0.68,
+    duration: phase === 'exit' ? 0.98 : 0.68,
     ease,
   }
 
@@ -179,17 +166,11 @@ export function EntryPreload() {
     <motion.div
       aria-hidden="true"
       className="pointer-events-none fixed inset-0 z-[100] overflow-hidden bg-black"
-      initial={
-        prefersReducedMotion ? { opacity: 1 } : { y: '100%', opacity: 1 }
-      }
+      initial={{ y: '100%', opacity: 1 }}
       animate={
         phase === 'exit'
-          ? prefersReducedMotion
-            ? { opacity: 0 }
-            : { y: '-100%', opacity: 0 }
-          : prefersReducedMotion
-            ? { opacity: 1 }
-            : { y: '0%', opacity: 1 }
+          ? { y: '-100%', opacity: 0 }
+          : { y: '0%', opacity: 1 }
       }
       transition={overlayTransition}
       onAnimationComplete={() => {
@@ -198,7 +179,7 @@ export function EntryPreload() {
           return
         }
 
-        if (phaseRef.current === 'enter' && !prefersReducedMotion) {
+        if (phaseRef.current === 'enter') {
           setPhase('play')
         }
       }}
@@ -207,18 +188,15 @@ export function EntryPreload() {
         className="pointer-events-none absolute inset-0"
         initial={{
           opacity: 0,
-          scale: prefersReducedMotion ? 1 : 0.9,
+          scale: 0.9,
         }}
         animate={
           phase === 'exit'
-            ? {
-                opacity: prefersReducedMotion ? 0 : 1,
-                scale: prefersReducedMotion ? 1 : 1,
-              }
+            ? { opacity: 1, scale: 1 }
             : { opacity: phase === 'play' ? 1 : 0, scale: 1 }
         }
         transition={{
-          duration: prefersReducedMotion ? 0.28 : 0.22,
+          duration: 0.22,
           ease,
         }}
       >
@@ -231,6 +209,12 @@ export function EntryPreload() {
           controls={false}
           disablePictureInPicture
           className="pointer-events-none absolute inset-0 h-full w-full object-contain"
+          onLoadedData={() => {
+            setIsVideoReady(true)
+          }}
+          onCanPlay={() => {
+            setIsVideoReady(true)
+          }}
           onPlaying={markPlaybackStarted}
           onEnded={triggerExit}
           onError={() => {
