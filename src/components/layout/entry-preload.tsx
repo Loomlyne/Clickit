@@ -9,7 +9,7 @@ type MediaType = 'video' | 'image'
 
 const entryPreloadConfig = {
   mediaType: 'video' as MediaType,
-  src: '/brand/clickit-preloader.mp4',
+  src: 'https://lajguozmtissnnfccmej.supabase.co/storage/v1/object/public/site-assets/brand/clickit-preloader.mp4?v=logo-animation-20260514',
   imageAlt: 'Clickit',
   imageHoldMs: 5000,
   imageFallbackSrc: '/brand/Clickit_final_logo.svg',
@@ -18,6 +18,8 @@ const entryPreloadConfig = {
 const enterDuration = 0.9
 const exitDuration = 0.9
 const playRetryMs = 250
+const startupFallbackMs = 4500
+const videoSafetyExitMs = 9000
 
 export function EntryPreload() {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -69,6 +71,15 @@ export function EntryPreload() {
     hasStartedVideoRef.current = false
     video.currentTime = 0
 
+    const switchToImageFallback = () => {
+      if (!entryPreloadConfig.imageFallbackSrc) {
+        return
+      }
+
+      setMediaType('image')
+      setMediaSrc(entryPreloadConfig.imageFallbackSrc)
+    }
+
     const playVideo = () => {
       if (hasStartedVideoRef.current) {
         return
@@ -84,8 +95,20 @@ export function EntryPreload() {
 
     playVideo()
     const retryTimer = window.setInterval(playVideo, playRetryMs)
+    const fallbackTimer = window.setTimeout(() => {
+      if (!hasStartedVideoRef.current) {
+        switchToImageFallback()
+      }
+    }, startupFallbackMs)
+    const safetyExitTimer = window.setTimeout(() => {
+      setPhase('exiting')
+    }, videoSafetyExitMs)
 
-    return () => window.clearInterval(retryTimer)
+    return () => {
+      window.clearInterval(retryTimer)
+      window.clearTimeout(fallbackTimer)
+      window.clearTimeout(safetyExitTimer)
+    }
   }, [mediaSrc, mediaType, phase])
 
   if (phase === 'done') {
@@ -132,11 +155,14 @@ export function EntryPreload() {
             src={mediaSrc}
             muted
             playsInline
-            autoPlay={false}
+            autoPlay
             controls={false}
             disablePictureInPicture
             preload="auto"
             tabIndex={-1}
+            onPlaying={() => {
+              hasStartedVideoRef.current = true
+            }}
             onEnded={() => setPhase('exiting')}
             onError={handleVideoError}
           />
