@@ -13,6 +13,7 @@ import {
 const ease = [0.22, 1, 0.36, 1] as const
 
 const VIDEO_FALLBACK_EXIT_MS = 2400
+const VIDEO_START_GRACE_MS = 1200
 const REDUCED_MOTION_EXIT_MS = 680
 const VIDEO_ERROR_EXIT_GRACE_MS = 360
 
@@ -21,13 +22,23 @@ let hasShownPreloadThisDocument = false
 export function EntryPreload() {
   const prefersReducedMotion = useReducedMotion()
   const [runPreload, setRunPreload] = useState<boolean | null>(null)
-  const [phase, setPhase] = useState<'enter' | 'exit' | 'done'>('enter')
+  const [phase, setPhase] = useState<'enter' | 'play' | 'exit' | 'done'>(
+    'enter'
+  )
   const phaseRef = useRef(phase)
   phaseRef.current = phase
+  const videoRef = useRef<HTMLVideoElement | null>(null)
   const hasTriggeredExitRef = useRef(false)
   const hasPlaybackStartedRef = useRef(false)
   const fallbackTimerRef = useRef<number | null>(null)
+  const startGraceTimerRef = useRef<number | null>(null)
   const errorExitTimerRef = useRef<number | null>(null)
+
+  const clearStartGraceTimer = useCallback(() => {
+    if (startGraceTimerRef.current === null) return
+    window.clearTimeout(startGraceTimerRef.current)
+    startGraceTimerRef.current = null
+  }, [])
 
   const clearFallbackTimer = useCallback(() => {
     if (fallbackTimerRef.current === null) return
@@ -44,19 +55,21 @@ export function EntryPreload() {
   const triggerExit = useCallback(() => {
     if (hasTriggeredExitRef.current) return
     hasTriggeredExitRef.current = true
+    clearStartGraceTimer()
     clearFallbackTimer()
     clearErrorExitTimer()
     setPhase('exit')
-  }, [clearErrorExitTimer, clearFallbackTimer])
+  }, [clearErrorExitTimer, clearFallbackTimer, clearStartGraceTimer])
 
   const markPlaybackStarted = useCallback(() => {
     if (hasPlaybackStartedRef.current) return
     hasPlaybackStartedRef.current = true
+    clearStartGraceTimer()
     clearFallbackTimer()
     fallbackTimerRef.current = window.setTimeout(() => {
       triggerExit()
     }, VIDEO_FALLBACK_EXIT_MS)
-  }, [clearFallbackTimer, triggerExit])
+  }, [clearFallbackTimer, clearStartGraceTimer, triggerExit])
 
   useLayoutEffect(() => {
     if (hasShownPreloadThisDocument) {
@@ -82,11 +95,56 @@ export function EntryPreload() {
   }, [prefersReducedMotion, runPreload, triggerExit])
 
   useEffect(() => {
+    if (runPreload !== true) return
+    if (prefersReducedMotion) return
+    if (phase !== 'play') return
+
+    const video = videoRef.current
+    if (!video) {
+      triggerExit()
+      return
+    }
+
+    hasPlaybackStartedRef.current = false
+    clearStartGraceTimer()
+    clearFallbackTimer()
+    clearErrorExitTimer()
+
+    video.muted = true
+    video.controls = false
+    if (video.readyState === 0) {
+      video.load()
+    } else {
+      video.currentTime = 0
+    }
+
+    startGraceTimerRef.current = window.setTimeout(() => {
+      if (!hasPlaybackStartedRef.current) triggerExit()
+    }, VIDEO_START_GRACE_MS)
+
+    video.play().catch(() => {
+      clearStartGraceTimer()
+      startGraceTimerRef.current = window.setTimeout(() => {
+        if (!hasPlaybackStartedRef.current) triggerExit()
+      }, VIDEO_START_GRACE_MS)
+    })
+  }, [
+    phase,
+    prefersReducedMotion,
+    runPreload,
+    clearErrorExitTimer,
+    clearFallbackTimer,
+    clearStartGraceTimer,
+    triggerExit,
+  ])
+
+  useEffect(() => {
     return () => {
+      clearStartGraceTimer()
       clearFallbackTimer()
       clearErrorExitTimer()
     }
-  }, [clearErrorExitTimer, clearFallbackTimer])
+  }, [clearErrorExitTimer, clearFallbackTimer, clearStartGraceTimer])
 
   const isVisible = useMemo(
     () => runPreload === true && phase !== 'done',
@@ -137,6 +195,11 @@ export function EntryPreload() {
       onAnimationComplete={() => {
         if (phaseRef.current === 'exit') {
           setPhase('done')
+          return
+        }
+
+        if (phaseRef.current === 'enter' && !prefersReducedMotion) {
+          setPhase('play')
         }
       }}
     >
@@ -152,29 +215,22 @@ export function EntryPreload() {
                 opacity: prefersReducedMotion ? 0 : 1,
                 scale: prefersReducedMotion ? 1 : 1,
               }
-            : { opacity: 1, scale: 1 }
+            : { opacity: phase === 'play' ? 1 : 0, scale: 1 }
         }
         transition={{
-          duration: prefersReducedMotion ? 0.28 : 0.86,
+          duration: prefersReducedMotion ? 0.28 : 0.22,
           ease,
         }}
       >
         <video
+          ref={videoRef}
           src="/brand/logo-animation.mp4"
-          autoPlay
           muted
           playsInline
           preload="auto"
           controls={false}
           disablePictureInPicture
           className="pointer-events-none absolute inset-0 h-full w-full object-contain"
-          onLoadedData={(event) => {
-            markPlaybackStarted()
-            event.currentTarget.play().catch(() => {
-              // Browser may reject explicit play() while autoplay is already in flight.
-              // Do not exit immediately, ended/error/fallback will drive lifecycle.
-            })
-          }}
           onPlaying={markPlaybackStarted}
           onEnded={triggerExit}
           onError={() => {
