@@ -22,15 +22,30 @@ const enterFallbackMs = 1100
 const startupFallbackMs = 3000
 const hardReleaseMs = 7000
 
+let hasShownEntryPreloadThisDocument = false
+
 export function EntryPreload() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const hasStartedVideoRef = useRef(false)
+  const shouldShowRef = useRef(!hasShownEntryPreloadThisDocument)
   const [videoStarted, setVideoStarted] = useState(false)
-  const [phase, setPhase] = useState<PreloadPhase>('entering')
+  const [phase, setPhase] = useState<PreloadPhase>(
+    shouldShowRef.current ? 'entering' : 'done'
+  )
   const [mediaType, setMediaType] = useState<MediaType>(
     entryPreloadConfig.mediaType
   )
   const [mediaSrc, setMediaSrc] = useState(entryPreloadConfig.src)
+
+  useEffect(() => {
+    if (shouldShowRef.current) {
+      const frame = window.requestAnimationFrame(() => {
+        hasShownEntryPreloadThisDocument = true
+      })
+
+      return () => window.cancelAnimationFrame(frame)
+    }
+  }, [])
 
   useEffect(() => {
     if (phase === 'done') {
@@ -206,7 +221,7 @@ export function EntryPreload() {
 
 function PreloadImage({ src }: { src: string }) {
   return (
-    <div className="absolute left-1/2 top-1/2 aspect-video w-[70vw] max-w-[70vw] -translate-x-1/2 -translate-y-1/2">
+    <div className="absolute top-1/2 left-1/2 aspect-video w-[70vw] max-w-[70vw] -translate-x-1/2 -translate-y-1/2">
       <Image
         src={src}
         alt={entryPreloadConfig.imageAlt ?? ''}
