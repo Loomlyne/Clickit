@@ -12,7 +12,11 @@ interface ShortsOverlayProps {
   onClose: () => void
 }
 
-export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlayProps) {
+export function ShortsOverlay({
+  shorts,
+  startIndex = 0,
+  onClose,
+}: ShortsOverlayProps) {
   const t = useTranslations('watch')
   const tCommon = useTranslations('common')
   const [idx, setIdx] = useState(startIndex)
@@ -31,8 +35,10 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
-      else if ((e.key === 'ArrowDown' || e.key === 'ArrowRight') && hasNext) goNext()
-      else if ((e.key === 'ArrowUp' || e.key === 'ArrowLeft') && hasPrev) goPrev()
+      else if ((e.key === 'ArrowDown' || e.key === 'ArrowRight') && hasNext)
+        goNext()
+      else if ((e.key === 'ArrowUp' || e.key === 'ArrowLeft') && hasPrev)
+        goPrev()
       else if (e.key === ' ') {
         e.preventDefault()
         setPaused((value) => !value)
@@ -95,7 +101,9 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
   }, [])
 
   // Touch swipe
-  const onTouchStart = (e: React.TouchEvent) => { touchStart.current = e.touches[0].clientY }
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStart.current = e.touches[0].clientY
+  }
   const onTouchEnd = (e: React.TouchEvent) => {
     if (touchStart.current == null) return
     const dy = e.changedTouches[0].clientY - touchStart.current
@@ -115,15 +123,22 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
     >
       {/* Ambient backdrop */}
       <div
-        className="absolute inset-0 bg-cover bg-center blur-[60px] scale-110 opacity-30"
-        style={{ backgroundImage: current.thumbnailUrl ? `url(${current.thumbnailUrl})` : undefined }}
+        className="absolute inset-0 scale-110 bg-cover bg-center opacity-30 blur-[60px]"
+        style={{
+          backgroundImage: current.thumbnailUrl
+            ? `url(${current.thumbnailUrl})`
+            : undefined,
+        }}
       />
       <div className="absolute inset-0 bg-black/80" />
 
       {/* Pre-warm adjacent shorts so arrow/swipe navigation is instant.
           Hidden offscreen iframes load YouTube player JS + initial chunks
           for prev/next videos while the user watches the current one. */}
-      <div aria-hidden className="pointer-events-none fixed top-0 left-0 h-px w-px overflow-hidden opacity-0">
+      <div
+        aria-hidden
+        className="pointer-events-none fixed top-0 left-0 h-px w-px overflow-hidden opacity-0"
+      >
         {hasPrev && (
           <iframe
             key={`prewarm-prev-${shorts[idx - 1].youtubeVideoId}`}
@@ -143,23 +158,40 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
       </div>
 
       {/* Top bar */}
-      <div className="absolute top-0 inset-x-0 z-10 flex items-center justify-between px-6 pb-4 pt-[max(env(safe-area-inset-top),16px)]">
+      <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-6 pt-[max(env(safe-area-inset-top),16px)] pb-4">
         <div className="flex items-center gap-3">
-          <span className="mono text-[10px] px-2 py-0.5 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-sm">SHORTS</span>
-          <span className="mono text-[var(--text-dim)]">{idx + 1} / {shorts.length}</span>
+          <span className="mono rounded-sm bg-[var(--primary)] px-2 py-0.5 text-[10px] text-[var(--primary-foreground)]">
+            SHORTS
+          </span>
+          <span className="mono text-[var(--text-dim)]">
+            {idx + 1} / {shorts.length}
+          </span>
         </div>
         <button
           onClick={onClose}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line-2)] text-[var(--text)] transition-colors hover:bg-white/10"
           aria-label={tCommon('close')}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
         </button>
       </div>
 
-      <div className="absolute left-4 right-4 top-[calc(max(env(safe-area-inset-top),16px)+52px)] z-10 flex gap-1 md:left-8 md:right-8">
+      <div className="absolute top-[calc(max(env(safe-area-inset-top),16px)+52px)] right-4 left-4 z-10 flex gap-1 md:right-8 md:left-8">
         {shorts.map((s, i) => (
-          <div key={s.id} className="h-0.5 flex-1 overflow-hidden rounded-full bg-white/18">
+          <div
+            key={s.id}
+            className="h-0.5 flex-1 overflow-hidden rounded-full bg-white/18"
+          >
             <div
               className="h-full bg-[var(--primary)] transition-[width] duration-100"
               style={{ width: `${i < idx ? 100 : i === idx ? progress : 0}%` }}
@@ -171,18 +203,29 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
       {/* Prev arrow — desktop only */}
       {hasPrev && (
         <button
-          className="absolute left-6 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--line-2)] bg-black/40 text-white/80 backdrop-blur-md transition-all duration-200 hover:scale-110 hover:border-white/40 hover:bg-white/10 hover:text-white lg:left-10 lg:flex"
+          className="absolute top-1/2 left-6 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--line-2)] bg-black/40 text-white/80 backdrop-blur-md transition-all duration-200 hover:scale-110 hover:border-white/40 hover:bg-white/10 hover:text-white lg:left-10 lg:flex"
           onClick={goPrev}
           aria-label={t('previousShort')}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
         </button>
       )}
 
       {/* Main card — YouTube Short embed */}
       <div className="flex w-full max-w-[380px] flex-col items-center gap-3 px-4 lg:px-0">
         <div
-          className="relative w-full overflow-hidden rounded-[20px] shadow-[0_40px_120px_rgba(0,0,0,0.6)]"
+          className="relative w-full overflow-hidden rounded-[10px] shadow-[0_40px_120px_rgba(0,0,0,0.6)]"
           style={{ aspectRatio: '9/16' }}
         >
           <iframe
@@ -194,37 +237,11 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
             title={current.title}
           />
 
-          {hasPrev && (
-            <button
-              type="button"
-              className="absolute inset-y-0 left-0 z-20 w-1/3 bg-transparent"
-              onClick={goPrev}
-              aria-label={t('previousShort')}
-            >
-              <span className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/35 text-white/75 opacity-0 backdrop-blur-md transition-opacity hover:opacity-100 lg:left-4">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-              </span>
-            </button>
-          )}
-
-          {hasNext && (
-            <button
-              type="button"
-              className="absolute inset-y-0 right-0 z-20 w-1/3 bg-transparent"
-              onClick={goNext}
-              aria-label={t('nextShort')}
-            >
-              <span className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/35 text-white/75 opacity-0 backdrop-blur-md transition-opacity hover:opacity-100 lg:right-4">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-              </span>
-            </button>
-          )}
-
-          <div className="pointer-events-none absolute right-0 top-0 z-20 h-full w-8 bg-gradient-to-l from-black/55 to-transparent" />
-          <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 h-12 bg-gradient-to-t from-black/72 to-transparent" />
+          <div className="pointer-events-none absolute top-0 right-0 z-20 h-full w-8 bg-gradient-to-l from-black/55 to-transparent" />
+          <div className="pointer-events-none absolute right-0 bottom-0 left-0 z-20 h-12 bg-gradient-to-t from-black/72 to-transparent" />
 
           {/* Bottom info overlay */}
-          <div className="pointer-events-none absolute bottom-4 left-4 right-4 z-10">
+          <div className="pointer-events-none absolute right-4 bottom-4 left-4 z-10">
             <div className="mb-2 flex items-center gap-2.5">
               <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[var(--bg-3)] text-[11px] font-medium text-white">
                 {current.thumbnailUrl ? (
@@ -240,35 +257,98 @@ export function ShortsOverlay({ shorts, startIndex = 0, onClose }: ShortsOverlay
                 )}
               </div>
               <span className="mono text-[11px] text-white/80">
-                {current.channelName || current.title.toLowerCase().replace(/[^a-z]/g, '').slice(0, 14)}
+                {current.channelName ||
+                  current.title
+                    .toLowerCase()
+                    .replace(/[^a-z]/g, '')
+                    .slice(0, 14)}
               </span>
               <button className="pointer-events-auto rounded-full bg-white px-2 py-1 text-[10px] font-medium text-black">
                 Follow
               </button>
             </div>
-            <div className="mb-1 font-[family-name:var(--font-display)] text-[16px] leading-tight text-white drop-shadow-lg">{current.title}</div>
+            <div className="mb-1 font-[family-name:var(--font-display)] text-[16px] leading-tight text-white drop-shadow-lg">
+              {current.title}
+            </div>
             {current.genre && (
               <div className="mt-1.5 flex items-center gap-2">
-                <span className="mono text-[10px] text-white/50">{current.genre}</span>
+                <span className="mono text-[10px] text-white/50">
+                  {current.genre}
+                </span>
               </div>
             )}
           </div>
         </div>
+        {(hasPrev || hasNext) && (
+          <div className="flex items-center justify-center gap-3 lg:hidden">
+            <button
+              type="button"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--line-2)] bg-black/45 text-white/85 backdrop-blur-md transition-colors hover:bg-white/10 disabled:pointer-events-none disabled:opacity-30"
+              onClick={goPrev}
+              disabled={!hasPrev}
+              aria-label={t('previousShort')}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--line-2)] bg-black/45 text-white/85 backdrop-blur-md transition-colors hover:bg-white/10 disabled:pointer-events-none disabled:opacity-30"
+              onClick={goNext}
+              disabled={!hasNext}
+              aria-label={t('nextShort')}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Next arrow — desktop only */}
+      {/* Next arrow */}
       {hasNext && (
         <button
-          className="absolute right-6 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--line-2)] bg-black/40 text-white/80 backdrop-blur-md transition-all duration-200 hover:scale-110 hover:border-white/40 hover:bg-white/10 hover:text-white lg:right-10 lg:flex"
+          className="absolute top-1/2 right-6 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--line-2)] bg-black/40 text-white/80 backdrop-blur-md transition-all duration-200 hover:scale-110 hover:border-white/40 hover:bg-white/10 hover:text-white lg:right-10 lg:flex"
           onClick={goNext}
           aria-label={t('nextShort')}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M9 6l6 6-6 6" />
+          </svg>
         </button>
       )}
 
       {/* Hint — adapts to viewport */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 mono text-[10px] text-white/30">
+      <div className="mono absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-white/30">
         <span className="lg:hidden">{t('shortsMobileHint')}</span>
         <span className="hidden lg:inline">{t('shortsDesktopHint')}</span>
       </div>
