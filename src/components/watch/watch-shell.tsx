@@ -95,6 +95,34 @@ export function WatchShell({
   const locale = useLocale()
   const t = useTranslations('watch')
 
+  useEffect(() => {
+    const marker = 'clickitWatchShell'
+    const baseMarker = 'clickitWatchBase'
+    const state = window.history.state ?? {}
+
+    if (!state?.[marker]) {
+      window.history.replaceState(
+        { ...state, [baseMarker]: true },
+        '',
+        window.location.href
+      )
+      window.history.pushState(
+        { ...state, [marker]: true },
+        '',
+        window.location.href
+      )
+    }
+
+    function handlePopState() {
+      if (window.location.pathname.includes('/watch/')) {
+        router.replace(`/series/${show.slug}`)
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [router, show.slug])
+
   // episodeId must be currentEpisode.id (state), NOT episode.id (initial prop).
   // Plan 02 updates currentEpisode before calling loadVideoById so the hook's
   // save closure targets the new episode immediately.
@@ -191,7 +219,11 @@ export function WatchShell({
       startSeconds: 0,
     })
     // 5. Sync URL without triggering a Next.js re-render
-    window.history.replaceState(null, '', `/${locale}/watch/${newEpisode.id}`)
+    window.history.replaceState(
+      { ...(window.history.state ?? {}), clickitWatchShell: true },
+      '',
+      `/${locale}/watch/${newEpisode.id}`
+    )
   }
 
   // Stable callback for AutoplayOverlay, useCallback prevents the overlay's
