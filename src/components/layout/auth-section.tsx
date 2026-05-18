@@ -75,7 +75,7 @@ export function AuthSection({ initialUser, isLanding, layout = 'default' }: Auth
     await supabase.auth.signOut()
     setUser(null)
     setIsAdmin(false)
-    router.push('/watch')
+    router.replace('/watch')
     router.refresh()
   }
 

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -13,6 +14,7 @@ import { Separator } from '@/components/ui/separator'
 import { AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { mapAuthError } from '@/lib/auth-errors'
+import { getSafeAuthNextPath } from '@/lib/auth-navigation'
 
 const loginSchema = z.object({
   email: z.string().email('emailInvalid'),
@@ -31,6 +33,7 @@ export function LoginForm() {
   const t = useTranslations('auth')
   const tErrors = useTranslations('errors')
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [serverError, setServerError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [mode, setMode] = useState<'login' | 'forgot'>('login')
@@ -66,7 +69,12 @@ export function LoginForm() {
     const isAdmin = config?.admin_user_id === authData.user?.id
 
     toast.success(t('welcomeBack'))
-    router.push(isAdmin ? '/admin' : '/watch')
+    router.replace(
+      getSafeAuthNextPath(
+        searchParams.get('next'),
+        isAdmin ? '/admin' : '/watch'
+      )
+    )
     router.refresh()
   }
 

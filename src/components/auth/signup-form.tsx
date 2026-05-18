@@ -67,7 +67,7 @@ export function SignupForm() {
     }
 
     toast.success(t('accountCreated'))
-    router.push('/watch')
+    router.replace('/watch')
     router.refresh()
   }
 

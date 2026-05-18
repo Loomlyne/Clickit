@@ -1,10 +1,13 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 
+import { redirect } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
 import { AuthPanel } from '@/components/auth/auth-panel'
 import { BotIdInit } from '@/components/auth/botid-init'
 import { getFeaturedShows } from '@/lib/queries'
+import { createClient } from '@/lib/supabase/server'
+import { getSafeAuthNextPath } from '@/lib/auth-navigation'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('common')
@@ -14,11 +17,28 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default async function AuthPage() {
-  const [shows, t] = await Promise.all([
+export default async function AuthPage({
+  searchParams,
+  params,
+}: {
+  searchParams?: Promise<{ next?: string }>
+  params: Promise<{ locale: string }>
+}) {
+  const supabase = await createClient()
+  const [shows, t, authResult, query, routeParams] = await Promise.all([
     getFeaturedShows(),
     getTranslations('auth'),
+    supabase.auth.getUser(),
+    searchParams,
+    params,
   ])
+  if (authResult.data.user) {
+    redirect({
+      href: getSafeAuthNextPath(query?.next, '/watch'),
+      locale: routeParams.locale,
+    })
+  }
+
   const backdrop = shows[1]?.heroImageUrl || shows[0]?.posterUrl
 
   return (

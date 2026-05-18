@@ -28,7 +28,7 @@ export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: Profil
     setSigningOut(true)
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push('/watch')
+    router.replace('/watch')
     router.refresh()
   }
 
