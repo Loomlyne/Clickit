@@ -17,30 +17,33 @@ Viewers enter the platform, discover a show, pick an episode, and watch immediat
 
 The platform is live with the full viewer experience (cinematic home page, series browsing, watch page with autoplay, personalization) and admin dashboard (show/season/episode CRUD, artwork upload, archive management). All 15 CIT programs are seeded. Content is served from Supabase with Postgres FTS search and RLS security.
 
-## Current Milestone: v2.2 Immersive Watch
+## Current Milestone: v2.3 Safe Ownership Transfer
 
-**Goal:** Rebuild the watch page as a fullscreen-first experience — video fills the entire viewport on load with zero UI chrome visible; scrolling/swiping up from the bottom edge reveals an episode tray showing all episodes in the season.
+**Goal:** Transfer Clickit to another person's GitHub, Vercel, Supabase, and domain ownership without downtime, broken auth, lost storage files, or missing production secrets.
 
-**User framing (verbatim):** "i want the video to open on full screen from the start and nothing will appear. but also when i am watching the video on full screen and i scroll from down to up then the next episodes of the show will appear"
+**User framing:** "make a steps milestones like a new project to get this done the correct way... if i didnt get the correct details it will not move the next step"
 
-**Target features:**
-- Watch route in its own `(watch)/` route group — no Navbar, Footer, Silk background, or MarqueeTicker
-- Video fills 100dvw × 100dvh on load (`h-dvh` + `min-h-svh`, not `100vh`)
-- Auto-hide top chrome (back button, title, S/E badge, watchlist/like/share) — 3s idle fade
-- Edge-anchored prev/next arrows, fade with chrome
-- Persistent 24px peek handle at viewport bottom (show name + episode counter)
-- Vaul-based bottom sheet with 3 snap points (peek / 50dvh / 95dvh)
-- Tray: season selector tabs + scrollable vertical episode list (thumb + S/E + title + duration + progress bar)
-- Player keeps playing while tray open; `loadVideoById()` for episode switches (no iframe remount)
+**Transfer rule:** The milestone is gated. If required details are missing, the next phase does not start.
 
-**Stack additions:** Zero. All capabilities in existing stack (motion, vaul/shadcn Drawer, CSS dvh).
+**Target phases:**
+- Phase 35: Ownership intake and transfer packet
+- Phase 36: GitHub handoff
+- Phase 37: Supabase migration
+- Phase 38: Vercel migration
+- Phase 39: Domain cutover
+- Phase 40: Final verification and access cleanup
+
+**Safety constraints:**
+- Old production remains online until the recipient-owned production passes verification.
+- Secrets are entered directly into service dashboards or a password manager, never chat or git.
+- DNS moves last, only after temporary Vercel URL verification passes.
+- Rollback records and old account access stay available through the agreed rollback window.
 
 **Explicit exclusions:**
-- Custom video scrubber (YouTube ToS)
-- Hiding YouTube native controls (ToS violation)
-- Tray covering the player (ToS: can't obscure controls)
-- Swipe-left/right for next episode (iOS swipe-back collision)
-- Ambient glow, PiP, Theater Mode (deferred to v2.3)
+- Feature changes during transfer
+- Rebuilding architecture
+- Deleting old accounts before rollback expires
+- Sharing service-role keys in chat
 
 ## Requirements
 
@@ -68,11 +71,14 @@ The platform is live with the full viewer experience (cinematic home page, serie
 - ✓ Catalog-aware empty states and browse redirect — v1.0
 - ✓ Profile page with watchlist preview and watch history — v1.0
 
-### Active (v2.2 — in progress)
+### Active (v2.3, blocked on required details)
 
-- [ ] Watch Route Isolation & Fullscreen Shell (Phase 32) — WATCH-01..06
-- [ ] Auto-Hide Chrome Layer (Phase 33) — CHROME-01, CHROME-02
-- [ ] Episode Tray (Phase 34) — TRAY-01..07
+- [ ] Ownership Intake and Transfer Packet (Phase 35), GATE-01..04, OWN-01..04
+- [ ] GitHub Handoff (Phase 36), GH-01..04
+- [ ] Supabase Migration (Phase 37), SB-01..06
+- [ ] Vercel Migration (Phase 38), VC-01..05
+- [ ] Domain Cutover (Phase 39), DNS-01..04
+- [ ] Final Verification and Access Cleanup (Phase 40), VERIFY-01..05
 
 ### Validated (v1.1)
 
@@ -231,4 +237,4 @@ This document evolves at phase transitions and milestone boundaries.
 5. All milestone decisions added to Key Decisions
 
 ---
-*Last updated: 2026-05-05 — v2.2 Immersive Watch started, 3 phases (32–34), 15 requirements, roadmap ready*
+*Last updated: 2026-05-18, v2.3 Safe Ownership Transfer started, 6 gated phases (35-40), blocked on required recipient and transfer details*

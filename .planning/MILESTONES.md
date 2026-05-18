@@ -57,3 +57,29 @@
 **Audit:** `.planning/milestones/v2.2-MILESTONE-AUDIT.md`
 
 ---
+
+## v2.3 Safe Ownership Transfer (Started: 2026-05-18)
+
+**Scope:** Transfer Clickit to another person's GitHub, Vercel, Supabase, and domain ownership without downtime or missing secrets.
+**Planned phases:** 6 phases, 24 requirements
+**Status:** Blocked on required recipient and transfer details
+
+**Gate policy:**
+
+1. No phase starts until its required details are filled.
+2. No destructive account transfer happens before rollback exists.
+3. No Supabase migration starts before recipient project, admin user, and secret handoff path are confirmed.
+4. No Vercel cutover starts before env vars and recipient GitHub access are confirmed.
+5. No DNS cutover happens before temporary URL verification passes.
+
+**Planned outcomes:**
+
+1. Recipient can own and deploy from GitHub.
+2. Recipient Supabase contains schema, data, storage, auth settings, RLS, and admin access.
+3. Recipient Vercel project builds and runs against recipient Supabase.
+4. Production domain moves only after the new stack works on temporary URLs.
+5. Old owner access is reduced only after final verification and rollback window.
+
+**Archive:** `.planning/milestones/v2.3-ROADMAP.md`, `.planning/milestones/v2.3-REQUIREMENTS.md`
+
+---

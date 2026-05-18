@@ -1,87 +1,65 @@
 ---
 gsd_state_version: 1.0
-milestone: all
-milestone_name: All tracked milestones
-status: complete
-stopped_at: all tracked GSD phases marked complete; production deploy handled in closeout turn
-last_updated: "2026-05-06T09:00:30Z"
-last_activity: 2026-05-06, v2.1 stale tracking closed and v2.2 completed
+milestone: v2.3
+milestone_name: Safe Ownership Transfer
+status: blocked_on_required_details
+stopped_at: phase 35 intake gate, required recipient and transfer details missing
+last_updated: "2026-05-18T00:00:00Z"
+last_activity: 2026-05-18, safe transfer milestone created with hard gates
 progress:
-  total_phases: 31
-  completed_phases: 31
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
+  total_phases: 6
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-24)
+See: `.planning/PROJECT.md`
 
-**Core value:** Viewers enter, discover a show, pick an episode, watch immediately, premium streaming experience for CIT originals.
-**Current focus:** all tracked GSD phases complete.
+**Core value:** Viewers enter, discover a show, pick an episode, and watch immediately. Transfer work must preserve that live experience while ownership moves.
+**Current focus:** v2.3 Safe Ownership Transfer.
 
 ## Current Position
 
-Phase: all tracked phases, COMPLETE
-Plan: all tracked plans complete
-Status: Milestone complete
-Last activity: 2026-05-06, v2.1 and v2.2 closeout finished
+Phase: 35, Ownership Intake and Transfer Packet
+Status: Blocked on required details
+Reason: recipient account identities, transfer model, maintenance window, rollback window, and secret handoff method must be provided before any account or production changes.
 
-## Roadmap Summary (v2.2)
+## Current Gate
 
-v2.1 and v2.2 are both complete.
+Required before moving forward:
+
+- Recipient legal or business name
+- Recipient email
+- GitHub username or organization
+- Vercel account or team slug
+- Supabase organization
+- Domain registrar account owner
+- Secret handoff method outside chat
+- Transfer model
+- Maintenance window
+- Rollback window
+- Final approver
+
+## Roadmap Summary
 
 | Phase | Scope | Status |
 |-------|-------|--------|
-| 28 | Contact and Notification Infrastructure | Complete |
-| 29 | CTA and Route Repair | Complete |
-| 30 | Company Pages | Complete |
-| 31 | Verification and Live Audit | Complete |
-| 32 | Watch Route Isolation & Fullscreen Shell | Complete |
-| 33 | Auto-Hide Chrome Layer | Complete |
-| 34 | Episode Tray | Complete |
+| 35 | Ownership Intake and Transfer Packet | Blocked on required details |
+| 36 | GitHub Handoff | Pending |
+| 37 | Supabase Migration | Pending |
+| 38 | Vercel Migration | Pending |
+| 39 | Domain Cutover | Pending |
+| 40 | Final Verification and Access Cleanup | Pending |
 
-## Traceability (v2.2)
+## Rules
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| WATCH-01 | Phase 32 | Static verified, human browser check remains |
-| WATCH-02 | Phase 32 | Static verified, human browser check remains |
-| WATCH-03 | Phase 32 | Verified |
-| WATCH-04 | Phase 32 | Verified |
-| WATCH-05 | Phase 32 | Static verified, human browser check remains |
-| WATCH-06 | Phase 32 | Static verified, live Supabase check remains |
-| CHROME-01 | Phase 33 | Verified |
-| CHROME-02 | Phase 33 | Verified |
-| TRAY-01 | Phase 34 | Static verified |
-| TRAY-02 | Phase 34 | Static verified, drag check remains |
-| TRAY-03 | Phase 34 | Static verified, browser layout check remains |
-| TRAY-04 | Phase 34 | Verified |
-| TRAY-05 | Phase 34 | Verified |
-| TRAY-06 | Phase 34 | Static verified, iframe identity check remains |
-| TRAY-07 | Phase 34 | Not present in roadmap success criteria |
-
-## Accumulated Context
-
-### v2.2 architecture decisions
-
-- `[locale]/(watch)/watch/[episodeId]` uses its own route group with no viewer chrome.
-- `WatchShell` owns the fullscreen shell, YouTube player, chrome overlay, and tray state.
-- Episode switching uses `loadVideoById()` through the existing `handleEpisodeSwitch()` path.
-- The tray is Vaul based, always mounted, and uses snap points `24px`, `0.5`, and `0.95`.
-- Player and tray are siblings. The player is squeezed with a changing bottom offset.
-- Chrome starts hidden on entry and stays visible while YouTube is paused.
-
-## Verification
-
-- `npm exec tsc -- --noEmit` passed.
-- `npm run lint` was started, produced no diagnostics, and was stopped after the known local stall recurred, matching the known Clickit ESLint package stall pattern.
-- `npm run dev` stalled before binding a port, so local browser smoke testing was blocked in this environment.
-
-## Session Continuity
-
-Last session: 2026-05-06
-Stopped at: all tracked GSD phases complete, production deploy handled in closeout turn
+- No destructive transfer before rollback exists.
+- No Supabase migration before recipient project and admin user are confirmed.
+- No Vercel production cutover before preview works against recipient Supabase.
+- No domain cutover before temporary URL verification passes.
+- No secrets in chat or git.

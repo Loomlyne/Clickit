@@ -8,6 +8,7 @@
 - ✅ **v2.0 Full Visual Redesign** -- Phases 18-27 (completed 2026-04-28)
 - ✅ **v2.1 UX Fixes** -- Phases 28-31 completed 2026-05-06
 - ✅ **v2.2 Immersive Watch** -- Phases 32-34 completed 2026-05-06
+- **v2.3 Safe Ownership Transfer**: Phases 35-40 planned; blocked on required recipient and transfer details
 
 ## Phases
 
@@ -64,6 +65,15 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 - [x] **Phase 32: Watch Route Isolation & Fullscreen Shell** -- Move watch into `(watch)/` route group; video fills 100dvw × 100dvh on entry with zero chrome; YouTube IFrame API stays alive across episode switches (completed 2026-05-06)
 - [x] **Phase 33: Auto-Hide Chrome Layer** -- Top overlay (back/title/badge/actions) and edge prev/next arrows fade in on interaction, fade out after 3s idle, never block YouTube native controls (completed 2026-05-05)
 - [x] **Phase 34: Episode Tray** -- Persistent 24px peek handle plus Vaul bottom sheet with 3 snap points (peek/half/full); season selector tabs + vertical episode list; tap navigates without remounting the player (completed 2026-05-06)
+
+### v2.3 Safe Ownership Transfer: Phases 35-40
+
+- [ ] **Phase 35: Ownership Intake and Transfer Packet**: Confirm recipient identities, transfer model, maintenance window, rollback window, secret handoff method, and current production inventory before any account changes
+- [ ] **Phase 36: GitHub Handoff**: Give recipient working code ownership while preserving the original repo as rollback
+- [ ] **Phase 37: Supabase Migration**: Recreate schema, data, storage, auth settings, admin user, and RLS in recipient Supabase
+- [ ] **Phase 38: Vercel Migration**: Deploy recipient Vercel project from recipient GitHub against recipient Supabase using temporary URLs first
+- [ ] **Phase 39: Domain Cutover**: Move production domain only after temporary URL verification passes and DNS rollback records are captured
+- [ ] **Phase 40: Final Verification and Access Cleanup**: Verify viewer, auth, admin, uploads, storage, cron, and ownership before reducing old-owner access
 
 ## Phase Details
 
@@ -273,11 +283,25 @@ Phases 20, 21, 22, 23 may run in parallel after Phase 19 lands (independent page
 
 Phase 32 is serial first. Phases 33 and 34 both depend on 32 but are largely independent surfaces (chrome overlay vs. bottom sheet). 34 references 33's interaction patterns (idle timer aware peek handle), so prefer serial 32 → 33 → 34 unless plan-phase splits cleanly.
 
+## Dependency Graph (v2.3)
+
+```
+35 (Ownership Intake)
+  -> 36 (GitHub Handoff)
+  -> 37 (Supabase Migration)
+  -> 38 (Vercel Migration)
+  -> 39 (Domain Cutover)
+  -> 40 (Final Verification)
+```
+
+No phase runs in parallel. Each phase is blocked until its required details are provided.
+
 ## Progress
 
 **Execution Order:**
 v2.0: 18 -> 19 -> 20/21/22/23 (parallel eligible) -> 24 -> 25/26 (parallel eligible) -> 27
 v2.2: 32 -> 33 -> 34
+v2.3: 35 -> 36 -> 37 -> 38 -> 39 -> 40
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -313,3 +337,9 @@ v2.2: 32 -> 33 -> 34
 | 32. Watch Route Isolation & Fullscreen Shell | v2.2 | 2/2 | Complete | 2026-05-06 |
 | 33. Auto-Hide Chrome Layer | v2.2 | 2/2 | Complete   | 2026-05-05 |
 | 34. Episode Tray | v2.2 | 1/1 | Complete | 2026-05-06 |
+| 35. Ownership Intake and Transfer Packet | v2.3 | 0/1 | Blocked on required details | - |
+| 36. GitHub Handoff | v2.3 | 0/1 | Pending | - |
+| 37. Supabase Migration | v2.3 | 0/1 | Pending | - |
+| 38. Vercel Migration | v2.3 | 0/1 | Pending | - |
+| 39. Domain Cutover | v2.3 | 0/1 | Pending | - |
+| 40. Final Verification and Access Cleanup | v2.3 | 0/1 | Pending | - |

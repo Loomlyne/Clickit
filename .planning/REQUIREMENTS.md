@@ -1,78 +1,94 @@
-# Requirements — v2.2 Immersive Watch
+# Requirements - v2.3 Safe Ownership Transfer
 
-**Milestone:** v2.2
-**Total:** 15 requirements across 3 categories
-**Generated:** 2026-05-05
+**Milestone:** v2.3
+**Total:** 24 requirements across 6 gated phases
+**Generated:** 2026-05-18
+**Mode:** gated handoff, no step advances without required details
 
----
-
-## Watch Player
-
-- [ ] **WATCH-01**: Watch route lives in its own route group (`(watch)/`) — no Navbar, Footer, Silk background, or MarqueeTicker rendered
-- [ ] **WATCH-02**: Video fills 100dvw × 100dvh on load — zero layout chrome visible on entry
-- [ ] **WATCH-03**: `h-dvh` + `min-h-svh` CSS units used (not `100vh`) to prevent iOS Safari toolbar clipping
-- [ ] **WATCH-04**: YouTube `controls=1` — native seek, volume, captions, cast preserved; no custom controls overlay
-- [ ] **WATCH-05**: Episode switches use `player.loadVideoById()` — iframe is never remounted; progress tracking stays live
-- [ ] **WATCH-06**: Continue-watching 10s progress writes work in the fullscreen layout (no regression from existing behavior)
-
-## Auto-Hide Chrome
-
-- [ ] **CHROME-01**: Top overlay (back button, show title, S/E badge, watchlist + like + share) fades in on tap/pointer-move, fades out after 3s idle; uses `pointer-events: none` when hidden so YouTube controls remain tappable
-- [ ] **CHROME-02**: Left/right edge-anchored prev/next episode arrow buttons (positioned at 50% viewport height), fade with chrome, hidden when no prev/next episode exists
-
-## Episode Tray
-
-- [ ] **TRAY-01**: Peek handle (24px pill strip) always visible at viewport bottom — shows show name + episode counter (e.g. "Last Call · Ep 3 of 12") — acts as tap target to open tray on desktop
-- [ ] **TRAY-02**: Swipe-up gesture (mobile) / clicking peek handle (desktop) opens the episode tray; swipe-down or backdrop tap closes it to peek state
-- [ ] **TRAY-03**: Tray has 3 snap points — closed/peek (0%), half (50dvh, 3–4 episode rows visible + player compressed above), full (95dvh, full episode list scrollable)
-- [ ] **TRAY-04**: Tray header shows show title + season selector tabs (all seasons); switching season tab updates the episode list below without page navigation
-- [ ] **TRAY-05**: Episode list is a scrollable vertical list — each row: 16:9 thumbnail, S/E badge, episode title, duration, mini continue-watching progress bar
-- [ ] **TRAY-06**: Currently-playing episode row is visually distinguished (background highlight + indicator)
-- [ ] **TRAY-07**: Tapping any episode row navigates to that episode immediately; tray closes after selection on mobile
+Source of truth: `.planning/milestones/v2.3-REQUIREMENTS.md`
 
 ---
 
-## Future Requirements (Deferred to v2.3)
+## Required Details Gate
 
-- Theater Mode button (requestFullscreen, desktop only — iOS doesn't support on iframes)
-- Ambient brand-color glow behind player (per-show color)
-- Picture-in-picture button (desktop Chrome)
-- Tray snap-point persistence per session (zustand + sessionStorage)
-- Tray episode search/filter (useful when seasons have 50+ episodes)
-- Episode thumbnail prefetch on tray open
+No phase can start until that phase's required details are filled.
 
----
+Minimum details needed before Phase 35:
 
-## Out of Scope
+- Recipient legal or business name
+- Recipient email
+- GitHub username or organization
+- Vercel account or team slug
+- Supabase organization
+- Domain registrar account owner
+- Secret handoff method outside chat
+- Transfer model
+- Maintenance window
+- Rollback window
+- Final approver
 
-| Item | Reason |
-|---|---|
-| Custom video scrubber | YouTube ToS: must not obscure player controls; rebuild cost weeks |
-| Hiding YouTube native controls (`controls=0`) | ToS violation — required minimum functionality |
-| Tray covering the player (overlay pattern) | ToS: any overlay on the iframe is a violation |
-| Swipe-left/right for next episode | Collides with iOS system swipe-back gesture |
-| Comments / reviews inside tray | Out of scope per PROJECT.md; reviews live on series page |
-| Autoplay on page load | YouTube policy — user must initiate first play |
-| Screen orientation lock | Breaks user agency and accessibility |
+## Requirements
 
----
+### Gate Rules
+
+- [ ] **GATE-01**: Every phase starts with a required-details checklist. Missing details stop the phase.
+- [ ] **GATE-02**: No destructive transfer action happens until a tested rollback path exists.
+- [ ] **GATE-03**: New-owner systems are verified with temporary URLs before the production domain moves.
+- [ ] **GATE-04**: Secrets are never shared in chat or committed to git.
+
+### Ownership Intake
+
+- [ ] **OWN-01**: Confirm recipient identity across GitHub, Vercel, Supabase, and domain registrar.
+- [ ] **OWN-02**: Confirm transfer model.
+- [ ] **OWN-03**: Confirm maintenance window, rollback window, and final approver.
+- [ ] **OWN-04**: Inventory current production state.
+
+### GitHub Handoff
+
+- [ ] **GH-01**: Recipient has accepted GitHub access and can clone the repo.
+- [ ] **GH-02**: Recipient can push a harmless branch or transferred repo is visible in their organization.
+- [ ] **GH-03**: Branch protection, secrets, deploy keys, and app permissions are documented or recreated.
+- [ ] **GH-04**: Original repo remains available until new production is verified.
+
+### Supabase Migration
+
+- [ ] **SB-01**: Recipient Supabase project exists and billing state is confirmed.
+- [ ] **SB-02**: Schema, migrations, RLS, functions, triggers, and generated types are migrated.
+- [ ] **SB-03**: Production data is exported and imported with row counts checked.
+- [ ] **SB-04**: Storage buckets, object paths, and bucket privacy settings are migrated.
+- [ ] **SB-05**: Auth settings, redirect URLs, OAuth providers, admin user, and app_config are recreated.
+- [ ] **SB-06**: Old Supabase project stays online during rollback window.
+
+### Vercel Migration
+
+- [ ] **VC-01**: Recipient Vercel project is connected to recipient GitHub repo.
+- [ ] **VC-02**: Env vars are recreated in the correct Vercel scopes.
+- [ ] **VC-03**: Preview deployment builds and loads core pages against recipient Supabase.
+- [ ] **VC-04**: Production deployment reaches Ready before domain changes.
+- [ ] **VC-05**: Cron routes, deployment protection, framework settings, Node version, and aliases match.
+
+### Domain Cutover
+
+- [ ] **DNS-01**: Current DNS records are captured before edits.
+- [ ] **DNS-02**: New Vercel project has the custom domain added and verified.
+- [ ] **DNS-03**: DNS cutover happens only after preview verification passes.
+- [ ] **DNS-04**: Production domain returns 200 for core verification URLs.
+
+### Final Verification
+
+- [ ] **VERIFY-01**: Viewer flow works.
+- [ ] **VERIFY-02**: Auth flow works.
+- [ ] **VERIFY-03**: Admin flow works.
+- [ ] **VERIFY-04**: Supabase data, storage URLs, auth redirects, and Vercel env vars point to recipient-owned accounts.
+- [ ] **VERIFY-05**: Old accounts are kept for rollback, then access is reduced or removed.
 
 ## Traceability
 
 | Requirement | Phase |
 |---|---|
-| WATCH-01 | Phase 32 |
-| WATCH-02 | Phase 32 |
-| WATCH-03 | Phase 32 |
-| WATCH-04 | Phase 32 |
-| WATCH-05 | Phase 32 |
-| WATCH-06 | Phase 32 |
-| CHROME-01 | Phase 33 |
-| CHROME-02 | Phase 33 |
-| TRAY-01 | Phase 34 |
-| TRAY-02 | Phase 34 |
-| TRAY-03 | Phase 34 |
-| TRAY-04 | Phase 34 |
-| TRAY-05 | Phase 34 |
-| TRAY-06 | Phase 34 |
-| TRAY-07 | Phase 34 |
+| GATE-01..04, OWN-01..04 | Phase 35 |
+| GH-01..04 | Phase 36 |
+| SB-01..06 | Phase 37 |
+| VC-01..05 | Phase 38 |
+| DNS-01..04 | Phase 39 |
+| VERIFY-01..05 | Phase 40 |
