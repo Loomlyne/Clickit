@@ -2179,13 +2179,12 @@ export async function updateTopTicker(
         text: row.text.trim(),
         ...(row.tag2?.trim() && { tag2: row.tag2.trim() }),
       }))
-      .filter((row) => row.tag.length > 0 && row.text.length > 0)
+      .filter((row) => row.tag.length > 0 || row.text.length > 0 || (row.tag2 ?? '').length > 0)
 
     if (parsed.enabled && items.length === 0) {
       return {
         success: false,
-        error:
-          'Add at least one ticker line with tag and text, or turn the ticker off.',
+        error: 'Add at least one ticker line, or turn the ticker off.',
       }
     }
 
