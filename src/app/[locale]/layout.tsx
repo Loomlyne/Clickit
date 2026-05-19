@@ -53,7 +53,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: config.siteTitle,
     description:
       config.siteDescription ?? 'Original shows from the UAE - streaming now',
-    icons: config.faviconUrl ? { icon: config.faviconUrl } : undefined,
+    icons: { icon: config.faviconUrl ?? '/favicon.ico' },
     openGraph: config.ogImageUrl
       ? {
           title: config.siteTitle,
