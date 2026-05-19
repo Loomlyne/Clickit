@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getAppConfig } from '@/lib/config'
+import { PLATFORM_MAP } from '@/lib/social-platforms'
 
 export async function Footer() {
   const [{ footer }, t, tNav] = await Promise.all([
@@ -9,6 +10,8 @@ export async function Footer() {
     getTranslations('footer'),
     getTranslations('nav'),
   ])
+
+  const socialLinks = footer.social.filter((s) => s.url.trim() !== '')
 
   return (
     <footer className="relative overflow-hidden border-t border-[var(--line)] bg-[var(--bg-1)]">
@@ -39,6 +42,29 @@ export async function Footer() {
             >
               {t('openContact')}
             </Link>
+
+            {/* Social links */}
+            {socialLinks.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-3">
+                {socialLinks.map((item, i) => {
+                  const meta = PLATFORM_MAP[item.platform]
+                  if (!meta) return null
+                  const Icon = meta.Icon
+                  return (
+                    <a
+                      key={i}
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mono flex items-center gap-1.5 text-[12px] text-[var(--text-dim)] transition-colors hover:text-[var(--text)]"
+                    >
+                      <Icon className="size-3.5 shrink-0" />
+                      {meta.label}
+                    </a>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

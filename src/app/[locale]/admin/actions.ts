@@ -1853,12 +1853,14 @@ const footerSchema = z.object({
       (v) => v === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
       'Invalid email'
     ),
-  social: z.object({
-    instagram: urlOrEmpty,
-    x: urlOrEmpty,
-    youtube: urlOrEmpty,
-    tiktok: urlOrEmpty,
-  }),
+  social: z
+    .array(
+      z.object({
+        platform: z.string().max(40),
+        url: urlOrEmpty,
+      })
+    )
+    .max(20),
   legal: z.object({
     privacy: urlOrEmpty,
     terms: urlOrEmpty,
@@ -1908,8 +1910,7 @@ const featureFlagsSchema = z.object({
 const topTickerItemSchema = z.object({
   tag: z.string().trim().max(24),
   text: z.string().trim().max(240),
-  tag_ar: z.string().trim().max(24).optional(),
-  text_ar: z.string().trim().max(240).optional(),
+  tag2: z.string().trim().max(24).optional(),
 })
 
 const topTickerSchema = z.object({
@@ -2175,8 +2176,7 @@ export async function updateTopTicker(
       .map((row) => ({
         tag: row.tag.trim(),
         text: row.text.trim(),
-        ...(row.tag_ar?.trim() && { tag_ar: row.tag_ar.trim() }),
-        ...(row.text_ar?.trim() && { text_ar: row.text_ar.trim() }),
+        ...(row.tag2?.trim() && { tag2: row.tag2.trim() }),
       }))
       .filter((row) => row.tag.length > 0 && row.text.length > 0)
 

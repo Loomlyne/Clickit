@@ -3,15 +3,20 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-// lucide-react 1.7.0 removed brand-specific icons (Instagram/Twitter/Youtube)
-// for licensing reasons. Use neutral icons for the editor labels — the actual
-// footer still renders custom brand SVG icons.
-import { Loader2, AtSign, PlaySquare, Music2, Camera } from 'lucide-react'
+import { Loader2, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { updateFooterContent } from '@/app/[locale]/admin/actions'
-import type { FooterContent } from '@/lib/config'
+import type { FooterContent, SocialLinkItem } from '@/lib/config'
+import { SOCIAL_PLATFORMS } from '@/lib/social-platforms'
 import { SettingsCard, SettingsField } from './settings-card'
 
 export function FooterEditor({ initial }: { initial: FooterContent }) {
@@ -19,8 +24,33 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
   const [saving, setSaving] = useState(false)
   const t = useTranslations('admin.settings')
 
-  // Stringify for cheap dirty-check — fine at this scale (<1KB of JSON)
   const dirty = JSON.stringify(v) !== JSON.stringify(initial)
+
+  function addRow() {
+    setV((prev) => ({
+      ...prev,
+      social: [
+        ...prev.social,
+        { platform: SOCIAL_PLATFORMS[0].id, url: '' },
+      ],
+    }))
+  }
+
+  function removeRow(index: number) {
+    setV((prev) => ({
+      ...prev,
+      social: prev.social.filter((_, i) => i !== index),
+    }))
+  }
+
+  function updateRow(index: number, patch: Partial<SocialLinkItem>) {
+    setV((prev) => ({
+      ...prev,
+      social: prev.social.map((row, i) =>
+        i === index ? { ...row, ...patch } : row
+      ),
+    }))
+  }
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault()
@@ -69,44 +99,88 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
           </SettingsField>
         </div>
 
+        {/* Social links — dynamic rows */}
         <fieldset className="space-y-3">
           <legend className="text-xs font-medium tracking-[0.16em] text-white/60 uppercase">
             {t('socialLinksHeading')}
           </legend>
-          <div className="grid gap-3 md:grid-cols-2">
-            <SocialInput
-              icon={<Camera className="size-4" />}
-              label="Instagram"
-              value={v.social.instagram}
-              onChange={(value) =>
-                setV({ ...v, social: { ...v.social, instagram: value } })
-              }
-            />
-            <SocialInput
-              icon={<AtSign className="size-4" />}
-              label="X (Twitter)"
-              value={v.social.x}
-              onChange={(value) =>
-                setV({ ...v, social: { ...v.social, x: value } })
-              }
-            />
-            <SocialInput
-              icon={<PlaySquare className="size-4" />}
-              label="YouTube"
-              value={v.social.youtube}
-              onChange={(value) =>
-                setV({ ...v, social: { ...v.social, youtube: value } })
-              }
-            />
-            <SocialInput
-              icon={<Music2 className="size-4" />}
-              label="TikTok"
-              value={v.social.tiktok}
-              onChange={(value) =>
-                setV({ ...v, social: { ...v.social, tiktok: value } })
-              }
-            />
+
+          <div className="space-y-2">
+            {v.social.map((row, index) => {
+              const platform =
+                SOCIAL_PLATFORMS.find((p) => p.id === row.platform) ??
+                SOCIAL_PLATFORMS[0]
+              const Icon = platform.Icon
+              return (
+                <div
+                  key={index}
+                  className="flex items-center gap-2"
+                >
+                  {/* Platform picker */}
+                  <Select
+                    value={row.platform}
+                    onValueChange={(val) => updateRow(index, { platform: val })}
+                  >
+                    <SelectTrigger className="w-[180px] shrink-0 rounded-[12px]">
+                      <SelectValue>
+                        <span className="flex items-center gap-2">
+                          <Icon className="size-4 shrink-0" />
+                          {platform.label}
+                        </span>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SOCIAL_PLATFORMS.map((p) => {
+                        const PIcon = p.Icon
+                        return (
+                          <SelectItem key={p.id} value={p.id}>
+                            <span className="flex items-center gap-2">
+                              <PIcon className="size-4 shrink-0" />
+                              {p.label}
+                            </span>
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
+
+                  {/* URL input */}
+                  <Input
+                    type="url"
+                    value={row.url}
+                    onChange={(e) => updateRow(index, { url: e.target.value })}
+                    placeholder="https://…"
+                    className="min-w-0 flex-1 rounded-[12px]"
+                  />
+
+                  {/* Remove */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 text-white/50 hover:text-red-300"
+                    onClick={() => removeRow(index)}
+                    aria-label="Remove"
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+              )
+            })}
           </div>
+
+          {v.social.length < 20 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-1 rounded-full"
+              onClick={addRow}
+            >
+              <Plus className="mr-1.5 size-3.5" />
+              Add social link
+            </Button>
+          )}
         </fieldset>
 
         <fieldset className="space-y-3">
@@ -155,33 +229,5 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
         </div>
       </form>
     </SettingsCard>
-  )
-}
-
-function SocialInput({
-  icon,
-  label,
-  value,
-  onChange,
-}: {
-  icon: React.ReactNode
-  label: string
-  value: string
-  onChange: (v: string) => void
-}) {
-  return (
-    <label className="space-y-1.5">
-      <span className="flex items-center gap-2 text-xs font-medium tracking-[0.16em] text-white/60 uppercase">
-        {icon}
-        {label}
-      </span>
-      <Input
-        type="url"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={`https://…/${label.toLowerCase().replace(/[^a-z]/g, '')}`}
-        className="rounded-[12px]"
-      />
-    </label>
   )
 }

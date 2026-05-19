@@ -8,16 +8,16 @@ import { createPublicClient } from '@/lib/supabase/public'
 // shape can evolve without migrations, but the app treats them as typed.
 // ---------------------------------------------------------------------------
 
+export type SocialLinkItem = {
+  platform: string
+  url: string
+}
+
 export type FooterContent = {
   tagline: string
   stat: string
   contactEmail: string
-  social: {
-    instagram: string
-    x: string
-    youtube: string
-    tiktok: string
-  }
+  social: SocialLinkItem[]
   legal: {
     privacy: string
     terms: string
@@ -60,8 +60,7 @@ export type FeatureFlags = {
 export type TopTickerItem = {
   tag: string
   text: string
-  tag_ar?: string
-  text_ar?: string
+  tag2?: string
 }
 
 export type TopTickerConfig = {
@@ -104,7 +103,7 @@ export const DEFAULT_FOOTER: FooterContent = {
   tagline: 'Clickit brings original programs from Abu Dhabi to viewers worldwide.',
   stat: '15 original programs',
   contactEmail: '',
-  social: { instagram: '', x: '', youtube: '', tiktok: '' },
+  social: [],
   legal: { privacy: '', terms: '', cookies: '' },
 }
 
@@ -242,18 +241,38 @@ function isObject(v: unknown): v is Record<string, unknown> {
 
 function mergeFooter(v: unknown): FooterContent {
   if (!isObject(v)) return DEFAULT_FOOTER
-  const social = isObject(v.social) ? (v.social as Record<string, unknown>) : {}
   const legal = isObject(v.legal) ? (v.legal as Record<string, unknown>) : {}
+
+  // Migrate old fixed-key format → array
+  let social: SocialLinkItem[] = []
+  if (Array.isArray(v.social)) {
+    social = (v.social as unknown[]).flatMap((item) => {
+      if (
+        isObject(item) &&
+        typeof item.platform === 'string' &&
+        typeof item.url === 'string' &&
+        item.url !== ''
+      ) {
+        return [{ platform: item.platform, url: item.url }]
+      }
+      return []
+    })
+  } else if (isObject(v.social)) {
+    // Old format: { instagram: '...', x: '...', youtube: '...', tiktok: '...' }
+    const old = v.social as Record<string, unknown>
+    const order = ['instagram', 'x', 'youtube', 'tiktok']
+    for (const key of order) {
+      if (typeof old[key] === 'string' && old[key] !== '') {
+        social.push({ platform: key, url: old[key] as string })
+      }
+    }
+  }
+
   return {
     tagline: typeof v.tagline === 'string' ? v.tagline : DEFAULT_FOOTER.tagline,
     stat: typeof v.stat === 'string' ? v.stat : DEFAULT_FOOTER.stat,
     contactEmail: typeof v.contactEmail === 'string' ? v.contactEmail : '',
-    social: {
-      instagram: typeof social.instagram === 'string' ? social.instagram : '',
-      x: typeof social.x === 'string' ? social.x : '',
-      youtube: typeof social.youtube === 'string' ? social.youtube : '',
-      tiktok: typeof social.tiktok === 'string' ? social.tiktok : '',
-    },
+    social,
     legal: {
       privacy: typeof legal.privacy === 'string' ? legal.privacy : '',
       terms: typeof legal.terms === 'string' ? legal.terms : '',
@@ -308,14 +327,12 @@ function mergeTopTicker(v: unknown): TopTickerConfig {
       const textRaw = typeof entry.text === 'string' ? entry.text.trim() : ''
       const tag = tagRaw.slice(0, 24)
       const text = textRaw.slice(0, 240)
-      const tagArRaw = typeof entry.tag_ar === 'string' ? entry.tag_ar.trim() : ''
-      const textArRaw = typeof entry.text_ar === 'string' ? entry.text_ar.trim() : ''
+      const tag2Raw = typeof entry.tag2 === 'string' ? entry.tag2.trim() : ''
       if (tag && text)
         items.push({
           tag,
           text,
-          ...(tagArRaw && { tag_ar: tagArRaw.slice(0, 24) }),
-          ...(textArRaw && { text_ar: textArRaw.slice(0, 240) }),
+          ...(tag2Raw && { tag2: tag2Raw.slice(0, 24) }),
         })
     }
   }

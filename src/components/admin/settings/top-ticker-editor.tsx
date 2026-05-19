@@ -10,13 +10,13 @@ import { updateTopTicker } from '@/app/[locale]/admin/actions'
 import type { TopTickerConfig, TopTickerItem } from '@/lib/config'
 import { SettingsCard, SettingsField } from './settings-card'
 
-const emptyRow = (): TopTickerItem => ({ tag: '', text: '' })
+const emptyRow = (): TopTickerItem => ({ tag: '', text: '', tag2: '' })
 
 export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
   const [enabled, setEnabled] = useState(initial.enabled)
   const [rows, setRows] = useState<TopTickerItem[]>(
     initial.items.length > 0
-      ? initial.items.map((r) => ({ ...r }))
+      ? initial.items.map((r) => ({ ...r, tag2: r.tag2 ?? '' }))
       : [emptyRow()]
   )
   const [saving, setSaving] = useState(false)
@@ -27,12 +27,13 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
     items: initial.items.map((r) => ({
       tag: r.tag.trim(),
       text: r.text.trim(),
+      tag2: (r.tag2 ?? '').trim(),
     })),
   }
   const normalizedDraft = {
     enabled,
     items: rows
-      .map((r) => ({ tag: r.tag.trim(), text: r.text.trim() }))
+      .map((r) => ({ tag: r.tag.trim(), text: r.text.trim(), tag2: (r.tag2 ?? '').trim() }))
       .filter((r) => r.tag.length > 0 || r.text.length > 0),
   }
   const dirty =
@@ -42,7 +43,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
     e.preventDefault()
     setSaving(true)
     const items = rows
-      .map((r) => ({ tag: r.tag.trim(), text: r.text.trim() }))
+      .map((r) => ({ tag: r.tag.trim(), text: r.text.trim(), tag2: r.tag2?.trim() || undefined }))
       .filter((r) => r.tag.length > 0 || r.text.length > 0)
     const result = await updateTopTicker({ enabled, items })
     setSaving(false)
@@ -123,7 +124,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
               className="flex flex-col gap-3 rounded-lg border border-white/8 bg-white/[0.02] p-4"
             >
               <div className="flex flex-col gap-3 md:flex-row md:items-end">
-                <div className="min-w-0 flex-1 md:max-w-[180px]">
+                <div className="min-w-0 flex-1 md:max-w-[160px]">
                   <SettingsField label={t('tagLabel')}>
                     <Input
                       value={row.tag}
@@ -157,6 +158,23 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
                     />
                   </SettingsField>
                 </div>
+                <div className="min-w-0 flex-1 md:max-w-[160px]">
+                  <SettingsField label={t('tagLabel')}>
+                    <Input
+                      value={row.tag2 ?? ''}
+                      maxLength={24}
+                      placeholder={t('tagPlaceholder')}
+                      onChange={(e) =>
+                        setRows((rs) =>
+                          rs.map((x, i) =>
+                            i === index ? { ...x, tag2: e.target.value } : x
+                          )
+                        )
+                      }
+                      className="rounded-[12px] font-[family-name:var(--font-lbc)] font-bold text-sm"
+                    />
+                  </SettingsField>
+                </div>
                 <Button
                   type="button"
                   variant="ghost"
@@ -167,44 +185,6 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
                 >
                   <Trash2 className="size-4" />
                 </Button>
-              </div>
-              <div className="flex flex-col gap-3 md:flex-row md:items-end">
-                <div className="min-w-0 flex-1 md:max-w-[180px]">
-                  <SettingsField label="TAG (AR)">
-                    <Input
-                      dir="rtl"
-                      value={row.tag_ar ?? ''}
-                      maxLength={24}
-                      placeholder="الوسم"
-                      onChange={(e) =>
-                        setRows((rs) =>
-                          rs.map((x, i) =>
-                            i === index ? { ...x, tag_ar: e.target.value } : x
-                          )
-                        )
-                      }
-                      className="rounded-[12px] font-[family-name:var(--font-lbc)] font-bold text-sm"
-                    />
-                  </SettingsField>
-                </div>
-                <div className="min-w-0 flex-[2]">
-                  <SettingsField label="TEXT (AR)">
-                    <Input
-                      dir="rtl"
-                      value={row.text_ar ?? ''}
-                      maxLength={240}
-                      placeholder="النص بالعربية"
-                      onChange={(e) =>
-                        setRows((rs) =>
-                          rs.map((x, i) =>
-                            i === index ? { ...x, text_ar: e.target.value } : x
-                          )
-                        )
-                      }
-                      className="rounded-[12px] font-[family-name:var(--font-lbc)] font-bold"
-                    />
-                  </SettingsField>
-                </div>
               </div>
             </div>
           ))}

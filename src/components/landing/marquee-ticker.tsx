@@ -1,6 +1,5 @@
 'use client'
 
-import { useLocale } from 'next-intl'
 import { usePathname } from '@/i18n/navigation'
 
 import type { TopTickerConfig } from '@/lib/config'
@@ -11,8 +10,6 @@ type MarqueeTickerProps = {
 
 export function MarqueeTicker({ ticker }: MarqueeTickerProps) {
   const pathname = usePathname()
-  const locale = useLocale()
-  const isAr = locale === 'ar'
 
   // Full-bleed landing / portfolio hero — keep ticker off so video isn't clipped
   if (
@@ -36,17 +33,17 @@ export function MarqueeTicker({ ticker }: MarqueeTickerProps) {
             className="flex shrink-0 items-center gap-10 pe-10"
           >
             {ticker.items.map((m, i) => {
-              const displayTag = isAr && m.tag_ar ? m.tag_ar : m.tag
-              const displayText = isAr && m.text_ar ? m.text_ar : m.text
-              const arFont = 'font-[family-name:var(--font-lbc)] font-bold'
+              const lbcBold = 'font-[family-name:var(--font-lbc)] font-bold'
               return (
                 <span
                   key={`${dup}-${i}`}
                   className="flex items-center gap-3"
-                  dir={isAr && (m.tag_ar || m.text_ar) ? 'rtl' : undefined}
                 >
-                  <b className={`${arFont} text-[var(--primary)]`}>◆ {displayTag}</b>
-                  <span className={`${arFont} text-[var(--text-dim)]`}>{displayText}</span>
+                  <b className={`${lbcBold} text-[var(--primary)]`}>◆ {m.tag}</b>
+                  <span className={`${lbcBold} text-[var(--text-dim)]`}>{m.text}</span>
+                  {m.tag2 && (
+                    <b className={`${lbcBold} text-[var(--primary)]`}>{m.tag2} ◆</b>
+                  )}
                 </span>
               )
             })}
