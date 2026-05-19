@@ -11,6 +11,7 @@ import { createPublicClient } from '@/lib/supabase/public'
 export type SocialLinkItem = {
   platform: string
   url: string
+  iconUrl?: string
 }
 
 export type FooterContent = {
@@ -253,7 +254,11 @@ function mergeFooter(v: unknown): FooterContent {
         typeof item.url === 'string' &&
         item.url !== ''
       ) {
-        return [{ platform: item.platform, url: item.url }]
+        return [{
+          platform: item.platform,
+          url: item.url,
+          ...(typeof item.iconUrl === 'string' && item.iconUrl ? { iconUrl: item.iconUrl } : {}),
+        }]
       }
       return []
     })

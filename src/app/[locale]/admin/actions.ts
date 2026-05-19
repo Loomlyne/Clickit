@@ -1858,6 +1858,7 @@ const footerSchema = z.object({
       z.object({
         platform: z.string().max(40),
         url: urlOrEmpty,
+        iconUrl: urlOrEmpty,
       })
     )
     .max(20),
@@ -2299,6 +2300,46 @@ export async function removeSiteImage(
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to remove',
+    }
+  }
+}
+
+export async function uploadSocialIcon(
+  formData: FormData
+): Promise<ActionResult<string>> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    const file = formData.get('file') as File | null
+    if (!file) return { success: false, error: 'No file provided' }
+    if (file.size > 2 * 1024 * 1024) {
+      return { success: false, error: 'Icon must be under 2MB' }
+    }
+
+    const extMap: Record<string, string> = {
+      'image/png': 'png',
+      'image/jpeg': 'jpg',
+      'image/webp': 'webp',
+      'image/svg+xml': 'svg',
+    }
+    const ext = extMap[file.type]
+    if (!ext) return { success: false, error: `Unsupported type: ${file.type}` }
+
+    const path = `settings/social-icons/${Date.now()}.${ext}`
+    const { error: uploadError } = await admin.storage
+      .from('site-assets')
+      .upload(path, file, { upsert: false, contentType: file.type, cacheControl: '31536000' })
+
+    if (uploadError) return { success: false, error: uploadError.message }
+
+    const { data: urlData } = admin.storage.from('site-assets').getPublicUrl(path)
+    return { success: true, data: urlData.publicUrl }
+  } catch (err) {
+    console.error('[admin/actions] uploadSocialIcon failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Upload failed',
     }
   }
 }

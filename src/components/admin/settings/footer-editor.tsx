@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { Loader2, Plus, Trash2 } from 'lucide-react'
+import Image from 'next/image'
+import { Loader2, Plus, Trash2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -14,7 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { updateFooterContent } from '@/app/[locale]/admin/actions'
+import {
+  updateFooterContent,
+  uploadSocialIcon,
+} from '@/app/[locale]/admin/actions'
 import type { FooterContent, SocialLinkItem } from '@/lib/config'
 import { SOCIAL_PLATFORMS } from '@/lib/social-platforms'
 import { SettingsCard, SettingsField } from './settings-card'
@@ -31,7 +35,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
       ...prev,
       social: [
         ...prev.social,
-        { platform: SOCIAL_PLATFORMS[0].id, url: '' },
+        { platform: SOCIAL_PLATFORMS[0].id, url: '', iconUrl: '' },
       ],
     }))
   }
@@ -112,10 +116,14 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
                 SOCIAL_PLATFORMS[0]
               const Icon = platform.Icon
               return (
-                <div
-                  key={index}
-                  className="flex items-center gap-2"
-                >
+                <div key={index} className="flex items-center gap-2">
+                  {/* Icon upload */}
+                  <SocialIconUpload
+                    currentUrl={row.iconUrl ?? ''}
+                    onUploaded={(url) => updateRow(index, { iconUrl: url })}
+                    onRemove={() => updateRow(index, { iconUrl: '' })}
+                  />
+
                   {/* Platform picker */}
                   <Select
                     value={row.platform}
@@ -153,7 +161,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
                     className="min-w-0 flex-1 rounded-[12px]"
                   />
 
-                  {/* Remove */}
+                  {/* Remove row */}
                   <Button
                     type="button"
                     variant="ghost"
@@ -229,5 +237,78 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
         </div>
       </form>
     </SettingsCard>
+  )
+}
+
+function SocialIconUpload({
+  currentUrl,
+  onUploaded,
+  onRemove,
+}: {
+  currentUrl: string
+  onUploaded: (url: string) => void
+  onRemove: () => void
+}) {
+  const [busy, setBusy] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setBusy(true)
+    try {
+      const fd = new FormData()
+      fd.set('file', file)
+      const result = await uploadSocialIcon(fd)
+      if (!result.success) {
+        toast.error(result.error ?? 'Upload failed')
+        return
+      }
+      onUploaded(result.data ?? '')
+    } finally {
+      setBusy(false)
+      if (inputRef.current) inputRef.current.value = ''
+    }
+  }
+
+  return (
+    <div className="shrink-0">
+      {currentUrl ? (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="group relative flex size-9 items-center justify-center overflow-hidden rounded-[8px] border border-white/10 bg-black/30"
+          title="Remove icon"
+        >
+          <Image
+            src={currentUrl}
+            alt="icon"
+            width={24}
+            height={24}
+            unoptimized
+            className="size-6 object-contain transition-opacity group-hover:opacity-20"
+          />
+          <Trash2 className="absolute size-3.5 text-red-300 opacity-0 transition-opacity group-hover:opacity-100" />
+        </button>
+      ) : (
+        <label
+          className="flex size-9 cursor-pointer items-center justify-center rounded-[8px] border border-dashed border-white/20 bg-white/[0.02] text-white/40 transition-colors hover:border-white/30 hover:text-white/60"
+          title="Upload icon"
+        >
+          {busy ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <Upload className="size-3.5" />
+          )}
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            className="hidden"
+            onChange={onFile}
+          />
+        </label>
+      )}
+    </div>
   )
 }

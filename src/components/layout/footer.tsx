@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getAppConfig } from '@/lib/config'
 import { PLATFORM_MAP } from '@/lib/social-platforms'
+import type { SocialLinkItem } from '@/lib/config'
 
 export async function Footer() {
   const [{ footer }, t, tNav] = await Promise.all([
@@ -45,24 +46,10 @@ export async function Footer() {
 
             {/* Social links */}
             {socialLinks.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-3">
-                {socialLinks.map((item, i) => {
-                  const meta = PLATFORM_MAP[item.platform]
-                  if (!meta) return null
-                  const Icon = meta.Icon
-                  return (
-                    <a
-                      key={i}
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mono flex items-center gap-1.5 text-[12px] text-[var(--text-dim)] transition-colors hover:text-[var(--text)]"
-                    >
-                      <Icon className="size-3.5 shrink-0" />
-                      {meta.label}
-                    </a>
-                  )
-                })}
+              <div className="mt-4 flex flex-wrap gap-4">
+                {socialLinks.map((item, i) => (
+                  <SocialIcon key={i} item={item} />
+                ))}
               </div>
             )}
           </div>
@@ -98,5 +85,45 @@ export async function Footer() {
         </div>
       </div>
     </footer>
+  )
+}
+
+function SocialIcon({ item }: { item: SocialLinkItem }) {
+  const meta = PLATFORM_MAP[item.platform]
+  const label = meta?.label ?? item.platform
+
+  if (item.iconUrl) {
+    return (
+      <a
+        href={item.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={label}
+        className="opacity-70 transition-opacity hover:opacity-100"
+      >
+        <Image
+          src={item.iconUrl}
+          alt={label}
+          width={24}
+          height={24}
+          unoptimized
+          className="size-6 object-contain"
+        />
+      </a>
+    )
+  }
+
+  if (!meta) return null
+  const Icon = meta.Icon
+  return (
+    <a
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      className="text-[var(--text-dim)] opacity-70 transition-opacity hover:opacity-100"
+    >
+      <Icon className="size-6" />
+    </a>
   )
 }

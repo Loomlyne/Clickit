@@ -34,7 +34,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
     enabled,
     items: rows
       .map((r) => ({ tag: r.tag.trim(), text: r.text.trim(), tag2: (r.tag2 ?? '').trim() }))
-      .filter((r) => r.tag.length > 0 || r.text.length > 0),
+      .filter((r) => r.tag.length > 0 || r.text.length > 0 || (r.tag2 ?? '').length > 0),
   }
   const dirty =
     JSON.stringify(normalizedDraft) !== JSON.stringify(normalizedInitial)
@@ -44,7 +44,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
     setSaving(true)
     const items = rows
       .map((r) => ({ tag: r.tag.trim(), text: r.text.trim(), tag2: r.tag2?.trim() || undefined }))
-      .filter((r) => r.tag.length > 0 || r.text.length > 0)
+      .filter((r) => r.tag.length > 0 || r.text.length > 0 || (r.tag2?.trim() ?? '').length > 0)
     const result = await updateTopTicker({ enabled, items })
     setSaving(false)
     if (result.success) {
