@@ -48,12 +48,12 @@ export async function LandingHero() {
           <iframe
             src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&cc_load_policy=0`}
             allow="autoplay; encrypted-media"
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+            className="absolute top-0 left-1/2 -translate-x-1/2"
             style={{
-              width: '100vw',
+              width: '177.78dvh',
+              minWidth: '100vw',
               height: '56.25vw',
               minHeight: '100dvh',
-              minWidth: '177.78dvh',
             }}
             title={t('heroBackgroundTitle')}
           />
@@ -78,7 +78,7 @@ export async function LandingHero() {
           <div className="mb-12 md:mb-16">
             <Link
               href={ctaHref}
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-5 py-3 text-[14px] font-medium whitespace-nowrap text-[var(--primary-foreground)] transition-all hover:bg-white sm:px-6 sm:py-3.5 sm:text-[15px]"
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-5 py-3 text-[14px] font-medium uppercase tracking-[0.06em] whitespace-nowrap text-[var(--primary-foreground)] transition-all hover:bg-white sm:px-6 sm:py-3.5 sm:text-[15px]"
             >
               <svg
                 width="16"
