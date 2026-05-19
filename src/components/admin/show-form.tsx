@@ -220,7 +220,10 @@ export function ShowForm({
     const primaryCategoryName = categories.find((category) =>
       data.category_ids.includes(category.id)
     )?.name_en
-    const normalized: ShowFormData & { id?: string } = {
+    const normalized: Omit<ShowFormData, 'genre'> & {
+      genre: string
+      id?: string
+    } = {
       ...data,
       genre: primaryCategoryName ?? data.genre ?? show?.genre ?? '',
       title_ar: data.title_ar || null,
