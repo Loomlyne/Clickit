@@ -6,7 +6,7 @@ import { PLATFORM_MAP } from '@/lib/social-platforms'
 import type { SocialLinkItem } from '@/lib/config'
 
 export async function Footer() {
-  const [{ footer }, t, tNav] = await Promise.all([
+  const [{ footer, ogImageUrl }, t, tNav] = await Promise.all([
     getAppConfig(),
     getTranslations('footer'),
     getTranslations('nav'),
@@ -18,22 +18,14 @@ export async function Footer() {
     <footer className="relative overflow-hidden border-t border-[var(--line)] bg-[var(--bg-1)]">
       {/* Hero wordmark + contact */}
       <div className="relative border-b border-[var(--line)] px-4 pt-[90px] pb-[60px] sm:px-6 md:px-12">
-        {/* Social links — above logo */}
-        {socialLinks.length > 0 && (
-          <div className="mb-8 flex flex-wrap gap-4">
-            {socialLinks.map((item, i) => (
-              <SocialIcon key={i} item={item} />
-            ))}
-          </div>
-        )}
-
         <Link href="/watch" aria-label={tNav('home')} className="block">
           <Image
-            src="/brand/Clickit_final_logo.svg"
+            src={ogImageUrl ?? '/brand/Clickit_final_logo.svg'}
             alt="Clickit"
             width={486}
             height={199}
             className="h-auto w-full max-w-[clamp(200px,42vw,520px)]"
+            unoptimized={!!ogImageUrl}
             priority
           />
         </Link>
@@ -54,6 +46,15 @@ export async function Footer() {
             </Link>
           </div>
         </div>
+
+        {/* Social links — below contact */}
+        {socialLinks.length > 0 && (
+          <div className="mt-10 flex flex-wrap gap-6">
+            {socialLinks.map((item, i) => (
+              <SocialIcon key={i} item={item} />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Bottom bar */}
@@ -104,10 +105,10 @@ function SocialIcon({ item }: { item: SocialLinkItem }) {
         <Image
           src={item.iconUrl}
           alt={label}
-          width={24}
-          height={24}
+          width={32}
+          height={32}
           unoptimized
-          className="size-6 object-contain"
+          className="size-8 object-contain"
         />
       </a>
     )
@@ -123,7 +124,7 @@ function SocialIcon({ item }: { item: SocialLinkItem }) {
       aria-label={label}
       className="text-[var(--text-dim)] opacity-70 transition-opacity hover:opacity-100"
     >
-      <Icon className="size-6" />
+      <Icon className="size-8" />
     </a>
   )
 }

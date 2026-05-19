@@ -20,9 +20,10 @@ import { AuthSection } from './auth-section'
 interface MobileNavProps {
   initialUser?: { id: string; email: string } | null
   liveStreamUrl?: string | null
+  logoUrl?: string | null
 }
 
-export function MobileNav({ initialUser }: MobileNavProps = {}) {
+export function MobileNav({ initialUser, logoUrl }: MobileNavProps = {}) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const t = useTranslations('nav')
@@ -54,11 +55,12 @@ export function MobileNav({ initialUser }: MobileNavProps = {}) {
             className="flex min-h-11 items-center"
           >
             <Image
-              src="/brand/cit-story.png"
+              src={logoUrl ?? '/brand/cit-story.png'}
               alt="Clickit"
               width={214}
               height={145}
-              className="h-8 w-auto"
+              className="h-8 w-auto object-contain"
+              unoptimized={!!logoUrl}
               priority
             />
           </Link>

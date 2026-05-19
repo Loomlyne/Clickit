@@ -65,11 +65,12 @@ export async function LandingHero() {
       <div className="relative flex min-h-dvh items-end px-4 pt-28 pb-16 sm:px-6 md:px-10 md:pb-20">
         <div className="w-full max-w-[560px]">
           <Image
-            src="/brand/Clickit_final_logo.svg"
+            src={config.ogImageUrl ?? '/brand/Clickit_final_logo.svg'}
             alt="Clickit Story"
             width={280}
             height={72}
             priority
+            unoptimized={!!config.ogImageUrl}
             className="mb-6 h-auto w-48 sm:w-56 md:w-64"
           />
           <p className="mb-9 text-[17px] leading-relaxed text-[var(--text-dim)]">

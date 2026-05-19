@@ -34,6 +34,7 @@ export default async function ViewerLayout({
           <Navbar
             initialUser={user ? { id: user.id, email: user.email ?? '' } : null}
             liveStreamUrl={config.liveStreamUrl}
+            logoUrl={config.faviconUrl}
           />
           <div className="pt-16">
             <PageTransition>{children}</PageTransition>

@@ -13,9 +13,10 @@ import { liveNavHref, liveNavIsExternal } from './nav-links'
 interface NavbarProps {
   initialUser?: { id: string; email: string } | null
   liveStreamUrl?: string | null
+  logoUrl?: string | null
 }
 
-export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
+export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
   const pathname = usePathname()
   const locale = useLocale()
   const t = useTranslations('nav')
@@ -78,11 +79,12 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
         className="flex min-h-11 items-center"
       >
         <Image
-          src="/brand/cit-story.png"
+          src={logoUrl ?? '/brand/cit-story.png'}
           alt="Clickit"
           width={214}
           height={145}
-          className="h-8 w-auto"
+          className="h-8 w-auto object-contain"
+          unoptimized={!!logoUrl}
           priority
         />
       </Link>
@@ -253,7 +255,7 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
             AR
           </Link>
         </div>
-        <MobileNav initialUser={initialUser} liveStreamUrl={liveStreamUrl} />
+        <MobileNav initialUser={initialUser} liveStreamUrl={liveStreamUrl} logoUrl={logoUrl} />
       </div>
     </header>
   )
