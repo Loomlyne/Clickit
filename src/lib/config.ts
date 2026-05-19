@@ -11,7 +11,7 @@ import { createPublicClient } from '@/lib/supabase/public'
 export type SocialLinkItem = {
   platform: string
   url: string
-  iconUrl?: string
+  iconUrl: string
 }
 
 export type FooterContent = {
@@ -257,7 +257,7 @@ function mergeFooter(v: unknown): FooterContent {
         return [{
           platform: item.platform,
           url: item.url,
-          ...(typeof item.iconUrl === 'string' && item.iconUrl ? { iconUrl: item.iconUrl } : {}),
+          iconUrl: typeof item.iconUrl === 'string' ? item.iconUrl : '',
         }]
       }
       return []
@@ -268,7 +268,7 @@ function mergeFooter(v: unknown): FooterContent {
     const order = ['instagram', 'x', 'youtube', 'tiktok']
     for (const key of order) {
       if (typeof old[key] === 'string' && old[key] !== '') {
-        social.push({ platform: key, url: old[key] as string })
+        social.push({ platform: key, url: old[key] as string, iconUrl: '' })
       }
     }
   }
