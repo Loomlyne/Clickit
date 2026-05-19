@@ -136,7 +136,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
                           )
                         )
                       }
-                      className="rounded-[12px] font-mono text-sm"
+                      className="rounded-[12px] font-[family-name:var(--font-lbc)] font-bold text-sm"
                     />
                   </SettingsField>
                 </div>
@@ -153,7 +153,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
                           )
                         )
                       }
-                      className="rounded-[12px]"
+                      className="rounded-[12px] font-[family-name:var(--font-lbc)] font-bold"
                     />
                   </SettingsField>
                 </div>
@@ -183,7 +183,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
                           )
                         )
                       }
-                      className="rounded-[12px] font-[family-name:var(--font-ge-ss)] text-sm"
+                      className="rounded-[12px] font-[family-name:var(--font-lbc)] font-bold text-sm"
                     />
                   </SettingsField>
                 </div>
@@ -201,7 +201,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
                           )
                         )
                       }
-                      className="rounded-[12px] font-[family-name:var(--font-ge-ss)]"
+                      className="rounded-[12px] font-[family-name:var(--font-lbc)] font-bold"
                     />
                   </SettingsField>
                 </div>

@@ -38,10 +38,7 @@ export function MarqueeTicker({ ticker }: MarqueeTickerProps) {
             {ticker.items.map((m, i) => {
               const displayTag = isAr && m.tag_ar ? m.tag_ar : m.tag
               const displayText = isAr && m.text_ar ? m.text_ar : m.text
-              const arFont =
-                isAr && (m.tag_ar || m.text_ar)
-                  ? 'font-[family-name:var(--font-lbc)] font-bold'
-                  : 'mono'
+              const arFont = 'font-[family-name:var(--font-lbc)] font-bold'
               return (
                 <span
                   key={`${dup}-${i}`}

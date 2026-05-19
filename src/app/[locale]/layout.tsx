@@ -31,14 +31,6 @@ const lbc = localFont({
   display: 'swap',
 })
 
-const geSS = localFont({
-  src: [
-    { path: '../../fonts/ge-ss-regular.ttf', weight: '400', style: 'normal' },
-    { path: '../../fonts/ge-ss-bold.ttf', weight: '700', style: 'normal' },
-  ],
-  variable: '--font-ge-ss',
-  display: 'swap',
-})
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -114,7 +106,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       dir={dir}
-      className={['dark', geist.variable, lbc.variable, geSS.variable].join(
+      className={['dark', geist.variable, lbc.variable].join(
         ' '
       )}
     >
