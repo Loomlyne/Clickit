@@ -27,7 +27,6 @@ export default async function AdminPage() {
       .from('shows')
       .select('*')
       .eq('archived', false)
-      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false }),
     supabase.from('profiles').select('*').single(),
     supabase
