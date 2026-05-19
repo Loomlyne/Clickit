@@ -18,6 +18,15 @@ export async function Footer() {
     <footer className="relative overflow-hidden border-t border-[var(--line)] bg-[var(--bg-1)]">
       {/* Hero wordmark + contact */}
       <div className="relative border-b border-[var(--line)] px-4 pt-[90px] pb-[60px] sm:px-6 md:px-12">
+        {/* Social links — above logo */}
+        {socialLinks.length > 0 && (
+          <div className="mb-8 flex flex-wrap gap-4">
+            {socialLinks.map((item, i) => (
+              <SocialIcon key={i} item={item} />
+            ))}
+          </div>
+        )}
+
         <Link href="/watch" aria-label={tNav('home')} className="block">
           <Image
             src="/brand/Clickit_final_logo.svg"
@@ -43,15 +52,6 @@ export async function Footer() {
             >
               {t('openContact')}
             </Link>
-
-            {/* Social links */}
-            {socialLinks.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-4">
-                {socialLinks.map((item, i) => (
-                  <SocialIcon key={i} item={item} />
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </div>
