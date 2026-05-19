@@ -23,20 +23,22 @@ export default async function UpdatesPage({
   const showTitle = showSlug ? showSlug.replace(/-/g, ' ') : undefined
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   const defaultEmail = user?.email ?? ''
 
   return (
-    <div className="px-4 pb-16 pt-8 sm:px-6 md:px-12">
-      <div className="mx-auto max-w-3xl rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)] p-6 sm:p-10">
-        <p className="mono mb-4 text-[var(--text-mute)]">
-          {t('eyebrow')}
-        </p>
+    <div className="px-4 pt-8 pb-16 sm:px-6 md:px-12">
+      <div className="mx-auto max-w-3xl rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6 sm:p-10">
+        <p className="mono mb-4 text-[var(--text-mute)]">{t('eyebrow')}</p>
         <h1 className="font-display text-[clamp(34px,6vw,60px)] leading-[0.98] tracking-[-0.04em] text-[var(--text)]">
           {t('heading')}
         </h1>
         <p className="mt-4 max-w-2xl text-[16px] leading-7 text-[var(--text-dim)]">
-          {showTitle ? t('descriptionForShow', { showTitle }) : t('descriptionGeneric')}
+          {showTitle
+            ? t('descriptionForShow', { showTitle })
+            : t('descriptionGeneric')}
         </p>
         <div className="mt-8">
           <NewsletterSignupForm

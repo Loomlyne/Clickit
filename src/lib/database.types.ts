@@ -557,6 +557,7 @@ export type Database = {
           poster_url: string | null
           season_count: number
           slug: string
+          sort_order: number
           status: string
           tagline: string | null
           tagline_ar: string | null
@@ -587,6 +588,7 @@ export type Database = {
           poster_url?: string | null
           season_count?: number
           slug: string
+          sort_order?: number
           status?: string
           tagline?: string | null
           tagline_ar?: string | null
@@ -617,6 +619,7 @@ export type Database = {
           poster_url?: string | null
           season_count?: number
           slug?: string
+          sort_order?: number
           status?: string
           tagline?: string | null
           tagline_ar?: string | null

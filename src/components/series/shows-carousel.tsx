@@ -15,12 +15,21 @@ interface ShowsCarouselProps {
 export function ShowsCarousel({ shows }: ShowsCarouselProps) {
   return (
     <Carousel
-      opts={{ align: 'start', containScroll: 'trimSnaps', dragFree: false, loop: false, slidesToScroll: 1 }}
+      opts={{
+        align: 'start',
+        containScroll: 'trimSnaps',
+        dragFree: false,
+        loop: false,
+        slidesToScroll: 1,
+      }}
       className="mt-8"
     >
       <CarouselContent>
         {shows.map((show) => (
-          <CarouselItem key={show.id} className="basis-1/2 sm:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+          <CarouselItem
+            key={show.id}
+            className="basis-1/2 sm:basis-1/3 lg:basis-1/4 xl:basis-1/5"
+          >
             <PortraitShowCard show={show} />
           </CarouselItem>
         ))}

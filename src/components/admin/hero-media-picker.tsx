@@ -52,8 +52,7 @@ export function HeroMediaPicker({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const t = useTranslations('admin.heroMedia')
 
-  const label =
-    variant === 'desktop' ? t('desktopHero') : t('mobileHero')
+  const label = variant === 'desktop' ? t('desktopHero') : t('mobileHero')
   const imageHint =
     variant === 'desktop' ? t('desktopImageHint') : t('mobileImageHint')
   const videoHint =
@@ -64,9 +63,7 @@ export function HeroMediaPicker({
     const file = e.target.files?.[0]
     if (!file) return
     if (file.size > 10 * 1024 * 1024) {
-      toast.error(
-        t('imageTooLarge')
-      )
+      toast.error(t('imageTooLarge'))
       return
     }
     setUploading(true)
@@ -95,9 +92,7 @@ export function HeroMediaPicker({
     const file = e.target.files?.[0]
     if (!file) return
     if (file.size > 50 * 1024 * 1024) {
-      toast.error(
-        t('videoTooLarge')
-      )
+      toast.error(t('videoTooLarge'))
       return
     }
     setUploading(true)
@@ -110,9 +105,7 @@ export function HeroMediaPicker({
         variant,
       })
       if (!uploadTarget.success || !uploadTarget.data) {
-        toast.error(
-          uploadTarget.error ?? t('uploadFailed')
-        )
+        toast.error(uploadTarget.error ?? t('uploadFailed'))
         return
       }
 
@@ -256,8 +249,7 @@ export function HeroMediaPicker({
             )}
             {m === 'youtube' && (
               <>
-                <LinkIcon className="size-3.5" />{' '}
-                {t('youtubeMode')}
+                <LinkIcon className="size-3.5" /> {t('youtubeMode')}
               </>
             )}
           </button>
@@ -268,9 +260,7 @@ export function HeroMediaPicker({
       {uploading ? (
         <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6">
           <Loader2 className="text-muted-foreground size-5 animate-spin" />
-          <p className="text-muted-foreground text-sm">
-            {t('uploadingVideo')}
-          </p>
+          <p className="text-muted-foreground text-sm">{t('uploadingVideo')}</p>
         </div>
       ) : mode === 'image' ? (
         <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6 transition-colors hover:border-white/20">

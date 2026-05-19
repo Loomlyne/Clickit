@@ -14,12 +14,10 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
-import {
-  AdminPanel,
-  AdminTableShell,
-} from '@/components/admin/admin-shell'
+import { AdminPanel, AdminTableShell } from '@/components/admin/admin-shell'
 import { deleteReview } from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
 
@@ -47,6 +45,9 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingReview, setDeletingReview] = useState<ReviewRow | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [search, setSearch] = useState('')
 
   const filtered = useMemo(() => {
@@ -59,6 +60,30 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
         r.shows?.title.toLowerCase().includes(q)
     )
   }, [reviews, search])
+  const filteredIds = useMemo(() => filtered.map((review) => review.id), [filtered])
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds])
+  const selectedCount = selectedIds.length
+  const allFilteredSelected =
+    filteredIds.length > 0 && filteredIds.every((id) => selectedSet.has(id))
+
+  function toggleReviewSelection(reviewId: string, checked: boolean) {
+    setSelectedIds((current) =>
+      checked
+        ? current.includes(reviewId)
+          ? current
+          : [...current, reviewId]
+        : current.filter((id) => id !== reviewId)
+    )
+  }
+
+  function toggleFilteredSelection(checked: boolean) {
+    setSelectedIds((current) => {
+      if (!checked) return current.filter((id) => !filteredIds.includes(id))
+      const next = new Set(current)
+      for (const id of filteredIds) next.add(id)
+      return Array.from(next)
+    })
+  }
 
   const handleDelete = async () => {
     if (!deletingReview) return
@@ -71,6 +96,24 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
     } else {
       toast.error(result.error || t('toastDeleteFailed'))
     }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return
+    const ids = selectedIds
+    setBulkDeleting(true)
+    for (const id of ids) {
+      const result = await deleteReview(id)
+      if (!result.success) {
+        setBulkDeleting(false)
+        toast.error(result.error || t('toastDeleteFailed'))
+        return
+      }
+    }
+    setBulkDeleting(false)
+    setBulkDeleteDialogOpen(false)
+    setSelectedIds([])
+    toast.success(t('bulkDeletedToast', { count: ids.length }))
   }
 
   const Stars = ({ count }: { count: number }) => (
@@ -97,22 +140,34 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
       <AdminPanel className="p-0">
         <div className="flex flex-col gap-3 border-b border-white/8 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-4 md:px-6">
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+            <h2 className="text-foreground text-lg font-semibold tracking-tight sm:text-xl">
               {tDash('reviews')}
             </h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mt-0.5 text-sm">
               {tDash('totalCountLabel', { count: reviews.length })}
             </p>
           </div>
 
-          <div className="relative w-full min-w-0 sm:w-[320px]">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-            <Input
-              placeholder={t('searchPlaceholder')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <div className="relative w-full min-w-0 sm:w-[320px]">
+              <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+              <Input
+                placeholder={t('searchPlaceholder')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            {selectedCount > 0 && (
+              <Button
+                variant="destructive"
+                onClick={() => setBulkDeleteDialogOpen(true)}
+                className="w-full gap-2 sm:w-auto"
+              >
+                <Trash2 className="size-4" />
+                {t('bulkDeleteButton', { count: selectedCount })}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -133,17 +188,48 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={
+                        allFilteredSelected
+                          ? true
+                          : selectedIds.some((id) => filteredIds.includes(id))
+                            ? 'indeterminate'
+                            : false
+                      }
+                      onCheckedChange={(checked) =>
+                        toggleFilteredSelection(checked === true)
+                      }
+                      aria-label={t('selectAllAria')}
+                    />
+                  </TableHead>
                   <TableHead>{t('colUser')}</TableHead>
                   <TableHead>{t('colShow')}</TableHead>
                   <TableHead>{t('colRating')}</TableHead>
-                  <TableHead className="max-w-[300px]">{t('colReview')}</TableHead>
+                  <TableHead className="max-w-[300px]">
+                    {t('colReview')}
+                  </TableHead>
                   <TableHead>{t('colDate')}</TableHead>
-                  <TableHead className="w-16 text-right">{t('colActions')}</TableHead>
+                  <TableHead className="w-16 text-right">
+                    {t('colActions')}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((r) => (
-                  <TableRow key={r.id}>
+                  <TableRow
+                    key={r.id}
+                    data-state={selectedSet.has(r.id) ? 'selected' : undefined}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedSet.has(r.id)}
+                        onCheckedChange={(checked) =>
+                          toggleReviewSelection(r.id, checked === true)
+                        }
+                        aria-label={t('selectReviewAria')}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bg-3)] text-[10px] font-medium text-[var(--text-dim)]">
@@ -177,8 +263,8 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
                       {new Date(r.created_at).toLocaleDateString(
                         { ar: 'ar-AE', en: 'en-AE' }[locale] ?? 'en-AE',
                         {
-                        month: 'short',
-                        day: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
                         }
                       )}
                     </TableCell>
@@ -209,13 +295,22 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
         onOpenChange={setDeleteDialogOpen}
         title={t('deleteTitle')}
         description={t('deleteDescription', {
-          name:
-            deletingReview?.profiles?.display_name || t('anonymous'),
+          name: deletingReview?.profiles?.display_name || t('anonymous'),
         })}
         confirmLabel={tCommon('delete')}
         destructive
         loading={deleting}
         onConfirm={handleDelete}
+      />
+      <ConfirmDialog
+        open={bulkDeleteDialogOpen}
+        onOpenChange={setBulkDeleteDialogOpen}
+        title={t('bulkDeleteTitle')}
+        description={t('bulkDeleteDescription', { count: selectedCount })}
+        confirmLabel={tCommon('delete')}
+        destructive
+        loading={bulkDeleting}
+        onConfirm={handleBulkDelete}
       />
     </>
   )

@@ -266,7 +266,7 @@ export function WatchShell({
 
       {/* Auto-hide chrome, top overlay strip */}
       <div
-        className={`fixed top-0 right-0 left-0 z-20 flex items-center justify-between border-b border-white/10 bg-zinc-950/90 px-4 pb-8 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.65)] backdrop-blur-md transition-opacity duration-200 ease-in-out [padding-top:max(1rem,env(safe-area-inset-top))] ${chromeClass}`}
+        className={`fixed top-0 right-0 left-0 z-20 flex items-center justify-between border-b border-white/10 bg-zinc-950/90 px-4 [padding-top:max(1rem,env(safe-area-inset-top))] pb-8 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.65)] backdrop-blur-md transition-opacity duration-200 ease-in-out ${chromeClass}`}
         aria-hidden={isIdle}
       >
         {/* Left: back to show */}
@@ -295,7 +295,9 @@ export function WatchShell({
           <button
             onClick={toggleWatchlist}
             className="flex size-8 items-center justify-center text-white/70 transition-colors duration-150 hover:text-white"
-            aria-label={isInList ? t('removeFromWatchlist') : t('addToWatchlist')}
+            aria-label={
+              isInList ? t('removeFromWatchlist') : t('addToWatchlist')
+            }
             aria-pressed={isInList}
             tabIndex={isIdle ? -1 : 0}
           >
@@ -329,7 +331,7 @@ export function WatchShell({
       {currentPrevEpisode && (
         <button
           onClick={() => handleEpisodeSwitch(currentPrevEpisode)}
-          className={`fixed top-1/2 left-3 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-opacity duration-200 ease-in-out ${chromeClass}`}
+          className={`fixed top-1/2 left-3 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-[10px] bg-black/40 backdrop-blur-sm transition-opacity duration-200 ease-in-out ${chromeClass}`}
           aria-label={t('previousEpisode')}
           tabIndex={isIdle ? -1 : 0}
         >
@@ -341,7 +343,7 @@ export function WatchShell({
       {currentNextEpisode && (
         <button
           onClick={() => handleEpisodeSwitch(currentNextEpisode)}
-          className={`fixed top-1/2 right-3 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-opacity duration-200 ease-in-out ${chromeClass}`}
+          className={`fixed top-1/2 right-3 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-[10px] bg-black/40 backdrop-blur-sm transition-opacity duration-200 ease-in-out ${chromeClass}`}
           aria-label={t('nextEpisode')}
           tabIndex={isIdle ? -1 : 0}
         >

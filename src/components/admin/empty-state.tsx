@@ -14,14 +14,16 @@ export function EmptyState({
 }) {
   const t = useTranslations('admin.emptyState')
   return (
-    <div className={`${adminPanelClass} flex flex-col items-center justify-center px-6 py-16 text-center`}>
-      <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+    <div
+      className={`${adminPanelClass} flex flex-col items-center justify-center px-6 py-16 text-center`}
+    >
+      <p className="text-muted-foreground text-xs tracking-[0.24em] uppercase">
         {t('defaultLabel')}
       </p>
-      <h3 className="mt-4 text-[22px] font-semibold tracking-tight text-foreground">
+      <h3 className="text-foreground mt-4 text-[22px] font-semibold tracking-tight">
         {heading}
       </h3>
-      <p className="mt-3 max-w-md text-[15px] leading-7 text-muted-foreground">
+      <p className="text-muted-foreground mt-3 max-w-md text-[15px] leading-7">
         {body}
       </p>
       {action && <div className="mt-6">{action}</div>}

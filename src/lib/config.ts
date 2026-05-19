@@ -60,6 +60,8 @@ export type FeatureFlags = {
 export type TopTickerItem = {
   tag: string
   text: string
+  tag_ar?: string
+  text_ar?: string
 }
 
 export type TopTickerConfig = {
@@ -306,7 +308,15 @@ function mergeTopTicker(v: unknown): TopTickerConfig {
       const textRaw = typeof entry.text === 'string' ? entry.text.trim() : ''
       const tag = tagRaw.slice(0, 24)
       const text = textRaw.slice(0, 240)
-      if (tag && text) items.push({ tag, text })
+      const tagArRaw = typeof entry.tag_ar === 'string' ? entry.tag_ar.trim() : ''
+      const textArRaw = typeof entry.text_ar === 'string' ? entry.text_ar.trim() : ''
+      if (tag && text)
+        items.push({
+          tag,
+          text,
+          ...(tagArRaw && { tag_ar: tagArRaw.slice(0, 24) }),
+          ...(textArRaw && { text_ar: textArRaw.slice(0, 240) }),
+        })
     }
   }
   return {

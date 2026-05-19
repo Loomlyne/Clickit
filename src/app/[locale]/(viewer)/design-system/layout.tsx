@@ -18,17 +18,19 @@ export default function DesignSystemLayout({
   const pathname = usePathname()
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-7xl px-4 pb-20 pt-10 md:px-8">
-        <header className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_28px_100px_rgba(0,0,0,0.28)] md:p-8">
-          <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+    <div className="bg-background min-h-screen">
+      <div className="mx-auto max-w-7xl px-4 pt-10 pb-20 md:px-8">
+        <header className="rounded-[12px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_28px_100px_rgba(0,0,0,0.28)] md:p-8">
+          <p className="text-muted-foreground text-xs tracking-[0.24em] uppercase">
             Clickit Design System
           </p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-foreground mt-3 text-4xl font-semibold tracking-tight">
             Apple restraint. Linear precision.
           </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground md:text-base">
-            Internal reference for the redesign preview. These pages document the actual tokens, spacing rules, and primitives now used across viewer, admin, and shared shells.
+          <p className="text-muted-foreground mt-3 max-w-3xl text-sm leading-7 md:text-base">
+            Internal reference for the redesign preview. These pages document
+            the actual tokens, spacing rules, and primitives now used across
+            viewer, admin, and shared shells.
           </p>
           <nav className="mt-6 flex flex-wrap gap-2">
             {sections.map((section) => (
@@ -38,7 +40,7 @@ export default function DesignSystemLayout({
                 className={`rounded-full px-4 py-2 text-sm transition-all ${
                   pathname === section.href
                     ? 'bg-white text-black shadow-[0_10px_30px_rgba(255,255,255,0.18)]'
-                    : 'border border-white/10 bg-white/[0.03] text-muted-foreground hover:text-foreground'
+                    : 'text-muted-foreground hover:text-foreground border border-white/10 bg-white/[0.03]'
                 }`}
               >
                 {section.label}

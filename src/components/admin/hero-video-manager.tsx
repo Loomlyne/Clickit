@@ -37,9 +37,7 @@ export function HeroVideoManager({
     if (!file) return
 
     if (file.size > 50 * 1024 * 1024) {
-      toast.error(
-        t('videoTooLarge')
-      )
+      toast.error(t('videoTooLarge'))
       return
     }
 
@@ -52,9 +50,7 @@ export function HeroVideoManager({
       })
 
       if (!uploadTarget.success || !uploadTarget.data) {
-        toast.error(
-          uploadTarget.error ?? t('uploadFailed')
-        )
+        toast.error(uploadTarget.error ?? t('uploadFailed'))
         return
       }
 
@@ -109,9 +105,7 @@ export function HeroVideoManager({
     try {
       const result = await setHeroVideoUrl(youtubeInput.trim())
       if (!result.success) {
-        toast.error(
-          result.error ?? t('saveFailed')
-        )
+        toast.error(result.error ?? t('saveFailed'))
         return
       }
       setVideo({ url: youtubeInput.trim(), type: 'youtube' })
@@ -128,9 +122,7 @@ export function HeroVideoManager({
     try {
       const result = await removeHeroVideo()
       if (!result.success) {
-        toast.error(
-          result.error ?? t('removeFailed')
-        )
+        toast.error(result.error ?? t('removeFailed'))
         return
       }
       setVideo(null)
@@ -234,9 +226,7 @@ export function HeroVideoManager({
               <p className="text-muted-foreground text-sm">
                 {t('clickToUploadMp4')}
               </p>
-              <p className="text-muted-foreground text-xs">
-                {t('mp4Hint')}
-              </p>
+              <p className="text-muted-foreground text-xs">{t('mp4Hint')}</p>
               <input
                 ref={inputRef}
                 type="file"

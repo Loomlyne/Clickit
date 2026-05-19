@@ -84,7 +84,11 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
       description={t('genreColorsDescription')}
       action={
         <Button size="sm" onClick={onSave} disabled={!dirty || saving}>
-          {saving ? <Loader2 className="size-4 animate-spin" /> : t('saveButtonShort')}
+          {saving ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            t('saveButtonShort')
+          )}
         </Button>
       }
     >
@@ -105,7 +109,9 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
                     title={p.label}
                     onClick={() => setColor(genre, p.value)}
                     className={`size-6 rounded-full ring-2 ring-offset-2 ring-offset-black transition-all ${
-                      active === p.value ? 'ring-white' : 'ring-transparent hover:ring-white/30'
+                      active === p.value
+                        ? 'ring-white'
+                        : 'ring-transparent hover:ring-white/30'
                     }`}
                     style={{ background: p.value }}
                   />
@@ -114,7 +120,7 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
                   type="button"
                   title={t('clearOverride')}
                   onClick={() => setColor(genre, undefined)}
-                  className={`ms-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider transition-colors ${
+                  className={`ms-1 rounded-full px-2 py-0.5 text-[10px] tracking-wider uppercase transition-colors ${
                     active
                       ? 'bg-white/10 text-white hover:bg-white/20'
                       : 'text-white/30'

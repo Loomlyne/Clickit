@@ -21,9 +21,9 @@ export function CompanyPage({
   ctaHref,
 }: CompanyPageProps) {
   return (
-    <div className="px-4 pb-16 pt-8 sm:px-6 md:px-12">
+    <div className="px-4 pt-8 pb-16 sm:px-6 md:px-12">
       <div className="mx-auto max-w-5xl space-y-10">
-        <section className="rounded-[24px] border border-[var(--line)] bg-[linear-gradient(180deg,var(--bg-1),var(--bg-2))] px-6 py-10 sm:px-10 sm:py-14">
+        <section className="rounded-[12px] border border-[var(--line)] bg-[linear-gradient(180deg,var(--bg-1),var(--bg-2))] px-6 py-10 sm:px-10 sm:py-14">
           <p className="mono mb-4 text-[var(--text-mute)]">{eyebrow}</p>
           <h1 className="font-display max-w-3xl text-[clamp(34px,6vw,68px)] leading-[0.96] tracking-[-0.04em] text-[var(--text)]">
             {title}
@@ -43,7 +43,7 @@ export function CompanyPage({
           {sections.map((section) => (
             <article
               key={section.heading}
-              className="rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)] p-6"
+              className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6"
             >
               <h2 className="font-display text-[24px] tracking-[-0.03em] text-[var(--text)]">
                 {section.heading}

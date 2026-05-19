@@ -26,7 +26,7 @@ export function SeriesDetailContent({
   const currentEpisodes = episodesBySeason[activeSeasonId] ?? []
   return (
     <div className="flex flex-col gap-8 lg:flex-row">
-      <div className="min-w-0 flex-1 rounded-[28px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
+      <div className="min-w-0 flex-1 rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
         {seasons.length > 0 && (
           <SeasonSelector
             seasons={seasons}

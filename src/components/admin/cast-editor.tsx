@@ -7,7 +7,11 @@ import { Plus, Trash2, Loader2, Camera, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { addCastMember, deleteCastMember, uploadCastImage } from '@/app/[locale]/admin/actions'
+import {
+  addCastMember,
+  deleteCastMember,
+  uploadCastImage,
+} from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
 import type { Database } from '@/lib/database.types'
 
@@ -122,10 +126,12 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="text-sm font-medium">{t('heading')}</h3>
-          <p className="text-xs text-muted-foreground">{t('membersCount', { count: cast.length })}</p>
+          <p className="text-muted-foreground text-xs">
+            {t('membersCount', { count: cast.length })}
+          </p>
         </div>
         <Button
           variant="outline"
@@ -148,7 +154,11 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
                   type="button"
                   onClick={() => inputRef.current?.click()}
                   className="group relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--line-2)] transition-all hover:border-[var(--text-mute)]"
-                  style={{ background: imagePreview ? undefined : 'linear-gradient(135deg, rgba(96,115,255,0.85), rgba(46,57,121,0.92))' }}
+                  style={{
+                    background: imagePreview
+                      ? undefined
+                      : 'linear-gradient(135deg, rgba(96,115,255,0.85), rgba(46,57,121,0.92))',
+                  }}
                 >
                   {imagePreview ? (
                     <Image
@@ -175,7 +185,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
                   <button
                     type="button"
                     onClick={clearImage}
-                    className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white transition-colors hover:bg-black"
+                    className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white transition-colors hover:bg-black"
                     aria-label={t('removeImageAria')}
                   >
                     <X className="size-3.5" />
@@ -216,8 +226,16 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleAdd} disabled={!name.trim() || adding}>
-              {adding ? <Loader2 className="size-3.5 animate-spin" /> : t('addMember')}
+            <Button
+              size="sm"
+              onClick={handleAdd}
+              disabled={!name.trim() || adding}
+            >
+              {adding ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                t('addMember')
+              )}
             </Button>
             <Button size="sm" variant="ghost" onClick={resetForm}>
               {tCommon('cancel')}
@@ -250,9 +268,11 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
                   {c.name.slice(0, 2).toUpperCase()}
                 </div>
               )}
-              <div className="text-sm font-medium truncate">{c.name}</div>
+              <div className="truncate text-sm font-medium">{c.name}</div>
               {c.role && (
-                <div className="mono text-[10px] text-[var(--text-mute)] truncate">{c.role}</div>
+                <div className="mono truncate text-[10px] text-[var(--text-mute)]">
+                  {c.role}
+                </div>
               )}
               {/* Delete button */}
               <button
@@ -271,7 +291,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
         </div>
       ) : (
         !formOpen && (
-          <div className="rounded-lg border border-dashed border-white/12 py-8 text-center text-sm text-muted-foreground">
+          <div className="text-muted-foreground rounded-lg border border-dashed border-white/12 py-8 text-center text-sm">
             {t('empty')}
           </div>
         )

@@ -10,11 +10,16 @@ export async function WhySection() {
   ]
 
   return (
-    <section className="mx-auto max-w-[1400px] px-10 py-24 border-t border-[var(--line)]" id="features">
+    <section
+      className="mx-auto max-w-[1400px] border-t border-[var(--line)] px-10 py-24"
+      id="features"
+    >
       <div className="grid grid-cols-1 items-start gap-20 md:grid-cols-2">
         <div>
-          <div className="mono mb-3.5 text-[var(--text-mute)]">{t('whyEyebrow')}</div>
-          <h2 className="font-[family-name:var(--font-display)] text-[clamp(36px,5vw,64px)] font-normal leading-none tracking-[-0.02em]">
+          <div className="mono mb-3.5 text-[var(--text-mute)]">
+            {t('whyEyebrow')}
+          </div>
+          <h2 className="font-[family-name:var(--font-display)] text-[clamp(36px,5vw,64px)] leading-none font-normal tracking-[-0.02em]">
             {t('whyHeading')}
           </h2>
         </div>
@@ -24,12 +29,16 @@ export async function WhySection() {
               key={f.n}
               className="grid grid-cols-[60px_1fr] gap-5 border-b border-[var(--line)] pb-8"
             >
-              <div className="mono text-[13px] text-[var(--primary)]">{f.n}</div>
+              <div className="mono text-[13px] text-[var(--primary)]">
+                {f.n}
+              </div>
               <div>
-                <h3 className="font-[family-name:var(--font-display)] text-[28px] font-normal tracking-[-0.01em] mb-2.5">
+                <h3 className="mb-2.5 font-[family-name:var(--font-display)] text-[28px] font-normal tracking-[-0.01em]">
                   {f.h}
                 </h3>
-                <p className="text-[15px] leading-relaxed text-[var(--text-dim)]">{f.b}</p>
+                <p className="text-[15px] leading-relaxed text-[var(--text-dim)]">
+                  {f.b}
+                </p>
               </div>
             </div>
           ))}

@@ -19,7 +19,13 @@ export function ViewerSilkBackground() {
         height: '100%',
       }}
     >
-      <Silk speed={2.5} scale={1.1} color="#3B82F6" noiseIntensity={1.7} rotation={0} />
+      <Silk
+        speed={2.5}
+        scale={1.1}
+        color="#3B82F6"
+        noiseIntensity={1.7}
+        rotation={0}
+      />
     </div>
   )
 }

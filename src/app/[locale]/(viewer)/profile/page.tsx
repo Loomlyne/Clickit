@@ -9,7 +9,11 @@ import { ProfileHeader } from '@/components/profile/profile-header'
 import { ProfileHistoryRow } from '@/components/profile/profile-history-row'
 import { PortraitShowCard } from '@/components/shows/portrait-show-card'
 import { LanguagePreference } from '@/components/profile/language-preference'
-import { getWatchlistShows, getLikedShows, getRecentlyWatched } from '@/lib/queries'
+import {
+  getWatchlistShows,
+  getLikedShows,
+  getRecentlyWatched,
+} from '@/lib/queries'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('profile')
@@ -21,7 +25,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ProfilePage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
     const locale = await getIntlLocale()
@@ -29,28 +35,33 @@ export default async function ProfilePage() {
   }
 
   const [{ data: profile }, { data: config }] = await Promise.all([
-    supabase.from('profiles').select('display_name, avatar_url').eq('id', user.id).single(),
+    supabase
+      .from('profiles')
+      .select('display_name, avatar_url')
+      .eq('id', user.id)
+      .single(),
     supabase.from('app_config').select('admin_user_id').single(),
   ])
 
   const isAdmin = config?.admin_user_id === user.id
 
   // Fetch personalization data
-  const [watchlistShows, likedShows, recentlyWatched, locale, t, tCommon] = await Promise.all([
-    getWatchlistShows(user.id),
-    getLikedShows(user.id),
-    getRecentlyWatched(user.id),
-    getLocale(),
-    getTranslations('profile'),
-    getTranslations('common'),
-  ])
+  const [watchlistShows, likedShows, recentlyWatched, locale, t, tCommon] =
+    await Promise.all([
+      getWatchlistShows(user.id),
+      getLikedShows(user.id),
+      getRecentlyWatched(user.id),
+      getLocale(),
+      getTranslations('profile'),
+      getTranslations('common'),
+    ])
 
   const displayName = profile?.display_name ?? ''
   const email = user.email ?? ''
 
   return (
     <div className="relative min-h-dvh">
-      <div className="relative z-10 mx-auto w-full max-w-5xl space-y-8 px-6 pb-16 pt-8 md:px-12">
+      <div className="relative z-10 mx-auto w-full max-w-5xl space-y-8 px-6 pt-8 pb-16 md:px-12">
         <ProfileHeader
           displayName={displayName}
           email={email}
@@ -58,14 +69,17 @@ export default async function ProfilePage() {
           isAdmin={isAdmin}
         />
 
-        <div id="account-settings" className="rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
+        <div
+          id="account-settings"
+          className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6"
+        >
           <h3 className="font-display mb-4 text-lg font-semibold tracking-[-0.02em] text-white">
             {t('accountHeading')}
           </h3>
           <ProfileForm displayName={displayName} />
         </div>
 
-        <div className="rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
+        <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
           <h3 className="font-display mb-1 text-lg font-semibold tracking-[-0.02em] text-white">
             {t('languageHeading')}
           </h3>
@@ -75,7 +89,7 @@ export default async function ProfilePage() {
           <LanguagePreference current={locale} />
         </div>
 
-        <div className="rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
+        <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
               {t('myListHeading')}
@@ -88,7 +102,7 @@ export default async function ProfilePage() {
             {watchlistShows.length > 0 && (
               <Link
                 href="/my-list"
-                className="text-sm text-[var(--text-dim)] hover:text-white transition-colors"
+                className="text-sm text-[var(--text-dim)] transition-colors hover:text-white"
               >
                 {t('myListSeeAll')} &rarr;
               </Link>
@@ -105,16 +119,19 @@ export default async function ProfilePage() {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-[var(--text-mute)] py-6 text-center">
+            <p className="py-6 text-center text-sm text-[var(--text-mute)]">
               {t('myListEmpty')}.{' '}
-              <Link href="/watch" className="text-[var(--text-dim)] hover:text-white underline">
+              <Link
+                href="/watch"
+                className="text-[var(--text-dim)] underline hover:text-white"
+              >
                 {tCommon('browseShows')}
               </Link>
             </p>
           )}
         </div>
 
-        <div className="rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
+        <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
               {t('likedHeading')}
@@ -136,13 +153,13 @@ export default async function ProfilePage() {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-[var(--text-mute)] py-6 text-center">
+            <p className="py-6 text-center text-sm text-[var(--text-mute)]">
               {t('likedEmpty')}
             </p>
           )}
         </div>
 
-        <div className="rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
+        <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
           <h3 className="font-display mb-4 text-lg font-semibold tracking-[-0.02em] text-white">
             {t('historyHeading')}
           </h3>
@@ -155,7 +172,7 @@ export default async function ProfilePage() {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-[var(--text-mute)] py-6 text-center">
+            <p className="py-6 text-center text-sm text-[var(--text-mute)]">
               {t('historyEmpty')}
             </p>
           )}

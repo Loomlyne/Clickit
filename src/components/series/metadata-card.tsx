@@ -12,24 +12,32 @@ interface MetadataCardProps {
 export function MetadataCard({ show }: MetadataCardProps) {
   const t = useTranslations('show')
   return (
-    <Card className="sticky top-28 rounded-[28px] border border-[var(--line)] bg-[var(--bg-1)]">
-      <CardContent className="p-6 space-y-4">
+    <Card className="sticky top-28 rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)]">
+      <CardContent className="space-y-4 p-6">
         <div className="space-y-2">
           {show.imdbRating && (
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-text-muted">IMDb</span>
+              <span className="text-text-muted text-xs font-medium tracking-wide uppercase">
+                IMDb
+              </span>
               <div className="flex items-center gap-1">
-                <Star className="size-3.5 fill-brand-yellow text-brand-yellow" />
-                <span className="text-sm font-medium text-foreground">{show.imdbRating}/10</span>
+                <Star className="fill-brand-yellow text-brand-yellow size-3.5" />
+                <span className="text-foreground text-sm font-medium">
+                  {show.imdbRating}/10
+                </span>
               </div>
             </div>
           )}
           {show.platformRating && (
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-text-muted">CIT Rating</span>
+              <span className="text-text-muted text-xs font-medium tracking-wide uppercase">
+                CIT Rating
+              </span>
               <div className="flex items-center gap-1">
-                <Star className="size-3.5 fill-brand-orange text-brand-orange" />
-                <span className="text-sm font-medium text-foreground">{show.platformRating}/5</span>
+                <Star className="fill-brand-orange text-brand-orange size-3.5" />
+                <span className="text-foreground text-sm font-medium">
+                  {show.platformRating}/5
+                </span>
               </div>
             </div>
           )}
@@ -38,22 +46,30 @@ export function MetadataCard({ show }: MetadataCardProps) {
         <Separator />
 
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-text-muted">{t('genreLabel')}</p>
-          <Badge variant="secondary" className="mt-1">{show.genre}</Badge>
+          <p className="text-text-muted text-xs font-medium tracking-wide uppercase">
+            {t('genreLabel')}
+          </p>
+          <Badge variant="secondary" className="mt-1">
+            {show.genre}
+          </Badge>
         </div>
 
         <Separator />
 
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-text-muted">{t('seasonsLabel')}</p>
-          <p className="mt-1 text-sm text-foreground">{show.seasonCount}</p>
+          <p className="text-text-muted text-xs font-medium tracking-wide uppercase">
+            {t('seasonsLabel')}
+          </p>
+          <p className="text-foreground mt-1 text-sm">{show.seasonCount}</p>
         </div>
 
         <Separator />
 
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-text-muted">{t('episodesLabel')}</p>
-          <p className="mt-1 text-sm text-foreground">{show.episodeCount}</p>
+          <p className="text-text-muted text-xs font-medium tracking-wide uppercase">
+            {t('episodesLabel')}
+          </p>
+          <p className="text-foreground mt-1 text-sm">{show.episodeCount}</p>
         </div>
       </CardContent>
     </Card>

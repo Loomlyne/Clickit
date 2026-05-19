@@ -3,7 +3,16 @@ import { notFound } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/server'
 import { WatchShell } from '@/components/watch/watch-shell'
-import { getEpisodeById, getEpisodeProgress, getEpisodesProgress, mapShow, mapEpisode, mapSeason, getShowWatchlistState, getShowLikeState } from '@/lib/queries'
+import {
+  getEpisodeById,
+  getEpisodeProgress,
+  getEpisodesProgress,
+  mapShow,
+  mapEpisode,
+  mapSeason,
+  getShowWatchlistState,
+  getShowLikeState,
+} from '@/lib/queries'
 import { getLocale } from '@/lib/locale'
 
 interface Props {
@@ -12,7 +21,10 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { episodeId } = await params
-  const [data, locale] = await Promise.all([getEpisodeById(episodeId), getLocale()])
+  const [data, locale] = await Promise.all([
+    getEpisodeById(episodeId),
+    getLocale(),
+  ])
   if (!data) return { title: 'Episode Not Found | Clickit Story' }
 
   // Localize titles + descriptions for shareable previews.
@@ -21,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const canonical = `/${locale}/watch/${episodeId}`
   const ogImage = data.episode.youtube_video_id
     ? `https://img.youtube.com/vi/${data.episode.youtube_video_id}/maxresdefault.jpg`
-    : data.show.hero_url ?? data.show.poster_url ?? undefined
+    : (data.show.hero_url ?? data.show.poster_url ?? undefined)
 
   return {
     title: `${ep.title} | ${show.title} | Clickit Story`,
@@ -55,12 +67,12 @@ export default async function WatchPage({ params }: Props) {
   if (!data) notFound()
 
   const user = authResult.data.user ?? null
-  const progressRow = user
-    ? await getEpisodeProgress(user.id, episodeId)
-    : null
+  const progressRow = user ? await getEpisodeProgress(user.id, episodeId) : null
 
   // Second wave, show.id is now available from data
-  const episodeIds = Object.values(data.episodesBySeason).flat().map((episode) => episode.id)
+  const episodeIds = Object.values(data.episodesBySeason)
+    .flat()
+    .map((episode) => episode.id)
 
   const [inWatchlist, isLiked, progressMap] = user
     ? await Promise.all([
@@ -77,7 +89,8 @@ export default async function WatchPage({ params }: Props) {
   const viewSeason = mapSeason(season, locale)
   const viewSeasons = seasons.map((s) => mapSeason(s, locale))
 
-  const viewEpisodesBySeason: Record<string, ReturnType<typeof mapEpisode>[]> = {}
+  const viewEpisodesBySeason: Record<string, ReturnType<typeof mapEpisode>[]> =
+    {}
   for (const [sid, eps] of Object.entries(episodesBySeason)) {
     viewEpisodesBySeason[sid] = eps.map((e) => mapEpisode(e, locale))
   }

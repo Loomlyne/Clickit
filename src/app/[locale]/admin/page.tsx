@@ -14,26 +14,35 @@ type ShowCategoryRow = Pick<
 export default async function AdminPage() {
   const supabase = await createClient()
 
-  const [{ data: { user } }, { data: shows }, { data: profile }, { data: showCategories }] = await Promise.all([
+  const [
+    {
+      data: { user },
+    },
+    { data: shows },
+    { data: profile },
+    { data: showCategories },
+  ] = await Promise.all([
     supabase.auth.getUser(),
     supabase
       .from('shows')
       .select('*')
       .eq('archived', false)
+      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false }),
-    supabase
-      .from('profiles')
-      .select('*')
-      .single(),
+    supabase.from('profiles').select('*').single(),
     supabase
       .from('show_categories')
       .select('show_id, categories!inner(name_en, slug, color)'),
   ])
 
-  const categoriesByShowId = (showCategories as ShowCategoryRow[] | null ?? []).reduce<
+  const categoriesByShowId = (
+    (showCategories as ShowCategoryRow[] | null) ?? []
+  ).reduce<
     Record<string, { name: string; slug: string; color: string | null }[]>
   >((acc, row) => {
-    const category = Array.isArray(row.categories) ? row.categories[0] : row.categories
+    const category = Array.isArray(row.categories)
+      ? row.categories[0]
+      : row.categories
     if (!category) return acc
     if (!acc[row.show_id]) acc[row.show_id] = []
     acc[row.show_id].push({

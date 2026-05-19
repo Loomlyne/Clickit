@@ -38,7 +38,7 @@ export function ShowCollage({ shows }: ShowCollageProps) {
           {col1.map((show) => (
             <div
               key={show.id}
-              className="w-36 rounded-xl overflow-hidden flex-shrink-0"
+              className="w-36 flex-shrink-0 overflow-hidden rounded-xl"
               style={{ opacity: 0.8 }}
             >
               <ShowArt
@@ -46,8 +46,10 @@ export function ShowCollage({ shows }: ShowCollageProps) {
                 title={show.title}
                 aspectRatio="2/3"
               >
-                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                  <p className="text-white text-xs font-medium truncate">{show.title}</p>
+                <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                  <p className="truncate text-xs font-medium text-white">
+                    {show.title}
+                  </p>
                 </div>
               </ShowArt>
             </div>
@@ -55,11 +57,11 @@ export function ShowCollage({ shows }: ShowCollageProps) {
         </div>
 
         {/* Column 2 — offset down */}
-        <div className="flex flex-col gap-4 mt-12">
+        <div className="mt-12 flex flex-col gap-4">
           {col2.map((show) => (
             <div
               key={show.id}
-              className="w-36 rounded-xl overflow-hidden flex-shrink-0"
+              className="w-36 flex-shrink-0 overflow-hidden rounded-xl"
               style={{ opacity: 0.7 }}
             >
               <ShowArt
@@ -67,8 +69,10 @@ export function ShowCollage({ shows }: ShowCollageProps) {
                 title={show.title}
                 aspectRatio="2/3"
               >
-                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                  <p className="text-white text-xs font-medium truncate">{show.title}</p>
+                <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                  <p className="truncate text-xs font-medium text-white">
+                    {show.title}
+                  </p>
                 </div>
               </ShowArt>
             </div>

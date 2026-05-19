@@ -10,19 +10,27 @@ interface ProfileHistoryRowProps {
 
 export async function ProfileHistoryRow({ item }: ProfileHistoryRowProps) {
   const brandHex = BRAND_COLOR_HEX[item.showBrandColor] ?? '#2C3569'
-  const progressPercent = item.durationSeconds > 0
-    ? Math.min(Math.round((item.progressSeconds / item.durationSeconds) * 100), 100)
-    : 0
+  const progressPercent =
+    item.durationSeconds > 0
+      ? Math.min(
+          Math.round((item.progressSeconds / item.durationSeconds) * 100),
+          100
+        )
+      : 0
   const t = await getTranslations('profile')
 
   return (
     <Link
       href={`/watch/${item.episodeId}`}
-      className="flex items-center gap-4 py-3 border-b border-[var(--line)] last:border-0 hover:bg-[var(--bg-2)] transition-colors rounded-full px-2 -mx-2"
+      className="-mx-2 flex items-center gap-4 rounded-full border-b border-[var(--line)] px-2 py-3 transition-colors last:border-0 hover:bg-[var(--bg-2)]"
     >
       {/* Thumbnail */}
-      <div className="w-20 aspect-video rounded-full overflow-hidden flex-shrink-0">
-        <ShowArt brandColor={brandHex} title={item.episodeTitle} aspectRatio="16/9">
+      <div className="aspect-video w-20 flex-shrink-0 overflow-hidden rounded-[8px]">
+        <ShowArt
+          brandColor={brandHex}
+          title={item.episodeTitle}
+          aspectRatio="16/9"
+        >
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-lg font-black text-white/30">
               E{item.episodeNumber}
@@ -32,9 +40,11 @@ export async function ProfileHistoryRow({ item }: ProfileHistoryRowProps) {
       </div>
 
       {/* Text */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-white truncate">{item.episodeTitle}</p>
-        <p className="text-xs text-[var(--text-mute)] mt-0.5">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-white">
+          {item.episodeTitle}
+        </p>
+        <p className="mt-0.5 text-xs text-[var(--text-mute)]">
           {item.showTitle} &middot; S{item.seasonNumber} E{item.episodeNumber}
         </p>
       </div>
@@ -47,13 +57,18 @@ export async function ProfileHistoryRow({ item }: ProfileHistoryRowProps) {
           </span>
         ) : (
           <div className="w-20">
-            <div className="h-1.5 rounded-full bg-[var(--bg-4)] overflow-hidden">
+            <div className="h-1.5 overflow-hidden rounded-full bg-[var(--bg-4)]">
               <div
                 className="h-full rounded-full"
-                style={{ width: `${progressPercent}%`, backgroundColor: brandHex }}
+                style={{
+                  width: `${progressPercent}%`,
+                  backgroundColor: brandHex,
+                }}
               />
             </div>
-            <p className="font-mono text-[11px] text-[var(--text-mute)] mt-1 text-end">{progressPercent}%</p>
+            <p className="mt-1 text-end font-mono text-[11px] text-[var(--text-mute)]">
+              {progressPercent}%
+            </p>
           </div>
         )}
       </div>

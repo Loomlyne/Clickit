@@ -11,6 +11,10 @@
  * providers here — they belong inside the locale wrapper so they can read the
  * active locale.
  */
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return children
 }

@@ -136,7 +136,8 @@ export function SeriesDetailHero({
             </span>
             <span>·</span>
             <span>
-              {show.episodeCount} {show.episodeCount === 1 ? t('episodeOne') : t('episodeMany')}
+              {show.episodeCount}{' '}
+              {show.episodeCount === 1 ? t('episodeOne') : t('episodeMany')}
             </span>
             {show.imdbRating && (
               <>

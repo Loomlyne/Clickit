@@ -1,14 +1,21 @@
 'use client'
 
-import { Fragment, useEffect, useMemo, useState } from 'react'
-import { Pencil, Plus, Trash2, X } from 'lucide-react'
+import { Fragment, useEffect, useMemo, useState, useTransition } from 'react'
+import { ChevronDown, ChevronUp, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { useTranslations } from 'next-intl'
 
-import { createCategory, deleteCategory, updateCategory } from '@/app/[locale]/admin/actions'
+import {
+  createCategory,
+  deleteCategory,
+  reorderCategories,
+  updateCategory,
+} from '@/app/[locale]/admin/actions'
 import { AdminPanel, AdminTableShell } from '@/components/admin/admin-shell'
+import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -19,6 +26,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { generateSlug } from '@/lib/slug'
 import type { Database } from '@/lib/database.types'
@@ -86,8 +99,9 @@ function ColorPicker({
           <div
             className="size-full"
             style={{
-              background: previewColor
-                ?? 'conic-gradient(from 0deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)',
+              background:
+                previewColor ??
+                'conic-gradient(from 0deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)',
             }}
           />
           <input
@@ -112,8 +126,11 @@ function ColorPicker({
         {value && (
           <button
             type="button"
-            onClick={() => { onChange(null); setRawInput('') }}
-            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            onClick={() => {
+              onChange(null)
+              setRawInput('')
+            }}
+            className="text-muted-foreground hover:text-foreground text-xs transition-colors"
           >
             {t('colorClear')}
           </button>
@@ -149,13 +166,16 @@ function CategoryEditor({
   const t = useTranslations('admin.categories')
   const tCommon = useTranslations('common')
   return (
-    <form onSubmit={onSubmit} className="rounded-lg border border-white/8 bg-white/[0.02] p-4 md:p-5">
+    <form
+      onSubmit={onSubmit}
+      className="rounded-lg border border-white/8 bg-white/[0.02] p-4 md:p-5"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+          <p className="text-muted-foreground text-xs tracking-[0.18em] uppercase">
             {editing ? t('eyebrowEdit') : t('eyebrowNew')}
           </p>
-          <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
+          <h3 className="text-foreground mt-1 text-lg font-semibold tracking-tight">
             {editing ? t('titleEdit') : t('titleNew')}
           </h3>
         </div>
@@ -195,7 +215,12 @@ function CategoryEditor({
             id="category-name-ar"
             dir="rtl"
             value={draft.name_ar}
-            onChange={(event) => onDraftChange((current) => ({ ...current, name_ar: event.target.value }))}
+            onChange={(event) =>
+              onDraftChange((current) => ({
+                ...current,
+                name_ar: event.target.value,
+              }))
+            }
             placeholder={t('placeholderArabic')}
             required
           />
@@ -206,7 +231,12 @@ function CategoryEditor({
           <Input
             id="category-slug"
             value={draft.slug}
-            onChange={(event) => onDraftChange((current) => ({ ...current, slug: generateSlug(event.target.value) }))}
+            onChange={(event) =>
+              onDraftChange((current) => ({
+                ...current,
+                slug: generateSlug(event.target.value),
+              }))
+            }
             placeholder={t('placeholderSlug')}
             required
           />
@@ -216,19 +246,25 @@ function CategoryEditor({
       <div
         className={cn(
           'mt-5 rounded-lg border border-white/8 bg-white/[0.02] p-4 transition-[border-left-color]',
-          draft.color && 'border-l-[3px]',
+          draft.color && 'border-l-[3px]'
         )}
         style={draft.color ? { borderLeftColor: draft.color } : undefined}
       >
         <ColorPicker
           value={draft.color}
-          onChange={(color) => onDraftChange((current) => ({ ...current, color }))}
+          onChange={(color) =>
+            onDraftChange((current) => ({ ...current, color }))
+          }
         />
       </div>
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
         <Button type="submit" disabled={saving}>
-          {saving ? t('saving') : editing ? t('saveCategory') : t('createCategory')}
+          {saving
+            ? t('saving')
+            : editing
+              ? t('saveCategory')
+              : t('createCategory')}
         </Button>
         <Button type="button" variant="outline" onClick={onCancel}>
           {tCommon('cancel')}
@@ -238,24 +274,42 @@ function CategoryEditor({
   )
 }
 
-export function CategoriesManager({ initialCategories }: { initialCategories: CategoryRecord[] }) {
+export function CategoriesManager({
+  initialCategories,
+}: {
+  initialCategories: CategoryRecord[]
+}) {
   const t = useTranslations('admin.dashboard')
   const tCat = useTranslations('admin.categories')
+  const tCommon = useTranslations('common')
   const [categories, setCategories] = useState(initialCategories)
   const [draft, setDraft] = useState<CategoryDraft>(EMPTY_DRAFT)
   const [editorState, setEditorState] = useState<EditorState>(null)
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null)
+  const [isReordering, startReorderTransition] = useTransition()
 
   const editingCategory = useMemo(
-    () => editorState?.mode === 'edit'
-      ? categories.find((category) => category.id === editorState.categoryId) ?? null
-      : null,
+    () =>
+      editorState?.mode === 'edit'
+        ? (categories.find(
+            (category) => category.id === editorState.categoryId
+          ) ?? null)
+        : null,
     [categories, editorState]
   )
 
   const isCreateOpen = editorState?.mode === 'create'
   const editingId = editingCategory?.id ?? null
+  const categoryIds = categories.map((category) => category.id)
+  const selectedSet = new Set(selectedIds)
+  const selectedCount = selectedIds.length
+  const allSelected =
+    categoryIds.length > 0 && categoryIds.every((id) => selectedSet.has(id))
 
   function resetEditor() {
     setDraft(EMPTY_DRAFT)
@@ -275,6 +329,20 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
       color: category.color ?? null,
     })
     setEditorState({ mode: 'edit', categoryId: category.id })
+  }
+
+  function toggleCategorySelection(categoryId: string, checked: boolean) {
+    setSelectedIds((current) =>
+      checked
+        ? current.includes(categoryId)
+          ? current
+          : [...current, categoryId]
+        : current.filter((id) => id !== categoryId)
+    )
+  }
+
+  function toggleAllSelection(checked: boolean) {
+    setSelectedIds(checked ? categoryIds : [])
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -300,14 +368,21 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
       return
     }
 
-    const nextCategory = { ...result.data, showCount: editingCategory?.showCount ?? 0 } as CategoryRecord
+    const nextCategory = {
+      ...result.data,
+      showCount: editingCategory?.showCount ?? 0,
+    } as CategoryRecord
     if (editingId) {
-      setCategories((current) => current.map((category) => (
-        category.id === editingId ? nextCategory : category
-      )))
+      setCategories((current) =>
+        current.map((category) =>
+          category.id === editingId ? nextCategory : category
+        )
+      )
       toast.success(tCat('toastUpdated'))
     } else {
-      setCategories((current) => [...current, nextCategory].sort((a, b) => a.sort_order - b.sort_order))
+      setCategories((current) =>
+        [...current, nextCategory].sort((a, b) => a.sort_order - b.sort_order)
+      )
       toast.success(tCat('toastCreated'))
     }
 
@@ -329,38 +404,135 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
     toast.success(tCat('toastDeleted'))
   }
 
+  async function handleBulkDelete() {
+    if (selectedIds.length === 0) return
+    const ids = selectedIds
+    setBulkDeleting(true)
+    for (const id of ids) {
+      const result = await deleteCategory(id)
+      if (!result.success) {
+        setBulkDeleting(false)
+        toast.error(result.error ?? tCat('toastDeleteFailed'))
+        return
+      }
+    }
+    setBulkDeleting(false)
+    setBulkDeleteDialogOpen(false)
+    setSelectedIds([])
+    setCategories((current) =>
+      current.filter((category) => !ids.includes(category.id))
+    )
+    if (editingId && ids.includes(editingId)) resetEditor()
+    toast.success(tCat('bulkDeletedToast', { count: ids.length }))
+  }
+
+  function handleReorder(categoryId: string, direction: 'up' | 'down') {
+    const currentIndex = categories.findIndex(
+      (category) => category.id === categoryId
+    )
+    const adjacentIndex =
+      direction === 'up' ? currentIndex - 1 : currentIndex + 1
+    if (
+      currentIndex < 0 ||
+      adjacentIndex < 0 ||
+      adjacentIndex >= categories.length
+    ) {
+      return
+    }
+
+    const previousCategories = categories
+    const nextCategories = [...categories]
+    const moving = nextCategories[currentIndex]!
+    nextCategories[currentIndex] = nextCategories[adjacentIndex]!
+    nextCategories[adjacentIndex] = moving
+    setPendingOrderId(categoryId)
+    setCategories(nextCategories)
+
+    startReorderTransition(async () => {
+      const result = await reorderCategories(
+        nextCategories.map((category) => category.id)
+      )
+      setPendingOrderId(null)
+      if (!result.success) {
+        setCategories(previousCategories)
+        toast.error(result.error ?? tCat('toastReorderFailed'))
+      }
+    })
+  }
+
   return (
-    <AdminPanel className="p-0">
+    <TooltipProvider delayDuration={300}>
+      <AdminPanel className="p-0">
       <div className="flex flex-col gap-3 border-b border-white/8 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-4 md:px-6">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+          <h2 className="text-foreground text-lg font-semibold tracking-tight sm:text-xl">
             {t('categories')}
           </h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-0.5 text-sm">
             {t('categoryCountLabel', { count: categories.length })}
           </p>
         </div>
-        <Button type="button" className="w-full shrink-0 sm:w-auto" onClick={startCreate}>
-          <Plus className="size-4" />
-          {tCat('addCategory')}
-        </Button>
+        {selectedCount > 0 ? (
+          <Button
+            type="button"
+            variant="destructive"
+            className="w-full shrink-0 sm:w-auto"
+            onClick={() => setBulkDeleteDialogOpen(true)}
+          >
+            <Trash2 className="size-4" />
+            {tCat('bulkDeleteButton', { count: selectedCount })}
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            className="w-full shrink-0 sm:w-auto"
+            onClick={startCreate}
+          >
+            <Plus className="size-4" />
+            {tCat('addCategory')}
+          </Button>
+        )}
       </div>
 
       <AdminTableShell className="rounded-none border-x-0 border-b-0">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={
+                    allSelected
+                      ? true
+                      : selectedIds.length > 0
+                        ? 'indeterminate'
+                        : false
+                  }
+                  onCheckedChange={(checked) =>
+                    toggleAllSelection(checked === true)
+                  }
+                  aria-label={tCat('selectAllAria')}
+                />
+              </TableHead>
               <TableHead>{tCat('colCategory')}</TableHead>
-              <TableHead className="hidden md:table-cell">{tCat('colArabicName')}</TableHead>
-              <TableHead className="hidden w-36 md:table-cell">{tCat('colColor')}</TableHead>
+              <TableHead className="hidden md:table-cell">
+                {tCat('colArabicName')}
+              </TableHead>
+              <TableHead className="hidden w-36 md:table-cell">
+                {tCat('colColor')}
+              </TableHead>
               <TableHead className="w-32">{tCat('colAssigned')}</TableHead>
-              <TableHead className="w-44 text-right">{tCat('colActions')}</TableHead>
+              <TableHead className="w-52 text-right">
+                {tCat('colActions')}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isCreateOpen && (
               <TableRow>
-                <TableCell colSpan={5} className="whitespace-normal bg-white/[0.015]">
+                <TableCell
+                  colSpan={6}
+                  className="bg-white/[0.015] whitespace-normal"
+                >
                   <CategoryEditor
                     draft={draft}
                     saving={saving}
@@ -375,26 +547,54 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
 
             {categories.length === 0 && !isCreateOpen && (
               <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={6}
+                  className="text-muted-foreground py-12 text-center"
+                >
                   {tCat('empty')}
                 </TableCell>
               </TableRow>
             )}
 
-            {categories.map((category) => {
-              const isEditingRow = editorState?.mode === 'edit' && editorState.categoryId === category.id
+            {categories.map((category, index) => {
+              const isEditingRow =
+                editorState?.mode === 'edit' &&
+                editorState.categoryId === category.id
 
               return (
                 <Fragment key={category.id}>
-                  <TableRow>
+                  <TableRow
+                    data-state={
+                      selectedSet.has(category.id) ? 'selected' : undefined
+                    }
+                  >
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedSet.has(category.id)}
+                        onCheckedChange={(checked) =>
+                          toggleCategorySelection(category.id, checked === true)
+                        }
+                        aria-label={tCat('selectCategoryAria', {
+                          name: category.name_en,
+                        })}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="min-w-[180px]">
-                        <div className="font-medium text-foreground">{category.name_en}</div>
-                        <div className="mt-1 text-xs text-muted-foreground">/{category.slug}</div>
-                        <div className="mt-1 text-xs text-muted-foreground md:hidden">{category.name_ar}</div>
+                        <div className="text-foreground font-medium">
+                          {category.name_en}
+                        </div>
+                        <div className="text-muted-foreground mt-1 text-xs">
+                          /{category.slug}
+                        </div>
+                        <div className="text-muted-foreground mt-1 text-xs md:hidden">
+                          {category.name_ar}
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell className="hidden text-muted-foreground md:table-cell">{category.name_ar}</TableCell>
+                    <TableCell className="text-muted-foreground hidden md:table-cell">
+                      {category.name_ar}
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">
                       {category.color ? (
                         <div className="flex items-center gap-2">
@@ -402,21 +602,73 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
                             className="size-4 shrink-0 rounded-full border border-white/10"
                             style={{ background: category.color }}
                           />
-                          <span className="font-mono text-xs text-muted-foreground">{category.color}</span>
+                          <span className="text-muted-foreground font-mono text-xs">
+                            {category.color}
+                          </span>
                         </div>
                       ) : (
-                        <span className="text-xs text-muted-foreground/40">—</span>
+                        <span className="text-muted-foreground/40 text-xs">
+                          —
+                        </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{category.showCount}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {category.showCount}
+                    </TableCell>
                     <TableCell>
-                      <div className="flex min-w-[120px] items-center justify-end gap-1">
+                      <div className="flex min-w-[168px] items-center justify-end gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              disabled={
+                                isReordering ||
+                                pendingOrderId === category.id ||
+                                index === 0
+                              }
+                              onClick={() => handleReorder(category.id, 'up')}
+                              aria-label={tCat('moveUpAria', {
+                                name: category.name_en,
+                              })}
+                            >
+                              <ChevronUp className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{tCat('moveUp')}</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              disabled={
+                                isReordering ||
+                                pendingOrderId === category.id ||
+                                index === categories.length - 1
+                              }
+                              onClick={() =>
+                                handleReorder(category.id, 'down')
+                              }
+                              aria-label={tCat('moveDownAria', {
+                                name: category.name_en,
+                              })}
+                            >
+                              <ChevronDown className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{tCat('moveDown')}</TooltipContent>
+                        </Tooltip>
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon-sm"
                           onClick={() => startEdit(category)}
-                          aria-label={tCat('editAria', { name: category.name_en })}
+                          aria-label={tCat('editAria', {
+                            name: category.name_en,
+                          })}
                         >
                           <Pencil className="size-4" />
                         </Button>
@@ -427,7 +679,9 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
                           className="text-red-400 hover:text-red-300"
                           disabled={deletingId === category.id}
                           onClick={() => handleDelete(category.id)}
-                          aria-label={tCat('deleteAria', { name: category.name_en })}
+                          aria-label={tCat('deleteAria', {
+                            name: category.name_en,
+                          })}
                         >
                           <Trash2 className="size-4" />
                         </Button>
@@ -437,7 +691,10 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
 
                   {isEditingRow && (
                     <TableRow>
-                      <TableCell colSpan={5} className="whitespace-normal bg-white/[0.015]">
+                      <TableCell
+                        colSpan={6}
+                        className="bg-white/[0.015] whitespace-normal"
+                      >
                         <CategoryEditor
                           draft={draft}
                           saving={saving}
@@ -455,6 +712,17 @@ export function CategoriesManager({ initialCategories }: { initialCategories: Ca
           </TableBody>
         </Table>
       </AdminTableShell>
-    </AdminPanel>
+      </AdminPanel>
+      <ConfirmDialog
+        open={bulkDeleteDialogOpen}
+        onOpenChange={setBulkDeleteDialogOpen}
+        title={tCat('bulkDeleteTitle')}
+        description={tCat('bulkDeleteDescription', { count: selectedCount })}
+        confirmLabel={tCommon('delete')}
+        destructive
+        loading={bulkDeleting}
+        onConfirm={handleBulkDelete}
+      />
+    </TooltipProvider>
   )
 }

@@ -30,18 +30,26 @@ export function EpisodeArtCard({ episode }: EpisodeArtCardProps) {
     : undefined
 
   return (
-    <Link href={`/watch/${episode.id}`} className="group block cursor-pointer flex-shrink-0 w-[320px]">
+    <Link
+      href={`/watch/${episode.id}`}
+      className="group block w-[320px] flex-shrink-0 cursor-pointer"
+    >
       <motion.div
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.97 }}
         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
       >
-        <ShowArt brandColor={brandColorHex} title={episode.showTitle} aspectRatio="16/9" imageUrl={thumbnailUrl}>
+        <ShowArt
+          brandColor={brandColorHex}
+          title={episode.showTitle}
+          aspectRatio="16/9"
+          imageUrl={thumbnailUrl}
+        >
           <PlayOverlay />
 
           {/* Episode number watermark */}
           <div className="absolute top-2 left-2">
-            <span className="text-xs font-bold text-white/50 uppercase tracking-widest">
+            <span className="text-xs font-bold tracking-widest text-white/50 uppercase">
               S{episode.seasonNumber} E{episode.episodeNumber}
             </span>
           </div>
@@ -49,7 +57,7 @@ export function EpisodeArtCard({ episode }: EpisodeArtCardProps) {
           {/* Duration badge */}
           {episode.duration && (
             <div className="absolute top-2 right-2">
-              <span className="text-xs bg-black/60 text-white/80 px-2 py-0.5 rounded">
+              <span className="rounded bg-black/60 px-2 py-0.5 text-xs text-white/80">
                 {Math.floor(episode.duration / 60)}m
               </span>
             </div>
@@ -57,10 +65,13 @@ export function EpisodeArtCard({ episode }: EpisodeArtCardProps) {
 
           {/* Progress bar */}
           {episode.watchProgress !== undefined && episode.watchProgress > 0 && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/20">
+            <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-white/20">
               <div
                 className="h-full transition-none"
-                style={{ width: `${episode.watchProgress}%`, background: brandColorHex }}
+                style={{
+                  width: `${episode.watchProgress}%`,
+                  background: brandColorHex,
+                }}
               />
             </div>
           )}
@@ -68,8 +79,12 @@ export function EpisodeArtCard({ episode }: EpisodeArtCardProps) {
 
         {/* Info below */}
         <div className="bg-[var(--color-surface-2)] px-3 py-2">
-          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider truncate">{episode.showTitle}</p>
-          <p className="text-white text-sm font-medium truncate mt-0.5">{episode.title}</p>
+          <p className="truncate text-[10px] tracking-wider text-[var(--color-text-muted)] uppercase">
+            {episode.showTitle}
+          </p>
+          <p className="mt-0.5 truncate text-sm font-medium text-white">
+            {episode.title}
+          </p>
         </div>
       </motion.div>
     </Link>

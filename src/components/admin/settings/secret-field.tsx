@@ -38,7 +38,7 @@ export function SecretField({
         <Input
           value="••••••••••••••••"
           readOnly
-          className="font-mono text-muted-foreground"
+          className="text-muted-foreground font-mono"
         />
         <button
           type="button"
@@ -46,7 +46,7 @@ export function SecretField({
             setReplacing(true)
             onChange('')
           }}
-          className="shrink-0 text-xs font-medium uppercase tracking-wider text-white/60 underline-offset-4 hover:text-white hover:underline"
+          className="shrink-0 text-xs font-medium tracking-wider text-white/60 uppercase underline-offset-4 hover:text-white hover:underline"
         >
           {t('replace')}
         </button>

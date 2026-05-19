@@ -24,14 +24,23 @@ interface AuthSectionProps {
   layout?: 'default' | 'sheet'
 }
 
-export function AuthSection({ initialUser, isLanding, layout = 'default' }: AuthSectionProps) {
+export function AuthSection({
+  initialUser,
+  isLanding,
+  layout = 'default',
+}: AuthSectionProps) {
   const t = useTranslations('common')
   const tNav = useTranslations('nav')
   const tAuth = useTranslations('auth')
   const router = useRouter()
   const [user, setUser] = useState<UserState | null>(
     initialUser
-      ? { id: initialUser.id, email: initialUser.email, displayName: null, avatarUrl: null }
+      ? {
+          id: initialUser.id,
+          email: initialUser.email,
+          displayName: null,
+          avatarUrl: null,
+        }
       : null
   )
   const [isAdmin, setIsAdmin] = useState(false)
@@ -41,7 +50,11 @@ export function AuthSection({ initialUser, isLanding, layout = 'default' }: Auth
 
     async function loadUser(userId: string, email: string) {
       const [profileRes, configRes] = await Promise.all([
-        supabase.from('profiles').select('display_name, avatar_url').eq('id', userId).single(),
+        supabase
+          .from('profiles')
+          .select('display_name, avatar_url')
+          .eq('id', userId)
+          .single(),
         supabase.from('app_config').select('admin_user_id').single(),
       ])
 
@@ -58,7 +71,9 @@ export function AuthSection({ initialUser, isLanding, layout = 'default' }: Auth
       if (u) loadUser(u.id, u.email ?? '')
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         loadUser(session.user.id, session.user.email ?? '')
       } else {
@@ -97,13 +112,13 @@ export function AuthSection({ initialUser, isLanding, layout = 'default' }: Auth
         <>
           <Link
             href="/auth"
-            className="inline-flex items-center justify-center rounded-full px-3 py-[7px] text-[12.5px] font-medium border border-[var(--line-2)] text-[var(--text)] transition-all duration-150 hover:bg-white/[0.04]"
+            className="inline-flex items-center justify-center rounded-full border border-[var(--line-2)] px-3 py-[7px] text-[12.5px] font-medium text-[var(--text)] transition-all duration-150 hover:bg-white/[0.04]"
           >
             {t('signIn')}
           </Link>
           <Link
             href="/auth"
-            className="inline-flex items-center justify-center rounded-full px-3 py-[7px] text-[12.5px] font-medium bg-[var(--primary)] text-[var(--primary-foreground)] transition-all duration-150 hover:bg-white"
+            className="inline-flex items-center justify-center rounded-full bg-[var(--primary)] px-3 py-[7px] text-[12.5px] font-medium text-[var(--primary-foreground)] transition-all duration-150 hover:bg-white"
           >
             {tAuth('landingStartFree')}
           </Link>
@@ -125,18 +140,29 @@ export function AuthSection({ initialUser, isLanding, layout = 'default' }: Auth
   if (layout === 'sheet') {
     return (
       <div className="flex w-full flex-col gap-3">
-        <p className="truncate px-0.5 text-xs text-muted-foreground" title={user.email}>
+        <p
+          className="text-muted-foreground truncate px-0.5 text-xs"
+          title={user.email}
+        >
           {user.email}
         </p>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <Button variant="outline" className="h-11 rounded-full justify-center gap-2" asChild>
+          <Button
+            variant="outline"
+            className="h-11 justify-center gap-2 rounded-full"
+            asChild
+          >
             <Link href="/profile" onClick={() => router.refresh()}>
               <User className="size-4" />
               {tNav('profile')}
             </Link>
           </Button>
           {isAdmin && (
-            <Button variant="outline" className="h-11 rounded-full justify-center gap-2" asChild>
+            <Button
+              variant="outline"
+              className="h-11 justify-center gap-2 rounded-full"
+              asChild
+            >
               <Link href="/admin">
                 <Shield className="size-4" />
                 {tNav('admin')}
@@ -146,11 +172,13 @@ export function AuthSection({ initialUser, isLanding, layout = 'default' }: Auth
           <Button
             variant="outline"
             className={cn(
-              'h-11 rounded-full justify-center gap-2 border-brand-red-safe/40 text-brand-red-safe hover:bg-brand-red-safe/10 hover:text-brand-red-safe',
-              isAdmin ? 'sm:col-span-2' : '',
+              'border-brand-red-safe/40 text-brand-red-safe hover:bg-brand-red-safe/10 hover:text-brand-red-safe h-11 justify-center gap-2 rounded-full',
+              isAdmin ? 'sm:col-span-2' : ''
             )}
             type="button"
-            onClick={() => { void signOut() }}
+            onClick={() => {
+              void signOut()
+            }}
           >
             <LogOut className="size-4" />
             {t('signOut')}
@@ -161,11 +189,7 @@ export function AuthSection({ initialUser, isLanding, layout = 'default' }: Auth
   }
 
   return (
-    <UserDropdown
-      email={user.email}
-      isAdmin={isAdmin}
-      onSignOut={signOut}
-    >
+    <UserDropdown email={user.email} isAdmin={isAdmin} onSignOut={signOut}>
       <button
         type="button"
         className="flex items-center gap-2.5"

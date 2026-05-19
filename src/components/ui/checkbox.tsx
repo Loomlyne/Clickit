@@ -1,10 +1,10 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import { CheckIcon } from "lucide-react"
-import { Checkbox as CheckboxPrimitive } from "radix-ui"
+import * as React from 'react'
+import { CheckIcon } from 'lucide-react'
+import { Checkbox as CheckboxPrimitive } from 'radix-ui'
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils'
 
 function Checkbox({
   className,
@@ -14,7 +14,7 @@ function Checkbox({
     <CheckboxPrimitive.Root
       data-slot="checkbox"
       className={cn(
-        "peer size-5 shrink-0 rounded-[10px] border border-white/14 bg-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-shadow outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground sm:size-4 dark:bg-white/[0.04] dark:aria-invalid:ring-destructive/40 dark:data-[state=checked]:bg-primary",
+        'peer focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:aria-invalid:ring-destructive/40 dark:data-[state=checked]:bg-primary size-5 shrink-0 rounded-[10px] border border-white/14 bg-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-shadow outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 sm:size-4 dark:bg-white/[0.04]',
         className
       )}
       {...props}

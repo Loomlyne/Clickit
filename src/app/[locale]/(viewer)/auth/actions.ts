@@ -21,7 +21,9 @@ type AuthResult =
   | { ok: true; userId: string; isAdmin: boolean }
   | { ok: false; error: string }
 
-async function gateAgainstBots(context: string): Promise<null | { ok: false; error: string }> {
+async function gateAgainstBots(
+  context: string
+): Promise<null | { ok: false; error: string }> {
   try {
     const result = await checkBotId({
       // In dev, bypass the challenge so local testing isn't blocked. In prod,
@@ -45,17 +47,28 @@ async function gateAgainstBots(context: string): Promise<null | { ok: false; err
     // If BotID itself throws (misconfig, network), do not hard-block auth —
     // log loudly and let the request through. Availability > overly strict
     // bot gating for a single-admin media app.
-    console.error('[auth]', context, 'BotID check failed (allowing through)', err)
+    console.error(
+      '[auth]',
+      context,
+      'BotID check failed (allowing through)',
+      err
+    )
   }
   return null
 }
 
-export async function signInAction(email: string, password: string): Promise<AuthResult> {
+export async function signInAction(
+  email: string,
+  password: string
+): Promise<AuthResult> {
   const blocked = await gateAgainstBots('signIn')
   if (blocked) return blocked
 
   const supabase = await createClient()
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
 
   if (error) {
     console.error('[auth] signIn failed:', error.message, error.status)
@@ -65,7 +78,11 @@ export async function signInAction(email: string, password: string): Promise<Aut
 
   // Read admin status once so the client can redirect correctly without a
   // second round trip.
-  const { data: config } = await supabase.from('app_config').select('admin_user_id').eq('id', 1).single()
+  const { data: config } = await supabase
+    .from('app_config')
+    .select('admin_user_id')
+    .eq('id', 1)
+    .single()
   const isAdmin = config?.admin_user_id === data.user.id
 
   return { ok: true, userId: data.user.id, isAdmin }
@@ -74,7 +91,7 @@ export async function signInAction(email: string, password: string): Promise<Aut
 export async function signUpAction(
   email: string,
   password: string,
-  displayName: string,
+  displayName: string
 ): Promise<AuthResult> {
   const blocked = await gateAgainstBots('signUp')
   if (blocked) return blocked

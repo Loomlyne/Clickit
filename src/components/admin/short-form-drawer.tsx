@@ -37,8 +37,17 @@ function buildFormSchema(t: (key: string) => string) {
 }
 
 const GENRES = [
-  'Travel', 'Health', 'Music', 'Comedy', 'Cooking',
-  'Kids', 'Poetry', 'Cinema', 'Tech', 'Entertainment', 'Culture',
+  'Travel',
+  'Health',
+  'Music',
+  'Comedy',
+  'Cooking',
+  'Kids',
+  'Poetry',
+  'Cinema',
+  'Tech',
+  'Entertainment',
+  'Culture',
 ]
 
 interface ShortFormDrawerProps {
@@ -47,7 +56,11 @@ interface ShortFormDrawerProps {
   editingShort: Short | null
 }
 
-export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormDrawerProps) {
+export function ShortFormDrawer({
+  open,
+  onOpenChange,
+  editingShort,
+}: ShortFormDrawerProps) {
   const t = useTranslations('admin.shortForm')
   const tShowForm = useTranslations('admin.showForm')
   const tCommon = useTranslations('common')
@@ -127,7 +140,9 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
 
     setFetching(true)
     try {
-      const res = await fetch(`/api/youtube-meta?url=${encodeURIComponent(url)}`)
+      const res = await fetch(
+        `/api/youtube-meta?url=${encodeURIComponent(url)}`
+      )
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         toast.error(body.error || t('toastMetaFailed'))
@@ -177,12 +192,18 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="sm:max-w-xl w-full p-0 flex flex-col">
-        <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col p-0 sm:max-w-xl"
+      >
+        <SheetHeader className="border-border shrink-0 border-b px-6 pt-6 pb-4">
           <SheetTitle>{isEditing ? t('editTitle') : t('addTitle')}</SheetTitle>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex-1 space-y-5 overflow-y-auto px-6 py-5"
+        >
           {/* YouTube URL + Fetch */}
           <div className="space-y-2">
             <Label htmlFor="youtube_url">{t('youtubeUrlLabel')}</Label>
@@ -200,11 +221,17 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
                 disabled={fetching}
                 className="shrink-0"
               >
-                {fetching ? <Loader2 className="size-4 animate-spin" /> : t('fetch')}
+                {fetching ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  t('fetch')
+                )}
               </Button>
             </div>
             {errors.youtube_url && (
-              <p className="text-sm text-red-400">{errors.youtube_url.message}</p>
+              <p className="text-sm text-red-400">
+                {errors.youtube_url.message}
+              </p>
             )}
           </div>
 
@@ -216,7 +243,7 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
                 alt={t('thumbnailAlt')}
                 className="h-20 w-auto rounded object-cover"
               />
-              <div className="text-xs text-muted-foreground space-y-1">
+              <div className="text-muted-foreground space-y-1 text-xs">
                 <div>
                   {t('videoIdLabel')}{' '}
                   <code className="text-foreground">{videoId}</code>
@@ -233,10 +260,15 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
           {/* Video ID — shown so admin can verify extraction worked */}
           {videoId && (
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">
+              <Label className="text-muted-foreground text-xs">
                 {t('videoIdReadonlyLabel')}
               </Label>
-              <Input value={videoId} readOnly className="font-mono text-xs opacity-60" {...register('youtube_video_id')} />
+              <Input
+                value={videoId}
+                readOnly
+                className="font-mono text-xs opacity-60"
+                {...register('youtube_video_id')}
+              />
             </div>
           )}
           {!videoId && youtubeUrl && (
@@ -265,11 +297,13 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
               <select
                 id="genre"
                 {...register('genre')}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
               >
                 <option value="">{t('genreNone')}</option>
                 {GENRES.map((g) => (
-                  <option key={g} value={g}>{tShowForm(`genre${g}` as never)}</option>
+                  <option key={g} value={g}>
+                    {tShowForm(`genre${g}` as never)}
+                  </option>
                 ))}
               </select>
             </div>
@@ -283,13 +317,17 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
               type="datetime-local"
               {...register('expires_at')}
             />
-            <p className="text-xs text-muted-foreground">{t('expiresHint')}</p>
+            <p className="text-muted-foreground text-xs">{t('expiresHint')}</p>
           </div>
         </form>
 
         {/* Sticky footer */}
-        <div className="shrink-0 border-t border-border px-6 py-4 flex gap-3">
-          <Button onClick={handleSubmit(onSubmit)} disabled={saving} className="flex-1">
+        <div className="border-border flex shrink-0 gap-3 border-t px-6 py-4">
+          <Button
+            onClick={handleSubmit(onSubmit)}
+            disabled={saving}
+            className="flex-1"
+          >
             {saving ? (
               <Loader2 className="size-4 animate-spin" />
             ) : isEditing ? (
@@ -298,10 +336,7 @@ export function ShortFormDrawer({ open, onOpenChange, editingShort }: ShortFormD
               t('add')
             )}
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             {tCommon('cancel')}
           </Button>
         </div>

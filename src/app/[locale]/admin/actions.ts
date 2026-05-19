@@ -8,6 +8,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { validateYouTubeUrl } from '@/lib/youtube'
 import { logAudit } from '@/lib/audit'
 import { generateSlug } from '@/lib/slug'
+import { getAppConfig } from '@/lib/config'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -183,6 +184,24 @@ function bumpCatalogCache() {
   updateTag('categories')
 }
 
+function swapByDirection<T>(
+  rows: T[],
+  currentIndex: number,
+  direction: 'up' | 'down'
+) {
+  const adjacentIndex =
+    direction === 'up' ? currentIndex - 1 : currentIndex + 1
+  if (
+    currentIndex < 0 ||
+    adjacentIndex < 0 ||
+    adjacentIndex >= rows.length
+  ) {
+    return null
+  }
+
+  return { current: rows[currentIndex]!, adjacent: rows[adjacentIndex]! }
+}
+
 async function syncShowCategories(
   admin: ReturnType<typeof createAdminClient>,
   showId: string,
@@ -231,7 +250,9 @@ async function findActiveTitleConflict(
   if (error) throw error
 
   return (data ?? []).find((show) => {
-    return show.id !== excludeId && normalizeEnglishTitle(show.title) === normalized
+    return (
+      show.id !== excludeId && normalizeEnglishTitle(show.title) === normalized
+    )
   })
 }
 
@@ -325,7 +346,19 @@ export async function createShow(
       }
     }
 
-    const insertData = id ? { id, ...rest } : rest
+    const { data: lastShow } = await admin
+      .from('shows')
+      .select('sort_order')
+      .eq('archived', false)
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const insertData = {
+      ...(id ? { id } : {}),
+      ...rest,
+      sort_order: (lastShow?.sort_order ?? -1) + 1,
+    }
 
     const { data: show, error } = await admin
       .from('shows')
@@ -468,6 +501,64 @@ export async function archiveShow(id: string): Promise<ActionResult> {
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to archive show',
+    }
+  }
+}
+
+export async function reorderShow(
+  id: string,
+  direction: 'up' | 'down'
+): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const admin = createAdminClient()
+
+    const { data: shows, error: fetchError } = await admin
+      .from('shows')
+      .select('id, title, sort_order')
+      .eq('archived', false)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
+
+    if (fetchError) return { success: false, error: fetchError.message }
+
+    const currentIndex = (shows ?? []).findIndex((show) => show.id === id)
+    const pair = swapByDirection(shows ?? [], currentIndex, direction)
+    if (!pair) return { success: false, error: 'No show to swap with' }
+
+    const [first, second] = await Promise.all([
+      admin
+        .from('shows')
+        .update({ sort_order: pair.adjacent.sort_order })
+        .eq('id', pair.current.id),
+      admin
+        .from('shows')
+        .update({ sort_order: pair.current.sort_order })
+        .eq('id', pair.adjacent.id),
+    ])
+
+    const error = first.error ?? second.error
+    if (error) return { success: false, error: error.message }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'update',
+      entity: 'show',
+      entityId: id,
+      diff: {
+        direction,
+        swapped_with: pair.adjacent.id,
+        ordered_titles: [pair.current.title, pair.adjacent.title],
+      },
+    })
+
+    bumpCatalogCache()
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/shows] reorder failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to reorder show',
     }
   }
 }
@@ -729,8 +820,7 @@ export async function resolveRestoreConflictsAndRestore(
     console.error('[admin/actions] mutation failed', err)
     return {
       success: false,
-      error:
-        err instanceof Error ? err.message : 'Failed to resolve conflicts',
+      error: err instanceof Error ? err.message : 'Failed to resolve conflicts',
     }
   }
 }
@@ -915,11 +1005,13 @@ export async function reorderCategories(
     const user = await assertAdmin()
     const admin = createAdminClient()
 
-    await Promise.all(
+    const results = await Promise.all(
       categoryIds.map((id, index) =>
         admin.from('categories').update({ sort_order: index }).eq('id', id)
       )
     )
+    const error = results.find((result) => result.error)?.error
+    if (error) return { success: false, error: error.message }
 
     await logAudit({
       adminUserId: user.id,
@@ -1695,23 +1787,6 @@ export async function toggleFeatured(showId: string) {
 
     const newFeatured = !show.featured
 
-    // If featuring, check we don't exceed 5
-    if (newFeatured) {
-      const { count } = await admin
-        .from('shows')
-        .select('id', { count: 'exact', head: true })
-        .eq('featured', true)
-        .eq('archived', false)
-
-      if ((count ?? 0) >= 5) {
-        return {
-          success: false,
-          error:
-            'Maximum 5 featured shows allowed. Unfeature another show first.',
-        }
-      }
-    }
-
     const { error } = await admin
       .from('shows')
       .update({ featured: newFeatured })
@@ -1833,6 +1908,8 @@ const featureFlagsSchema = z.object({
 const topTickerItemSchema = z.object({
   tag: z.string().trim().max(24),
   text: z.string().trim().max(240),
+  tag_ar: z.string().trim().max(24).optional(),
+  text_ar: z.string().trim().max(240).optional(),
 })
 
 const topTickerSchema = z.object({
@@ -1935,6 +2012,36 @@ export async function updateFooterContent(
     if (error) return { success: false, error: error.message }
     await auditConfigUpdate(user.id, ['footer_content'])
     bumpSiteConfigCache()
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to save',
+    }
+  }
+}
+
+export async function updateContactRecipient(
+  input: { contactEmail: string }
+): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const current = await getAppConfig()
+    const parsed = footerSchema.parse({
+      ...current.footer,
+      contactEmail: input.contactEmail,
+    })
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('app_config')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ footer_content: parsed } as any)
+      .eq('id', 1)
+    if (error) return { success: false, error: error.message }
+    await auditConfigUpdate(user.id, ['footer_content.contactEmail'])
+    bumpSiteConfigCache()
+    revalidatePath('/admin/inbox')
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
@@ -2068,13 +2175,16 @@ export async function updateTopTicker(
       .map((row) => ({
         tag: row.tag.trim(),
         text: row.text.trim(),
+        ...(row.tag_ar?.trim() && { tag_ar: row.tag_ar.trim() }),
+        ...(row.text_ar?.trim() && { text_ar: row.text_ar.trim() }),
       }))
       .filter((row) => row.tag.length > 0 && row.text.length > 0)
 
     if (parsed.enabled && items.length === 0) {
       return {
         success: false,
-        error: 'Add at least one ticker line with tag and text, or turn the ticker off.',
+        error:
+          'Add at least one ticker line with tag and text, or turn the ticker off.',
       }
     }
 
@@ -2325,6 +2435,68 @@ export async function toggleShortFeatured(
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed',
+    }
+  }
+}
+
+export async function reorderShort(
+  id: string,
+  direction: 'up' | 'down'
+): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const admin = createAdminClient()
+
+    const { data: shorts, error: fetchError } = await admin
+      .from('shorts')
+      .select('id, title, sort_order')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
+
+    if (fetchError) return { success: false, error: fetchError.message }
+
+    const currentIndex = (shorts ?? []).findIndex((short) => short.id === id)
+    const pair = swapByDirection(shorts ?? [], currentIndex, direction)
+    if (!pair) return { success: false, error: 'No short to swap with' }
+    const adjacentIndex =
+      direction === 'up' ? currentIndex - 1 : currentIndex + 1
+    const currentSortOrder = pair.current.sort_order ?? currentIndex
+    const adjacentSortOrder = pair.adjacent.sort_order ?? adjacentIndex
+
+    const [first, second] = await Promise.all([
+      admin
+        .from('shorts')
+        .update({ sort_order: adjacentSortOrder })
+        .eq('id', pair.current.id),
+      admin
+        .from('shorts')
+        .update({ sort_order: currentSortOrder })
+        .eq('id', pair.adjacent.id),
+    ])
+
+    const error = first.error ?? second.error
+    if (error) return { success: false, error: error.message }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'update',
+      entity: 'short',
+      entityId: id,
+      diff: {
+        direction,
+        swapped_with: pair.adjacent.id,
+        ordered_titles: [pair.current.title, pair.adjacent.title],
+      },
+    })
+
+    revalidatePath('/admin/shorts')
+    updateTag('shorts')
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/shorts] reorder failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to reorder short',
     }
   }
 }

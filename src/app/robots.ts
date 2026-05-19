@@ -10,7 +10,11 @@ import { siteUrl } from '@/lib/site-url'
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
-      { userAgent: '*', allow: '/', disallow: ['/admin', '/admin/', '/api/', '/auth/'] },
+      {
+        userAgent: '*',
+        allow: '/',
+        disallow: ['/admin', '/admin/', '/api/', '/auth/'],
+      },
     ],
     sitemap: `${siteUrl()}/sitemap.xml`,
   }

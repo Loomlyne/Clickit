@@ -59,7 +59,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(siteUrl()),
     title: config.siteTitle,
-    description: config.siteDescription ?? 'Original shows from the UAE - streaming now',
+    description:
+      config.siteDescription ?? 'Original shows from the UAE - streaming now',
     icons: config.faviconUrl ? { icon: config.faviconUrl } : undefined,
     openGraph: config.ogImageUrl
       ? {
@@ -113,12 +114,14 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       dir={dir}
-      className={['dark', geist.variable, lbc.variable, geSS.variable].join(' ')}
+      className={['dark', geist.variable, lbc.variable, geSS.variable].join(
+        ' '
+      )}
     >
-      <body className="bg-background text-foreground font-sans antialiased selection:bg-primary/70 selection:text-primary-foreground">
+      <body className="bg-background text-foreground selection:bg-primary/70 selection:text-primary-foreground font-sans antialiased">
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[60] focus:rounded-full focus:bg-card focus:px-4 focus:py-2 focus:text-foreground focus:ring-2 focus:ring-ring"
+          className="focus:bg-card focus:text-foreground focus:ring-ring sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[60] focus:rounded-full focus:px-4 focus:py-2 focus:ring-2"
         >
           Skip to content
         </a>
@@ -131,7 +134,8 @@ export default async function LocaleLayout({
           theme="dark"
           toastOptions={{
             classNames: {
-              toast: 'border border-white/10 bg-[#10131a] text-foreground shadow-[0_24px_80px_rgba(0,0,0,0.45)]',
+              toast:
+                'border border-white/10 bg-[#10131a] text-foreground shadow-[0_24px_80px_rgba(0,0,0,0.45)]',
               description: 'text-muted-foreground',
               actionButton: 'bg-primary text-primary-foreground',
               cancelButton: 'bg-secondary text-secondary-foreground',

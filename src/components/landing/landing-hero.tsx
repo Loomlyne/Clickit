@@ -10,7 +10,13 @@ const FALLBACK_YT_ID = 'Nk2jlxVX8g8'
 
 export async function LandingHero() {
   const supabase = await createClient()
-  const [{ data: { user } }, config, t] = await Promise.all([
+  const [
+    {
+      data: { user },
+    },
+    config,
+    t,
+  ] = await Promise.all([
     supabase.auth.getUser(),
     getAppConfig(),
     getTranslations('landing'),

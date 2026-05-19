@@ -10,7 +10,9 @@ export default async function BrowseRedirectPage({
   const params = await searchParams
   const category = params?.category?.trim()
   redirect({
-    href: category ? `/watch?category=${encodeURIComponent(category)}` : '/watch',
+    href: category
+      ? `/watch?category=${encodeURIComponent(category)}`
+      : '/watch',
     locale,
   })
 }

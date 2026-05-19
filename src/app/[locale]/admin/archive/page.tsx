@@ -17,15 +17,15 @@ export default async function ArchivePage() {
   return (
     <div className="space-y-6">
       <AdminPanel className="p-6 md:p-8">
-        <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+        <p className="text-muted-foreground text-xs tracking-[0.24em] uppercase">
           {t('adminConsole')}
         </p>
         <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            <h1 className="text-foreground text-3xl font-semibold tracking-tight">
               {t('heading')}
             </h1>
-            <p className="mt-2 max-w-2xl text-sm text-muted-foreground md:text-base">
+            <p className="text-muted-foreground mt-2 max-w-2xl text-sm md:text-base">
               {t('description')}
             </p>
           </div>
@@ -36,9 +36,7 @@ export default async function ArchivePage() {
               <p className="font-medium text-yellow-100">
                 {t('hiddenWarningTitle')}
               </p>
-              <p className="mt-1 text-yellow-100/65">
-                {t('warning')}
-              </p>
+              <p className="mt-1 text-yellow-100/65">{t('warning')}</p>
             </div>
           </div>
         </div>

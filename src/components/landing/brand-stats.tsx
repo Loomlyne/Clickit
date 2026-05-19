@@ -16,7 +16,7 @@ export async function BrandStats() {
           key={s.l}
           className="flex flex-col gap-2.5 border-e border-[var(--line)] px-8 py-10 last:border-e-0"
         >
-          <div className="font-[family-name:var(--font-display)] text-[clamp(36px,5vw,56px)] font-normal leading-none tracking-[-0.02em]">
+          <div className="font-[family-name:var(--font-display)] text-[clamp(36px,5vw,56px)] leading-none font-normal tracking-[-0.02em]">
             {s.n}
           </div>
           <div className="mono">{s.l}</div>

@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ResetPasswordPage() {
   const t = await getTranslations('auth')
   return (
-    <div className="-mt-24 md:-mt-28 relative flex min-h-dvh items-center justify-center overflow-hidden px-6 py-16">
+    <div className="relative -mt-24 flex min-h-dvh items-center justify-center overflow-hidden px-6 py-16 md:-mt-28">
       <CinematicBackdrop
         brandColor="#2C3569"
         intensity="high"
@@ -24,8 +24,8 @@ export default async function ResetPasswordPage() {
         className="absolute inset-0"
       />
 
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(0,0,0,0.8)_70%)] pointer-events-none" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(0,0,0,0.8)_70%)]" />
 
       <div className="relative z-10 w-full max-w-[440px]">
         <div className="mb-8 flex justify-center">
@@ -40,19 +40,20 @@ export default async function ResetPasswordPage() {
         </div>
 
         <div
-          className="rounded-full border border-white/10 p-8 backdrop-blur-xl"
+          className="rounded-[10px] border border-white/10 p-8 backdrop-blur-xl"
           style={{
             background: 'rgba(12, 15, 21, 0.88)',
-            boxShadow: '0 32px 90px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.04)',
+            boxShadow:
+              '0 32px 90px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.04)',
           }}
         >
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.28em] text-white/34">
+          <p className="mb-3 text-[11px] font-medium tracking-[0.28em] text-white/34 uppercase">
             {t('resetHeading')}
           </p>
           <h2 className="font-display text-[2rem] font-semibold tracking-[-0.03em] text-white">
             {t('resetDescription')}
           </h2>
-          <p className="mb-8 mt-2 text-sm leading-6 text-white/52">
+          <p className="mt-2 mb-8 text-sm leading-6 text-white/52">
             {t('resetButton')}
           </p>
 

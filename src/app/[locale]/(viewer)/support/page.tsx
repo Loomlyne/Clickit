@@ -1,7 +1,12 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import { getTranslations } from 'next-intl/server'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
 import { ContactForm } from '@/components/support/contact-form'
 
@@ -28,12 +33,17 @@ export default async function SupportPage() {
   const rightFaq = faqItems.slice(4)
 
   return (
-    <div id="support-top" className="px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-8 md:px-12">
-      <div className="grid gap-px overflow-hidden rounded-[24px] border border-[var(--line)] bg-[var(--line)] lg:grid-cols-[1.05fr_0.95fr]">
+    <div
+      id="support-top"
+      className="px-4 pt-6 pb-16 sm:px-6 sm:pt-8 sm:pb-20 md:px-12"
+    >
+      <div className="grid gap-px overflow-hidden rounded-[12px] border border-[var(--line)] bg-[var(--line)] lg:grid-cols-[1.05fr_0.95fr]">
         {/* Left — info panel */}
         <div className="bg-[var(--bg-1)] p-6 sm:p-8 lg:p-10">
-          <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--text-mute)] sm:mb-4">{t('pageTitle')}</p>
-          <h1 className="font-display text-[clamp(28px,5vw,48px)] font-semibold leading-[1.05] tracking-[-0.04em] text-foreground">
+          <p className="mb-3 font-mono text-[11px] tracking-[0.28em] text-[var(--text-mute)] uppercase sm:mb-4">
+            {t('pageTitle')}
+          </p>
+          <h1 className="font-display text-foreground text-[clamp(28px,5vw,48px)] leading-[1.05] font-semibold tracking-[-0.04em]">
             {t('heading')}
           </h1>
           <p className="mt-4 max-w-md text-[15px] leading-relaxed text-[var(--text-dim)] sm:text-base sm:leading-7">
@@ -45,11 +55,18 @@ export default async function SupportPage() {
               alt=""
               width={100}
               height={28}
-              className="h-7 w-auto brightness-0 invert opacity-30 mb-4"
+              className="mb-4 h-7 w-auto opacity-30 brightness-0 invert"
             />
             {/* 6-color brand strip */}
             <div className="flex gap-1.5">
-              {['#2C3569', '#9F54A0', '#50A258', '#DB3F34', '#EA8C2E', '#F8C623'].map((color, i) => (
+              {[
+                '#2C3569',
+                '#9F54A0',
+                '#50A258',
+                '#DB3F34',
+                '#EA8C2E',
+                '#F8C623',
+              ].map((color, i) => (
                 <div
                   key={i}
                   className="h-[3px] w-6 rounded-[1px] sm:w-8"
@@ -67,30 +84,44 @@ export default async function SupportPage() {
       </div>
 
       <section id="faq" className="mt-12 sm:mt-16">
-        <h2 className="font-display text-[clamp(24px,4vw,30px)] font-semibold tracking-[-0.03em] text-foreground">{t('faqHeading')}</h2>
+        <h2 className="font-display text-foreground text-[clamp(24px,4vw,30px)] font-semibold tracking-[-0.03em]">
+          {t('faqHeading')}
+        </h2>
         <div className="mt-5 grid gap-4 sm:mt-6 sm:gap-6 md:grid-cols-2">
           <Accordion type="single" collapsible>
             {leftFaq.map((item, i) => (
-              <AccordionItem key={i} value={`left-${i}`} className="border-[var(--line)]">
-                <AccordionTrigger className="text-[15px] text-foreground data-[state=open]:text-[var(--accent-yellow)] sm:text-sm">{item.q}</AccordionTrigger>
-                <AccordionContent className="text-[14px] text-[var(--text-dim)] sm:text-sm">{item.a}</AccordionContent>
+              <AccordionItem
+                key={i}
+                value={`left-${i}`}
+                className="border-[var(--line)]"
+              >
+                <AccordionTrigger className="text-foreground text-[15px] data-[state=open]:text-[var(--accent-yellow)] sm:text-sm">
+                  {item.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-[14px] text-[var(--text-dim)] sm:text-sm">
+                  {item.a}
+                </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
           <Accordion type="single" collapsible>
             {rightFaq.map((item, i) => (
-              <AccordionItem key={i} value={`right-${i}`} className="border-[var(--line)]">
-                <AccordionTrigger className="text-[15px] text-foreground data-[state=open]:text-[var(--accent-yellow)] sm:text-sm">{item.q}</AccordionTrigger>
-                <AccordionContent className="text-[14px] text-[var(--text-dim)] sm:text-sm">{item.a}</AccordionContent>
+              <AccordionItem
+                key={i}
+                value={`right-${i}`}
+                className="border-[var(--line)]"
+              >
+                <AccordionTrigger className="text-foreground text-[15px] data-[state=open]:text-[var(--accent-yellow)] sm:text-sm">
+                  {item.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-[14px] text-[var(--text-dim)] sm:text-sm">
+                  {item.a}
+                </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
         </div>
-        <Button
-          variant="default"
-          className="mt-8 min-h-[44px]"
-          asChild
-        >
+        <Button variant="default" className="mt-8 min-h-[44px]" asChild>
           <a href="#contact-form">{t('contactHeading')}</a>
         </Button>
       </section>

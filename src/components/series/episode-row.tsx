@@ -42,7 +42,7 @@ export function EpisodeRow({
       {/* Thumbnail area — wider: 160px mobile, 180px md+ */}
       <div
         className={cn(
-          'relative aspect-video w-[120px] sm:w-[160px] md:w-[180px] flex-shrink-0 rounded-[14px] overflow-hidden',
+          'relative aspect-video w-[120px] flex-shrink-0 overflow-hidden rounded-[14px] sm:w-[160px] md:w-[180px]',
           isDimmed && 'opacity-45'
         )}
       >
@@ -67,7 +67,10 @@ export function EpisodeRow({
         {isPublished && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60">
-              <Play className="size-5 text-white fill-white" aria-hidden="true" />
+              <Play
+                className="size-5 fill-white text-white"
+                aria-hidden="true"
+              />
             </div>
           </div>
         )}
@@ -88,36 +91,38 @@ export function EpisodeRow({
       </div>
 
       {/* Text content */}
-      <div className="flex flex-col justify-center min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 flex-col justify-center">
         {/* Row 1: episode number + title */}
         <div className="flex items-center gap-3">
           <span
-            className="font-display text-[28px] flex-shrink-0 leading-none text-[var(--text-dim)]"
+            className="font-display flex-shrink-0 text-[28px] leading-none text-[var(--text-dim)]"
             style={{ color: isCurrentEpisode ? brandColorHex : undefined }}
           >
             {episode.episodeNumber}
           </span>
-          <span className="font-display text-base font-medium text-foreground truncate">
+          <span className="font-display text-foreground truncate text-base font-medium">
             {episode.title}
           </span>
         </div>
 
         {/* Row 2: description */}
         <p
-          className="mt-1 text-sm text-muted-foreground line-clamp-1"
+          className="text-muted-foreground mt-1 line-clamp-1 text-sm"
           title={episode.description}
         >
           {episode.description}
         </p>
 
         {/* Row 3: duration + status badge */}
-        <div className="flex items-center gap-2 mt-2">
-          <Badge variant="secondary" className="text-xs text-muted-foreground">
-            {episode.duration ? t('minutesAbbr', { duration: episode.duration }) : t('minutesEmpty')}
+        <div className="mt-2 flex items-center gap-2">
+          <Badge variant="secondary" className="text-muted-foreground text-xs">
+            {episode.duration
+              ? t('minutesAbbr', { duration: episode.duration })
+              : t('minutesEmpty')}
           </Badge>
 
           {isComingSoon && (
-            <Badge className="bg-brand-orange text-black text-xs">
+            <Badge className="bg-brand-orange text-xs text-black">
               {t('comingSoonBadge')}
             </Badge>
           )}
@@ -138,10 +143,13 @@ export function EpisodeRow({
           </div>
         )}
         {!isCompleted && resumePercent != null && resumePercent > 0 && (
-          <div className="mt-2 h-1 rounded-full bg-white/10 overflow-hidden max-w-[200px]">
+          <div className="mt-2 h-1 max-w-[200px] overflow-hidden rounded-full bg-white/10">
             <div
               className="h-full rounded-full transition-all duration-300"
-              style={{ width: `${resumePercent}%`, backgroundColor: brandColorHex }}
+              style={{
+                width: `${resumePercent}%`,
+                backgroundColor: brandColorHex,
+              }}
             />
           </div>
         )}
@@ -154,7 +162,7 @@ export function EpisodeRow({
       <div
         id={`episode-${episode.id}`}
         aria-current="true"
-        className="group flex cursor-default items-start gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--bg-1)] p-4"
+        className="group flex cursor-default items-start gap-4 rounded-[10px] border border-[var(--line)] bg-[var(--bg-1)] p-4"
         style={{
           borderInlineStart: `3px solid ${brandColorHex}`,
         }}
@@ -170,7 +178,7 @@ export function EpisodeRow({
         <Link
           id={`episode-${episode.id}`}
           href={`/watch/${episode.id}`}
-          className="group flex cursor-pointer items-start gap-4 rounded-[20px] border border-transparent p-4 transition-colors duration-200 hover:border-[var(--line)] hover:bg-[var(--bg-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="group focus-visible:ring-ring flex cursor-pointer items-start gap-4 rounded-[10px] border border-transparent p-4 transition-colors duration-200 hover:border-[var(--line)] hover:bg-[var(--bg-1)] focus-visible:ring-2 focus-visible:outline-none"
         >
           {rowContent}
         </Link>
@@ -181,7 +189,7 @@ export function EpisodeRow({
   return (
     <div
       aria-disabled="true"
-      className="flex cursor-default items-start gap-4 rounded-[20px] p-4"
+      className="flex cursor-default items-start gap-4 rounded-[10px] p-4"
     >
       {rowContent}
     </div>

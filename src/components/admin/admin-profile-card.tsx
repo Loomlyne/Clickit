@@ -9,7 +9,11 @@ interface AdminProfileCardProps {
   avatarUrl: string | null
 }
 
-export function AdminProfileCard({ email, displayName, avatarUrl }: AdminProfileCardProps) {
+export function AdminProfileCard({
+  email,
+  displayName,
+  avatarUrl,
+}: AdminProfileCardProps) {
   const t = useTranslations('admin.profileCard')
   const tProfile = useTranslations('profile')
   return (
@@ -26,15 +30,17 @@ export function AdminProfileCard({ email, displayName, avatarUrl }: AdminProfile
             <User className="size-5" />
           </div>
         )}
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium truncate">
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium">
             {displayName || t('fallbackName')}
           </div>
-          <div className="mono text-[11px] text-muted-foreground truncate">{email}</div>
+          <div className="mono text-muted-foreground truncate text-[11px]">
+            {email}
+          </div>
         </div>
         <Link
           href="/profile"
-          className="flex items-center gap-1.5 rounded-full border border-white/8 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-full border border-white/8 px-3 py-1.5 text-xs transition-colors"
         >
           <Settings className="size-3" />
           {tProfile('title')}

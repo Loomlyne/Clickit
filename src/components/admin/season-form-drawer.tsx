@@ -31,11 +31,18 @@ interface SeasonFormDrawerProps {
   season?: Database['public']['Tables']['seasons']['Row'] | null
   showId: string
   nextSeasonNumber: number
-  onSave: (data: SeasonFormData) => Promise<{ success: boolean; error?: string }>
+  onSave: (
+    data: SeasonFormData
+  ) => Promise<{ success: boolean; error?: string }>
 }
 
 export function SeasonFormDrawer({
-  open, onOpenChange, season, showId, nextSeasonNumber, onSave,
+  open,
+  onOpenChange,
+  season,
+  showId,
+  nextSeasonNumber,
+  onSave,
 }: SeasonFormDrawerProps) {
   const isEdit = !!season
   const t = useTranslations('admin.seasonForm')
@@ -50,7 +57,11 @@ export function SeasonFormDrawer({
   useEffect(() => {
     if (open) {
       if (season) {
-        form.reset({ title: season.title, title_ar: season.title_ar ?? '', season_number: season.season_number })
+        form.reset({
+          title: season.title,
+          title_ar: season.title_ar ?? '',
+          season_number: season.season_number,
+        })
       } else {
         form.reset({ title: '', title_ar: '', season_number: nextSeasonNumber })
       }
@@ -74,22 +85,40 @@ export function SeasonFormDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="sm:max-w-md w-full p-0 flex flex-col">
-        <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
-          <SheetTitle className="text-lg">{isEdit ? t('editSeason') : t('createSeason')}</SheetTitle>
-          <p className="text-sm text-muted-foreground">
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col p-0 sm:max-w-md"
+      >
+        <SheetHeader className="border-border shrink-0 border-b px-6 pt-6 pb-4">
+          <SheetTitle className="text-lg">
+            {isEdit ? t('editSeason') : t('createSeason')}
+          </SheetTitle>
+          <p className="text-muted-foreground text-sm">
             {isEdit
               ? t('editingSeason', { title: season.title })
               : t('seasonNumberDescription', { number: nextSeasonNumber })}
           </p>
         </SheetHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
             <div className="space-y-1.5">
-              <Label className="text-sm">{t('titleLabel')}<span className="text-destructive ms-0.5">*</span></Label>
-              <Input {...form.register('title')} placeholder={t('titlePlaceholder')} />
-              {errors.title && <p className="text-xs text-destructive">{tErrors(errors.title.message as never)}</p>}
+              <Label className="text-sm">
+                {t('titleLabel')}
+                <span className="text-destructive ms-0.5">*</span>
+              </Label>
+              <Input
+                {...form.register('title')}
+                placeholder={t('titlePlaceholder')}
+              />
+              {errors.title && (
+                <p className="text-destructive text-xs">
+                  {tErrors(errors.title.message as never)}
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -98,13 +127,24 @@ export function SeasonFormDrawer({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm">{t('seasonNumberLabel')}<span className="text-destructive ms-0.5">*</span></Label>
-              <Input type="number" min={1} {...form.register('season_number', { valueAsNumber: true })} />
-              {errors.season_number && <p className="text-xs text-destructive">{tErrors(errors.season_number.message as never)}</p>}
+              <Label className="text-sm">
+                {t('seasonNumberLabel')}
+                <span className="text-destructive ms-0.5">*</span>
+              </Label>
+              <Input
+                type="number"
+                min={1}
+                {...form.register('season_number', { valueAsNumber: true })}
+              />
+              {errors.season_number && (
+                <p className="text-destructive text-xs">
+                  {tErrors(errors.season_number.message as never)}
+                </p>
+              )}
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-border bg-[var(--card)] px-6 py-4 flex items-center justify-end gap-3">
+          <div className="border-border flex shrink-0 items-center justify-end gap-3 border-t bg-[var(--card)] px-6 py-4">
             <button
               type="button"
               onClick={() => onOpenChange(false)}

@@ -10,7 +10,7 @@ export async function CtaBanner() {
   const backdrop = shows[2]?.heroImageUrl || shows[0]?.posterUrl
 
   return (
-    <section className="relative overflow-hidden border-y border-[var(--line)] py-28 px-10 text-center">
+    <section className="relative overflow-hidden border-y border-[var(--line)] px-10 py-28 text-center">
       {backdrop && (
         <div
           className="absolute inset-0 bg-cover bg-center opacity-25 grayscale"
@@ -18,11 +18,13 @@ export async function CtaBanner() {
         />
       )}
       <div className="relative mx-auto max-w-[720px]">
-        <div className="mono mb-3.5 text-[var(--primary)]">{t('ctaEyebrow')}</div>
-        <h2 className="font-[family-name:var(--font-display)] text-[clamp(40px,6vw,80px)] font-normal leading-none tracking-[-0.02em] mb-6">
+        <div className="mono mb-3.5 text-[var(--primary)]">
+          {t('ctaEyebrow')}
+        </div>
+        <h2 className="mb-6 font-[family-name:var(--font-display)] text-[clamp(40px,6vw,80px)] leading-none font-normal tracking-[-0.02em]">
           {t('ctaHeading')}
         </h2>
-        <p className="text-[17px] text-[var(--text-dim)] mb-9">
+        <p className="mb-9 text-[17px] text-[var(--text-dim)]">
           {t('ctaBody')}
         </p>
         <div className="flex items-center justify-center gap-3">

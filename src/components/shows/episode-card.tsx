@@ -16,7 +16,7 @@ export function EpisodeCard({ episode }: EpisodeCardProps) {
   return (
     <Link
       href={`/watch/${episode.id}`}
-      className="poster group relative block flex-shrink-0 cursor-pointer overflow-hidden rounded-[24px] bg-[var(--bg-2)] transition-transform duration-[250ms] ease-[var(--ease)] hover:-translate-y-1 hover:z-[2]"
+      className="poster group relative block flex-shrink-0 cursor-pointer overflow-hidden rounded-[12px] bg-[var(--bg-2)] transition-transform duration-[250ms] ease-[var(--ease)] hover:z-[2] hover:-translate-y-1"
       style={{ width: 'var(--landscape-w)', aspectRatio: '16 / 9' }}
     >
       {thumbnailUrl ? (
@@ -38,14 +38,14 @@ export function EpisodeCard({ episode }: EpisodeCardProps) {
           {episode.showTitle} · E{episode.episodeNumber}
         </div>
         <div className="mt-2.5 flex gap-1.5">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-[7px] text-[12.5px] font-medium text-primary-foreground">
+          <span className="bg-primary text-primary-foreground inline-flex items-center gap-1.5 rounded-full px-3 py-[7px] text-[12.5px] font-medium">
             <Play className="size-3 fill-current" /> Play
           </span>
         </div>
       </div>
 
       {/* New badge */}
-      <div className="absolute left-2.5 top-2.5 rounded-full bg-primary px-2 py-1 font-[family-name:var(--font-mono)] text-[9.5px] font-semibold uppercase tracking-[0.14em] text-primary-foreground">
+      <div className="bg-primary text-primary-foreground absolute top-2.5 left-2.5 rounded-full px-2 py-1 font-[family-name:var(--font-mono)] text-[9.5px] font-semibold tracking-[0.14em] uppercase">
         New
       </div>
     </Link>

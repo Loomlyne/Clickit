@@ -13,7 +13,7 @@ export function LandingHeroAnimations({ logo }: { logo: React.ReactNode }) {
   return (
     <>
       <motion.p
-        className="mb-4 text-[11px] font-medium uppercase tracking-[0.28em] text-white/48"
+        className="mb-4 text-[11px] font-medium tracking-[0.28em] text-white/48 uppercase"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: CINEMA_EASE, delay: 0.1 }}
@@ -24,7 +24,7 @@ export function LandingHeroAnimations({ logo }: { logo: React.ReactNode }) {
       {logo}
 
       <motion.p
-        className="font-display mt-5 font-semibold leading-tight text-white/80"
+        className="font-display mt-5 leading-tight font-semibold text-white/80"
         style={{ fontSize: 'clamp(1.5rem, 4vw, 3rem)' }}
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -50,7 +50,7 @@ export function LandingHeroAnimations({ logo }: { logo: React.ReactNode }) {
       >
         <Link
           href="/watch"
-          className="inline-flex items-center rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-[0_16px_40px_rgba(96,115,255,0.28)] transition-colors hover:bg-[#7082ff]"
+          className="bg-primary text-primary-foreground inline-flex items-center rounded-full px-7 py-3 text-sm font-semibold shadow-[0_16px_40px_rgba(96,115,255,0.28)] transition-colors hover:bg-[#7082ff]"
         >
           {tCommon('browseShows')}
         </Link>
@@ -76,7 +76,9 @@ export function LandingHeroAnimations({ logo }: { logo: React.ReactNode }) {
         >
           ↓
         </motion.span>
-        <span className="text-[11px] uppercase tracking-[0.22em]">{tShow('scrollDown')}</span>
+        <span className="text-[11px] tracking-[0.22em] uppercase">
+          {tShow('scrollDown')}
+        </span>
       </motion.div>
     </>
   )

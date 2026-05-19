@@ -112,9 +112,7 @@ export function EpisodeTray({
                     )
                   }
                   className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 hover:text-white"
-                  aria-label={
-                    isTrayRaised ? t('lowerTray') : t('raiseTray')
-                  }
+                  aria-label={isTrayRaised ? t('lowerTray') : t('raiseTray')}
                 >
                   <ChevronUp
                     className={cn(
@@ -169,7 +167,7 @@ export function EpisodeTray({
                           </span>
                         </div>
                         {episode.duration && (
-                          <div className="absolute right-3 bottom-3 rounded-[6px] bg-black/75 px-2 py-1 text-sm font-semibold text-white">
+                          <div className="absolute right-3 bottom-3 rounded-full bg-black/75 px-2 py-1 text-sm font-semibold text-white">
                             {episode.duration}:00
                           </div>
                         )}

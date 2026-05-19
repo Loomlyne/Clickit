@@ -28,20 +28,31 @@ interface ReelCardProps {
   showBrandColor: ViewShow['brandColor']
 }
 
-export function ReelCard({ reel, showSlug, showTitle, showBrandColor }: ReelCardProps) {
+export function ReelCard({
+  reel,
+  showSlug,
+  showTitle,
+  showBrandColor,
+}: ReelCardProps) {
   return (
     <Link href={`/series/${showSlug}`} className="block">
-      <div className="group relative cursor-pointer overflow-hidden rounded-lg aspect-[9/16]">
+      <div className="group relative aspect-[9/16] cursor-pointer overflow-hidden rounded-lg">
         <div className={`h-full w-full ${BRAND_COLOR_BG[showBrandColor]}`}>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-4xl font-black text-white/10">{showTitle.split(' ')[0]}</span>
+            <span className="text-4xl font-black text-white/10">
+              {showTitle.split(' ')[0]}
+            </span>
           </div>
         </div>
         {isReelFresh(reel) && (
-          <Badge className="absolute top-2 right-2 bg-brand-red text-white text-xs">24h</Badge>
+          <Badge className="bg-brand-red absolute top-2 right-2 text-xs text-white">
+            24h
+          </Badge>
         )}
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-          <p className="truncate text-sm font-medium text-white">{reel.title}</p>
+          <p className="truncate text-sm font-medium text-white">
+            {reel.title}
+          </p>
           <p className="text-xs text-white/60">{Math.floor(reel.duration)}s</p>
         </div>
       </div>

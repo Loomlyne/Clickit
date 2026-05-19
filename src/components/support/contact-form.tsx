@@ -28,7 +28,9 @@ type ContactFormData = z.infer<typeof contactSchema>
 export function ContactForm() {
   const t = useTranslations('support')
   const tErrors = useTranslations('errors')
-  const [submitState, setSubmitState] = useState<'idle' | 'saved_email_failed'>('idle')
+  const [submitState, setSubmitState] = useState<'idle' | 'saved_email_failed'>(
+    'idle'
+  )
   const {
     register,
     handleSubmit,
@@ -39,7 +41,14 @@ export function ContactForm() {
     formState: { errors, isSubmitting },
   } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
-    defaultValues: { name: '', email: '', phone: '', subject: '', message: '', terms: false },
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      subject: '',
+      message: '',
+      terms: false,
+    },
   })
 
   const termsValue = watch('terms')
@@ -64,44 +73,106 @@ export function ContactForm() {
     if (result.status === 'saved_email_failed') {
       setSubmitState('saved_email_failed')
       toast.success(t('savedEmailFailedToast'))
-      reset({ name: '', email: '', phone: '', subject: '', message: '', terms: false })
+      reset({
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: '',
+        terms: false,
+      })
       return
     }
 
     setSubmitState('idle')
     toast.success(t('messageSent'))
-    reset({ name: '', email: '', phone: '', subject: '', message: '', terms: false })
+    reset({
+      name: '',
+      email: '',
+      phone: '',
+      subject: '',
+      message: '',
+      terms: false,
+    })
   }
 
   return (
-    <form id="contact-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form
+      id="contact-form"
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-5"
+    >
       <div>
         <Label htmlFor="name">{t('nameLabel')}</Label>
-        <Input id="name" placeholder={t('namePlaceholder')} className="mt-1.5" {...register('name')} />
-        {errors.name && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.name.message as never)}</p>}
+        <Input
+          id="name"
+          placeholder={t('namePlaceholder')}
+          className="mt-1.5"
+          {...register('name')}
+        />
+        {errors.name && (
+          <p className="text-brand-red-safe mt-1 text-xs">
+            {tErrors(errors.name.message as never)}
+          </p>
+        )}
       </div>
 
       <div>
         <Label htmlFor="email">{t('emailLabel')}</Label>
-        <Input id="email" type="email" placeholder={t('emailPlaceholder')} className="mt-1.5" {...register('email')} />
-        {errors.email && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.email.message as never)}</p>}
+        <Input
+          id="email"
+          type="email"
+          placeholder={t('emailPlaceholder')}
+          className="mt-1.5"
+          {...register('email')}
+        />
+        {errors.email && (
+          <p className="text-brand-red-safe mt-1 text-xs">
+            {tErrors(errors.email.message as never)}
+          </p>
+        )}
       </div>
 
       <div>
         <Label htmlFor="phone">{t('phoneOptional')}</Label>
-        <Input id="phone" type="tel" placeholder={t('phonePlaceholder')} className="mt-1.5" {...register('phone')} />
+        <Input
+          id="phone"
+          type="tel"
+          placeholder={t('phonePlaceholder')}
+          className="mt-1.5"
+          {...register('phone')}
+        />
       </div>
 
       <div>
         <Label htmlFor="subject">{t('subjectLabel')}</Label>
-        <Input id="subject" placeholder={t('subjectPlaceholder')} className="mt-1.5 rounded-[20px]" {...register('subject')} />
-        {errors.subject && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.subject.message as never)}</p>}
+        <Input
+          id="subject"
+          placeholder={t('subjectPlaceholder')}
+          className="mt-1.5 rounded-[10px]"
+          {...register('subject')}
+        />
+        {errors.subject && (
+          <p className="text-brand-red-safe mt-1 text-xs">
+            {tErrors(errors.subject.message as never)}
+          </p>
+        )}
       </div>
 
       <div>
         <Label htmlFor="message">{t('messageLabel')}</Label>
-        <Textarea id="message" placeholder={t('messagePlaceholder')} rows={5} className="mt-1.5 rounded-[20px]" {...register('message')} />
-        {errors.message && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.message.message as never)}</p>}
+        <Textarea
+          id="message"
+          placeholder={t('messagePlaceholder')}
+          rows={5}
+          className="mt-1.5 rounded-[10px]"
+          {...register('message')}
+        />
+        {errors.message && (
+          <p className="text-brand-red-safe mt-1 text-xs">
+            {tErrors(errors.message.message as never)}
+          </p>
+        )}
       </div>
 
       <div className="flex items-start justify-start gap-2">
@@ -111,11 +182,18 @@ export function ContactForm() {
           checked={termsValue}
           onCheckedChange={(checked) => setValue('terms', checked === true)}
         />
-        <Label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed">
+        <Label
+          htmlFor="terms"
+          className="text-muted-foreground text-sm leading-relaxed"
+        >
           {t('termsAccept')}
         </Label>
       </div>
-      {errors.terms && <p className="text-xs text-brand-red-safe">{tErrors(errors.terms.message as never)}</p>}
+      {errors.terms && (
+        <p className="text-brand-red-safe text-xs">
+          {tErrors(errors.terms.message as never)}
+        </p>
+      )}
 
       {submitState === 'saved_email_failed' && (
         <p className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">

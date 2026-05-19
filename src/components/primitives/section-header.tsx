@@ -21,7 +21,7 @@ export function SectionHeader({
       className={`mb-4 flex items-start justify-between gap-4 px-10${className ? ` ${className}` : ''}`}
     >
       <div>
-        <h2 className="font-display m-0 text-[26px]">{title}</h2>
+        <h2 className="font-display m-0 text-[26px] font-bold">{title}</h2>
       </div>
 
       {seeAllHref && (

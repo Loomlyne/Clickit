@@ -16,7 +16,9 @@ export function EpisodeBreadcrumb({
   return (
     <nav aria-label={tNav('breadcrumb')}>
       <ol className="flex items-center gap-2 text-sm">
-        <li className="text-text-muted">{tShow('seasonPrefix')} {seasonNumber}</li>
+        <li className="text-text-muted">
+          {tShow('seasonPrefix')} {seasonNumber}
+        </li>
         <li aria-hidden="true" className="text-text-muted">
           &gt;
         </li>

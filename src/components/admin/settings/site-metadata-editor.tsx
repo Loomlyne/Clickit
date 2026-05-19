@@ -48,16 +48,23 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
         <SettingsField label={t('siteTitleLabel')} hint={t('siteTitleHint')}>
           <Input
             value={values.site_title}
-            onChange={(e) => setValues((v) => ({ ...v, site_title: e.target.value }))}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, site_title: e.target.value }))
+            }
             placeholder={t('siteTitlePlaceholder')}
             maxLength={120}
           />
         </SettingsField>
 
-        <SettingsField label={t('siteTaglineLabel')} hint={t('siteTaglineHint')}>
+        <SettingsField
+          label={t('siteTaglineLabel')}
+          hint={t('siteTaglineHint')}
+        >
           <Input
             value={values.site_tagline}
-            onChange={(e) => setValues((v) => ({ ...v, site_tagline: e.target.value }))}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, site_tagline: e.target.value }))
+            }
             placeholder={t('siteTaglinePlaceholder')}
             maxLength={120}
           />
@@ -69,7 +76,9 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
         >
           <Textarea
             value={values.site_description}
-            onChange={(e) => setValues((v) => ({ ...v, site_description: e.target.value }))}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, site_description: e.target.value }))
+            }
             placeholder={t('seoDescriptionPlaceholder')}
             maxLength={300}
             rows={3}
@@ -79,7 +88,11 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
 
         <div className="flex items-center justify-end md:col-span-2">
           <Button type="submit" disabled={!dirty || saving}>
-            {saving ? <Loader2 className="size-4 animate-spin" /> : t('saveMetadata')}
+            {saving ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              t('saveMetadata')
+            )}
           </Button>
         </div>
       </form>

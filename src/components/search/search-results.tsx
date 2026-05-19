@@ -13,7 +13,11 @@ interface SearchResultsProps {
   })[]
 }
 
-export async function SearchResults({ query, shows, episodes }: SearchResultsProps) {
+export async function SearchResults({
+  query,
+  shows,
+  episodes,
+}: SearchResultsProps) {
   const total = shows.length + episodes.length
   const t = await getTranslations('search')
 

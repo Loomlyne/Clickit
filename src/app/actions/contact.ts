@@ -30,7 +30,9 @@ async function getContactRecipient() {
   return config.footer.contactEmail.trim() || 'contact@clickitstory.com'
 }
 
-export async function submitSupportMessage(input: SupportMessageInput): Promise<SupportSubmitResult> {
+export async function submitSupportMessage(
+  input: SupportMessageInput
+): Promise<SupportSubmitResult> {
   const parsed = supportMessageSchema.safeParse(input)
 
   if (!parsed.success) {
@@ -107,12 +109,17 @@ export async function submitSupportMessage(input: SupportMessageInput): Promise<
     return {
       ok: false,
       code: 'unknown',
-      message: error instanceof Error ? error.message : 'Failed to submit support message',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Failed to submit support message',
     }
   }
 }
 
-export async function subscribeToNewsletter(input: NewsletterSignupInput): Promise<NewsletterSignupResult> {
+export async function subscribeToNewsletter(
+  input: NewsletterSignupInput
+): Promise<NewsletterSignupResult> {
   const parsed = newsletterSignupSchema.safeParse(input)
 
   if (!parsed.success) {
@@ -153,7 +160,9 @@ export async function subscribeToNewsletter(input: NewsletterSignupInput): Promi
       .single()
 
     if (upsertError || !saved) {
-      throw new Error(upsertError?.message || 'Failed to save newsletter subscriber')
+      throw new Error(
+        upsertError?.message || 'Failed to save newsletter subscriber'
+      )
     }
 
     const shouldNotify =
@@ -167,9 +176,10 @@ export async function subscribeToNewsletter(input: NewsletterSignupInput): Promi
     }
 
     const recipient = await getContactRecipient()
-    const interestLabel = nextInterests.length > 0
-      ? nextInterests.map((item) => item.title || item.slug).join(', ')
-      : 'General newsletter'
+    const interestLabel =
+      nextInterests.length > 0
+        ? nextInterests.map((item) => item.title || item.slug).join(', ')
+        : 'General newsletter'
 
     const mail = await sendTransactionalEmail({
       to: recipient,
@@ -215,7 +225,10 @@ export async function subscribeToNewsletter(input: NewsletterSignupInput): Promi
     return {
       ok: false,
       code: 'unknown',
-      message: error instanceof Error ? error.message : 'Failed to subscribe to newsletter',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Failed to subscribe to newsletter',
     }
   }
 }

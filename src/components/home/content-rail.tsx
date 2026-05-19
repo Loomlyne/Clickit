@@ -32,7 +32,7 @@ export function ContentRail({
       {/* Rail header */}
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <h2 className="font-display m-0 text-[26px] tracking-[0.04em] uppercase">
+          <h2 className="font-display m-0 text-[26px] font-bold tracking-[0.04em] uppercase">
             {title}
           </h2>
         </div>

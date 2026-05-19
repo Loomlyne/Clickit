@@ -111,7 +111,7 @@ export function AdminHeader() {
             : 'px-3 py-2 text-sm',
           active
             ? 'bg-[var(--primary)] text-[var(--primary-foreground)] shadow-sm'
-            : 'text-muted-foreground hover:bg-white/[0.06] hover:text-foreground'
+            : 'text-muted-foreground hover:text-foreground hover:bg-white/[0.06]'
         )}
       >
         {item.label}
@@ -148,7 +148,7 @@ export function AdminHeader() {
             {navGroups.map((group) => (
               <div
                 key={group.id}
-                className="inline-flex min-w-0 flex-wrap items-center gap-0.5 rounded-xl border border-white/8 bg-white/[0.03] p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                className="inline-flex min-w-0 flex-wrap items-center gap-0.5 rounded-full border border-white/8 bg-white/[0.03] p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
               >
                 {group.items.map((item) => renderNavLink(item, true))}
               </div>
@@ -159,7 +159,7 @@ export function AdminHeader() {
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger
-              className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-white/8 bg-white/[0.03] text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground md:hidden"
+              className="text-muted-foreground hover:text-foreground inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-white/8 bg-white/[0.03] transition-colors hover:bg-white/[0.06] md:hidden"
               aria-label={t('navMenu')}
             >
               <Menu className="size-5" />
@@ -172,7 +172,7 @@ export function AdminHeader() {
               {navGroups.map((group, gi) => (
                 <div key={group.id}>
                   {gi > 0 ? <DropdownMenuSeparator /> : null}
-                  <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                  <DropdownMenuLabel className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
                     {group.label}
                   </DropdownMenuLabel>
                   {group.items.map((tab) => {
@@ -221,10 +221,12 @@ export function AdminHeader() {
             onMouseEnter={() => prefetchRoute('/profile')}
             onTouchStart={() => prefetchRoute('/profile')}
             prefetch
-            className="hidden min-h-10 items-center gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 text-sm text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground md:inline-flex lg:px-4"
+            className="text-muted-foreground hover:text-foreground hidden min-h-10 items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 text-sm transition-colors hover:bg-white/[0.06] md:inline-flex lg:px-4"
           >
             <User className="size-4 shrink-0 opacity-70" aria-hidden />
-            <span className="max-w-[8rem] truncate lg:max-w-[10rem]">{tNav('profile')}</span>
+            <span className="max-w-[8rem] truncate lg:max-w-[10rem]">
+              {tNav('profile')}
+            </span>
           </Link>
         </div>
       </div>

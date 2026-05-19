@@ -11,13 +11,17 @@ interface YouTubeUrlInputProps {
   error?: string
 }
 
-export function YouTubeUrlInput({ value, onChange, error }: YouTubeUrlInputProps) {
+export function YouTubeUrlInput({
+  value,
+  onChange,
+  error,
+}: YouTubeUrlInputProps) {
   const t = useTranslations('admin.youtubeInput')
   // Determine if initial value is a bare video ID (11 chars, no slashes)
   const isVideoId = value && value.length === 11 && !value.includes('/')
   const [rawUrl, setRawUrl] = useState(isVideoId ? '' : value)
   const [extractedId, setExtractedId] = useState<string | null>(
-    isVideoId ? value : (value ? extractYouTubeId(value) : null)
+    isVideoId ? value : value ? extractYouTubeId(value) : null
   )
   const [validationError, setValidationError] = useState<string | null>(null)
 
@@ -72,7 +76,7 @@ export function YouTubeUrlInput({ value, onChange, error }: YouTubeUrlInputProps
         aria-invalid={!!(error || validationError)}
       />
       {(error || validationError) && (
-        <p className="text-sm text-destructive">{error || validationError}</p>
+        <p className="text-destructive text-sm">{error || validationError}</p>
       )}
       {extractedId && (
         <div className="flex items-center gap-3">
@@ -82,9 +86,9 @@ export function YouTubeUrlInput({ value, onChange, error }: YouTubeUrlInputProps
             alt={t('thumbnailAlt')}
             width={120}
             height={68}
-            className="rounded border border-border"
+            className="border-border rounded border"
           />
-          <span className="text-sm text-muted-foreground">
+          <span className="text-muted-foreground text-sm">
             {t('idLabel')} {extractedId}
           </span>
         </div>

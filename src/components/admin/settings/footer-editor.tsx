@@ -32,10 +32,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
   }
 
   return (
-    <SettingsCard
-      title={t('footerTitle')}
-      description={t('footerDescription')}
-    >
+    <SettingsCard title={t('footerTitle')} description={t('footerDescription')}>
       <form onSubmit={onSave} className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2">
           <SettingsField label={t('footerTaglineLabel')}>
@@ -47,7 +44,10 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
               className="rounded-[12px]"
             />
           </SettingsField>
-          <SettingsField label={t('catalogStatLabel')} hint={t('catalogStatHint')}>
+          <SettingsField
+            label={t('catalogStatLabel')}
+            hint={t('catalogStatHint')}
+          >
             <Input
               maxLength={80}
               value={v.stat}
@@ -55,7 +55,10 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
               className="rounded-[12px]"
             />
           </SettingsField>
-          <SettingsField label={t('contactEmailLabel')} hint={t('contactEmailHint')}>
+          <SettingsField
+            label={t('contactEmailLabel')}
+            hint={t('contactEmailHint')}
+          >
             <Input
               type="email"
               value={v.contactEmail}
@@ -67,7 +70,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
         </div>
 
         <fieldset className="space-y-3">
-          <legend className="text-xs font-medium uppercase tracking-[0.16em] text-white/60">
+          <legend className="text-xs font-medium tracking-[0.16em] text-white/60 uppercase">
             {t('socialLinksHeading')}
           </legend>
           <div className="grid gap-3 md:grid-cols-2">
@@ -75,52 +78,66 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
               icon={<Camera className="size-4" />}
               label="Instagram"
               value={v.social.instagram}
-              onChange={(value) => setV({ ...v, social: { ...v.social, instagram: value } })}
+              onChange={(value) =>
+                setV({ ...v, social: { ...v.social, instagram: value } })
+              }
             />
             <SocialInput
               icon={<AtSign className="size-4" />}
               label="X (Twitter)"
               value={v.social.x}
-              onChange={(value) => setV({ ...v, social: { ...v.social, x: value } })}
+              onChange={(value) =>
+                setV({ ...v, social: { ...v.social, x: value } })
+              }
             />
             <SocialInput
               icon={<PlaySquare className="size-4" />}
               label="YouTube"
               value={v.social.youtube}
-              onChange={(value) => setV({ ...v, social: { ...v.social, youtube: value } })}
+              onChange={(value) =>
+                setV({ ...v, social: { ...v.social, youtube: value } })
+              }
             />
             <SocialInput
               icon={<Music2 className="size-4" />}
               label="TikTok"
               value={v.social.tiktok}
-              onChange={(value) => setV({ ...v, social: { ...v.social, tiktok: value } })}
+              onChange={(value) =>
+                setV({ ...v, social: { ...v.social, tiktok: value } })
+              }
             />
           </div>
         </fieldset>
 
         <fieldset className="space-y-3">
-          <legend className="text-xs font-medium uppercase tracking-[0.16em] text-white/60">
+          <legend className="text-xs font-medium tracking-[0.16em] text-white/60 uppercase">
             {t('legalPagesHeading')}
           </legend>
           <div className="grid gap-3 md:grid-cols-3">
             <SettingsField label={t('privacyUrlLabel')}>
               <Input
                 value={v.legal.privacy}
-                onChange={(e) => setV({ ...v, legal: { ...v.legal, privacy: e.target.value } })}
+                onChange={(e) =>
+                  setV({ ...v, legal: { ...v.legal, privacy: e.target.value } })
+                }
                 placeholder="/legal/privacy"
               />
             </SettingsField>
             <SettingsField label={t('termsUrlLabel')}>
               <Input
                 value={v.legal.terms}
-                onChange={(e) => setV({ ...v, legal: { ...v.legal, terms: e.target.value } })}
+                onChange={(e) =>
+                  setV({ ...v, legal: { ...v.legal, terms: e.target.value } })
+                }
                 placeholder="/legal/terms"
               />
             </SettingsField>
             <SettingsField label={t('cookiesUrlLabel')}>
               <Input
                 value={v.legal.cookies}
-                onChange={(e) => setV({ ...v, legal: { ...v.legal, cookies: e.target.value } })}
+                onChange={(e) =>
+                  setV({ ...v, legal: { ...v.legal, cookies: e.target.value } })
+                }
                 placeholder="/legal/cookies"
               />
             </SettingsField>
@@ -129,7 +146,11 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
 
         <div className="flex items-center justify-end">
           <Button type="submit" disabled={!dirty || saving}>
-            {saving ? <Loader2 className="size-4 animate-spin" /> : t('saveFooter')}
+            {saving ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              t('saveFooter')
+            )}
           </Button>
         </div>
       </form>
@@ -150,7 +171,7 @@ function SocialInput({
 }) {
   return (
     <label className="space-y-1.5">
-      <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-white/60">
+      <span className="flex items-center gap-2 text-xs font-medium tracking-[0.16em] text-white/60 uppercase">
         {icon}
         {label}
       </span>

@@ -29,14 +29,17 @@ export function FeaturedShortsGrid({ shorts }: { shorts: ViewShort[] }) {
       <link rel="preconnect" href="https://www.youtube.com" />
       <link rel="preconnect" href="https://i.ytimg.com" />
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5" data-lenis-prevent>
+      <div
+        className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5"
+        data-lenis-prevent
+      >
         {shorts.map((s, i) => (
           <div
             key={s.id}
             onClick={() => setOverlayIdx(i)}
             onMouseEnter={() => prefetchShort(s.youtubeVideoId)}
             onTouchStart={() => prefetchShort(s.youtubeVideoId)}
-            className="group relative cursor-pointer overflow-hidden rounded-[20px] bg-[var(--bg-2)]"
+            className="group relative cursor-pointer overflow-hidden rounded-[10px] bg-[var(--bg-2)]"
             style={{ aspectRatio: '9/16' }}
           >
             <Image
@@ -50,26 +53,31 @@ export function FeaturedShortsGrid({ shorts }: { shorts: ViewShort[] }) {
 
             {/* SHORT badge */}
             <div
-              className="absolute left-2.5 top-2.5 rounded-sm px-1.5 py-0.5 text-[9px] font-semibold tracking-widest"
-              style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+              className="absolute top-2.5 left-2.5 rounded-sm px-1.5 py-0.5 text-[9px] font-semibold tracking-widest"
+              style={{
+                background: 'var(--primary)',
+                color: 'var(--primary-foreground)',
+              }}
             >
               SHORT
             </div>
 
             {/* Genre */}
             {s.genre && (
-              <div className="absolute left-2.5 bottom-12 mono text-[10px] text-white/50">
+              <div className="mono absolute bottom-12 left-2.5 text-[10px] text-white/50">
                 {s.genre}
               </div>
             )}
 
             {/* Title + channel */}
-            <div className="absolute bottom-3 left-2.5 right-2.5">
-              <div className="font-[family-name:var(--font-display)] text-[15px] leading-tight line-clamp-2 mb-0.5">
+            <div className="absolute right-2.5 bottom-3 left-2.5">
+              <div className="mb-0.5 line-clamp-2 font-[family-name:var(--font-display)] text-[15px] leading-tight">
                 {s.title}
               </div>
               {s.channelName && (
-                <div className="mono text-[10px] text-white/50">{s.channelName}</div>
+                <div className="mono text-[10px] text-white/50">
+                  {s.channelName}
+                </div>
               )}
             </div>
           </div>

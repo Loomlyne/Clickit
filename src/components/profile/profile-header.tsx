@@ -15,7 +15,12 @@ interface ProfileHeaderProps {
   isAdmin: boolean
 }
 
-export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: ProfileHeaderProps) {
+export function ProfileHeader({
+  displayName,
+  email,
+  avatarUrl,
+  isAdmin,
+}: ProfileHeaderProps) {
   const router = useRouter()
   const tNav = useTranslations('nav')
   const tCommon = useTranslations('common')
@@ -36,8 +41,10 @@ export function ProfileHeader({ displayName, email, avatarUrl, isAdmin }: Profil
     <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-6">
       <AvatarUpload currentUrl={avatarUrl} fallbackInitial={initial} />
 
-      <div className="flex flex-col items-center gap-1 sm:items-start sm:flex-1">
-        <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-[var(--text-mute)]">{tProfile('accountEyebrow')}</p>
+      <div className="flex flex-col items-center gap-1 sm:flex-1 sm:items-start">
+        <p className="font-mono text-[11px] tracking-[0.26em] text-[var(--text-mute)] uppercase">
+          {tProfile('accountEyebrow')}
+        </p>
         <h1 className="font-display text-3xl font-semibold tracking-[-0.04em] text-white">
           {displayName || tProfile('yourAccount')}
         </h1>

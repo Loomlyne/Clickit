@@ -71,7 +71,9 @@ export default async function SeriesDetailPage({ params }: Props) {
     seasons,
     allEpisodes,
     { data: castMembers },
-    { data: { user } },
+    {
+      data: { user },
+    },
     allStreaming,
     t,
   ] = await Promise.all([

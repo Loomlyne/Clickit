@@ -16,12 +16,18 @@ import { routing } from '@/i18n/routing'
  * reach them via depth-2 traversal. Revisit if organic search becomes a
  * meaningful traffic source.
  */
-function languageAlternates(base: string, path: string): Record<string, string> {
+function languageAlternates(
+  base: string,
+  path: string
+): Record<string, string> {
   // Build { en: ${base}/en${path}, ar: ${base}/ar${path} } — one entry per
   // locale in routing.locales. Adding a new locale in routing.ts picks up
   // automatically here.
   return Object.fromEntries(
-    routing.locales.map((loc) => [loc, `${base}/${loc}${path === '/' ? '' : path}`]),
+    routing.locales.map((loc) => [
+      loc,
+      `${base}/${loc}${path === '/' ? '' : path}`,
+    ])
   )
 }
 
@@ -29,8 +35,10 @@ function entry(
   base: string,
   path: string,
   now: Date,
-  changeFrequency: NonNullable<MetadataRoute.Sitemap[number]['changeFrequency']>,
-  priority: number,
+  changeFrequency: NonNullable<
+    MetadataRoute.Sitemap[number]['changeFrequency']
+  >,
+  priority: number
 ): MetadataRoute.Sitemap[number] {
   // The `url` field uses the defaultLocale variant as the canonical URL the
   // crawler hits first. Google follows alternates to discover the /ar/ peer.
@@ -64,8 +72,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry(base, '/support', now, 'weekly', 0.5),
   ]
 
-  const showEntries: MetadataRoute.Sitemap = [...streaming, ...comingSoon].map((show) =>
-    entry(base, `/series/${show.slug}`, now, 'weekly', 0.8),
+  const showEntries: MetadataRoute.Sitemap = [...streaming, ...comingSoon].map(
+    (show) => entry(base, `/series/${show.slug}`, now, 'weekly', 0.8)
   )
 
   return [...staticEntries, ...showEntries]

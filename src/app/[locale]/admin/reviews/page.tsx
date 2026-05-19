@@ -14,12 +14,17 @@ export default async function AdminReviewsPage() {
 
   const { data: reviews, error } = await supabase
     .from('reviews')
-    .select('*, profiles:profiles!reviews_user_id_fkey(display_name, avatar_url), shows(title, slug)')
+    .select(
+      '*, profiles:profiles!reviews_user_id_fkey(display_name, avatar_url), shows(title, slug)'
+    )
     .order('created_at', { ascending: false })
 
   return (
     <div className="space-y-6">
-      <ReviewsTable reviews={(reviews as ReviewRow[] | null) ?? []} loadError={error?.message ?? null} />
+      <ReviewsTable
+        reviews={(reviews as ReviewRow[] | null) ?? []}
+        loadError={error?.message ?? null}
+      />
     </div>
   )
 }

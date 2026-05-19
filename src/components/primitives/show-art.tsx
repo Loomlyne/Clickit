@@ -1,12 +1,12 @@
 import Image from 'next/image'
 
 interface ShowArtProps {
-  brandColor: string;
-  title: string;
-  aspectRatio?: string;
-  children?: React.ReactNode;
-  className?: string;
-  imageUrl?: string;
+  brandColor: string
+  title: string
+  aspectRatio?: string
+  children?: React.ReactNode
+  className?: string
+  imageUrl?: string
 }
 
 export function ShowArt({
@@ -17,7 +17,7 @@ export function ShowArt({
   className,
   imageUrl,
 }: ShowArtProps) {
-  const watermarkWord = title.split(' ')[0] ?? title;
+  const watermarkWord = title.split(' ')[0] ?? title
 
   return (
     <div
@@ -25,10 +25,7 @@ export function ShowArt({
       style={{ aspectRatio }}
     >
       {/* Layer 1: brand color background (always present as ultimate fallback) */}
-      <div
-        className="absolute inset-0"
-        style={{ background: brandColor }}
-      />
+      <div className="absolute inset-0" style={{ background: brandColor }} />
 
       {/* Layer 2: actual image when available */}
       {imageUrl && (
@@ -71,11 +68,7 @@ export function ShowArt({
       )}
 
       {/* Layer 5: children content overlay */}
-      {children && (
-        <div className="absolute inset-0">
-          {children}
-        </div>
-      )}
+      {children && <div className="absolute inset-0">{children}</div>}
     </div>
-  );
+  )
 }

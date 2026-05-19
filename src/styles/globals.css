@@ -1,6 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -34,7 +34,8 @@
      --font-app + --font-ui are legacy aliases pointing to the active body font. */
   --font-title: var(--font-lbc), ui-sans-serif, system-ui, sans-serif;
   --font-en-body: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
-  --font-ar-body: var(--font-ge-ss), var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-ar-body:
+    var(--font-ge-ss), var(--font-geist), ui-sans-serif, system-ui, sans-serif;
 
   --font-app: var(--font-en-body);
   --font-ui: var(--font-app);
@@ -69,7 +70,7 @@
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.08);
   --ring: rgba(255, 204, 0, 0.5);
-  --radius: 32px;
+  --radius: 8px;
   --chart-1: #ffcc00;
   --chart-2: #d97757;
   --chart-3: #7c9e6d;
@@ -85,11 +86,22 @@
   --sidebar-ring: rgba(255, 204, 0, 0.5);
 
   /* Gradients & Shadows */
-  --gradient-cinema: linear-gradient(180deg, rgba(10, 10, 10, 0) 0%, rgba(10, 10, 10, 0.72) 58%, rgba(10, 10, 10, 0.96) 100%);
-  --gradient-left-vignette: linear-gradient(90deg, rgba(10, 10, 10, 0.92) 0%, rgba(10, 10, 10, 0.54) 40%, rgba(10, 10, 10, 0) 100%);
+  --gradient-cinema: linear-gradient(
+    180deg,
+    rgba(10, 10, 10, 0) 0%,
+    rgba(10, 10, 10, 0.72) 58%,
+    rgba(10, 10, 10, 0.96) 100%
+  );
+  --gradient-left-vignette: linear-gradient(
+    90deg,
+    rgba(10, 10, 10, 0.92) 0%,
+    rgba(10, 10, 10, 0.54) 40%,
+    rgba(10, 10, 10, 0) 100%
+  );
   --bloom-opacity: 0.22;
   --shadow-soft: 0 24px 80px rgba(0, 0, 0, 0.38);
-  --shadow-panel: 0 10px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-panel:
+    0 10px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .dark {
@@ -112,7 +124,7 @@
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.08);
   --ring: rgba(255, 204, 0, 0.5);
-  --radius: 32px;
+  --radius: 8px;
   --chart-1: #ffcc00;
   --chart-2: #d97757;
   --chart-3: #7c9e6d;
@@ -166,11 +178,11 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  --radius-sm: calc(var(--radius) * 0.75);
-  --radius-md: calc(var(--radius) * 0.92);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.35);
-  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 12px;
 }
 
 @theme {
@@ -244,7 +256,12 @@ html[lang='ar'] {
   }
 
   /* All headings use the title font (LBC) regardless of locale. */
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-title);
   }
 
@@ -306,7 +323,7 @@ html::-webkit-scrollbar-track {
 }
 html::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.08);
-  border-radius: 28px;
+  border-radius: 8px;
 }
 html::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.18);
@@ -351,14 +368,14 @@ html::-webkit-scrollbar-thumb:hover {
    RTL / Arabic
    ═══════════════════════════════════════════════════ */
 
-[dir="rtl"],
-[lang="ar"] {
+[dir='rtl'],
+[lang='ar'] {
   font-family: var(--font-app);
 }
 
 /* RTL-04: strip wide letter-spacing on Arabic pages so glyph joining stays correct.
    Tailwind's arbitrary tracking-[0.2em+] classes break Arabic connected letters. */
-html[lang="ar"] [class*="tracking-["] {
+html[lang='ar'] [class*='tracking-['] {
   letter-spacing: 0 !important;
 }
 
@@ -367,8 +384,17 @@ html[lang="ar"] [class*="tracking-["] {
    ═══════════════════════════════════════════════════ */
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 10px var(--glow-color, rgba(255, 204, 0, 0.28)), 0 0 26px rgba(255, 204, 0, 0.12); }
-  50% { box-shadow: 0 0 14px var(--glow-color, rgba(255, 204, 0, 0.38)), 0 0 34px rgba(255, 204, 0, 0.18); }
+  0%,
+  100% {
+    box-shadow:
+      0 0 10px var(--glow-color, rgba(255, 204, 0, 0.28)),
+      0 0 26px rgba(255, 204, 0, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 14px var(--glow-color, rgba(255, 204, 0, 0.38)),
+      0 0 34px rgba(255, 204, 0, 0.18);
+  }
 }
 
 .animate-glow-pulse {
@@ -376,18 +402,30 @@ html[lang="ar"] [class*="tracking-["] {
 }
 
 @keyframes progress-fill {
-  from { width: 0%; }
-  to { width: 100%; }
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
 }
 
 @keyframes heroDotFill {
-  from { transform: scaleY(0); }
-  to { transform: scaleY(1); }
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
 }
 
 /* Watch page: hide shared navbar + footer, the component renders its own header */
-.watch-page-wrap ~ footer { display: none; }
-:has(.watch-page-wrap) > header { display: none; }
+.watch-page-wrap ~ footer {
+  display: none;
+}
+:has(.watch-page-wrap) > header {
+  display: none;
+}
 
 /* YT-style watch page sidebar episodes */
 .yt-side-ep {
@@ -395,37 +433,48 @@ html[lang="ar"] [class*="tracking-["] {
   grid-template-columns: 168px 1fr;
   gap: 12px;
   padding: 8px;
-  border-radius: 24px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background 0.15s var(--ease);
   align-items: flex-start;
 }
-.yt-side-ep:hover { background: var(--bg-1); }
-.yt-side-ep.current { background: var(--bg-2); cursor: default; }
+.yt-side-ep:hover {
+  background: var(--bg-1);
+}
+.yt-side-ep.current {
+  background: var(--bg-2);
+  cursor: default;
+}
 .yt-side-thumb {
   position: relative;
   width: 168px;
   aspect-ratio: 16/9;
-  border-radius: 24px;
+  border-radius: 8px;
   overflow: hidden;
   background: var(--bg-3);
   flex-shrink: 0;
 }
-.yt-side-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.yt-side-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .yt-side-runtime {
   position: absolute;
-  right: 6px; bottom: 6px;
+  right: 6px;
+  bottom: 6px;
   font-family: var(--font-app);
   font-size: 10px;
   padding: 2px 5px;
-  background: rgba(0,0,0,0.85);
+  background: rgba(0, 0, 0, 0.85);
   color: #fff;
   border-radius: 999px;
   letter-spacing: 0.05em;
 }
 .yt-side-now {
   position: absolute;
-  left: 6px; top: 6px;
+  left: 6px;
+  top: 6px;
   font-family: var(--font-app);
   font-size: 9px;
   letter-spacing: 0.14em;
@@ -435,7 +484,10 @@ html[lang="ar"] [class*="tracking-["] {
   border-radius: 999px;
   font-weight: 600;
 }
-.yt-side-body { min-width: 0; padding-top: 2px; }
+.yt-side-body {
+  min-width: 0;
+  padding-top: 2px;
+}
 .yt-side-num {
   font-family: var(--font-app);
   font-size: 10px;
@@ -444,7 +496,9 @@ html[lang="ar"] [class*="tracking-["] {
   color: var(--text-mute);
   margin-bottom: 4px;
 }
-.yt-side-ep.current .yt-side-num { color: var(--accent); }
+.yt-side-ep.current .yt-side-num {
+  color: var(--accent);
+}
 .yt-side-title {
   font-family: var(--font-title);
   font-size: 15px;

@@ -25,11 +25,12 @@ function loadYouTubeAPI(): Promise<void> {
     apiLoading = true
 
     // Global callback that YouTube API invokes when ready
-    ;(window as unknown as Record<string, unknown>).onYouTubeIframeAPIReady = () => {
-      apiReady = true
-      readyCallbacks.forEach((cb) => cb())
-      readyCallbacks.length = 0
-    }
+    ;(window as unknown as Record<string, unknown>).onYouTubeIframeAPIReady =
+      () => {
+        apiReady = true
+        readyCallbacks.forEach((cb) => cb())
+        readyCallbacks.length = 0
+      }
 
     const tag = document.createElement('script')
     tag.src = 'https://www.youtube.com/iframe_api'
@@ -134,7 +135,7 @@ export function YouTubePlayer({
     <div
       role="region"
       aria-label={t('videoPlayerAria')}
-      className="relative w-full aspect-video min-h-[200px] bg-black"
+      className="relative aspect-video min-h-[200px] w-full bg-black"
     >
       {/* Loading state — absolute overlay */}
       {!isReady && !errorCode && (
@@ -151,20 +152,17 @@ export function YouTubePlayer({
       {/* Error state — absolute overlay */}
       {errorCode !== null && (
         <div
-          className="absolute inset-0 z-10 flex items-center justify-center bg-surface-2 px-6"
+          className="bg-surface-2 absolute inset-0 z-10 flex items-center justify-center px-6"
           role="alert"
         >
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-center text-sm">
             {getErrorMessage(errorCode)}
           </p>
         </div>
       )}
 
       {/* Player container — always visible with full dimensions so iframe can initialize */}
-      <div
-        ref={containerRef}
-        className="absolute inset-0 w-full h-full"
-      />
+      <div ref={containerRef} className="absolute inset-0 h-full w-full" />
     </div>
   )
 }

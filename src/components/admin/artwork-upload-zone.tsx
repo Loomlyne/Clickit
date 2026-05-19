@@ -66,7 +66,11 @@ export function ArtworkUploadZone({
       const result = await uploadArtwork(formData)
 
       if (!result.success) {
-        toast.error(t('uploadFailedWithError', { error: result.error ?? t('uploadFailedToast') }))
+        toast.error(
+          t('uploadFailedWithError', {
+            error: result.error ?? t('uploadFailedToast'),
+          })
+        )
         return
       }
 
@@ -99,8 +103,8 @@ export function ArtworkUploadZone({
       <div className="space-y-2">
         <p className="text-sm font-medium">{label}</p>
         <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">{t('uploading')}</p>
+          <Loader2 className="text-muted-foreground size-6 animate-spin" />
+          <p className="text-muted-foreground text-sm">{t('uploading')}</p>
         </div>
       </div>
     )
@@ -121,7 +125,12 @@ export function ArtworkUploadZone({
           <div className="absolute inset-x-0 bottom-0 flex justify-end bg-gradient-to-t from-black/60 to-transparent p-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="secondary" size="icon" className="size-8">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  className="size-8"
+                >
                   <MoreVertical className="size-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -141,7 +150,7 @@ export function ArtworkUploadZone({
             </DropdownMenu>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">{aspectHint}</p>
+        <p className="text-muted-foreground text-xs">{aspectHint}</p>
         <input
           ref={inputRef}
           type="file"
@@ -158,9 +167,9 @@ export function ArtworkUploadZone({
     <div className="space-y-2">
       <p className="text-sm font-medium">{label}</p>
       <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6 transition-colors hover:border-white/20">
-        <Upload className="size-6 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">{t('clickToUpload')}</p>
-        <p className="text-xs text-muted-foreground">{aspectHint}</p>
+        <Upload className="text-muted-foreground size-6" />
+        <p className="text-muted-foreground text-sm">{t('clickToUpload')}</p>
+        <p className="text-muted-foreground text-xs">{aspectHint}</p>
         <input
           ref={inputRef}
           type="file"

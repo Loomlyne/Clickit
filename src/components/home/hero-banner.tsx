@@ -12,7 +12,11 @@ const SLIDE_DURATION = 600
 const SLIDE_EASE = 'cubic-bezier(0.77, 0, 0.175, 1)'
 
 interface HeroBannerProps {
-  shows: Array<{ show: ViewShow; firstEpisodeId?: string; hasWatched?: boolean }>
+  shows: Array<{
+    show: ViewShow
+    firstEpisodeId?: string
+    hasWatched?: boolean
+  }>
   isMobile?: boolean
 }
 
@@ -55,22 +59,28 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
   }, [isResetting])
 
   return (
-    <div
-      className="relative mb-3 overflow-hidden h-[78vh] min-h-[480px] md:min-h-[580px]"
-    >
+    <div className="relative mb-3 h-[78vh] min-h-[480px] overflow-hidden md:min-h-[580px]">
       <div
         style={{
           display: 'flex',
           width: `${extN * 100}%`,
           height: '100%',
           transform: `translateX(-${(activeIndex / extN) * 100}%)`,
-          transition: isResetting || shouldReduceMotion ? 'none' : `transform 0.6s ${SLIDE_EASE}`,
+          transition:
+            isResetting || shouldReduceMotion
+              ? 'none'
+              : `transform 0.6s ${SLIDE_EASE}`,
         }}
       >
         {extShows.map(({ show, firstEpisodeId, hasWatched }, i) => (
           <div
             key={`${show.id}-${i}`}
-            style={{ position: 'relative', width: `${100 / extN}%`, flexShrink: 0, height: '100%' }}
+            style={{
+              position: 'relative',
+              width: `${100 / extN}%`,
+              flexShrink: 0,
+              height: '100%',
+            }}
           >
             <HeroSlide
               show={show}

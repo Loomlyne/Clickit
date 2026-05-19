@@ -57,8 +57,11 @@ export function LanguagePreference({ current }: { current: Locale }) {
             )}
           >
             {active && (
-              <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-yellow)]">
-                <Check className="h-3 w-3 text-[var(--accent-yellow-fg)]" strokeWidth={2.5} />
+              <span className="absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-yellow)]">
+                <Check
+                  className="h-3 w-3 text-[var(--accent-yellow-fg)]"
+                  strokeWidth={2.5}
+                />
               </span>
             )}
             <p className="text-sm font-semibold text-white">{label}</p>

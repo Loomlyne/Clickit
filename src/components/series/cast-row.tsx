@@ -14,8 +14,8 @@ export function CastRow({ cast }: CastRowProps) {
   if (!cast || cast.length === 0) return null
 
   return (
-    <section className="px-6 md:px-12 mt-10">
-      <h2 className="font-display text-xl font-medium text-foreground">Cast</h2>
+    <section className="mt-10 px-6 md:px-12">
+      <h2 className="font-display text-foreground text-xl font-medium">Cast</h2>
       <div className="mt-4 flex gap-6 overflow-x-auto pb-2">
         {cast.map((member) => {
           const initials = member.name
@@ -24,14 +24,21 @@ export function CastRow({ cast }: CastRowProps) {
             .join('')
             .slice(0, 2)
           return (
-            <div key={member.name} className="flex min-w-[80px] flex-col items-center gap-2">
+            <div
+              key={member.name}
+              className="flex min-w-[80px] flex-col items-center gap-2"
+            >
               <Avatar className="size-20 rounded-full">
-                <AvatarFallback className="rounded-full bg-[var(--bg-2)] text-lg font-medium text-muted-foreground">
+                <AvatarFallback className="text-muted-foreground rounded-full bg-[var(--bg-2)] text-lg font-medium">
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <p className="text-center text-sm font-medium text-foreground">{member.name}</p>
-              <p className="text-center text-xs text-muted-foreground">{member.role}</p>
+              <p className="text-foreground text-center text-sm font-medium">
+                {member.name}
+              </p>
+              <p className="text-muted-foreground text-center text-xs">
+                {member.role}
+              </p>
             </div>
           )
         })}

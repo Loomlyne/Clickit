@@ -1,8 +1,9 @@
-'use client'
+‘use client’
 
-import { usePathname } from '@/i18n/navigation'
+import { useLocale } from ‘next-intl’
+import { usePathname } from ‘@/i18n/navigation’
 
-import type { TopTickerConfig } from '@/lib/config'
+import type { TopTickerConfig } from ‘@/lib/config’
 
 type MarqueeTickerProps = {
   ticker: TopTickerConfig
@@ -10,12 +11,15 @@ type MarqueeTickerProps = {
 
 export function MarqueeTicker({ ticker }: MarqueeTickerProps) {
   const pathname = usePathname()
+  const locale = useLocale()
+  const isAr = locale === ‘ar’
+
   // Full-bleed landing / portfolio hero — keep ticker off so video isn’t clipped
   if (
-    pathname === '/' ||
-    pathname === '' ||
-    pathname === '/portfolio' ||
-    pathname.startsWith('/portfolio/')
+    pathname === ‘/’ ||
+    pathname === ‘’ ||
+    pathname === ‘/portfolio’ ||
+    pathname.startsWith(‘/portfolio/’)
   ) {
     return null
   }
@@ -28,15 +32,27 @@ export function MarqueeTicker({ ticker }: MarqueeTickerProps) {
         {[0, 1].map((dup) => (
           <span
             key={dup}
-            aria-hidden={dup === 1 ? 'true' : undefined}
+            aria-hidden={dup === 1 ? ‘true’ : undefined}
             className="flex shrink-0 items-center gap-10 pe-10"
           >
-            {ticker.items.map((m, i) => (
-              <span key={`${dup}-${i}`} className="flex items-center gap-3">
-                <b className="mono text-[var(--primary)]">◆ {m.tag}</b>
-                <span className="mono text-[var(--text-dim)]">{m.text}</span>
-              </span>
-            ))}
+            {ticker.items.map((m, i) => {
+              const displayTag = isAr && m.tag_ar ? m.tag_ar : m.tag
+              const displayText = isAr && m.text_ar ? m.text_ar : m.text
+              const arFont =
+                isAr && (m.tag_ar || m.text_ar)
+                  ? ‘font-[family-name:var(--font-ge-ss)]’
+                  : ‘mono’
+              return (
+                <span
+                  key={`${dup}-${i}`}
+                  className="flex items-center gap-3"
+                  dir={isAr && (m.tag_ar || m.text_ar) ? ‘rtl’ : undefined}
+                >
+                  <b className={`${arFont} text-[var(--primary)]`}>◆ {displayTag}</b>
+                  <span className={`${arFont} text-[var(--text-dim)]`}>{displayText}</span>
+                </span>
+              )
+            })}
           </span>
         ))}
       </div>

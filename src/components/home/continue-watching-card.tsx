@@ -16,7 +16,7 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
   return (
     <Link
       href={`/watch/${item.episodeId}`}
-      className="poster group relative block flex-shrink-0 cursor-pointer overflow-hidden rounded-[24px] bg-[var(--bg-2)] transition-transform duration-[250ms] ease-[var(--ease)] hover:-translate-y-1 hover:z-[2]"
+      className="poster group relative block flex-shrink-0 cursor-pointer overflow-hidden rounded-[12px] bg-[var(--bg-2)] transition-transform duration-[250ms] ease-[var(--ease)] hover:z-[2] hover:-translate-y-1"
       style={{ width: 'var(--landscape-w)', aspectRatio: '16 / 9' }}
     >
       {thumbnailUrl ? (
@@ -38,7 +38,7 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
           {item.showTitle} · S{item.seasonNumber} E{item.episodeNumber}
         </div>
         <div className="mt-2.5 flex gap-1.5">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-[7px] text-[12.5px] font-medium text-primary-foreground">
+          <span className="bg-primary text-primary-foreground inline-flex items-center gap-1.5 rounded-full px-3 py-[7px] text-[12.5px] font-medium">
             <Play className="size-3 fill-current" /> Continue
           </span>
         </div>
@@ -46,9 +46,9 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
 
       {/* Progress bar */}
       {item.progressPercent > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/12">
+        <div className="absolute right-0 bottom-0 left-0 h-[3px] bg-white/12">
           <span
-            className="block h-full bg-primary"
+            className="bg-primary block h-full"
             style={{ width: `${item.progressPercent}%` }}
           />
         </div>

@@ -100,12 +100,12 @@ export function ImageUploadField({
       )}
 
       {busy ? (
-        <div className="flex items-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] px-4 py-3 text-sm text-muted-foreground">
+        <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] px-4 py-3 text-sm">
           <Loader2 className="size-4 animate-spin" />
           {t('working')}
         </div>
       ) : (
-        <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] px-4 py-3 text-sm text-muted-foreground transition-colors hover:border-white/20 hover:text-foreground">
+        <label className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] px-4 py-3 text-sm transition-colors hover:border-white/20">
           <Upload className="size-4" />
           <span>{url ? t('replaceImage') : t('uploadImage')}</span>
           <input
@@ -118,7 +118,7 @@ export function ImageUploadField({
         </label>
       )}
 
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {hint && <p className="text-muted-foreground text-xs">{hint}</p>}
     </div>
   )
 }

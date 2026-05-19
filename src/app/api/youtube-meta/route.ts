@@ -16,7 +16,9 @@ import { extractYouTubeId } from '@/lib/youtube'
 export async function GET(request: Request) {
   // Auth: must be signed-in admin.
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -52,10 +54,13 @@ export async function GET(request: Request) {
     id: videoId,
     key: apiKey,
   })
-  const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params}`, {
-    // YouTube metadata rarely changes; cache for a day.
-    next: { revalidate: 86400 },
-  })
+  const res = await fetch(
+    `https://www.googleapis.com/youtube/v3/videos?${params}`,
+    {
+      // YouTube metadata rarely changes; cache for a day.
+      next: { revalidate: 86400 },
+    }
+  )
   if (!res.ok) {
     return NextResponse.json(
       { error: `YouTube API error: ${res.status}` },

@@ -9,7 +9,11 @@ import { Input } from '@/components/ui/input'
 import { updateLiveStreamUrl } from '@/app/[locale]/admin/actions'
 import { SettingsCard, SettingsField } from './settings-card'
 
-export function LiveStreamUrlEditor({ initialUrl }: { initialUrl: string | null }) {
+export function LiveStreamUrlEditor({
+  initialUrl,
+}: {
+  initialUrl: string | null
+}) {
   const [value, setValue] = useState(initialUrl ?? '')
   const [saving, setSaving] = useState(false)
   const t = useTranslations('admin.settings')
@@ -36,10 +40,7 @@ export function LiveStreamUrlEditor({ initialUrl }: { initialUrl: string | null 
       description={t('liveStreamDescription')}
     >
       <form onSubmit={onSave} className="grid gap-4">
-        <SettingsField
-          label={t('youtubeUrlLabel')}
-          hint={t('liveStreamHint')}
-        >
+        <SettingsField label={t('youtubeUrlLabel')} hint={t('liveStreamHint')}>
           <Input
             value={value}
             onChange={(e) => setValue(e.target.value)}
@@ -50,7 +51,11 @@ export function LiveStreamUrlEditor({ initialUrl }: { initialUrl: string | null 
         </SettingsField>
         <div className="flex justify-end">
           <Button type="submit" disabled={!dirty || saving}>
-            {saving ? <Loader2 className="size-4 animate-spin" /> : t('saveLiveUrl')}
+            {saving ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              t('saveLiveUrl')
+            )}
           </Button>
         </div>
       </form>

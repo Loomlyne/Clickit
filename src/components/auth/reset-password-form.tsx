@@ -61,9 +61,9 @@ export function ResetPasswordForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {serverError && (
-        <div className="rounded-full px-4 py-3 text-sm bg-[#DB3F34]/10 border border-[#DB3F34]/25 text-red-300">
-          <div className="flex gap-2.5 items-start">
-            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+        <div className="rounded-full border border-[#DB3F34]/25 bg-[#DB3F34]/10 px-4 py-3 text-sm text-red-300">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{serverError}</span>
           </div>
         </div>
@@ -84,12 +84,20 @@ export function ResetPasswordForm() {
             tabIndex={-1}
             onClick={() => setShowPassword(!showPassword)}
             aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+            className="absolute top-1/2 right-3 -translate-y-1/2 text-white/40 transition-colors hover:text-white/70"
           >
-            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            {showPassword ? (
+              <EyeOff className="size-4" />
+            ) : (
+              <Eye className="size-4" />
+            )}
           </button>
         </div>
-        {errors.password && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.password.message as never)}</p>}
+        {errors.password && (
+          <p className="text-brand-red-safe mt-1 text-xs">
+            {tErrors(errors.password.message as never)}
+          </p>
+        )}
       </div>
 
       <div>
@@ -107,18 +115,26 @@ export function ResetPasswordForm() {
             tabIndex={-1}
             onClick={() => setShowConfirm(!showConfirm)}
             aria-label={showConfirm ? t('hidePassword') : t('showPassword')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+            className="absolute top-1/2 right-3 -translate-y-1/2 text-white/40 transition-colors hover:text-white/70"
           >
-            {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            {showConfirm ? (
+              <EyeOff className="size-4" />
+            ) : (
+              <Eye className="size-4" />
+            )}
           </button>
         </div>
-        {errors.confirmPassword && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.confirmPassword.message as never)}</p>}
+        {errors.confirmPassword && (
+          <p className="text-brand-red-safe mt-1 text-xs">
+            {tErrors(errors.confirmPassword.message as never)}
+          </p>
+        )}
       </div>
 
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="bg-primary text-primary-foreground w-full rounded-full px-7 py-3 text-sm font-semibold transition-colors hover:bg-[#7082ff] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSubmitting ? t('resetButton') + '…' : t('resetButton')}
       </button>

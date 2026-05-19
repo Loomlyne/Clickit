@@ -46,12 +46,12 @@ export default async function ComingSoonPage() {
   return (
     <div className="pb-20">
       {/* Header */}
-      <div className="px-6 pb-12 pt-16 md:px-12">
+      <div className="px-6 pt-16 pb-12 md:px-12">
         <div className="mx-auto max-w-4xl">
           <p className="mono mb-4 text-[var(--text-mute)]">
             {t('eyebrowYear')}
           </p>
-          <h1 className="font-display text-[clamp(2.5rem,6vw,64px)] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--text)]">
+          <h1 className="font-display text-[clamp(2.5rem,6vw,64px)] leading-[1.05] font-normal tracking-[-0.02em] text-[var(--text)]">
             {t('releasingHeading')}
           </h1>
           <p className="mt-4 max-w-lg text-[var(--text-dim)]">
@@ -64,7 +64,7 @@ export default async function ComingSoonPage() {
       {comingSoonShows.length > 0 ? (
         <section className="mx-auto max-w-4xl px-6 pb-16 md:px-12">
           <div className="space-y-0">
-            {comingSoonShows.map((show) => (
+            {comingSoonShows.map((show) =>
               (() => {
                 const thumbnail = show.heroImageUrl || show.posterUrl
 
@@ -74,7 +74,7 @@ export default async function ComingSoonPage() {
                     className="grid grid-cols-1 gap-6 border-t border-[var(--line)] py-8 md:grid-cols-[320px_1fr_auto] md:gap-10"
                   >
                     {/* Landscape thumbnail */}
-                    <div className="w-full overflow-hidden rounded-full bg-[var(--bg-2)] md:w-[320px]">
+                    <div className="w-full overflow-hidden rounded-[10px] bg-[var(--bg-2)] md:w-[320px]">
                       {thumbnail ? (
                         <Image
                           src={thumbnail}
@@ -97,7 +97,7 @@ export default async function ComingSoonPage() {
                       >
                         {show.tagline || show.genre}
                       </p>
-                      <h2 className="font-display text-[clamp(1.5rem,4vw,44px)] font-normal leading-[1.1] tracking-[-0.02em] text-[var(--text)]">
+                      <h2 className="font-display text-[clamp(1.5rem,4vw,44px)] leading-[1.1] font-normal tracking-[-0.02em] text-[var(--text)]">
                         {show.title}
                       </h2>
                       <p className="line-clamp-2 text-[14px] leading-relaxed text-[var(--text-dim)]">
@@ -105,7 +105,9 @@ export default async function ComingSoonPage() {
                       </p>
                       <p className="mono mt-1 text-[11px] text-[var(--text-mute)]">
                         {show.genre} &middot; {show.seasonCount}{' '}
-                        {show.seasonCount === 1 ? t('seasonOne') : t('seasonMany')}
+                        {show.seasonCount === 1
+                          ? t('seasonOne')
+                          : t('seasonMany')}
                       </p>
                     </div>
 
@@ -121,7 +123,7 @@ export default async function ComingSoonPage() {
                   </div>
                 )
               })()
-            ))}
+            )}
           </div>
         </section>
       ) : (

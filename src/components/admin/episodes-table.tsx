@@ -122,11 +122,8 @@ export function EpisodesTable({
               <TableHead className="hidden w-28 md:table-cell">
                 {tTable('youtubeColumn')}
               </TableHead>
-              <TableHead className="hidden w-28 lg:table-cell">
-                {tTable('orderColumn')}
-              </TableHead>
               <TableHead className="w-[110px]">{t('statusLabel')}</TableHead>
-              <TableHead className="w-40 text-end">
+              <TableHead className="w-52 text-end">
                 {tTable('actionsColumn')}
               </TableHead>
             </TableRow>
@@ -134,26 +131,28 @@ export function EpisodesTable({
           <TableBody>
             {optimisticEpisodes.map((episode, index) => (
               <TableRow key={episode.id} className="align-top">
-                <TableCell className="pt-5 font-mono text-xs text-muted-foreground">
+                <TableCell className="text-muted-foreground pt-5 font-mono text-xs">
                   #{episode.episode_number}
                 </TableCell>
                 <TableCell className="py-4">
-                  <span className="font-medium text-foreground">{episode.title}</span>
+                  <span className="text-foreground font-medium">
+                    {episode.title}
+                  </span>
                   {episode.title_ar && (
                     <span
                       dir="rtl"
-                      className="mt-1 block text-sm text-muted-foreground"
+                      className="text-muted-foreground mt-1 block text-sm"
                     >
                       {episode.title_ar}
                     </span>
                   )}
-                  <span className="mt-1 block text-xs text-muted-foreground sm:hidden">
+                  <span className="text-muted-foreground mt-1 block text-xs sm:hidden">
                     {episode.duration
                       ? t('durationMinutes', { minutes: episode.duration })
                       : tTable('missingDuration')}
                   </span>
                 </TableCell>
-                <TableCell className="hidden pt-5 text-muted-foreground sm:table-cell">
+                <TableCell className="text-muted-foreground hidden pt-5 sm:table-cell">
                   {episode.duration
                     ? t('durationMinutes', { minutes: episode.duration })
                     : tTable('missingDuration')}
@@ -164,50 +163,53 @@ export function EpisodesTable({
                       {episode.youtube_video_id}
                     </span>
                   ) : (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {tTable('noVideo')}
                     </span>
                   )}
-                </TableCell>
-                <TableCell className="hidden pt-4 lg:table-cell">
-                  <div className="flex items-center gap-1">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() => handleReorder(episode.id, 'up')}
-                          disabled={isPending || index === 0}
-                          aria-label={tTable('moveUp')}
-                        >
-                          <ChevronUp />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{tTable('moveUp')}</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() => handleReorder(episode.id, 'down')}
-                          disabled={
-                            isPending || index === optimisticEpisodes.length - 1
-                          }
-                          aria-label={tTable('moveDown')}
-                        >
-                          <ChevronDown />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{tTable('moveDown')}</TooltipContent>
-                    </Tooltip>
-                  </div>
                 </TableCell>
                 <TableCell className="pt-4">
                   <StatusBadge status={episode.status} />
                 </TableCell>
                 <TableCell className="pt-4">
                   <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center gap-1">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => handleReorder(episode.id, 'up')}
+                            disabled={isPending || index === 0}
+                            aria-label={tTable('moveUpAria', {
+                              title: episode.title,
+                            })}
+                          >
+                            <ChevronUp className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{tTable('moveUp')}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => handleReorder(episode.id, 'down')}
+                            disabled={
+                              isPending ||
+                              index === optimisticEpisodes.length - 1
+                            }
+                            aria-label={tTable('moveDownAria', {
+                              title: episode.title,
+                            })}
+                          >
+                            <ChevronDown className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{tTable('moveDown')}</TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
@@ -217,7 +219,9 @@ export function EpisodesTable({
                       })}
                     >
                       <Pencil className="size-3.5 sm:me-1" />
-                      <span className="hidden sm:inline">{tCommon('edit')}</span>
+                      <span className="hidden sm:inline">
+                        {tCommon('edit')}
+                      </span>
                     </Button>
                     <Button
                       variant="ghost"

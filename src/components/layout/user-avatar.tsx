@@ -21,8 +21,8 @@ export const UserAvatar = forwardRef<HTMLButtonElement, UserAvatarProps>(
           'flex size-[30px] items-center justify-center overflow-hidden rounded-full',
           'border border-[var(--line-2)] bg-gradient-to-br from-[#c8a04a] to-[#d97757]',
           'font-[family-name:var(--font-mono)] text-[12px] font-medium text-[#0a0a0a]',
-          'cursor-pointer flex-shrink-0 transition-transform duration-150 hover:scale-105',
-          'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+          'flex-shrink-0 cursor-pointer transition-transform duration-150 hover:scale-105',
+          'focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2',
           className
         )}
         {...props}

@@ -36,7 +36,10 @@ const SHOW_ARTWORK_BUCKET = 'show-artwork'
  * entries). We intentionally return null on parse failure rather than throwing
  * so one malformed row doesn't abort the whole sweep.
  */
-function extractStoragePath(publicUrl: string | null, bucket: string): string | null {
+function extractStoragePath(
+  publicUrl: string | null,
+  bucket: string
+): string | null {
   if (!publicUrl) return null
   const marker = `/storage/v1/object/public/${bucket}/`
   const idx = publicUrl.indexOf(marker)
@@ -61,8 +64,11 @@ export async function GET(req: Request) {
   } catch (err) {
     console.error('[cron/cleanup-media] unhandled failure', err)
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : 'Unknown failure' },
-      { status: 500 },
+      {
+        ok: false,
+        error: err instanceof Error ? err.message : 'Unknown failure',
+      },
+      { status: 500 }
     )
   }
 }
@@ -75,10 +81,15 @@ async function runCleanup() {
   // --- Step 1: gather all URLs currently referenced by the DB --------------
   const { data: shows, error: showsError } = await admin
     .from('shows')
-    .select('hero_url, hero_image_mobile_url, poster_url, logo_url, hero_video_url, hero_video_mobile_url')
+    .select(
+      'hero_url, hero_image_mobile_url, poster_url, logo_url, hero_video_url, hero_video_mobile_url'
+    )
 
   if (showsError) {
-    return NextResponse.json({ error: 'Failed to load shows', details: showsError.message }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to load shows', details: showsError.message },
+      { status: 500 }
+    )
   }
 
   const referencedArtwork = new Set<string>()
@@ -87,7 +98,10 @@ async function runCleanup() {
   for (const show of shows ?? []) {
     // Artwork bucket: hero + hero-mobile + poster + logo all live here
     const heroPath = extractStoragePath(show.hero_url, SHOW_ARTWORK_BUCKET)
-    const mobileHeroPath = extractStoragePath(show.hero_image_mobile_url, SHOW_ARTWORK_BUCKET)
+    const mobileHeroPath = extractStoragePath(
+      show.hero_image_mobile_url,
+      SHOW_ARTWORK_BUCKET
+    )
     const posterPath = extractStoragePath(show.poster_url, SHOW_ARTWORK_BUCKET)
     const logoPath = extractStoragePath(show.logo_url, SHOW_ARTWORK_BUCKET)
     if (heroPath) referencedArtwork.add(heroPath)
@@ -95,8 +109,14 @@ async function runCleanup() {
     if (posterPath) referencedArtwork.add(posterPath)
     if (logoPath) referencedArtwork.add(logoPath)
     // Video bucket: hero videos only
-    const videoPath = extractStoragePath(show.hero_video_url, SITE_ASSETS_BUCKET)
-    const mobileVideoPath = extractStoragePath(show.hero_video_mobile_url, SITE_ASSETS_BUCKET)
+    const videoPath = extractStoragePath(
+      show.hero_video_url,
+      SITE_ASSETS_BUCKET
+    )
+    const mobileVideoPath = extractStoragePath(
+      show.hero_video_mobile_url,
+      SITE_ASSETS_BUCKET
+    )
     if (videoPath) referencedVideos.add(videoPath)
     if (mobileVideoPath) referencedVideos.add(mobileVideoPath)
   }
@@ -112,7 +132,7 @@ async function runCleanup() {
     bucket: string,
     referenced: Set<string>,
     orphanFilenamePattern: RegExp,
-    collect: string[],
+    collect: string[]
   ) {
     const { data: showFolders, error: listShowsErr } = await admin.storage
       .from(bucket)
@@ -151,10 +171,15 @@ async function runCleanup() {
     SHOW_ARTWORK_BUCKET,
     referencedArtwork,
     /^(hero(-mobile)?|poster|logo)-\d+\.(webp|png|jpg|jpeg)$/,
-    artworkOrphans,
+    artworkOrphans
   )
   // Videos bucket: hero-desktop-*.mp4, hero-mobile-*.mp4
-  await scanBucket(SITE_ASSETS_BUCKET, referencedVideos, /^hero-(desktop|mobile)-\d+\.mp4$/, videoOrphans)
+  await scanBucket(
+    SITE_ASSETS_BUCKET,
+    referencedVideos,
+    /^hero-(desktop|mobile)-\d+\.mp4$/,
+    videoOrphans
+  )
 
   // --- Step 3: delete orphans ---------------------------------------------
   let artworkDeleted = 0
@@ -162,12 +187,16 @@ async function runCleanup() {
   const errors: string[] = []
 
   if (artworkOrphans.length > 0) {
-    const { error } = await admin.storage.from(SHOW_ARTWORK_BUCKET).remove(artworkOrphans)
+    const { error } = await admin.storage
+      .from(SHOW_ARTWORK_BUCKET)
+      .remove(artworkOrphans)
     if (error) errors.push(`artwork: ${error.message}`)
     else artworkDeleted = artworkOrphans.length
   }
   if (videoOrphans.length > 0) {
-    const { error } = await admin.storage.from(SITE_ASSETS_BUCKET).remove(videoOrphans)
+    const { error } = await admin.storage
+      .from(SITE_ASSETS_BUCKET)
+      .remove(videoOrphans)
     if (error) errors.push(`video: ${error.message}`)
     else videoDeleted = videoOrphans.length
   }
@@ -190,7 +219,10 @@ async function runCleanup() {
   return NextResponse.json({
     ok: errors.length === 0,
     shows: shows?.length ?? 0,
-    referenced: { artwork: referencedArtwork.size, videos: referencedVideos.size },
+    referenced: {
+      artwork: referencedArtwork.size,
+      videos: referencedVideos.size,
+    },
     orphans: { artwork: artworkOrphans.length, videos: videoOrphans.length },
     deleted: { artwork: artworkDeleted, videos: videoDeleted },
     durationMs,

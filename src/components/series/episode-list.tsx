@@ -32,8 +32,10 @@ export function EpisodeList({
   if (episodes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-        <h3 className="text-xl font-bold text-foreground">{tAdmin('noEpisodes')}</h3>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <h3 className="text-foreground text-xl font-bold">
+          {tAdmin('noEpisodes')}
+        </h3>
+        <p className="text-muted-foreground mt-2 text-sm">
           {tShow('emptyEpisodesDescription')}
         </p>
       </div>
@@ -61,7 +63,7 @@ export function EpisodeList({
       {hasMore && (
         <Button
           variant="secondary"
-          className="mt-6 mx-auto block"
+          className="mx-auto mt-6 block"
           onClick={() => setVisibleCount((c) => c + CHUNK_SIZE)}
         >
           {tEp('loadMore')}

@@ -29,14 +29,18 @@ export function EpisodeNav({ prev, next }: EpisodeNavProps) {
       {prev ? (
         <Link
           href={`/watch/${prev.id}`}
-          className={cn(baseClasses, enabledClasses, 'flex items-center gap-3 justify-start')}
+          className={cn(
+            baseClasses,
+            enabledClasses,
+            'flex items-center justify-start gap-3'
+          )}
         >
           <ChevronLeft className="size-5 flex-shrink-0 rtl:scale-x-[-1]" />
           <div className="min-w-0">
-            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+            <span className="text-muted-foreground group-hover:text-foreground text-sm transition-colors">
               {t('previous')}
             </span>
-            <span className="block text-sm font-bold text-foreground truncate">
+            <span className="text-foreground block truncate text-sm font-bold">
               {prev.title}
             </span>
           </div>
@@ -45,7 +49,11 @@ export function EpisodeNav({ prev, next }: EpisodeNavProps) {
         <div
           aria-disabled="true"
           tabIndex={-1}
-          className={cn(baseClasses, disabledClasses, 'flex items-center gap-3 justify-start')}
+          className={cn(
+            baseClasses,
+            disabledClasses,
+            'flex items-center justify-start gap-3'
+          )}
         >
           <ChevronLeft className="size-5 flex-shrink-0 rtl:scale-x-[-1]" />
           <div className="min-w-0">
@@ -58,10 +66,14 @@ export function EpisodeNav({ prev, next }: EpisodeNavProps) {
       {next ? (
         <Link
           href={`/watch/${next.id}`}
-          className={cn(baseClasses, enabledClasses, 'flex items-center gap-3 justify-end')}
+          className={cn(
+            baseClasses,
+            enabledClasses,
+            'flex items-center justify-end gap-3'
+          )}
         >
           <div className="min-w-0 text-end">
-            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+            <span className="text-muted-foreground group-hover:text-foreground text-sm transition-colors">
               {t('next')}
             </span>
           </div>
@@ -71,7 +83,11 @@ export function EpisodeNav({ prev, next }: EpisodeNavProps) {
         <div
           aria-disabled="true"
           tabIndex={-1}
-          className={cn(baseClasses, disabledClasses, 'flex items-center gap-3 justify-end')}
+          className={cn(
+            baseClasses,
+            disabledClasses,
+            'flex items-center justify-end gap-3'
+          )}
         >
           <div className="min-w-0 text-end">
             <span className="text-sm">{t('next')}</span>

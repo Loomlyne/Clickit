@@ -64,7 +64,10 @@ export function MobileNav({ initialUser }: MobileNavProps = {}) {
           </Link>
         </SheetHeader>
 
-        <nav aria-label={t('mobileNavLabel')} className="flex flex-col gap-1 px-4 py-4">
+        <nav
+          aria-label={t('mobileNavLabel')}
+          className="flex flex-col gap-1 px-4 py-4"
+        >
           {NAV_LINK_HREFS.map(({ key, href }) => {
             const isActive = pathname.startsWith(href)
             return (
@@ -73,7 +76,7 @@ export function MobileNav({ initialUser }: MobileNavProps = {}) {
                 href={href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  'flex min-h-[48px] items-center rounded-full px-4 text-[15px] font-medium uppercase tracking-[0.08em] transition-colors',
+                  'flex min-h-[48px] items-center rounded-full px-4 text-[15px] font-medium tracking-[0.08em] uppercase transition-colors',
                   isActive
                     ? 'bg-white/[0.08] text-white'
                     : 'text-white/56 hover:bg-white/[0.04] hover:text-white'
@@ -86,7 +89,7 @@ export function MobileNav({ initialUser }: MobileNavProps = {}) {
         </nav>
 
         {/* Auth section inside the sheet */}
-        <div className="mt-auto border-t border-white/[0.06] px-4 py-4 flex flex-col gap-2">
+        <div className="mt-auto flex flex-col gap-2 border-t border-white/[0.06] px-4 py-4">
           <AuthSection initialUser={initialUser} layout="sheet" />
         </div>
       </SheetContent>

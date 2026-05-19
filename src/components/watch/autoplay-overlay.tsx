@@ -41,10 +41,10 @@ export function AutoplayOverlay({
   }, [onPlayNow])
 
   return (
-    <div className="absolute inset-0 z-20 flex items-end justify-between bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 md:p-6 max-sm:flex-col max-sm:items-stretch max-sm:gap-4">
+    <div className="absolute inset-0 z-20 flex items-end justify-between bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 max-sm:flex-col max-sm:items-stretch max-sm:gap-4 md:p-6">
       {/* Left column - next episode info */}
       <div className="flex flex-col gap-2">
-        <span className="text-xs font-medium uppercase tracking-widest text-white/50">
+        <span className="text-xs font-medium tracking-widest text-white/50 uppercase">
           {t('nextEpisode')}
         </span>
         <span className="text-sm text-white/70">

@@ -35,10 +35,16 @@ const episodeFormSchema = z.object({
 
 type EpisodeFormData = z.infer<typeof episodeFormSchema>
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
   return (
     <div className="space-y-4">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
+      <h3 className="text-muted-foreground border-border border-b pb-2 text-xs font-semibold tracking-wider uppercase">
         {title}
       </h3>
       {children}
@@ -46,7 +52,17 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function Field({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
+function Field({
+  label,
+  required,
+  error,
+  children,
+}: {
+  label: string
+  required?: boolean
+  error?: string
+  children: React.ReactNode
+}) {
   return (
     <div className="space-y-1.5">
       <Label className="text-sm">
@@ -54,7 +70,7 @@ function Field({ label, required, error, children }: { label: string; required?:
         {required && <span className="text-destructive ms-0.5">*</span>}
       </Label>
       {children}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="text-destructive text-xs">{error}</p>}
     </div>
   )
 }
@@ -66,11 +82,19 @@ interface EpisodeFormDrawerProps {
   showId: string
   seasonId: string
   nextEpisodeNumber: number
-  onSave: (data: EpisodeFormData) => Promise<{ success: boolean; error?: string }>
+  onSave: (
+    data: EpisodeFormData
+  ) => Promise<{ success: boolean; error?: string }>
 }
 
 export function EpisodeFormDrawer({
-  open, onOpenChange, episode, showId, seasonId, nextEpisodeNumber, onSave,
+  open,
+  onOpenChange,
+  episode,
+  showId,
+  seasonId,
+  nextEpisodeNumber,
+  onSave,
 }: EpisodeFormDrawerProps) {
   const isEdit = !!episode
   const t = useTranslations('admin.episodeForm')
@@ -78,17 +102,34 @@ export function EpisodeFormDrawer({
   const tErrors = useTranslations('errors')
 
   const STATUS_OPTIONS = [
-    { value: 'draft' as const, label: t('statusDraft'), desc: t('statusDraftDesc') },
-    { value: 'coming-soon' as const, label: t('statusScheduled'), desc: t('statusScheduledDesc') },
-    { value: 'published' as const, label: t('statusPublished'), desc: t('statusPublishedDesc') },
+    {
+      value: 'draft' as const,
+      label: t('statusDraft'),
+      desc: t('statusDraftDesc'),
+    },
+    {
+      value: 'coming-soon' as const,
+      label: t('statusScheduled'),
+      desc: t('statusScheduledDesc'),
+    },
+    {
+      value: 'published' as const,
+      label: t('statusPublished'),
+      desc: t('statusPublishedDesc'),
+    },
   ]
 
   const form = useForm<EpisodeFormData>({
     resolver: zodResolver(episodeFormSchema),
     defaultValues: {
-      title: '', title_ar: '', description: '', description_ar: '',
-      episode_number: nextEpisodeNumber, youtube_video_id: '',
-      duration: null, status: 'draft',
+      title: '',
+      title_ar: '',
+      description: '',
+      description_ar: '',
+      episode_number: nextEpisodeNumber,
+      youtube_video_id: '',
+      duration: null,
+      status: 'draft',
     },
   })
 
@@ -96,8 +137,10 @@ export function EpisodeFormDrawer({
     if (open) {
       if (episode) {
         form.reset({
-          title: episode.title, title_ar: episode.title_ar ?? '',
-          description: episode.description, description_ar: episode.description_ar ?? '',
+          title: episode.title,
+          title_ar: episode.title_ar ?? '',
+          description: episode.description,
+          description_ar: episode.description_ar ?? '',
           episode_number: episode.episode_number,
           youtube_video_id: episode.youtube_video_id ?? '',
           duration: episode.duration ?? null,
@@ -105,9 +148,14 @@ export function EpisodeFormDrawer({
         })
       } else {
         form.reset({
-          title: '', title_ar: '', description: '', description_ar: '',
-          episode_number: nextEpisodeNumber, youtube_video_id: '',
-          duration: null, status: 'draft',
+          title: '',
+          title_ar: '',
+          description: '',
+          description_ar: '',
+          episode_number: nextEpisodeNumber,
+          youtube_video_id: '',
+          duration: null,
+          status: 'draft',
         })
       }
     }
@@ -118,7 +166,8 @@ export function EpisodeFormDrawer({
   const watchedVideoId = form.watch('youtube_video_id')
   useEffect(() => {
     const videoId = watchedVideoId?.trim()
-    if (!videoId || videoId.length !== 11 || videoId === lastDetectedId.current) return
+    if (!videoId || videoId.length !== 11 || videoId === lastDetectedId.current)
+      return
     // Only auto-fill if duration is empty
     const currentDuration = form.getValues('duration')
     if (currentDuration) return
@@ -136,8 +185,10 @@ export function EpisodeFormDrawer({
   async function onSubmit(data: EpisodeFormData) {
     const normalized = {
       ...data,
-      title_ar: data.title_ar || null, description_ar: data.description_ar || null,
-      youtube_video_id: data.youtube_video_id || null, duration: data.duration || null,
+      title_ar: data.title_ar || null,
+      description_ar: data.description_ar || null,
+      youtube_video_id: data.youtube_video_id || null,
+      duration: data.duration || null,
     }
     const result = await onSave(normalized)
     if (result.success) {
@@ -156,28 +207,60 @@ export function EpisodeFormDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="sm:max-w-xl w-full p-0 flex flex-col">
-        <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
-          <SheetTitle className="text-lg">{isEdit ? t('editEpisode') : t('createEpisode')}</SheetTitle>
-          <p className="text-sm text-muted-foreground">
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col p-0 sm:max-w-xl"
+      >
+        <SheetHeader className="border-border shrink-0 border-b px-6 pt-6 pb-4">
+          <SheetTitle className="text-lg">
+            {isEdit ? t('editEpisode') : t('createEpisode')}
+          </SheetTitle>
+          <p className="text-muted-foreground text-sm">
             {isEdit
               ? t('editingEpisode', { title: episode.title })
               : t('episodeNumberDescription', { number: nextEpisodeNumber })}
           </p>
         </SheetHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-8">
-
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <div className="flex-1 space-y-8 overflow-y-auto px-6 py-5">
             <Section title={t('sectionInfo')}>
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
-                  <Field label={t('titleLabel')} required error={errors.title?.message ? tErrors(errors.title.message as never) : undefined}>
-                    <Input {...form.register('title')} placeholder={t('episodeTitlePlaceholder')} />
+                  <Field
+                    label={t('titleLabel')}
+                    required
+                    error={
+                      errors.title?.message
+                        ? tErrors(errors.title.message as never)
+                        : undefined
+                    }
+                  >
+                    <Input
+                      {...form.register('title')}
+                      placeholder={t('episodeTitlePlaceholder')}
+                    />
                   </Field>
                 </div>
-                <Field label={t('episodeNumberLabel')} required error={errors.episode_number?.message ? tErrors(errors.episode_number.message as never) : undefined}>
-                  <Input type="number" min={1} {...form.register('episode_number', { valueAsNumber: true })} />
+                <Field
+                  label={t('episodeNumberLabel')}
+                  required
+                  error={
+                    errors.episode_number?.message
+                      ? tErrors(errors.episode_number.message as never)
+                      : undefined
+                  }
+                >
+                  <Input
+                    type="number"
+                    min={1}
+                    {...form.register('episode_number', {
+                      valueAsNumber: true,
+                    })}
+                  />
                 </Field>
               </div>
 
@@ -187,31 +270,57 @@ export function EpisodeFormDrawer({
 
               {/* Status — radio buttons */}
               <div className="space-y-1.5">
-                <Label className="text-sm">{t('statusLabel')}<span className="text-destructive ms-0.5">*</span></Label>
+                <Label className="text-sm">
+                  {t('statusLabel')}
+                  <span className="text-destructive ms-0.5">*</span>
+                </Label>
                 <div className="grid grid-cols-3 gap-2">
                   {STATUS_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => form.setValue('status', opt.value, { shouldValidate: true })}
+                      onClick={() =>
+                        form.setValue('status', opt.value, {
+                          shouldValidate: true,
+                        })
+                      }
                       className={`rounded-lg border p-3 text-start transition-all ${
                         currentStatus === opt.value
                           ? 'border-white/30 bg-white/10 ring-1 ring-white/20'
                           : 'border-border hover:border-white/15 hover:bg-white/[0.03]'
                       }`}
                     >
-                      <span className="text-sm font-medium text-foreground">{opt.label}</span>
-                      <span className="block text-[10px] text-muted-foreground mt-0.5">{opt.desc}</span>
+                      <span className="text-foreground text-sm font-medium">
+                        {opt.label}
+                      </span>
+                      <span className="text-muted-foreground mt-0.5 block text-[10px]">
+                        {opt.desc}
+                      </span>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <Field label={t('durationLabel')} error={errors.duration?.message ? tErrors(errors.duration.message as never) : undefined}>
+                <Field
+                  label={t('durationLabel')}
+                  error={
+                    errors.duration?.message
+                      ? tErrors(errors.duration.message as never)
+                      : undefined
+                  }
+                >
                   <div className="relative">
-                    <Input type="number" min={1} placeholder="25" {...form.register('duration', { valueAsNumber: true })} className="pe-10" />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{t('durationUnit')}</span>
+                    <Input
+                      type="number"
+                      min={1}
+                      placeholder="25"
+                      {...form.register('duration', { valueAsNumber: true })}
+                      className="pe-10"
+                    />
+                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
+                      {t('durationUnit')}
+                    </span>
                   </div>
                 </Field>
               </div>
@@ -236,7 +345,9 @@ export function EpisodeFormDrawer({
                       // Only fill fields that are currently empty — never overwrite
                       // what the admin has already typed.
                       if (!form.getValues('title') && meta.title) {
-                        form.setValue('title', meta.title, { shouldDirty: true })
+                        form.setValue('title', meta.title, {
+                          shouldDirty: true,
+                        })
                       }
                       if (!form.getValues('description') && meta.description) {
                         // YouTube descriptions are long; cap at 1000 chars to keep
@@ -247,28 +358,51 @@ export function EpisodeFormDrawer({
                           { shouldDirty: true }
                         )
                       }
-                      if (!form.getValues('duration') && meta.durationSeconds > 0) {
-                        form.setValue('duration', Math.round(meta.durationSeconds / 60), {
-                          shouldDirty: true,
-                        })
+                      if (
+                        !form.getValues('duration') &&
+                        meta.durationSeconds > 0
+                      ) {
+                        form.setValue(
+                          'duration',
+                          Math.round(meta.durationSeconds / 60),
+                          {
+                            shouldDirty: true,
+                          }
+                        )
                       }
                     }}
                   />
                 )}
               </Field>
 
-              <Field label={t('descriptionLabel')} required error={errors.description?.message ? tErrors(errors.description.message as never) : undefined}>
-                <Textarea rows={5} {...form.register('description')} placeholder={t('descriptionPlaceholder')} />
+              <Field
+                label={t('descriptionLabel')}
+                required
+                error={
+                  errors.description?.message
+                    ? tErrors(errors.description.message as never)
+                    : undefined
+                }
+              >
+                <Textarea
+                  rows={5}
+                  {...form.register('description')}
+                  placeholder={t('descriptionPlaceholder')}
+                />
               </Field>
 
               <Field label={t('descriptionArLabel')}>
-                <Textarea rows={5} dir="rtl" {...form.register('description_ar')} />
+                <Textarea
+                  rows={5}
+                  dir="rtl"
+                  {...form.register('description_ar')}
+                />
               </Field>
             </Section>
           </div>
 
           {/* Sticky footer */}
-          <div className="shrink-0 border-t border-border bg-[var(--card)] px-6 py-4 flex items-center justify-end gap-3">
+          <div className="border-border flex shrink-0 items-center justify-end gap-3 border-t bg-[var(--card)] px-6 py-4">
             <Button
               type="button"
               variant="outline"
@@ -276,10 +410,7 @@ export function EpisodeFormDrawer({
             >
               {t('discardChanges')}
             </Button>
-            <Button
-              type="submit"
-              disabled={form.formState.isSubmitting}
-            >
+            <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting
                 ? t('savingLabel')
                 : isEdit
@@ -322,7 +453,9 @@ function YouTubeFetchButton({
     setLoading(true)
     try {
       const url = `https://www.youtube.com/watch?v=${videoId}`
-      const res = await fetch(`/api/youtube-meta?url=${encodeURIComponent(url)}`)
+      const res = await fetch(
+        `/api/youtube-meta?url=${encodeURIComponent(url)}`
+      )
       if (res.status === 503) {
         toast.error(t('toastNoYoutubeKey'), {
           description: t('toastNoYoutubeKeyDescription'),

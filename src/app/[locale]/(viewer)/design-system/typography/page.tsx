@@ -45,39 +45,49 @@ const typographyRoles = [
 export default function TypographyPage() {
   return (
     <div className="space-y-8">
-      <section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">{'Type system'}</h2>
+      <section className="rounded-[12px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
+        <h2 className="text-foreground text-2xl font-semibold tracking-tight">
+          {'Type system'}
+        </h2>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
-          <div className="rounded-[28px] border border-white/10 bg-black/20 p-5">
-            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Titles · all locales</p>
-            <p className="mt-3 text-lg text-foreground font-display">LBC</p>
+          <div className="rounded-[12px] border border-white/10 bg-black/20 p-5">
+            <p className="text-muted-foreground text-xs tracking-[0.24em] uppercase">
+              Titles · all locales
+            </p>
+            <p className="text-foreground font-display mt-3 text-lg">LBC</p>
           </div>
-          <div className="rounded-[28px] border border-white/10 bg-black/20 p-5">
-            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Body · English</p>
-            <p className="mt-3 text-lg text-foreground">Geist</p>
+          <div className="rounded-[12px] border border-white/10 bg-black/20 p-5">
+            <p className="text-muted-foreground text-xs tracking-[0.24em] uppercase">
+              Body · English
+            </p>
+            <p className="text-foreground mt-3 text-lg">Geist</p>
           </div>
-          <div className="rounded-[28px] border border-white/10 bg-black/20 p-5">
-            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Body · Arabic</p>
-            <p className="mt-3 text-lg text-foreground">GE SS</p>
+          <div className="rounded-[12px] border border-white/10 bg-black/20 p-5">
+            <p className="text-muted-foreground text-xs tracking-[0.24em] uppercase">
+              Body · Arabic
+            </p>
+            <p className="text-foreground mt-3 text-lg">GE SS</p>
           </div>
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">Scale</h2>
+      <section className="rounded-[12px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:p-8">
+        <h2 className="text-foreground text-2xl font-semibold tracking-tight">
+          Scale
+        </h2>
         <div className="mt-8 space-y-8">
-        {typographyRoles.map((role) => (
-          <div key={role.role}>
-            <p className="font-mono text-xs uppercase tracking-[0.24em] text-muted-foreground">
-              {role.role} · {role.spec}
-            </p>
-            <p
-              className={`mt-3 text-foreground ${role.sizeClass} ${role.weightClass} ${role.lineHeightClass}`}
-            >
-              {role.sample}
-            </p>
-          </div>
-        ))}
+          {typographyRoles.map((role) => (
+            <div key={role.role}>
+              <p className="text-muted-foreground font-mono text-xs tracking-[0.24em] uppercase">
+                {role.role} · {role.spec}
+              </p>
+              <p
+                className={`text-foreground mt-3 ${role.sizeClass} ${role.weightClass} ${role.lineHeightClass}`}
+              >
+                {role.sample}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
     </div>

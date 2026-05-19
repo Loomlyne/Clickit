@@ -22,11 +22,16 @@ export function ReviewsSection({ reviews }: ReviewsSectionProps) {
   if (reviews.length === 0) return null
 
   return (
-    <section className="px-6 md:px-12 mt-10">
-      <h2 className="font-display text-xl font-medium text-foreground">{t('heading')}</h2>
+    <section className="mt-10 px-6 md:px-12">
+      <h2 className="font-display text-foreground text-xl font-medium">
+        {t('heading')}
+      </h2>
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
         {reviews.map((review) => (
-          <Card key={review.id} className="rounded-[24px] border border-[var(--line)] bg-[var(--bg-1)]">
+          <Card
+            key={review.id}
+            className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)]"
+          >
             <CardContent className="p-4">
               <div className="flex items-center gap-1">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -40,13 +45,19 @@ export function ReviewsSection({ reviews }: ReviewsSectionProps) {
                   />
                 ))}
               </div>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground line-clamp-3">
+              <p className="text-muted-foreground mt-2 line-clamp-3 text-sm leading-relaxed">
                 {review.text}
               </p>
               <div className="mt-3 flex items-center justify-between">
-                <span className="text-sm font-medium text-foreground">{review.authorName}</span>
-                <span className="text-xs text-text-muted">
-                  {new Date(review.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                <span className="text-foreground text-sm font-medium">
+                  {review.authorName}
+                </span>
+                <span className="text-text-muted text-xs">
+                  {new Date(review.date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
                 </span>
               </div>
             </CardContent>

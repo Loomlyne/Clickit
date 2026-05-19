@@ -3,16 +3,16 @@ import { extractYouTubeId } from '@/lib/youtube'
 import { resolveHeroMedia, type HeroMediaChoice } from '@/lib/hero-media'
 
 interface CinematicBackdropProps {
-  brandColor: string;
-  intensity?: 'low' | 'medium' | 'high';
-  watermarkText?: string;
-  className?: string;
-  imageUrl?: string;
-  mobileImageUrl?: string;
-  videoUrl?: string;
-  videoType?: 'mp4' | 'youtube';
-  mobileVideoUrl?: string;
-  mobileVideoType?: 'mp4' | 'youtube';
+  brandColor: string
+  intensity?: 'low' | 'medium' | 'high'
+  watermarkText?: string
+  className?: string
+  imageUrl?: string
+  mobileImageUrl?: string
+  videoUrl?: string
+  videoType?: 'mp4' | 'youtube'
+  mobileVideoUrl?: string
+  mobileVideoType?: 'mp4' | 'youtube'
   /**
    * When set (server-side UA detection), renders only the matching variant
    * instead of both branches. Prevents the browser from downloading both
@@ -20,14 +20,14 @@ interface CinematicBackdropProps {
    * When undefined, falls back to CSS-based responsive rendering (both
    * branches mount, CSS hides one — used by auth pages which have no videos).
    */
-  isMobile?: boolean;
+  isMobile?: boolean
   /**
    * When true, disables video autoplay (both <video> and YouTube iframe) in
    * respect of the user's prefers-reduced-motion OS setting. The video still
    * mounts but stays paused on its poster/first frame. YouTube iframes omit
    * the autoplay flag so they load without animating.
    */
-  reducedMotion?: boolean;
+  reducedMotion?: boolean
 }
 
 function VideoLayer({
@@ -96,7 +96,8 @@ export function CinematicBackdrop({
   isMobile,
   reducedMotion,
 }: CinematicBackdropProps) {
-  const bloomAlpha = intensity === 'low' ? '40' : intensity === 'high' ? '80' : '55';
+  const bloomAlpha =
+    intensity === 'low' ? '40' : intensity === 'high' ? '80' : '55'
 
   // Server-side viewport-aware rendering: when isMobile is resolved upstream,
   // render ONLY the matching variant. Prevents double-download of desktop +
@@ -120,7 +121,9 @@ export function CinematicBackdrop({
   const mobileUsesDesktopVideo = !mobileHasVideo && desktopHasVideo
 
   return (
-    <div className={`pointer-events-none absolute inset-0 overflow-hidden${className ? ` ${className}` : ''}`}>
+    <div
+      className={`pointer-events-none absolute inset-0 overflow-hidden${className ? ` ${className}` : ''}`}
+    >
       {/* Layer 1: solid black base */}
       <div className="absolute inset-0 bg-black" />
 
@@ -130,9 +133,9 @@ export function CinematicBackdrop({
           <VideoLayer
             url={resolved.url}
             type={resolved.type}
-            className="absolute inset-0 h-full w-full scale-110 object-cover opacity-80 pointer-events-none"
+            className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-80"
             reducedMotion={reducedMotion}
-            poster={isMobile ? mobileImageUrl ?? imageUrl : imageUrl}
+            poster={isMobile ? (mobileImageUrl ?? imageUrl) : imageUrl}
           />
         ) : resolved?.kind === 'image' ? (
           <Image
@@ -152,7 +155,7 @@ export function CinematicBackdrop({
             <VideoLayer
               url={videoUrl!}
               type={videoType!}
-              className="absolute inset-0 hidden h-full w-full scale-110 object-cover opacity-80 pointer-events-none md:block"
+              className="pointer-events-none absolute inset-0 hidden h-full w-full scale-110 object-cover opacity-80 md:block"
               reducedMotion={reducedMotion}
               poster={imageUrl}
             />
@@ -173,7 +176,7 @@ export function CinematicBackdrop({
             <VideoLayer
               url={mobileVideoUrl!}
               type={mobileVideoType!}
-              className="absolute inset-0 block h-full w-full scale-110 object-cover opacity-80 pointer-events-none md:hidden"
+              className="pointer-events-none absolute inset-0 block h-full w-full scale-110 object-cover opacity-80 md:hidden"
               reducedMotion={reducedMotion}
               poster={mobileImageUrl ?? imageUrl}
             />
@@ -181,7 +184,7 @@ export function CinematicBackdrop({
             <VideoLayer
               url={videoUrl!}
               type={videoType!}
-              className="absolute inset-0 block h-full w-full scale-110 object-cover opacity-80 pointer-events-none md:hidden"
+              className="pointer-events-none absolute inset-0 block h-full w-full scale-110 object-cover opacity-80 md:hidden"
               reducedMotion={reducedMotion}
               poster={mobileImageUrl ?? imageUrl}
             />
@@ -255,5 +258,5 @@ export function CinematicBackdrop({
         }}
       />
     </div>
-  );
+  )
 }

@@ -16,7 +16,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function MyListPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
     const locale = await getLocale()
@@ -32,17 +34,17 @@ export default async function MyListPage() {
   return (
     <div className="pb-20">
       {/* Header */}
-      <div className="px-6 pb-12 pt-16 md:px-12">
+      <div className="px-6 pt-16 pb-12 md:px-12">
         <div className="mx-auto max-w-5xl">
-          <p className="mono mb-4 text-[var(--text-mute)]">
-            {t('eyebrow')}
-          </p>
-          <h1 className="font-display text-[clamp(2.5rem,5vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--text)]">
+          <p className="mono mb-4 text-[var(--text-mute)]">{t('eyebrow')}</p>
+          <h1 className="font-display text-[clamp(2.5rem,5vw,56px)] leading-[1.05] font-normal tracking-[-0.02em] text-[var(--text)]">
             {t('pageTitle')}
           </h1>
           <p className="mt-3 text-[var(--text-dim)]">
             {shows.length > 0
-              ? t(shows.length === 1 ? 'countOne' : 'countMany', { count: shows.length })
+              ? t(shows.length === 1 ? 'countOne' : 'countMany', {
+                  count: shows.length,
+                })
               : t('emptyDescription')}
           </p>
         </div>
@@ -65,7 +67,7 @@ export default async function MyListPage() {
       ) : (
         <div className="mx-auto max-w-5xl px-6 md:px-12">
           <div className="border-t border-[var(--line)] py-24 text-center">
-            <h3 className="font-display text-[32px] font-normal leading-[1.1] text-[var(--text)]">
+            <h3 className="font-display text-[32px] leading-[1.1] font-normal text-[var(--text)]">
               {t('emptyHeading')}
             </h3>
             <p className="mt-3 text-[14px] text-[var(--text-dim)]">

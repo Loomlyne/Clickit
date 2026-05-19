@@ -3,9 +3,15 @@ import { redirect } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdminHeader } from '@/components/admin/admin-header'
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
     const locale = await getLocale()
@@ -26,7 +32,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen bg-[var(--bg-0)]">
       <AdminHeader />
-      <div className="mx-auto max-w-7xl px-4 pb-10 pt-28 md:px-8 md:pb-16 md:pt-32">
+      <div className="mx-auto max-w-7xl px-4 pt-28 pb-10 md:px-8 md:pt-32 md:pb-16">
         {children}
       </div>
     </div>

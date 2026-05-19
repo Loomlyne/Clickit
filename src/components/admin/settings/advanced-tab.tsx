@@ -90,7 +90,11 @@ export function AdvancedTab({ config }: { config: AppConfig }) {
         description={t('featureFlagsDescription')}
         action={
           <Button size="sm" onClick={onSave} disabled={!dirty || saving}>
-            {saving ? <Loader2 className="size-4 animate-spin" /> : t('saveFlags')}
+            {saving ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              t('saveFlags')
+            )}
           </Button>
         }
       >
@@ -106,10 +110,7 @@ export function AdvancedTab({ config }: { config: AppConfig }) {
         </div>
       </SettingsCard>
 
-      <SettingsCard
-        title={t('cacheTitle')}
-        description={t('cacheDescription')}
-      >
+      <SettingsCard title={t('cacheTitle')} description={t('cacheDescription')}>
         <Button
           variant="outline"
           onClick={onRevalidate}
@@ -129,7 +130,7 @@ export function AdvancedTab({ config }: { config: AppConfig }) {
         title={t('adminAccountTitle')}
         description={t('adminAccountDescription')}
       >
-        <div className="rounded-lg border border-white/8 bg-white/[0.02] px-4 py-3 font-mono text-xs text-muted-foreground">
+        <div className="text-muted-foreground rounded-lg border border-white/8 bg-white/[0.02] px-4 py-3 font-mono text-xs">
           {t('adminAccountCurrent')}
         </div>
       </SettingsCard>
@@ -154,7 +155,9 @@ function FlagRow({
         </span>
         <div className="min-w-0">
           <p className="text-sm font-medium text-white">{meta.title}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{meta.description}</p>
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            {meta.description}
+          </p>
           {meta.warning && value && (
             <p className="mt-1.5 flex items-center gap-1 text-xs text-orange-300">
               <AlertTriangle className="size-3.5" />

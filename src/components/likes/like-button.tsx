@@ -17,7 +17,14 @@ const PARTICLES = Array.from({ length: PARTICLE_COUNT }, (_, i) => {
   return { x: Math.cos(rad) * distance, y: Math.sin(rad) * distance, angle }
 })
 
-const PARTICLE_COLORS = ['#ff6b8a', '#ff8fa3', '#ffb3c1', '#ff477e', '#e05297', '#ff85a1']
+const PARTICLE_COLORS = [
+  '#ff6b8a',
+  '#ff8fa3',
+  '#ffb3c1',
+  '#ff477e',
+  '#e05297',
+  '#ff85a1',
+]
 
 interface LikeButtonProps {
   showId: string
@@ -25,7 +32,11 @@ interface LikeButtonProps {
   userId: string | null
 }
 
-export function LikeButton({ showId, initialLiked = false, userId }: LikeButtonProps) {
+export function LikeButton({
+  showId,
+  initialLiked = false,
+  userId,
+}: LikeButtonProps) {
   const { isLiked, toggle } = useLikes(showId, initialLiked, userId)
   const justLikedRef = useRef(false)
   const t = useTranslations('show')
@@ -58,7 +69,9 @@ export function LikeButton({ showId, initialLiked = false, userId }: LikeButtonP
             animate={{ scale: 1.8, opacity: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
-            onAnimationComplete={() => { justLikedRef.current = false }}
+            onAnimationComplete={() => {
+              justLikedRef.current = false
+            }}
           />
         )}
       </AnimatePresence>
@@ -70,8 +83,10 @@ export function LikeButton({ showId, initialLiked = false, userId }: LikeButtonP
             {PARTICLES.map((p, i) => (
               <motion.span
                 key={`p-${i}`}
-                className="absolute left-1/2 top-1/2 h-1.5 w-1.5 rounded-full"
-                style={{ backgroundColor: PARTICLE_COLORS[i % PARTICLE_COLORS.length] }}
+                className="absolute top-1/2 left-1/2 h-1.5 w-1.5 rounded-full"
+                style={{
+                  backgroundColor: PARTICLE_COLORS[i % PARTICLE_COLORS.length],
+                }}
                 initial={{ x: '-50%', y: '-50%', scale: 1, opacity: 1 }}
                 animate={{
                   x: p.x,

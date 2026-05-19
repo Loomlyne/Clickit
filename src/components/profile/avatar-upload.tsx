@@ -11,7 +11,10 @@ interface AvatarUploadProps {
   fallbackInitial: string
 }
 
-export function AvatarUpload({ currentUrl, fallbackInitial }: AvatarUploadProps) {
+export function AvatarUpload({
+  currentUrl,
+  fallbackInitial,
+}: AvatarUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const objectUrlRef = useRef<string | null>(null)
   const [preview, setPreview] = useState<string | null>(currentUrl)
@@ -41,7 +44,10 @@ export function AvatarUpload({ currentUrl, fallbackInitial }: AvatarUploadProps)
       toast.success(t('avatarUpdated'))
     } catch (err) {
       setPreview(currentUrl)
-      console.error('[avatar-upload] upload failed:', err instanceof Error ? err.message : err)
+      console.error(
+        '[avatar-upload] upload failed:',
+        err instanceof Error ? err.message : err
+      )
       toast.error(t('avatarUploadFailed'))
     } finally {
       setUploading(false)
@@ -54,12 +60,22 @@ export function AvatarUpload({ currentUrl, fallbackInitial }: AvatarUploadProps)
       onClick={() => inputRef.current?.click()}
       disabled={uploading}
       className="group relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--line-2)] transition-all hover:border-[var(--text-mute)]"
-      style={{ background: preview ? undefined : 'linear-gradient(135deg, rgba(96,115,255,0.85), rgba(46,57,121,0.92))' }}
+      style={{
+        background: preview
+          ? undefined
+          : 'linear-gradient(135deg, rgba(96,115,255,0.85), rgba(46,57,121,0.92))',
+      }}
     >
       {preview ? (
-        <img src={preview} alt={t('avatarPicAlt')} className="size-full object-cover" />
+        <img
+          src={preview}
+          alt={t('avatarPicAlt')}
+          className="size-full object-cover"
+        />
       ) : (
-        <span className="text-3xl font-semibold text-white">{fallbackInitial}</span>
+        <span className="text-3xl font-semibold text-white">
+          {fallbackInitial}
+        </span>
       )}
 
       <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">

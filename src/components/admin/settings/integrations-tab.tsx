@@ -67,10 +67,7 @@ export function IntegrationsTab({
         </SettingsField>
       </SettingsCard>
 
-      <SettingsCard
-        title="Meta Pixel"
-        description={t('metaPixelDescription')}
-      >
+      <SettingsCard title="Meta Pixel" description={t('metaPixelDescription')}>
         <SettingsField label={t('pixelIdLabel')} hint={t('pixelIdHint')}>
           <Input
             value={pixel}
@@ -97,10 +94,7 @@ export function IntegrationsTab({
           </a>
         }
       >
-        <SettingsField
-          label={t('apiKeyLabel')}
-          hint={t('apiKeyHint')}
-        >
+        <SettingsField label={t('apiKeyLabel')} hint={t('apiKeyHint')}>
           <SecretField
             value={yt}
             onChange={setYt}
@@ -112,7 +106,11 @@ export function IntegrationsTab({
 
       <div className="flex items-center justify-end">
         <Button type="submit" disabled={saving}>
-          {saving ? <Loader2 className="size-4 animate-spin" /> : t('saveIntegrations')}
+          {saving ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            t('saveIntegrations')
+          )}
         </Button>
       </div>
     </form>

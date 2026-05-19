@@ -27,7 +27,10 @@ export function WatchlistToggleButton({
   const t = useTranslations('show')
 
   const handleClick = (e?: React.MouseEvent) => {
-    if (e) { e.preventDefault(); e.stopPropagation() }
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (!isInList) justAddedRef.current = true
     toggle()
   }
@@ -49,7 +52,9 @@ export function WatchlistToggleButton({
             animate={{ scale: 1.7, opacity: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.45, ease: 'easeOut' }}
-            onAnimationComplete={() => { justAddedRef.current = false }}
+            onAnimationComplete={() => {
+              justAddedRef.current = false
+            }}
           />
         )}
       </AnimatePresence>
@@ -64,7 +69,11 @@ export function WatchlistToggleButton({
           transition={SPRING}
           className="flex items-center justify-center"
         >
-          {isInList ? <Check className={iconSize} strokeWidth={3} /> : <Plus className={iconSize} />}
+          {isInList ? (
+            <Check className={iconSize} strokeWidth={3} />
+          ) : (
+            <Plus className={iconSize} />
+          )}
         </motion.span>
       </AnimatePresence>
     </span>
@@ -77,7 +86,7 @@ export function WatchlistToggleButton({
         whileTap={{ scale: 0.85 }}
         aria-label={isInList ? t('removeFromList') : t('addToList')}
         className={cn(
-          'absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200',
+          'absolute top-3 right-3 z-20 flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200',
           isInList
             ? 'border border-white bg-white text-black'
             : 'border border-white/20 bg-black/50 text-white/80 backdrop-blur-md hover:bg-black/70'

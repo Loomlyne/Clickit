@@ -1,9 +1,18 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
-import { Pencil, Archive, Plus, Search, Star } from 'lucide-react'
+import {
+  Archive,
+  ChevronDown,
+  ChevronUp,
+  Pencil,
+  Plus,
+  Search,
+  Star,
+} from 'lucide-react'
 
 import {
   Table,
@@ -29,6 +38,7 @@ import {
 import { StatusBadge } from '@/components/admin/status-badge'
 import { EmptyState } from '@/components/admin/empty-state'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -37,7 +47,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { AdminCategoryBadge } from '@/components/admin/admin-category-badge'
-import { archiveShow, toggleFeatured } from '@/app/[locale]/admin/actions'
+import {
+  archiveShow,
+  reorderShow,
+  toggleFeatured,
+} from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
 import type { Database } from '@/lib/database.types'
 
@@ -52,19 +66,30 @@ interface ShowsTableProps {
 }
 
 export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
+  const router = useRouter()
   const tDash = useTranslations('admin.dashboard')
   const tShowForm = useTranslations('admin.showForm')
   const tShows = useTranslations('admin.shows')
   const tCommon = useTranslations('common')
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false)
+  const [bulkArchiveDialogOpen, setBulkArchiveDialogOpen] = useState(false)
   const [archivingShow, setArchivingShow] = useState<Show | null>(null)
   const [archiving, setArchiving] = useState(false)
+  const [bulkArchiving, setBulkArchiving] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [displayShows, setDisplayShows] = useState(shows)
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null)
+  const [isReordering, startReorderTransition] = useTransition()
+
+  useEffect(() => {
+    setDisplayShows(shows)
+  }, [shows])
 
   // Filtered shows
   const filtered = useMemo(() => {
-    let result = shows
+    let result = displayShows
     if (search) {
       const q = search.toLowerCase()
       result = result.filter(
@@ -77,18 +102,50 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
       result = result.filter((s) => s.status === statusFilter)
     }
     return result
-  }, [shows, search, statusFilter])
+  }, [displayShows, search, statusFilter])
 
   // Stats
   const stats = useMemo(
     () => ({
-      total: shows.length,
-      streaming: shows.filter((s) => s.status === 'now-streaming').length,
-      comingSoon: shows.filter((s) => s.status === 'coming-soon').length,
-      draft: shows.filter((s) => s.status === 'draft').length,
+      total: displayShows.length,
+      streaming: displayShows.filter((s) => s.status === 'now-streaming')
+        .length,
+      comingSoon: displayShows.filter((s) => s.status === 'coming-soon')
+        .length,
+      draft: displayShows.filter((s) => s.status === 'draft').length,
     }),
-    [shows]
+    [displayShows]
   )
+  const filteredIds = useMemo(() => filtered.map((show) => show.id), [filtered])
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds])
+  const selectedCount = selectedIds.length
+  const allFilteredSelected =
+    filteredIds.length > 0 && filteredIds.every((id) => selectedSet.has(id))
+
+  useEffect(() => {
+    setSelectedIds((current) =>
+      current.filter((id) => displayShows.some((show) => show.id === id))
+    )
+  }, [displayShows])
+
+  function toggleShowSelection(showId: string, checked: boolean) {
+    setSelectedIds((current) =>
+      checked
+        ? current.includes(showId)
+          ? current
+          : [...current, showId]
+        : current.filter((id) => id !== showId)
+    )
+  }
+
+  function toggleFilteredSelection(checked: boolean) {
+    setSelectedIds((current) => {
+      if (!checked) return current.filter((id) => !filteredIds.includes(id))
+      const next = new Set(current)
+      for (const id of filteredIds) next.add(id)
+      return Array.from(next)
+    })
+  }
 
   function handleArchiveClick(show: Show) {
     setArchivingShow(show)
@@ -109,7 +166,57 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
     }
   }
 
-  if (shows.length === 0) {
+  async function handleBulkArchiveConfirm() {
+    if (selectedIds.length === 0) return
+    setBulkArchiving(true)
+    for (const id of selectedIds) {
+      const result = await archiveShow(id)
+      if (!result.success) {
+        setBulkArchiving(false)
+        toast.error(result.error ?? tCommon('error'))
+        return
+      }
+    }
+    setBulkArchiving(false)
+    setBulkArchiveDialogOpen(false)
+    setSelectedIds([])
+    toast.success(tShows('bulkArchiveToast', { count: selectedCount }))
+    router.refresh()
+  }
+
+  function handleReorder(showId: string, direction: 'up' | 'down') {
+    const currentIndex = filtered.findIndex((show) => show.id === showId)
+    const adjacentIndex =
+      direction === 'up' ? currentIndex - 1 : currentIndex + 1
+    const adjacent = filtered[adjacentIndex]
+    if (!adjacent) return
+
+    const previousShows = displayShows
+    setPendingOrderId(showId)
+    setDisplayShows((current) => {
+      const next = [...current]
+      const from = next.findIndex((show) => show.id === showId)
+      const to = next.findIndex((show) => show.id === adjacent.id)
+      if (from === -1 || to === -1) return current
+      const moving = next[from]!
+      next[from] = next[to]!
+      next[to] = moving
+      return next
+    })
+
+    startReorderTransition(async () => {
+      const result = await reorderShow(showId, direction)
+      setPendingOrderId(null)
+      if (!result.success) {
+        setDisplayShows(previousShows)
+        toast.error(result.error ?? tShows('toastReorderFailed'))
+        return
+      }
+      router.refresh()
+    })
+  }
+
+  if (displayShows.length === 0) {
     return (
       <EmptyState
         heading={tShows('emptyHeading')}
@@ -207,13 +314,39 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
 
         <div className="text-muted-foreground mt-5 flex items-center justify-between pb-3 text-sm">
           <span>{tShows('resultCount', { count: filtered.length })}</span>
-          <span>{tShows('sortedByNewest')}</span>
+          {selectedCount > 0 ? (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setBulkArchiveDialogOpen(true)}
+            >
+              <Archive className="me-1.5 size-4" />
+              {tShows('bulkArchiveButton', { count: selectedCount })}
+            </Button>
+          ) : (
+            <span>{tShows('sortedByNewest')}</span>
+          )}
         </div>
 
         <AdminTableShell>
           <Table>
             <TableHeader>
               <TableRow className="bg-transparent">
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={
+                      allFilteredSelected
+                        ? true
+                        : selectedIds.some((id) => filteredIds.includes(id))
+                          ? 'indeterminate'
+                          : false
+                    }
+                    onCheckedChange={(checked) =>
+                      toggleFilteredSelection(checked === true)
+                    }
+                    aria-label={tShows('selectAllAria')}
+                  />
+                </TableHead>
                 <TableHead>{tShows('showColumn')}</TableHead>
                 <TableHead className="hidden w-[100px] md:table-cell">
                   {tShows('genreColumn')}
@@ -227,17 +360,29 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                 <TableHead className="hidden w-[150px] lg:table-cell">
                   {tShows('broadcastColumn')}
                 </TableHead>
-                <TableHead className="w-[90px] text-end">
+                <TableHead className="w-[132px] text-end">
                   {tShows('actionsColumn')}
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((show) => (
+              {filtered.map((show, index) => (
                 <TableRow
                   key={show.id}
                   className="group transition-colors hover:bg-white/[0.02]"
+                  data-state={selectedSet.has(show.id) ? 'selected' : undefined}
                 >
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedSet.has(show.id)}
+                      onCheckedChange={(checked) =>
+                        toggleShowSelection(show.id, checked === true)
+                      }
+                      aria-label={tShows('selectShowAria', {
+                        title: show.title,
+                      })}
+                    />
+                  </TableCell>
                   <TableCell>
                     <Link
                       href={`/admin/shows/${show.id}`}
@@ -281,6 +426,46 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => handleReorder(show.id, 'up')}
+                            disabled={
+                              isReordering ||
+                              pendingOrderId === show.id ||
+                              index === 0
+                            }
+                            aria-label={tShows('moveUpAria', {
+                              title: show.title,
+                            })}
+                          >
+                            <ChevronUp className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{tShows('moveUp')}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => handleReorder(show.id, 'down')}
+                            disabled={
+                              isReordering ||
+                              pendingOrderId === show.id ||
+                              index === filtered.length - 1
+                            }
+                            aria-label={tShows('moveDownAria', {
+                              title: show.title,
+                            })}
+                          >
+                            <ChevronDown className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{tShows('moveDown')}</TooltipContent>
+                      </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
@@ -357,7 +542,7 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
               {filtered.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="text-muted-foreground py-10 text-center"
                   >
                     {tShows('noSearchMatches')}
@@ -380,6 +565,18 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
         onConfirm={handleArchiveConfirm}
         destructive
         loading={archiving}
+      />
+      <ConfirmDialog
+        open={bulkArchiveDialogOpen}
+        onOpenChange={setBulkArchiveDialogOpen}
+        title={tShows('bulkArchiveTitle')}
+        description={tShows('bulkArchiveDescription', {
+          count: selectedCount,
+        })}
+        confirmLabel={tShows('bulkArchiveConfirm')}
+        onConfirm={handleBulkArchiveConfirm}
+        destructive
+        loading={bulkArchiving}
       />
     </TooltipProvider>
   )

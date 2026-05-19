@@ -105,7 +105,12 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
             </>
           )
           return external ? (
-            <a href={liveHref} target="_blank" rel="noopener noreferrer" className={pillClass}>
+            <a
+              href={liveHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={pillClass}
+            >
               {inner}
             </a>
           ) : (
@@ -135,7 +140,12 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
                 </>
               )
               return external ? (
-                <a href={liveHref} target="_blank" rel="noopener noreferrer" className={pillClass}>
+                <a
+                  href={liveHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={pillClass}
+                >
                   {inner}
                 </a>
               ) : (
@@ -163,13 +173,13 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
               <>
                 <a
                   href={`${prefix}#shows`}
-                  className="px-0.5 py-1.5 text-[13.5px] uppercase tracking-[0.08em] text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
+                  className="px-0.5 py-1.5 text-[13.5px] tracking-[0.08em] text-[var(--text-dim)] uppercase transition-colors duration-150 hover:text-[var(--text)]"
                 >
                   {t('shows')}
                 </a>
                 <a
                   href={`${prefix}#faq`}
-                  className="px-0.5 py-1.5 text-[13.5px] uppercase tracking-[0.08em] text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
+                  className="px-0.5 py-1.5 text-[13.5px] tracking-[0.08em] text-[var(--text-dim)] uppercase transition-colors duration-150 hover:text-[var(--text)]"
                 >
                   {t('faq')}
                 </a>
@@ -186,7 +196,7 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
             locale="en"
             aria-label="Switch to English"
             className={cn(
-              'rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none tracking-[0.08em] transition-colors duration-150',
+              'rounded-full px-2.5 py-1 text-[11px] leading-none font-semibold tracking-[0.08em] transition-colors duration-150',
               locale === 'en'
                 ? 'bg-white text-black'
                 : 'text-[var(--text-dim)] hover:text-[var(--text)]'
@@ -200,7 +210,7 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
             locale="ar"
             aria-label="Switch to Arabic"
             className={cn(
-              'rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none tracking-[0.08em] transition-colors duration-150',
+              'rounded-full px-2.5 py-1 text-[11px] leading-none font-semibold tracking-[0.08em] transition-colors duration-150',
               locale === 'ar'
                 ? 'bg-white text-black'
                 : 'text-[var(--text-dim)] hover:text-[var(--text)]'
@@ -220,7 +230,7 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
             locale="en"
             aria-label="Switch to English"
             className={cn(
-              'rounded-full px-2 py-1 text-[10px] font-semibold leading-none tracking-[0.08em] transition-colors duration-150',
+              'rounded-full px-2 py-1 text-[10px] leading-none font-semibold tracking-[0.08em] transition-colors duration-150',
               locale === 'en'
                 ? 'bg-white text-black'
                 : 'text-[var(--text-dim)] hover:text-[var(--text)]'
@@ -234,7 +244,7 @@ export function Navbar({ initialUser, liveStreamUrl }: NavbarProps) {
             locale="ar"
             aria-label="Switch to Arabic"
             className={cn(
-              'rounded-full px-2 py-1 text-[10px] font-semibold leading-none tracking-[0.08em] transition-colors duration-150',
+              'rounded-full px-2 py-1 text-[10px] leading-none font-semibold tracking-[0.08em] transition-colors duration-150',
               locale === 'ar'
                 ? 'bg-white text-black'
                 : 'text-[var(--text-dim)] hover:text-[var(--text)]'

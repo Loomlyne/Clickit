@@ -195,8 +195,8 @@ export const getFeaturedShows = cache(unstable_cache(
       .select('*')
       .eq('featured', true)
       .eq('archived', false)
-      .order('updated_at', { ascending: false })
-      .limit(5)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
 
     if (!data || data.length === 0) {
       // Fallback: first 3 streaming shows if none featured
@@ -205,6 +205,7 @@ export const getFeaturedShows = cache(unstable_cache(
         .select('*')
         .eq('status', 'now-streaming')
         .eq('archived', false)
+        .order('sort_order', { ascending: true })
         .order('created_at', { ascending: false })
         .limit(3)
       return (fallback ?? []).map((s) => mapShow(s))
@@ -224,6 +225,7 @@ export const getStreamingShows = unstable_cache(
       .select('*')
       .eq('status', 'now-streaming')
       .eq('archived', false)
+      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false })
 
     return (data ?? []).map((s) => mapShow(s))
@@ -240,6 +242,7 @@ export const getComingSoonShows = unstable_cache(
       .select('*')
       .eq('status', 'coming-soon')
       .eq('archived', false)
+      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false })
 
     return (data ?? []).map((s) => mapShow(s))
@@ -673,7 +676,8 @@ export const getAllShows = unstable_cache(
       .select('*')
       .eq('archived', false)
       .in('status', ['now-streaming', 'coming-soon'])
-      .order('title')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
 
     return (data ?? []).map((s) => mapShow(s))
   },

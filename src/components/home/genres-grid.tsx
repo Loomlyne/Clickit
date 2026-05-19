@@ -36,14 +36,14 @@ export async function GenresGrid() {
                 className="group flex-shrink-0"
               >
                 <div
-                  className="flex min-w-[120px] sm:min-w-[160px] cursor-pointer items-center justify-center rounded-full border bg-white/[0.03] px-4 py-3.5 transition-all duration-200 hover:-translate-y-0.5 sm:px-6"
+                  className="flex min-w-[120px] cursor-pointer items-center justify-center rounded-full border bg-white/[0.03] px-4 py-3.5 transition-all duration-200 hover:-translate-y-0.5 sm:min-w-[160px] sm:px-6"
                   style={{
                     borderColor: `${color}35`,
                     boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03), 0 18px 40px rgba(0,0,0,0.12)`,
                   }}
                 >
                   <span
-                    className="whitespace-nowrap text-sm font-medium"
+                    className="text-sm font-medium whitespace-nowrap"
                     style={{ color }}
                   >
                     {categoryNameByLocale[locale] ?? category.nameEn}

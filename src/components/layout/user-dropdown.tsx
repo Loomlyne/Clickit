@@ -19,18 +19,21 @@ interface UserDropdownProps {
   email?: string
 }
 
-export function UserDropdown({ children, onSignOut, isAdmin = false, email }: UserDropdownProps) {
+export function UserDropdown({
+  children,
+  onSignOut,
+  isAdmin = false,
+  email,
+}: UserDropdownProps) {
   const tNav = useTranslations('nav')
   const tCommon = useTranslations('common')
   const router = useRouter()
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        {children}
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={8} className="w-[200px]">
-        <DropdownMenuLabel className="font-normal text-muted-foreground">
+        <DropdownMenuLabel className="text-muted-foreground font-normal">
           {email ?? tNav('profile')}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

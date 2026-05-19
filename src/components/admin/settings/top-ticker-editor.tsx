@@ -15,14 +15,19 @@ const emptyRow = (): TopTickerItem => ({ tag: '', text: '' })
 export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
   const [enabled, setEnabled] = useState(initial.enabled)
   const [rows, setRows] = useState<TopTickerItem[]>(
-    initial.items.length > 0 ? initial.items.map((r) => ({ ...r })) : [emptyRow()]
+    initial.items.length > 0
+      ? initial.items.map((r) => ({ ...r }))
+      : [emptyRow()]
   )
   const [saving, setSaving] = useState(false)
   const t = useTranslations('admin.settings')
 
   const normalizedInitial = {
     enabled: initial.enabled,
-    items: initial.items.map((r) => ({ tag: r.tag.trim(), text: r.text.trim() })),
+    items: initial.items.map((r) => ({
+      tag: r.tag.trim(),
+      text: r.text.trim(),
+    })),
   }
   const normalizedDraft = {
     enabled,
@@ -57,7 +62,9 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
   }
 
   function removeRow(index: number) {
-    setRows((r) => (r.length <= 1 ? [emptyRow()] : r.filter((_, i) => i !== index)))
+    setRows((r) =>
+      r.length <= 1 ? [emptyRow()] : r.filter((_, i) => i !== index)
+    )
   }
 
   return (
@@ -71,7 +78,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
             <p className="text-sm font-medium text-white">
               {t('enableTicker')}
             </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
+            <p className="text-muted-foreground mt-0.5 text-xs">
               {t('enableTickerHint')}
             </p>
           </div>
@@ -94,10 +101,17 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-medium uppercase tracking-[0.16em] text-white/60">
+            <span className="text-xs font-medium tracking-[0.16em] text-white/60 uppercase">
               {t('tickerLinesHeading')}
             </span>
-            <Button type="button" variant="outline" size="sm" className="gap-1" onClick={addRow} disabled={rows.length >= 12}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              onClick={addRow}
+              disabled={rows.length >= 12}
+            >
               <Plus className="size-4" />
               {t('line')}
             </Button>
@@ -106,55 +120,103 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
           {rows.map((row, index) => (
             <div
               key={index}
-              className="flex flex-col gap-3 rounded-lg border border-white/8 bg-white/[0.02] p-4 md:flex-row md:items-end"
+              className="flex flex-col gap-3 rounded-lg border border-white/8 bg-white/[0.02] p-4"
             >
-              <div className="min-w-0 flex-1 md:max-w-[180px]">
-                <SettingsField label={t('tagLabel')}>
-                  <Input
-                    value={row.tag}
-                    maxLength={24}
-                    placeholder={t('tagPlaceholder')}
-                    onChange={(e) =>
-                      setRows((rs) =>
-                        rs.map((x, i) => (i === index ? { ...x, tag: e.target.value } : x))
-                      )
-                    }
-                    className="rounded-[12px] font-mono text-sm"
-                  />
-                </SettingsField>
+              <div className="flex flex-col gap-3 md:flex-row md:items-end">
+                <div className="min-w-0 flex-1 md:max-w-[180px]">
+                  <SettingsField label={t('tagLabel')}>
+                    <Input
+                      value={row.tag}
+                      maxLength={24}
+                      placeholder={t('tagPlaceholder')}
+                      onChange={(e) =>
+                        setRows((rs) =>
+                          rs.map((x, i) =>
+                            i === index ? { ...x, tag: e.target.value } : x
+                          )
+                        )
+                      }
+                      className="rounded-[12px] font-mono text-sm"
+                    />
+                  </SettingsField>
+                </div>
+                <div className="min-w-0 flex-[2]">
+                  <SettingsField label={t('textLabel')}>
+                    <Input
+                      value={row.text}
+                      maxLength={240}
+                      placeholder={t('tickerMessagePlaceholder')}
+                      onChange={(e) =>
+                        setRows((rs) =>
+                          rs.map((x, i) =>
+                            i === index ? { ...x, text: e.target.value } : x
+                          )
+                        )
+                      }
+                      className="rounded-[12px]"
+                    />
+                  </SettingsField>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 text-white/50 hover:text-red-300"
+                  aria-label={t('removeLineAria')}
+                  onClick={() => removeRow(index)}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
               </div>
-              <div className="min-w-0 flex-[2]">
-                <SettingsField label={t('textLabel')}>
-                  <Input
-                    value={row.text}
-                    maxLength={240}
-                    placeholder={t('tickerMessagePlaceholder')}
-                    onChange={(e) =>
-                      setRows((rs) =>
-                        rs.map((x, i) => (i === index ? { ...x, text: e.target.value } : x))
-                      )
-                    }
-                    className="rounded-[12px]"
-                  />
-                </SettingsField>
+              <div className="flex flex-col gap-3 md:flex-row md:items-end">
+                <div className="min-w-0 flex-1 md:max-w-[180px]">
+                  <SettingsField label="TAG (AR)">
+                    <Input
+                      dir="rtl"
+                      value={row.tag_ar ?? ''}
+                      maxLength={24}
+                      placeholder="الوسم"
+                      onChange={(e) =>
+                        setRows((rs) =>
+                          rs.map((x, i) =>
+                            i === index ? { ...x, tag_ar: e.target.value } : x
+                          )
+                        )
+                      }
+                      className="rounded-[12px] font-[family-name:var(--font-ge-ss)] text-sm"
+                    />
+                  </SettingsField>
+                </div>
+                <div className="min-w-0 flex-[2]">
+                  <SettingsField label="TEXT (AR)">
+                    <Input
+                      dir="rtl"
+                      value={row.text_ar ?? ''}
+                      maxLength={240}
+                      placeholder="النص بالعربية"
+                      onChange={(e) =>
+                        setRows((rs) =>
+                          rs.map((x, i) =>
+                            i === index ? { ...x, text_ar: e.target.value } : x
+                          )
+                        )
+                      }
+                      className="rounded-[12px] font-[family-name:var(--font-ge-ss)]"
+                    />
+                  </SettingsField>
+                </div>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="shrink-0 text-white/50 hover:text-red-300"
-                aria-label={t('removeLineAria')}
-                onClick={() => removeRow(index)}
-              >
-                <Trash2 className="size-4" />
-              </Button>
             </div>
           ))}
         </div>
 
         <div className="flex justify-end">
           <Button type="submit" disabled={!dirty || saving}>
-            {saving ? <Loader2 className="size-4 animate-spin" /> : t('saveTicker')}
+            {saving ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              t('saveTicker')
+            )}
           </Button>
         </div>
       </form>

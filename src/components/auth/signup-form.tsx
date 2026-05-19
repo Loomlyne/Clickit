@@ -14,16 +14,18 @@ import { AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { mapAuthError } from '@/lib/auth-errors'
 import { signUpAction } from '@/app/[locale]/(viewer)/auth/actions'
 
-const signupSchema = z.object({
-  name: z.string().min(2, 'nameMin'),
-  email: z.string().email('emailInvalid'),
-  password: z.string().min(6, 'passwordMin'),
-  confirmPassword: z.string(),
-  terms: z.boolean().refine((v) => v === true, 'termsRequired'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'passwordMismatch',
-  path: ['confirmPassword'],
-})
+const signupSchema = z
+  .object({
+    name: z.string().min(2, 'nameMin'),
+    email: z.string().email('emailInvalid'),
+    password: z.string().min(6, 'passwordMin'),
+    confirmPassword: z.string(),
+    terms: z.boolean().refine((v) => v === true, 'termsRequired'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'passwordMismatch',
+    path: ['confirmPassword'],
+  })
 
 type SignupFormData = z.infer<typeof signupSchema>
 
@@ -43,7 +45,13 @@ export function SignupForm() {
     formState: { errors, isSubmitting },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { name: '', email: '', password: '', confirmPassword: '', terms: false },
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      terms: false,
+    },
   })
 
   const termsValue = watch('terms')
@@ -74,9 +82,9 @@ export function SignupForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 md:space-y-4">
       {serverError && (
-        <div className="rounded-full px-4 py-3 text-sm bg-[#DB3F34]/10 border border-[#DB3F34]/25 text-red-300">
-          <div className="flex gap-2.5 items-start">
-            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+        <div className="rounded-full border border-[#DB3F34]/25 bg-[#DB3F34]/10 px-4 py-3 text-sm text-red-300">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{serverError}</span>
           </div>
         </div>
@@ -84,14 +92,33 @@ export function SignupForm() {
 
       <div>
         <Label htmlFor="signup-name">{t('displayName')}</Label>
-        <Input id="signup-name" placeholder={t('displayNamePlaceholder')} className="mt-1.5" {...register('name')} />
-        {errors.name && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.name.message as never)}</p>}
+        <Input
+          id="signup-name"
+          placeholder={t('displayNamePlaceholder')}
+          className="mt-1.5"
+          {...register('name')}
+        />
+        {errors.name && (
+          <p className="text-brand-red-safe mt-1 text-xs">
+            {tErrors(errors.name.message as never)}
+          </p>
+        )}
       </div>
 
       <div>
         <Label htmlFor="signup-email">{t('email')}</Label>
-        <Input id="signup-email" type="email" placeholder={t('emailPlaceholder')} className="mt-1.5" {...register('email')} />
-        {errors.email && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.email.message as never)}</p>}
+        <Input
+          id="signup-email"
+          type="email"
+          placeholder={t('emailPlaceholder')}
+          className="mt-1.5"
+          {...register('email')}
+        />
+        {errors.email && (
+          <p className="text-brand-red-safe mt-1 text-xs">
+            {tErrors(errors.email.message as never)}
+          </p>
+        )}
       </div>
 
       <div>
@@ -109,12 +136,19 @@ export function SignupForm() {
             tabIndex={-1}
             onClick={() => setShowPassword(!showPassword)}
             aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+            className="absolute top-1/2 right-3 -translate-y-1/2 text-white/40 transition-colors hover:text-white/70"
           >
-            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            {showPassword ? (
+              <EyeOff className="size-4" />
+            ) : (
+              <Eye className="size-4" />
+            )}
           </button>
         </div>
-        <div className="mt-2 grid grid-cols-4 gap-1.5" aria-label={t('passwordStrengthAria')}>
+        <div
+          className="mt-2 grid grid-cols-4 gap-1.5"
+          aria-label={t('passwordStrengthAria')}
+        >
           {[1, 2, 3, 4].map((level) => (
             <span
               key={level}
@@ -123,9 +157,20 @@ export function SignupForm() {
           ))}
         </div>
         <p className="mono mt-1.5 text-[10px] text-[var(--text-mute)]">
-          {t('strengthLabel', { level: passwordScore < 2 ? t('strengthWeak') : passwordScore < 4 ? t('strengthGood') : t('strengthStrong') })}
+          {t('strengthLabel', {
+            level:
+              passwordScore < 2
+                ? t('strengthWeak')
+                : passwordScore < 4
+                  ? t('strengthGood')
+                  : t('strengthStrong'),
+          })}
         </p>
-        {errors.password && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.password.message as never)}</p>}
+        {errors.password && (
+          <p className="text-brand-red-safe mt-1 text-xs">
+            {tErrors(errors.password.message as never)}
+          </p>
+        )}
       </div>
 
       <div>
@@ -143,12 +188,20 @@ export function SignupForm() {
             tabIndex={-1}
             onClick={() => setShowConfirm(!showConfirm)}
             aria-label={showConfirm ? t('hidePassword') : t('showPassword')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+            className="absolute top-1/2 right-3 -translate-y-1/2 text-white/40 transition-colors hover:text-white/70"
           >
-            {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            {showConfirm ? (
+              <EyeOff className="size-4" />
+            ) : (
+              <Eye className="size-4" />
+            )}
           </button>
         </div>
-        {errors.confirmPassword && <p className="mt-1 text-xs text-brand-red-safe">{tErrors(errors.confirmPassword.message as never)}</p>}
+        {errors.confirmPassword && (
+          <p className="text-brand-red-safe mt-1 text-xs">
+            {tErrors(errors.confirmPassword.message as never)}
+          </p>
+        )}
       </div>
 
       <div className="flex items-start gap-2">
@@ -157,16 +210,23 @@ export function SignupForm() {
           checked={termsValue}
           onCheckedChange={(checked) => setValue('terms', checked === true)}
         />
-        <Label htmlFor="signup-terms" className="text-sm text-muted-foreground leading-relaxed">
+        <Label
+          htmlFor="signup-terms"
+          className="text-muted-foreground text-sm leading-relaxed"
+        >
           {t('termsAccept')}
         </Label>
       </div>
-      {errors.terms && <p className="text-xs text-brand-red-safe">{tErrors(errors.terms.message as never)}</p>}
+      {errors.terms && (
+        <p className="text-brand-red-safe text-xs">
+          {tErrors(errors.terms.message as never)}
+        </p>
+      )}
 
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#7082ff] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="bg-primary text-primary-foreground w-full rounded-full px-7 py-3 text-sm font-semibold transition-colors hover:bg-[#7082ff] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSubmitting ? t('signUpButton') + '…' : t('signUpButton')}
       </button>

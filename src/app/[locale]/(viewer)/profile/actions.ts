@@ -5,7 +5,9 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function updateProfile(data: { display_name: string }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
   const { error } = await supabase
@@ -24,7 +26,9 @@ export async function updateProfile(data: { display_name: string }) {
 
 export async function uploadAvatar(formData: FormData) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
   const file = formData.get('avatar') as File | null
@@ -33,9 +37,11 @@ export async function uploadAvatar(formData: FormData) {
   if (file.size > 2 * 1024 * 1024) throw new Error('File must be under 2MB')
 
   const allowed = ['image/webp', 'image/png', 'image/jpeg']
-  if (!allowed.includes(file.type)) throw new Error('Only WebP, PNG, or JPEG images allowed')
+  if (!allowed.includes(file.type))
+    throw new Error('Only WebP, PNG, or JPEG images allowed')
 
-  const ext = file.type.split('/')[1] === 'jpeg' ? 'jpg' : file.type.split('/')[1]
+  const ext =
+    file.type.split('/')[1] === 'jpeg' ? 'jpg' : file.type.split('/')[1]
   const path = `${user.id}/avatar.${ext}`
 
   // Upload (upsert replaces existing)

@@ -20,19 +20,22 @@ export function ProfileForm({ displayName }: ProfileFormProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null)
   const lastSavedRef = useRef(displayName)
 
-  const save = useCallback(async (value: string) => {
-    if (value === lastSavedRef.current) return
-    setStatus('saving')
-    try {
-      await updateProfile({ display_name: value })
-      lastSavedRef.current = value
-      setStatus('saved')
-      setTimeout(() => setStatus((s) => s === 'saved' ? 'idle' : s), 2000)
-    } catch {
-      toast.error(tCommon('error'))
-      setStatus('idle')
-    }
-  }, [tCommon])
+  const save = useCallback(
+    async (value: string) => {
+      if (value === lastSavedRef.current) return
+      setStatus('saving')
+      try {
+        await updateProfile({ display_name: value })
+        lastSavedRef.current = value
+        setStatus('saved')
+        setTimeout(() => setStatus((s) => (s === 'saved' ? 'idle' : s)), 2000)
+      } catch {
+        toast.error(tCommon('error'))
+        setStatus('idle')
+      }
+    },
+    [tCommon]
+  )
 
   function handleChange(value: string) {
     setName(value)

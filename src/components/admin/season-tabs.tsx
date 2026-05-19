@@ -107,7 +107,7 @@ export function SeasonTabs({
   return (
     <TooltipProvider delayDuration={300}>
       <Tabs defaultValue={defaultTab} className="space-y-4">
-        <TabsList className="h-auto flex-wrap justify-start rounded-2xl p-1.5">
+        <TabsList className="h-auto flex-wrap justify-start rounded-full p-1.5">
           {seasons.map((season) => {
             const epCount = episodesBySeason[season.id]?.length ?? 0
             const title = getSeasonTitle(season, isArabic)
@@ -117,11 +117,11 @@ export function SeasonTabs({
                 value={season.id}
                 className="min-h-10 gap-2 px-3"
               >
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   {t('seasonNumber', { number: season.season_number })}
                 </span>
                 <span>{title}</span>
-                <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-xs text-muted-foreground">
+                <span className="text-muted-foreground rounded-full bg-white/[0.06] px-2 py-0.5 text-xs">
                   {epCount}
                 </span>
               </TabsTrigger>
@@ -144,7 +144,10 @@ export function SeasonTabs({
                       {title}
                     </h3>
                     {season.title_ar && !isArabic && (
-                      <p dir="rtl" className="text-muted-foreground mt-1 text-sm">
+                      <p
+                        dir="rtl"
+                        className="text-muted-foreground mt-1 text-sm"
+                      >
                         {season.title_ar}
                       </p>
                     )}
@@ -169,7 +172,10 @@ export function SeasonTabs({
                       </TooltipTrigger>
                       <TooltipContent>{t('editSeasonTooltip')}</TooltipContent>
                     </Tooltip>
-                    <Button size="sm" onClick={() => handleAddEpisode(season.id)}>
+                    <Button
+                      size="sm"
+                      onClick={() => handleAddEpisode(season.id)}
+                    >
                       <Plus className="me-1 size-4" />
                       {tEpisode('addEpisode')}
                     </Button>

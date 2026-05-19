@@ -27,33 +27,29 @@ export default async function ShowDetailPage({
   if (showError && showError.code !== 'PGRST116') throw showError
   if (!show) notFound()
 
-  const [
-    seasonsResult,
-    episodesResult,
-    allEpisodesResult,
-    castMembersResult,
-  ] = await Promise.all([
-    supabase
-      .from('seasons')
-      .select('*')
-      .eq('show_id', id)
-      .order('season_number', { ascending: true }),
-    supabase
-      .from('episodes')
-      .select('*')
-      .eq('show_id', id)
-      .eq('archived', false)
-      .order('episode_number', { ascending: true }),
-    supabase
-      .from('episodes')
-      .select('season_id, episode_number')
-      .eq('show_id', id),
-    supabase
-      .from('show_cast')
-      .select('*')
-      .eq('show_id', id)
-      .order('sort_order', { ascending: true }),
-  ])
+  const [seasonsResult, episodesResult, allEpisodesResult, castMembersResult] =
+    await Promise.all([
+      supabase
+        .from('seasons')
+        .select('*')
+        .eq('show_id', id)
+        .order('season_number', { ascending: true }),
+      supabase
+        .from('episodes')
+        .select('*')
+        .eq('show_id', id)
+        .eq('archived', false)
+        .order('episode_number', { ascending: true }),
+      supabase
+        .from('episodes')
+        .select('season_id, episode_number')
+        .eq('show_id', id),
+      supabase
+        .from('show_cast')
+        .select('*')
+        .eq('show_id', id)
+        .order('sort_order', { ascending: true }),
+    ])
 
   for (const result of [
     seasonsResult,
