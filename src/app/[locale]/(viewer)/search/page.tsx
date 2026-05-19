@@ -23,17 +23,15 @@ export default async function SearchPage({ searchParams }: Props) {
   // Empty/no query state
   if (!q || q.trim().length === 0) {
     return (
-      <div className="px-6 pb-16 pt-16 md:px-12">
+      <div className="px-6 pt-16 pb-16 md:px-12">
         <div className="mx-auto max-w-3xl">
           <p className="mono mb-4 text-[var(--text-mute)]">
             Search the catalog
           </p>
-          <h1 className="font-display text-[clamp(2.5rem,5vw,56px)] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--text)]">
+          <h1 className="font-display text-[clamp(2.5rem,5vw,56px)] leading-[1.05] font-normal tracking-[-0.02em] text-[var(--text)]">
             {t('pageTitle')}
           </h1>
-          <p className="mt-3 text-[var(--text-dim)]">
-            {t('description')}
-          </p>
+          <p className="mt-3 text-[var(--text-dim)]">{t('description')}</p>
 
           {/* Search input placeholder */}
           <form action="/search" method="get" className="mt-10">
@@ -42,7 +40,7 @@ export default async function SearchPage({ searchParams }: Props) {
               name="q"
               placeholder={t('placeholder')}
               autoFocus
-              className="w-full rounded-full border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
+              className="w-full rounded-lg border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
             />
           </form>
         </div>
@@ -53,7 +51,7 @@ export default async function SearchPage({ searchParams }: Props) {
   // Short query state
   if (q.trim().length < 2) {
     return (
-      <div className="px-6 pb-16 pt-16 md:px-12">
+      <div className="px-6 pt-16 pb-16 md:px-12">
         <div className="mx-auto max-w-3xl">
           <p className="mono mb-4 text-[var(--text-mute)]">
             Search the catalog
@@ -65,7 +63,7 @@ export default async function SearchPage({ searchParams }: Props) {
               defaultValue={q}
               autoFocus
               placeholder={t('placeholder')}
-              className="w-full rounded-full border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
+              className="w-full rounded-lg border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
             />
           </form>
           <p className="mono mt-4 text-[var(--text-mute)]">{t('minChars')}</p>
@@ -83,7 +81,7 @@ export default async function SearchPage({ searchParams }: Props) {
   // No results state
   if (shows.length === 0 && episodes.length === 0) {
     return (
-      <div className="px-6 pb-16 pt-16 md:px-12">
+      <div className="px-6 pt-16 pb-16 md:px-12">
         <div className="mx-auto max-w-3xl">
           <p className="mono mb-4 text-[var(--text-mute)]">
             Search the catalog
@@ -95,7 +93,7 @@ export default async function SearchPage({ searchParams }: Props) {
               defaultValue={q}
               autoFocus
               placeholder={t('placeholder')}
-              className="w-full rounded-full border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
+              className="w-full rounded-lg border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
             />
           </form>
 
@@ -128,11 +126,9 @@ export default async function SearchPage({ searchParams }: Props) {
 
   // Results state
   return (
-    <div className="px-6 pb-16 pt-16 md:px-12">
+    <div className="px-6 pt-16 pb-16 md:px-12">
       <div className="mx-auto max-w-5xl">
-        <p className="mono mb-4 text-[var(--text-mute)]">
-          Search the catalog
-        </p>
+        <p className="mono mb-4 text-[var(--text-mute)]">Search the catalog</p>
         <form action="/search" method="get" className="mb-8">
           <input
             type="text"
@@ -140,7 +136,7 @@ export default async function SearchPage({ searchParams }: Props) {
             defaultValue={q}
             autoFocus
             placeholder={t('placeholder')}
-            className="w-full rounded-full border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
+            className="w-full rounded-lg border border-[var(--line)] bg-[var(--bg-1)] p-[18px] font-[family-name:var(--font-ui)] text-[16px] text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--line-2)]"
           />
         </form>
         <SearchResults query={q} shows={shows} episodes={episodes} />

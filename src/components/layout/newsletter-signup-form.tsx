@@ -80,15 +80,31 @@ export function NewsletterSignupForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-2.5">
       <input type="hidden" value={source} {...register('source')} />
-      <input type="hidden" value={interestSlug || ''} {...register('interestSlug')} />
-      <input type="hidden" value={interestTitle || ''} {...register('interestTitle')} />
-      <div className={compact ? 'flex items-center border-b border-[var(--line-2)]' : 'space-y-3'}>
+      <input
+        type="hidden"
+        value={interestSlug || ''}
+        {...register('interestSlug')}
+      />
+      <input
+        type="hidden"
+        value={interestTitle || ''}
+        {...register('interestTitle')}
+      />
+      <div
+        className={
+          compact
+            ? 'flex items-center border-b border-[var(--line-2)]'
+            : 'space-y-3'
+        }
+      >
         <input
           type="email"
           placeholder={t('placeholder')}
-          className={compact
-            ? 'flex-1 bg-transparent py-3 text-sm text-[var(--text)] placeholder:text-[var(--text-mute)] outline-none'
-            : 'min-h-11 w-full rounded-full border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-mute)] outline-none'}
+          className={
+            compact
+              ? 'flex-1 bg-transparent py-3 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-mute)]'
+              : 'min-h-11 w-full rounded-lg border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-mute)]'
+          }
           {...register('email')}
         />
         {compact && (
@@ -98,7 +114,18 @@ export function NewsletterSignupForm({
             className="flex min-h-11 min-w-11 items-center justify-center px-2 py-3 text-[var(--text-dim)] transition-colors hover:text-[var(--accent)] disabled:opacity-60"
             aria-label={buttonLabel || t('submitAria')}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
           </button>
         )}
       </div>
@@ -106,20 +133,16 @@ export function NewsletterSignupForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-white disabled:opacity-60"
+          className="bg-primary text-primary-foreground inline-flex min-h-11 items-center justify-center rounded-full px-5 py-3 text-sm font-medium transition-colors hover:bg-white disabled:opacity-60"
         >
           {buttonLabel || t('defaultButton')}
         </button>
       )}
       {errors.email?.message && (
-        <p className="text-xs text-brand-red-safe">
-          {t('invalidEmail')}
-        </p>
+        <p className="text-brand-red-safe text-xs">{t('invalidEmail')}</p>
       )}
       {statusMessage && (
-        <p className="text-sm text-[var(--text-dim)]">
-          {statusMessage}
-        </p>
+        <p className="text-sm text-[var(--text-dim)]">{statusMessage}</p>
       )}
     </form>
   )

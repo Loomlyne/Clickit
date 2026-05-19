@@ -21,7 +21,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { AdminMetric, AdminPanel, AdminTableShell } from '@/components/admin/admin-shell'
+import {
+  AdminMetric,
+  AdminPanel,
+  AdminTableShell,
+} from '@/components/admin/admin-shell'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { EmptyState } from '@/components/admin/empty-state'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
@@ -41,7 +45,10 @@ type Show = Database['public']['Tables']['shows']['Row']
 
 interface ShowsTableProps {
   shows: Show[]
-  categoriesByShowId: Record<string, { name: string; slug: string; color: string | null }[]>
+  categoriesByShowId: Record<
+    string,
+    { name: string; slug: string; color: string | null }[]
+  >
 }
 
 export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
@@ -60,7 +67,11 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
     let result = shows
     if (search) {
       const q = search.toLowerCase()
-      result = result.filter((s) => s.title.toLowerCase().includes(q) || s.genre?.toLowerCase().includes(q))
+      result = result.filter(
+        (s) =>
+          s.title.toLowerCase().includes(q) ||
+          s.genre?.toLowerCase().includes(q)
+      )
     }
     if (statusFilter !== 'all') {
       result = result.filter((s) => s.status === statusFilter)
@@ -69,12 +80,15 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
   }, [shows, search, statusFilter])
 
   // Stats
-  const stats = useMemo(() => ({
-    total: shows.length,
-    streaming: shows.filter((s) => s.status === 'now-streaming').length,
-    comingSoon: shows.filter((s) => s.status === 'coming-soon').length,
-    draft: shows.filter((s) => s.status === 'draft').length,
-  }), [shows])
+  const stats = useMemo(
+    () => ({
+      total: shows.length,
+      streaming: shows.filter((s) => s.status === 'now-streaming').length,
+      comingSoon: shows.filter((s) => s.status === 'coming-soon').length,
+      draft: shows.filter((s) => s.status === 'draft').length,
+    }),
+    [shows]
+  )
 
   function handleArchiveClick(show: Show) {
     setArchivingShow(show)
@@ -100,7 +114,14 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
       <EmptyState
         heading={tShows('emptyHeading')}
         body={tShows('emptyBody')}
-        action={<Link href="/admin/shows/new"><Button><Plus className="size-4 me-1.5" />{tDash('createShow')}</Button></Link>}
+        action={
+          <Link href="/admin/shows/new">
+            <Button>
+              <Plus className="me-1.5 size-4" />
+              {tDash('createShow')}
+            </Button>
+          </Link>
+        }
       />
     )
   }
@@ -109,29 +130,49 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
     <TooltipProvider delayDuration={300}>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
-          { label: tShows('totalShows'), value: stats.total, color: 'text-foreground' },
-          { label: tShows('streaming'), value: stats.streaming, color: 'text-emerald-200' },
-          { label: tShows('comingSoon'), value: stats.comingSoon, color: 'text-amber-100' },
-          { label: tShows('draft'), value: stats.draft, color: 'text-muted-foreground' },
+          {
+            label: tShows('totalShows'),
+            value: stats.total,
+            color: 'text-foreground',
+          },
+          {
+            label: tShows('streaming'),
+            value: stats.streaming,
+            color: 'text-emerald-200',
+          },
+          {
+            label: tShows('comingSoon'),
+            value: stats.comingSoon,
+            color: 'text-amber-100',
+          },
+          {
+            label: tShows('draft'),
+            value: stats.draft,
+            color: 'text-muted-foreground',
+          },
         ].map((stat) => (
-          <AdminMetric key={stat.label} label={stat.label} value={<span className={stat.color}>{stat.value}</span>} />
+          <AdminMetric
+            key={stat.label}
+            label={stat.label}
+            value={<span className={stat.color}>{stat.value}</span>}
+          />
         ))}
       </div>
 
       <AdminPanel>
         <div className="flex flex-col gap-4 border-b border-white/8 pb-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+            <p className="text-muted-foreground text-xs tracking-[0.24em] uppercase">
               {tShows('catalog')}
             </p>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+            <h2 className="text-foreground mt-2 text-xl font-semibold tracking-tight">
               {tShows('activeShows')}
             </h2>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:justify-end lg:gap-3">
             <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
               <div className="relative min-w-[240px] flex-1">
-                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                 <Input
                   placeholder={tShows('searchPlaceholder')}
                   value={search}
@@ -140,13 +181,17 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full min-w-[180px] sm:w-[200px] shrink-0 rounded-full border-white/8 bg-white/[0.03]">
+                <SelectTrigger className="w-full min-w-[180px] shrink-0 rounded-lg border-white/8 bg-white/[0.03] sm:w-[200px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{tShows('allStatus')}</SelectItem>
-                  <SelectItem value="now-streaming">{tShows('streaming')}</SelectItem>
-                  <SelectItem value="coming-soon">{tShows('comingSoon')}</SelectItem>
+                  <SelectItem value="now-streaming">
+                    {tShows('streaming')}
+                  </SelectItem>
+                  <SelectItem value="coming-soon">
+                    {tShows('comingSoon')}
+                  </SelectItem>
                   <SelectItem value="draft">{tShows('draft')}</SelectItem>
                 </SelectContent>
               </Select>
@@ -160,7 +205,7 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
           </div>
         </div>
 
-        <div className="mt-5 flex items-center justify-between pb-3 text-sm text-muted-foreground">
+        <div className="text-muted-foreground mt-5 flex items-center justify-between pb-3 text-sm">
           <span>{tShows('resultCount', { count: filtered.length })}</span>
           <span>{tShows('sortedByNewest')}</span>
         </div>
@@ -170,26 +215,43 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
             <TableHeader>
               <TableRow className="bg-transparent">
                 <TableHead>{tShows('showColumn')}</TableHead>
-                <TableHead className="hidden w-[100px] md:table-cell">{tShows('genreColumn')}</TableHead>
-                <TableHead className="w-[110px]">{tShows('statusColumn')}</TableHead>
-                <TableHead className="hidden w-[70px] sm:table-cell">{tShows('episodesColumn')}</TableHead>
-                <TableHead className="hidden w-[150px] lg:table-cell">{tShows('broadcastColumn')}</TableHead>
-                <TableHead className="w-[90px] text-end">{tShows('actionsColumn')}</TableHead>
+                <TableHead className="hidden w-[100px] md:table-cell">
+                  {tShows('genreColumn')}
+                </TableHead>
+                <TableHead className="w-[110px]">
+                  {tShows('statusColumn')}
+                </TableHead>
+                <TableHead className="hidden w-[70px] sm:table-cell">
+                  {tShows('episodesColumn')}
+                </TableHead>
+                <TableHead className="hidden w-[150px] lg:table-cell">
+                  {tShows('broadcastColumn')}
+                </TableHead>
+                <TableHead className="w-[90px] text-end">
+                  {tShows('actionsColumn')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map((show) => (
-                <TableRow key={show.id} className="group transition-colors hover:bg-white/[0.02]">
+                <TableRow
+                  key={show.id}
+                  className="group transition-colors hover:bg-white/[0.02]"
+                >
                   <TableCell>
                     <Link
                       href={`/admin/shows/${show.id}`}
-                      className="font-medium text-foreground transition-colors hover:text-primary"
+                      className="text-foreground hover:text-primary font-medium transition-colors"
                     >
                       {show.title}
                     </Link>
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground md:hidden">
+                    <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-xs md:hidden">
                       <span>{show.genre}</span>
-                      {show.featured && <span className="text-amber-200">{tShows('featured')}</span>}
+                      {show.featured && (
+                        <span className="text-amber-200">
+                          {tShows('featured')}
+                        </span>
+                      )}
                     </div>
                     {(categoriesByShowId[show.id] ?? []).length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1.5">
@@ -203,12 +265,16 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                       </div>
                     )}
                   </TableCell>
-                  <TableCell className="hidden text-muted-foreground md:table-cell">{show.genre}</TableCell>
+                  <TableCell className="text-muted-foreground hidden md:table-cell">
+                    {show.genre}
+                  </TableCell>
                   <TableCell>
                     <StatusBadge status={show.status} />
                   </TableCell>
-                  <TableCell className="hidden text-muted-foreground sm:table-cell">{show.episode_count}</TableCell>
-                  <TableCell className="hidden text-sm text-muted-foreground lg:table-cell">
+                  <TableCell className="text-muted-foreground hidden sm:table-cell">
+                    {show.episode_count}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground hidden text-sm lg:table-cell">
                     {show.broadcast_day && show.broadcast_time
                       ? `${show.broadcast_day} ${show.broadcast_time}`
                       : '---'}
@@ -223,21 +289,35 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                             onClick={async () => {
                               const result = await toggleFeatured(show.id)
                               if (result.success) {
-                                toast.success(result.featured
-                                  ? tShows('featuredToast', { title: show.title })
-                                  : tShows('unfeaturedToast', { title: show.title }))
+                                toast.success(
+                                  result.featured
+                                    ? tShows('featuredToast', {
+                                        title: show.title,
+                                      })
+                                    : tShows('unfeaturedToast', {
+                                        title: show.title,
+                                      })
+                                )
                               } else {
                                 toast.error(result.error ?? tCommon('error'))
                               }
                             }}
-                            aria-label={show.featured
-                              ? tShows('unfeatureAria', { title: show.title })
-                              : tShows('featureAria', { title: show.title })}
+                            aria-label={
+                              show.featured
+                                ? tShows('unfeatureAria', { title: show.title })
+                                : tShows('featureAria', { title: show.title })
+                            }
                           >
-                            <Star className={`size-4 ${show.featured ? 'fill-amber-300 text-amber-300' : ''}`} />
+                            <Star
+                              className={`size-4 ${show.featured ? 'fill-amber-300 text-amber-300' : ''}`}
+                            />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>{show.featured ? tShows('removeFromHero') : tShows('featureOnHero')}</TooltipContent>
+                        <TooltipContent>
+                          {show.featured
+                            ? tShows('removeFromHero')
+                            : tShows('featureOnHero')}
+                        </TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -245,7 +325,9 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              aria-label={tShows('editShowAria', { title: show.title })}
+                              aria-label={tShows('editShowAria', {
+                                title: show.title,
+                              })}
                             >
                               <Pencil className="size-4" />
                             </Button>
@@ -259,7 +341,9 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                             variant="ghost"
                             size="icon-sm"
                             onClick={() => handleArchiveClick(show)}
-                            aria-label={tShows('archiveShowAria', { title: show.title })}
+                            aria-label={tShows('archiveShowAria', {
+                              title: show.title,
+                            })}
                           >
                             <Archive className="size-4" />
                           </Button>
@@ -272,7 +356,10 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
               ))}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={6}
+                    className="text-muted-foreground py-10 text-center"
+                  >
                     {tShows('noSearchMatches')}
                   </TableCell>
                 </TableRow>
@@ -286,7 +373,9 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
         open={archiveDialogOpen}
         onOpenChange={setArchiveDialogOpen}
         title={tShows('archiveDialogTitle')}
-        description={tShows('archiveDialogDescription', { title: archivingShow?.title ?? tShows('thisShow') })}
+        description={tShows('archiveDialogDescription', {
+          title: archivingShow?.title ?? tShows('thisShow'),
+        })}
         confirmLabel={tShows('archiveDialogTitle')}
         onConfirm={handleArchiveConfirm}
         destructive

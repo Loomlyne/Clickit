@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { RefreshCw } from 'lucide-react'
+import { ChevronDown, RefreshCw } from 'lucide-react'
 import { useRouter } from '@/i18n/navigation'
 
 import { Input } from '@/components/ui/input'
@@ -20,7 +20,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { AdminPanel } from '@/components/admin/admin-shell'
 import { HeroMediaPicker } from '@/components/admin/hero-media-picker'
 import { generateSlug } from '@/lib/slug'
@@ -35,8 +40,14 @@ const showFormSchema = z.object({
   description_ar: z.string().optional().nullable(),
   tagline: z.string().optional().nullable(),
   tagline_ar: z.string().optional().nullable(),
-  genre: z.string().min(1, 'genreRequired'),
-  brand_color: z.enum(['brand-blue', 'brand-purple', 'brand-green', 'brand-red', 'brand-orange']),
+  genre: z.string().optional().nullable(),
+  brand_color: z.enum([
+    'brand-blue',
+    'brand-purple',
+    'brand-green',
+    'brand-red',
+    'brand-orange',
+  ]),
   status: z.enum(['draft', 'coming-soon', 'now-streaming']),
   broadcast_day: z.string().optional().nullable(),
   broadcast_time: z.string().optional().nullable(),
@@ -48,23 +59,30 @@ const showFormSchema = z.object({
   hero_video_type: z.enum(['mp4', 'youtube']).optional().nullable(),
   hero_video_mobile_url: z.string().optional().nullable(),
   hero_video_mobile_type: z.enum(['mp4', 'youtube']).optional().nullable(),
-  category_ids: z.array(z.string().uuid()).default([]),
+  category_ids: z.array(z.string().uuid()).min(1, 'categoryRequired'),
 })
 
 type ShowFormData = z.infer<typeof showFormSchema>
 type DbShow = Database['public']['Tables']['shows']['Row']
 type Category = Database['public']['Tables']['categories']['Row']
 
-const GENRES = [
-  'Travel', 'Health', 'Music', 'Comedy', 'Cooking',
-  'Kids', 'Poetry', 'Cinema', 'Tech', 'Entertainment', 'Culture',
-]
-
 const DAYS = [
-  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
 ]
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
   return (
     <AdminPanel className="p-6">
       <h3 className="mono mb-5 text-[var(--text-mute)]">{title}</h3>
@@ -73,12 +91,22 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function Field({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
+function Field({
+  label,
+  required,
+  error,
+  children,
+}: {
+  label: string
+  required?: boolean
+  error?: string
+  children: React.ReactNode
+}) {
   return (
     <div className="space-y-1.5">
       <Label className="text-sm">
         {label}
-        {required && <span className="text-red-400 ms-0.5">*</span>}
+        {required && <span className="ms-0.5 text-red-400">*</span>}
       </Label>
       {children}
       {error && <p className="text-xs text-red-400">{error}</p>}
@@ -86,32 +114,57 @@ function Field({ label, required, error, children }: { label: string; required?:
   )
 }
 
-function getFormDefaults(show: DbShow | null, categoryIds: string[]): ShowFormData {
+function getFormDefaults(
+  show: DbShow | null,
+  categoryIds: string[]
+): ShowFormData {
   if (!show) {
     return {
-      title: '', title_ar: '', slug: '', description: '', description_ar: '',
-      tagline: '', tagline_ar: '', genre: '', brand_color: 'brand-blue',
-      status: 'draft', broadcast_day: '', broadcast_time: '',
-      poster_url: '', hero_url: '', logo_url: '',
-      hero_image_mobile_url: '', hero_video_url: '', hero_video_type: null,
-      hero_video_mobile_url: '', hero_video_mobile_type: null,
+      title: '',
+      title_ar: '',
+      slug: '',
+      description: '',
+      description_ar: '',
+      tagline: '',
+      tagline_ar: '',
+      genre: '',
+      brand_color: 'brand-blue',
+      status: 'draft',
+      broadcast_day: '',
+      broadcast_time: '',
+      poster_url: '',
+      hero_url: '',
+      logo_url: '',
+      hero_image_mobile_url: '',
+      hero_video_url: '',
+      hero_video_type: null,
+      hero_video_mobile_url: '',
+      hero_video_mobile_type: null,
       category_ids: categoryIds,
     }
   }
   return {
-    title: show.title, title_ar: show.title_ar ?? '', slug: show.slug,
-    description: show.description, description_ar: show.description_ar ?? '',
-    tagline: show.tagline ?? '', tagline_ar: show.tagline_ar ?? '',
-    genre: show.genre, brand_color: show.brand_color as ShowFormData['brand_color'],
+    title: show.title,
+    title_ar: show.title_ar ?? '',
+    slug: show.slug,
+    description: show.description,
+    description_ar: show.description_ar ?? '',
+    tagline: show.tagline ?? '',
+    tagline_ar: show.tagline_ar ?? '',
+    genre: show.genre,
+    brand_color: show.brand_color as ShowFormData['brand_color'],
     status: show.status as ShowFormData['status'],
-    broadcast_day: show.broadcast_day ?? '', broadcast_time: show.broadcast_time ?? '',
-    poster_url: show.poster_url ?? '', hero_url: show.hero_url ?? '',
+    broadcast_day: show.broadcast_day ?? '',
+    broadcast_time: show.broadcast_time ?? '',
+    poster_url: show.poster_url ?? '',
+    hero_url: show.hero_url ?? '',
     logo_url: show.logo_url ?? '',
     hero_image_mobile_url: show.hero_image_mobile_url ?? '',
     hero_video_url: show.hero_video_url ?? '',
     hero_video_type: (show.hero_video_type as 'mp4' | 'youtube' | null) ?? null,
     hero_video_mobile_url: show.hero_video_mobile_url ?? '',
-    hero_video_mobile_type: (show.hero_video_mobile_type as 'mp4' | 'youtube' | null) ?? null,
+    hero_video_mobile_type:
+      (show.hero_video_mobile_type as 'mp4' | 'youtube' | null) ?? null,
     category_ids: categoryIds,
   }
 }
@@ -122,7 +175,11 @@ interface ShowFormProps {
   initialCategoryIds?: string[]
 }
 
-export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowFormProps) {
+export function ShowForm({
+  show,
+  categories,
+  initialCategoryIds = [],
+}: ShowFormProps) {
   const isEdit = !!show
   const router = useRouter()
   const t = useTranslations('admin.showForm')
@@ -153,20 +210,27 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
   function regenerateSlug() {
     const title = form.getValues('title')
     const id = isEdit ? show.id : generatedId
-    form.setValue(
-      'slug',
-      generateSlug(title ?? '', `show-${id.slice(0, 8)}`),
-      { shouldDirty: true, shouldValidate: true }
-    )
+    form.setValue('slug', generateSlug(title ?? '', `show-${id.slice(0, 8)}`), {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
   }
 
   async function onSubmit(data: ShowFormData) {
+    const primaryCategoryName = categories.find((category) =>
+      data.category_ids.includes(category.id)
+    )?.name_en
     const normalized: ShowFormData & { id?: string } = {
       ...data,
-      title_ar: data.title_ar || null, description_ar: data.description_ar || null,
-      tagline: data.tagline || null, tagline_ar: data.tagline_ar || null,
-      broadcast_day: data.broadcast_day || null, broadcast_time: data.broadcast_time || null,
-      poster_url: data.poster_url || null, hero_url: data.hero_url || null,
+      genre: primaryCategoryName ?? data.genre ?? show?.genre ?? '',
+      title_ar: data.title_ar || null,
+      description_ar: data.description_ar || null,
+      tagline: data.tagline || null,
+      tagline_ar: data.tagline_ar || null,
+      broadcast_day: data.broadcast_day || null,
+      broadcast_time: data.broadcast_time || null,
+      poster_url: data.poster_url || null,
+      hero_url: data.hero_url || null,
       logo_url: data.logo_url || null,
       hero_image_mobile_url: data.hero_image_mobile_url || null,
       hero_video_url: data.hero_video_url || null,
@@ -191,6 +255,9 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
 
   const errors = form.formState.errors
   const selectedCategoryIds = form.watch('category_ids')
+  const selectedCategoryNames = categories
+    .filter((category) => selectedCategoryIds.includes(category.id))
+    .map((category) => category.name_en)
 
   function toggleCategory(categoryId: string, checked: boolean) {
     const next = checked
@@ -203,7 +270,15 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       <Section title={t('basicInfoTab')}>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          <Field label={t('titleLabel')} required error={errors.title?.message ? tErrors(errors.title.message as never) : undefined}>
+          <Field
+            label={t('titleLabel')}
+            required
+            error={
+              errors.title?.message
+                ? tErrors(errors.title.message as never)
+                : undefined
+            }
+          >
             <Input {...form.register('title')} placeholder="e.g., Last Call" />
           </Field>
           <Field label={t('titleArLabel')}>
@@ -211,73 +286,102 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
           </Field>
         </div>
 
-        <Field label={t('slugLabel')} required error={errors.slug?.message ? tErrors(errors.slug.message as never) : undefined}>
+        <Field
+          label={t('slugLabel')}
+          required
+          error={
+            errors.slug?.message
+              ? tErrors(errors.slug.message as never)
+              : undefined
+          }
+        >
           <div className="flex gap-2">
             <Input {...form.register('slug')} className="flex-1" />
             <button
               type="button"
               onClick={regenerateSlug}
-              className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="border-input bg-background text-muted-foreground hover:bg-accent hover:text-foreground inline-flex items-center gap-1.5 rounded-md border px-3 text-xs font-medium"
               title={t('regenerateSlugTitle')}
             >
               <RefreshCw className="size-3.5" /> {t('regenerateSlug')}
             </button>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">{t('slugHint')}</p>
+          <p className="text-muted-foreground mt-1 text-xs">{t('slugHint')}</p>
         </Field>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          <Field label={t('genreLabel')} required error={errors.genre?.message ? tErrors(errors.genre.message as never) : undefined}>
-            <Select
-              value={form.watch('genre')}
-              onValueChange={(val) => form.setValue('genre', val, { shouldValidate: true })}
-            >
-              <SelectTrigger><SelectValue placeholder={t('selectPlaceholder')} /></SelectTrigger>
-              <SelectContent>
-                {GENRES.map((g) => <SelectItem key={g} value={g}>{t(`genre${g}` as never)}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </Field>
           <Field label={t('statusLabel')} required>
             <Select
               value={form.watch('status')}
-              onValueChange={(val) => form.setValue('status', val as ShowFormData['status'], { shouldValidate: true })}
+              onValueChange={(val) =>
+                form.setValue('status', val as ShowFormData['status'], {
+                  shouldValidate: true,
+                })
+              }
             >
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="draft">{t('statusDraft')}</SelectItem>
-                <SelectItem value="coming-soon">{t('statusComingSoon')}</SelectItem>
-                <SelectItem value="now-streaming">{t('statusNowStreaming')}</SelectItem>
+                <SelectItem value="coming-soon">
+                  {t('statusComingSoon')}
+                </SelectItem>
+                <SelectItem value="now-streaming">
+                  {t('statusNowStreaming')}
+                </SelectItem>
               </SelectContent>
             </Select>
           </Field>
-          <div className="md:col-span-2">
-            <Field label={t('categoriesLabel')}>
+          <div>
+            <Field
+              label={t('categoriesLabel')}
+              required
+              error={
+                errors.category_ids?.message
+                  ? tErrors(errors.category_ids.message as never)
+                  : undefined
+              }
+            >
               {categories.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-white/12 px-4 py-3 text-sm text-muted-foreground">
+                <div className="text-muted-foreground rounded-lg border border-dashed border-white/12 px-4 py-3 text-sm">
                   {t('categoriesEmpty')}
                 </div>
               ) : (
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {categories.map((category) => {
-                    const checked = selectedCategoryIds.includes(category.id)
-                    return (
-                      <label
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-11 w-full justify-between rounded-lg border-white/10 bg-white/[0.04] px-4 text-start text-sm font-normal shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-white/[0.06] md:w-fit md:min-w-72"
+                    >
+                      <span className="min-w-0 flex-1 truncate">
+                        {selectedCategoryNames.length > 0
+                          ? selectedCategoryNames.join(', ')
+                          : t('selectPlaceholder')}
+                      </span>
+                      <ChevronDown className="size-4 shrink-0 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="start"
+                    className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)] rounded-[12px] bg-[#11151d]/98 p-1 shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl"
+                  >
+                    {categories.map((category) => (
+                      <DropdownMenuCheckboxItem
                         key={category.id}
-                        className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2.5 transition-colors hover:border-white/16"
+                        checked={selectedCategoryIds.includes(category.id)}
+                        onCheckedChange={(value) =>
+                          toggleCategory(category.id, value === true)
+                        }
+                        onSelect={(event) => event.preventDefault()}
+                        className="rounded-[12px] py-2 ps-3 pe-8"
                       >
-                        <Checkbox
-                          checked={checked}
-                          onCheckedChange={(value) => toggleCategory(category.id, value === true)}
-                        />
-                        <div className="min-w-0">
-                          <div className="text-sm text-foreground">{category.name_en}</div>
-                          <div className="text-xs text-muted-foreground">{category.slug}</div>
-                        </div>
-                      </label>
-                    )
-                  })}
-                </div>
+                        {category.name_en}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </Field>
           </div>
@@ -285,7 +389,15 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
       </Section>
 
       <Section title={t('descriptionSection')}>
-        <Field label={t('descriptionLabel')} required error={errors.description?.message ? tErrors(errors.description.message as never) : undefined}>
+        <Field
+          label={t('descriptionLabel')}
+          required
+          error={
+            errors.description?.message
+              ? tErrors(errors.description.message as never)
+              : undefined
+          }
+        >
           <Textarea
             rows={4}
             {...form.register('description')}
@@ -298,7 +410,10 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
         </Field>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <Field label={t('taglineLabel')}>
-            <Input {...form.register('tagline')} placeholder={t('taglinePlaceholder')} />
+            <Input
+              {...form.register('tagline')}
+              placeholder={t('taglinePlaceholder')}
+            />
           </Field>
           <Field label={t('taglineArLabel')}>
             <Input dir="rtl" {...form.register('tagline_ar')} />
@@ -307,7 +422,7 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
       </Section>
 
       <Section title={t('heroMediaSection')}>
-        <p className="text-xs text-muted-foreground -mt-2">
+        <p className="text-muted-foreground -mt-2 text-xs">
           {t('heroMediaHint')}
         </p>
         <HeroMediaPicker
@@ -328,7 +443,9 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
           currentImageUrl={form.watch('hero_image_mobile_url') || null}
           currentVideoUrl={form.watch('hero_video_mobile_url') || null}
           currentVideoType={form.watch('hero_video_mobile_type') ?? null}
-          onImageChange={(url) => form.setValue('hero_image_mobile_url', url ?? '')}
+          onImageChange={(url) =>
+            form.setValue('hero_image_mobile_url', url ?? '')
+          }
           onVideoChange={(video) => {
             form.setValue('hero_video_mobile_url', video?.url ?? '')
             form.setValue('hero_video_mobile_type', video?.type ?? null)
@@ -341,11 +458,19 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
           <Field label={t('broadcastDayLabel')}>
             <Select
               value={form.watch('broadcast_day') ?? ''}
-              onValueChange={(val) => form.setValue('broadcast_day', val || null)}
+              onValueChange={(val) =>
+                form.setValue('broadcast_day', val || null)
+              }
             >
-              <SelectTrigger><SelectValue placeholder={t('selectDayPlaceholder')} /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder={t('selectDayPlaceholder')} />
+              </SelectTrigger>
               <SelectContent>
-                {DAYS.map((d) => <SelectItem key={d} value={d}>{t(`day${d}` as never)}</SelectItem>)}
+                {DAYS.map((d) => (
+                  <SelectItem key={d} value={d}>
+                    {t(`day${d}` as never)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </Field>
@@ -359,12 +484,18 @@ export function ShowForm({ show, categories, initialCategoryIds = [] }: ShowForm
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push(isEdit ? `/admin/shows/${show.id}` : '/admin')}
+          onClick={() =>
+            router.push(isEdit ? `/admin/shows/${show.id}` : '/admin')
+          }
         >
           {tCommon('cancel')}
         </Button>
         <Button type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? t('savingLabel') : isEdit ? t('saveShow') : t('createShowCta')}
+          {form.formState.isSubmitting
+            ? t('savingLabel')
+            : isEdit
+              ? t('saveShow')
+              : t('createShowCta')}
         </Button>
       </AdminPanel>
     </form>
