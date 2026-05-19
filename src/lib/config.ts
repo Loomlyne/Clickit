@@ -333,7 +333,7 @@ function mergeTopTicker(v: unknown): TopTickerConfig {
       const tag = tagRaw.slice(0, 24)
       const text = textRaw.slice(0, 240)
       const tag2Raw = typeof entry.tag2 === 'string' ? entry.tag2.trim() : ''
-      if (tag && text)
+      if (tag || text || tag2Raw)
         items.push({
           tag,
           text,
