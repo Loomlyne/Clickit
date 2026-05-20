@@ -27,11 +27,14 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
     pathname === '/portfolio' || pathname === '' || pathname.startsWith('/auth')
 
   // Direction-aware show/hide via Lenis. Hide on scroll down, show on scroll up.
+  // Landing pages keep the nav pinned — hiding it reveals body bg behind the hero.
   useLenis(({ scroll }) => {
     const y = scroll
     const delta = y - lastScrollY.current
     setScrolled(y > 24)
-    if (y < 80) {
+    if (isLanding) {
+      setHidden(false)
+    } else if (y < 80) {
       setHidden(false)
     } else if (delta > 4) {
       setHidden(true)
