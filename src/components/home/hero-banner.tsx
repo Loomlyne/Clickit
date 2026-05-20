@@ -29,7 +29,6 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
   const n = shows.length
   // Clone first slide at end — seamless infinite forward loop
   const extShows = useMemo(() => [...shows, shows[0]], [shows])
-  const extN = extShows.length
 
   useEffect(() => {
     if (isPaused || shouldReduceMotion) return
@@ -61,12 +60,10 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
   return (
     <div className="relative mb-3 h-[78vh] min-h-[480px] overflow-hidden md:min-h-[580px]">
       <div
-        dir="ltr"
         style={{
-          display: 'flex',
-          width: `${extN * 100}%`,
-          height: '100%',
-          transform: `translateX(-${(activeIndex / extN) * 100}%)`,
+          position: 'absolute',
+          inset: 0,
+          transform: `translateX(-${activeIndex * 100}%)`,
           transition:
             isResetting || shouldReduceMotion
               ? 'none'
@@ -77,9 +74,10 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
           <div
             key={`${show.id}-${i}`}
             style={{
-              position: 'relative',
-              width: `${100 / extN}%`,
-              flexShrink: 0,
+              position: 'absolute',
+              top: 0,
+              left: `${i * 100}%`,
+              width: '100%',
               height: '100%',
             }}
           >
