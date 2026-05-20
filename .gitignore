@@ -58,10 +58,15 @@ next-env.d.ts
 # test artifacts
 test-results/
 
+# tool state
+.agents/
+.codex/
+.context/
+.planning/
+.aidesigner/
+
 # junk files
 Untitled*.base
 _claude*
 _planning*
-.aidesigner/*
-!.aidesigner/.gitkeep
 .vercel/.cron-secret

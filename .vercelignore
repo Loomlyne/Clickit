@@ -23,5 +23,12 @@ src/app/api/debug-session-log/
 # Junk files
 Untitled*.base
 
+# Tool state
+.agents/
+.codex/
+.context/
+.planning/
+.aidesigner/
+
 # Supabase local
 .supabase/
