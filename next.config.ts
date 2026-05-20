@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '55mb',
     },
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
   },
   // Long-lived cache for immutable brand assets. These files are versioned in
   // git — when we change the logo we'd change the filename. Vercel was serving

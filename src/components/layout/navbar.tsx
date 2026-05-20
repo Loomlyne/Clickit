@@ -159,11 +159,12 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
                 </Link>
               )
             })()}
-            <Link href="/watch" className={navLinkClass(pathname === '/watch')}>
+            <Link href="/watch" prefetch className={navLinkClass(pathname === '/watch')}>
               {t('watch')}
             </Link>
             <Link
               href="/support"
+              prefetch
               className={navLinkClass(pathname === '/support')}
             >
               {t('support')}
