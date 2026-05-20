@@ -61,6 +61,7 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
   return (
     <div className="relative mb-3 h-[78vh] min-h-[480px] overflow-hidden md:min-h-[580px]">
       <div
+        dir="ltr"
         style={{
           display: 'flex',
           width: `${extN * 100}%`,
