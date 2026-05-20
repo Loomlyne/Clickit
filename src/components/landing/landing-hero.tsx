@@ -47,11 +47,11 @@ export async function LandingHero() {
       )}
 
       {ytId && (
-        <div className={`pointer-events-none absolute inset-0 overflow-hidden${isAr ? ' -scale-x-100' : ''}`}>
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <iframe
             src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&cc_load_policy=0`}
             allow="autoplay; encrypted-media"
-            className="absolute top-0 left-1/2 -translate-x-1/2"
+            className={`absolute top-0 left-1/2 -translate-x-1/2${isAr ? ' -scale-x-100' : ''}`}
             style={{
               width: '177.78dvh',
               minWidth: '100vw',
