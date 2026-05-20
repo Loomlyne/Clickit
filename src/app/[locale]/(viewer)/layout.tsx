@@ -7,6 +7,7 @@ import { ViewerScrollPersistence } from '@/components/providers/viewer-scroll-pe
 import { PageTransition } from '@/components/layout/page-transition'
 import { ViewerSilkBackground } from '@/components/layout/viewer-silk-background'
 import { MarqueeTicker } from '@/components/landing/marquee-ticker'
+import { EntryPreload } from '@/components/layout/entry-preload'
 
 export default async function ViewerLayout({
   children,
@@ -25,6 +26,13 @@ export default async function ViewerLayout({
 
   return (
     <>
+      {/* Server-rendered black cover — paints instantly before JS, prevents content flash */}
+      <div
+        id="preload-cover"
+        aria-hidden="true"
+        style={{ position: 'fixed', inset: 0, background: '#0a0a0a', zIndex: 997 }}
+      />
+      <EntryPreload />
       <ViewerSilkBackground />
       <SmoothScroll>
         <ViewerScrollPersistence />

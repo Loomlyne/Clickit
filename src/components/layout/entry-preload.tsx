@@ -30,7 +30,7 @@ export function EntryPreload() {
   const shouldShowRef = useRef(!hasShownEntryPreloadThisDocument)
   const [videoStarted, setVideoStarted] = useState(false)
   const [phase, setPhase] = useState<PreloadPhase>(
-    shouldShowRef.current ? 'entering' : 'done'
+    shouldShowRef.current ? 'playing' : 'done'
   )
   const [mediaType, setMediaType] = useState<MediaType>(
     entryPreloadConfig.mediaType
@@ -38,6 +38,9 @@ export function EntryPreload() {
   const [mediaSrc, setMediaSrc] = useState(entryPreloadConfig.src)
 
   useEffect(() => {
+    // Remove the server-rendered black cover — preloader (z-1000) already covers it
+    document.getElementById('preload-cover')?.remove()
+
     if (shouldShowRef.current) {
       const frame = window.requestAnimationFrame(() => {
         hasShownEntryPreloadThisDocument = true
@@ -172,7 +175,7 @@ export function EntryPreload() {
     <motion.div
       aria-hidden="true"
       className="fixed inset-0 z-[1000] flex items-center justify-center overflow-hidden bg-black"
-      initial={{ y: '100%' }}
+      initial={{ y: '0%' }}
       animate={{ y: phase === 'exiting' ? '-100%' : '0%' }}
       transition={{
         duration: phase === 'exiting' ? exitDuration : enterDuration,
