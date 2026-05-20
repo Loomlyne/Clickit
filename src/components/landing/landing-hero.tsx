@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAppConfig } from '@/lib/config'
@@ -16,11 +16,14 @@ export async function LandingHero() {
     },
     config,
     t,
+    locale,
   ] = await Promise.all([
     supabase.auth.getUser(),
     getAppConfig(),
     getTranslations('landing'),
+    getLocale(),
   ])
+  const isAr = locale === 'ar'
   const ctaHref = user ? '/watch' : '/auth'
 
   const { heroVideoUrl, heroVideoType } = config
@@ -39,12 +42,12 @@ export async function LandingHero() {
           muted
           loop
           playsInline
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+          className={`pointer-events-none absolute inset-0 h-full w-full object-cover${isAr ? ' -scale-x-100' : ''}`}
         />
       )}
 
       {ytId && (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className={`pointer-events-none absolute inset-0 overflow-hidden${isAr ? ' -scale-x-100' : ''}`}>
           <iframe
             src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&cc_load_policy=0`}
             allow="autoplay; encrypted-media"
@@ -61,6 +64,13 @@ export async function LandingHero() {
       )}
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black from-10% via-black/50 via-40% to-transparent" />
+      <div
+        className={`pointer-events-none absolute inset-0 ${
+          isAr
+            ? 'bg-gradient-to-l from-black/80 via-black/40 to-transparent'
+            : 'bg-gradient-to-r from-black/80 via-black/40 to-transparent'
+        }`}
+      />
 
       <div className="relative flex min-h-dvh items-end px-4 pt-28 pb-16 sm:px-6 md:px-10 md:pb-20">
         <div className="w-full max-w-[560px]">
