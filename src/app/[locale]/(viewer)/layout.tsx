@@ -5,7 +5,6 @@ import { Footer } from '@/components/layout/footer'
 import { SmoothScroll } from '@/components/providers/smooth-scroll'
 import { ViewerScrollPersistence } from '@/components/providers/viewer-scroll-persistence'
 import { PageTransition } from '@/components/layout/page-transition'
-import { ViewerSilkBackground } from '@/components/layout/viewer-silk-background'
 import { MarqueeTicker } from '@/components/landing/marquee-ticker'
 import { EntryPreload } from '@/components/layout/entry-preload'
 
@@ -33,11 +32,9 @@ export default async function ViewerLayout({
         style={{ position: 'fixed', inset: 0, background: '#0a0a0a', zIndex: 997 }}
       />
       <EntryPreload />
-      <ViewerSilkBackground />
       <SmoothScroll>
         <ViewerScrollPersistence />
-        {/* z-[2] wrapper pushes all content above the fixed silk (z-1) */}
-        <div className="relative z-[2]">
+        <div className="relative min-h-screen bg-black">
           <MarqueeTicker ticker={config.topTicker} />
           <Navbar
             initialUser={user ? { id: user.id, email: user.email ?? '' } : null}
@@ -48,7 +45,6 @@ export default async function ViewerLayout({
             <PageTransition>{children}</PageTransition>
           </div>
         </div>
-        {/* Footer sits below z-[2] so silk (z-1) renders above it */}
         <Footer />
       </SmoothScroll>
     </>

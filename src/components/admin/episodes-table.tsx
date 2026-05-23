@@ -34,11 +34,19 @@ import type { Database } from '@/lib/database.types'
 
 type Episode = Database['public']['Tables']['episodes']['Row']
 
+type ShowDefaults = {
+  title: string
+  title_ar: string | null
+  description: string
+  description_ar: string | null
+}
+
 interface EpisodesTableProps {
   episodes: Episode[]
   showId: string
   seasonId: string
   nextEpisodeNumber: number
+  showDefaults: ShowDefaults
 }
 
 export function EpisodesTable({
@@ -46,6 +54,7 @@ export function EpisodesTable({
   showId,
   seasonId,
   nextEpisodeNumber,
+  showDefaults,
 }: EpisodesTableProps) {
   const t = useTranslations('admin.episodeForm')
   const tTable = useTranslations('admin.episodesTable')
@@ -250,6 +259,7 @@ export function EpisodesTable({
         episode={editEpisode}
         showId={showId}
         seasonId={seasonId}
+        showDefaults={showDefaults}
         nextEpisodeNumber={nextEpisodeNumber}
         onSave={async (data) => {
           if (!editEpisode) {
