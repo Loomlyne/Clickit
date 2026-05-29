@@ -1,0 +1,35 @@
+name: Supabase Migrations
+
+# Auto-applies pending Supabase migrations to the production database whenever
+# migration files change on main. Runs in parallel with the Vercel app deploy.
+#
+# Requires one GitHub repo secret:
+#   SUPABASE_DB_URL = the production project's Session-pooler connection string
+#                     (postgresql://postgres.<ref>:<password>@<region>.pooler.supabase.com:5432/postgres)
+#   Set at: repo Settings -> Secrets and variables -> Actions -> New repository secret
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+  workflow_dispatch: {} # allow manual run from the Actions tab
+
+concurrency:
+  group: supabase-migrations
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Apply pending migrations
+        run: supabase db push --db-url "$SUPABASE_DB_URL"
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
