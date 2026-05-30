@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
+import { checkBotId } from 'botid/server'
 
 import {
   buildNewsletterInterests,
@@ -70,6 +71,29 @@ const rateLimited = {
   message: 'Too many requests. Please try again in a little while.',
 }
 
+// Detect-and-log bot signal, mirroring the auth actions' deliberate policy:
+// BotID has produced false negatives in this app, so we keep the signal but do
+// NOT hard-block (rate-limiting above is the real abuse gate). Availability >
+// strict gating for a single-admin media site.
+async function logBotSignal(context: string): Promise<void> {
+  try {
+    const result = await checkBotId({
+      developmentOptions: {
+        isDevelopment: process.env.NODE_ENV !== 'production',
+        bypass: process.env.NODE_ENV !== 'production' ? 'HUMAN' : undefined,
+      },
+    })
+    if (!result.isHuman) {
+      console.warn('[contact]', context, 'BotID flagged non-human', {
+        isBot: result.isBot,
+        isVerifiedBot: result.isVerifiedBot,
+      })
+    }
+  } catch (err) {
+    console.error('[contact]', context, 'BotID check failed', err)
+  }
+}
+
 async function getContactRecipient() {
   const config = await getAppConfig()
   return config.footer.contactEmail.trim() || 'contact@clickitstory.com'
@@ -87,6 +111,7 @@ export async function submitSupportMessage(
   if (!(await withinRateLimit(`support:${await getClientIp()}`, 5, 3600))) {
     return rateLimited
   }
+  await logBotSignal('support')
 
   try {
     const admin = createAdminClient()
@@ -178,6 +203,7 @@ export async function subscribeToNewsletter(
   if (!(await withinRateLimit(`newsletter:${await getClientIp()}`, 10, 3600))) {
     return rateLimited
   }
+  await logBotSignal('newsletter')
 
   try {
     const admin = createAdminClient()

@@ -253,7 +253,7 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
                       )}
                     </div>
                     <div className="mono text-[10px] text-[var(--text-mute)]">
-                      {new Date(r.created_at).toLocaleDateString('en-US', {
+                      {new Date(r.created_at).toLocaleDateString(undefined, {
                         month: 'short',
                         year: 'numeric',
                       })}
