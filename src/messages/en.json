@@ -265,7 +265,9 @@
     "clearSearch": "Clear search",
     "resultsSummary": "{total, plural, one {# result} other {# results}} for \"{query}\"",
     "showsHeading": "Shows",
-    "episodesHeading": "Episodes"
+    "episodesHeading": "Episodes",
+    "searchTheCatalog": "Search the catalog",
+    "watchCatalog": "Watch catalog"
   },
   "profile": {
     "accountHeading": "Account Settings",

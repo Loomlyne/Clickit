@@ -10,6 +10,7 @@ import localFont from 'next/font/local'
 
 import '@/styles/globals.css'
 import { Toaster } from 'sonner'
+import { MotionConfig } from 'motion/react'
 import { getAppConfig } from '@/lib/config'
 import { siteUrl } from '@/lib/site-url'
 import { dirFor } from '@/lib/locale'
@@ -122,9 +123,14 @@ export default async function LocaleLayout({
           Skip to content
         </a>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <main id="main" tabIndex={-1}>
-            {children}
-          </main>
+          {/* reducedMotion="user" makes all motion components auto-respect the
+              OS prefers-reduced-motion setting (disables transform/scroll
+              animations, keeps opacity) — one switch for all 12 motion files. */}
+          <MotionConfig reducedMotion="user">
+            <main id="main" tabIndex={-1}>
+              {children}
+            </main>
+          </MotionConfig>
         </NextIntlClientProvider>
         <Toaster
           theme="dark"

@@ -103,7 +103,7 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
           const inner = (
             <>
               <span className="relative flex size-2 shrink-0" aria-hidden>
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75" />
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" />
                 <span className="relative inline-flex size-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
               </span>
               {t('nowLive')}
@@ -138,7 +138,7 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
               const inner = (
                 <>
                   <span className="relative flex size-2 shrink-0" aria-hidden>
-                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75" />
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" />
                     <span className="relative inline-flex size-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
                   </span>
                   {t('nowLive')}
