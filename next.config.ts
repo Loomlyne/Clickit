@@ -12,6 +12,30 @@ const withBundleAnalyzer = bundleAnalyzer({
 // layout/page awaits getMessages() during prerender (Phase 13 [locale]/layout).
 const withNextIntl = createNextIntlPlugin()
 
+// Content-Security-Policy. Allowlists every origin the app actually loads:
+// GA (googletagmanager/google-analytics), Meta Pixel (facebook), YouTube embeds,
+// Vercel Analytics + Speed Insights + BotID, and Supabase (REST + realtime wss +
+// public storage images/video). 'unsafe-inline' is required for the inline GA/
+// Pixel snippets and Next's bootstrap (nonce-based hardening is a future step).
+// The locked-down directives (frame-ancestors/object-src/base-uri/form-action)
+// add real protection at zero breakage risk.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://www.youtube.com https://s.ytimg.com https://va.vercel-scripts.com https://vercel.live",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' blob: https://*.supabase.co",
+  "font-src 'self' data:",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://stats.g.doubleclick.net https://va.vercel-scripts.com https://*.vercel-insights.com https://connect.facebook.net https://www.facebook.com",
+  "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
+  "worker-src 'self' blob:",
+  "frame-ancestors 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  'upgrade-insecure-requests',
+].join('; ')
+
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
@@ -62,6 +86,7 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()',
           },
+          { key: 'Content-Security-Policy', value: CSP },
         ],
       },
       {
