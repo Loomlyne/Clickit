@@ -1,5 +1,6 @@
 // Poster card — matches handoff .poster (landscape variant)
 // Sharp 6px radius, solid bg, hover overlay with title/meta/play
+import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { Play, Plus } from 'lucide-react'
 
@@ -17,10 +18,12 @@ export function ShowCard({ show }: ShowCardProps) {
       style={{ width: 'var(--landscape-w)', aspectRatio: '16 / 9' }}
     >
       {show.heroImageUrl || show.posterUrl ? (
-        <img
-          src={show.heroImageUrl ?? show.posterUrl}
+        <Image
+          src={(show.heroImageUrl ?? show.posterUrl) as string}
           alt={show.title}
-          className="h-full w-full object-cover transition-transform duration-[400ms] ease-[var(--ease)] group-hover:scale-[1.04]"
+          fill
+          sizes="(max-width: 640px) 80vw, 320px"
+          className="object-cover transition-transform duration-[400ms] ease-[var(--ease)] group-hover:scale-[1.04]"
         />
       ) : (
         <div className="h-full w-full bg-[var(--bg-2)]" />

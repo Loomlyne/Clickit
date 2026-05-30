@@ -1,4 +1,5 @@
 // Episode poster card — matches handoff .poster (landscape)
+import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { Play } from 'lucide-react'
 
@@ -20,10 +21,12 @@ export function EpisodeCard({ episode }: EpisodeCardProps) {
       style={{ width: 'var(--landscape-w)', aspectRatio: '16 / 9' }}
     >
       {thumbnailUrl ? (
-        <img
-          src={thumbnailUrl}
+        <Image
+          src={thumbnailUrl as string}
           alt={episode.title}
-          className="h-full w-full object-cover transition-transform duration-[400ms] ease-[var(--ease)] group-hover:scale-[1.04]"
+          fill
+          sizes="(max-width: 640px) 80vw, 320px"
+          className="object-cover transition-transform duration-[400ms] ease-[var(--ease)] group-hover:scale-[1.04]"
         />
       ) : (
         <div className="h-full w-full bg-[var(--bg-2)]" />

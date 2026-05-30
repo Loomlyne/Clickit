@@ -48,6 +48,7 @@ export function HeroSlide({
         mobileVideoType={show.heroVideoMobileType}
         isMobile={isMobile}
         reducedMotion={reducedMotion}
+        isActive={isActive}
       />
 
       {/* Scrim — matches handoff: left vignette + bottom fade */}

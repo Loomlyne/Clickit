@@ -1,6 +1,7 @@
 // Portrait poster card — matches handoff .poster (vertical 2:3)
 'use client'
 
+import Image from 'next/image'
 import { useLocale } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { Play } from 'lucide-react'
@@ -39,10 +40,12 @@ export function PortraitShowCard({
         style={{ width: 'var(--poster-w)', aspectRatio: '2 / 3' }}
       >
         {show.posterUrl || show.heroImageUrl ? (
-          <img
-            src={show.posterUrl ?? show.heroImageUrl}
+          <Image
+            src={(show.posterUrl ?? show.heroImageUrl) as string}
             alt={show.title}
-            className="h-full w-full object-cover transition-transform duration-[400ms] ease-[var(--ease)] group-hover:scale-[1.04]"
+            fill
+            sizes="(max-width: 640px) 45vw, 220px"
+            className="object-cover transition-transform duration-[400ms] ease-[var(--ease)] group-hover:scale-[1.04]"
           />
         ) : (
           <div className="h-full w-full bg-[var(--bg-2)]" />
