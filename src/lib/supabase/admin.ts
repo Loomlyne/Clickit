@@ -3,6 +3,8 @@
 // WARNING: This client bypasses Row Level Security. Only use in Server Actions.
 // NEVER import this file in client-side code.
 
+import 'server-only'
+
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/database.types'
 

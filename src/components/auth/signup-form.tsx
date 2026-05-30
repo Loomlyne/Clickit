@@ -136,7 +136,7 @@ export function SignupForm() {
             tabIndex={-1}
             onClick={() => setShowPassword(!showPassword)}
             aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-            className="absolute top-1/2 right-3 -translate-y-1/2 text-white/40 transition-colors hover:text-white/70"
+            className="absolute top-1/2 end-3 -translate-y-1/2 text-white/40 transition-colors hover:text-white/70"
           >
             {showPassword ? (
               <EyeOff className="size-4" />
@@ -188,7 +188,7 @@ export function SignupForm() {
             tabIndex={-1}
             onClick={() => setShowConfirm(!showConfirm)}
             aria-label={showConfirm ? t('hidePassword') : t('showPassword')}
-            className="absolute top-1/2 right-3 -translate-y-1/2 text-white/40 transition-colors hover:text-white/70"
+            className="absolute top-1/2 end-3 -translate-y-1/2 text-white/40 transition-colors hover:text-white/70"
           >
             {showConfirm ? (
               <EyeOff className="size-4" />

@@ -4,7 +4,6 @@ import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { SmoothScroll } from '@/components/providers/smooth-scroll'
 import { ViewerScrollPersistence } from '@/components/providers/viewer-scroll-persistence'
-import { PageTransition } from '@/components/layout/page-transition'
 import { MarqueeTicker } from '@/components/landing/marquee-ticker'
 import { EntryPreload } from '@/components/layout/entry-preload'
 
@@ -42,7 +41,7 @@ export default async function ViewerLayout({
             logoUrl={config.faviconUrl}
           />
           <div className="pt-16">
-            <PageTransition>{children}</PageTransition>
+            {children}
           </div>
         </div>
         <Footer />

@@ -99,7 +99,11 @@ export default async function LocaleLayout({
   // Phases 15-17 rather than silently fall back to English.
   const messages = await getMessages()
 
-  const { googleAnalyticsId, metaPixelId } = await getAppConfig()
+  const { googleAnalyticsId: rawGaId, metaPixelId: rawPixelId } = await getAppConfig()
+  // Harden against stored XSS: these admin-controlled IDs are interpolated into
+  // inline <Script> bodies, so allow only the exact provider ID formats.
+  const googleAnalyticsId = /^G-[A-Z0-9]{4,20}$/.test(rawGaId ?? '') ? rawGaId : null
+  const metaPixelId = /^[0-9]{6,20}$/.test(rawPixelId ?? '') ? rawPixelId : null
   const dir = dirFor(locale as Locale)
 
   return (

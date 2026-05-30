@@ -54,6 +54,10 @@ const nextConfig: NextConfig = {
     ]
   },
   images: {
+    formats: ['image/avif', 'image/webp'],
+    // Cache optimized images (YouTube thumbnails, show artwork) for 24h instead
+    // of re-optimizing every request — cuts image function invocations + latency.
+    minimumCacheTTL: 86400,
     remotePatterns: [
       {
         protocol: 'https',
