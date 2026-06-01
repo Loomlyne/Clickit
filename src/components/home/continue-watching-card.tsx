@@ -2,6 +2,7 @@
 import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { Play } from 'lucide-react'
+import { Tr } from '@/components/i18n/tr'
 
 import type { ContinueWatchingItem } from '@/lib/queries'
 
@@ -42,7 +43,7 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
         </div>
         <div className="mt-2.5 flex gap-1.5">
           <span className="bg-primary text-primary-foreground inline-flex items-center gap-1.5 rounded-full px-3 py-[7px] text-[12.5px] font-medium">
-            <Play className="size-3 fill-current" /> Continue
+            <Play className="size-3 fill-current" /> <Tr k="continue" />
           </span>
         </div>
       </div>

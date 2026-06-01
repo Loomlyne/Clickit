@@ -109,7 +109,10 @@ export default async function SeriesDetailPage({ params }: Props) {
       (ep) => ep.status === 'published'
     )
     if (firstPublished) {
-      firstEpisodeLabel = `S${firstSeason.seasonNumber} E${firstPublished.episodeNumber}`
+      firstEpisodeLabel = t('seasonEpisodeShort', {
+        season: firstSeason.seasonNumber,
+        episode: firstPublished.episodeNumber,
+      })
       firstEpisodeId = firstPublished.id
     }
   }
@@ -151,7 +154,7 @@ export default async function SeriesDetailPage({ params }: Props) {
       {castMembers && castMembers.length > 0 && (
         <div className="mt-12 px-6 md:px-12">
           <div className="mx-auto max-w-7xl">
-            <div className="label mb-4">Cast</div>
+            <div className="label mb-4">{t('cast')}</div>
             <div className="scrollbar-hide flex gap-5 overflow-x-auto pb-3">
               {castMembers.map((c) => (
                 <div
