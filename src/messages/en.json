@@ -173,6 +173,7 @@
     "newBadge": "New",
     "continue": "Continue",
     "seasonShort": "S{season}",
+    "episodeShort": "E{episode}",
     "seasonEpisodeShort": "S{season} E{episode}",
     "addToList": "Add to List",
     "removeFromList": "In your list",

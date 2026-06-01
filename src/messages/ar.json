@@ -173,6 +173,7 @@
     "newBadge": "جديد",
     "continue": "متابعة",
     "seasonShort": "م{season}",
+    "episodeShort": "ح{episode}",
     "seasonEpisodeShort": "م{season} ح{episode}",
     "addToList": "إضافة إلى القائمة",
     "removeFromList": "في قائمتك",
