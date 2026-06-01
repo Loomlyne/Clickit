@@ -232,6 +232,32 @@ export const getStreamingShows = unstable_cache(
   { revalidate: 3600, tags: ['shows'] } // 1 hr — show status rarely changes
 )
 
+// "More Like This" rail. Filters by genre at the DB level (instead of fetching
+// every streaming show and filtering in memory) and excludes the current show.
+// Locale-aware: maps titles/descriptions for the requested locale so the rail
+// is not English-only for Arabic users. genre is the English-only taxonomy.
+export const getShowsByGenre = unstable_cache(
+  async (
+    genre: string,
+    excludeId: string,
+    locale: Locale = DEFAULT_LOCALE
+  ): Promise<ViewShow[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('shows')
+      .select('*')
+      .eq('status', 'now-streaming')
+      .eq('archived', false)
+      .eq('genre', genre)
+      .neq('id', excludeId)
+      .order('created_at', { ascending: false })
+
+    return (data ?? []).map((s) => mapShow(s, locale))
+  },
+  ['shows-by-genre'],
+  { revalidate: 3600, tags: ['shows'] } // 1 hr — matches getStreamingShows
+)
+
 export const getComingSoonShows = unstable_cache(
   async (): Promise<ViewShow[]> => {
     const supabase = createPublicClient()

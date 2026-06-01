@@ -13,7 +13,7 @@ import {
   getShowBySlug,
   getSeasonsByShowId,
   getEpisodesByShowId,
-  getStreamingShows,
+  getShowsByGenre,
   getShowWatchlistState,
   getShowLikeState,
   getEpisodesProgress,
@@ -74,7 +74,7 @@ export default async function SeriesDetailPage({ params }: Props) {
     {
       data: { user },
     },
-    allStreaming,
+    moreLikeThis,
     t,
   ] = await Promise.all([
     getSeasonsByShowId(dbShow.id),
@@ -85,7 +85,7 @@ export default async function SeriesDetailPage({ params }: Props) {
       .eq('show_id', dbShow.id)
       .order('sort_order'),
     supabase.auth.getUser(),
-    getStreamingShows(),
+    getShowsByGenre(dbShow.genre, dbShow.id, locale),
     getTranslations('show'),
   ])
 
@@ -133,10 +133,6 @@ export default async function SeriesDetailPage({ params }: Props) {
         false,
         {} as Record<string, { progressPercent: number; completed: boolean }>,
       ]
-
-  const moreLikeThis = allStreaming.filter(
-    (s) => s.genre === show.genre && s.id !== show.id
-  )
 
   return (
     <div className="-mt-16">
