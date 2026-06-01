@@ -20,6 +20,7 @@ interface SeriesDetailHeroProps {
   initialSaved?: boolean
   initialLiked?: boolean
   userId?: string | null
+  isMobile?: boolean // server-resolved viewport, picks the vertical hero crop
 }
 
 export function SeriesDetailHero({
@@ -30,10 +31,17 @@ export function SeriesDetailHero({
   initialSaved,
   initialLiked,
   userId,
+  isMobile,
 }: SeriesDetailHeroProps) {
   const [scrolled, setScrolled] = useState(false)
   const t = useTranslations('show')
-  const backdropSrc = show.heroImageUrl ?? show.posterUrl
+  // On mobile prefer the admin's vertical crop: dedicated mobile hero, then the
+  // portrait poster, then the horizontal hero as a last resort. On desktop use
+  // the horizontal hero (poster fallback). isMobile is resolved server-side so
+  // only one image is requested — no double download, no hydration flip.
+  const backdropSrc = isMobile
+    ? (show.heroImageMobileUrl ?? show.posterUrl ?? show.heroImageUrl)
+    : (show.heroImageUrl ?? show.posterUrl)
 
   useEffect(() => {
     let ticking = false

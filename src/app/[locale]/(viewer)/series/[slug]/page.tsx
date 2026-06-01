@@ -24,6 +24,7 @@ import {
   type ViewEpisode,
 } from '@/lib/queries'
 import { getLocale } from '@/lib/locale'
+import { getIsMobile } from '@/lib/device'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -62,7 +63,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SeriesDetailPage({ params }: Props) {
   const { slug } = await params
-  const [dbShow, locale] = await Promise.all([getShowBySlug(slug), getLocale()])
+  const [dbShow, locale, isMobile] = await Promise.all([
+    getShowBySlug(slug),
+    getLocale(),
+    getIsMobile(),
+  ])
   if (!dbShow) notFound()
 
   const show = mapShow(dbShow, locale)
@@ -156,6 +161,7 @@ export default async function SeriesDetailPage({ params }: Props) {
         initialSaved={inWatchlist}
         initialLiked={isLiked}
         userId={user?.id ?? null}
+        isMobile={isMobile}
       />
 
       {/* Cast */}
