@@ -54,7 +54,9 @@
     "mobileNavLabel": "تنقل الجوّال",
     "navLabel": "تنقل الموقع",
     "breadcrumb": "مسار التنقل",
-    "userMenu": "قائمة المستخدم"
+    "userMenu": "قائمة المستخدم",
+    "switchToEnglish": "التبديل إلى الإنجليزية",
+    "switchToArabic": "التبديل إلى العربية"
   },
   "footer": {
     "directContact": "تواصل مباشر",

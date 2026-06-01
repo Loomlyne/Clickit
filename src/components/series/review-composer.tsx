@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 
@@ -22,6 +22,8 @@ interface ReviewComposerProps {
 
 export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
   const t = useTranslations('reviews')
+  const locale = useLocale()
+  const dateLocale = locale === 'ar' ? 'ar-AE' : 'en-US'
   const STAR_LABELS = [
     '',
     t('starNope'),
@@ -253,7 +255,7 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
                       )}
                     </div>
                     <div className="mono text-[10px] text-[var(--text-mute)]">
-                      {new Date(r.created_at).toLocaleDateString(undefined, {
+                      {new Date(r.created_at).toLocaleDateString(dateLocale, {
                         month: 'short',
                         year: 'numeric',
                       })}

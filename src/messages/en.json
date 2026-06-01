@@ -54,7 +54,9 @@
     "mobileNavLabel": "Mobile navigation",
     "navLabel": "Site navigation",
     "breadcrumb": "Breadcrumb",
-    "userMenu": "User menu"
+    "userMenu": "User menu",
+    "switchToEnglish": "Switch to English",
+    "switchToArabic": "Switch to Arabic"
   },
   "footer": {
     "directContact": "Direct contact",
