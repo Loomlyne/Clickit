@@ -25,6 +25,8 @@ import {
 } from '@/lib/queries'
 import { getLocale } from '@/lib/locale'
 import { getIsMobile } from '@/lib/device'
+import { siteUrl } from '@/lib/site-url'
+import { JsonLd } from '@/components/seo/json-ld'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -151,8 +153,26 @@ export default async function SeriesDetailPage({ params }: Props) {
     ? t('moreLikeThisHeading', { genre: show.genre })
     : t('moreShowsHeading')
 
+  // schema.org TVSeries for rich results. Localized name/description; image
+  // and url are absolute so crawlers resolve them.
+  const seriesJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'TVSeries',
+    name: show.title,
+    description: show.description,
+    inLanguage: locale === 'ar' ? 'ar' : 'en',
+    genre: show.genre,
+    url: `${siteUrl()}/${locale}/series/${show.slug}`,
+    ...(show.heroImageUrl || show.posterUrl
+      ? { image: show.heroImageUrl ?? show.posterUrl }
+      : {}),
+    ...(viewSeasons.length ? { numberOfSeasons: viewSeasons.length } : {}),
+    ...(show.episodeCount ? { numberOfEpisodes: show.episodeCount } : {}),
+  }
+
   return (
     <div className="-mt-16">
+      <JsonLd data={seriesJsonLd} />
       <SeriesDetailHero
         show={show}
         seasons={viewSeasons}

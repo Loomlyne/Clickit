@@ -14,6 +14,8 @@ import {
   getShowLikeState,
 } from '@/lib/queries'
 import { getLocale } from '@/lib/locale'
+import { siteUrl } from '@/lib/site-url'
+import { JsonLd } from '@/components/seo/json-ld'
 
 interface Props {
   params: Promise<{ episodeId: string }>
@@ -101,20 +103,42 @@ export default async function WatchPage({ params }: Props) {
   const initialProgressSeconds =
     progressRow && !progressRow.completed ? progressRow.progressSeconds : 0
 
+  // schema.org VideoObject for rich results. YouTube thumb + embed when the
+  // episode has a video; localized name/description.
+  const videoJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: `${viewEpisode.title}, ${viewShow.title}`,
+    description: viewEpisode.description || viewShow.description,
+    inLanguage: locale === 'ar' ? 'ar' : 'en',
+    uploadDate: episode.created_at,
+    url: `${siteUrl()}/${locale}/watch/${episodeId}`,
+    ...(episode.youtube_video_id
+      ? {
+          thumbnailUrl: `https://img.youtube.com/vi/${episode.youtube_video_id}/maxresdefault.jpg`,
+          embedUrl: `https://www.youtube.com/embed/${episode.youtube_video_id}`,
+        }
+      : {}),
+    partOfSeries: { '@type': 'TVSeries', name: viewShow.title },
+  }
+
   return (
-    <WatchShell
-      episode={viewEpisode}
-      show={viewShow}
-      season={viewSeason}
-      seasons={viewSeasons}
-      episodesBySeason={viewEpisodesBySeason}
-      prevEpisode={viewPrev}
-      nextEpisode={viewNext}
-      initialProgressSeconds={initialProgressSeconds}
-      userId={user?.id ?? null}
-      initialSaved={inWatchlist}
-      initialLiked={isLiked}
-      progressMap={progressMap}
-    />
+    <>
+      <JsonLd data={videoJsonLd} />
+      <WatchShell
+        episode={viewEpisode}
+        show={viewShow}
+        season={viewSeason}
+        seasons={viewSeasons}
+        episodesBySeason={viewEpisodesBySeason}
+        prevEpisode={viewPrev}
+        nextEpisode={viewNext}
+        initialProgressSeconds={initialProgressSeconds}
+        userId={user?.id ?? null}
+        initialSaved={inWatchlist}
+        initialLiked={isLiked}
+        progressMap={progressMap}
+      />
+    </>
   )
 }
