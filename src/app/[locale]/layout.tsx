@@ -25,8 +25,8 @@ const geist = Geist({
 
 const lbc = localFont({
   src: [
-    { path: '../../fonts/lbc-regular.ttf', weight: '400', style: 'normal' },
-    { path: '../../fonts/lbc-bold.ttf', weight: '700', style: 'normal' },
+    { path: '../../fonts/lbc-regular.woff2', weight: '400', style: 'normal' },
+    { path: '../../fonts/lbc-bold.woff2', weight: '700', style: 'normal' },
   ],
   variable: '--font-lbc',
   display: 'swap',
