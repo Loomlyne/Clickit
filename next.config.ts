@@ -37,6 +37,11 @@ const CSP = [
 ].join('; ')
 
 const nextConfig: NextConfig = {
+  // React Compiler (stable in Next 16): auto-memoizes components to cut
+  // unnecessary re-renders, no manual useMemo/useCallback. Runs a Babel pass
+  // so builds are a little slower; components that break Rules of React are
+  // safely skipped, not broken. Reversible by deleting this one line.
+  reactCompiler: true,
   experimental: {
     serverActions: {
       bodySizeLimit: '55mb',
