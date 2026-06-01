@@ -10,6 +10,7 @@ import {
   WATCH_TRAY_SNAP_POINTS,
   type WatchTraySnapPoint,
 } from '@/components/watch/episode-tray'
+import { Tr } from '@/components/i18n/tr'
 import { useProgressTracker } from '@/hooks/use-progress-tracker'
 import { useIdleTimer } from '@/hooks/use-idle-timer'
 import { useWatchlist } from '@/hooks/use-watchlist'
@@ -267,7 +268,7 @@ export function WatchShell({
       {/* Auto-hide chrome, top overlay strip */}
       <div
         className={`fixed top-0 right-0 left-0 z-20 flex items-center justify-between border-b border-white/10 bg-zinc-950/90 px-4 [padding-top:max(1rem,env(safe-area-inset-top))] pb-8 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.65)] backdrop-blur-md transition-opacity duration-200 ease-in-out ${chromeClass}`}
-        aria-hidden={isIdle}
+        inert={isIdle}
       >
         {/* Left: back to show */}
         <Link
@@ -286,7 +287,13 @@ export function WatchShell({
             {currentEpisode.title}
           </span>
           <span className="font-mono text-xs leading-none text-white/50">
-            S{seasonNumber} E{currentEpisode.episodeNumber}
+            <Tr
+              k="seasonEpisodeShort"
+              values={{
+                season: seasonNumber,
+                episode: currentEpisode.episodeNumber,
+              }}
+            />
           </span>
         </div>
 

@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 
+import { Tr } from '@/components/i18n/tr'
+
 interface AutoplayOverlayProps {
   nextEpisode: {
     id: string
@@ -48,7 +50,13 @@ export function AutoplayOverlay({
           {t('nextEpisode')}
         </span>
         <span className="text-sm text-white/70">
-          S{nextEpisode.seasonNumber} E{nextEpisode.episodeNumber}
+          <Tr
+            k="seasonEpisodeShort"
+            values={{
+              season: nextEpisode.seasonNumber,
+              episode: nextEpisode.episodeNumber,
+            }}
+          />
         </span>
         <span className="text-lg font-semibold text-white">
           {nextEpisode.title}
