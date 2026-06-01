@@ -258,6 +258,31 @@ export const getShowsByGenre = unstable_cache(
   { revalidate: 3600, tags: ['shows'] } // 1 hr — matches getStreamingShows
 )
 
+// Fallback for the "More Like This" rail when a show is the only one in its
+// genre (e.g. the lone Culture show): show other streaming shows so the rail
+// is never empty. Locale-aware, excludes the current show.
+export const getOtherStreamingShows = unstable_cache(
+  async (
+    excludeId: string,
+    locale: Locale = DEFAULT_LOCALE,
+    limit = 12
+  ): Promise<ViewShow[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('shows')
+      .select('*')
+      .eq('status', 'now-streaming')
+      .eq('archived', false)
+      .neq('id', excludeId)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    return (data ?? []).map((s) => mapShow(s, locale))
+  },
+  ['other-streaming-shows'],
+  { revalidate: 3600, tags: ['shows'] }
+)
+
 export const getComingSoonShows = unstable_cache(
   async (): Promise<ViewShow[]> => {
     const supabase = createPublicClient()

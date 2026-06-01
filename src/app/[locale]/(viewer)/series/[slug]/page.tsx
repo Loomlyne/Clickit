@@ -14,6 +14,7 @@ import {
   getSeasonsByShowId,
   getEpisodesByShowId,
   getShowsByGenre,
+  getOtherStreamingShows,
   getShowWatchlistState,
   getShowLikeState,
   getEpisodesProgress,
@@ -134,6 +135,17 @@ export default async function SeriesDetailPage({ params }: Props) {
         {} as Record<string, { progressPercent: number; completed: boolean }>,
       ]
 
+  // "More Like This" rail: prefer same-genre shows; if this show is the only
+  // one in its genre, fall back to other streaming shows so the rail still
+  // appears (under a generic heading instead of "More {genre} shows").
+  const hasGenreMatches = moreLikeThis.length > 0
+  const relatedShows = hasGenreMatches
+    ? moreLikeThis
+    : await getOtherStreamingShows(dbShow.id, locale)
+  const relatedHeading = hasGenreMatches
+    ? t('moreLikeThisHeading', { genre: show.genre })
+    : t('moreShowsHeading')
+
   return (
     <div className="-mt-16">
       <SeriesDetailHero
@@ -226,12 +238,9 @@ export default async function SeriesDetailPage({ params }: Props) {
         </div>
       </div>
 
-      {moreLikeThis.length > 0 && (
+      {relatedShows.length > 0 && (
         <div className="mt-12 pb-16">
-          <ContentRail
-            title={t('moreLikeThisHeading', { genre: show.genre })}
-            shows={moreLikeThis}
-          />
+          <ContentRail title={relatedHeading} shows={relatedShows} />
         </div>
       )}
     </div>
