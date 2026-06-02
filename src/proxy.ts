@@ -143,10 +143,14 @@ export const config = {
     /*
      * Catch-all for everything else, excluding:
      * - _next/static, _next/image, favicon.ico
+     * - sitemap.xml, robots.txt — generated metadata routes that live at the
+     *   ROOT (no locale prefix). Without excluding them, next-intl 307s
+     *   /sitemap.xml -> /en/sitemap.xml which 404s, leaving crawlers with no
+     *   sitemap or robots.txt at all.
      * - Static assets (.svg, .png, .jpg, .jpeg, .gif, .webp, .mp4, .webm, .mov, .m4v)
      * /api/* and /auth/callback are NOT excluded here — proxy.ts handles them
      * inline so Supabase session cookies refresh on API + OAuth boundaries.
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm|mov|m4v)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm|mov|m4v)$).*)',
   ],
 }
