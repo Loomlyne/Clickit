@@ -299,6 +299,45 @@ export const getComingSoonShows = unstable_cache(
   { revalidate: 3600, tags: ['shows'] } // 1 hr
 )
 
+// Lightweight feed for sitemap.xml. Returns every crawlable show + published
+// episode with its real last-updated timestamp so crawlers (Google + AI bots)
+// get accurate <lastmod> and re-crawl only what changed. Generated from the
+// DB, so new shows/episodes appear automatically — no code change needed.
+export type SitemapEntry = { path: string; lastmod: string }
+export const getSitemapEntries = unstable_cache(
+  async (): Promise<{ shows: SitemapEntry[]; episodes: SitemapEntry[] }> => {
+    const supabase = createPublicClient()
+    const [showsRes, episodesRes] = await Promise.all([
+      supabase
+        .from('shows')
+        .select('slug, updated_at')
+        .eq('archived', false)
+        .in('status', ['now-streaming', 'coming-soon']),
+      // Published episodes whose parent show is live. shows!inner enforces the
+      // join filter so episodes under archived shows are excluded.
+      supabase
+        .from('episodes')
+        .select('id, updated_at, shows!inner(archived, status)')
+        .eq('status', 'published')
+        .eq('archived', false)
+        .eq('shows.archived', false),
+    ])
+
+    return {
+      shows: (showsRes.data ?? []).map((s) => ({
+        path: `/series/${s.slug}`,
+        lastmod: s.updated_at,
+      })),
+      episodes: (episodesRes.data ?? []).map((e) => ({
+        path: `/watch/${e.id}`,
+        lastmod: e.updated_at,
+      })),
+    }
+  },
+  ['sitemap-entries'],
+  { revalidate: 3600, tags: ['shows'] }
+)
+
 export const getCategories = unstable_cache(
   async (): Promise<ViewCategory[]> => {
     const supabase = createPublicClient()

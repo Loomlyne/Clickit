@@ -1,20 +1,18 @@
 import type { MetadataRoute } from 'next'
 
-import { getStreamingShows, getComingSoonShows } from '@/lib/queries'
+import { getSitemapEntries } from '@/lib/queries'
 import { siteUrl } from '@/lib/site-url'
 import { routing } from '@/i18n/routing'
 
 /**
  * Sitemap generator. Emits one entry per route with `alternates.languages`
- * pointing at the /en/ and /ar/ variants. Google uses the alternates to
- * treat the two URLs as language variants of the same canonical page
+ * pointing at the /en/ and /ar/ variants. Google + AI crawlers use the
+ * alternates to treat the two URLs as language variants of one canonical page
  * instead of competing duplicates.
  *
- * Episode URLs are intentionally omitted — the catalog has ~300 episodes
- * addressed by numeric IDs that won't help crawlers discover content. Show
- * pages already link to every episode via the season tabs, so crawlers
- * reach them via depth-2 traversal. Revisit if organic search becomes a
- * meaningful traffic source.
+ * Fully data-driven: shows AND published episodes come from the DB, so new
+ * content appears automatically with no code change. <lastmod> is the row's
+ * real `updated_at` so crawlers re-fetch only what actually changed.
  */
 function languageAlternates(
   base: string,
@@ -34,7 +32,7 @@ function languageAlternates(
 function entry(
   base: string,
   path: string,
-  now: Date,
+  lastModified: Date | string,
   changeFrequency: NonNullable<
     MetadataRoute.Sitemap[number]['changeFrequency']
   >,
@@ -45,7 +43,7 @@ function entry(
   const defaultPath = path === '/' ? '' : path
   return {
     url: `${base}/${routing.defaultLocale}${defaultPath}`,
-    lastModified: now,
+    lastModified,
     changeFrequency,
     priority,
     alternates: {
@@ -56,10 +54,7 @@ function entry(
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl()
-  const [streaming, comingSoon] = await Promise.all([
-    getStreamingShows(),
-    getComingSoonShows(),
-  ])
+  const { shows, episodes } = await getSitemapEntries()
 
   const now = new Date()
 
@@ -72,9 +67,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry(base, '/support', now, 'weekly', 0.5),
   ]
 
-  const showEntries: MetadataRoute.Sitemap = [...streaming, ...comingSoon].map(
-    (show) => entry(base, `/series/${show.slug}`, now, 'weekly', 0.8)
+  const showEntries: MetadataRoute.Sitemap = shows.map((s) =>
+    entry(base, s.path, s.lastmod ?? now, 'weekly', 0.8)
   )
 
-  return [...staticEntries, ...showEntries]
+  // Episode watch pages carry VideoObject structured data — worth indexing for
+  // Google video results and AI retrieval. Real lastmod keeps them fresh.
+  const episodeEntries: MetadataRoute.Sitemap = episodes.map((e) =>
+    entry(base, e.path, e.lastmod ?? now, 'monthly', 0.6)
+  )
+
+  return [...staticEntries, ...showEntries, ...episodeEntries]
 }
