@@ -190,13 +190,14 @@ export const getHeroVideo = unstable_cache(
 export const getFeaturedShows = cache(unstable_cache(
   async (): Promise<ViewShow[]> => {
     const supabase = createPublicClient()
+    // No limit: every featured show the admin selects cycles in the hero
+    // carousel — whether that's 1 or 50.
     const { data } = await supabase
       .from('shows')
       .select('*')
       .eq('featured', true)
       .eq('archived', false)
       .order('updated_at', { ascending: false })
-      .limit(5)
 
     if (!data || data.length === 0) {
       // Fallback: first 3 streaming shows if none featured

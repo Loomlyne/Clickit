@@ -7,7 +7,7 @@ import { useReducedMotion } from 'motion/react'
 import type { ViewShow } from '@/lib/queries'
 import { HeroSlide } from '@/components/home/hero-slide'
 
-const INTERVAL = 2500
+const INTERVAL = 3000
 const SLIDE_DURATION = 600
 const SLIDE_EASE = 'cubic-bezier(0.77, 0, 0.175, 1)'
 
