@@ -22,8 +22,9 @@ import {
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { AdminPanel } from '@/components/admin/admin-shell'
@@ -59,7 +60,10 @@ const showFormSchema = z.object({
   hero_video_type: z.enum(['mp4', 'youtube']).optional().nullable(),
   hero_video_mobile_url: z.string().optional().nullable(),
   hero_video_mobile_type: z.enum(['mp4', 'youtube']).optional().nullable(),
-  category_ids: z.array(z.string().uuid()).min(1, 'categoryRequired'),
+  // Single category per show. A string (not array) so the form can never
+  // accumulate multiple values; required (non-empty) — the id always comes
+  // from the radio list, so it's a valid category id.
+  category_id: z.string().min(1, 'categoryRequired'),
 })
 
 type ShowFormData = z.infer<typeof showFormSchema>
@@ -140,7 +144,7 @@ function getFormDefaults(
       hero_video_type: null,
       hero_video_mobile_url: '',
       hero_video_mobile_type: null,
-      category_ids: categoryIds,
+      category_id: categoryIds[0] ?? '',
     }
   }
   return {
@@ -165,7 +169,7 @@ function getFormDefaults(
     hero_video_mobile_url: show.hero_video_mobile_url ?? '',
     hero_video_mobile_type:
       (show.hero_video_mobile_type as 'mp4' | 'youtube' | null) ?? null,
-    category_ids: categoryIds,
+    category_id: categoryIds[0] ?? '',
   }
 }
 
@@ -217,14 +221,18 @@ export function ShowForm({
   }
 
   async function onSubmit(data: ShowFormData) {
-    const primaryCategoryName = categories.find((category) =>
-      data.category_ids.includes(category.id)
+    // Single category in the form; the show_categories join still takes an
+    // array, so wrap the one id. Exactly one category per show.
+    const { category_id, ...rest } = data
+    const primaryCategoryName = categories.find(
+      (category) => category.id === category_id
     )?.name_en
-    const normalized: Omit<ShowFormData, 'genre'> & {
+    const normalized: Omit<ShowFormData, 'genre' | 'category_id'> & {
       genre: string
+      category_ids: string[]
       id?: string
     } = {
-      ...data,
+      ...rest,
       genre: primaryCategoryName ?? data.genre ?? show?.genre ?? '',
       title_ar: data.title_ar || null,
       description_ar: data.description_ar || null,
@@ -240,7 +248,7 @@ export function ShowForm({
       hero_video_type: data.hero_video_type || null,
       hero_video_mobile_url: data.hero_video_mobile_url || null,
       hero_video_mobile_type: data.hero_video_mobile_type || null,
-      category_ids: data.category_ids,
+      category_ids: [category_id],
     }
     if (!isEdit) normalized.id = generatedId
 
@@ -257,16 +265,17 @@ export function ShowForm({
   }
 
   const errors = form.formState.errors
-  const selectedCategoryIds = form.watch('category_ids')
-  const selectedCategoryNames = categories
-    .filter((category) => selectedCategoryIds.includes(category.id))
-    .map((category) => category.name_en)
+  const selectedCategoryId = form.watch('category_id')
+  const selectedCategoryName = categories.find(
+    (category) => category.id === selectedCategoryId
+  )?.name_en
 
-  function toggleCategory(categoryId: string, checked: boolean) {
-    const next = checked
-      ? [...new Set([...selectedCategoryIds, categoryId])]
-      : selectedCategoryIds.filter((id) => id !== categoryId)
-    form.setValue('category_ids', next, { shouldDirty: true })
+  function selectCategory(categoryId: string) {
+    // Replace, never append. The dropdown closes on select (radio item default).
+    form.setValue('category_id', categoryId, {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
   }
 
   return (
@@ -341,8 +350,8 @@ export function ShowForm({
               label={t('categoriesLabel')}
               required
               error={
-                errors.category_ids?.message
-                  ? tErrors(errors.category_ids.message as never)
+                errors.category_id?.message
+                  ? tErrors(errors.category_id.message as never)
                   : undefined
               }
             >
@@ -359,9 +368,7 @@ export function ShowForm({
                       className="h-11 w-full justify-between rounded-lg border-white/10 bg-white/[0.04] px-4 text-start text-sm font-normal shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-white/[0.06] md:w-fit md:min-w-72"
                     >
                       <span className="min-w-0 flex-1 truncate">
-                        {selectedCategoryNames.length > 0
-                          ? selectedCategoryNames.join(', ')
-                          : t('selectPlaceholder')}
+                        {selectedCategoryName ?? t('selectPlaceholder')}
                       </span>
                       <ChevronDown className="size-4 shrink-0 opacity-50" />
                     </Button>
@@ -370,19 +377,20 @@ export function ShowForm({
                     align="start"
                     className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)] rounded-[12px] bg-[#11151d]/98 p-1 shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl"
                   >
-                    {categories.map((category) => (
-                      <DropdownMenuCheckboxItem
-                        key={category.id}
-                        checked={selectedCategoryIds.includes(category.id)}
-                        onCheckedChange={(value) =>
-                          toggleCategory(category.id, value === true)
-                        }
-                        onSelect={(event) => event.preventDefault()}
-                        className="rounded-[12px] py-2 ps-3 pe-8"
-                      >
-                        {category.name_en}
-                      </DropdownMenuCheckboxItem>
-                    ))}
+                    <DropdownMenuRadioGroup
+                      value={selectedCategoryId}
+                      onValueChange={selectCategory}
+                    >
+                      {categories.map((category) => (
+                        <DropdownMenuRadioItem
+                          key={category.id}
+                          value={category.id}
+                          className="rounded-[12px] py-2 ps-3 pe-8"
+                        >
+                          {category.name_en}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
