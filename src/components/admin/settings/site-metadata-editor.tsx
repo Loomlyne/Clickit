@@ -14,6 +14,7 @@ type Values = {
   site_title: string
   site_description: string
   site_tagline: string
+  hero_description: string
 }
 
 export function SiteMetadataEditor({ initial }: { initial: Values }) {
@@ -24,7 +25,8 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
   const dirty =
     values.site_title !== initial.site_title ||
     values.site_description !== initial.site_description ||
-    values.site_tagline !== initial.site_tagline
+    values.site_tagline !== initial.site_tagline ||
+    values.hero_description !== initial.hero_description
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault()
@@ -33,6 +35,7 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
       site_title: values.site_title,
       site_description: values.site_description || null,
       site_tagline: values.site_tagline,
+      hero_description: values.hero_description || null,
     })
     setSaving(false)
     if (result.success) toast.success(t('siteMetadataSaved'))
@@ -85,6 +88,24 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
             className="rounded-[12px] md:col-span-2"
           />
         </SettingsField>
+
+        <div className="md:col-span-2">
+          <SettingsField
+            label={t('heroDescriptionLabel')}
+            hint={t('heroDescriptionHint')}
+          >
+            <Textarea
+              value={values.hero_description}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, hero_description: e.target.value }))
+              }
+              placeholder={t('heroDescriptionPlaceholder')}
+              maxLength={500}
+              rows={3}
+              className="rounded-[12px]"
+            />
+          </SettingsField>
+        </div>
 
         <div className="flex items-center justify-end md:col-span-2">
           <Button type="submit" disabled={!dirty || saving}>

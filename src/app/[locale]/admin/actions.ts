@@ -1829,6 +1829,7 @@ const siteMetadataSchema = z.object({
   site_title: z.string().trim().min(1, 'Title is required').max(120),
   site_description: z.string().trim().max(300).nullable(),
   site_tagline: z.string().trim().min(1, 'Tagline is required').max(120),
+  hero_description: z.string().trim().max(500).nullable(),
 })
 
 const liveStreamUrlSchema = z.object({
@@ -2731,6 +2732,186 @@ export async function deleteCastMember(id: string): Promise<ActionResult> {
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to delete cast',
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Legal Pages Actions
+// ---------------------------------------------------------------------------
+
+export type LegalPage = {
+  id: string
+  slug: string
+  title: string
+  content: string
+  sort_order: number
+  updated_at: string
+}
+
+const legalPageSchema = z.object({
+  id: z.string().uuid().optional(),
+  slug: z
+    .string()
+    .min(1, 'Slug is required')
+    .max(80)
+    .regex(/^[a-z0-9-]+$/, 'Lowercase letters, numbers, hyphens only'),
+  title: z.string().min(1, 'Title is required').max(200),
+  content: z.string(),
+  sort_order: z.number().int().min(0).default(0),
+})
+
+export async function getLegalPages(): Promise<LegalPage[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('legal_pages')
+    .select('id, slug, title, content, sort_order, updated_at')
+    .order('sort_order', { ascending: true })
+  return (data ?? []) as LegalPage[]
+}
+
+export async function upsertLegalPage(
+  raw: unknown
+): Promise<ActionResult<LegalPage>> {
+  try {
+    await assertAdmin()
+    const parsed = legalPageSchema.safeParse(raw)
+    if (!parsed.success)
+      return { success: false, error: parsed.error.errors[0].message }
+
+    const supabase = await createClient()
+    const { id, ...fields } = parsed.data
+
+    if (id) {
+      const { data, error } = await supabase
+        .from('legal_pages')
+        .update(fields)
+        .eq('id', id)
+        .select()
+        .single()
+      if (error) return { success: false, error: error.message }
+      revalidatePath('/', 'layout')
+      return { success: true, data: data as LegalPage }
+    } else {
+      const { data, error } = await supabase
+        .from('legal_pages')
+        .insert(fields)
+        .select()
+        .single()
+      if (error) return { success: false, error: error.message }
+      revalidatePath('/', 'layout')
+      return { success: true, data: data as LegalPage }
+    }
+  } catch (err) {
+    console.error('[admin/legal] upsert failed', err)
+    return {
+      success: false,
+      error:
+        err instanceof Error ? err.message : 'Failed to save legal page',
+    }
+  }
+}
+
+export async function deleteLegalPage(id: string): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const supabase = await createClient()
+    const { error } = await supabase
+      .from('legal_pages')
+      .delete()
+      .eq('id', id)
+    if (error) return { success: false, error: error.message }
+    revalidatePath('/', 'layout')
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/legal] delete failed', err)
+    return {
+      success: false,
+      error:
+        err instanceof Error ? err.message : 'Failed to delete legal page',
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// FAQ Actions
+// ---------------------------------------------------------------------------
+
+export type Faq = {
+  id: string
+  question: string
+  answer: string
+  sort_order: number
+}
+
+const faqSchema = z.object({
+  id: z.string().uuid().optional(),
+  question: z.string().min(1, 'Question is required').max(500),
+  answer: z.string().min(1, 'Answer is required'),
+  sort_order: z.number().int().min(0).default(0),
+})
+
+export async function getFaqs(): Promise<Faq[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('faqs')
+    .select('id, question, answer, sort_order')
+    .order('sort_order', { ascending: true })
+  return (data ?? []) as Faq[]
+}
+
+export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
+  try {
+    await assertAdmin()
+    const parsed = faqSchema.safeParse(raw)
+    if (!parsed.success)
+      return { success: false, error: parsed.error.errors[0].message }
+
+    const supabase = await createClient()
+    const { id, ...fields } = parsed.data
+
+    if (id) {
+      const { data, error } = await supabase
+        .from('faqs')
+        .update(fields)
+        .eq('id', id)
+        .select()
+        .single()
+      if (error) return { success: false, error: error.message }
+      revalidatePath('/', 'layout')
+      return { success: true, data: data as Faq }
+    } else {
+      const { data, error } = await supabase
+        .from('faqs')
+        .insert(fields)
+        .select()
+        .single()
+      if (error) return { success: false, error: error.message }
+      revalidatePath('/', 'layout')
+      return { success: true, data: data as Faq }
+    }
+  } catch (err) {
+    console.error('[admin/faq] upsert failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to save FAQ',
+    }
+  }
+}
+
+export async function deleteFaq(id: string): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const supabase = await createClient()
+    const { error } = await supabase.from('faqs').delete().eq('id', id)
+    if (error) return { success: false, error: error.message }
+    revalidatePath('/', 'layout')
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/faq] delete failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to delete FAQ',
     }
   }
 }

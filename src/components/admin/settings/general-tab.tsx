@@ -15,6 +15,7 @@ export function GeneralTab({ config }: { config: AppConfig }) {
           site_title: config.siteTitle,
           site_description: config.siteDescription ?? '',
           site_tagline: config.siteTagline,
+          hero_description: config.heroDescription ?? '',
         }}
       />
       <LiveStreamUrlEditor initialUrl={config.liveStreamUrl} />

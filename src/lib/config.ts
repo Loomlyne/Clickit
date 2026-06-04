@@ -92,6 +92,8 @@ export type AppConfig = {
   topTicker: TopTickerConfig
   /** Optional YouTube (or same-host) live stream; nav falls back to /watch#now-streaming when null. */
   liveStreamUrl: string | null
+  /** Landing hero paragraph below the logo. Null means use the i18n fallback. */
+  heroDescription: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -182,7 +184,7 @@ export const getAppConfig = cache(unstable_cache(
     const { data } = await supabase
       .from('app_config')
       .select(
-        'site_title, site_description, site_tagline, og_image_url, favicon_url, hero_video_url, hero_video_type, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url' as string
+        'site_title, site_description, site_tagline, og_image_url, favicon_url, hero_video_url, hero_video_type, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, hero_description' as string
       )
       .eq('id', 1)
       .single<RawConfigRow>()
@@ -214,6 +216,7 @@ type RawConfigRow = {
   feature_flags: unknown
   top_ticker: unknown
   live_stream_url: string | null
+  hero_description: string | null
 } | null
 
 function mapConfig(row: RawConfigRow): AppConfig {
@@ -233,6 +236,7 @@ function mapConfig(row: RawConfigRow): AppConfig {
     flags: mergeFlags(row?.feature_flags),
     topTicker: mergeTopTicker(row?.top_ticker),
     liveStreamUrl: row?.live_stream_url ?? null,
+    heroDescription: row?.hero_description ?? null,
   }
 }
 
