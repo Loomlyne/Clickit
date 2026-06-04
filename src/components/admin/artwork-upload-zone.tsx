@@ -15,7 +15,7 @@ import { uploadArtwork } from '@/app/[locale]/admin/actions'
 
 interface ArtworkUploadZoneProps {
   showId: string
-  slot: 'poster' | 'hero' | 'hero-mobile' | 'logo'
+  slot: 'poster' | 'card' | 'hero' | 'hero-mobile' | 'logo'
   currentUrl: string | null
   onUploadComplete: (publicUrl: string) => void
   onDelete?: () => void
@@ -25,6 +25,7 @@ interface ArtworkUploadZoneProps {
 
 const MAX_SIZE_BYTES: Record<string, number> = {
   poster: 10 * 1024 * 1024,
+  card: 10 * 1024 * 1024,
   hero: 10 * 1024 * 1024,
   'hero-mobile': 10 * 1024 * 1024,
   logo: 2 * 1024 * 1024,

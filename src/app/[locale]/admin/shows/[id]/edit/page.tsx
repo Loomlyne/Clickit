@@ -24,7 +24,8 @@ function getBrandAccent(show: Show) {
 }
 
 function EditMediaPreview({ show, accent }: { show: Show; accent: string }) {
-  const imageUrl = show.hero_url ?? show.poster_url ?? null
+  const imageUrl =
+    show.card_image_url ?? show.hero_url ?? show.poster_url ?? null
 
   return (
     <div className="relative overflow-hidden rounded-lg border border-white/10 bg-[#0f0f0f]">

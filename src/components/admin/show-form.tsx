@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { AdminPanel } from '@/components/admin/admin-shell'
 import { HeroMediaPicker } from '@/components/admin/hero-media-picker'
+import { ArtworkUploadZone } from '@/components/admin/artwork-upload-zone'
 import { generateSlug } from '@/lib/slug'
 import { createShow, updateShow } from '@/app/[locale]/admin/actions'
 import type { Database } from '@/lib/database.types'
@@ -52,6 +53,7 @@ const showFormSchema = z.object({
   broadcast_day: z.string().optional().nullable(),
   broadcast_time: z.string().optional().nullable(),
   poster_url: z.string().optional().nullable(),
+  card_image_url: z.string().optional().nullable(),
   hero_url: z.string().optional().nullable(),
   logo_url: z.string().optional().nullable(),
   hero_image_mobile_url: z.string().optional().nullable(),
@@ -133,6 +135,7 @@ function getFormDefaults(
       broadcast_day: '',
       broadcast_time: '',
       poster_url: '',
+      card_image_url: '',
       hero_url: '',
       logo_url: '',
       hero_image_mobile_url: '',
@@ -157,6 +160,7 @@ function getFormDefaults(
     broadcast_day: show.broadcast_day ?? '',
     broadcast_time: show.broadcast_time ?? '',
     poster_url: show.poster_url ?? '',
+    card_image_url: show.card_image_url ?? '',
     hero_url: show.hero_url ?? '',
     logo_url: show.logo_url ?? '',
     hero_image_mobile_url: show.hero_image_mobile_url ?? '',
@@ -233,6 +237,7 @@ export function ShowForm({
       broadcast_day: data.broadcast_day || null,
       broadcast_time: data.broadcast_time || null,
       poster_url: data.poster_url || null,
+      card_image_url: data.card_image_url || null,
       hero_url: data.hero_url || null,
       logo_url: data.logo_url || null,
       hero_image_mobile_url: data.hero_image_mobile_url || null,
@@ -424,9 +429,26 @@ export function ShowForm({
         </div>
       </Section>
 
-      <Section title={t('heroMediaSection')}>
+      <Section title={t('showCardSection')}>
         <p className="text-muted-foreground -mt-2 text-xs">
-          {t('heroMediaHint')}
+          {t('showCardHint')}
+        </p>
+        <div className="max-w-md">
+          <ArtworkUploadZone
+            showId={generatedId}
+            slot="card"
+            currentUrl={form.watch('card_image_url') || null}
+            onUploadComplete={(url) => form.setValue('card_image_url', url)}
+            onDelete={() => form.setValue('card_image_url', '')}
+            label={t('showCardLabel')}
+            aspectHint={t('showCardAspectHint')}
+          />
+        </div>
+      </Section>
+
+      <Section title={t('heroSliderSection')}>
+        <p className="text-muted-foreground -mt-2 text-xs">
+          {t('heroSliderHint')}
         </p>
         <HeroMediaPicker
           showId={generatedId}

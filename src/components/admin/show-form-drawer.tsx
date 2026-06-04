@@ -50,6 +50,7 @@ const showFormSchema = z.object({
   broadcast_day: z.string().optional().nullable(),
   broadcast_time: z.string().optional().nullable(),
   poster_url: z.string().optional().nullable(),
+  card_image_url: z.string().optional().nullable(),
   hero_url: z.string().optional().nullable(),
   logo_url: z.string().optional().nullable(),
   hero_image_mobile_url: z.string().optional().nullable(),
@@ -153,6 +154,7 @@ function getFormDefaults(show: DbShow | null): ShowFormData {
       broadcast_day: '',
       broadcast_time: '',
       poster_url: '',
+      card_image_url: '',
       hero_url: '',
       logo_url: '',
       hero_image_mobile_url: '',
@@ -176,6 +178,7 @@ function getFormDefaults(show: DbShow | null): ShowFormData {
     broadcast_day: show.broadcast_day ?? '',
     broadcast_time: show.broadcast_time ?? '',
     poster_url: show.poster_url ?? '',
+    card_image_url: show.card_image_url ?? '',
     hero_url: show.hero_url ?? '',
     logo_url: show.logo_url ?? '',
     hero_image_mobile_url: show.hero_image_mobile_url ?? '',
@@ -240,6 +243,7 @@ export function ShowFormDrawer({
       broadcast_day: data.broadcast_day || null,
       broadcast_time: data.broadcast_time || null,
       poster_url: data.poster_url || null,
+      card_image_url: data.card_image_url || null,
       hero_url: data.hero_url || null,
       logo_url: data.logo_url || null,
       hero_image_mobile_url: data.hero_image_mobile_url || null,
@@ -478,10 +482,26 @@ export function ShowFormDrawer({
               </div>
             </Section>
 
-            {/* HERO MEDIA */}
-            <Section title={t('heroMediaSection')}>
+            {/* SHOW CARD */}
+            <Section title={t('showCardSection')}>
               <p className="text-muted-foreground -mt-2 text-xs">
-                {t('heroMediaSwitchHint')}
+                {t('showCardHint')}
+              </p>
+              <ArtworkUploadZone
+                showId={generatedId}
+                slot="card"
+                currentUrl={form.watch('card_image_url') || null}
+                onUploadComplete={(url) => form.setValue('card_image_url', url)}
+                onDelete={() => form.setValue('card_image_url', '')}
+                label={t('showCardLabel')}
+                aspectHint={t('showCardAspectHint')}
+              />
+            </Section>
+
+            {/* HERO SLIDER */}
+            <Section title={t('heroSliderSection')}>
+              <p className="text-muted-foreground -mt-2 text-xs">
+                {t('heroSliderHint')}
               </p>
               <HeroMediaPicker
                 showId={generatedId}

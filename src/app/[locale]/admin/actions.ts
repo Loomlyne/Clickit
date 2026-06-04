@@ -145,6 +145,7 @@ const showSchema = z
     broadcast_day: z.string().optional().nullable(),
     broadcast_time: z.string().optional().nullable(),
     poster_url: optionalUrl,
+    card_image_url: optionalUrl,
     hero_url: optionalUrl,
     logo_url: optionalUrl,
     hero_image_mobile_url: optionalUrl,

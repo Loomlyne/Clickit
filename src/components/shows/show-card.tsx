@@ -16,9 +16,9 @@ export function ShowCard({ show }: ShowCardProps) {
       className="poster group relative block flex-shrink-0 cursor-pointer overflow-hidden rounded-[12px] bg-[var(--bg-2)] transition-transform duration-[250ms] ease-[var(--ease)] hover:z-[2] hover:-translate-y-1"
       style={{ width: 'var(--landscape-w)', aspectRatio: '16 / 9' }}
     >
-      {show.heroImageUrl || show.posterUrl ? (
+      {show.cardImageUrl || show.heroImageUrl || show.posterUrl ? (
         <img
-          src={show.heroImageUrl ?? show.posterUrl}
+          src={show.cardImageUrl ?? show.heroImageUrl ?? show.posterUrl}
           alt={show.title}
           className="h-full w-full object-cover transition-transform duration-[400ms] ease-[var(--ease)] group-hover:scale-[1.04]"
         />

@@ -82,7 +82,7 @@ async function runCleanup() {
   const { data: shows, error: showsError } = await admin
     .from('shows')
     .select(
-      'hero_url, hero_image_mobile_url, poster_url, logo_url, hero_video_url, hero_video_mobile_url'
+      'hero_url, hero_image_mobile_url, poster_url, card_image_url, logo_url, hero_video_url, hero_video_mobile_url'
     )
 
   if (showsError) {
@@ -103,10 +103,15 @@ async function runCleanup() {
       SHOW_ARTWORK_BUCKET
     )
     const posterPath = extractStoragePath(show.poster_url, SHOW_ARTWORK_BUCKET)
+    const cardPath = extractStoragePath(
+      show.card_image_url,
+      SHOW_ARTWORK_BUCKET
+    )
     const logoPath = extractStoragePath(show.logo_url, SHOW_ARTWORK_BUCKET)
     if (heroPath) referencedArtwork.add(heroPath)
     if (mobileHeroPath) referencedArtwork.add(mobileHeroPath)
     if (posterPath) referencedArtwork.add(posterPath)
+    if (cardPath) referencedArtwork.add(cardPath)
     if (logoPath) referencedArtwork.add(logoPath)
     // Video bucket: hero videos only
     const videoPath = extractStoragePath(

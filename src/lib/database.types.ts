@@ -539,6 +539,7 @@ export type Database = {
           brand_color: string
           broadcast_day: string | null
           broadcast_time: string | null
+          card_image_url: string | null
           created_at: string
           description: string
           description_ar: string | null
@@ -570,6 +571,7 @@ export type Database = {
           brand_color?: string
           broadcast_day?: string | null
           broadcast_time?: string | null
+          card_image_url?: string | null
           created_at?: string
           description?: string
           description_ar?: string | null
@@ -601,6 +603,7 @@ export type Database = {
           brand_color?: string
           broadcast_day?: string | null
           broadcast_time?: string | null
+          card_image_url?: string | null
           created_at?: string
           description?: string
           description_ar?: string | null

@@ -23,6 +23,7 @@ export type ViewShow = {
   status: 'streaming' | 'coming-soon'
   brandColor: 'brand-blue' | 'brand-purple' | 'brand-green' | 'brand-red' | 'brand-orange'
   posterUrl?: string
+  cardImageUrl?: string
   heroImageUrl?: string
   heroImageMobileUrl?: string
   heroVideoUrl?: string
@@ -67,6 +68,7 @@ export function mapShow(db: DbShow, locale: Locale = DEFAULT_LOCALE): ViewShow {
     status: db.status === 'now-streaming' ? 'streaming' : 'coming-soon',
     brandColor: (db.brand_color || 'brand-blue') as ViewShow['brandColor'],
     posterUrl: db.poster_url ?? undefined,
+    cardImageUrl: db.card_image_url ?? undefined,
     heroImageUrl: db.hero_url ?? undefined,
     heroImageMobileUrl: db.hero_image_mobile_url ?? undefined,
     heroVideoUrl: db.hero_video_url ?? undefined,
