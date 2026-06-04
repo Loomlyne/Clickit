@@ -61,9 +61,11 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 flex items-center gap-3 border-b px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 backdrop-blur-[18px] md:gap-7 md:px-10 md:pt-[calc(env(safe-area-inset-top)+18px)] md:pb-[18px]',
+        'sticky top-0 z-50 flex items-center gap-3 border-b px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 md:gap-7 md:px-10 md:pt-[calc(env(safe-area-inset-top)+18px)] md:pb-[18px]',
         'transition-[transform,background-color,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform',
         hidden ? '-translate-y-full' : 'translate-y-0',
+        // Frosted blur everywhere except the landing hero at the top (truly transparent there)
+        !(isLanding && !scrolled) && 'backdrop-blur-[18px]',
         isLanding &&
           !scrolled &&
           'border-transparent bg-transparent',
@@ -74,7 +76,10 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
           'border-[var(--line)] bg-[linear-gradient(180deg,rgba(10,10,10,0.95),rgba(10,10,10,0.65))]',
         !isLanding && scrolled && 'bg-[rgba(10,10,10,0.96)]'
       )}
-      style={{ WebkitBackdropFilter: 'blur(18px)' }}
+      style={{
+        WebkitBackdropFilter:
+          isLanding && !scrolled ? undefined : 'blur(18px)',
+      }}
     >
       <Link
         href="/watch"
