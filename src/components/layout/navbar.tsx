@@ -66,7 +66,7 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
         hidden ? '-translate-y-full' : 'translate-y-0',
         isLanding &&
           !scrolled &&
-          'border-transparent bg-gradient-to-b from-[rgba(10,10,10,0.8)] to-transparent',
+          'border-transparent bg-transparent',
         isLanding &&
           scrolled &&
           'border-[var(--line)] bg-[rgba(10,10,10,0.96)]',
