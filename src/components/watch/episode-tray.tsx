@@ -5,6 +5,7 @@ import { Drawer } from 'vaul'
 import { ChevronUp, Play } from 'lucide-react'
 
 import { ShowArt } from '@/components/primitives/show-art'
+import { Tr } from '@/components/i18n/tr'
 import { cn } from '@/lib/utils'
 import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
 import type { ViewEpisode, ViewSeason, ViewShow } from '@/lib/queries'
@@ -88,7 +89,7 @@ export function EpisodeTray({
                     )}
                     aria-pressed={activeSeasonId === season.id}
                   >
-                    S{season.seasonNumber}
+                    <Tr k="seasonShort" values={{ season: season.seasonNumber }} />
                   </button>
                 ))}
               </div>
@@ -176,11 +177,16 @@ export function EpisodeTray({
                       <span className="mt-4 flex min-w-0 flex-col px-1 pb-2">
                         <span className="flex min-w-0 items-center gap-2">
                           <span className="rounded-full bg-white/10 px-2 py-0.5 font-mono text-[10px] text-white/55">
-                            S
-                            {seasons.find(
-                              (season) => season.id === episode.seasonId
-                            )?.seasonNumber ?? 1}{' '}
-                            E{episode.episodeNumber}
+                            <Tr
+                              k="seasonEpisodeShort"
+                              values={{
+                                season:
+                                  seasons.find(
+                                    (season) => season.id === episode.seasonId
+                                  )?.seasonNumber ?? 1,
+                                episode: episode.episodeNumber,
+                              }}
+                            />
                           </span>
                           {isCurrent && (
                             <span className="rounded-full bg-white px-2 py-0.5 font-mono text-[10px] text-black">

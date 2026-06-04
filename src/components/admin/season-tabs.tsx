@@ -28,11 +28,19 @@ import type { Database } from '@/lib/database.types'
 type Season = Database['public']['Tables']['seasons']['Row']
 type Episode = Database['public']['Tables']['episodes']['Row']
 
+type ShowDefaults = {
+  title: string
+  title_ar: string | null
+  description: string
+  description_ar: string | null
+}
+
 interface SeasonTabsProps {
   seasons: Season[]
   episodesBySeason: Record<string, Episode[]>
   maxEpisodeNumberBySeason: Record<string, number>
   showId: string
+  showDefaults: ShowDefaults
 }
 
 function getSeasonTitle(season: Season, isArabic: boolean) {
@@ -44,6 +52,7 @@ export function SeasonTabs({
   episodesBySeason,
   maxEpisodeNumberBySeason,
   showId,
+  showDefaults,
 }: SeasonTabsProps) {
   const router = useRouter()
   const locale = useLocale()
@@ -186,6 +195,7 @@ export function SeasonTabs({
                   episodes={seasonEpisodes}
                   showId={showId}
                   seasonId={season.id}
+                  showDefaults={showDefaults}
                   nextEpisodeNumber={
                     (maxEpisodeNumberBySeason[season.id] ?? 0) + 1
                   }
@@ -224,6 +234,7 @@ export function SeasonTabs({
           episode={null}
           showId={showId}
           seasonId={activeSeasonIdForEpisode}
+          showDefaults={showDefaults}
           nextEpisodeNumber={
             (maxEpisodeNumberBySeason[activeSeasonIdForEpisode] ?? 0) + 1
           }

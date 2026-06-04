@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Tr } from '@/components/i18n/tr'
 
 interface CastMember {
   name: string
@@ -15,7 +16,9 @@ export function CastRow({ cast }: CastRowProps) {
 
   return (
     <section className="mt-10 px-6 md:px-12">
-      <h2 className="font-display text-foreground text-xl font-medium">Cast</h2>
+      <h2 className="font-display text-foreground text-xl font-medium">
+        <Tr k="cast" />
+      </h2>
       <div className="mt-4 flex gap-6 overflow-x-auto pb-2">
         {cast.map((member) => {
           const initials = member.name

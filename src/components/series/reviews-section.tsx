@@ -1,6 +1,6 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Star } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -19,6 +19,8 @@ interface ReviewsSectionProps {
 
 export function ReviewsSection({ reviews }: ReviewsSectionProps) {
   const t = useTranslations('reviews')
+  const locale = useLocale()
+  const dateLocale = locale === 'ar' ? 'ar-AE' : 'en-US'
   if (reviews.length === 0) return null
 
   return (
@@ -53,7 +55,7 @@ export function ReviewsSection({ reviews }: ReviewsSectionProps) {
                   {review.authorName}
                 </span>
                 <span className="text-text-muted text-xs">
-                  {new Date(review.date).toLocaleDateString('en-US', {
+                  {new Date(review.date).toLocaleDateString(dateLocale, {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric',

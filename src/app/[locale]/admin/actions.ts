@@ -2210,6 +2210,20 @@ export async function updateTopTicker(
   }
 }
 
+// Neutralize active content in SVG uploads before they land in the public
+// site-assets bucket. SVGs served from storage can execute inline <script>,
+// event-handler attributes, or javascript: URLs when opened directly — this
+// strips those common stored-XSS vectors. Non-SVG uploads never call this.
+function sanitizeSvgUpload(svg: string): string {
+  return svg
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, '')
+    .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
+    .replace(/\son\w+\s*=\s*'[^']*'/gi, '')
+    .replace(/\son\w+\s*=\s*[^\s>]+/gi, '')
+    .replace(/(href|xlink:href)\s*=\s*["']\s*javascript:[^"']*["']/gi, '')
+}
+
 // Upload OG image or favicon to site-assets bucket.
 // Returns the public URL and writes it to the matching app_config column.
 export async function uploadSiteImage(
@@ -2245,9 +2259,14 @@ export async function uploadSiteImage(
     const path =
       kind === 'og' ? `settings/og.${ext}` : `settings/favicon.${ext}`
 
+    let body: Blob = file
+    if (mime === 'image/svg+xml') {
+      body = new Blob([sanitizeSvgUpload(await file.text())], { type: mime })
+    }
+
     const { error: uploadError } = await admin.storage
       .from('site-assets')
-      .upload(path, file, {
+      .upload(path, body, {
         upsert: true,
         contentType: mime,
         cacheControl: '3600',
@@ -2328,9 +2347,13 @@ export async function uploadSocialIcon(
     if (!ext) return { success: false, error: `Unsupported type: ${file.type}` }
 
     const path = `settings/social-icons/${Date.now()}.${ext}`
+    let body: Blob = file
+    if (file.type === 'image/svg+xml') {
+      body = new Blob([sanitizeSvgUpload(await file.text())], { type: file.type })
+    }
     const { error: uploadError } = await admin.storage
       .from('site-assets')
-      .upload(path, file, { upsert: false, contentType: file.type, cacheControl: '31536000' })
+      .upload(path, body, { upsert: false, contentType: file.type, cacheControl: '31536000' })
 
     if (uploadError) return { success: false, error: uploadError.message }
 

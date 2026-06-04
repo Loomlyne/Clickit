@@ -1,10 +1,9 @@
 /**
  * Unit tests for the hero media resolution fallback chain.
  *
- * Runs with the Node.js built-in test runner (no Vitest/Jest needed):
- *   node --experimental-strip-types --test tests/unit/hero-media.test.ts
+ * Runs with the Node.js built-in test runner. No Vitest or Jest needed.
  *
- * Test coverage: the 5 branches of resolveHeroMedia — mobile video, mobile
+ * Test coverage: the 5 branches of resolveHeroMedia, mobile video, mobile
  * uses desktop video fallback, mobile image, mobile uses desktop image
  * fallback, and the null (bloom-only) case. Plus the 3 desktop branches.
  */
@@ -19,9 +18,7 @@ const DESKTOP_IMAGE = 'https://cdn/hero-desktop.webp'
 const MOBILE_IMAGE = 'https://cdn/hero-mobile.webp'
 const YT_URL = 'https://www.youtube.com/watch?v=abc123'
 
-// -----------------------------------------------------------------------------
 // Desktop viewport
-// -----------------------------------------------------------------------------
 
 test('desktop: prefers desktop video when both video and image exist', () => {
   const result = resolveHeroMedia(false, {
@@ -60,13 +57,11 @@ test('desktop: video with type=youtube uses youtube', () => {
 
 test('desktop: video without type is ignored (invariant safety)', () => {
   const result = resolveHeroMedia(false, { videoUrl: DESKTOP_VIDEO, imageUrl: DESKTOP_IMAGE })
-  // videoType missing → treat as no video, fall through to image
+  // videoType missing, treat as no video and fall through to image
   assert.deepEqual(result, { kind: 'image', url: DESKTOP_IMAGE })
 })
 
-// -----------------------------------------------------------------------------
-// Mobile viewport — fallback chain
-// -----------------------------------------------------------------------------
+// Mobile viewport, fallback chain
 
 test('mobile: prefers mobile video when all four variants exist', () => {
   const result = resolveHeroMedia(true, {
@@ -80,14 +75,13 @@ test('mobile: prefers mobile video when all four variants exist', () => {
   assert.deepEqual(result, { kind: 'video', url: MOBILE_VIDEO, type: 'mp4' })
 })
 
-test('mobile: falls back to desktop video when no mobile video', () => {
+test('mobile: prefers mobile image over desktop video when no mobile video', () => {
   const result = resolveHeroMedia(true, {
     videoUrl: DESKTOP_VIDEO,
     videoType: 'mp4',
     mobileImageUrl: MOBILE_IMAGE,
   })
-  // Desktop video wins over mobile image
-  assert.deepEqual(result, { kind: 'video', url: DESKTOP_VIDEO, type: 'mp4' })
+  assert.deepEqual(result, { kind: 'image', url: MOBILE_IMAGE })
 })
 
 test('mobile: falls back to mobile image when no videos', () => {
@@ -108,9 +102,7 @@ test('mobile: returns null when nothing provided (bloom-only case)', () => {
   assert.equal(result, null)
 })
 
-// -----------------------------------------------------------------------------
 // Cross-field invariant safety (defensive rendering when DB state is bad)
-// -----------------------------------------------------------------------------
 
 test('mobile: url without type ignored, falls through to next branch', () => {
   const result = resolveHeroMedia(true, {

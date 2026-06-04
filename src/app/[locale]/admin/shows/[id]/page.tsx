@@ -97,6 +97,12 @@ export default async function ShowDetailPage({
         episodesBySeason={episodesBySeason}
         maxEpisodeNumberBySeason={maxEpisodeNumberBySeason}
         showId={id}
+        showDefaults={{
+          title: show.title,
+          title_ar: show.title_ar,
+          description: show.description,
+          description_ar: show.description_ar,
+        }}
       />
     </div>
   )

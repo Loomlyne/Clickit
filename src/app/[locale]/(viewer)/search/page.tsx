@@ -26,7 +26,7 @@ export default async function SearchPage({ searchParams }: Props) {
       <div className="px-6 pt-16 pb-16 md:px-12">
         <div className="mx-auto max-w-3xl">
           <p className="mono mb-4 text-[var(--text-mute)]">
-            Search the catalog
+            {t('searchTheCatalog')}
           </p>
           <h1 className="font-display text-[clamp(2.5rem,5vw,56px)] leading-[1.05] font-normal tracking-[-0.02em] text-[var(--text)]">
             {t('pageTitle')}
@@ -54,7 +54,7 @@ export default async function SearchPage({ searchParams }: Props) {
       <div className="px-6 pt-16 pb-16 md:px-12">
         <div className="mx-auto max-w-3xl">
           <p className="mono mb-4 text-[var(--text-mute)]">
-            Search the catalog
+            {t('searchTheCatalog')}
           </p>
           <form action="/search" method="get" className="mt-6">
             <input
@@ -84,7 +84,7 @@ export default async function SearchPage({ searchParams }: Props) {
       <div className="px-6 pt-16 pb-16 md:px-12">
         <div className="mx-auto max-w-3xl">
           <p className="mono mb-4 text-[var(--text-mute)]">
-            Search the catalog
+            {t('searchTheCatalog')}
           </p>
           <form action="/search" method="get" className="mb-8">
             <input
@@ -115,7 +115,7 @@ export default async function SearchPage({ searchParams }: Props) {
                 href="/watch"
                 className="mono rounded-full border border-[var(--line-2)] bg-transparent px-5 py-2.5 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]"
               >
-                Watch catalog
+                {t('watchCatalog')}
               </Link>
             </div>
           </div>
@@ -128,7 +128,7 @@ export default async function SearchPage({ searchParams }: Props) {
   return (
     <div className="px-6 pt-16 pb-16 md:px-12">
       <div className="mx-auto max-w-5xl">
-        <p className="mono mb-4 text-[var(--text-mute)]">Search the catalog</p>
+        <p className="mono mb-4 text-[var(--text-mute)]">{t('searchTheCatalog')}</p>
         <form action="/search" method="get" className="mb-8">
           <input
             type="text"

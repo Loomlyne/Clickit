@@ -13,7 +13,8 @@ import {
   getShowBySlug,
   getSeasonsByShowId,
   getEpisodesByShowId,
-  getStreamingShows,
+  getShowsByGenre,
+  getOtherStreamingShows,
   getShowWatchlistState,
   getShowLikeState,
   getEpisodesProgress,
@@ -23,6 +24,9 @@ import {
   type ViewEpisode,
 } from '@/lib/queries'
 import { getLocale } from '@/lib/locale'
+import { getIsMobile } from '@/lib/device'
+import { siteUrl } from '@/lib/site-url'
+import { JsonLd } from '@/components/seo/json-ld'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -61,7 +65,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SeriesDetailPage({ params }: Props) {
   const { slug } = await params
-  const [dbShow, locale] = await Promise.all([getShowBySlug(slug), getLocale()])
+  const [dbShow, locale, isMobile] = await Promise.all([
+    getShowBySlug(slug),
+    getLocale(),
+    getIsMobile(),
+  ])
   if (!dbShow) notFound()
 
   const show = mapShow(dbShow, locale)
@@ -74,7 +82,7 @@ export default async function SeriesDetailPage({ params }: Props) {
     {
       data: { user },
     },
-    allStreaming,
+    moreLikeThis,
     t,
   ] = await Promise.all([
     getSeasonsByShowId(dbShow.id),
@@ -85,7 +93,7 @@ export default async function SeriesDetailPage({ params }: Props) {
       .eq('show_id', dbShow.id)
       .order('sort_order'),
     supabase.auth.getUser(),
-    getStreamingShows(),
+    getShowsByGenre(dbShow.genre, dbShow.id, locale),
     getTranslations('show'),
   ])
 
@@ -109,7 +117,10 @@ export default async function SeriesDetailPage({ params }: Props) {
       (ep) => ep.status === 'published'
     )
     if (firstPublished) {
-      firstEpisodeLabel = `S${firstSeason.seasonNumber} E${firstPublished.episodeNumber}`
+      firstEpisodeLabel = t('seasonEpisodeShort', {
+        season: firstSeason.seasonNumber,
+        episode: firstPublished.episodeNumber,
+      })
       firstEpisodeId = firstPublished.id
     }
   }
@@ -131,12 +142,37 @@ export default async function SeriesDetailPage({ params }: Props) {
         {} as Record<string, { progressPercent: number; completed: boolean }>,
       ]
 
-  const moreLikeThis = allStreaming.filter(
-    (s) => s.genre === show.genre && s.id !== show.id
-  )
+  // "More Like This" rail: prefer same-genre shows; if this show is the only
+  // one in its genre, fall back to other streaming shows so the rail still
+  // appears (under a generic heading instead of "More {genre} shows").
+  const hasGenreMatches = moreLikeThis.length > 0
+  const relatedShows = hasGenreMatches
+    ? moreLikeThis
+    : await getOtherStreamingShows(dbShow.id, locale)
+  const relatedHeading = hasGenreMatches
+    ? t('moreLikeThisHeading', { genre: show.genre })
+    : t('moreShowsHeading')
+
+  // schema.org TVSeries for rich results. Localized name/description; image
+  // and url are absolute so crawlers resolve them.
+  const seriesJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'TVSeries',
+    name: show.title,
+    description: show.description,
+    inLanguage: locale === 'ar' ? 'ar' : 'en',
+    genre: show.genre,
+    url: `${siteUrl()}/${locale}/series/${show.slug}`,
+    ...(show.heroImageUrl || show.posterUrl
+      ? { image: show.heroImageUrl ?? show.posterUrl }
+      : {}),
+    ...(viewSeasons.length ? { numberOfSeasons: viewSeasons.length } : {}),
+    ...(show.episodeCount ? { numberOfEpisodes: show.episodeCount } : {}),
+  }
 
   return (
     <div className="-mt-16">
+      <JsonLd data={seriesJsonLd} />
       <SeriesDetailHero
         show={show}
         seasons={viewSeasons}
@@ -145,13 +181,14 @@ export default async function SeriesDetailPage({ params }: Props) {
         initialSaved={inWatchlist}
         initialLiked={isLiked}
         userId={user?.id ?? null}
+        isMobile={isMobile}
       />
 
       {/* Cast */}
       {castMembers && castMembers.length > 0 && (
         <div className="mt-12 px-6 md:px-12">
           <div className="mx-auto max-w-7xl">
-            <div className="label mb-4">Cast</div>
+            <div className="label mb-4">{t('cast')}</div>
             <div className="scrollbar-hide flex gap-5 overflow-x-auto pb-3">
               {castMembers.map((c) => (
                 <div
@@ -227,12 +264,9 @@ export default async function SeriesDetailPage({ params }: Props) {
         </div>
       </div>
 
-      {moreLikeThis.length > 0 && (
+      {relatedShows.length > 0 && (
         <div className="mt-12 pb-16">
-          <ContentRail
-            title={t('moreLikeThisHeading', { genre: show.genre })}
-            shows={moreLikeThis}
-          />
+          <ContentRail title={relatedHeading} shows={relatedShows} />
         </div>
       )}
     </div>

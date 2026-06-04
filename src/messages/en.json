@@ -54,7 +54,9 @@
     "mobileNavLabel": "Mobile navigation",
     "navLabel": "Site navigation",
     "breadcrumb": "Breadcrumb",
-    "userMenu": "User menu"
+    "userMenu": "User menu",
+    "switchToEnglish": "Switch to English",
+    "switchToArabic": "Switch to Arabic"
   },
   "footer": {
     "directContact": "Direct contact",
@@ -168,6 +170,13 @@
     "episodePrefix": "Episode",
     "watchNow": "Watch Now",
     "watchSeasonEpisode": "Watch S{season} E{episode}",
+    "cast": "Cast",
+    "play": "Play",
+    "newBadge": "New",
+    "continue": "Continue",
+    "seasonShort": "S{season}",
+    "episodeShort": "E{episode}",
+    "seasonEpisodeShort": "S{season} E{episode}",
     "addToList": "Add to List",
     "removeFromList": "In your list",
     "like": "Like",
@@ -190,6 +199,7 @@
     "emptyEpisodesDescription": "Check back soon — the team is wrapping up post-production.",
     "comingSoonEyebrow": "See what's coming",
     "moreLikeThisHeading": "More {genre} shows",
+    "moreShowsHeading": "More to watch",
     "seasonDrawerTitle": "Pick an episode",
     "scrollDown": "Scroll to see more",
     "seasonSelectorLabel": "Select season",
@@ -265,7 +275,9 @@
     "clearSearch": "Clear search",
     "resultsSummary": "{total, plural, one {# result} other {# results}} for \"{query}\"",
     "showsHeading": "Shows",
-    "episodesHeading": "Episodes"
+    "episodesHeading": "Episodes",
+    "searchTheCatalog": "Search the catalog",
+    "watchCatalog": "Watch catalog"
   },
   "profile": {
     "accountHeading": "Account Settings",

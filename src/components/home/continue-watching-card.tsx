@@ -1,6 +1,8 @@
 // Continue watching poster — landscape with progress bar
+import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { Play } from 'lucide-react'
+import { Tr } from '@/components/i18n/tr'
 
 import type { ContinueWatchingItem } from '@/lib/queries'
 
@@ -20,10 +22,12 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
       style={{ width: 'var(--landscape-w)', aspectRatio: '16 / 9' }}
     >
       {thumbnailUrl ? (
-        <img
+        <Image
           src={thumbnailUrl}
           alt={item.episodeTitle}
-          className="h-full w-full object-cover transition-transform duration-[400ms] ease-[var(--ease)] group-hover:scale-[1.04]"
+          fill
+          sizes="(max-width: 640px) 80vw, 320px"
+          className="object-cover transition-transform duration-[400ms] ease-[var(--ease)] group-hover:scale-[1.04]"
         />
       ) : (
         <div className="h-full w-full bg-[var(--bg-2)]" />
@@ -39,7 +43,7 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
         </div>
         <div className="mt-2.5 flex gap-1.5">
           <span className="bg-primary text-primary-foreground inline-flex items-center gap-1.5 rounded-full px-3 py-[7px] text-[12.5px] font-medium">
-            <Play className="size-3 fill-current" /> Continue
+            <Play className="size-3 fill-current" /> <Tr k="continue" />
           </span>
         </div>
       </div>

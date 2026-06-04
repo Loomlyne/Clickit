@@ -1,6 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
+import { checkBotId } from 'botid/server'
 
 import {
   buildNewsletterInterests,
@@ -25,6 +27,73 @@ function validationError(fieldErrors: Record<string, string[] | undefined>) {
   }
 }
 
+async function getClientIp(): Promise<string> {
+  try {
+    const h = await headers()
+    return (
+      h.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      h.get('x-real-ip') ||
+      'unknown'
+    )
+  } catch {
+    return 'unknown'
+  }
+}
+
+// Abuse throttle for public unauthenticated actions. Counts recent rows in the
+// rate_limits ledger (service_role only) for this key/window. Fails OPEN on any
+// error so a limiter hiccup never blocks a real user.
+async function withinRateLimit(
+  key: string,
+  max: number,
+  windowSec: number
+): Promise<boolean> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const admin = createAdminClient() as any
+    const since = new Date(Date.now() - windowSec * 1000).toISOString()
+    const { count } = await admin
+      .from('rate_limits')
+      .select('id', { count: 'exact', head: true })
+      .eq('key', key)
+      .gte('created_at', since)
+    if ((count ?? 0) >= max) return false
+    await admin.from('rate_limits').insert({ key })
+    return true
+  } catch {
+    return true
+  }
+}
+
+const rateLimited = {
+  ok: false as const,
+  code: 'unknown' as const,
+  message: 'Too many requests. Please try again in a little while.',
+}
+
+// Detect-and-log bot signal, mirroring the auth actions' deliberate policy:
+// BotID has produced false negatives in this app, so we keep the signal but do
+// NOT hard-block (rate-limiting above is the real abuse gate). Availability >
+// strict gating for a single-admin media site.
+async function logBotSignal(context: string): Promise<void> {
+  try {
+    const result = await checkBotId({
+      developmentOptions: {
+        isDevelopment: process.env.NODE_ENV !== 'production',
+        bypass: process.env.NODE_ENV !== 'production' ? 'HUMAN' : undefined,
+      },
+    })
+    if (!result.isHuman) {
+      console.warn('[contact]', context, 'BotID flagged non-human', {
+        isBot: result.isBot,
+        isVerifiedBot: result.isVerifiedBot,
+      })
+    }
+  } catch (err) {
+    console.error('[contact]', context, 'BotID check failed', err)
+  }
+}
+
 async function getContactRecipient() {
   const config = await getAppConfig()
   return config.footer.contactEmail.trim() || 'contact@clickitstory.com'
@@ -38,6 +107,11 @@ export async function submitSupportMessage(
   if (!parsed.success) {
     return validationError(parsed.error.flatten().fieldErrors)
   }
+
+  if (!(await withinRateLimit(`support:${await getClientIp()}`, 5, 3600))) {
+    return rateLimited
+  }
+  await logBotSignal('support')
 
   try {
     const admin = createAdminClient()
@@ -125,6 +199,11 @@ export async function subscribeToNewsletter(
   if (!parsed.success) {
     return validationError(parsed.error.flatten().fieldErrors)
   }
+
+  if (!(await withinRateLimit(`newsletter:${await getClientIp()}`, 10, 3600))) {
+    return rateLimited
+  }
+  await logBotSignal('newsletter')
 
   try {
     const admin = createAdminClient()

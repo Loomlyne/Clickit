@@ -23,10 +23,14 @@ export default async function AdminPage() {
     { data: showCategories },
   ] = await Promise.all([
     supabase.auth.getUser(),
+    // Order by sort_order to match reorderShow(), so admin drag/up-down
+    // reordering persists across re-render/refresh instead of reverting to
+    // creation order. created_at is the tiebreaker for equal sort_order.
     supabase
       .from('shows')
       .select('*')
       .eq('archived', false)
+      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false }),
     supabase.from('profiles').select('*').single(),
     supabase

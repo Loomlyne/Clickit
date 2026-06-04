@@ -10,6 +10,7 @@ import localFont from 'next/font/local'
 
 import '@/styles/globals.css'
 import { Toaster } from 'sonner'
+import { MotionConfig } from 'motion/react'
 import { getAppConfig } from '@/lib/config'
 import { siteUrl } from '@/lib/site-url'
 import { dirFor } from '@/lib/locale'
@@ -24,8 +25,8 @@ const geist = Geist({
 
 const lbc = localFont({
   src: [
-    { path: '../../fonts/lbc-regular.ttf', weight: '400', style: 'normal' },
-    { path: '../../fonts/lbc-bold.ttf', weight: '700', style: 'normal' },
+    { path: '../../fonts/lbc-regular.woff2', weight: '400', style: 'normal' },
+    { path: '../../fonts/lbc-bold.woff2', weight: '700', style: 'normal' },
   ],
   variable: '--font-lbc',
   display: 'swap',
@@ -99,7 +100,11 @@ export default async function LocaleLayout({
   // Phases 15-17 rather than silently fall back to English.
   const messages = await getMessages()
 
-  const { googleAnalyticsId, metaPixelId } = await getAppConfig()
+  const { googleAnalyticsId: rawGaId, metaPixelId: rawPixelId } = await getAppConfig()
+  // Harden against stored XSS: these admin-controlled IDs are interpolated into
+  // inline <Script> bodies, so allow only the exact provider ID formats.
+  const googleAnalyticsId = /^G-[A-Z0-9]{4,20}$/.test(rawGaId ?? '') ? rawGaId : null
+  const metaPixelId = /^[0-9]{6,20}$/.test(rawPixelId ?? '') ? rawPixelId : null
   const dir = dirFor(locale as Locale)
 
   return (
@@ -118,9 +123,14 @@ export default async function LocaleLayout({
           Skip to content
         </a>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <main id="main" tabIndex={-1}>
-            {children}
-          </main>
+          {/* reducedMotion="user" makes all motion components auto-respect the
+              OS prefers-reduced-motion setting (disables transform/scroll
+              animations, keeps opacity) — one switch for all 12 motion files. */}
+          <MotionConfig reducedMotion="user">
+            <main id="main" tabIndex={-1}>
+              {children}
+            </main>
+          </MotionConfig>
         </NextIntlClientProvider>
         <Toaster
           theme="dark"

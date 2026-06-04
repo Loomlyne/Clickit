@@ -192,13 +192,14 @@ export const getHeroVideo = unstable_cache(
 export const getFeaturedShows = cache(unstable_cache(
   async (): Promise<ViewShow[]> => {
     const supabase = createPublicClient()
+    // No limit: every featured show the admin selects cycles in the hero
+    // carousel — whether that's 1 or 50.
     const { data } = await supabase
       .from('shows')
       .select('*')
       .eq('featured', true)
       .eq('archived', false)
       .order('updated_at', { ascending: false })
-      .limit(5)
 
     if (!data || data.length === 0) {
       // Fallback: first 3 streaming shows if none featured
@@ -234,6 +235,57 @@ export const getStreamingShows = unstable_cache(
   { revalidate: 3600, tags: ['shows'] } // 1 hr — show status rarely changes
 )
 
+// "More Like This" rail. Filters by genre at the DB level (instead of fetching
+// every streaming show and filtering in memory) and excludes the current show.
+// Locale-aware: maps titles/descriptions for the requested locale so the rail
+// is not English-only for Arabic users. genre is the English-only taxonomy.
+export const getShowsByGenre = unstable_cache(
+  async (
+    genre: string,
+    excludeId: string,
+    locale: Locale = DEFAULT_LOCALE
+  ): Promise<ViewShow[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('shows')
+      .select('*')
+      .eq('status', 'now-streaming')
+      .eq('archived', false)
+      .eq('genre', genre)
+      .neq('id', excludeId)
+      .order('created_at', { ascending: false })
+
+    return (data ?? []).map((s) => mapShow(s, locale))
+  },
+  ['shows-by-genre'],
+  { revalidate: 3600, tags: ['shows'] } // 1 hr — matches getStreamingShows
+)
+
+// Fallback for the "More Like This" rail when a show is the only one in its
+// genre (e.g. the lone Culture show): show other streaming shows so the rail
+// is never empty. Locale-aware, excludes the current show.
+export const getOtherStreamingShows = unstable_cache(
+  async (
+    excludeId: string,
+    locale: Locale = DEFAULT_LOCALE,
+    limit = 12
+  ): Promise<ViewShow[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('shows')
+      .select('*')
+      .eq('status', 'now-streaming')
+      .eq('archived', false)
+      .neq('id', excludeId)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    return (data ?? []).map((s) => mapShow(s, locale))
+  },
+  ['other-streaming-shows'],
+  { revalidate: 3600, tags: ['shows'] }
+)
+
 export const getComingSoonShows = unstable_cache(
   async (): Promise<ViewShow[]> => {
     const supabase = createPublicClient()
@@ -248,6 +300,45 @@ export const getComingSoonShows = unstable_cache(
   },
   ['coming-soon-shows'],
   { revalidate: 3600, tags: ['shows'] } // 1 hr
+)
+
+// Lightweight feed for sitemap.xml. Returns every crawlable show + published
+// episode with its real last-updated timestamp so crawlers (Google + AI bots)
+// get accurate <lastmod> and re-crawl only what changed. Generated from the
+// DB, so new shows/episodes appear automatically — no code change needed.
+export type SitemapEntry = { path: string; lastmod: string }
+export const getSitemapEntries = unstable_cache(
+  async (): Promise<{ shows: SitemapEntry[]; episodes: SitemapEntry[] }> => {
+    const supabase = createPublicClient()
+    const [showsRes, episodesRes] = await Promise.all([
+      supabase
+        .from('shows')
+        .select('slug, updated_at')
+        .eq('archived', false)
+        .in('status', ['now-streaming', 'coming-soon']),
+      // Published episodes whose parent show is live. shows!inner enforces the
+      // join filter so episodes under archived shows are excluded.
+      supabase
+        .from('episodes')
+        .select('id, updated_at, shows!inner(archived, status)')
+        .eq('status', 'published')
+        .eq('archived', false)
+        .eq('shows.archived', false),
+    ])
+
+    return {
+      shows: (showsRes.data ?? []).map((s) => ({
+        path: `/series/${s.slug}`,
+        lastmod: s.updated_at,
+      })),
+      episodes: (episodesRes.data ?? []).map((e) => ({
+        path: `/watch/${e.id}`,
+        lastmod: e.updated_at,
+      })),
+    }
+  },
+  ['sitemap-entries'],
+  { revalidate: 3600, tags: ['shows'] }
 )
 
 export const getCategories = unstable_cache(

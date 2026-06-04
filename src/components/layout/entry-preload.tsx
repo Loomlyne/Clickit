@@ -11,7 +11,7 @@ const entryPreloadConfig = {
   mediaType: 'video' as MediaType,
   src: 'https://lajguozmtissnnfccmej.supabase.co/storage/v1/object/public/site-assets/brand/clickit-preloader.mp4?v=logo-animation-20260514',
   imageAlt: 'Clickit',
-  imageHoldMs: 5000,
+  imageHoldMs: 2500,
   imageFallbackSrc: '/brand/Clickit_final_logo.svg',
 }
 
@@ -19,8 +19,8 @@ const enterDuration = 0.9
 const exitDuration = 0.9
 const playRetryMs = 250
 const enterFallbackMs = 1100
-const startupFallbackMs = 3000
-const hardReleaseMs = 7000
+const startupFallbackMs = 2000
+const hardReleaseMs = 5000
 
 let hasShownEntryPreloadThisDocument = false
 
@@ -196,7 +196,7 @@ export function EntryPreload() {
             autoPlay={false}
             controls={false}
             disablePictureInPicture
-            preload="auto"
+            preload="metadata"
             tabIndex={-1}
             onPlaying={() => {
               hasStartedVideoRef.current = true

@@ -54,7 +54,9 @@
     "mobileNavLabel": "تنقل الجوّال",
     "navLabel": "تنقل الموقع",
     "breadcrumb": "مسار التنقل",
-    "userMenu": "قائمة المستخدم"
+    "userMenu": "قائمة المستخدم",
+    "switchToEnglish": "التبديل إلى الإنجليزية",
+    "switchToArabic": "التبديل إلى العربية"
   },
   "footer": {
     "directContact": "تواصل مباشر",
@@ -168,6 +170,13 @@
     "episodePrefix": "الحلقة",
     "watchNow": "شاهد الآن",
     "watchSeasonEpisode": "شاهد الموسم {season} الحلقة {episode}",
+    "cast": "طاقم العمل",
+    "play": "تشغيل",
+    "newBadge": "جديد",
+    "continue": "متابعة",
+    "seasonShort": "م{season}",
+    "episodeShort": "ح{episode}",
+    "seasonEpisodeShort": "م{season} ح{episode}",
     "addToList": "إضافة إلى القائمة",
     "removeFromList": "في قائمتك",
     "like": "إعجاب",
@@ -190,6 +199,7 @@
     "emptyEpisodesDescription": "عد قريباً — الفريق يُنهي مرحلة ما بعد الإنتاج.",
     "comingSoonEyebrow": "انظر ما القادم",
     "moreLikeThisHeading": "المزيد من برامج {genre}",
+    "moreShowsHeading": "المزيد للمشاهدة",
     "seasonDrawerTitle": "اختر حلقة",
     "scrollDown": "مرّر لأسفل للمزيد",
     "seasonSelectorLabel": "اختر الموسم",
@@ -265,7 +275,9 @@
     "clearSearch": "مسح البحث",
     "resultsSummary": "{total, plural, one {# نتيجة} other {# نتيجة}} عن \"{query}\"",
     "showsHeading": "البرامج",
-    "episodesHeading": "الحلقات"
+    "episodesHeading": "الحلقات",
+    "searchTheCatalog": "ابحث في الكتالوج",
+    "watchCatalog": "شاهد الكتالوج"
   },
   "profile": {
     "accountHeading": "إعدادات الحساب",

@@ -28,6 +28,12 @@ interface CinematicBackdropProps {
    * the autoplay flag so they load without animating.
    */
   reducedMotion?: boolean
+  /**
+   * When false, the video is NOT mounted — the poster image is rendered
+   * instead. Carousel slides pass this so only the visible (and next) slide
+   * loads a video, not all N at once. Defaults true for non-carousel usages.
+   */
+  isActive?: boolean
 }
 
 function VideoLayer({
@@ -95,6 +101,7 @@ export function CinematicBackdrop({
   mobileVideoType,
   isMobile,
   reducedMotion,
+  isActive = true,
 }: CinematicBackdropProps) {
   const bloomAlpha =
     intensity === 'low' ? '40' : intensity === 'high' ? '80' : '55'
@@ -130,13 +137,24 @@ export function CinematicBackdrop({
       {useServerViewport ? (
         /* Viewport-aware: single variant, no CSS hiding needed */
         resolved?.kind === 'video' ? (
-          <VideoLayer
-            url={resolved.url}
-            type={resolved.type}
-            className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-80"
-            reducedMotion={reducedMotion}
-            poster={isMobile ? (mobileImageUrl ?? imageUrl) : imageUrl}
-          />
+          isActive ? (
+            <VideoLayer
+              url={resolved.url}
+              type={resolved.type}
+              className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-80"
+              reducedMotion={reducedMotion}
+              poster={isMobile ? (mobileImageUrl ?? imageUrl) : imageUrl}
+            />
+          ) : (isMobile ? (mobileImageUrl ?? imageUrl) : imageUrl) ? (
+            <Image
+              src={(isMobile ? (mobileImageUrl ?? imageUrl) : imageUrl) as string}
+              alt=""
+              fill
+              className="object-cover opacity-80"
+              sizes="100vw"
+              aria-hidden
+            />
+          ) : null
         ) : resolved?.kind === 'image' ? (
           <Image
             src={resolved.url}

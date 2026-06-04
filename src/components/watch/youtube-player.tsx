@@ -5,38 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Play } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
-
-// ---------------------------------------------------------------------------
-// YouTube IFrame API singleton script loader
-// ---------------------------------------------------------------------------
-
-let apiReady = false
-let apiLoading = false
-const readyCallbacks: (() => void)[] = []
-
-function loadYouTubeAPI(): Promise<void> {
-  return new Promise((resolve) => {
-    if (apiReady) {
-      resolve()
-      return
-    }
-    readyCallbacks.push(resolve)
-    if (apiLoading) return
-    apiLoading = true
-
-    // Global callback that YouTube API invokes when ready
-    ;(window as unknown as Record<string, unknown>).onYouTubeIframeAPIReady =
-      () => {
-        apiReady = true
-        readyCallbacks.forEach((cb) => cb())
-        readyCallbacks.length = 0
-      }
-
-    const tag = document.createElement('script')
-    tag.src = 'https://www.youtube.com/iframe_api'
-    document.head.appendChild(tag)
-  })
-}
+import { loadYouTubeAPI } from '@/lib/youtube'
 
 // ---------------------------------------------------------------------------
 // YouTubePlayer component

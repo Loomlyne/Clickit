@@ -35,6 +35,13 @@ const episodeFormSchema = z.object({
 
 type EpisodeFormData = z.infer<typeof episodeFormSchema>
 
+type ShowDefaults = {
+  title: string
+  title_ar: string | null
+  description: string
+  description_ar: string | null
+}
+
 function Section({
   title,
   children,
@@ -81,6 +88,7 @@ interface EpisodeFormDrawerProps {
   episode?: Database['public']['Tables']['episodes']['Row'] | null
   showId: string
   seasonId: string
+  showDefaults: ShowDefaults
   nextEpisodeNumber: number
   onSave: (
     data: EpisodeFormData
@@ -93,6 +101,7 @@ export function EpisodeFormDrawer({
   episode,
   showId,
   seasonId,
+  showDefaults,
   nextEpisodeNumber,
   onSave,
 }: EpisodeFormDrawerProps) {
@@ -119,13 +128,17 @@ export function EpisodeFormDrawer({
     },
   ]
 
+  const inheritedEpisodeFields = {
+    title: showDefaults.title,
+    title_ar: showDefaults.title_ar ?? '',
+    description: showDefaults.description,
+    description_ar: showDefaults.description_ar ?? '',
+  }
+
   const form = useForm<EpisodeFormData>({
     resolver: zodResolver(episodeFormSchema),
     defaultValues: {
-      title: '',
-      title_ar: '',
-      description: '',
-      description_ar: '',
+      ...inheritedEpisodeFields,
       episode_number: nextEpisodeNumber,
       youtube_video_id: '',
       duration: null,
@@ -148,10 +161,10 @@ export function EpisodeFormDrawer({
         })
       } else {
         form.reset({
-          title: '',
-          title_ar: '',
-          description: '',
-          description_ar: '',
+          title: showDefaults.title,
+          title_ar: showDefaults.title_ar ?? '',
+          description: showDefaults.description,
+          description_ar: showDefaults.description_ar ?? '',
           episode_number: nextEpisodeNumber,
           youtube_video_id: '',
           duration: null,
@@ -159,7 +172,16 @@ export function EpisodeFormDrawer({
         })
       }
     }
-  }, [open, episode, nextEpisodeNumber, form])
+  }, [
+    open,
+    episode,
+    nextEpisodeNumber,
+    form,
+    showDefaults.title,
+    showDefaults.title_ar,
+    showDefaults.description,
+    showDefaults.description_ar,
+  ])
 
   // Auto-detect duration from YouTube video
   const lastDetectedId = useRef<string | null>(null)
@@ -183,12 +205,13 @@ export function EpisodeFormDrawer({
   }, [watchedVideoId, form, t])
 
   async function onSubmit(data: EpisodeFormData) {
+    const sourceData = isEdit ? data : { ...data, ...inheritedEpisodeFields }
     const normalized = {
-      ...data,
-      title_ar: data.title_ar || null,
-      description_ar: data.description_ar || null,
-      youtube_video_id: data.youtube_video_id || null,
-      duration: data.duration || null,
+      ...sourceData,
+      title_ar: sourceData.title_ar || null,
+      description_ar: sourceData.description_ar || null,
+      youtube_video_id: sourceData.youtube_video_id || null,
+      duration: sourceData.duration || null,
     }
     const result = await onSave(normalized)
     if (result.success) {
@@ -218,7 +241,10 @@ export function EpisodeFormDrawer({
           <p className="text-muted-foreground text-sm">
             {isEdit
               ? t('editingEpisode', { title: episode.title })
-              : t('episodeNumberDescription', { number: nextEpisodeNumber })}
+              : t('createFromShowDescription', {
+                  number: nextEpisodeNumber,
+                  title: showDefaults.title,
+                })}
           </p>
         </SheetHeader>
 
@@ -228,23 +254,49 @@ export function EpisodeFormDrawer({
         >
           <div className="flex-1 space-y-8 overflow-y-auto px-6 py-5">
             <Section title={t('sectionInfo')}>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2">
-                  <Field
-                    label={t('titleLabel')}
-                    required
-                    error={
-                      errors.title?.message
-                        ? tErrors(errors.title.message as never)
-                        : undefined
-                    }
-                  >
-                    <Input
-                      {...form.register('title')}
-                      placeholder={t('episodeTitlePlaceholder')}
-                    />
+              {isEdit ? (
+                <>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2">
+                      <Field
+                        label={t('titleLabel')}
+                        required
+                        error={
+                          errors.title?.message
+                            ? tErrors(errors.title.message as never)
+                            : undefined
+                        }
+                      >
+                        <Input
+                          {...form.register('title')}
+                          placeholder={t('episodeTitlePlaceholder')}
+                        />
+                      </Field>
+                    </div>
+                    <Field
+                      label={t('episodeNumberLabel')}
+                      required
+                      error={
+                        errors.episode_number?.message
+                          ? tErrors(errors.episode_number.message as never)
+                          : undefined
+                      }
+                    >
+                      <Input
+                        type="number"
+                        min={1}
+                        {...form.register('episode_number', {
+                          valueAsNumber: true,
+                        })}
+                      />
+                    </Field>
+                  </div>
+
+                  <Field label={t('titleArLabel')}>
+                    <Input dir="rtl" {...form.register('title_ar')} />
                   </Field>
-                </div>
+                </>
+              ) : (
                 <Field
                   label={t('episodeNumberLabel')}
                   required
@@ -262,13 +314,8 @@ export function EpisodeFormDrawer({
                     })}
                   />
                 </Field>
-              </div>
+              )}
 
-              <Field label={t('titleArLabel')}>
-                <Input dir="rtl" {...form.register('title_ar')} />
-              </Field>
-
-              {/* Status — radio buttons */}
               <div className="space-y-1.5">
                 <Label className="text-sm">
                   {t('statusLabel')}
@@ -341,8 +388,9 @@ export function EpisodeFormDrawer({
                 {watchedVideoId && watchedVideoId.length === 11 && (
                   <YouTubeFetchButton
                     videoId={watchedVideoId}
+                    isEdit={isEdit}
                     onFetched={(meta) => {
-                      // Only fill fields that are currently empty — never overwrite
+                      // Only fill fields that are currently empty, never overwrite
                       // what the admin has already typed.
                       if (!form.getValues('title') && meta.title) {
                         form.setValue('title', meta.title, {
@@ -375,29 +423,33 @@ export function EpisodeFormDrawer({
                 )}
               </Field>
 
-              <Field
-                label={t('descriptionLabel')}
-                required
-                error={
-                  errors.description?.message
-                    ? tErrors(errors.description.message as never)
-                    : undefined
-                }
-              >
-                <Textarea
-                  rows={5}
-                  {...form.register('description')}
-                  placeholder={t('descriptionPlaceholder')}
-                />
-              </Field>
+              {isEdit && (
+                <>
+                  <Field
+                    label={t('descriptionLabel')}
+                    required
+                    error={
+                      errors.description?.message
+                        ? tErrors(errors.description.message as never)
+                        : undefined
+                    }
+                  >
+                    <Textarea
+                      rows={5}
+                      {...form.register('description')}
+                      placeholder={t('descriptionPlaceholder')}
+                    />
+                  </Field>
 
-              <Field label={t('descriptionArLabel')}>
-                <Textarea
-                  rows={5}
-                  dir="rtl"
-                  {...form.register('description_ar')}
-                />
-              </Field>
+                  <Field label={t('descriptionArLabel')}>
+                    <Textarea
+                      rows={5}
+                      dir="rtl"
+                      {...form.register('description_ar')}
+                    />
+                  </Field>
+                </>
+              )}
             </Section>
           </div>
 
@@ -441,9 +493,11 @@ type YouTubeMeta = {
 
 function YouTubeFetchButton({
   videoId,
+  isEdit,
   onFetched,
 }: {
   videoId: string
+  isEdit: boolean
   onFetched: (meta: YouTubeMeta) => void
 }) {
   const [loading, setLoading] = useState(false)
@@ -469,7 +523,9 @@ function YouTubeFetchButton({
       }
       const meta: YouTubeMeta = await res.json()
       onFetched(meta)
-      toast.success(t('toastFetchSuccess'))
+      toast.success(
+        isEdit ? t('toastFetchSuccess') : t('toastFetchDurationSuccess')
+      )
     } finally {
       setLoading(false)
     }
@@ -487,7 +543,7 @@ function YouTubeFetchButton({
       ) : (
         <Sparkles className="size-3" />
       )}
-      {t('fetchYoutubeMetadata')}
+      {isEdit ? t('fetchYoutubeMetadata') : t('fetchYoutubeDuration')}
     </button>
   )
 }
