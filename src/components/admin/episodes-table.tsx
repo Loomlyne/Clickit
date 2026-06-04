@@ -143,7 +143,7 @@ export function EpisodesTable({
                 <TableCell className="text-muted-foreground pt-5 font-mono text-xs">
                   #{episode.episode_number}
                 </TableCell>
-                <TableCell className="py-4">
+                <TableCell className="py-4 break-words whitespace-normal">
                   <span className="text-foreground font-medium">
                     {episode.title}
                   </span>
