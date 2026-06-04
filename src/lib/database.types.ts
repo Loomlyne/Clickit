@@ -242,6 +242,33 @@ export type Database = {
           },
         ]
       }
+      faqs: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          question: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          answer?: string
+          created_at?: string
+          id?: string
+          question: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          question?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           created_at: string
@@ -274,6 +301,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      legal_pages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          slug: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          slug: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          slug?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       newsletter_subscribers: {
         Row: {

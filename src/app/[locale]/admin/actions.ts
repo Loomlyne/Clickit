@@ -2800,7 +2800,7 @@ export async function upsertLegalPage(
     await assertAdmin()
     const parsed = legalPageSchema.safeParse(raw)
     if (!parsed.success)
-      return { success: false, error: parsed.error.errors[0].message }
+      return { success: false, error: parsed.error.issues[0].message }
 
     const supabase = await createClient()
     const { id, ...fields } = parsed.data
@@ -2888,7 +2888,7 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
     await assertAdmin()
     const parsed = faqSchema.safeParse(raw)
     if (!parsed.success)
-      return { success: false, error: parsed.error.errors[0].message }
+      return { success: false, error: parsed.error.issues[0].message }
 
     const supabase = await createClient()
     const { id, ...fields } = parsed.data

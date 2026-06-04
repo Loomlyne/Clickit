@@ -3,17 +3,23 @@
 import { useTranslations } from 'next-intl'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import type { AppConfig } from '@/lib/config'
+import type { LegalPage, Faq } from '@/app/[locale]/admin/actions'
 import { GeneralTab } from './general-tab'
 import { BrandingTab } from './branding-tab'
 import { IntegrationsTab } from './integrations-tab'
 import { AdvancedTab } from './advanced-tab'
+import { LegalTab } from './legal-tab'
 
 export function SettingsTabs({
   config,
   hasYouTubeKey,
+  legalPages,
+  faqs,
 }: {
   config: AppConfig
   hasYouTubeKey: boolean
+  legalPages: LegalPage[]
+  faqs: Faq[]
 }) {
   const t = useTranslations('admin.settings')
   return (
@@ -23,6 +29,7 @@ export function SettingsTabs({
         <TabsTrigger value="branding">{t('brandingTab')}</TabsTrigger>
         <TabsTrigger value="integrations">{t('integrationsTab')}</TabsTrigger>
         <TabsTrigger value="advanced">{t('advancedTab')}</TabsTrigger>
+        <TabsTrigger value="legal">Legal</TabsTrigger>
       </TabsList>
 
       <TabsContent value="general" className="space-y-6">
@@ -39,6 +46,10 @@ export function SettingsTabs({
 
       <TabsContent value="advanced" className="space-y-6">
         <AdvancedTab config={config} />
+      </TabsContent>
+
+      <TabsContent value="legal" className="space-y-6">
+        <LegalTab legalPages={legalPages} faqs={faqs} />
       </TabsContent>
     </Tabs>
   )

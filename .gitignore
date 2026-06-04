@@ -70,3 +70,4 @@ Untitled*.base
 _claude*
 _planning*
 .vercel/.cron-secret
+.gstack/
