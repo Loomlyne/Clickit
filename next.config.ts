@@ -28,20 +28,7 @@ const nextConfig: NextConfig = {
   // page load to re-validate the SVG, wasting ~700ms of LCP on the landing
   // page (the logo is the LCP element). Now it's cached for a year, immutable.
   async redirects() {
-    return [
-      {
-        source: '/:path*',
-        has: [{ type: 'host', value: 'clickitstory.ae' }],
-        destination: 'https://clickitstory.com/:path*',
-        permanent: true,
-      },
-      {
-        source: '/:path*',
-        has: [{ type: 'host', value: 'www.clickitstory.ae' }],
-        destination: 'https://clickitstory.com/:path*',
-        permanent: true,
-      },
-    ]
+    return []
   },
   async headers() {
     return [
