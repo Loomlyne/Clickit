@@ -15,6 +15,7 @@ type Values = {
   site_description: string
   site_tagline: string
   hero_description: string
+  hero_description_ar: string
 }
 
 export function SiteMetadataEditor({ initial }: { initial: Values }) {
@@ -26,7 +27,8 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
     values.site_title !== initial.site_title ||
     values.site_description !== initial.site_description ||
     values.site_tagline !== initial.site_tagline ||
-    values.hero_description !== initial.hero_description
+    values.hero_description !== initial.hero_description ||
+    values.hero_description_ar !== initial.hero_description_ar
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault()
@@ -36,6 +38,7 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
       site_description: values.site_description || null,
       site_tagline: values.site_tagline,
       hero_description: values.hero_description || null,
+      hero_description_ar: values.hero_description_ar || null,
     })
     setSaving(false)
     if (result.success) toast.success(t('siteMetadataSaved'))
@@ -100,6 +103,25 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
                 setValues((v) => ({ ...v, hero_description: e.target.value }))
               }
               placeholder={t('heroDescriptionPlaceholder')}
+              maxLength={500}
+              rows={3}
+              className="rounded-[12px]"
+            />
+          </SettingsField>
+        </div>
+
+        <div className="md:col-span-2">
+          <SettingsField
+            label={t('heroDescriptionArLabel')}
+            hint={t('heroDescriptionArHint')}
+          >
+            <Textarea
+              dir="rtl"
+              value={values.hero_description_ar}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, hero_description_ar: e.target.value }))
+              }
+              placeholder={t('heroDescriptionArPlaceholder')}
               maxLength={500}
               rows={3}
               className="rounded-[12px]"

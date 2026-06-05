@@ -84,7 +84,8 @@ export async function LandingHero() {
             className="mb-6 h-auto w-48 sm:w-56 md:w-64"
           />
           <p className="mb-9 text-[17px] leading-relaxed text-[var(--text-dim)]">
-            {config.heroDescription ?? t('heroDescription')}
+            {(isAr ? config.heroDescriptionAr : config.heroDescription) ??
+              t('heroDescription')}
           </p>
           <div className="mb-12 md:mb-16">
             <Link

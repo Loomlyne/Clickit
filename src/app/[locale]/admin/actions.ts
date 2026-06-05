@@ -1841,6 +1841,7 @@ const siteMetadataSchema = z.object({
   site_description: z.string().trim().max(300).nullable(),
   site_tagline: z.string().trim().min(1, 'Tagline is required').max(120),
   hero_description: z.string().trim().max(500).nullable(),
+  hero_description_ar: z.string().trim().max(500).nullable(),
 })
 
 const liveStreamUrlSchema = z.object({
