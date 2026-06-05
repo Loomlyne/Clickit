@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { useForm } from 'react-hook-form'
+import { useForm, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Lock } from 'lucide-react'
+import { Lock, Monitor, Smartphone } from 'lucide-react'
 
 import {
   Sheet,
@@ -132,6 +132,76 @@ function Field({
       </Label>
       {children}
       {error && <p className="text-destructive text-xs">{error}</p>}
+    </div>
+  )
+}
+
+// Hero slider — device-tabbed so only one screen size shows at a time.
+function HeroSliderFields({
+  form,
+  showId,
+}: {
+  form: UseFormReturn<ShowFormData>
+  showId: string
+}) {
+  const t = useTranslations('admin.heroMedia')
+  const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
+
+  const devices = [
+    { id: 'desktop' as const, label: t('desktopHero'), icon: Monitor },
+    { id: 'mobile' as const, label: t('mobileHero'), icon: Smartphone },
+  ]
+
+  return (
+    <div className="space-y-3">
+      {/* Device switcher */}
+      <div className="inline-flex rounded-full border border-white/8 bg-white/[0.02] p-0.5">
+        {devices.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setDevice(id)}
+            className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+              device === id
+                ? 'bg-white text-black'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Icon className="size-3.5" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {device === 'desktop' ? (
+        <HeroMediaPicker
+          showId={showId}
+          variant="desktop"
+          currentImageUrl={form.watch('hero_url') || null}
+          currentVideoUrl={form.watch('hero_video_url') || null}
+          currentVideoType={form.watch('hero_video_type') ?? null}
+          onImageChange={(url) => form.setValue('hero_url', url ?? '')}
+          onVideoChange={(video) => {
+            form.setValue('hero_video_url', video?.url ?? '')
+            form.setValue('hero_video_type', video?.type ?? null)
+          }}
+        />
+      ) : (
+        <HeroMediaPicker
+          showId={showId}
+          variant="mobile"
+          currentImageUrl={form.watch('hero_image_mobile_url') || null}
+          currentVideoUrl={form.watch('hero_video_mobile_url') || null}
+          currentVideoType={form.watch('hero_video_mobile_type') ?? null}
+          onImageChange={(url) =>
+            form.setValue('hero_image_mobile_url', url ?? '')
+          }
+          onVideoChange={(video) => {
+            form.setValue('hero_video_mobile_url', video?.url ?? '')
+            form.setValue('hero_video_mobile_type', video?.type ?? null)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -503,32 +573,7 @@ export function ShowFormDrawer({
               <p className="text-muted-foreground -mt-2 text-xs">
                 {t('heroSliderHint')}
               </p>
-              <HeroMediaPicker
-                showId={generatedId}
-                variant="desktop"
-                currentImageUrl={form.watch('hero_url') || null}
-                currentVideoUrl={form.watch('hero_video_url') || null}
-                currentVideoType={form.watch('hero_video_type') ?? null}
-                onImageChange={(url) => form.setValue('hero_url', url ?? '')}
-                onVideoChange={(video) => {
-                  form.setValue('hero_video_url', video?.url ?? '')
-                  form.setValue('hero_video_type', video?.type ?? null)
-                }}
-              />
-              <HeroMediaPicker
-                showId={generatedId}
-                variant="mobile"
-                currentImageUrl={form.watch('hero_image_mobile_url') || null}
-                currentVideoUrl={form.watch('hero_video_mobile_url') || null}
-                currentVideoType={form.watch('hero_video_mobile_type') ?? null}
-                onImageChange={(url) =>
-                  form.setValue('hero_image_mobile_url', url ?? '')
-                }
-                onVideoChange={(video) => {
-                  form.setValue('hero_video_mobile_url', video?.url ?? '')
-                  form.setValue('hero_video_mobile_type', video?.type ?? null)
-                }}
-              />
+              <HeroSliderFields form={form} showId={generatedId} />
             </Section>
 
             {/* SCHEDULE */}

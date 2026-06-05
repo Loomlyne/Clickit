@@ -11,6 +11,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   createShowVideoUpload,
@@ -170,129 +171,158 @@ export function HeroMediaPicker({
   }
 
   const hasContent = !!(currentImageUrl || currentVideoUrl)
+  const contentType: Mode | null = currentVideoType ?? (currentImageUrl ? 'image' : null)
+  const isMobile = variant === 'mobile'
+  const aspectBadge = isMobile ? '9:16' : '16:9'
+  const sourceHint = mode === 'mp4' ? videoHint : imageHint
+
+  const modes: { id: Mode; label: string; icon: typeof ImageIcon }[] = [
+    { id: 'image', label: t('imageMode'), icon: ImageIcon },
+    { id: 'mp4', label: 'MP4', icon: Film },
+    { id: 'youtube', label: t('youtubeMode'), icon: LinkIcon },
+  ]
+
+  // Single hidden file input, retargeted by the active mode.
+  const fileAccept = mode === 'mp4' ? 'video/mp4' : 'image/webp,image/png,image/jpeg'
+  const fileHandler = mode === 'mp4' ? handleMp4Upload : handleImageUpload
+
+  const mediaPreview =
+    contentType === 'mp4' && currentVideoUrl ? (
+      <video
+        src={currentVideoUrl}
+        muted
+        autoPlay
+        loop
+        playsInline
+        className="h-full w-full object-cover"
+      />
+    ) : contentType === 'youtube' && currentVideoUrl ? (
+      (() => {
+        const ytId = extractYouTubeId(currentVideoUrl)
+        return ytId ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={getYouTubeThumbnailUrl(ytId)}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : null
+      })()
+    ) : currentImageUrl ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={currentImageUrl} alt="" className="h-full w-full object-cover" />
+    ) : null
 
   return (
-    <div className="space-y-3 rounded-lg border border-white/8 bg-white/[0.02] p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">{label}</p>
-        {hasContent && (
-          <Button
+    <div className="space-y-2.5">
+      {/* Header: label + aspect, source switcher */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-sm font-medium">{label}</span>
+          <span className="text-muted-foreground rounded-full border border-white/8 bg-white/[0.03] px-2 py-0.5 font-mono text-[10px]">
+            {aspectBadge}
+          </span>
+        </div>
+        <div className="flex items-center gap-0.5 rounded-full border border-white/8 bg-white/[0.02] p-0.5">
+          {modes.map(({ id, label: ml, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setMode(id)}
+              className={cn(
+                'flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
+                mode === id
+                  ? 'bg-white text-black'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Icon className="size-3.5" />
+              <span className="hidden sm:inline">{ml}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Aspect-correct framed zone — preview + upload surface in one */}
+      <div
+        className={cn(
+          'group relative overflow-hidden rounded-xl border bg-black/40',
+          isMobile ? 'mx-auto aspect-[9/16] w-full max-w-[200px]' : 'aspect-video w-full',
+          hasContent ? 'border-white/10' : 'border-dashed border-white/12'
+        )}
+      >
+        {/* Hidden input reused for both empty-state click and Replace */}
+        {mode !== 'youtube' && (
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={fileAccept}
+            className="hidden"
+            onChange={fileHandler}
+          />
+        )}
+
+        {uploading ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60">
+            <Loader2 className="size-6 animate-spin text-white/70" />
+            <p className="text-xs text-white/60">{t('uploadingVideo')}</p>
+          </div>
+        ) : hasContent ? (
+          <>
+            {mediaPreview}
+            {/* Source badge */}
+            {contentType && (
+              <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium text-white/80 backdrop-blur-sm">
+                {contentType === 'mp4'
+                  ? 'MP4'
+                  : contentType === 'youtube'
+                    ? t('youtubeMode')
+                    : t('imageMode')}
+              </span>
+            )}
+            {/* Hover actions */}
+            <div className="absolute inset-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/70 to-black/30 opacity-0 transition-opacity group-hover:opacity-100">
+              {mode !== 'youtube' && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-black transition-transform hover:scale-105"
+                >
+                  {t('replaceButton')}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleRemove}
+                className="flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/25"
+              >
+                <Trash2 className="size-3.5" />
+                {t('clearButton')}
+              </button>
+            </div>
+          </>
+        ) : mode === 'youtube' ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-4 text-center">
+            <LinkIcon className="text-muted-foreground size-6" />
+            <p className="text-muted-foreground text-xs">{t('youtubeUrlLabel')}</p>
+          </div>
+        ) : (
+          <button
             type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleRemove}
-            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-4 text-center transition-colors hover:bg-white/[0.03]"
           >
-            <Trash2 className="me-1.5 size-3.5" />
-            {t('clearButton')}
-          </Button>
+            <Upload className="text-muted-foreground size-6" />
+            <p className="text-muted-foreground text-sm">
+              {mode === 'mp4' ? t('clickToUploadMp4') : t('clickToUploadImage')}
+            </p>
+            <p className="text-muted-foreground text-[11px]">{sourceHint}</p>
+          </button>
         )}
       </div>
 
-      {/* Current preview */}
-      {hasContent && (
-        <div className="relative overflow-hidden rounded-lg border border-white/8 bg-black">
-          {currentVideoType === 'mp4' && currentVideoUrl ? (
-            <video
-              src={currentVideoUrl}
-              muted
-              autoPlay
-              loop
-              playsInline
-              className="h-32 w-full object-cover"
-            />
-          ) : currentVideoType === 'youtube' && currentVideoUrl ? (
-            (() => {
-              const ytId = extractYouTubeId(currentVideoUrl)
-              return ytId ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={getYouTubeThumbnailUrl(ytId)}
-                  alt=""
-                  className="h-32 w-full object-cover"
-                />
-              ) : null
-            })()
-          ) : currentImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={currentImageUrl}
-              alt=""
-              className="h-32 w-full object-cover"
-            />
-          ) : null}
-        </div>
-      )}
-
-      {/* Mode tabs */}
-      <div className="flex gap-1.5">
-        {(['image', 'mp4', 'youtube'] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => setMode(m)}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium transition-all ${
-              mode === m
-                ? 'bg-white text-black shadow-[0_8px_24px_rgba(255,255,255,0.14)]'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {m === 'image' && (
-              <>
-                <ImageIcon className="size-3.5" /> {t('imageMode')}
-              </>
-            )}
-            {m === 'mp4' && (
-              <>
-                <Film className="size-3.5" /> MP4
-              </>
-            )}
-            {m === 'youtube' && (
-              <>
-                <LinkIcon className="size-3.5" /> {t('youtubeMode')}
-              </>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Mode content */}
-      {uploading ? (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6">
-          <Loader2 className="text-muted-foreground size-5 animate-spin" />
-          <p className="text-muted-foreground text-sm">{t('uploadingVideo')}</p>
-        </div>
-      ) : mode === 'image' ? (
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6 transition-colors hover:border-white/20">
-          <Upload className="text-muted-foreground size-5" />
-          <p className="text-muted-foreground text-sm">
-            {t('clickToUploadImage')}
-          </p>
-          <p className="text-muted-foreground text-xs">{imageHint}</p>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/webp,image/png,image/jpeg"
-            className="hidden"
-            onChange={handleImageUpload}
-          />
-        </label>
-      ) : mode === 'mp4' ? (
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6 transition-colors hover:border-white/20">
-          <Upload className="text-muted-foreground size-5" />
-          <p className="text-muted-foreground text-sm">
-            {t('clickToUploadMp4')}
-          </p>
-          <p className="text-muted-foreground text-xs">{videoHint}</p>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="video/mp4"
-            className="hidden"
-            onChange={handleMp4Upload}
-          />
-        </label>
-      ) : (
+      {/* YouTube URL field — only in YouTube mode */}
+      {mode === 'youtube' && (
         <div className="flex gap-2">
           <input
             type="url"
