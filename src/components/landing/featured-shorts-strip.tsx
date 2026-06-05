@@ -29,10 +29,7 @@ export function FeaturedShortsGrid({ shorts }: { shorts: ViewShort[] }) {
       <link rel="preconnect" href="https://www.youtube.com" />
       <link rel="preconnect" href="https://i.ytimg.com" />
 
-      <div
-        className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5"
-        data-lenis-prevent
-      >
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
         {shorts.map((s, i) => (
           <div
             key={s.id}
