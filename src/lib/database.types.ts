@@ -49,6 +49,7 @@ export type Database = {
           admin_user_id: string | null
           created_at: string
           cta_copy: Json
+          favicon_dark_url: string | null
           favicon_url: string | null
           feature_flags: Json
           footer_content: Json
@@ -71,6 +72,7 @@ export type Database = {
           admin_user_id?: string | null
           created_at?: string
           cta_copy?: Json
+          favicon_dark_url?: string | null
           favicon_url?: string | null
           feature_flags?: Json
           footer_content?: Json
@@ -93,6 +95,7 @@ export type Database = {
           admin_user_id?: string | null
           created_at?: string
           cta_copy?: Json
+          favicon_dark_url?: string | null
           favicon_url?: string | null
           feature_flags?: Json
           footer_content?: Json

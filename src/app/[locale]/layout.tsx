@@ -47,6 +47,25 @@ export function generateStaticParams() {
   return staticParams
 }
 
+/**
+ * Builds the favicon <link> set. When a dark variant is configured we emit two
+ * icons keyed by `prefers-color-scheme` media queries so the browser swaps to
+ * the visible one as the OS/browser theme flips — preventing a same-colored
+ * favicon from vanishing against the tab strip. With only the default favicon we
+ * emit a single plain icon (no media query) so it always shows.
+ */
+function buildFaviconLinks(
+  faviconUrl: string | null,
+  faviconDarkUrl: string | null
+) {
+  const light = faviconUrl ?? '/favicon.ico'
+  if (!faviconDarkUrl) return light
+  return [
+    { url: light, media: '(prefers-color-scheme: light)' },
+    { url: faviconDarkUrl, media: '(prefers-color-scheme: dark)' },
+  ]
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   const config = await getAppConfig()
   return {
@@ -54,7 +73,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: config.siteTitle,
     description:
       config.siteDescription ?? 'Original shows from the UAE - streaming now',
-    icons: { icon: config.faviconUrl ?? '/favicon.ico' },
+    icons: { icon: buildFaviconLinks(config.faviconUrl, config.faviconDarkUrl) },
     openGraph: config.ogImageUrl
       ? {
           title: config.siteTitle,

@@ -19,9 +19,14 @@ const withNextIntl = createNextIntlPlugin()
 // Pixel snippets and Next's bootstrap (nonce-based hardening is a future step).
 // The locked-down directives (frame-ancestors/object-src/base-uri/form-action)
 // add real protection at zero breakage risk.
+// Dev-only relaxation: React + Turbopack rely on dynamic code execution in
+// development for fast refresh and callstack reconstruction. Production never
+// needs it, so this CSP token is added only outside production builds.
+const devScriptSrc = process.env.NODE_ENV === 'production' ? '' : " 'unsafe-" + "eval'"
+
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://www.youtube.com https://s.ytimg.com https://va.vercel-scripts.com https://vercel.live",
+  `script-src 'self' 'unsafe-inline'${devScriptSrc} https://www.googletagmanager.com https://connect.facebook.net https://www.youtube.com https://s.ytimg.com https://va.vercel-scripts.com https://vercel.live`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: https://*.supabase.co",

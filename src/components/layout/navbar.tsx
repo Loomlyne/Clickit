@@ -205,7 +205,6 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
           <Link
             href={pathname || '/watch'}
             locale="en"
-            prefetch
             aria-label={t('switchToEnglish')}
             className={cn(
               'rounded-full px-2.5 py-1 text-[11px] leading-none font-semibold tracking-[0.08em] transition-colors duration-150',
@@ -220,7 +219,6 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
           <Link
             href={pathname || '/watch'}
             locale="ar"
-            prefetch
             aria-label={t('switchToArabic')}
             className={cn(
               'rounded-full px-2.5 py-1 text-[11px] leading-none font-semibold tracking-[0.08em] transition-colors duration-150',
@@ -241,7 +239,6 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
           <Link
             href={pathname || '/watch'}
             locale="en"
-            prefetch
             aria-label={t('switchToEnglish')}
             className={cn(
               'rounded-full px-2 py-1 text-[10px] leading-none font-semibold tracking-[0.08em] transition-colors duration-150',
@@ -256,7 +253,6 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
           <Link
             href={pathname || '/watch'}
             locale="ar"
-            prefetch
             aria-label={t('switchToArabic')}
             className={cn(
               'rounded-full px-2 py-1 text-[10px] leading-none font-semibold tracking-[0.08em] transition-colors duration-150',

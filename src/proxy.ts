@@ -25,7 +25,39 @@ const COMING_SOON_ALLOWLIST = [
   '/support',
 ]
 
+/**
+ * Paths (after locale strip) reachable WITHOUT being signed in. Every other
+ * route bounces a signed-out visitor to /auth.
+ *
+ * Kept SEPARATE from COMING_SOON_ALLOWLIST on purpose: coming-soon allows
+ * /admin so the admin can log in and toggle the flag, but the auth gate must
+ * NOT — /admin requires an authenticated (and admin) user.
+ */
+const PUBLIC_ALLOWLIST = [
+  '/', // locale root = portfolio landing
+  '/portfolio',
+  '/auth',
+  '/coming-soon',
+  '/support',
+  '/about',
+  '/privacy',
+  '/terms',
+]
+
 const handleI18nRouting = createMiddleware(routing)
+
+/**
+ * Build a redirect to `url` that carries the merged Supabase session cookies
+ * from `fromResponse`. Without copying the cookies, the redirect drops the
+ * refreshed sb-…-auth-token and silently logs the user out.
+ */
+function redirectWithCookies(url: URL, fromResponse: NextResponse): NextResponse {
+  const redirect = NextResponse.redirect(url)
+  fromResponse.cookies.getAll().forEach((cookie) => {
+    redirect.cookies.set(cookie.name, cookie.value, cookie)
+  })
+  return redirect
+}
 
 /**
  * Strip a known locale prefix from a pathname.
@@ -72,7 +104,7 @@ export async function proxy(request: NextRequest) {
   const intlResponse = handleI18nRouting(request)
 
   // Step 2: Refresh Supabase session cookies on a separate response.
-  const { response: supabaseResponse, checkIsAdmin } = await updateSession(request)
+  const { response: supabaseResponse, userId, checkIsAdmin } = await updateSession(request)
 
   // Step 3: Merge Supabase cookies onto the i18n response. This is the fix
   // for Pitfall #1 (RTE-03): without this merge, the redirect from / → /en/
@@ -119,11 +151,37 @@ export async function proxy(request: NextRequest) {
         url.search = ''
         // Copy the merged cookies onto the coming-soon redirect — keeps the
         // admin's session refresh alive even when they get gated.
-        const redirect = NextResponse.redirect(url)
-        intlResponse.cookies.getAll().forEach((cookie) => {
-          redirect.cookies.set(cookie.name, cookie.value, cookie)
-        })
-        return redirect
+        return redirectWithCookies(url, intlResponse)
+      }
+    }
+  }
+
+  // Step 5: Auth gate. Runs AFTER the coming-soon gate so coming-soon wins
+  // first. Any route not on the public allowlist requires a signed-in user;
+  // /admin/* additionally requires the admin.
+  const isPublic = PUBLIC_ALLOWLIST.some(
+    (p) => pathWithoutLocale === p || pathWithoutLocale.startsWith(`${p}/`)
+  )
+  const isAdminRoute =
+    pathWithoutLocale === '/admin' || pathWithoutLocale.startsWith('/admin/')
+
+  if (!isPublic) {
+    if (!userId) {
+      // Signed out → bounce to /auth, remembering the intended destination.
+      const url = request.nextUrl.clone()
+      url.pathname = `/${locale}/auth`
+      url.search = `?next=${pathWithoutLocale}`
+      return redirectWithCookies(url, intlResponse)
+    }
+    if (isAdminRoute) {
+      // Signed in but not the admin → bounce to /watch. checkIsAdmin() (one DB
+      // query) runs only for /admin/* requests, never on normal page loads.
+      const isAdmin = await checkIsAdmin()
+      if (!isAdmin) {
+        const url = request.nextUrl.clone()
+        url.pathname = `/${locale}/watch`
+        url.search = ''
+        return redirectWithCookies(url, intlResponse)
       }
     }
   }

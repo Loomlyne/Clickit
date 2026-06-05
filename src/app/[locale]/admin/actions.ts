@@ -2235,6 +2235,15 @@ function sanitizeSvgUpload(svg: string): string {
     .replace(/(href|xlink:href)\s*=\s*["']\s*javascript:[^"']*["']/gi, '')
 }
 
+// Maps each upload kind to the app_config column it writes.
+const SITE_IMAGE_COLUMN = {
+  og: 'og_image_url',
+  favicon: 'favicon_url',
+  'favicon-dark': 'favicon_dark_url',
+} as const
+
+type SiteImageKind = keyof typeof SITE_IMAGE_COLUMN
+
 // Upload OG image or favicon to site-assets bucket.
 // Returns the public URL and writes it to the matching app_config column.
 export async function uploadSiteImage(
@@ -2245,9 +2254,9 @@ export async function uploadSiteImage(
     const admin = createAdminClient()
 
     const file = formData.get('file') as File | null
-    const kind = formData.get('kind') as 'og' | 'favicon' | null
+    const kind = formData.get('kind') as SiteImageKind | null
     if (!file) return { success: false, error: 'No file provided' }
-    if (!kind || !['og', 'favicon'].includes(kind)) {
+    if (!kind || !(kind in SITE_IMAGE_COLUMN)) {
       return { success: false, error: 'Invalid kind' }
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -2267,8 +2276,12 @@ export async function uploadSiteImage(
     if (!ext)
       return { success: false, error: `Unsupported image type: ${mime}` }
 
-    const path =
-      kind === 'og' ? `settings/og.${ext}` : `settings/favicon.${ext}`
+    const pathMap: Record<typeof kind & string, string> = {
+      og: `settings/og.${ext}`,
+      favicon: `settings/favicon.${ext}`,
+      'favicon-dark': `settings/favicon-dark.${ext}`,
+    }
+    const path = pathMap[kind]
 
     let body: Blob = file
     if (mime === 'image/svg+xml') {
@@ -2291,7 +2304,7 @@ export async function uploadSiteImage(
     // Cache-bust the URL so browsers always pick up the latest upload
     const bustedUrl = `${urlData.publicUrl}?v=${Date.now()}`
 
-    const column = kind === 'og' ? 'og_image_url' : 'favicon_url'
+    const column = SITE_IMAGE_COLUMN[kind]
     const { error: dbError } = await admin
       .from('app_config')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2312,12 +2325,12 @@ export async function uploadSiteImage(
 }
 
 export async function removeSiteImage(
-  kind: 'og' | 'favicon'
+  kind: SiteImageKind
 ): Promise<ActionResult> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
-    const column = kind === 'og' ? 'og_image_url' : 'favicon_url'
+    const column = SITE_IMAGE_COLUMN[kind]
     const { error } = await admin
       .from('app_config')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

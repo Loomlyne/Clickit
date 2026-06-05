@@ -76,6 +76,8 @@ export type AppConfig = {
   siteTagline: string
   ogImageUrl: string | null
   faviconUrl: string | null
+  /** Dark-mode favicon variant. Served via prefers-color-scheme: dark; falls back to faviconUrl. */
+  faviconDarkUrl: string | null
   // Hero video (existing)
   heroVideoUrl: string | null
   heroVideoType: 'mp4' | 'youtube' | null
@@ -184,7 +186,7 @@ export const getAppConfig = cache(unstable_cache(
     const { data } = await supabase
       .from('app_config')
       .select(
-        'site_title, site_description, site_tagline, og_image_url, favicon_url, hero_video_url, hero_video_type, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, hero_description' as string
+        'site_title, site_description, site_tagline, og_image_url, favicon_url, favicon_dark_url, hero_video_url, hero_video_type, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, hero_description' as string
       )
       .eq('id', 1)
       .single<RawConfigRow>()
@@ -206,6 +208,7 @@ type RawConfigRow = {
   site_tagline: string | null
   og_image_url: string | null
   favicon_url: string | null
+  favicon_dark_url: string | null
   hero_video_url: string | null
   hero_video_type: string | null
   footer_content: unknown
@@ -226,6 +229,7 @@ function mapConfig(row: RawConfigRow): AppConfig {
     siteTagline: row?.site_tagline ?? 'Every Story Clicks.',
     ogImageUrl: row?.og_image_url ?? null,
     faviconUrl: row?.favicon_url ?? null,
+    faviconDarkUrl: row?.favicon_dark_url ?? null,
     heroVideoUrl: row?.hero_video_url ?? null,
     heroVideoType: (row?.hero_video_type as 'mp4' | 'youtube' | null) ?? null,
     footer: mergeFooter(row?.footer_content),

@@ -20,13 +20,17 @@ export function ImageUploadField({
   maxMb = 5,
   hint,
   previewClassName = 'size-32',
+  previewBgClassName = 'bg-black/40',
 }: {
-  kind: 'og' | 'favicon'
+  kind: 'og' | 'favicon' | 'favicon-dark'
   currentUrl: string | null
   accept: string
   maxMb?: number
   hint?: string
   previewClassName?: string
+  /** Background of the preview tile. Defaults to a dark surface; pass a light
+   *  surface when previewing an icon meant for light browser themes. */
+  previewBgClassName?: string
 }) {
   const [url, setUrl] = useState<string | null>(currentUrl)
   const [busy, setBusy] = useState(false)
@@ -75,7 +79,7 @@ export function ImageUploadField({
       {url && (
         <div className="flex items-start gap-4">
           <div
-            className={`relative overflow-hidden rounded-lg border border-white/8 bg-black/40 ${previewClassName}`}
+            className={`relative overflow-hidden rounded-lg border border-white/8 ${previewBgClassName} ${previewClassName}`}
           >
             {/* next/image with unoptimized for cache-busted dynamic URLs */}
             <Image
