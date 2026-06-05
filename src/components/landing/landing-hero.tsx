@@ -34,7 +34,7 @@ export async function LandingHero() {
   const ytId = adminYtId ?? (heroVideoType === 'mp4' ? null : FALLBACK_YT_ID)
 
   return (
-    <section className="relative -mt-16 min-h-dvh overflow-hidden">
+    <section className="relative -mt-[calc(var(--nav-h)_+_4rem)] min-h-dvh overflow-hidden">
       {heroVideoType === 'mp4' && heroVideoUrl && (
         <video
           src={heroVideoUrl}
