@@ -43,6 +43,12 @@ jobs:
           version: 2.102.0
 
       - name: Apply pending migrations
-        run: supabase db push --db-url "$SUPABASE_DB_URL"
+        # --include-all: apply every pending local migration even when its version
+        # sorts before the latest one already on remote. Without it, db push aborts
+        # (exit 1) the moment a migration with an out-of-order timestamp appears —
+        # which happens whenever migrations are authored in parallel branches/sessions
+        # and merged with interleaved timestamps. Every committed migration here is
+        # meant for prod, so applying all pending is the intended behaviour.
+        run: supabase db push --include-all --db-url "$SUPABASE_DB_URL"
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
