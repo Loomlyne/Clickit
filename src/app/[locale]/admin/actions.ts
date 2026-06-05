@@ -2038,6 +2038,54 @@ export async function updateFooterContent(
   }
 }
 
+const portfolioContentSchema = z.object({
+  hero_description: z.string().trim().max(500).nullable(),
+  hero_description_ar: z.string().trim().max(500).nullable(),
+  portfolio_heading: z.string().trim().max(200).nullable(),
+  portfolio_heading_ar: z.string().trim().max(200).nullable(),
+  footer_tagline: z.string().trim().max(300),
+})
+
+export async function updatePortfolioContent(
+  input: z.input<typeof portfolioContentSchema>
+): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const parsed = portfolioContentSchema.parse(input)
+    const current = await getAppConfig()
+    const admin = createAdminClient()
+
+    const { error } = await admin
+      .from('app_config')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({
+        hero_description: parsed.hero_description,
+        hero_description_ar: parsed.hero_description_ar,
+        portfolio_heading: parsed.portfolio_heading,
+        portfolio_heading_ar: parsed.portfolio_heading_ar,
+        footer_content: { ...current.footer, tagline: parsed.footer_tagline },
+      } as any)
+      .eq('id', 1)
+
+    if (error) return { success: false, error: error.message }
+    await auditConfigUpdate(user.id, [
+      'hero_description',
+      'hero_description_ar',
+      'portfolio_heading',
+      'portfolio_heading_ar',
+      'footer_content.tagline',
+    ])
+    bumpSiteConfigCache()
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to save',
+    }
+  }
+}
+
 export async function updateContactRecipient(
   input: { contactEmail: string }
 ): Promise<ActionResult> {

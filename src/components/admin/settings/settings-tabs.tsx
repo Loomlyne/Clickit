@@ -9,6 +9,7 @@ import { BrandingTab } from './branding-tab'
 import { IntegrationsTab } from './integrations-tab'
 import { AdvancedTab } from './advanced-tab'
 import { LegalTab } from './legal-tab'
+import { PortfolioTab } from './portfolio-tab'
 
 export function SettingsTabs({
   config,
@@ -24,13 +25,18 @@ export function SettingsTabs({
   const t = useTranslations('admin.settings')
   return (
     <Tabs defaultValue="general" className="gap-6">
-      <TabsList className="w-full md:w-fit">
-        <TabsTrigger value="general">{t('generalTab')}</TabsTrigger>
-        <TabsTrigger value="branding">{t('brandingTab')}</TabsTrigger>
-        <TabsTrigger value="integrations">{t('integrationsTab')}</TabsTrigger>
-        <TabsTrigger value="advanced">{t('advancedTab')}</TabsTrigger>
-        <TabsTrigger value="legal">Legal</TabsTrigger>
-      </TabsList>
+      {/* Scrollable pill bar — on narrow viewports the tabs overflow and scroll
+          horizontally rather than squishing or wrapping. */}
+      <div className="overflow-x-auto">
+        <TabsList className="min-w-max">
+          <TabsTrigger value="general">{t('generalTab')}</TabsTrigger>
+          <TabsTrigger value="branding">{t('brandingTab')}</TabsTrigger>
+          <TabsTrigger value="integrations">{t('integrationsTab')}</TabsTrigger>
+          <TabsTrigger value="advanced">{t('advancedTab')}</TabsTrigger>
+          <TabsTrigger value="legal">Legal</TabsTrigger>
+          <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+        </TabsList>
+      </div>
 
       <TabsContent value="general" className="space-y-6">
         <GeneralTab config={config} />
@@ -50,6 +56,10 @@ export function SettingsTabs({
 
       <TabsContent value="legal" className="space-y-6">
         <LegalTab legalPages={legalPages} faqs={faqs} />
+      </TabsContent>
+
+      <TabsContent value="portfolio" className="space-y-6">
+        <PortfolioTab config={config} />
       </TabsContent>
     </Tabs>
   )

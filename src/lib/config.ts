@@ -98,6 +98,10 @@ export type AppConfig = {
   heroDescription: string | null
   /** Arabic landing hero paragraph. Shown when locale is ar; null falls back to i18n. */
   heroDescriptionAr: string | null
+  /** Heading above the shows grid on the landing/portfolio page. Null falls back to i18n. */
+  portfolioHeading: string | null
+  /** Arabic heading above the shows grid. Shown when locale is ar; null falls back to i18n. */
+  portfolioHeadingAr: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -188,7 +192,7 @@ export const getAppConfig = cache(unstable_cache(
     const { data } = await supabase
       .from('app_config')
       .select(
-        'site_title, site_description, site_tagline, og_image_url, favicon_url, favicon_dark_url, hero_video_url, hero_video_type, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, hero_description, hero_description_ar' as string
+        'site_title, site_description, site_tagline, og_image_url, favicon_url, favicon_dark_url, hero_video_url, hero_video_type, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, hero_description, hero_description_ar, portfolio_heading, portfolio_heading_ar' as string
       )
       .eq('id', 1)
       .single<RawConfigRow>()
@@ -223,6 +227,8 @@ type RawConfigRow = {
   live_stream_url: string | null
   hero_description: string | null
   hero_description_ar: string | null
+  portfolio_heading: string | null
+  portfolio_heading_ar: string | null
 } | null
 
 function mapConfig(row: RawConfigRow): AppConfig {
@@ -245,6 +251,8 @@ function mapConfig(row: RawConfigRow): AppConfig {
     liveStreamUrl: row?.live_stream_url ?? null,
     heroDescription: row?.hero_description ?? null,
     heroDescriptionAr: row?.hero_description_ar ?? null,
+    portfolioHeading: row?.portfolio_heading ?? null,
+    portfolioHeadingAr: row?.portfolio_heading_ar ?? null,
   }
 }
 
