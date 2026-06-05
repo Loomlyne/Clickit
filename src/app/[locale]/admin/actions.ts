@@ -2887,6 +2887,7 @@ export async function upsertLegalPage(
         .single()
       if (error) return { success: false, error: error.message }
       revalidatePath('/', 'layout')
+      updateTag('legal-pages')
       return { success: true, data: data as LegalPage }
     } else {
       const { data, error } = await supabase
@@ -2896,6 +2897,7 @@ export async function upsertLegalPage(
         .single()
       if (error) return { success: false, error: error.message }
       revalidatePath('/', 'layout')
+      updateTag('legal-pages')
       return { success: true, data: data as LegalPage }
     }
   } catch (err) {
@@ -2918,6 +2920,7 @@ export async function deleteLegalPage(id: string): Promise<ActionResult> {
       .eq('id', id)
     if (error) return { success: false, error: error.message }
     revalidatePath('/', 'layout')
+    updateTag('legal-pages')
     return { success: true }
   } catch (err) {
     console.error('[admin/legal] delete failed', err)
@@ -2975,6 +2978,7 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
         .single()
       if (error) return { success: false, error: error.message }
       revalidatePath('/', 'layout')
+      updateTag('faqs')
       return { success: true, data: data as Faq }
     } else {
       const { data, error } = await supabase
@@ -2984,6 +2988,7 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
         .single()
       if (error) return { success: false, error: error.message }
       revalidatePath('/', 'layout')
+      updateTag('faqs')
       return { success: true, data: data as Faq }
     }
   } catch (err) {
@@ -3002,6 +3007,7 @@ export async function deleteFaq(id: string): Promise<ActionResult> {
     const { error } = await supabase.from('faqs').delete().eq('id', id)
     if (error) return { success: false, error: error.message }
     revalidatePath('/', 'layout')
+    updateTag('faqs')
     return { success: true }
   } catch (err) {
     console.error('[admin/faq] delete failed', err)

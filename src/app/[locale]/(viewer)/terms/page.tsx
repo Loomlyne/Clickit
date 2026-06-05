@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
+import { getLegalPageBySlug } from '@/lib/queries'
+import { LegalPageContent } from '@/components/legal/legal-page-content'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('legal')
@@ -11,7 +13,25 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function TermsPage() {
-  const t = await getTranslations('legal')
+  const [page, t] = await Promise.all([
+    getLegalPageBySlug('terms-of-use'),
+    getTranslations('legal'),
+  ])
+
+  // If admin has entered content for this slug, render it directly.
+  if (page?.content?.trim()) {
+    return (
+      <main className="mx-auto max-w-[860px] px-4 py-24 sm:px-6 md:px-10">
+        <div className="mono mb-4 text-[var(--text-mute)]">{t('eyebrow')}</div>
+        <h1 className="mb-12 font-[family-name:var(--font-display)] text-[clamp(36px,5vw,64px)] leading-none font-normal tracking-[-0.02em]">
+          {page.title}
+        </h1>
+        <LegalPageContent content={page.content} updatedAt={page.updated_at} />
+      </main>
+    )
+  }
+
+  // Fall back to the built-in i18n terms page.
   return (
     <main className="mx-auto max-w-[860px] px-4 py-24 sm:px-6 md:px-10">
       <div className="mono mb-4 text-[var(--text-mute)]">{t('eyebrow')}</div>

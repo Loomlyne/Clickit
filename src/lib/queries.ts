@@ -1086,3 +1086,53 @@ export const getShortsForBrowse = unstable_cache(
   ['shorts-browse'],
   { revalidate: 900, tags: ['shorts'] } // 15 min
 )
+
+// ---------------------------------------------------------------------------
+// Public FAQ + Legal page queries — read from admin-managed DB tables.
+// Both tables have "Public can read" RLS policies so createPublicClient() is
+// correct (no cookie dependency).
+// ---------------------------------------------------------------------------
+
+export type PublicFaq = { id: string; question: string; answer: string; sort_order: number }
+
+export const getFaqsPublic = unstable_cache(
+  async (): Promise<PublicFaq[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('faqs')
+      .select('id, question, answer, sort_order')
+      .order('sort_order', { ascending: true })
+    return (data ?? []) as PublicFaq[]
+  },
+  ['faqs-public'],
+  { revalidate: 300, tags: ['faqs'] } // 5 min — FAQ edits show up promptly
+)
+
+export type PublicLegalPage = { id: string; slug: string; title: string; content: string; updated_at: string }
+
+export const getLegalPageBySlug = unstable_cache(
+  async (slug: string): Promise<PublicLegalPage | null> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('legal_pages')
+      .select('id, slug, title, content, updated_at')
+      .eq('slug', slug)
+      .single()
+    return (data ?? null) as PublicLegalPage | null
+  },
+  ['legal-page-by-slug'],
+  { revalidate: 900, tags: ['legal-pages'] } // 15 min
+)
+
+export const getAllLegalPages = unstable_cache(
+  async (): Promise<PublicLegalPage[]> => {
+    const supabase = createPublicClient()
+    const { data } = await supabase
+      .from('legal_pages')
+      .select('id, slug, title, content, updated_at')
+      .order('sort_order', { ascending: true })
+    return (data ?? []) as PublicLegalPage[]
+  },
+  ['legal-pages-all'],
+  { revalidate: 900, tags: ['legal-pages'] } // 15 min
+)
