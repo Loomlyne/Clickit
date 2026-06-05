@@ -1596,13 +1596,7 @@ export async function saveHeroVideoUpload(
 
     if (error) return { success: false, error: error.message }
 
-    // revalidateTag busts the legacy unstable_cache('site-config') entry that
-    // getAppConfig reads; updateTag alone (Cache Components API) does not reach
-    // it, which let the landing serve a stale config (the fallback clip) for up
-    // to 15 min. Tag-based invalidation is locale-independent, so /en and /ar
-    // both refresh on the next request — no per-path revalidate needed.
     updateTag('site-config')
-    revalidateTag('site-config')
     revalidatePath('/')
     return { success: true, data: publicUrl }
   } catch (err) {
@@ -1656,6 +1650,14 @@ export async function setHeroVideoUrl(
 
     updateTag('site-config')
     revalidatePath('/')
+
+    // Switching to a YouTube hero abandons any previously uploaded MP4 (which
+    // always lives at the fixed hero/video.mp4 path). Delete it to reclaim
+    // storage — AFTER the config flip + revalidation above, so the live hero
+    // has already switched to YouTube and never references a file we removed.
+    // Ignore errors (e.g. there was no MP4 to begin with).
+    await admin.storage.from('site-assets').remove(['hero/video.mp4'])
+
     return { success: true }
   } catch (err) {
     console.error('[setHeroVideoUrl] failed', err)
@@ -1671,9 +1673,6 @@ export async function removeHeroVideo(): Promise<ActionResult> {
     await assertAdmin()
     const admin = createAdminClient()
 
-    // Try to remove MP4 from storage (ignore errors if not found)
-    await admin.storage.from('site-assets').remove(['hero/video.mp4'])
-
     const { error } = await admin
       .from('app_config')
       .update({ hero_video_url: null, hero_video_type: null })
@@ -1683,6 +1682,12 @@ export async function removeHeroVideo(): Promise<ActionResult> {
 
     updateTag('site-config')
     revalidatePath('/')
+
+    // Remove the MP4 from storage only AFTER the config is cleared +
+    // revalidated, so the live hero never points at a deleted file. Ignore
+    // not-found errors (e.g. the hero was a YouTube URL with no MP4).
+    await admin.storage.from('site-assets').remove(['hero/video.mp4'])
+
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
