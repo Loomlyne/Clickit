@@ -1948,6 +1948,21 @@ function bumpSiteConfigCache() {
   revalidatePath('/', 'layout')
 }
 
+// Busts the page cache for every page that renders FAQs so edits apply
+// on the very next request after save.
+function bumpFaqCache() {
+  revalidatePath('/', 'layout')
+}
+
+// Busts the page cache for every public legal page so edits apply immediately.
+// Pass the saved slug to also revalidate /legal/[slug] for that page.
+function bumpLegalCache(slug?: string) {
+  revalidatePath('/privacy', 'page')
+  revalidatePath('/terms', 'page')
+  if (slug) revalidatePath(`/legal/${slug}`, 'page')
+  revalidatePath('/', 'layout')
+}
+
 /**
  * Log a settings-tab save to the audit log. Every updateX() below calls this
  * with the column(s) it touched so the audit dashboard can show "admin
@@ -2886,8 +2901,7 @@ export async function upsertLegalPage(
         .select()
         .single()
       if (error) return { success: false, error: error.message }
-      revalidatePath('/', 'layout')
-      updateTag('legal-pages')
+      bumpLegalCache(parsed.data.slug)
       return { success: true, data: data as LegalPage }
     } else {
       const { data, error } = await supabase
@@ -2896,8 +2910,7 @@ export async function upsertLegalPage(
         .select()
         .single()
       if (error) return { success: false, error: error.message }
-      revalidatePath('/', 'layout')
-      updateTag('legal-pages')
+      bumpLegalCache(parsed.data.slug)
       return { success: true, data: data as LegalPage }
     }
   } catch (err) {
@@ -2919,8 +2932,7 @@ export async function deleteLegalPage(id: string): Promise<ActionResult> {
       .delete()
       .eq('id', id)
     if (error) return { success: false, error: error.message }
-    revalidatePath('/', 'layout')
-    updateTag('legal-pages')
+    bumpLegalCache()
     return { success: true }
   } catch (err) {
     console.error('[admin/legal] delete failed', err)
@@ -2977,8 +2989,7 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
         .select()
         .single()
       if (error) return { success: false, error: error.message }
-      revalidatePath('/', 'layout')
-      updateTag('faqs')
+      bumpFaqCache()
       return { success: true, data: data as Faq }
     } else {
       const { data, error } = await supabase
@@ -2987,8 +2998,7 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
         .select()
         .single()
       if (error) return { success: false, error: error.message }
-      revalidatePath('/', 'layout')
-      updateTag('faqs')
+      bumpFaqCache()
       return { success: true, data: data as Faq }
     }
   } catch (err) {
@@ -3006,8 +3016,7 @@ export async function deleteFaq(id: string): Promise<ActionResult> {
     const supabase = await createClient()
     const { error } = await supabase.from('faqs').delete().eq('id', id)
     if (error) return { success: false, error: error.message }
-    revalidatePath('/', 'layout')
-    updateTag('faqs')
+    bumpFaqCache()
     return { success: true }
   } catch (err) {
     console.error('[admin/faq] delete failed', err)
