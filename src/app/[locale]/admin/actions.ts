@@ -1596,7 +1596,13 @@ export async function saveHeroVideoUpload(
 
     if (error) return { success: false, error: error.message }
 
+    // revalidateTag busts the legacy unstable_cache('site-config') entry that
+    // getAppConfig reads; updateTag alone (Cache Components API) does not reach
+    // it, which let the landing serve a stale config (the fallback clip) for up
+    // to 15 min. Tag-based invalidation is locale-independent, so /en and /ar
+    // both refresh on the next request — no per-path revalidate needed.
     updateTag('site-config')
+    revalidateTag('site-config')
     revalidatePath('/')
     return { success: true, data: publicUrl }
   } catch (err) {
