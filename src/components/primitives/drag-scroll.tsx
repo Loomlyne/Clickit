@@ -5,21 +5,13 @@ import { useRef } from 'react'
 
 import { cn } from '@/lib/utils'
 
-type DragScrollProps = ComponentPropsWithoutRef<'div'> & {
-  /**
-   * `horizontal` — touch-pan-x (default). Use for rails that scroll horizontally at all breakpoints.
-   * `responsive` — touch-auto on small screens, sm:touch-pan-x above. Use when the track is
-   * vertical on mobile (e.g. ContentRail) so vertical page scroll is not blocked.
-   */
-  touchMode?: 'horizontal' | 'responsive'
-}
+type DragScrollProps = ComponentPropsWithoutRef<'div'>
 
 const DRAG_THRESHOLD = 6
 
 export function DragScroll({
   className,
   children,
-  touchMode = 'horizontal',
   ...props
 }: DragScrollProps) {
   const trackRef = useRef<HTMLDivElement>(null)
@@ -83,11 +75,14 @@ export function DragScroll({
   return (
     <div
       ref={trackRef}
+      // touch-auto: let the browser resolve gesture axis — horizontal swipe scrolls the
+      // rail (native overflow-x), vertical swipe scrolls the page. Never block vertical.
+      // data-lenis-prevent: keep page-level Lenis from hijacking wheel/touch over the
+      // rail, which otherwise stutters vertical scroll and swallows native rail scroll.
+      data-lenis-prevent
       className={cn(
         'cursor-grab active:cursor-grabbing data-[dragging=true]:select-none',
-        touchMode === 'responsive'
-          ? 'touch-auto sm:touch-pan-x sm:overscroll-x-contain'
-          : 'touch-pan-x overscroll-x-contain',
+        'touch-auto overscroll-x-contain',
         className
       )}
       onClickCapture={(event) => {

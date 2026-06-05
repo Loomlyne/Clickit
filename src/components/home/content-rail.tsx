@@ -51,10 +51,7 @@ export function ContentRail({
       </div>
 
       {/* Native scroll track — vertical grid on mobile, horizontal rail on sm+ */}
-      <DragScroll
-        touchMode="responsive"
-        className="content-rail-track sm:scroll-snap-x-mandatory sm:scrollbar-hide flex flex-col gap-[var(--rail-gap)] py-1.5 pb-5 sm:flex-row sm:overflow-x-auto"
-      >
+      <DragScroll className="content-rail-track sm:scroll-snap-x-mandatory sm:scrollbar-hide flex flex-col gap-[var(--rail-gap)] py-1.5 pb-5 sm:flex-row sm:overflow-x-auto">
         {shows.map((show) => (
           <ShowCard key={show.id} show={show} />
         ))}
