@@ -1270,7 +1270,17 @@
       "slugConflictWithShow": "المعرّف مستخدم في برنامج نشط: \"{title}\"",
       "newNumberLabel": "رقم جديد:",
       "fixing": "جارٍ الإصلاح…",
-      "fixAndRestore": "إصلاح واستعادة"
+      "fixAndRestore": "إصلاح واستعادة",
+      "episodesSectionTitle": "الحلقات المؤرشفة",
+      "episodesSectionDescription": "حلقات تمت أرشفتها بمفردها (لا يزال برنامجها نشطاً).",
+      "archivedEpisodesCount": "{count, plural, one {# حلقة مؤرشفة} other {# حلقات مؤرشفة}}",
+      "episodeColumn": "الحلقة",
+      "episodeRestoredToast": "تمت استعادة الحلقة",
+      "episodeDeletedToast": "تم حذف الحلقة نهائياً",
+      "restoreEpisodeTooltip": "استعادة الحلقة إلى برنامجها",
+      "deleteEpisodeTitle": "حذف الحلقة نهائياً",
+      "deleteEpisodeDescription": "سيؤدي هذا إلى حذف \"{title}\" نهائياً. لا يمكن التراجع عن هذا الإجراء.",
+      "thisEpisode": "هذه الحلقة"
     },
     "audit": {
       "pageTitle": "سجل التدقيق",

@@ -1270,7 +1270,17 @@
       "slugConflictWithShow": "Slug already used by active show: \"{title}\"",
       "newNumberLabel": "New #:",
       "fixing": "Fixing...",
-      "fixAndRestore": "Fix & Restore"
+      "fixAndRestore": "Fix & Restore",
+      "episodesSectionTitle": "Archived episodes",
+      "episodesSectionDescription": "Episodes archived on their own (their show is still active).",
+      "archivedEpisodesCount": "{count, plural, one {# archived episode} other {# archived episodes}}",
+      "episodeColumn": "Episode",
+      "episodeRestoredToast": "Episode restored",
+      "episodeDeletedToast": "Episode permanently deleted",
+      "restoreEpisodeTooltip": "Restore episode to its show",
+      "deleteEpisodeTitle": "Permanently Delete Episode",
+      "deleteEpisodeDescription": "This will permanently delete \"{title}\". This action cannot be undone.",
+      "thisEpisode": "this episode"
     },
     "audit": {
       "pageTitle": "Audit Log",

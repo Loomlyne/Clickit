@@ -1399,6 +1399,113 @@ export async function archiveEpisode(
   }
 }
 
+export async function restoreEpisode(id: string): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const admin = createAdminClient()
+
+    const { data: ep, error: fetchError } = await admin
+      .from('episodes')
+      .select('id, show_id, title')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !ep) return { success: false, error: 'Episode not found' }
+
+    // Restoring just flips archived. The unique (season_id, episode_number)
+    // constraint covers archived rows too, so the episode's number is already
+    // free table-wide — un-archiving can never collide.
+    const { error } = await admin
+      .from('episodes')
+      .update({ archived: false })
+      .eq('id', id)
+
+    if (error) return { success: false, error: error.message }
+
+    // Recompute the show's episode_count (non-archived only).
+    const { count } = await admin
+      .from('episodes')
+      .select('*', { count: 'exact', head: true })
+      .eq('show_id', ep.show_id)
+      .eq('archived', false)
+
+    await admin
+      .from('shows')
+      .update({ episode_count: count ?? 0 })
+      .eq('id', ep.show_id)
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'restore',
+      entity: 'episode',
+      entityId: id,
+      diff: { id, title: ep.title },
+    })
+
+    revalidatePath('/admin/archive')
+    revalidatePath(`/admin/shows/${ep.show_id}`)
+    bumpCatalogCache()
+    updateTag('episodes')
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to restore episode',
+    }
+  }
+}
+
+export async function deleteEpisodePermanently(
+  id: string
+): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const admin = createAdminClient()
+
+    const { data: ep } = await admin
+      .from('episodes')
+      .select('title, show_id')
+      .eq('id', id)
+      .single()
+
+    // CASCADE handles watch progress / likes tied to the episode.
+    const { error } = await admin.from('episodes').delete().eq('id', id)
+    if (error) return { success: false, error: error.message }
+
+    if (ep?.show_id) {
+      const { count } = await admin
+        .from('episodes')
+        .select('*', { count: 'exact', head: true })
+        .eq('show_id', ep.show_id)
+        .eq('archived', false)
+      await admin
+        .from('shows')
+        .update({ episode_count: count ?? 0 })
+        .eq('id', ep.show_id)
+    }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'delete',
+      entity: 'episode',
+      entityId: id,
+      diff: { id, title: ep?.title },
+    })
+
+    revalidatePath('/admin/archive')
+    bumpCatalogCache()
+    updateTag('episodes')
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to delete episode',
+    }
+  }
+}
+
 export async function reorderEpisode(
   episodeId: string,
   direction: 'up' | 'down'
