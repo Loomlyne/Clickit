@@ -1,9 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["fra1"],
   "crons": [
     {
       "path": "/api/cron/cleanup-media",
       "schedule": "0 4 * * 1"
+    },
+    {
+      "path": "/api/cron/publish-scheduled",
+      "schedule": "0 1 * * *"
     }
   ]
 }
