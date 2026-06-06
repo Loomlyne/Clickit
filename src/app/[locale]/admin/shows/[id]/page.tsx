@@ -84,7 +84,12 @@ export default async function ShowDetailPage({
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <AdminBackLink href="/admin">{tDash('allShows')}</AdminBackLink>
+        <div className="min-w-0 space-y-1.5">
+          <AdminBackLink href="/admin">{tDash('allShows')}</AdminBackLink>
+          <h1 className="text-foreground truncate text-xl font-semibold tracking-tight sm:text-2xl">
+            {show.title}
+          </h1>
+        </div>
         <EditShowButton show={show} />
       </div>
 

@@ -116,7 +116,7 @@ export function SeasonTabs({
   return (
     <TooltipProvider delayDuration={300}>
       <Tabs defaultValue={defaultTab} className="space-y-4">
-        <TabsList className="h-auto flex-wrap justify-start rounded-full p-1.5">
+        <TabsList className="h-auto! flex-wrap justify-start rounded-full p-1.5">
           {seasons.map((season) => {
             const epCount = episodesBySeason[season.id]?.length ?? 0
             const title = getSeasonTitle(season, isArabic)
@@ -124,7 +124,7 @@ export function SeasonTabs({
               <TabsTrigger
                 key={season.id}
                 value={season.id}
-                className="min-h-10 gap-2 px-3"
+                className="h-8! gap-2 px-3"
               >
                 <span className="text-muted-foreground text-xs">
                   {t('seasonNumber', { number: season.season_number })}
