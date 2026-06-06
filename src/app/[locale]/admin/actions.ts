@@ -310,6 +310,9 @@ const episodeSchema = z.object({
   youtube_video_id: z.string().optional().nullable(),
   duration: z.number().int().positive().optional().nullable(),
   status: z.enum(['draft', 'coming-soon', 'published']),
+  // Scheduled publish time (UTC ISO). Only meaningful for coming-soon episodes;
+  // the form sends null otherwise.
+  publish_at: z.string().datetime({ offset: true }).optional().nullable(),
 })
 
 // ---------------------------------------------------------------------------
@@ -1858,6 +1861,7 @@ const liveStreamUrlSchema = z.object({
 
 const footerSchema = z.object({
   tagline: z.string().max(300),
+  taglineAr: z.string().max(300).default(''),
   stat: z.string().max(80),
   contactEmail: z
     .string()
@@ -2059,6 +2063,7 @@ const portfolioContentSchema = z.object({
   portfolio_heading: z.string().trim().max(200).nullable(),
   portfolio_heading_ar: z.string().trim().max(200).nullable(),
   footer_tagline: z.string().trim().max(300),
+  footer_tagline_ar: z.string().trim().max(300),
 })
 
 export async function updatePortfolioContent(
@@ -2070,16 +2075,21 @@ export async function updatePortfolioContent(
     const current = await getAppConfig()
     const admin = createAdminClient()
 
+    const updatePayload = {
+      hero_description: parsed.hero_description,
+      hero_description_ar: parsed.hero_description_ar,
+      portfolio_heading: parsed.portfolio_heading,
+      portfolio_heading_ar: parsed.portfolio_heading_ar,
+      footer_content: {
+        ...current.footer,
+        tagline: parsed.footer_tagline,
+        taglineAr: parsed.footer_tagline_ar,
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
     const { error } = await admin
       .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({
-        hero_description: parsed.hero_description,
-        hero_description_ar: parsed.hero_description_ar,
-        portfolio_heading: parsed.portfolio_heading,
-        portfolio_heading_ar: parsed.portfolio_heading_ar,
-        footer_content: { ...current.footer, tagline: parsed.footer_tagline },
-      } as any)
+      .update(updatePayload)
       .eq('id', 1)
 
     if (error) return { success: false, error: error.message }
@@ -2089,6 +2099,7 @@ export async function updatePortfolioContent(
       'portfolio_heading',
       'portfolio_heading_ar',
       'footer_content.tagline',
+      'footer_content.taglineAr',
     ])
     bumpSiteConfigCache()
     return { success: true }
@@ -2856,6 +2867,8 @@ export type LegalPage = {
   slug: string
   title: string
   content: string
+  title_ar: string | null
+  content_ar: string | null
   sort_order: number
   updated_at: string
 }
@@ -2869,6 +2882,8 @@ const legalPageSchema = z.object({
     .regex(/^[a-z0-9-]+$/, 'Lowercase letters, numbers, hyphens only'),
   title: z.string().min(1, 'Title is required').max(200),
   content: z.string(),
+  title_ar: z.string().max(200).optional().nullable(),
+  content_ar: z.string().optional().nullable(),
   sort_order: z.number().int().min(0).default(0),
 })
 
@@ -2876,7 +2891,7 @@ export async function getLegalPages(): Promise<LegalPage[]> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('legal_pages')
-    .select('id, slug, title, content, sort_order, updated_at')
+    .select('id, slug, title, content, title_ar, content_ar, sort_order, updated_at')
     .order('sort_order', { ascending: true })
   return (data ?? []) as LegalPage[]
 }
@@ -2952,6 +2967,8 @@ export type Faq = {
   id: string
   question: string
   answer: string
+  question_ar: string | null
+  answer_ar: string | null
   sort_order: number
 }
 
@@ -2959,6 +2976,8 @@ const faqSchema = z.object({
   id: z.string().uuid().optional(),
   question: z.string().min(1, 'Question is required').max(500),
   answer: z.string().min(1, 'Answer is required'),
+  question_ar: z.string().max(500).optional().nullable(),
+  answer_ar: z.string().optional().nullable(),
   sort_order: z.number().int().min(0).default(0),
 })
 
@@ -2966,7 +2985,7 @@ export async function getFaqs(): Promise<Faq[]> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('faqs')
-    .select('id, question, answer, sort_order')
+    .select('id, question, answer, question_ar, answer_ar, sort_order')
     .order('sort_order', { ascending: true })
   return (data ?? []) as Faq[]
 }

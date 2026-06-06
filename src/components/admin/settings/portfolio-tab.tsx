@@ -33,6 +33,7 @@ type Values = {
   portfolio_heading: string
   portfolio_heading_ar: string
   footer_tagline: string
+  footer_tagline_ar: string
 }
 
 export function PortfolioTab({ config }: { config: AppConfig }) {
@@ -42,6 +43,7 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
     portfolio_heading: config.portfolioHeading ?? '',
     portfolio_heading_ar: config.portfolioHeadingAr ?? '',
     footer_tagline: config.footer.tagline,
+    footer_tagline_ar: config.footer.taglineAr,
   })
   const [saving, setSaving] = useState(false)
 
@@ -51,6 +53,7 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
     portfolio_heading: config.portfolioHeading ?? '',
     portfolio_heading_ar: config.portfolioHeadingAr ?? '',
     footer_tagline: config.footer.tagline,
+    footer_tagline_ar: config.footer.taglineAr,
   }
 
   const dirty = JSON.stringify(values) !== JSON.stringify(initial)
@@ -68,6 +71,7 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
       portfolio_heading: values.portfolio_heading || null,
       portfolio_heading_ar: values.portfolio_heading_ar || null,
       footer_tagline: values.footer_tagline,
+      footer_tagline_ar: values.footer_tagline_ar,
     })
     setSaving(false)
     if (result.success) toast.success('Portfolio content saved')
@@ -168,19 +172,35 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
           title="Footer Tagline"
           description="Short italicised sentence shown in the footer below the logo."
         >
-          <SettingsField
-            label="Tagline"
-            hint="Appears in the footer. Keep it under 150 characters."
-          >
-            <Textarea
-              value={values.footer_tagline}
-              onChange={(e) => set({ footer_tagline: e.target.value })}
-              placeholder="From the UAE to the world…"
-              maxLength={300}
-              rows={2}
-              className="rounded-[12px]"
-            />
-          </SettingsField>
+          <div className="grid gap-4 md:grid-cols-2">
+            <SettingsField
+              label="Tagline"
+              hint="Appears in the footer. Keep it under 150 characters."
+            >
+              <Textarea
+                value={values.footer_tagline}
+                onChange={(e) => set({ footer_tagline: e.target.value })}
+                placeholder="From the UAE to the world…"
+                maxLength={300}
+                rows={2}
+                className="rounded-[12px]"
+              />
+            </SettingsField>
+            <SettingsField
+              label="Tagline (Arabic)"
+              hint="Shown in the footer when the viewer switches to Arabic. Leave blank to fall back to English."
+            >
+              <Textarea
+                dir="rtl"
+                value={values.footer_tagline_ar}
+                onChange={(e) => set({ footer_tagline_ar: e.target.value })}
+                placeholder="من الإمارات إلى العالم…"
+                maxLength={300}
+                rows={2}
+                className="rounded-[12px]"
+              />
+            </SettingsField>
+          </div>
         </SettingsCard>
       </section>
 

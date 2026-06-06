@@ -162,7 +162,7 @@ export function SeriesDetailHero({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.75 }}
           >
-            {firstEpisodeId && show.status === 'streaming' ? (
+            {firstEpisodeId ? (
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

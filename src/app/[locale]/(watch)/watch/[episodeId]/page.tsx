@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/server'
+import { isEpisodeLive } from '@/lib/scheduling'
 import { WatchShell } from '@/components/watch/watch-shell'
 import {
   getEpisodeById,
@@ -67,6 +68,14 @@ export default async function WatchPage({ params }: Props) {
     supabase.auth.getUser(),
   ])
   if (!data) notFound()
+
+  // Scheduling gate: a coming-soon episode whose publish_at hasn't arrived (or a
+  // teaser with no date) is not watchable yet. The masking view already strips
+  // its youtube id, so the player couldn't load anyway — send the viewer to the
+  // show page rather than render an empty player.
+  if (!isEpisodeLive(data.episode.status, data.episode.publish_at)) {
+    redirect(`/${locale}/series/${data.show.slug}`)
+  }
 
   const user = authResult.data.user ?? null
   const progressRow = user ? await getEpisodeProgress(user.id, episodeId) : null

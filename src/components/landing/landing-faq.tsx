@@ -1,18 +1,24 @@
 import { getTranslations } from 'next-intl/server'
 import { getFaqsPublic } from '@/lib/queries'
+import { getLocale, pickLocalized } from '@/lib/locale'
 import { FaqAccordion } from './faq-accordion'
 
 export async function LandingFaq() {
-  const [dbFaqs, t] = await Promise.all([
+  const [dbFaqs, t, locale] = await Promise.all([
     getFaqsPublic(),
     getTranslations('landing'),
+    getLocale(),
   ])
 
   // Use DB-managed FAQs when any exist; fall back to the i18n defaults so the
-  // landing page always shows something even on a fresh install.
+  // landing page always shows something even on a fresh install. Each FAQ shows
+  // its Arabic question/answer when the viewer's locale is ar (English fallback).
   const items =
     dbFaqs.length > 0
-      ? dbFaqs.map((f) => ({ q: f.question, a: f.answer }))
+      ? dbFaqs.map((f) => ({
+          q: pickLocalized(locale, f.question, f.question_ar),
+          a: pickLocalized(locale, f.answer, f.answer_ar),
+        }))
       : [
           { q: t('faq1Q'), a: t('faq1A') },
           { q: t('faq2Q'), a: t('faq2A') },

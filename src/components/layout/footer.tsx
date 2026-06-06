@@ -4,14 +4,17 @@ import { Link } from '@/i18n/navigation'
 import { getAppConfig } from '@/lib/config'
 import { PLATFORM_MAP } from '@/lib/social-platforms'
 import type { SocialLinkItem } from '@/lib/config'
+import { getLocale, pickLocalized } from '@/lib/locale'
 
 export async function Footer() {
-  const [{ footer, ogImageUrl }, t, tNav] = await Promise.all([
+  const [{ footer, ogImageUrl }, t, tNav, locale] = await Promise.all([
     getAppConfig(),
     getTranslations('footer'),
     getTranslations('nav'),
+    getLocale(),
   ])
 
+  const tagline = pickLocalized(locale, footer.tagline, footer.taglineAr)
   const socialLinks = footer.social.filter((s) => s.url.trim() !== '')
 
   return (
@@ -32,7 +35,7 @@ export async function Footer() {
 
         <div className="mt-10 flex flex-col justify-between gap-10 md:flex-row md:items-end">
           <p className="font-display m-0 max-w-[420px] text-[16px] leading-relaxed text-[var(--text-dim)] italic">
-            {footer.tagline || t('fallbackTagline')}
+            {tagline || t('fallbackTagline')}
           </p>
           <div className="w-full max-w-sm">
             <div className="mono mb-3" style={{ letterSpacing: '0.14em' }}>

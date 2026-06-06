@@ -49,6 +49,8 @@ type Draft = {
   slug: string
   title: string
   content: string
+  title_ar: string
+  content_ar: string
   sort_order: number
 }
 
@@ -56,6 +58,8 @@ const emptyDraft = (): Draft => ({
   slug: '',
   title: '',
   content: '',
+  title_ar: '',
+  content_ar: '',
   sort_order: 0,
 })
 
@@ -78,6 +82,8 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
       slug: page.slug,
       title: page.title,
       content: page.content,
+      title_ar: page.title_ar ?? '',
+      content_ar: page.content_ar ?? '',
       sort_order: page.sort_order,
     })
     setSlugTouched(true)
@@ -222,6 +228,22 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                 />
               </SettingsField>
 
+              <SettingsField
+                label="Title (Arabic)"
+                hint="Shown when the viewer switches to Arabic. Leave blank to fall back to English."
+              >
+                <Input
+                  dir="rtl"
+                  value={draft.title_ar}
+                  maxLength={200}
+                  placeholder="شروط الاستخدام"
+                  onChange={(e) =>
+                    setDraft((d) => (d ? { ...d, title_ar: e.target.value } : d))
+                  }
+                  className="rounded-[12px]"
+                />
+              </SettingsField>
+
               <SettingsField label="Slug" hint="URL path: /legal/[slug]">
                 <Input
                   value={draft.slug}
@@ -260,6 +282,22 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                   placeholder="Enter the full legal text here..."
                   onChange={(e) =>
                     setDraft((d) => (d ? { ...d, content: e.target.value } : d))
+                  }
+                  className="rounded-[12px] font-mono text-sm leading-relaxed resize-y"
+                />
+              </SettingsField>
+
+              <SettingsField
+                label="Content (Arabic)"
+                hint="Arabic body shown on the Arabic locale. Leave blank to fall back to English."
+              >
+                <Textarea
+                  dir="rtl"
+                  value={draft.content_ar}
+                  rows={20}
+                  placeholder="أدخل النص القانوني الكامل هنا..."
+                  onChange={(e) =>
+                    setDraft((d) => (d ? { ...d, content_ar: e.target.value } : d))
                   }
                   className="rounded-[12px] font-mono text-sm leading-relaxed resize-y"
                 />

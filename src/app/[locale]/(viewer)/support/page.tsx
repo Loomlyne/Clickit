@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { ContactForm } from '@/components/support/contact-form'
 import { getFaqsPublic } from '@/lib/queries'
+import { getLocale, pickLocalized } from '@/lib/locale'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('support')
@@ -20,18 +21,23 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function SupportPage() {
-  const [t, tFaq, dbFaqs] = await Promise.all([
+  const [t, tFaq, dbFaqs, locale] = await Promise.all([
     getTranslations('support'),
     getTranslations('faq'),
     getFaqsPublic(),
+    getLocale(),
   ])
 
   // Use the admin-managed FAQs (same `faqs` table as the landing page) so both
   // pages stay in sync from one source. Fall back to the i18n faq namespace
-  // (q1Question..q8Answer) only when no FAQs have been configured yet.
+  // (q1Question..q8Answer) only when no FAQs have been configured yet. Arabic
+  // question/answer shown when locale is ar, English as fallback.
   const faqItems =
     dbFaqs.length > 0
-      ? dbFaqs.map((f) => ({ q: f.question, a: f.answer }))
+      ? dbFaqs.map((f) => ({
+          q: pickLocalized(locale, f.question, f.question_ar),
+          a: pickLocalized(locale, f.answer, f.answer_ar),
+        }))
       : [1, 2, 3, 4, 5, 6, 7, 8].map((i) => ({
           q: tFaq(`q${i}Question`),
           a: tFaq(`q${i}Answer`),

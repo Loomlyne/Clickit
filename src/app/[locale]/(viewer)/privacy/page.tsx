@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getLegalPageBySlug } from '@/lib/queries'
+import { getLocale, pickLocalized } from '@/lib/locale'
 import { LegalPageContent } from '@/components/legal/legal-page-content'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -13,20 +14,25 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PrivacyPage() {
-  const [page, t] = await Promise.all([
+  const [page, t, locale] = await Promise.all([
     getLegalPageBySlug('privacy-policy'),
     getTranslations('legal'),
+    getLocale(),
   ])
 
-  // If admin has entered content for this slug, render it directly.
-  if (page?.content?.trim()) {
+  // Localize for the active locale (Arabic when set, English fallback).
+  const title = page ? pickLocalized(locale, page.title, page.title_ar) : ''
+  const content = page ? pickLocalized(locale, page.content, page.content_ar) : ''
+
+  // If admin has entered content for this slug + locale, render it directly.
+  if (content.trim()) {
     return (
       <main className="mx-auto max-w-[860px] px-4 py-24 sm:px-6 md:px-10">
         <div className="mono mb-4 text-[var(--text-mute)]">{t('eyebrow')}</div>
         <h1 className="mb-12 font-[family-name:var(--font-display)] text-[clamp(36px,5vw,64px)] leading-none font-normal tracking-[-0.02em]">
-          {page.title}
+          {title}
         </h1>
-        <LegalPageContent content={page.content} updatedAt={page.updated_at} />
+        <LegalPageContent content={content} updatedAt={page!.updated_at} />
       </main>
     )
   }

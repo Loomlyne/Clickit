@@ -55,12 +55,16 @@ export type Database = {
           footer_content: Json
           genre_config: Json
           google_analytics_id: string | null
+          hero_description: string | null
+          hero_description_ar: string | null
           hero_video_type: string | null
           hero_video_url: string | null
           id: number
           live_stream_url: string | null
           meta_pixel_id: string | null
           og_image_url: string | null
+          portfolio_heading: string | null
+          portfolio_heading_ar: string | null
           site_description: string | null
           site_tagline: string | null
           site_title: string | null
@@ -78,12 +82,16 @@ export type Database = {
           footer_content?: Json
           genre_config?: Json
           google_analytics_id?: string | null
+          hero_description?: string | null
+          hero_description_ar?: string | null
           hero_video_type?: string | null
           hero_video_url?: string | null
           id?: number
           live_stream_url?: string | null
           meta_pixel_id?: string | null
           og_image_url?: string | null
+          portfolio_heading?: string | null
+          portfolio_heading_ar?: string | null
           site_description?: string | null
           site_tagline?: string | null
           site_title?: string | null
@@ -101,12 +109,16 @@ export type Database = {
           footer_content?: Json
           genre_config?: Json
           google_analytics_id?: string | null
+          hero_description?: string | null
+          hero_description_ar?: string | null
           hero_video_type?: string | null
           hero_video_url?: string | null
           id?: number
           live_stream_url?: string | null
           meta_pixel_id?: string | null
           og_image_url?: string | null
+          portfolio_heading?: string | null
+          portfolio_heading_ar?: string | null
           site_description?: string | null
           site_tagline?: string | null
           site_title?: string | null
@@ -186,6 +198,7 @@ export type Database = {
           episode_number: number
           fts: unknown
           id: string
+          publish_at: string | null
           season_id: string
           show_id: string
           status: string
@@ -203,6 +216,7 @@ export type Database = {
           episode_number: number
           fts?: unknown
           id?: string
+          publish_at?: string | null
           season_id: string
           show_id: string
           status?: string
@@ -220,6 +234,7 @@ export type Database = {
           episode_number?: number
           fts?: unknown
           id?: string
+          publish_at?: string | null
           season_id?: string
           show_id?: string
           status?: string
@@ -248,26 +263,68 @@ export type Database = {
       faqs: {
         Row: {
           answer: string
+          answer_ar: string | null
           created_at: string
           id: string
           question: string
+          question_ar: string | null
           sort_order: number
           updated_at: string
         }
         Insert: {
           answer?: string
+          answer_ar?: string | null
           created_at?: string
           id?: string
           question: string
+          question_ar?: string | null
           sort_order?: number
           updated_at?: string
         }
         Update: {
           answer?: string
+          answer_ar?: string | null
           created_at?: string
           id?: string
           question?: string
+          question_ar?: string | null
           sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      legal_pages: {
+        Row: {
+          content: string
+          content_ar: string | null
+          created_at: string
+          id: string
+          slug: string
+          sort_order: number
+          title: string
+          title_ar: string | null
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          content_ar?: string | null
+          created_at?: string
+          id?: string
+          slug: string
+          sort_order?: number
+          title: string
+          title_ar?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          content_ar?: string | null
+          created_at?: string
+          id?: string
+          slug?: string
+          sort_order?: number
+          title?: string
+          title_ar?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -304,36 +361,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      legal_pages: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          slug: string
-          sort_order: number
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          content?: string
-          created_at?: string
-          id?: string
-          slug: string
-          sort_order?: number
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          slug?: string
-          sort_order?: number
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
       newsletter_subscribers: {
         Row: {
@@ -395,6 +422,24 @@ export type Database = {
           display_name?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      rate_limits: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
         }
         Relationships: []
       }
@@ -490,7 +535,7 @@ export type Database = {
           expires_at: string | null
           genre: string | null
           id: string
-          is_featured: boolean
+          is_featured: boolean | null
           sort_order: number | null
           thumbnail_url: string | null
           title: string
@@ -505,7 +550,7 @@ export type Database = {
           expires_at?: string | null
           genre?: string | null
           id?: string
-          is_featured?: boolean
+          is_featured?: boolean | null
           sort_order?: number | null
           thumbnail_url?: string | null
           title: string
@@ -520,7 +565,7 @@ export type Database = {
           expires_at?: string | null
           genre?: string | null
           id?: string
-          is_featured?: boolean
+          is_featured?: boolean | null
           sort_order?: number | null
           thumbnail_url?: string | null
           title?: string
@@ -830,6 +875,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "watch_progress_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "episodes_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "watch_progress_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -873,7 +925,46 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      episodes_view: {
+        Row: {
+          archived: boolean | null
+          created_at: string | null
+          description: string | null
+          description_ar: string | null
+          duration: number | null
+          episode_number: number | null
+          id: string | null
+          publish_at: string | null
+          season_id: string | null
+          show_brand_color: string | null
+          show_id: string | null
+          show_poster_url: string | null
+          show_slug: string | null
+          show_status: string | null
+          show_title: string | null
+          status: string | null
+          title: string | null
+          title_ar: string | null
+          updated_at: string | null
+          youtube_video_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "episodes_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "episodes_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       is_admin: { Args: never; Returns: boolean }

@@ -27,10 +27,12 @@ export function EpisodeRow({
   isCompleted,
 }: EpisodeRowProps) {
   const t = useTranslations('episode')
-  const isPublished = episode.status === 'published'
-  const isComingSoon = episode.status === 'coming-soon'
+  // isLive (not raw status) drives interactivity: a coming-soon episode whose
+  // scheduled time has passed becomes clickable without a redeploy.
+  const isLive = episode.isLive
+  const isComingSoon = episode.status === 'coming-soon' && !isLive
   const isDraft = episode.status === 'draft'
-  const isDimmed = isComingSoon || isDraft
+  const isDimmed = !isLive
   const isCurrentEpisode = currentEpisodeId === episode.id
   const brandColorHex = BRAND_COLOR_HEX[showBrandColor] ?? '#2C3569'
   const thumbnailUrl = episode.youtubeId
@@ -64,7 +66,7 @@ export function EpisodeRow({
         </ShowArt>
 
         {/* Published hover: play overlay */}
-        {isPublished && (
+        {isLive && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60">
               <Play
@@ -157,7 +159,7 @@ export function EpisodeRow({
     </>
   )
 
-  if (isPublished && isCurrentEpisode) {
+  if (isLive && isCurrentEpisode) {
     return (
       <div
         id={`episode-${episode.id}`}
@@ -172,7 +174,7 @@ export function EpisodeRow({
     )
   }
 
-  if (isPublished) {
+  if (isLive) {
     return (
       <motion.div whileTap={{ scale: 0.985 }} transition={{ duration: 0.15 }}>
         <Link

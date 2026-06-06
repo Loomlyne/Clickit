@@ -921,6 +921,8 @@
       "statusDraftDesc": "غير مرئية للزوار",
       "statusScheduledDesc": "مرئية ولكن غير قابلة للتشغيل",
       "statusPublishedDesc": "مباشرة وقابلة للتشغيل",
+      "scheduleLabel": "تاريخ ووقت النشر (توقيت الخليج)",
+      "scheduleHelp": "تُنشر الحلقة تلقائياً في هذا الوقت (توقيت الإمارات/الخليج). اتركه فارغاً لإبقائها كإعلان حتى تنشرها يدوياً.",
       "sectionInfo": "معلومات الحلقة",
       "sectionContent": "المحتوى",
       "episodeTitlePlaceholder": "عنوان الحلقة",

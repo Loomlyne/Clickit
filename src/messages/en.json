@@ -921,6 +921,8 @@
       "statusDraftDesc": "Not visible to viewers",
       "statusScheduledDesc": "Visible but not playable",
       "statusPublishedDesc": "Live and playable",
+      "scheduleLabel": "Publish date & time (Gulf time)",
+      "scheduleHelp": "The episode goes live automatically at this time (UAE / GST). Leave empty to keep it as a teaser until you publish manually.",
       "sectionInfo": "Episode Info",
       "sectionContent": "Content",
       "episodeTitlePlaceholder": "Episode title",

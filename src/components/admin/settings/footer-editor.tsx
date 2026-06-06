@@ -79,6 +79,20 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
             />
           </SettingsField>
           <SettingsField
+            label={`${t('footerTaglineLabel')} (Arabic)`}
+            hint="Shown when the viewer switches to Arabic. Leave blank to fall back to English."
+          >
+            <Textarea
+              dir="rtl"
+              rows={2}
+              maxLength={300}
+              value={v.taglineAr}
+              onChange={(e) => setV({ ...v, taglineAr: e.target.value })}
+              className="rounded-[12px]"
+              placeholder="من الإمارات إلى العالم…"
+            />
+          </SettingsField>
+          <SettingsField
             label={t('catalogStatLabel')}
             hint={t('catalogStatHint')}
           >

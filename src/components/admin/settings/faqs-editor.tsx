@@ -31,12 +31,16 @@ type Draft = {
   id?: string
   question: string
   answer: string
+  question_ar: string
+  answer_ar: string
   sort_order: number
 }
 
 const emptyDraft = (nextOrder: number): Draft => ({
   question: '',
   answer: '',
+  question_ar: '',
+  answer_ar: '',
   sort_order: nextOrder,
 })
 
@@ -59,6 +63,8 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
       id: faq.id,
       question: faq.question,
       answer: faq.answer,
+      question_ar: faq.question_ar ?? '',
+      answer_ar: faq.answer_ar ?? '',
       sort_order: faq.sort_order,
     })
   }
@@ -210,6 +216,42 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
                   onChange={(e) =>
                     setDraft((d) =>
                       d ? { ...d, answer: e.target.value } : d
+                    )
+                  }
+                  className="rounded-[12px] resize-y"
+                />
+              </SettingsField>
+
+              <SettingsField
+                label="Question (Arabic)"
+                hint="Shown when the viewer switches to Arabic. Leave blank to fall back to English."
+              >
+                <Input
+                  dir="rtl"
+                  value={draft.question_ar}
+                  maxLength={500}
+                  placeholder="ما هي كليك إت ستوري؟"
+                  onChange={(e) =>
+                    setDraft((d) =>
+                      d ? { ...d, question_ar: e.target.value } : d
+                    )
+                  }
+                  className="rounded-[12px]"
+                />
+              </SettingsField>
+
+              <SettingsField
+                label="Answer (Arabic)"
+                hint="Arabic answer shown on the Arabic locale. Leave blank to fall back to English."
+              >
+                <Textarea
+                  dir="rtl"
+                  value={draft.answer_ar}
+                  rows={5}
+                  placeholder="أدخل الإجابة..."
+                  onChange={(e) =>
+                    setDraft((d) =>
+                      d ? { ...d, answer_ar: e.target.value } : d
                     )
                   }
                   className="rounded-[12px] resize-y"

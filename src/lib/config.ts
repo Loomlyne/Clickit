@@ -16,6 +16,8 @@ export type SocialLinkItem = {
 
 export type FooterContent = {
   tagline: string
+  /** Arabic footer tagline. Shown when locale is ar; falls back to tagline when empty. */
+  taglineAr: string
   stat: string
   contactEmail: string
   social: SocialLinkItem[]
@@ -112,6 +114,7 @@ export type AppConfig = {
 
 export const DEFAULT_FOOTER: FooterContent = {
   tagline: 'Clickit brings original programs from Abu Dhabi to viewers worldwide.',
+  taglineAr: '',
   stat: '15 original programs',
   contactEmail: '',
   social: [],
@@ -295,6 +298,7 @@ function mergeFooter(v: unknown): FooterContent {
 
   return {
     tagline: typeof v.tagline === 'string' ? v.tagline : DEFAULT_FOOTER.tagline,
+    taglineAr: typeof v.taglineAr === 'string' ? v.taglineAr : '',
     stat: typeof v.stat === 'string' ? v.stat : DEFAULT_FOOTER.stat,
     contactEmail: typeof v.contactEmail === 'string' ? v.contactEmail : '',
     social,

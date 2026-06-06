@@ -21,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { YouTubeUrlInput } from '@/components/admin/youtube-url-input'
 import type { Database } from '@/lib/database.types'
+import { dubaiLocalToUtcIso, utcIsoToDubaiLocal } from '@/lib/scheduling'
 
 const episodeFormSchema = z.object({
   title: z.string().min(1, 'titleRequired'),
@@ -31,6 +32,9 @@ const episodeFormSchema = z.object({
   youtube_video_id: z.string().optional().nullable(),
   duration: z.number().int().positive('fieldRequired').optional().nullable(),
   status: z.enum(['draft', 'coming-soon', 'published']),
+  // Dubai wall-clock datetime-local string in the form; converted to a UTC ISO
+  // string on submit. Only sent when status is coming-soon.
+  publish_at: z.string().optional().nullable(),
 })
 
 type EpisodeFormData = z.infer<typeof episodeFormSchema>
@@ -143,6 +147,7 @@ export function EpisodeFormDrawer({
       youtube_video_id: '',
       duration: null,
       status: 'draft',
+      publish_at: '',
     },
   })
 
@@ -158,6 +163,7 @@ export function EpisodeFormDrawer({
           youtube_video_id: episode.youtube_video_id ?? '',
           duration: episode.duration ?? null,
           status: episode.status as EpisodeFormData['status'],
+          publish_at: utcIsoToDubaiLocal(episode.publish_at),
         })
       } else {
         form.reset({
@@ -169,6 +175,7 @@ export function EpisodeFormDrawer({
           youtube_video_id: '',
           duration: null,
           status: 'draft',
+          publish_at: '',
         })
       }
     }
@@ -212,6 +219,12 @@ export function EpisodeFormDrawer({
       description_ar: sourceData.description_ar || null,
       youtube_video_id: sourceData.youtube_video_id || null,
       duration: sourceData.duration || null,
+      // Scheduling only applies to coming-soon episodes; clear it otherwise.
+      // Convert the Dubai wall-clock input to a UTC ISO string for storage.
+      publish_at:
+        sourceData.status === 'coming-soon'
+          ? dubaiLocalToUtcIso(sourceData.publish_at)
+          : null,
     }
     const result = await onSave(normalized)
     if (result.success) {
@@ -347,6 +360,18 @@ export function EpisodeFormDrawer({
                   ))}
                 </div>
               </div>
+
+              {currentStatus === 'coming-soon' && (
+                <Field label={t('scheduleLabel')}>
+                  <Input
+                    type="datetime-local"
+                    {...form.register('publish_at')}
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    {t('scheduleHelp')}
+                  </p>
+                </Field>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <Field

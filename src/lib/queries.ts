@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createPublicClient } from '@/lib/supabase/public'
 import type { Database } from '@/lib/database.types'
 import { DEFAULT_LOCALE, pickLocalized, type Locale } from '@/lib/locale'
+import { isEpisodeLive } from '@/lib/scheduling'
 
 export type DbShow = Database['public']['Tables']['shows']['Row']
 export type DbSeason = Database['public']['Tables']['seasons']['Row']
@@ -105,6 +106,12 @@ export type ViewEpisode = {
   status: 'published' | 'coming-soon' | 'draft'
   youtubeId: string | null
   publishedAt?: string
+  // Scheduled publish time (UTC ISO) for coming-soon episodes, null otherwise.
+  publishAt: string | null
+  // True when a viewer can watch right now: published, OR coming-soon whose
+  // publish_at has passed. Computed at read time so the episode flips on at the
+  // exact scheduled minute. See lib/scheduling.isEpisodeLive.
+  isLive: boolean
 }
 
 export type ViewSeason = {
@@ -127,6 +134,8 @@ export function mapEpisode(db: DbEpisode, locale: Locale = DEFAULT_LOCALE): View
     status: db.status as ViewEpisode['status'],
     youtubeId: db.youtube_video_id,
     publishedAt: db.created_at,
+    publishAt: db.publish_at ?? null,
+    isLive: isEpisodeLive(db.status, db.publish_at),
   }
 }
 
@@ -481,15 +490,15 @@ export const getFirstEpisodesForShows = unstable_cache(
 export const getEpisodesByShowId = unstable_cache(
   async (showId: string): Promise<DbEpisode[]> => {
     const supabase = createPublicClient()
+    // Read the masking view: coming-soon teasers are included, but their
+    // youtube_video_id is null until the episode is effectively live.
     const { data } = await supabase
-      .from('episodes')
+      .from('episodes_view')
       .select('*')
       .eq('show_id', showId)
-      .eq('archived', false)
-      .in('status', ['published', 'coming-soon'])
       .order('episode_number', { ascending: true })
 
-    return data ?? []
+    return (data ?? []) as unknown as DbEpisode[]
   },
   ['episodes-by-show'],
   { revalidate: 1800, tags: ['episodes'] } // 30 min
@@ -534,14 +543,12 @@ export const getEpisodesBySeasonId = unstable_cache(
   async (seasonId: string): Promise<DbEpisode[]> => {
     const supabase = createPublicClient()
     const { data } = await supabase
-      .from('episodes')
+      .from('episodes_view')
       .select('*')
       .eq('season_id', seasonId)
-      .eq('archived', false)
-      .in('status', ['published', 'coming-soon'])
       .order('episode_number', { ascending: true })
 
-    return data ?? []
+    return (data ?? []) as unknown as DbEpisode[]
   },
   ['episodes-by-season'],
   { revalidate: 1800, tags: ['episodes'] } // 30 min
@@ -560,13 +567,18 @@ export const getEpisodesBySeasonId = unstable_cache(
 export const getEpisodeById = cache(async function getEpisodeById(episodeId: string) {
   const supabase = await createClient()
 
-  const { data: episode } = await supabase
-    .from('episodes')
+  // Read from the masking view: youtube_video_id comes back null unless the
+  // episode is effectively live, and draft / non-public-show episodes are not
+  // returned at all (→ 404). The watch page additionally redirects coming-soon
+  // episodes whose time hasn't arrived.
+  const { data: episodeRow } = await supabase
+    .from('episodes_view')
     .select('*')
     .eq('id', episodeId)
     .single()
 
-  if (!episode) return null
+  if (!episodeRow) return null
+  const episode = episodeRow as unknown as DbEpisode
 
   // Fetch season, show, and all seasons in parallel
   const [{ data: season }, { data: show }] = await Promise.all([
@@ -591,7 +603,7 @@ export const getEpisodeById = cache(async function getEpisodeById(episodeId: str
   // Flatten published episodes for cross-season navigation
   const seasonNumberMap = new Map(seasons.map(s => [s.id, s.season_number]))
   const allEpisodes = allShowEpisodes
-    .filter(e => e.status === 'published')
+    .filter(e => isEpisodeLive(e.status, e.publish_at))
     .sort((a, b) => {
       const aSeason = seasonNumberMap.get(a.season_id) ?? 0
       const bSeason = seasonNumberMap.get(b.season_id) ?? 0
@@ -735,19 +747,23 @@ export const getComingSoonEpisodes = unstable_cache(
     (ViewEpisode & { showTitle: string; showSlug: string; showBrandColor: ViewShow['brandColor'] })[]
   > => {
     const supabase = createPublicClient()
+    // Only episodes still genuinely upcoming: coming-soon AND either unscheduled
+    // or scheduled for the future. Once publish_at passes the episode is live, so
+    // it should drop off the Coming Soon page.
+    const nowIso = new Date().toISOString()
     const { data } = await supabase
-      .from('episodes')
-      .select('*, shows!inner(title, slug, brand_color, status)')
+      .from('episodes_view')
+      .select('*')
       .eq('status', 'coming-soon')
-      .eq('archived', false)
+      .or(`publish_at.is.null,publish_at.gt.${nowIso}`)
       .order('created_at', { ascending: false })
       .limit(20)
 
     return (data ?? []).map((e: any) => ({
-      ...mapEpisode(e),
-      showTitle: e.shows.title,
-      showSlug: e.shows.slug,
-      showBrandColor: e.shows.brand_color as ViewShow['brandColor'],
+      ...mapEpisode(e as unknown as DbEpisode),
+      showTitle: e.show_title,
+      showSlug: e.show_slug,
+      showBrandColor: e.show_brand_color as ViewShow['brandColor'],
     }))
   },
   ['coming-soon-episodes'],
@@ -1099,24 +1115,39 @@ export const getShortsForBrowse = unstable_cache(
 // persistent cache layer here would re-introduce the delay.
 // ---------------------------------------------------------------------------
 
-export type PublicFaq = { id: string; question: string; answer: string; sort_order: number }
+export type PublicFaq = {
+  id: string
+  question: string
+  answer: string
+  question_ar: string | null
+  answer_ar: string | null
+  sort_order: number
+}
 
 export async function getFaqsPublic(): Promise<PublicFaq[]> {
   const supabase = createPublicClient()
   const { data } = await supabase
     .from('faqs')
-    .select('id, question, answer, sort_order')
+    .select('id, question, answer, question_ar, answer_ar, sort_order')
     .order('sort_order', { ascending: true })
   return (data ?? []) as PublicFaq[]
 }
 
-export type PublicLegalPage = { id: string; slug: string; title: string; content: string; updated_at: string }
+export type PublicLegalPage = {
+  id: string
+  slug: string
+  title: string
+  content: string
+  title_ar: string | null
+  content_ar: string | null
+  updated_at: string
+}
 
 export async function getLegalPageBySlug(slug: string): Promise<PublicLegalPage | null> {
   const supabase = createPublicClient()
   const { data } = await supabase
     .from('legal_pages')
-    .select('id, slug, title, content, updated_at')
+    .select('id, slug, title, content, title_ar, content_ar, updated_at')
     .eq('slug', slug)
     .single()
   return (data ?? null) as PublicLegalPage | null
@@ -1126,7 +1157,7 @@ export async function getAllLegalPages(): Promise<PublicLegalPage[]> {
   const supabase = createPublicClient()
   const { data } = await supabase
     .from('legal_pages')
-    .select('id, slug, title, content, updated_at')
+    .select('id, slug, title, content, title_ar, content_ar, updated_at')
     .order('sort_order', { ascending: true })
   return (data ?? []) as PublicLegalPage[]
 }

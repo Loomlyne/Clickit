@@ -113,9 +113,7 @@ export default async function SeriesDetailPage({ params }: Props) {
   if (viewSeasons.length > 0) {
     const firstSeason = viewSeasons[0]
     const firstSeasonEpisodes = viewEpisodesBySeason[firstSeason.id] ?? []
-    const firstPublished = firstSeasonEpisodes.find(
-      (ep) => ep.status === 'published'
-    )
+    const firstPublished = firstSeasonEpisodes.find((ep) => ep.isLive)
     if (firstPublished) {
       firstEpisodeLabel = t('seasonEpisodeShort', {
         season: firstSeason.seasonNumber,
