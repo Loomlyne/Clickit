@@ -13,7 +13,9 @@ import { SettingsCard, SettingsField } from './settings-card'
 type Values = {
   site_title: string
   site_description: string
+  site_description_ar: string
   site_tagline: string
+  site_tagline_ar: string
   hero_description: string
   hero_description_ar: string
 }
@@ -26,7 +28,9 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
   const dirty =
     values.site_title !== initial.site_title ||
     values.site_description !== initial.site_description ||
+    values.site_description_ar !== initial.site_description_ar ||
     values.site_tagline !== initial.site_tagline ||
+    values.site_tagline_ar !== initial.site_tagline_ar ||
     values.hero_description !== initial.hero_description ||
     values.hero_description_ar !== initial.hero_description_ar
 
@@ -36,7 +40,9 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
     const result = await updateSiteMetadata({
       site_title: values.site_title,
       site_description: values.site_description || null,
+      site_description_ar: values.site_description_ar || null,
       site_tagline: values.site_tagline,
+      site_tagline_ar: values.site_tagline_ar || null,
       hero_description: values.hero_description || null,
       hero_description_ar: values.hero_description_ar || null,
     })
@@ -77,6 +83,21 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
         </SettingsField>
 
         <SettingsField
+          label={`${t('siteTaglineLabel')} (Arabic)`}
+          hint="Shown when the viewer switches to Arabic. Leave blank to fall back to English."
+        >
+          <Input
+            dir="rtl"
+            value={values.site_tagline_ar}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, site_tagline_ar: e.target.value }))
+            }
+            placeholder="كل قصة تنقر"
+            maxLength={120}
+          />
+        </SettingsField>
+
+        <SettingsField
           label={t('seoDescriptionLabel')}
           hint={t('seoDescriptionHint')}
         >
@@ -86,6 +107,23 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
               setValues((v) => ({ ...v, site_description: e.target.value }))
             }
             placeholder={t('seoDescriptionPlaceholder')}
+            maxLength={300}
+            rows={3}
+            className="rounded-[12px] md:col-span-2"
+          />
+        </SettingsField>
+
+        <SettingsField
+          label={`${t('seoDescriptionLabel')} (Arabic)`}
+          hint="Arabic meta description shown when the viewer is on the Arabic locale."
+        >
+          <Textarea
+            dir="rtl"
+            value={values.site_description_ar}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, site_description_ar: e.target.value }))
+            }
+            placeholder="عروض أصلية من الإمارات — تُبث الآن"
             maxLength={300}
             rows={3}
             className="rounded-[12px] md:col-span-2"
@@ -103,25 +141,6 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
                 setValues((v) => ({ ...v, hero_description: e.target.value }))
               }
               placeholder={t('heroDescriptionPlaceholder')}
-              maxLength={500}
-              rows={3}
-              className="rounded-[12px]"
-            />
-          </SettingsField>
-        </div>
-
-        <div className="md:col-span-2">
-          <SettingsField
-            label={t('heroDescriptionArLabel')}
-            hint={t('heroDescriptionArHint')}
-          >
-            <Textarea
-              dir="rtl"
-              value={values.hero_description_ar}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, hero_description_ar: e.target.value }))
-              }
-              placeholder={t('heroDescriptionArPlaceholder')}
               maxLength={500}
               rows={3}
               className="rounded-[12px]"

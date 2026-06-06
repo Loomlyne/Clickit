@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getAppConfig } from '@/lib/config'
+import { getLocale, pickLocalized } from '@/lib/locale'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { SmoothScroll } from '@/components/providers/smooth-scroll'
@@ -17,12 +18,26 @@ export default async function ViewerLayout({
   // only a flash-prevention hint — AuthSection re-derives the full session on
   // the client. Saves an auth-server roundtrip on every hard page load.
   const supabase = await createClient()
-  const [authResult, config] = await Promise.all([
+  const [authResult, config, locale] = await Promise.all([
     supabase.auth.getClaims(),
     getAppConfig(),
+    getLocale(),
   ])
   const claims = authResult.data?.claims
   const user = claims ? { id: claims.sub, email: claims.email ?? '' } : null
+
+  // Localize the ticker server-side so the client component stays locale-agnostic.
+  // Each line shows its Arabic tag/text/tag2 when locale is ar (English fallback).
+  const localizedTicker = {
+    enabled: config.topTicker.enabled,
+    items: config.topTicker.items.map((m) => ({
+      tag: pickLocalized(locale, m.tag, m.tag_ar),
+      text: pickLocalized(locale, m.text, m.text_ar),
+      ...(m.tag2 || m.tag2_ar
+        ? { tag2: pickLocalized(locale, m.tag2 ?? '', m.tag2_ar) }
+        : {}),
+    })),
+  }
 
   return (
     <>
@@ -36,7 +51,7 @@ export default async function ViewerLayout({
       <SmoothScroll>
         <ViewerScrollPersistence />
         <div className="relative min-h-screen bg-black">
-          <MarqueeTicker ticker={config.topTicker} />
+          <MarqueeTicker ticker={localizedTicker} />
           <Navbar
             initialUser={user}
             liveStreamUrl={config.liveStreamUrl}

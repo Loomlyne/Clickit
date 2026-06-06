@@ -8,7 +8,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { validateYouTubeUrl } from '@/lib/youtube'
 import { logAudit } from '@/lib/audit'
 import { generateSlug } from '@/lib/slug'
-import { getAppConfig } from '@/lib/config'
+import { fillArabic, translateToArabic, translateBatchToArabic } from '@/lib/translate'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -333,6 +333,11 @@ export async function createShow(
       generateSlug(rest.title, id ? `show-${id.slice(0, 8)}` : undefined)
     )
 
+    // Auto-fill blank Arabic fields from their English source (DeepL).
+    rest.title_ar = await fillArabic(rest.title, rest.title_ar)
+    rest.description_ar = await fillArabic(rest.description, rest.description_ar)
+    rest.tagline_ar = await fillArabic(rest.tagline, rest.tagline_ar)
+
     const conflict = await getActiveShowNamespaceConflict(admin, {
       title: rest.title,
       slug: rest.slug,
@@ -422,6 +427,14 @@ export async function updateShow(
     if (normalizedSlug && normalizedSlug !== updateData.slug) {
       updateData.slug = normalizedSlug
     }
+
+    // Auto-fill blank Arabic fields from their English source (DeepL).
+    updateData.title_ar = await fillArabic(updateData.title, updateData.title_ar)
+    updateData.description_ar = await fillArabic(
+      updateData.description,
+      updateData.description_ar
+    )
+    updateData.tagline_ar = await fillArabic(updateData.tagline, updateData.tagline_ar)
 
     const conflict = await getActiveShowNamespaceConflict(admin, {
       title: updateData.title,
@@ -1048,6 +1061,9 @@ export async function createSeason(
     const parsed = seasonSchema.parse(data)
     const admin = createAdminClient()
 
+    // Auto-fill blank Arabic title from English (DeepL).
+    parsed.title_ar = await fillArabic(parsed.title, parsed.title_ar)
+
     const { data: season, error } = await admin
       .from('seasons')
       .insert(parsed)
@@ -1086,6 +1102,11 @@ export async function updateSeason(
   try {
     await assertAdmin()
     const admin = createAdminClient()
+
+    // Auto-fill blank Arabic title from English when the title is being set.
+    if (data.title && !(data.title_ar ?? '').trim()) {
+      data.title_ar = await translateToArabic(data.title)
+    }
 
     const { data: season, error } = await admin
       .from('seasons')
@@ -1169,6 +1190,10 @@ export async function createEpisode(
     await assertAdmin()
     const parsed = episodeSchema.parse(data)
     const admin = createAdminClient()
+
+    // Auto-fill blank Arabic fields from their English source (DeepL).
+    parsed.title_ar = await fillArabic(parsed.title, parsed.title_ar)
+    parsed.description_ar = await fillArabic(parsed.description, parsed.description_ar)
 
     // If an archived episode occupies this number, bump it out of the way
     const { data: archivedConflict } = await admin
@@ -1268,6 +1293,14 @@ export async function updateEpisode(
   try {
     await assertAdmin()
     const admin = createAdminClient()
+
+    // Auto-fill blank Arabic fields from English when those fields are being set.
+    if (data.title && !(data.title_ar ?? '').trim()) {
+      data.title_ar = await translateToArabic(data.title)
+    }
+    if (data.description && !(data.description_ar ?? '').trim()) {
+      data.description_ar = await translateToArabic(data.description)
+    }
 
     // Pre-check: if episode_number is changing, ensure no collision in the same season
     if (data.episode_number !== undefined) {
@@ -1842,7 +1875,9 @@ const urlOrEmpty = z
 const siteMetadataSchema = z.object({
   site_title: z.string().trim().min(1, 'Title is required').max(120),
   site_description: z.string().trim().max(300).nullable(),
+  site_description_ar: z.string().trim().max(300).nullable(),
   site_tagline: z.string().trim().min(1, 'Tagline is required').max(120),
+  site_tagline_ar: z.string().trim().max(120).nullable(),
   hero_description: z.string().trim().max(500).nullable(),
   hero_description_ar: z.string().trim().max(500).nullable(),
 })
@@ -1930,6 +1965,9 @@ const topTickerItemSchema = z.object({
   tag: z.string().trim().max(24),
   text: z.string().trim().max(240),
   tag2: z.string().trim().max(24).optional(),
+  tag_ar: z.string().trim().max(24).optional(),
+  text_ar: z.string().trim().max(240).optional(),
+  tag2_ar: z.string().trim().max(24).optional(),
 })
 
 const topTickerSchema = z.object({
@@ -2072,16 +2110,38 @@ export async function updatePortfolioContent(
   try {
     const user = await assertAdmin()
     const parsed = portfolioContentSchema.parse(input)
-    const current = await getAppConfig()
     const admin = createAdminClient()
+
+    // Read the CURRENT footer_content fresh from the DB — NOT the cached
+    // getAppConfig(), which silently falls back to DEFAULT_FOOTER (social: [])
+    // on a read miss/error and would clobber admin-managed fields (social
+    // links, contact, legal) when this read-modify-write saves it back. Fail
+    // closed: if we can't read the current blob, abort rather than overwrite.
+    const { data: cfgRow, error: readErr } = await admin
+      .from('app_config')
+      .select('footer_content')
+      .eq('id', 1)
+      .single<{ footer_content: unknown }>()
+    if (readErr || !cfgRow) {
+      return {
+        success: false,
+        error: readErr?.message ?? 'Could not read current footer content',
+      }
+    }
+    const currentFooter =
+      cfgRow.footer_content && typeof cfgRow.footer_content === 'object'
+        ? (cfgRow.footer_content as Record<string, unknown>)
+        : {}
 
     const updatePayload = {
       hero_description: parsed.hero_description,
       hero_description_ar: parsed.hero_description_ar,
       portfolio_heading: parsed.portfolio_heading,
       portfolio_heading_ar: parsed.portfolio_heading_ar,
+      // Spread the raw stored blob so social/contact/legal pass through
+      // untouched; only the tagline fields this editor owns are overwritten.
       footer_content: {
-        ...current.footer,
+        ...currentFooter,
         tagline: parsed.footer_tagline,
         taglineAr: parsed.footer_tagline_ar,
       },
@@ -2117,12 +2177,31 @@ export async function updateContactRecipient(
 ): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
-    const current = await getAppConfig()
+    const admin = createAdminClient()
+
+    // Read footer_content fresh (not cached getAppConfig, which defaults to
+    // social: [] on a read miss). Fail closed so a transient read failure can
+    // never overwrite admin-managed fields like social links.
+    const { data: cfgRow, error: readErr } = await admin
+      .from('app_config')
+      .select('footer_content')
+      .eq('id', 1)
+      .single<{ footer_content: unknown }>()
+    if (readErr || !cfgRow) {
+      return {
+        success: false,
+        error: readErr?.message ?? 'Could not read current footer content',
+      }
+    }
+    const currentFooter =
+      cfgRow.footer_content && typeof cfgRow.footer_content === 'object'
+        ? (cfgRow.footer_content as Record<string, unknown>)
+        : {}
+
     const parsed = footerSchema.parse({
-      ...current.footer,
+      ...currentFooter,
       contactEmail: input.contactEmail,
     })
-    const admin = createAdminClient()
     const { error } = await admin
       .from('app_config')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2266,6 +2345,9 @@ export async function updateTopTicker(
         tag: row.tag.trim(),
         text: row.text.trim(),
         ...(row.tag2?.trim() && { tag2: row.tag2.trim() }),
+        ...(row.tag_ar?.trim() && { tag_ar: row.tag_ar.trim() }),
+        ...(row.text_ar?.trim() && { text_ar: row.text_ar.trim() }),
+        ...(row.tag2_ar?.trim() && { tag2_ar: row.tag2_ar.trim() }),
       }))
       .filter((row) => row.tag.length > 0 || row.text.length > 0 || (row.tag2 ?? '').length > 0)
 

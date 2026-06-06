@@ -66,7 +66,9 @@ export type Database = {
           portfolio_heading: string | null
           portfolio_heading_ar: string | null
           site_description: string | null
+          site_description_ar: string | null
           site_tagline: string | null
+          site_tagline_ar: string | null
           site_title: string | null
           top_ticker: Json
           updated_at: string
@@ -93,7 +95,9 @@ export type Database = {
           portfolio_heading?: string | null
           portfolio_heading_ar?: string | null
           site_description?: string | null
+          site_description_ar?: string | null
           site_tagline?: string | null
+          site_tagline_ar?: string | null
           site_title?: string | null
           top_ticker?: Json
           updated_at?: string
@@ -120,7 +124,9 @@ export type Database = {
           portfolio_heading?: string | null
           portfolio_heading_ar?: string | null
           site_description?: string | null
+          site_description_ar?: string | null
           site_tagline?: string | null
+          site_tagline_ar?: string | null
           site_title?: string | null
           top_ticker?: Json
           updated_at?: string

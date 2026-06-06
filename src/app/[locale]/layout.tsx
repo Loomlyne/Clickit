@@ -13,7 +13,7 @@ import { Toaster } from 'sonner'
 import { MotionConfig } from 'motion/react'
 import { getAppConfig } from '@/lib/config'
 import { siteUrl } from '@/lib/site-url'
-import { dirFor } from '@/lib/locale'
+import { dirFor, getLocale, pickLocalized } from '@/lib/locale'
 import { routing, staticParams, type Locale } from '@/i18n/routing'
 
 const geist = Geist({
@@ -67,29 +67,32 @@ function buildFaviconLinks(
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const config = await getAppConfig()
+  const [config, locale] = await Promise.all([getAppConfig(), getLocale()])
+  // Arabic SEO/meta description when the viewer's locale is ar (English fallback).
+  const description =
+    pickLocalized(locale, config.siteDescription ?? '', config.siteDescriptionAr) ||
+    'Original shows from the UAE - streaming now'
   return {
     metadataBase: new URL(siteUrl()),
     title: config.siteTitle,
-    description:
-      config.siteDescription ?? 'Original shows from the UAE - streaming now',
+    description,
     icons: { icon: buildFaviconLinks(config.faviconUrl, config.faviconDarkUrl) },
     openGraph: config.ogImageUrl
       ? {
           title: config.siteTitle,
-          description: config.siteDescription ?? undefined,
+          description,
           images: [{ url: config.ogImageUrl }],
           type: 'website',
         }
       : {
           title: config.siteTitle,
-          description: config.siteDescription ?? undefined,
+          description,
           type: 'website',
         },
     twitter: {
       card: 'summary_large_image',
       title: config.siteTitle,
-      description: config.siteDescription ?? undefined,
+      description,
       images: config.ogImageUrl ? [config.ogImageUrl] : undefined,
     },
   }

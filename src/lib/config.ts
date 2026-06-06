@@ -64,6 +64,10 @@ export type TopTickerItem = {
   tag: string
   text: string
   tag2?: string
+  /** Arabic variants. Shown when locale is ar; fall back to the English fields when empty. */
+  tag_ar?: string
+  text_ar?: string
+  tag2_ar?: string
 }
 
 export type TopTickerConfig = {
@@ -75,7 +79,11 @@ export type AppConfig = {
   // Branding / SEO
   siteTitle: string
   siteDescription: string | null
+  /** Arabic SEO/meta description. Shown when locale is ar; falls back to siteDescription. */
+  siteDescriptionAr: string | null
   siteTagline: string
+  /** Arabic site tagline. Shown when locale is ar; falls back to siteTagline. */
+  siteTaglineAr: string | null
   ogImageUrl: string | null
   faviconUrl: string | null
   /** Dark-mode favicon variant. Served via prefers-color-scheme: dark; falls back to faviconUrl. */
@@ -195,7 +203,7 @@ export const getAppConfig = cache(unstable_cache(
     const { data } = await supabase
       .from('app_config')
       .select(
-        'site_title, site_description, site_tagline, og_image_url, favicon_url, favicon_dark_url, hero_video_url, hero_video_type, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, hero_description, hero_description_ar, portfolio_heading, portfolio_heading_ar' as string
+        'site_title, site_description, site_description_ar, site_tagline, site_tagline_ar, og_image_url, favicon_url, favicon_dark_url, hero_video_url, hero_video_type, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, hero_description, hero_description_ar, portfolio_heading, portfolio_heading_ar' as string
       )
       .eq('id', 1)
       .single<RawConfigRow>()
@@ -214,7 +222,9 @@ export const getAppConfig = cache(unstable_cache(
 type RawConfigRow = {
   site_title: string | null
   site_description: string | null
+  site_description_ar: string | null
   site_tagline: string | null
+  site_tagline_ar: string | null
   og_image_url: string | null
   favicon_url: string | null
   favicon_dark_url: string | null
@@ -238,7 +248,9 @@ function mapConfig(row: RawConfigRow): AppConfig {
   return {
     siteTitle: row?.site_title ?? 'Clickit Story',
     siteDescription: row?.site_description ?? null,
+    siteDescriptionAr: row?.site_description_ar ?? null,
     siteTagline: row?.site_tagline ?? 'Every Story Clicks.',
+    siteTaglineAr: row?.site_tagline_ar ?? null,
     ogImageUrl: row?.og_image_url ?? null,
     faviconUrl: row?.favicon_url ?? null,
     faviconDarkUrl: row?.favicon_dark_url ?? null,
@@ -357,11 +369,17 @@ function mergeTopTicker(v: unknown): TopTickerConfig {
       const tag = tagRaw.slice(0, 24)
       const text = textRaw.slice(0, 240)
       const tag2Raw = typeof entry.tag2 === 'string' ? entry.tag2.trim() : ''
+      const tagAr = typeof entry.tag_ar === 'string' ? entry.tag_ar.trim().slice(0, 24) : ''
+      const textAr = typeof entry.text_ar === 'string' ? entry.text_ar.trim().slice(0, 240) : ''
+      const tag2Ar = typeof entry.tag2_ar === 'string' ? entry.tag2_ar.trim().slice(0, 24) : ''
       if (tag || text || tag2Raw)
         items.push({
           tag,
           text,
           ...(tag2Raw && { tag2: tag2Raw.slice(0, 24) }),
+          ...(tagAr && { tag_ar: tagAr }),
+          ...(textAr && { text_ar: textAr }),
+          ...(tag2Ar && { tag2_ar: tag2Ar }),
         })
     }
   }
