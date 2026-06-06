@@ -32,13 +32,11 @@
   --accent-yellow: #ffcc00;
   --accent-yellow-fg: #0a0a0a;
 
-  /* Type stacks — 2-font system
-     Titles (all locales): LBC
-     EN body / UI: Geist
-     AR body / UI: LBC Bold
+  /* Type stacks — LBC everywhere
+     Titles + Body + UI (EN + AR): LBC
      --font-app + --font-ui are legacy aliases pointing to the active body font. */
   --font-title: var(--font-lbc), ui-sans-serif, system-ui, sans-serif;
-  --font-en-body: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-en-body: var(--font-lbc), ui-sans-serif, system-ui, sans-serif;
   --font-ar-body: var(--font-lbc), ui-sans-serif, system-ui, sans-serif;
 
   --font-app: var(--font-en-body);
@@ -221,7 +219,7 @@
   --color-text-muted: #6e6e6b;
 }
 
-/* Arabic locale: LBC Bold for all text. */
+/* Arabic locale: Geist body, same as English. */
 html[lang='ar'] {
   --font-app: var(--font-ar-body);
   --font-ui: var(--font-app);
@@ -263,7 +261,6 @@ html[lang='ar'] {
 
   html[lang='ar'] body {
     font-family: var(--font-ar-body);
-    font-weight: 700;
   }
 
   /* All headings use the title font (LBC) regardless of locale. */
