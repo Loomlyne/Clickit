@@ -5,7 +5,6 @@ import { getMessages, setRequestLocale } from 'next-intl/server'
 import Script from 'next/script'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
-import { Geist } from 'next/font/google'
 import localFont from 'next/font/local'
 
 import '@/styles/globals.css'
@@ -15,13 +14,6 @@ import { getAppConfig } from '@/lib/config'
 import { siteUrl } from '@/lib/site-url'
 import { dirFor, getLocale, pickLocalized } from '@/lib/locale'
 import { routing, staticParams, type Locale } from '@/i18n/routing'
-
-const geist = Geist({
-  subsets: ['latin'],
-  variable: '--font-geist',
-  weight: ['300', '400', '500', '600', '700', '800'],
-  display: 'swap',
-})
 
 const lbc = localFont({
   src: [
@@ -133,9 +125,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       dir={dir}
-      className={['dark', geist.variable, lbc.variable].join(
-        ' '
-      )}
+      className={['dark', lbc.variable].join(' ')}
     >
       <body className="bg-background text-foreground selection:bg-primary/70 selection:text-primary-foreground font-sans antialiased">
         <a

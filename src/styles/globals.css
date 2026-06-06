@@ -219,7 +219,7 @@
   --color-text-muted: #6e6e6b;
 }
 
-/* Arabic locale: Geist body, same as English. */
+/* Arabic locale: LBC body, same as English. */
 html[lang='ar'] {
   --font-app: var(--font-ar-body);
   --font-ui: var(--font-app);
