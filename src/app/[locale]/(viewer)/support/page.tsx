@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
 import { ContactForm } from '@/components/support/contact-form'
+import { getFaqsPublic } from '@/lib/queries'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('support')
@@ -19,18 +20,25 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function SupportPage() {
-  const [t, tFaq] = await Promise.all([
+  const [t, tFaq, dbFaqs] = await Promise.all([
     getTranslations('support'),
     getTranslations('faq'),
+    getFaqsPublic(),
   ])
 
-  // Build FAQ items from the faq namespace keys (q1Question..q8Answer)
-  const faqItems = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => ({
-    q: tFaq(`q${i}Question`),
-    a: tFaq(`q${i}Answer`),
-  }))
-  const leftFaq = faqItems.slice(0, 4)
-  const rightFaq = faqItems.slice(4)
+  // Use the admin-managed FAQs (same `faqs` table as the landing page) so both
+  // pages stay in sync from one source. Fall back to the i18n faq namespace
+  // (q1Question..q8Answer) only when no FAQs have been configured yet.
+  const faqItems =
+    dbFaqs.length > 0
+      ? dbFaqs.map((f) => ({ q: f.question, a: f.answer }))
+      : [1, 2, 3, 4, 5, 6, 7, 8].map((i) => ({
+          q: tFaq(`q${i}Question`),
+          a: tFaq(`q${i}Answer`),
+        }))
+  const splitAt = Math.ceil(faqItems.length / 2)
+  const leftFaq = faqItems.slice(0, splitAt)
+  const rightFaq = faqItems.slice(splitAt)
 
   return (
     <div
