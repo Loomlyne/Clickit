@@ -1,6 +1,6 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import {
   DropdownMenu,
@@ -27,6 +27,7 @@ export function UserDropdown({
 }: UserDropdownProps) {
   const tNav = useTranslations('nav')
   const tCommon = useTranslations('common')
+  const locale = useLocale()
   const router = useRouter()
 
   return (
@@ -49,7 +50,7 @@ export function UserDropdown({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="focus:text-[var(--primary)] data-[highlighted]:text-[var(--primary)] focus:[&_svg]:text-[var(--primary)] data-[highlighted]:[&_svg]:text-[var(--primary)]"
-              onSelect={() => router.push('/admin')}
+              onSelect={() => window.location.assign(`/${locale}/admin`)}
             >
               <Shield className="me-2 size-4 text-current" />
               {tNav('admin')}

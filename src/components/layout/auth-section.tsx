@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/components/ui/button'
@@ -32,6 +32,7 @@ export function AuthSection({
   const t = useTranslations('common')
   const tNav = useTranslations('nav')
   const tAuth = useTranslations('auth')
+  const locale = useLocale()
   const router = useRouter()
   const [user, setUser] = useState<UserState | null>(
     initialUser
@@ -163,10 +164,10 @@ export function AuthSection({
               className="h-11 justify-center gap-2 rounded-full"
               asChild
             >
-              <Link href="/admin">
+              <a href={`/${locale}/admin`}>
                 <Shield className="size-4" />
                 {tNav('admin')}
-              </Link>
+              </a>
             </Button>
           )}
           <Button

@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useTranslations } from 'next-intl'
-import { useRouter } from '@/i18n/navigation'
+import { useTranslations, useLocale } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -32,7 +31,7 @@ type ForgotFormData = z.infer<typeof forgotSchema>
 export function LoginForm() {
   const t = useTranslations('auth')
   const tErrors = useTranslations('errors')
-  const router = useRouter()
+  const locale = useLocale()
   const searchParams = useSearchParams()
   const [serverError, setServerError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
@@ -68,14 +67,15 @@ export function LoginForm() {
       .single()
     const isAdmin = config?.admin_user_id === authData.user?.id
 
-    toast.success(t('welcomeBack'))
-    router.replace(
-      getSafeAuthNextPath(
-        searchParams.get('next'),
-        isAdmin ? '/admin' : '/watch'
-      )
+    const path = getSafeAuthNextPath(
+      searchParams.get('next'),
+      isAdmin ? '/admin' : '/watch'
     )
-    router.refresh()
+    toast.success(t('welcomeBack'))
+    // Hard navigation: guarantees the browser sends the freshly persisted
+    // sb-…-auth-token cookie so the middleware auth gate and the admin layout
+    // render against a consistent session (no soft-nav race → no double-click).
+    window.location.assign(`/${locale}${path}`)
   }
 
   async function onForgot(data: ForgotFormData) {

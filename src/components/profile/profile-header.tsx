@@ -1,9 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
-import { Link } from '@/i18n/navigation'
 import { Shield, LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { AvatarUpload } from './avatar-upload'
@@ -22,6 +21,7 @@ export function ProfileHeader({
   isAdmin,
 }: ProfileHeaderProps) {
   const router = useRouter()
+  const locale = useLocale()
   const tNav = useTranslations('nav')
   const tCommon = useTranslations('common')
   const tProfile = useTranslations('profile')
@@ -54,13 +54,13 @@ export function ProfileHeader({
       {/* Action buttons */}
       <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-end">
         {isAdmin && (
-          <Link
-            href="/admin"
+          <a
+            href={`/${locale}/admin`}
             className="flex items-center gap-2 rounded-full border border-[var(--line-2)] bg-[var(--bg-2)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--bg-3)]"
           >
             <Shield className="size-4" />
             {tNav('admin')}
-          </Link>
+          </a>
         )}
         <button
           onClick={handleSignOut}

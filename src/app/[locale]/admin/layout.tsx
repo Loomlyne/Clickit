@@ -22,6 +22,7 @@ export default async function AdminLayout({
   const { data: config } = await supabase
     .from('app_config')
     .select('admin_user_id')
+    .eq('id', 1)
     .single()
 
   if (config?.admin_user_id !== user.id) {
