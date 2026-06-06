@@ -15,7 +15,7 @@ export function AdminProfileCard({
   avatarUrl,
 }: AdminProfileCardProps) {
   const t = useTranslations('admin.profileCard')
-  const tProfile = useTranslations('profile')
+  const tNav = useTranslations('nav')
   return (
     <AdminPanel className="p-5">
       <div className="flex items-center gap-4">
@@ -43,7 +43,7 @@ export function AdminProfileCard({
           className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-full border border-white/8 px-3 py-1.5 text-xs transition-colors"
         >
           <Settings className="size-3" />
-          {tProfile('title')}
+          {tNav('profile')}
         </Link>
       </div>
     </AdminPanel>

@@ -34,7 +34,7 @@ export function SettingsTabs({
           <TabsTrigger value="integrations">{t('integrationsTab')}</TabsTrigger>
           <TabsTrigger value="advanced">{t('advancedTab')}</TabsTrigger>
           <TabsTrigger value="legal">Legal</TabsTrigger>
-          <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+          <TabsTrigger value="portfolio">Information</TabsTrigger>
         </TabsList>
       </div>
 

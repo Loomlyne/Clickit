@@ -191,16 +191,10 @@ export function AuthSection({
 
   return (
     <UserDropdown email={user.email} isAdmin={isAdmin} onSignOut={signOut}>
-      <button
-        type="button"
-        className="flex items-center gap-2.5"
-        aria-label={tNav('userMenu')}
-      >
-        <UserAvatar
-          name={user.displayName || user.email}
-          avatarUrl={user.avatarUrl}
-        />
-      </button>
+      <UserAvatar
+        name={user.displayName || user.email}
+        avatarUrl={user.avatarUrl}
+      />
     </UserDropdown>
   )
 }
