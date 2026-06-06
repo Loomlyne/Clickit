@@ -93,17 +93,6 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
             />
           </SettingsField>
           <SettingsField
-            label={t('catalogStatLabel')}
-            hint={t('catalogStatHint')}
-          >
-            <Input
-              maxLength={80}
-              value={v.stat}
-              onChange={(e) => setV({ ...v, stat: e.target.value })}
-              className="rounded-[12px]"
-            />
-          </SettingsField>
-          <SettingsField
             label={t('contactEmailLabel')}
             hint={t('contactEmailHint')}
           >
