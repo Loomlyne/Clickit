@@ -220,7 +220,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
               {/* Arabic — shown on the ticker when the viewer locale is ar */}
               <div className="flex flex-col gap-3 border-t border-white/5 pt-3 md:flex-row md:items-end">
                 <div className="min-w-0 flex-1 md:max-w-[160px]">
-                  <SettingsField label={`${t('tagLabel')} (Arabic)`}>
+                  <SettingsField label={t('tagArLabel')}>
                     <Input
                       dir="rtl"
                       value={row.tag_ar ?? ''}
@@ -237,7 +237,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
                   </SettingsField>
                 </div>
                 <div className="min-w-0 flex-[2]">
-                  <SettingsField label={`${t('textLabel')} (Arabic)`}>
+                  <SettingsField label={t('textArLabel')}>
                     <Input
                       dir="rtl"
                       value={row.text_ar ?? ''}
@@ -254,7 +254,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
                   </SettingsField>
                 </div>
                 <div className="min-w-0 flex-1 md:max-w-[160px]">
-                  <SettingsField label={`${t('tagLabel')} (Arabic)`}>
+                  <SettingsField label={t('tagArLabel')}>
                     <Input
                       dir="rtl"
                       value={row.tag2_ar ?? ''}

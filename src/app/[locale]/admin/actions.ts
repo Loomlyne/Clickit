@@ -2051,6 +2051,18 @@ export async function updateSiteMetadata(
   try {
     const user = await assertAdmin()
     const parsed = siteMetadataSchema.parse(input)
+
+    // Auto-fill blank Arabic fields from their English source (DeepL).
+    parsed.site_description_ar = await fillArabic(
+      parsed.site_description,
+      parsed.site_description_ar
+    )
+    parsed.site_tagline_ar = await fillArabic(parsed.site_tagline, parsed.site_tagline_ar)
+    parsed.hero_description_ar = await fillArabic(
+      parsed.hero_description,
+      parsed.hero_description_ar
+    )
+
     const admin = createAdminClient()
     const { error } = await admin
       .from('app_config')
@@ -2076,6 +2088,10 @@ export async function updateFooterContent(
   try {
     const user = await assertAdmin()
     const parsed = footerSchema.parse(input)
+
+    // Auto-fill blank Arabic tagline from English (DeepL).
+    parsed.taglineAr = (await fillArabic(parsed.tagline, parsed.taglineAr)) ?? ''
+
     const admin = createAdminClient()
     const { error } = await admin
       .from('app_config')
@@ -2110,6 +2126,19 @@ export async function updatePortfolioContent(
   try {
     const user = await assertAdmin()
     const parsed = portfolioContentSchema.parse(input)
+
+    // Auto-fill blank Arabic fields from their English source (DeepL).
+    parsed.hero_description_ar = await fillArabic(
+      parsed.hero_description,
+      parsed.hero_description_ar
+    )
+    parsed.portfolio_heading_ar = await fillArabic(
+      parsed.portfolio_heading,
+      parsed.portfolio_heading_ar
+    )
+    parsed.footer_tagline_ar =
+      (await fillArabic(parsed.footer_tagline, parsed.footer_tagline_ar)) ?? ''
+
     const admin = createAdminClient()
 
     // Read the CURRENT footer_content fresh from the DB — NOT the cached
@@ -2340,7 +2369,15 @@ export async function updateTopTicker(
   try {
     const user = await assertAdmin()
     const parsed = topTickerSchema.parse(input)
-    const items = parsed.items
+    type TickerItem = {
+      tag: string
+      text: string
+      tag2?: string
+      tag_ar?: string
+      text_ar?: string
+      tag2_ar?: string
+    }
+    const items: TickerItem[] = parsed.items
       .map((row) => ({
         tag: row.tag.trim(),
         text: row.text.trim(),
@@ -2350,6 +2387,22 @@ export async function updateTopTicker(
         ...(row.tag2_ar?.trim() && { tag2_ar: row.tag2_ar.trim() }),
       }))
       .filter((row) => row.tag.length > 0 || row.text.length > 0 || (row.tag2 ?? '').length > 0)
+
+    // Auto-fill blank Arabic fields from English in one batched DeepL call.
+    const enTexts: string[] = []
+    const slots: Array<[number, 'tag_ar' | 'text_ar' | 'tag2_ar']> = []
+    items.forEach((it, idx) => {
+      if (!it.tag_ar && it.tag) { enTexts.push(it.tag); slots.push([idx, 'tag_ar']) }
+      if (!it.text_ar && it.text) { enTexts.push(it.text); slots.push([idx, 'text_ar']) }
+      if (!it.tag2_ar && it.tag2) { enTexts.push(it.tag2); slots.push([idx, 'tag2_ar']) }
+    })
+    if (enTexts.length > 0) {
+      const translated = await translateBatchToArabic(enTexts)
+      translated.forEach((tr, i) => {
+        const slot = slots[i]
+        if (slot && tr?.trim()) items[slot[0]][slot[1]] = tr
+      })
+    }
 
     if (parsed.enabled && items.length === 0) {
       return {
@@ -2990,6 +3043,10 @@ export async function upsertLegalPage(
     const supabase = await createClient()
     const { id, ...fields } = parsed.data
 
+    // Auto-fill blank Arabic fields from their English source (DeepL).
+    fields.title_ar = await fillArabic(fields.title, fields.title_ar)
+    fields.content_ar = await fillArabic(fields.content, fields.content_ar)
+
     if (id) {
       const { data, error } = await supabase
         .from('legal_pages')
@@ -3081,6 +3138,10 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
 
     const supabase = await createClient()
     const { id, ...fields } = parsed.data
+
+    // Auto-fill blank Arabic fields from their English source (DeepL).
+    fields.question_ar = await fillArabic(fields.question, fields.question_ar)
+    fields.answer_ar = await fillArabic(fields.answer, fields.answer_ar)
 
     if (id) {
       const { data, error } = await supabase

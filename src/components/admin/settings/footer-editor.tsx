@@ -79,8 +79,8 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
             />
           </SettingsField>
           <SettingsField
-            label={`${t('footerTaglineLabel')} (Arabic)`}
-            hint="Shown when the viewer switches to Arabic. Leave blank to fall back to English."
+            label={t('footerTaglineArLabel')}
+            hint={t('footerTaglineArHint')}
           >
             <Textarea
               dir="rtl"

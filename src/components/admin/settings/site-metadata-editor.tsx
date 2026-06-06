@@ -83,8 +83,8 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
         </SettingsField>
 
         <SettingsField
-          label={`${t('siteTaglineLabel')} (Arabic)`}
-          hint="Shown when the viewer switches to Arabic. Leave blank to fall back to English."
+          label={t('siteTaglineArLabel')}
+          hint={t('siteTaglineArHint')}
         >
           <Input
             dir="rtl"
@@ -114,8 +114,8 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
         </SettingsField>
 
         <SettingsField
-          label={`${t('seoDescriptionLabel')} (Arabic)`}
-          hint="Arabic meta description shown when the viewer is on the Arabic locale."
+          label={t('seoDescriptionArLabel')}
+          hint={t('seoDescriptionArHint')}
         >
           <Textarea
             dir="rtl"

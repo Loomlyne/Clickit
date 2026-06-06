@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Pencil, Plus, Trash2, Loader2, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -45,6 +46,8 @@ const emptyDraft = (nextOrder: number): Draft => ({
 })
 
 export function FaqsEditor({ initial }: { initial: Faq[] }) {
+  const t = useTranslations('admin.settings')
+  const tc = useTranslations('common')
   const [faqs, setFaqs] = useState<Faq[]>(initial)
   const [draft, setDraft] = useState<Draft | null>(null)
   const [saving, setSaving] = useState(false)
@@ -75,7 +78,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
     const result = await upsertFaq(draft)
     setSaving(false)
     if (!result.success) {
-      toast.error(result.error ?? 'Failed to save FAQ')
+      toast.error(result.error ?? t('faqSaveFailed'))
       return
     }
     const saved = result.data as Faq
@@ -85,7 +88,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
         : [...prev, saved]
     )
     setDraft(null)
-    toast.success(draft.id ? 'FAQ updated' : 'FAQ created')
+    toast.success(draft.id ? t('faqUpdated') : t('faqCreated'))
   }
 
   async function onDelete() {
@@ -94,12 +97,12 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
     const result = await deleteFaq(deleteTarget.id)
     setDeleting(false)
     if (!result.success) {
-      toast.error(result.error ?? 'Failed to delete FAQ')
+      toast.error(result.error ?? t('faqDeleteFailed'))
       return
     }
     setFaqs((prev) => prev.filter((f) => f.id !== deleteTarget.id))
     setDeleteTarget(null)
-    toast.success('FAQ deleted')
+    toast.success(t('faqDeleted'))
   }
 
   const sortedFaqs = [...faqs].sort((a, b) => a.sort_order - b.sort_order)
@@ -107,19 +110,19 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
   return (
     <>
       <SettingsCard
-        title="FAQs"
-        description="Frequently asked questions shown on the landing page."
+        title={t('faqsCardTitle')}
+        description={t('faqsCardDescription')}
         action={
           <Button size="sm" className="gap-1.5" onClick={openNew}>
             <Plus className="size-3.5" />
-            Add FAQ
+            {t('faqAdd')}
           </Button>
         }
       >
         {sortedFaqs.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <HelpCircle className="size-8 text-white/20" />
-            <p className="text-sm text-white/40">No FAQs yet</p>
+            <p className="text-sm text-white/40">{t('faqEmpty')}</p>
             <Button
               size="sm"
               variant="outline"
@@ -127,7 +130,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
               className="mt-1"
             >
               <Plus className="mr-1.5 size-3.5" />
-              Add first FAQ
+              {t('faqAddFirst')}
             </Button>
           </div>
         ) : (
@@ -135,9 +138,9 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-8 hidden sm:table-cell">#</TableHead>
-                <TableHead>Question</TableHead>
-                <TableHead className="hidden md:table-cell">Answer preview</TableHead>
-                <TableHead className="w-[88px] text-right">Actions</TableHead>
+                <TableHead>{t('faqColQuestion')}</TableHead>
+                <TableHead className="hidden md:table-cell">{t('faqColAnswerPreview')}</TableHead>
+                <TableHead className="w-[88px] text-right">{t('faqColActions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -159,7 +162,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
                         variant="ghost"
                         className="size-8 text-white/50 hover:text-white"
                         onClick={() => openEdit(faq)}
-                        aria-label="Edit FAQ"
+                        aria-label={t('faqEditAria')}
                       >
                         <Pencil className="size-3.5" />
                       </Button>
@@ -168,7 +171,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
                         variant="ghost"
                         className="size-8 text-white/50 hover:text-red-300"
                         onClick={() => setDeleteTarget(faq)}
-                        aria-label="Delete FAQ"
+                        aria-label={t('faqDeleteAria')}
                       >
                         <Trash2 className="size-3.5" />
                       </Button>
@@ -185,20 +188,19 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
       <Dialog open={!!draft} onOpenChange={(open) => !open && setDraft(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{draft?.id ? 'Edit FAQ' : 'New FAQ'}</DialogTitle>
+            <DialogTitle>{draft?.id ? t('faqDialogEditTitle') : t('faqDialogNewTitle')}</DialogTitle>
             <DialogDescription>
-              This FAQ will appear in the landing page FAQ section when the FAQ
-              section is enabled.
+              {t('faqDialogDescription')}
             </DialogDescription>
           </DialogHeader>
 
           {draft && (
             <div className="space-y-4 py-2">
-              <SettingsField label="Question">
+              <SettingsField label={t('faqQuestionLabel')}>
                 <Input
                   value={draft.question}
                   maxLength={500}
-                  placeholder="What is Clickit Story?"
+                  placeholder={t('faqQuestionPlaceholder')}
                   onChange={(e) =>
                     setDraft((d) =>
                       d ? { ...d, question: e.target.value } : d
@@ -208,11 +210,11 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
                 />
               </SettingsField>
 
-              <SettingsField label="Answer">
+              <SettingsField label={t('faqAnswerLabel')}>
                 <Textarea
                   value={draft.answer}
                   rows={5}
-                  placeholder="Enter the answer..."
+                  placeholder={t('faqAnswerPlaceholder')}
                   onChange={(e) =>
                     setDraft((d) =>
                       d ? { ...d, answer: e.target.value } : d
@@ -223,14 +225,14 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
               </SettingsField>
 
               <SettingsField
-                label="Question (Arabic)"
-                hint="Shown when the viewer switches to Arabic. Leave blank to fall back to English."
+                label={t('faqQuestionArLabel')}
+                hint={t('faqQuestionArHint')}
               >
                 <Input
                   dir="rtl"
                   value={draft.question_ar}
                   maxLength={500}
-                  placeholder="ما هي كليك إت ستوري؟"
+                  placeholder={t('faqQuestionArPlaceholder')}
                   onChange={(e) =>
                     setDraft((d) =>
                       d ? { ...d, question_ar: e.target.value } : d
@@ -241,14 +243,14 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
               </SettingsField>
 
               <SettingsField
-                label="Answer (Arabic)"
-                hint="Arabic answer shown on the Arabic locale. Leave blank to fall back to English."
+                label={t('faqAnswerArLabel')}
+                hint={t('faqAnswerArHint')}
               >
                 <Textarea
                   dir="rtl"
                   value={draft.answer_ar}
                   rows={5}
-                  placeholder="أدخل الإجابة..."
+                  placeholder={t('faqAnswerArPlaceholder')}
                   onChange={(e) =>
                     setDraft((d) =>
                       d ? { ...d, answer_ar: e.target.value } : d
@@ -259,8 +261,8 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
               </SettingsField>
 
               <SettingsField
-                label="Sort Order"
-                hint="Lower number = appears first"
+                label={t('sortOrderLabel')}
+                hint={t('faqSortHint')}
               >
                 <Input
                   type="number"
@@ -288,7 +290,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
               onClick={() => setDraft(null)}
               disabled={saving}
             >
-              Cancel
+              {tc('cancel')}
             </Button>
             <Button
               onClick={onSave}
@@ -301,7 +303,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
               {saving ? (
                 <Loader2 className="mr-2 size-4 animate-spin" />
               ) : null}
-              {draft?.id ? 'Save Changes' : 'Create FAQ'}
+              {draft?.id ? t('faqSaveChanges') : t('faqCreate')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -311,9 +313,9 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Delete FAQ"
-        description={`Permanently delete this FAQ? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('faqDeleteTitle')}
+        description={t('faqDeleteConfirm')}
+        confirmLabel={tc('delete')}
         onConfirm={onDelete}
         destructive
         loading={deleting}

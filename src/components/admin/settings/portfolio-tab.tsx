@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -37,6 +38,7 @@ type Values = {
 }
 
 export function PortfolioTab({ config }: { config: AppConfig }) {
+  const t = useTranslations('admin.settings')
   const [values, setValues] = useState<Values>({
     hero_description: config.heroDescription ?? '',
     hero_description_ar: config.heroDescriptionAr ?? '',
@@ -74,8 +76,8 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
       footer_tagline_ar: values.footer_tagline_ar,
     })
     setSaving(false)
-    if (result.success) toast.success('Portfolio content saved')
-    else toast.error(result.error ?? 'Failed to save')
+    if (result.success) toast.success(t('portfolioSaved'))
+    else toast.error(result.error ?? t('saveFailed'))
   }
 
   return (
@@ -83,25 +85,25 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
       {/* ── Landing Page ───────────────────────────────────────────── */}
       <section className="space-y-6">
         <PageHeading
-          title="Landing Page"
-          description="Content shown on the public landing page."
+          title={t('portfolioLandingTitle')}
+          description={t('portfolioLandingDesc')}
         />
 
         {/* Hero section */}
         <SettingsCard
-          title="Hero Section"
-          description="Text shown on the landing page hero below the logo."
+          title={t('portfolioHeroTitle')}
+          description={t('portfolioHeroDesc')}
         >
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
               <SettingsField
-                label="Hero Description"
-                hint="Paragraph shown below the logo on the landing page hero. Leave blank to use the default copy."
+                label={t('heroDescriptionLabel')}
+                hint={t('heroDescriptionHint')}
               >
                 <Textarea
                   value={values.hero_description}
                   onChange={(e) => set({ hero_description: e.target.value })}
-                  placeholder="A global digital media platform from the UAE…"
+                  placeholder={t('heroDescriptionPlaceholder')}
                   maxLength={500}
                   rows={3}
                   className="rounded-[12px]"
@@ -110,14 +112,14 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
             </div>
             <div className="md:col-span-2">
               <SettingsField
-                label="Hero Description (Arabic)"
-                hint="Arabic paragraph shown on the hero when the viewer switches to Arabic. Leave blank to use the default Arabic copy."
+                label={t('heroDescriptionArLabel')}
+                hint={t('heroDescriptionArHint')}
               >
                 <Textarea
                   dir="rtl"
                   value={values.hero_description_ar}
                   onChange={(e) => set({ hero_description_ar: e.target.value })}
-                  placeholder="منصة إعلامية رقمية عالمية من الإمارات…"
+                  placeholder={t('heroDescriptionArPlaceholder')}
                   maxLength={500}
                   rows={3}
                   className="rounded-[12px]"
@@ -129,30 +131,30 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
 
         {/* Shows section heading */}
         <SettingsCard
-          title="Shows Section"
-          description="Heading above the shows grid on the landing page."
+          title={t('portfolioShowsTitle')}
+          description={t('portfolioShowsDesc')}
         >
           <div className="grid gap-4 md:grid-cols-2">
             <SettingsField
-              label="Shows Heading"
-              hint="Large heading above the shows grid. Leave blank to use the default."
+              label={t('portfolioShowsHeadingLabel')}
+              hint={t('portfolioShowsHeadingHint')}
             >
               <Input
                 value={values.portfolio_heading}
                 onChange={(e) => set({ portfolio_heading: e.target.value })}
-                placeholder="Click the Moment, Live the Story"
+                placeholder={t('portfolioShowsHeadingPlaceholder')}
                 maxLength={200}
               />
             </SettingsField>
             <SettingsField
-              label="Shows Heading (Arabic)"
-              hint="Arabic heading shown when the viewer is on the Arabic locale."
+              label={t('portfolioShowsHeadingArLabel')}
+              hint={t('portfolioShowsHeadingArHint')}
             >
               <Input
                 dir="rtl"
                 value={values.portfolio_heading_ar}
                 onChange={(e) => set({ portfolio_heading_ar: e.target.value })}
-                placeholder="انقر اللحظة، عش القصة"
+                placeholder={t('portfolioShowsHeadingArPlaceholder')}
                 maxLength={200}
               />
             </SettingsField>
@@ -163,38 +165,38 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
       {/* ── Footer (all pages) ─────────────────────────────────────── */}
       <section className="space-y-6">
         <PageHeading
-          title="Footer"
-          description="Shown in the footer across every page."
+          title={t('portfolioFooterTitle')}
+          description={t('portfolioFooterDesc')}
         />
 
         {/* Footer tagline */}
         <SettingsCard
-          title="Footer Tagline"
-          description="Short italicised sentence shown in the footer below the logo."
+          title={t('portfolioFooterTaglineCardTitle')}
+          description={t('portfolioFooterTaglineCardDesc')}
         >
           <div className="grid gap-4 md:grid-cols-2">
             <SettingsField
-              label="Tagline"
-              hint="Appears in the footer. Keep it under 150 characters."
+              label={t('portfolioTaglineLabel')}
+              hint={t('portfolioTaglineHint')}
             >
               <Textarea
                 value={values.footer_tagline}
                 onChange={(e) => set({ footer_tagline: e.target.value })}
-                placeholder="From the UAE to the world…"
+                placeholder={t('portfolioTaglinePlaceholder')}
                 maxLength={300}
                 rows={2}
                 className="rounded-[12px]"
               />
             </SettingsField>
             <SettingsField
-              label="Tagline (Arabic)"
-              hint="Shown in the footer when the viewer switches to Arabic. Leave blank to fall back to English."
+              label={t('portfolioTaglineArLabel')}
+              hint={t('portfolioTaglineArHint')}
             >
               <Textarea
                 dir="rtl"
                 value={values.footer_tagline_ar}
                 onChange={(e) => set({ footer_tagline_ar: e.target.value })}
-                placeholder="من الإمارات إلى العالم…"
+                placeholder={t('portfolioTaglineArPlaceholder')}
                 maxLength={300}
                 rows={2}
                 className="rounded-[12px]"
@@ -206,7 +208,7 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
 
       <div className="flex justify-end">
         <Button type="submit" disabled={!dirty || saving}>
-          {saving ? <Loader2 className="size-4 animate-spin" /> : 'Save portfolio content'}
+          {saving ? <Loader2 className="size-4 animate-spin" /> : t('portfolioSave')}
         </Button>
       </div>
     </form>
