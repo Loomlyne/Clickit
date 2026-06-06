@@ -12,15 +12,17 @@ export default async function ViewerLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Prefer getUser() in RSC: validates the JWT with Supabase (avoids SSR warning).
+  // getClaims() verifies the JWT locally (ES256 JWKS, cached) instead of calling
+  // the Supabase auth server. It still validates the signature; initialUser is
+  // only a flash-prevention hint — AuthSection re-derives the full session on
+  // the client. Saves an auth-server roundtrip on every hard page load.
   const supabase = await createClient()
   const [authResult, config] = await Promise.all([
-    supabase.auth.getUser(),
+    supabase.auth.getClaims(),
     getAppConfig(),
   ])
-  const {
-    data: { user },
-  } = authResult
+  const claims = authResult.data?.claims
+  const user = claims ? { id: claims.sub, email: claims.email ?? '' } : null
 
   return (
     <>
@@ -36,7 +38,7 @@ export default async function ViewerLayout({
         <div className="relative min-h-screen bg-black">
           <MarqueeTicker ticker={config.topTicker} />
           <Navbar
-            initialUser={user ? { id: user.id, email: user.email ?? '' } : null}
+            initialUser={user}
             liveStreamUrl={config.liveStreamUrl}
             logoUrl={config.faviconUrl}
           />

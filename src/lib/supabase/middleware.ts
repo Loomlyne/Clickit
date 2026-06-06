@@ -52,20 +52,28 @@ export async function updateSession(request: NextRequest): Promise<SessionResult
     }
   )
 
-  // IMPORTANT: DO NOT use getSession() here.
-  // getUser() validates the JWT against Supabase's signing keys.
-  // getSession() does NOT validate the JWT and can return stale/tampered data.
-  const { data: { user } } = await supabase.auth.getUser()
+  // getClaims() verifies the JWT LOCALLY against the project's ES256 asymmetric
+  // signing key (JWKS fetched once, then cached in-process). Unlike getUser(),
+  // it does NOT round-trip to the Supabase auth server. This proxy runs on
+  // EVERY request — including the RSC fetch behind each client-side navigation —
+  // so cutting that ~100-300ms network call is paid back on every click.
+  //
+  // Security: getClaims() cryptographically validates the signature, so the
+  // returned sub/email are trustworthy (the same guarantee getUser() gave us;
+  // getSession() would NOT validate and must never be used here). Cookie refresh
+  // still happens via the setAll() callback above when the token is rotated.
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const userId = claimsData?.claims?.sub ?? null
 
   const checkIsAdmin = async (): Promise<boolean> => {
-    if (!user) return false
+    if (!userId) return false
     const { data: config } = await supabase
       .from('app_config')
       .select('admin_user_id')
       .eq('id', 1)
       .single()
-    return config?.admin_user_id === user.id
+    return config?.admin_user_id === userId
   }
 
-  return { response: supabaseResponse, userId: user?.id ?? null, checkIsAdmin }
+  return { response: supabaseResponse, userId, checkIsAdmin }
 }

@@ -11,7 +11,9 @@ const entryPreloadConfig = {
   mediaType: 'video' as MediaType,
   src: 'https://lajguozmtissnnfccmej.supabase.co/storage/v1/object/public/site-assets/brand/clickit-preloader.mp4?v=logo-animation-20260514',
   imageAlt: 'Clickit',
-  imageHoldMs: 2500,
+  // Static-logo fallback hold (only used when the video can't play). Trimmed so
+  // a stalled intro doesn't pin the viewer behind the splash for 2.5s.
+  imageHoldMs: 1400,
   imageFallbackSrc: '/brand/Clickit_final_logo.svg',
 }
 
@@ -19,8 +21,14 @@ const enterDuration = 0.9
 const exitDuration = 0.9
 const playRetryMs = 250
 const enterFallbackMs = 1100
-const startupFallbackMs = 2000
-const hardReleaseMs = 5000
+// If the intro video hasn't begun within this window, bail to the static logo
+// instead of staring at a black screen. Lowered 2000 → 1100.
+const startupFallbackMs = 1100
+// Absolute worst-case cap: force the splash away even if the video never fires
+// `ended` (stalled/looping on a slow connection). The happy path still exits on
+// the video's natural `onEnded`, so this only shortens the degraded case.
+// Lowered 5000 → 3000 so first interaction is never blocked more than ~3s.
+const hardReleaseMs = 3000
 
 let hasShownEntryPreloadThisDocument = false
 
