@@ -184,13 +184,13 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
               <>
                 <a
                   href={`${prefix}#shows`}
-                  className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[13.5px] tracking-[0.08em] text-[var(--text-dim)] uppercase transition-colors duration-150 hover:bg-white/[0.08] hover:text-[var(--text)]"
+                  className="rounded-full border border-white/12 bg-black/80 px-3.5 py-1.5 text-[13.5px] tracking-[0.08em] text-[var(--text-dim)] uppercase transition-colors duration-150 hover:bg-black/90 hover:text-[var(--text)]"
                 >
                   {t('shows')}
                 </a>
                 <a
                   href={`${prefix}#faq`}
-                  className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[13.5px] tracking-[0.08em] text-[var(--text-dim)] uppercase transition-colors duration-150 hover:bg-white/[0.08] hover:text-[var(--text)]"
+                  className="rounded-full border border-white/12 bg-black/80 px-3.5 py-1.5 text-[13.5px] tracking-[0.08em] text-[var(--text-dim)] uppercase transition-colors duration-150 hover:bg-black/90 hover:text-[var(--text)]"
                 >
                   {t('faq')}
                 </a>
@@ -201,7 +201,7 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
 
       {/* Right side: auth (desktop) */}
       <div className="ms-auto hidden items-center gap-3.5 md:flex">
-        <div className="inline-flex items-center rounded-full border border-white/12 bg-white/10 p-1">
+        <div className="inline-flex items-center rounded-full border border-white/12 bg-black/80 p-1">
           <Link
             href={pathname || '/watch'}
             locale="en"
@@ -235,7 +235,7 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
 
       {/* Mobile: locale switch + hamburger */}
       <div className="ms-auto flex items-center gap-2 md:hidden">
-        <div className="inline-flex items-center rounded-full border border-white/12 bg-white/10 p-1">
+        <div className="inline-flex items-center rounded-full border border-white/12 bg-black/80 p-1">
           <Link
             href={pathname || '/watch'}
             locale="en"
