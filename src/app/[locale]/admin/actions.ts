@@ -1985,8 +1985,6 @@ const siteMetadataSchema = z.object({
   site_description_ar: z.string().trim().max(300).nullable(),
   site_tagline: z.string().trim().min(1, 'Tagline is required').max(120),
   site_tagline_ar: z.string().trim().max(120).nullable(),
-  hero_description: z.string().trim().max(500).nullable(),
-  hero_description_ar: z.string().trim().max(500).nullable(),
 })
 
 const liveStreamUrlSchema = z.object({
@@ -2165,10 +2163,6 @@ export async function updateSiteMetadata(
       parsed.site_description_ar
     )
     parsed.site_tagline_ar = await fillArabic(parsed.site_tagline, parsed.site_tagline_ar)
-    parsed.hero_description_ar = await fillArabic(
-      parsed.hero_description,
-      parsed.hero_description_ar
-    )
 
     const admin = createAdminClient()
     const { error } = await admin
