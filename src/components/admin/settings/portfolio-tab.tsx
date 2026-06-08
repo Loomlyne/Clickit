@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { updatePortfolioContent } from '@/app/[locale]/admin/actions'
 import type { AppConfig } from '@/lib/config'
 import { SettingsCard, SettingsField } from './settings-card'
+import { FooterEditor } from './footer-editor'
 
 function PageHeading({
   title,
@@ -20,10 +21,10 @@ function PageHeading({
 }) {
   return (
     <div className="border-b border-[var(--line)] pb-2">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground/70">
+      <h2 className="text-foreground/70 text-sm font-semibold tracking-wide uppercase">
         {title}
       </h2>
-      <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+      <p className="text-muted-foreground mt-0.5 text-xs">{description}</p>
     </div>
   )
 }
@@ -33,8 +34,6 @@ type Values = {
   hero_description_ar: string
   portfolio_heading: string
   portfolio_heading_ar: string
-  footer_tagline: string
-  footer_tagline_ar: string
 }
 
 export function PortfolioTab({ config }: { config: AppConfig }) {
@@ -44,8 +43,6 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
     hero_description_ar: config.heroDescriptionAr ?? '',
     portfolio_heading: config.portfolioHeading ?? '',
     portfolio_heading_ar: config.portfolioHeadingAr ?? '',
-    footer_tagline: config.footer.tagline,
-    footer_tagline_ar: config.footer.taglineAr,
   })
   const [saving, setSaving] = useState(false)
 
@@ -54,8 +51,6 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
     hero_description_ar: config.heroDescriptionAr ?? '',
     portfolio_heading: config.portfolioHeading ?? '',
     portfolio_heading_ar: config.portfolioHeadingAr ?? '',
-    footer_tagline: config.footer.tagline,
-    footer_tagline_ar: config.footer.taglineAr,
   }
 
   const dirty = JSON.stringify(values) !== JSON.stringify(initial)
@@ -72,8 +67,6 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
       hero_description_ar: values.hero_description_ar || null,
       portfolio_heading: values.portfolio_heading || null,
       portfolio_heading_ar: values.portfolio_heading_ar || null,
-      footer_tagline: values.footer_tagline,
-      footer_tagline_ar: values.footer_tagline_ar,
     })
     setSaving(false)
     if (result.success) toast.success(t('portfolioSaved'))
@@ -81,86 +74,102 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
   }
 
   return (
-    <form onSubmit={onSave} className="space-y-10">
-      {/* ── Landing Page ───────────────────────────────────────────── */}
-      <section className="space-y-6">
-        <PageHeading
-          title={t('portfolioLandingTitle')}
-          description={t('portfolioLandingDesc')}
-        />
+    <div className="space-y-10">
+      <form onSubmit={onSave} className="space-y-10">
+        {/* ── Landing Page ───────────────────────────────────────────── */}
+        <section className="space-y-6">
+          <PageHeading
+            title={t('portfolioLandingTitle')}
+            description={t('portfolioLandingDesc')}
+          />
 
-        {/* Hero section */}
-        <SettingsCard
-          title={t('portfolioHeroTitle')}
-          description={t('portfolioHeroDesc')}
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="md:col-span-2">
+          {/* Hero section */}
+          <SettingsCard
+            title={t('portfolioHeroTitle')}
+            description={t('portfolioHeroDesc')}
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <SettingsField
+                  label={t('heroDescriptionLabel')}
+                  hint={t('heroDescriptionHint')}
+                >
+                  <Textarea
+                    value={values.hero_description}
+                    onChange={(e) => set({ hero_description: e.target.value })}
+                    placeholder={t('heroDescriptionPlaceholder')}
+                    maxLength={500}
+                    rows={3}
+                    className="rounded-[12px]"
+                  />
+                </SettingsField>
+              </div>
+              <div className="md:col-span-2">
+                <SettingsField
+                  label={t('heroDescriptionArLabel')}
+                  hint={t('heroDescriptionArHint')}
+                >
+                  <Textarea
+                    dir="rtl"
+                    value={values.hero_description_ar}
+                    onChange={(e) =>
+                      set({ hero_description_ar: e.target.value })
+                    }
+                    placeholder={t('heroDescriptionArPlaceholder')}
+                    maxLength={500}
+                    rows={3}
+                    className="rounded-[12px]"
+                  />
+                </SettingsField>
+              </div>
+            </div>
+          </SettingsCard>
+
+          {/* Shows section heading */}
+          <SettingsCard
+            title={t('portfolioShowsTitle')}
+            description={t('portfolioShowsDesc')}
+          >
+            <div className="grid gap-4 md:grid-cols-2">
               <SettingsField
-                label={t('heroDescriptionLabel')}
-                hint={t('heroDescriptionHint')}
+                label={t('portfolioShowsHeadingLabel')}
+                hint={t('portfolioShowsHeadingHint')}
               >
-                <Textarea
-                  value={values.hero_description}
-                  onChange={(e) => set({ hero_description: e.target.value })}
-                  placeholder={t('heroDescriptionPlaceholder')}
-                  maxLength={500}
-                  rows={3}
-                  className="rounded-[12px]"
+                <Input
+                  value={values.portfolio_heading}
+                  onChange={(e) => set({ portfolio_heading: e.target.value })}
+                  placeholder={t('portfolioShowsHeadingPlaceholder')}
+                  maxLength={200}
                 />
               </SettingsField>
-            </div>
-            <div className="md:col-span-2">
               <SettingsField
-                label={t('heroDescriptionArLabel')}
-                hint={t('heroDescriptionArHint')}
+                label={t('portfolioShowsHeadingArLabel')}
+                hint={t('portfolioShowsHeadingArHint')}
               >
-                <Textarea
+                <Input
                   dir="rtl"
-                  value={values.hero_description_ar}
-                  onChange={(e) => set({ hero_description_ar: e.target.value })}
-                  placeholder={t('heroDescriptionArPlaceholder')}
-                  maxLength={500}
-                  rows={3}
-                  className="rounded-[12px]"
+                  value={values.portfolio_heading_ar}
+                  onChange={(e) =>
+                    set({ portfolio_heading_ar: e.target.value })
+                  }
+                  placeholder={t('portfolioShowsHeadingArPlaceholder')}
+                  maxLength={200}
                 />
               </SettingsField>
             </div>
-          </div>
-        </SettingsCard>
+          </SettingsCard>
+        </section>
 
-        {/* Shows section heading */}
-        <SettingsCard
-          title={t('portfolioShowsTitle')}
-          description={t('portfolioShowsDesc')}
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <SettingsField
-              label={t('portfolioShowsHeadingLabel')}
-              hint={t('portfolioShowsHeadingHint')}
-            >
-              <Input
-                value={values.portfolio_heading}
-                onChange={(e) => set({ portfolio_heading: e.target.value })}
-                placeholder={t('portfolioShowsHeadingPlaceholder')}
-                maxLength={200}
-              />
-            </SettingsField>
-            <SettingsField
-              label={t('portfolioShowsHeadingArLabel')}
-              hint={t('portfolioShowsHeadingArHint')}
-            >
-              <Input
-                dir="rtl"
-                value={values.portfolio_heading_ar}
-                onChange={(e) => set({ portfolio_heading_ar: e.target.value })}
-                placeholder={t('portfolioShowsHeadingArPlaceholder')}
-                maxLength={200}
-              />
-            </SettingsField>
-          </div>
-        </SettingsCard>
-      </section>
+        <div className="flex justify-end">
+          <Button type="submit" disabled={!dirty || saving}>
+            {saving ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              t('portfolioSave')
+            )}
+          </Button>
+        </div>
+      </form>
 
       {/* ── Footer (all pages) ─────────────────────────────────────── */}
       <section className="space-y-6">
@@ -168,49 +177,8 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
           title={t('portfolioFooterTitle')}
           description={t('portfolioFooterDesc')}
         />
-
-        {/* Footer tagline */}
-        <SettingsCard
-          title={t('portfolioFooterTaglineCardTitle')}
-          description={t('portfolioFooterTaglineCardDesc')}
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <SettingsField
-              label={t('portfolioTaglineLabel')}
-              hint={t('portfolioTaglineHint')}
-            >
-              <Textarea
-                value={values.footer_tagline}
-                onChange={(e) => set({ footer_tagline: e.target.value })}
-                placeholder={t('portfolioTaglinePlaceholder')}
-                maxLength={300}
-                rows={2}
-                className="rounded-[12px]"
-              />
-            </SettingsField>
-            <SettingsField
-              label={t('portfolioTaglineArLabel')}
-              hint={t('portfolioTaglineArHint')}
-            >
-              <Textarea
-                dir="rtl"
-                value={values.footer_tagline_ar}
-                onChange={(e) => set({ footer_tagline_ar: e.target.value })}
-                placeholder={t('portfolioTaglineArPlaceholder')}
-                maxLength={300}
-                rows={2}
-                className="rounded-[12px]"
-              />
-            </SettingsField>
-          </div>
-        </SettingsCard>
+        <FooterEditor initial={config.footer} />
       </section>
-
-      <div className="flex justify-end">
-        <Button type="submit" disabled={!dirty || saving}>
-          {saving ? <Loader2 className="size-4 animate-spin" /> : t('portfolioSave')}
-        </Button>
-      </div>
-    </form>
+    </div>
   )
 }

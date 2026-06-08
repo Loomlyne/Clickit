@@ -2223,8 +2223,6 @@ const portfolioContentSchema = z.object({
   hero_description_ar: z.string().trim().max(500).nullable(),
   portfolio_heading: z.string().trim().max(200).nullable(),
   portfolio_heading_ar: z.string().trim().max(200).nullable(),
-  footer_tagline: z.string().trim().max(300),
-  footer_tagline_ar: z.string().trim().max(300),
 })
 
 export async function updatePortfolioContent(
@@ -2243,44 +2241,14 @@ export async function updatePortfolioContent(
       parsed.portfolio_heading,
       parsed.portfolio_heading_ar
     )
-    parsed.footer_tagline_ar =
-      (await fillArabic(parsed.footer_tagline, parsed.footer_tagline_ar)) ?? ''
 
     const admin = createAdminClient()
-
-    // Read the CURRENT footer_content fresh from the DB — NOT the cached
-    // getAppConfig(), which silently falls back to DEFAULT_FOOTER (social: [])
-    // on a read miss/error and would clobber admin-managed fields (social
-    // links, contact, legal) when this read-modify-write saves it back. Fail
-    // closed: if we can't read the current blob, abort rather than overwrite.
-    const { data: cfgRow, error: readErr } = await admin
-      .from('app_config')
-      .select('footer_content')
-      .eq('id', 1)
-      .single<{ footer_content: unknown }>()
-    if (readErr || !cfgRow) {
-      return {
-        success: false,
-        error: readErr?.message ?? 'Could not read current footer content',
-      }
-    }
-    const currentFooter =
-      cfgRow.footer_content && typeof cfgRow.footer_content === 'object'
-        ? (cfgRow.footer_content as Record<string, unknown>)
-        : {}
 
     const updatePayload = {
       hero_description: parsed.hero_description,
       hero_description_ar: parsed.hero_description_ar,
       portfolio_heading: parsed.portfolio_heading,
       portfolio_heading_ar: parsed.portfolio_heading_ar,
-      // Spread the raw stored blob so social/contact/legal pass through
-      // untouched; only the tagline fields this editor owns are overwritten.
-      footer_content: {
-        ...currentFooter,
-        tagline: parsed.footer_tagline,
-        taglineAr: parsed.footer_tagline_ar,
-      },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any
     const { error } = await admin
@@ -2294,8 +2262,6 @@ export async function updatePortfolioContent(
       'hero_description_ar',
       'portfolio_heading',
       'portfolio_heading_ar',
-      'footer_content.tagline',
-      'footer_content.taglineAr',
     ])
     bumpSiteConfigCache()
     return { success: true }

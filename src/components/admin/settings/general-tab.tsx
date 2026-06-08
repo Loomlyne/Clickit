@@ -3,7 +3,6 @@
 import type { AppConfig } from '@/lib/config'
 import { SiteMetadataEditor } from './site-metadata-editor'
 import { LiveStreamUrlEditor } from './live-stream-url-editor'
-import { FooterEditor } from './footer-editor'
 import { TopTickerEditor } from './top-ticker-editor'
 
 export function GeneralTab({ config }: { config: AppConfig }) {
@@ -22,7 +21,6 @@ export function GeneralTab({ config }: { config: AppConfig }) {
       />
       <LiveStreamUrlEditor initialUrl={config.liveStreamUrl} />
       <TopTickerEditor initial={config.topTicker} />
-      <FooterEditor initial={config.footer} />
     </>
   )
 }
