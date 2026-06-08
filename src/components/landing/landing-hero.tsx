@@ -63,16 +63,16 @@ export async function LandingHero() {
         </div>
       )}
 
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black from-10% via-black/50 via-40% to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 from-5% via-black/25 via-40% to-transparent" />
       <div
         className={`pointer-events-none absolute inset-0 ${
           isAr
-            ? 'bg-gradient-to-l from-black/80 via-black/40 to-transparent'
-            : 'bg-gradient-to-r from-black/80 via-black/40 to-transparent'
+            ? 'bg-gradient-to-l from-black/50 via-black/20 to-transparent'
+            : 'bg-gradient-to-r from-black/50 via-black/20 to-transparent'
         }`}
       />
 
-      <div className="relative flex min-h-dvh items-end px-4 pt-28 pb-16 sm:px-6 md:px-10 md:pb-20">
+      <div className="relative flex min-h-dvh items-end px-4 pt-28 pb-8 sm:px-6 md:px-10 md:pb-10">
         <div className="w-full max-w-[560px]">
           <Image
             src={config.ogImageUrl ?? '/brand/Clickit_final_logo.svg'}
@@ -81,13 +81,13 @@ export async function LandingHero() {
             height={72}
             priority
             unoptimized={!!config.ogImageUrl}
-            className="mb-6 h-auto w-48 sm:w-56 md:w-64"
+            className="mb-3 h-auto w-48 sm:w-56 md:w-64"
           />
-          <p className="mb-9 text-[17px] leading-relaxed text-[var(--text-dim)]">
+          <p className="mb-5 text-[17px] leading-snug text-[var(--text-dim)]">
             {(isAr ? config.heroDescriptionAr : config.heroDescription) ??
               t('heroDescription')}
           </p>
-          <div className="mb-12 md:mb-16">
+          <div className="mb-6 md:mb-8">
             <Link
               href={ctaHref}
               className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-5 py-3 text-[14px] font-medium uppercase tracking-[0.06em] whitespace-nowrap text-[var(--primary-foreground)] transition-all hover:bg-white sm:px-6 sm:py-3.5 sm:text-[15px]"
