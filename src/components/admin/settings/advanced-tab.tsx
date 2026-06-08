@@ -11,14 +11,18 @@ import {
   Moon,
   RefreshCw,
   AlertTriangle,
+  ExternalLink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   updateFeatureFlags,
   revalidateAllCache,
+  updateIntegrations,
 } from '@/app/[locale]/admin/actions'
 import type { AppConfig, FeatureFlags } from '@/lib/config'
-import { SettingsCard } from './settings-card'
+import { SettingsCard, SettingsField } from './settings-card'
+import { SecretField } from './secret-field'
 
 type FlagMeta = {
   key: keyof FeatureFlags
@@ -58,16 +62,29 @@ function getFlags(t: ReturnType<typeof useTranslations>): FlagMeta[] {
   ]
 }
 
-export function AdvancedTab({ config }: { config: AppConfig }) {
+export function AdvancedTab({
+  config,
+  hasYouTubeKey,
+}: {
+  config: AppConfig
+  hasYouTubeKey: boolean
+}) {
   const [flags, setFlags] = useState<FeatureFlags>(config.flags)
   const [saving, setSaving] = useState(false)
   const [revalidating, setRevalidating] = useState(false)
+
+  const [ga, setGa] = useState(config.googleAnalyticsId ?? '')
+  const [pixel, setPixel] = useState(config.metaPixelId ?? '')
+  const [yt, setYt] = useState('')
+  const [savedHasYouTube, setSavedHasYouTube] = useState(hasYouTubeKey)
+  const [savingIntegrations, setSavingIntegrations] = useState(false)
+
   const t = useTranslations('admin.settings')
   const FLAGS = getFlags(t)
 
   const dirty = JSON.stringify(flags) !== JSON.stringify(config.flags)
 
-  async function onSave() {
+  async function onSaveFlags() {
     setSaving(true)
     const result = await updateFeatureFlags(flags)
     setSaving(false)
@@ -83,13 +100,31 @@ export function AdvancedTab({ config }: { config: AppConfig }) {
     else toast.error(result.error ?? t('revalidateFailed'))
   }
 
+  async function onSaveIntegrations(e: React.SyntheticEvent) {
+    e.preventDefault()
+    setSavingIntegrations(true)
+    const result = await updateIntegrations({
+      google_analytics_id: ga.trim() || null,
+      meta_pixel_id: pixel.trim() || null,
+      youtube_api_key: yt === '' ? null : yt.trim(),
+    })
+    setSavingIntegrations(false)
+    if (result.success) {
+      toast.success(t('integrationsSaved'))
+      if (yt !== '') setSavedHasYouTube(true)
+      else if (yt === '' && !savedHasYouTube) setSavedHasYouTube(false)
+    } else {
+      toast.error(result.error ?? t('saveFailed'))
+    }
+  }
+
   return (
     <>
       <SettingsCard
         title={t('featureFlagsTitle')}
         description={t('featureFlagsDescription')}
         action={
-          <Button size="sm" onClick={onSave} disabled={!dirty || saving}>
+          <Button size="sm" onClick={onSaveFlags} disabled={!dirty || saving}>
             {saving ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
@@ -109,6 +144,76 @@ export function AdvancedTab({ config }: { config: AppConfig }) {
           ))}
         </div>
       </SettingsCard>
+
+      <form onSubmit={onSaveIntegrations} className="space-y-6">
+        <SettingsCard
+          title="Google Analytics"
+          description={t('googleAnalyticsDescription')}
+        >
+          <SettingsField
+            label={t('measurementIdLabel')}
+            hint={t('measurementIdHint')}
+          >
+            <Input
+              value={ga}
+              onChange={(e) => setGa(e.target.value)}
+              placeholder={t('measurementIdPlaceholder')}
+              className="font-mono"
+              maxLength={40}
+            />
+          </SettingsField>
+        </SettingsCard>
+
+        <SettingsCard
+          title="Meta Pixel"
+          description={t('metaPixelDescription')}
+        >
+          <SettingsField label={t('pixelIdLabel')} hint={t('pixelIdHint')}>
+            <Input
+              value={pixel}
+              onChange={(e) => setPixel(e.target.value)}
+              placeholder="1234567890"
+              className="font-mono"
+              maxLength={40}
+            />
+          </SettingsField>
+        </SettingsCard>
+
+        <SettingsCard
+          title="YouTube Data API"
+          description={t('youtubeApiDescription')}
+          action={
+            <a
+              href="https://console.cloud.google.com/apis/credentials"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-white/60 hover:text-white"
+            >
+              {t('getKey')}
+              <ExternalLink className="size-3" />
+            </a>
+          }
+        >
+          <SettingsField label={t('apiKeyLabel')} hint={t('apiKeyHint')}>
+            <SecretField
+              value={yt}
+              onChange={setYt}
+              hasSavedValue={savedHasYouTube}
+              placeholder={t('apiKeyPlaceholder')}
+            />
+          </SettingsField>
+        </SettingsCard>
+
+        <div className="flex items-center justify-end">
+          <Button type="submit" disabled={savingIntegrations}>
+            {savingIntegrations ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              t('saveIntegrations')
+            )}
+          </Button>
+        </div>
+      </form>
 
       <SettingsCard title={t('cacheTitle')} description={t('cacheDescription')}>
         <Button
