@@ -20,7 +20,7 @@ export function BrandingTab({ config }: { config: AppConfig }) {
         title={t('heroVideoCardTitle')}
         description={t('heroVideoCardDescription')}
       >
-        <HeroVideoManager currentVideo={currentVideo} />
+        <HeroVideoManager currentVideo={currentVideo} heroVideoMuted={config.heroVideoMuted} />
       </SettingsCard>
 
       <SettingsCard

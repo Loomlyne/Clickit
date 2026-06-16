@@ -91,6 +91,7 @@ export type AppConfig = {
   // Hero video (existing)
   heroVideoUrl: string | null
   heroVideoType: 'mp4' | 'youtube' | null
+  heroVideoMuted: boolean
   // Structured content
   footer: FooterContent
   ctaCopy: CtaCopy
@@ -203,7 +204,7 @@ export const getAppConfig = cache(unstable_cache(
     const { data } = await supabase
       .from('app_config')
       .select(
-        'site_title, site_description, site_description_ar, site_tagline, site_tagline_ar, og_image_url, favicon_url, favicon_dark_url, hero_video_url, hero_video_type, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, hero_description, hero_description_ar, portfolio_heading, portfolio_heading_ar' as string
+        'site_title, site_description, site_description_ar, site_tagline, site_tagline_ar, og_image_url, favicon_url, favicon_dark_url, hero_video_url, hero_video_type, hero_video_muted, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, hero_description, hero_description_ar, portfolio_heading, portfolio_heading_ar' as string
       )
       .eq('id', 1)
       .single<RawConfigRow>()
@@ -230,6 +231,7 @@ type RawConfigRow = {
   favicon_dark_url: string | null
   hero_video_url: string | null
   hero_video_type: string | null
+  hero_video_muted: boolean | null
   footer_content: unknown
   cta_copy: unknown
   genre_config: unknown
@@ -256,6 +258,7 @@ function mapConfig(row: RawConfigRow): AppConfig {
     faviconDarkUrl: row?.favicon_dark_url ?? null,
     heroVideoUrl: row?.hero_video_url ?? null,
     heroVideoType: (row?.hero_video_type as 'mp4' | 'youtube' | null) ?? null,
+    heroVideoMuted: row?.hero_video_muted ?? true,
     footer: mergeFooter(row?.footer_content),
     ctaCopy: mergeCta(row?.cta_copy),
     genreConfig: isObject(row?.genre_config) ? (row!.genre_config as GenreConfig) : {},

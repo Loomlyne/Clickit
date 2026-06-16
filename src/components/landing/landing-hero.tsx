@@ -26,7 +26,7 @@ export async function LandingHero() {
   const isAr = locale === 'ar'
   const ctaHref = user ? '/watch' : '/auth'
 
-  const { heroVideoUrl, heroVideoType } = config
+  const { heroVideoUrl, heroVideoType, heroVideoMuted } = config
   const adminYtId =
     heroVideoType === 'youtube' && heroVideoUrl
       ? extractYouTubeId(heroVideoUrl)
@@ -39,19 +39,19 @@ export async function LandingHero() {
         <video
           src={heroVideoUrl}
           autoPlay
-          muted
+          muted={heroVideoMuted}
           loop
           playsInline
-          className={`pointer-events-none absolute inset-0 h-full w-full object-cover${isAr ? ' -scale-x-100' : ''}`}
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         />
       )}
 
       {ytId && (
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <iframe
-            src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&cc_load_policy=0`}
+            src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=${heroVideoMuted ? 1 : 0}&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&cc_load_policy=0`}
             allow="autoplay; encrypted-media"
-            className={`absolute top-0 left-1/2 -translate-x-1/2${isAr ? ' -scale-x-100' : ''}`}
+            className="absolute top-0 left-1/2 -translate-x-1/2"
             style={{
               width: '177.78dvh',
               minWidth: '100vw',

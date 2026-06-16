@@ -1358,7 +1358,11 @@
       "youtubeThumbnailAlt": "YouTube thumbnail",
       "uploadMp4": "Upload MP4",
       "mp4Hint": "Max 50MB, plays muted as hero background",
-      "saveButton": "Save"
+      "saveButton": "Save",
+      "audioLabel": "Audio",
+      "audioOn": "Audio on",
+      "audioMuted": "Muted",
+      "autoplayWarning": "Browsers may block autoplay with audio — visitors may need to interact first"
     },
     "episodesTable": {
       "moveUp": "Move up",

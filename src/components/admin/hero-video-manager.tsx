@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useTranslations } from 'next-intl'
-import { Upload, Loader2, Trash2, Link as LinkIcon, Film } from 'lucide-react'
+import { Upload, Loader2, Trash2, Link as LinkIcon, Film, Volume2, VolumeX, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -10,6 +10,7 @@ import {
   saveHeroVideoUpload,
   setHeroVideoUrl,
   removeHeroVideo,
+  setHeroVideoMuted,
 } from '@/app/[locale]/admin/actions'
 import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
@@ -18,8 +19,10 @@ type VideoConfig = { url: string; type: 'mp4' | 'youtube' } | null
 
 export function HeroVideoManager({
   currentVideo,
+  heroVideoMuted,
 }: {
   currentVideo: VideoConfig
+  heroVideoMuted: boolean
 }) {
   const [video, setVideo] = useState<VideoConfig>(currentVideo)
   const [mode, setMode] = useState<'mp4' | 'youtube'>(
@@ -29,6 +32,8 @@ export function HeroVideoManager({
   const [youtubeInput, setYoutubeInput] = useState(
     currentVideo?.type === 'youtube' ? currentVideo.url : ''
   )
+  const [muted, setMuted] = useState(heroVideoMuted)
+  const [savingAudio, setSavingAudio] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const t = useTranslations('admin.heroMedia')
 
@@ -132,6 +137,24 @@ export function HeroVideoManager({
       toast.error(t('removeFailed'))
     } finally {
       setUploading(false)
+    }
+  }
+
+  async function handleToggleAudio() {
+    const next = !muted
+    setSavingAudio(true)
+    try {
+      const result = await setHeroVideoMuted(next)
+      if (!result.success) {
+        toast.error(result.error ?? t('saveFailed'))
+        return
+      }
+      setMuted(next)
+      toast.success(next ? t('audioMuted') : t('audioOn'))
+    } catch {
+      toast.error(t('saveFailed'))
+    } finally {
+      setSavingAudio(false)
     }
   }
 
@@ -261,6 +284,46 @@ export function HeroVideoManager({
           </Button>
         </div>
       )}
+
+      {/* Audio toggle */}
+      <div className="mt-5 rounded-lg border border-white/8 bg-white/[0.02] p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            {muted ? (
+              <VolumeX className="size-4 text-white/40" />
+            ) : (
+              <Volume2 className="size-4 text-emerald-400" />
+            )}
+            <span className="text-sm font-medium text-white">
+              {t('audioLabel')}
+            </span>
+            <span className={`text-xs ${muted ? 'text-white/40' : 'text-emerald-400'}`}>
+              {muted ? t('audioMuted') : t('audioOn')}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleToggleAudio}
+            disabled={savingAudio}
+            aria-label={muted ? t('audioOn') : t('audioMuted')}
+            className={`relative h-6 w-11 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 disabled:opacity-50 ${
+              muted ? 'bg-white/10' : 'bg-emerald-500'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform ${
+                muted ? 'translate-x-0' : 'translate-x-5'
+              }`}
+            />
+          </button>
+        </div>
+        {!muted && (
+          <div className="mt-3 flex items-start gap-2 text-xs text-amber-400/80">
+            <AlertTriangle className="mt-0.5 size-3 shrink-0" />
+            <span>{t('autoplayWarning')}</span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

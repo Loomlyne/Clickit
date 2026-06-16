@@ -1358,7 +1358,11 @@
       "youtubeThumbnailAlt": "صورة يوتيوب المصغّرة",
       "uploadMp4": "رفع MP4",
       "mp4Hint": "الحد 50 م.ب.، يعمل بدون صوت كخلفية هيرو",
-      "saveButton": "حفظ"
+      "saveButton": "حفظ",
+      "audioLabel": "الصوت",
+      "audioOn": "الصوت مفعّل",
+      "audioMuted": "كتم الصوت",
+      "autoplayWarning": "قد تمنع المتصفحات التشغيل التلقائي مع الصوت — قد يحتاج الزوار إلى التفاعل أولاً"
     },
     "episodesTable": {
       "moveUp": "نقل لأعلى",

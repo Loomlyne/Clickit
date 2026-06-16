@@ -1841,6 +1841,32 @@ export async function removeHeroVideo(): Promise<ActionResult> {
   }
 }
 
+export async function setHeroVideoMuted(muted: boolean): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await admin
+      .from('app_config')
+      .update({ hero_video_muted: muted } as any)
+      .eq('id', 1)
+
+    if (error) return { success: false, error: error.message }
+
+    updateTag('site-config')
+    revalidatePath('/')
+
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to update audio setting',
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Per-Show Hero Video Management
 // ---------------------------------------------------------------------------
