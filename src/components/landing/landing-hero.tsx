@@ -3,6 +3,7 @@ import { getTranslations, getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAppConfig } from '@/lib/config'
+import { getIsMobile } from '@/lib/device'
 import { extractYouTubeId } from '@/lib/youtube'
 import { HeroBackgroundMedia } from './hero-background-media'
 
@@ -18,21 +19,39 @@ export async function LandingHero() {
     config,
     t,
     locale,
+    isMobile,
   ] = await Promise.all([
     supabase.auth.getUser(),
     getAppConfig(),
     getTranslations('landing'),
     getLocale(),
+    getIsMobile(),
   ])
   const isAr = locale === 'ar'
   const ctaHref = user ? '/watch' : '/auth'
 
-  const { heroVideoUrl, heroVideoType, heroVideoMuted } = config
+  // On mobile, prefer the admin's vertical (9:16) clip; fall back to the desktop
+  // clip when no vertical variant is set. Desktop always uses the horizontal one.
+  const hasMobileVariant = !!(
+    config.heroVideoMobileUrl && config.heroVideoMobileType
+  )
+  const useVertical = isMobile && hasMobileVariant
+  const heroVideoUrl = useVertical
+    ? config.heroVideoMobileUrl
+    : config.heroVideoUrl
+  const heroVideoType = useVertical
+    ? config.heroVideoMobileType
+    : config.heroVideoType
+  const { heroVideoMuted } = config
+
   const adminYtId =
     heroVideoType === 'youtube' && heroVideoUrl
       ? extractYouTubeId(heroVideoUrl)
       : null
-  const ytId = adminYtId ?? (heroVideoType === 'mp4' ? null : FALLBACK_YT_ID)
+  // Fallback reel only applies to the desktop/horizontal hero — a portrait phone
+  // gets no letterboxed landscape fallback.
+  const ytId =
+    adminYtId ?? (heroVideoType === 'mp4' || useVertical ? null : FALLBACK_YT_ID)
 
   return (
     <section className="relative -mt-[calc(var(--nav-h)_+_4rem)] min-h-dvh overflow-hidden">
@@ -41,6 +60,7 @@ export async function LandingHero() {
         ytId={ytId}
         muted={heroVideoMuted}
         title={t('heroBackgroundTitle')}
+        vertical={useVertical}
       />
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 from-5% via-black/25 via-40% to-transparent" />

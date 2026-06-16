@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 
 /**
  * Hero background video player.
@@ -16,11 +16,18 @@ export function HeroBackgroundMedia({
   ytId,
   muted,
   title,
+  vertical = false,
 }: {
   mp4Url: string | null
   ytId: string | null
   muted: boolean
   title: string
+  /**
+   * When true the source clip is 9:16 (vertical). MP4 covers via object-cover
+   * regardless, but the YouTube iframe needs portrait cover sizing so a vertical
+   * clip fills a portrait viewport instead of being letterboxed.
+   */
+  vertical?: boolean
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -91,19 +98,29 @@ export function HeroBackgroundMedia({
     // enablejsapi=1 lets us postMessage unMute/setVolume after a user gesture.
     // mute=1 in the URL is required for the iframe to autoplay at all.
     const src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&cc_load_policy=0&enablejsapi=1`
+    // Cover sizing: keep the 16:9 (landscape) or 9:16 (portrait) source aspect
+    // while overflowing the viewport in both axes so there's never a letterbox.
+    const coverStyle: CSSProperties = vertical
+      ? {
+          height: '177.78vw',
+          minHeight: '100dvh',
+          width: '56.25dvh',
+          minWidth: '100vw',
+        }
+      : {
+          width: '177.78dvh',
+          minWidth: '100vw',
+          height: '56.25vw',
+          minHeight: '100dvh',
+        }
     return (
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <iframe
           ref={iframeRef}
           src={src}
           allow="autoplay; encrypted-media"
-          className="absolute top-0 left-1/2 -translate-x-1/2"
-          style={{
-            width: '177.78dvh',
-            minWidth: '100vw',
-            height: '56.25vw',
-            minHeight: '100dvh',
-          }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+          style={coverStyle}
           title={title}
         />
       </div>

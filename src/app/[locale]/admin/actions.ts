@@ -1681,11 +1681,30 @@ export async function uploadArtwork(
 // Hero Video Management
 // ---------------------------------------------------------------------------
 
-export async function createHeroVideoUpload(file: {
-  name: string
-  size: number
-  type: string
-}): Promise<ActionResult<SignedVideoUploadTarget>> {
+// Desktop (horizontal 16:9) and mobile (vertical 9:16) hero clips live at fixed,
+// distinct storage paths so each variant can be replaced independently.
+type HeroVariant = 'desktop' | 'mobile'
+const HERO_VIDEO_PATH: Record<HeroVariant, string> = {
+  desktop: 'hero/video.mp4',
+  mobile: 'hero/video-mobile.mp4',
+}
+const HERO_URL_COLUMN: Record<HeroVariant, 'hero_video_url' | 'hero_video_mobile_url'> = {
+  desktop: 'hero_video_url',
+  mobile: 'hero_video_mobile_url',
+}
+const HERO_TYPE_COLUMN: Record<HeroVariant, 'hero_video_type' | 'hero_video_mobile_type'> = {
+  desktop: 'hero_video_type',
+  mobile: 'hero_video_mobile_type',
+}
+
+export async function createHeroVideoUpload(
+  file: {
+    name: string
+    size: number
+    type: string
+  },
+  variant: HeroVariant = 'desktop'
+): Promise<ActionResult<SignedVideoUploadTarget>> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
@@ -1698,7 +1717,7 @@ export async function createHeroVideoUpload(file: {
       return { success: false, error: 'Video must be under 50MB' }
     }
 
-    const path = 'hero/video.mp4'
+    const path = HERO_VIDEO_PATH[variant]
     const { data, error } = await admin.storage
       .from('site-assets')
       .createSignedUploadUrl(path, { upsert: true })
@@ -1716,13 +1735,14 @@ export async function createHeroVideoUpload(file: {
 }
 
 export async function saveHeroVideoUpload(
-  path: string
+  path: string,
+  variant: HeroVariant = 'desktop'
 ): Promise<ActionResult<string>> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
 
-    if (path !== 'hero/video.mp4') {
+    if (path !== HERO_VIDEO_PATH[variant]) {
       return { success: false, error: 'Invalid upload path' }
     }
 
@@ -1734,7 +1754,10 @@ export async function saveHeroVideoUpload(
 
     const { error } = await admin
       .from('app_config')
-      .update({ hero_video_url: publicUrl, hero_video_type: 'mp4' })
+      .update({
+        [HERO_URL_COLUMN[variant]]: publicUrl,
+        [HERO_TYPE_COLUMN[variant]]: 'mp4',
+      } as never)
       .eq('id', 1)
 
     if (error) return { success: false, error: error.message }
@@ -1752,7 +1775,8 @@ export async function saveHeroVideoUpload(
 }
 
 export async function setHeroVideoUrl(
-  youtubeUrl: string
+  youtubeUrl: string,
+  variant: HeroVariant = 'desktop'
 ): Promise<ActionResult> {
   try {
     await assertAdmin()
@@ -1780,7 +1804,10 @@ export async function setHeroVideoUrl(
 
     const { error } = await admin
       .from('app_config')
-      .update({ hero_video_url: canonicalUrl, hero_video_type: 'youtube' })
+      .update({
+        [HERO_URL_COLUMN[variant]]: canonicalUrl,
+        [HERO_TYPE_COLUMN[variant]]: 'youtube',
+      } as never)
       .eq('id', 1)
 
     if (error) {
@@ -1794,12 +1821,12 @@ export async function setHeroVideoUrl(
     updateTag('site-config')
     revalidatePath('/')
 
-    // Switching to a YouTube hero abandons any previously uploaded MP4 (which
-    // always lives at the fixed hero/video.mp4 path). Delete it to reclaim
-    // storage — AFTER the config flip + revalidation above, so the live hero
-    // has already switched to YouTube and never references a file we removed.
-    // Ignore errors (e.g. there was no MP4 to begin with).
-    await admin.storage.from('site-assets').remove(['hero/video.mp4'])
+    // Switching to a YouTube hero abandons any previously uploaded MP4 for this
+    // variant (which lives at a fixed path). Delete it to reclaim storage —
+    // AFTER the config flip + revalidation above, so the live hero has already
+    // switched to YouTube and never references a file we removed. Ignore errors
+    // (e.g. there was no MP4 to begin with).
+    await admin.storage.from('site-assets').remove([HERO_VIDEO_PATH[variant]])
 
     return { success: true }
   } catch (err) {
@@ -1811,14 +1838,19 @@ export async function setHeroVideoUrl(
   }
 }
 
-export async function removeHeroVideo(): Promise<ActionResult> {
+export async function removeHeroVideo(
+  variant: HeroVariant = 'desktop'
+): Promise<ActionResult> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
 
     const { error } = await admin
       .from('app_config')
-      .update({ hero_video_url: null, hero_video_type: null })
+      .update({
+        [HERO_URL_COLUMN[variant]]: null,
+        [HERO_TYPE_COLUMN[variant]]: null,
+      } as never)
       .eq('id', 1)
 
     if (error) return { success: false, error: error.message }
@@ -1829,7 +1861,7 @@ export async function removeHeroVideo(): Promise<ActionResult> {
     // Remove the MP4 from storage only AFTER the config is cleared +
     // revalidated, so the live hero never points at a deleted file. Ignore
     // not-found errors (e.g. the hero was a YouTube URL with no MP4).
-    await admin.storage.from('site-assets').remove(['hero/video.mp4'])
+    await admin.storage.from('site-assets').remove([HERO_VIDEO_PATH[variant]])
 
     return { success: true }
   } catch (err) {

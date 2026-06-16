@@ -1010,7 +1010,7 @@
       "cookiesUrlLabel": "Cookie Policy URL",
       "saveFooter": "Save footer",
       "heroVideoCardTitle": "Hero video",
-      "heroVideoCardDescription": "Upload an MP4 or paste a YouTube URL. Plays muted as the landing-page hero background.",
+      "heroVideoCardDescription": "Set the landing-page hero background. Add a horizontal (16:9) clip for desktop and an optional vertical (9:16) clip for phones — each can be an MP4 upload or a YouTube URL. Mobile falls back to the desktop clip when left empty.",
       "ogImageTitle": "Open Graph image",
       "ogImageDescription": "The preview image shown when the site is shared on social media (WhatsApp, X, Slack, LinkedIn). Recommended 1200x630.",
       "ogImageHint": "PNG, JPG, or WebP. Max 5MB.",
