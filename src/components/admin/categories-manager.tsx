@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, useEffect, useMemo, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { ChevronDown, ChevronUp, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -279,6 +280,7 @@ export function CategoriesManager({
 }: {
   initialCategories: CategoryRecord[]
 }) {
+  const router = useRouter()
   const t = useTranslations('admin.dashboard')
   const tCat = useTranslations('admin.categories')
   const tCommon = useTranslations('common')
@@ -456,7 +458,9 @@ export function CategoriesManager({
       if (!result.success) {
         setCategories(previousCategories)
         toast.error(result.error ?? tCat('toastReorderFailed'))
+        return
       }
+      router.refresh()
     })
   }
 

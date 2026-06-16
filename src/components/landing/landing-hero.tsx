@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAppConfig } from '@/lib/config'
 import { extractYouTubeId } from '@/lib/youtube'
+import { HeroBackgroundMedia } from './hero-background-media'
 
 // Fallback cinematic reel — admin can override via Settings → Branding → Hero video
 const FALLBACK_YT_ID = 'Nk2jlxVX8g8'
@@ -35,33 +36,12 @@ export async function LandingHero() {
 
   return (
     <section className="relative -mt-[calc(var(--nav-h)_+_4rem)] min-h-dvh overflow-hidden">
-      {heroVideoType === 'mp4' && heroVideoUrl && (
-        <video
-          src={heroVideoUrl}
-          autoPlay
-          muted={heroVideoMuted}
-          loop
-          playsInline
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-        />
-      )}
-
-      {ytId && (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <iframe
-            src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=${heroVideoMuted ? 1 : 0}&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&cc_load_policy=0`}
-            allow="autoplay; encrypted-media"
-            className="absolute top-0 left-1/2 -translate-x-1/2"
-            style={{
-              width: '177.78dvh',
-              minWidth: '100vw',
-              height: '56.25vw',
-              minHeight: '100dvh',
-            }}
-            title={t('heroBackgroundTitle')}
-          />
-        </div>
-      )}
+      <HeroBackgroundMedia
+        mp4Url={heroVideoType === 'mp4' ? heroVideoUrl : null}
+        ytId={ytId}
+        muted={heroVideoMuted}
+        title={t('heroBackgroundTitle')}
+      />
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 from-5% via-black/25 via-40% to-transparent" />
       <div

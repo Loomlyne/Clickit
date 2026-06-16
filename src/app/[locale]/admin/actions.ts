@@ -1846,10 +1846,11 @@ export async function setHeroVideoMuted(muted: boolean): Promise<ActionResult> {
     await assertAdmin()
     const admin = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // hero_video_muted not yet in generated database.types — `as never` is the
+    // codebase convention for columns added by a migration before gen-types runs.
     const { error } = await admin
       .from('app_config')
-      .update({ hero_video_muted: muted } as any)
+      .update({ hero_video_muted: muted } as never)
       .eq('id', 1)
 
     if (error) return { success: false, error: error.message }
@@ -2739,9 +2740,16 @@ export async function createShort(
     const parsed = shortSchema.parse(data)
     const admin = createAdminClient()
 
+    const { data: lastShort } = await admin
+      .from('shorts')
+      .select('sort_order')
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
     const { data: short, error } = await admin
       .from('shorts')
-      .insert(parsed)
+      .insert({ ...parsed, sort_order: (lastShort?.sort_order ?? -1) + 1 })
       .select()
       .single()
 
@@ -2847,26 +2855,28 @@ export async function reorderShort(
 
     if (fetchError) return { success: false, error: fetchError.message }
 
-    const currentIndex = (shorts ?? []).findIndex((short) => short.id === id)
-    const pair = swapByDirection(shorts ?? [], currentIndex, direction)
-    if (!pair) return { success: false, error: 'No short to swap with' }
+    const ordered = [...(shorts ?? [])]
+    const currentIndex = ordered.findIndex((short) => short.id === id)
+    if (currentIndex === -1) return { success: false, error: 'Short not found' }
     const adjacentIndex =
       direction === 'up' ? currentIndex - 1 : currentIndex + 1
-    const currentSortOrder = pair.current.sort_order ?? currentIndex
-    const adjacentSortOrder = pair.adjacent.sort_order ?? adjacentIndex
+    if (adjacentIndex < 0 || adjacentIndex >= ordered.length) {
+      return { success: false, error: 'No short to swap with' }
+    }
 
-    const [first, second] = await Promise.all([
-      admin
-        .from('shorts')
-        .update({ sort_order: adjacentSortOrder })
-        .eq('id', pair.current.id),
-      admin
-        .from('shorts')
-        .update({ sort_order: currentSortOrder })
-        .eq('id', pair.adjacent.id),
-    ])
+    // Swap the two rows in the array, then normalize every short's sort_order
+    // to its sequential index. This avoids the all-zeros collision that made
+    // a two-item value swap a no-op, and keeps sort_orders clean going forward.
+    const moving = ordered[currentIndex]!
+    ordered[currentIndex] = ordered[adjacentIndex]!
+    ordered[adjacentIndex] = moving
 
-    const error = first.error ?? second.error
+    const results = await Promise.all(
+      ordered.map((short, index) =>
+        admin.from('shorts').update({ sort_order: index }).eq('id', short.id)
+      )
+    )
+    const error = results.find((result) => result.error)?.error
     if (error) return { success: false, error: error.message }
 
     await logAudit({
@@ -2876,8 +2886,7 @@ export async function reorderShort(
       entityId: id,
       diff: {
         direction,
-        swapped_with: pair.adjacent.id,
-        ordered_titles: [pair.current.title, pair.adjacent.title],
+        ordered_ids: ordered.map((short) => short.id),
       },
     })
 
