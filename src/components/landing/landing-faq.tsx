@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 import { getFaqsPublic } from '@/lib/queries'
-import { getLocale, pickLocalized } from '@/lib/locale'
+import { pickLocalized } from '@/lib/locale'
+import { getLocale } from '@/lib/locale-server'
 import { FaqAccordion } from './faq-accordion'
 
 export async function LandingFaq() {

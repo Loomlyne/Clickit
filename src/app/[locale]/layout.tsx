@@ -12,7 +12,8 @@ import { Toaster } from 'sonner'
 import { MotionConfig } from 'motion/react'
 import { getAppConfig } from '@/lib/config'
 import { siteUrl } from '@/lib/site-url'
-import { dirFor, getLocale, pickLocalized } from '@/lib/locale'
+import { dirFor, pickLocalized } from '@/lib/locale'
+import { getLocale } from '@/lib/locale-server'
 import { routing, staticParams, type Locale } from '@/i18n/routing'
 
 const lbc = localFont({

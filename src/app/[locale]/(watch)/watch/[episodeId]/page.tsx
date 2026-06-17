@@ -14,7 +14,7 @@ import {
   getShowWatchlistState,
   getShowLikeState,
 } from '@/lib/queries'
-import { getLocale } from '@/lib/locale'
+import { getLocale } from '@/lib/locale-server'
 import { siteUrl } from '@/lib/site-url'
 import { JsonLd } from '@/components/seo/json-ld'
 

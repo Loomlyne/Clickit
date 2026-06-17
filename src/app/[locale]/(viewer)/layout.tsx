@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getAppConfig } from '@/lib/config'
-import { getLocale, pickLocalized } from '@/lib/locale'
+import { pickLocalized } from '@/lib/locale'
+import { getLocale } from '@/lib/locale-server'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { SmoothScroll } from '@/components/providers/smooth-scroll'

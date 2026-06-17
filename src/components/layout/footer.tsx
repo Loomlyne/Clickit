@@ -4,7 +4,8 @@ import { Link } from '@/i18n/navigation'
 import { getAppConfig } from '@/lib/config'
 import { PLATFORM_MAP } from '@/lib/social-platforms'
 import type { SocialLinkItem } from '@/lib/config'
-import { getLocale, pickLocalized } from '@/lib/locale'
+import { pickLocalized } from '@/lib/locale'
+import { getLocale } from '@/lib/locale-server'
 
 export async function Footer() {
   const [{ footer, ogImageUrl }, t, tNav, locale] = await Promise.all([

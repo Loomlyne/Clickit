@@ -23,7 +23,7 @@ import {
   mapEpisode,
   type ViewEpisode,
 } from '@/lib/queries'
-import { getLocale } from '@/lib/locale'
+import { getLocale } from '@/lib/locale-server'
 import { getIsMobile } from '@/lib/device'
 import { siteUrl } from '@/lib/site-url'
 import { JsonLd } from '@/components/seo/json-ld'

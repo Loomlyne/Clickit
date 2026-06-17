@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getLegalPageBySlug } from '@/lib/queries'
-import { getLocale, pickLocalized } from '@/lib/locale'
+import { pickLocalized } from '@/lib/locale'
+import { getLocale } from '@/lib/locale-server'
 import { LegalPageContent } from '@/components/legal/legal-page-content'
 
 export async function generateMetadata(): Promise<Metadata> {
