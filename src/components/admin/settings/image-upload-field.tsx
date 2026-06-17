@@ -22,7 +22,7 @@ export function ImageUploadField({
   previewClassName = 'size-32',
   previewBgClassName = 'bg-black/40',
 }: {
-  kind: 'og' | 'favicon' | 'favicon-dark'
+  kind: 'og' | 'favicon' | 'favicon-dark' | 'auth'
   currentUrl: string | null
   accept: string
   maxMb?: number

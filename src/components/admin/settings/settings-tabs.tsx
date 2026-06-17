@@ -9,6 +9,7 @@ import { BrandingTab } from './branding-tab'
 import { AdvancedTab } from './advanced-tab'
 import { LegalTab } from './legal-tab'
 import { PortfolioTab } from './portfolio-tab'
+import { AuthTab } from './auth-tab'
 
 export function SettingsTabs({
   config,
@@ -31,6 +32,7 @@ export function SettingsTabs({
           <TabsTrigger value="general">{t('generalTab')}</TabsTrigger>
           <TabsTrigger value="branding">{t('brandingTab')}</TabsTrigger>
           <TabsTrigger value="advanced">{t('advancedTab')}</TabsTrigger>
+          <TabsTrigger value="auth">{t('authTab')}</TabsTrigger>
           <TabsTrigger value="legal">Legal</TabsTrigger>
           <TabsTrigger value="portfolio">Information</TabsTrigger>
         </TabsList>
@@ -46,6 +48,10 @@ export function SettingsTabs({
 
       <TabsContent value="advanced" className="space-y-6">
         <AdvancedTab config={config} hasYouTubeKey={hasYouTubeKey} />
+      </TabsContent>
+
+      <TabsContent value="auth" className="space-y-6">
+        <AuthTab config={config} />
       </TabsContent>
 
       <TabsContent value="legal" className="space-y-6">

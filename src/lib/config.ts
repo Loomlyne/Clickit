@@ -95,6 +95,18 @@ export type AppConfig = {
   heroVideoMobileUrl: string | null
   heroVideoMobileType: 'mp4' | 'youtube' | null
   heroVideoMuted: boolean
+  // Sign-in page — admin-editable image, copy (EN/AR) and OAuth toggles
+  authImageUrl: string | null
+  authHeading: string | null
+  authHeadingAr: string | null
+  authSubheading: string | null
+  authSubheadingAr: string | null
+  authQuote: string | null
+  authQuoteAr: string | null
+  authQuoteAttribution: string | null
+  authQuoteAttributionAr: string | null
+  authGoogleEnabled: boolean
+  authAppleEnabled: boolean
   // Structured content
   footer: FooterContent
   ctaCopy: CtaCopy
@@ -207,7 +219,7 @@ export const getAppConfig = cache(unstable_cache(
     const { data } = await supabase
       .from('app_config')
       .select(
-        'site_title, site_description, site_description_ar, site_tagline, site_tagline_ar, og_image_url, favicon_url, favicon_dark_url, hero_video_url, hero_video_type, hero_video_mobile_url, hero_video_mobile_type, hero_video_muted, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, hero_description, hero_description_ar, portfolio_heading, portfolio_heading_ar' as string
+        'site_title, site_description, site_description_ar, site_tagline, site_tagline_ar, og_image_url, favicon_url, favicon_dark_url, hero_video_url, hero_video_type, hero_video_mobile_url, hero_video_mobile_type, hero_video_muted, auth_image_url, auth_heading, auth_heading_ar, auth_subheading, auth_subheading_ar, auth_quote, auth_quote_ar, auth_quote_attribution, auth_quote_attribution_ar, auth_google_enabled, auth_apple_enabled, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, hero_description, hero_description_ar, portfolio_heading, portfolio_heading_ar' as string
       )
       .eq('id', 1)
       .single<RawConfigRow>()
@@ -237,6 +249,17 @@ type RawConfigRow = {
   hero_video_mobile_url: string | null
   hero_video_mobile_type: string | null
   hero_video_muted: boolean | null
+  auth_image_url: string | null
+  auth_heading: string | null
+  auth_heading_ar: string | null
+  auth_subheading: string | null
+  auth_subheading_ar: string | null
+  auth_quote: string | null
+  auth_quote_ar: string | null
+  auth_quote_attribution: string | null
+  auth_quote_attribution_ar: string | null
+  auth_google_enabled: boolean | null
+  auth_apple_enabled: boolean | null
   footer_content: unknown
   cta_copy: unknown
   genre_config: unknown
@@ -267,6 +290,17 @@ function mapConfig(row: RawConfigRow): AppConfig {
     heroVideoMobileType:
       (row?.hero_video_mobile_type as 'mp4' | 'youtube' | null) ?? null,
     heroVideoMuted: row?.hero_video_muted ?? true,
+    authImageUrl: row?.auth_image_url ?? null,
+    authHeading: row?.auth_heading ?? null,
+    authHeadingAr: row?.auth_heading_ar ?? null,
+    authSubheading: row?.auth_subheading ?? null,
+    authSubheadingAr: row?.auth_subheading_ar ?? null,
+    authQuote: row?.auth_quote ?? null,
+    authQuoteAr: row?.auth_quote_ar ?? null,
+    authQuoteAttribution: row?.auth_quote_attribution ?? null,
+    authQuoteAttributionAr: row?.auth_quote_attribution_ar ?? null,
+    authGoogleEnabled: row?.auth_google_enabled ?? false,
+    authAppleEnabled: row?.auth_apple_enabled ?? false,
     footer: mergeFooter(row?.footer_content),
     ctaCopy: mergeCta(row?.cta_copy),
     genreConfig: isObject(row?.genre_config) ? (row!.genre_config as GenreConfig) : {},

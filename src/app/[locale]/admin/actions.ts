@@ -2046,6 +2046,19 @@ const siteMetadataSchema = z.object({
   site_tagline_ar: z.string().trim().max(120).nullable(),
 })
 
+const authPageSchema = z.object({
+  auth_heading: z.string().trim().max(120).nullable(),
+  auth_heading_ar: z.string().trim().max(120).nullable(),
+  auth_subheading: z.string().trim().max(300).nullable(),
+  auth_subheading_ar: z.string().trim().max(300).nullable(),
+  auth_quote: z.string().trim().max(400).nullable(),
+  auth_quote_ar: z.string().trim().max(400).nullable(),
+  auth_quote_attribution: z.string().trim().max(120).nullable(),
+  auth_quote_attribution_ar: z.string().trim().max(120).nullable(),
+  auth_google_enabled: z.boolean(),
+  auth_apple_enabled: z.boolean(),
+})
+
 const liveStreamUrlSchema = z.object({
   live_stream_url: z
     .string()
@@ -2228,6 +2241,46 @@ export async function updateSiteMetadata(
       .from('app_config')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update(parsed as any)
+      .eq('id', 1)
+    if (error) return { success: false, error: error.message }
+    await auditConfigUpdate(user.id, Object.keys(parsed))
+    bumpSiteConfigCache()
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to save',
+    }
+  }
+}
+
+export async function updateAuthPageConfig(
+  input: z.input<typeof authPageSchema>
+): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const parsed = authPageSchema.parse(input)
+
+    // Auto-fill blank Arabic copy from the English source (DeepL).
+    parsed.auth_heading_ar = await fillArabic(
+      parsed.auth_heading,
+      parsed.auth_heading_ar
+    )
+    parsed.auth_subheading_ar = await fillArabic(
+      parsed.auth_subheading,
+      parsed.auth_subheading_ar
+    )
+    parsed.auth_quote_ar = await fillArabic(parsed.auth_quote, parsed.auth_quote_ar)
+    parsed.auth_quote_attribution_ar = await fillArabic(
+      parsed.auth_quote_attribution,
+      parsed.auth_quote_attribution_ar
+    )
+
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('app_config')
+      .update(parsed as never)
       .eq('id', 1)
     if (error) return { success: false, error: error.message }
     await auditConfigUpdate(user.id, Object.keys(parsed))
@@ -2576,6 +2629,7 @@ const SITE_IMAGE_COLUMN = {
   og: 'og_image_url',
   favicon: 'favicon_url',
   'favicon-dark': 'favicon_dark_url',
+  auth: 'auth_image_url',
 } as const
 
 type SiteImageKind = keyof typeof SITE_IMAGE_COLUMN
@@ -2616,6 +2670,7 @@ export async function uploadSiteImage(
       og: `settings/og.${ext}`,
       favicon: `settings/favicon.${ext}`,
       'favicon-dark': `settings/favicon-dark.${ext}`,
+      auth: `settings/auth.${ext}`,
     }
     const path = pathMap[kind]
 
