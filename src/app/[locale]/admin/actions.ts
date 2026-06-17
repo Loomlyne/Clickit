@@ -2068,6 +2068,16 @@ const liveStreamUrlSchema = z.object({
       (v) => v === null || validateYouTubeUrl(v) !== null,
       'Must be empty or a valid YouTube URL'
     ),
+  live_stream_label: z
+    .string()
+    .max(40)
+    .nullish()
+    .transform((v) => (!v || v.trim() === '' ? null : v.trim())),
+  live_stream_label_ar: z
+    .string()
+    .max(40)
+    .nullish()
+    .transform((v) => (!v || v.trim() === '' ? null : v.trim())),
 })
 
 const footerSchema = z.object({
@@ -2206,10 +2216,18 @@ export async function updateLiveStreamUrl(
     const { error } = await admin
       .from('app_config')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ live_stream_url: parsed.live_stream_url } as any)
+      .update({
+        live_stream_url: parsed.live_stream_url,
+        live_stream_label: parsed.live_stream_label,
+        live_stream_label_ar: parsed.live_stream_label_ar,
+      } as any)
       .eq('id', 1)
     if (error) return { success: false, error: error.message }
-    await auditConfigUpdate(user.id, ['live_stream_url'])
+    await auditConfigUpdate(user.id, [
+      'live_stream_url',
+      'live_stream_label',
+      'live_stream_label_ar',
+    ])
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {

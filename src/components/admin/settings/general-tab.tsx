@@ -17,7 +17,11 @@ export function GeneralTab({ config }: { config: AppConfig }) {
           site_tagline_ar: config.siteTaglineAr ?? '',
         }}
       />
-      <LiveStreamUrlEditor initialUrl={config.liveStreamUrl} />
+      <LiveStreamUrlEditor
+        initialUrl={config.liveStreamUrl}
+        initialLabel={config.liveStreamLabel}
+        initialLabelAr={config.liveStreamLabelAr}
+      />
       <TopTickerEditor initial={config.topTicker} />
     </>
   )

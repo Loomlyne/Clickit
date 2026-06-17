@@ -121,6 +121,10 @@ export type AppConfig = {
   topTicker: TopTickerConfig
   /** Optional YouTube (or same-host) live stream; nav falls back to /watch#now-streaming when null. */
   liveStreamUrl: string | null
+  /** Custom EN label for the navbar Now Live pill. Null falls back to i18n. */
+  liveStreamLabel: string | null
+  /** Custom AR label. Shown when locale is ar; null falls back to EN or i18n. */
+  liveStreamLabelAr: string | null
   /** Landing hero paragraph below the logo. Null means use the i18n fallback. */
   heroDescription: string | null
   /** Arabic landing hero paragraph. Shown when locale is ar; null falls back to i18n. */
@@ -220,7 +224,7 @@ export const getAppConfig = cache(unstable_cache(
     const { data } = await supabase
       .from('app_config')
       .select(
-        'site_title, site_description, site_description_ar, site_tagline, site_tagline_ar, og_image_url, favicon_url, favicon_dark_url, hero_video_url, hero_video_type, hero_video_mobile_url, hero_video_mobile_type, hero_video_muted, auth_image_url, auth_heading, auth_heading_ar, auth_subheading, auth_subheading_ar, auth_quote, auth_quote_ar, auth_quote_attribution, auth_quote_attribution_ar, auth_allow_skip, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, hero_description, hero_description_ar, portfolio_heading, portfolio_heading_ar' as string
+        'site_title, site_description, site_description_ar, site_tagline, site_tagline_ar, og_image_url, favicon_url, favicon_dark_url, hero_video_url, hero_video_type, hero_video_mobile_url, hero_video_mobile_type, hero_video_muted, auth_image_url, auth_heading, auth_heading_ar, auth_subheading, auth_subheading_ar, auth_quote, auth_quote_ar, auth_quote_attribution, auth_quote_attribution_ar, auth_allow_skip, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, live_stream_label, live_stream_label_ar, hero_description, hero_description_ar, portfolio_heading, portfolio_heading_ar' as string
       )
       .eq('id', 1)
       .single<RawConfigRow>()
@@ -268,6 +272,8 @@ type RawConfigRow = {
   feature_flags: unknown
   top_ticker: unknown
   live_stream_url: string | null
+  live_stream_label: string | null
+  live_stream_label_ar: string | null
   hero_description: string | null
   hero_description_ar: string | null
   portfolio_heading: string | null
@@ -308,6 +314,8 @@ function mapConfig(row: RawConfigRow): AppConfig {
     flags: mergeFlags(row?.feature_flags),
     topTicker: mergeTopTicker(row?.top_ticker),
     liveStreamUrl: row?.live_stream_url ?? null,
+    liveStreamLabel: row?.live_stream_label ?? null,
+    liveStreamLabelAr: row?.live_stream_label_ar ?? null,
     heroDescription: row?.hero_description ?? null,
     heroDescriptionAr: row?.hero_description_ar ?? null,
     portfolioHeading: row?.portfolio_heading ?? null,

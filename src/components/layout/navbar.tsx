@@ -9,14 +9,23 @@ import { cn } from '@/lib/utils'
 import { AuthSection } from './auth-section'
 import { MobileNav } from './mobile-nav'
 import { liveNavHref, liveNavIsExternal } from './nav-links'
+import { pickLocalized, type Locale } from '@/lib/locale'
 
 interface NavbarProps {
   initialUser?: { id: string; email: string } | null
   liveStreamUrl?: string | null
+  liveStreamLabel?: string | null
+  liveStreamLabelAr?: string | null
   logoUrl?: string | null
 }
 
-export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
+export function Navbar({
+  initialUser,
+  liveStreamUrl,
+  liveStreamLabel,
+  liveStreamLabelAr,
+  logoUrl,
+}: NavbarProps) {
   const pathname = usePathname()
   const locale = useLocale()
   const t = useTranslations('nav')
@@ -57,6 +66,13 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
         ? 'text-[var(--text)] after:absolute after:inset-x-0 after:-bottom-1 after:h-0.5 after:bg-[var(--primary)]'
         : 'text-[var(--text-dim)]'
     )
+
+  const customLiveLabel = pickLocalized(
+    locale as Locale,
+    liveStreamLabel ?? '',
+    liveStreamLabelAr
+  ).trim()
+  const liveLabel = customLiveLabel || t('nowLive')
 
   return (
     <header
@@ -111,7 +127,7 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" />
                 <span className="relative inline-flex size-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
               </span>
-              {t('nowLive')}
+              {liveLabel}
             </>
           )
           return external ? (
@@ -146,7 +162,7 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
                     <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" />
                     <span className="relative inline-flex size-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
                   </span>
-                  {t('nowLive')}
+                  {liveLabel}
                 </>
               )
               return external ? (

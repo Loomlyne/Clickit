@@ -55,6 +55,8 @@ export default async function ViewerLayout({
           <Navbar
             initialUser={user}
             liveStreamUrl={config.liveStreamUrl}
+            liveStreamLabel={config.liveStreamLabel}
+            liveStreamLabelAr={config.liveStreamLabelAr}
             logoUrl={config.faviconUrl}
           />
           <div className="pt-16">
