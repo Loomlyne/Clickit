@@ -19,8 +19,6 @@ type Values = {
   auth_quote_ar: string
   auth_quote_attribution: string
   auth_quote_attribution_ar: string
-  auth_google_enabled: boolean
-  auth_apple_enabled: boolean
 }
 
 export function AuthPageEditor({ initial }: { initial: Values }) {
@@ -48,8 +46,6 @@ export function AuthPageEditor({ initial }: { initial: Values }) {
       auth_quote_ar: values.auth_quote_ar.trim() || null,
       auth_quote_attribution: values.auth_quote_attribution.trim() || null,
       auth_quote_attribution_ar: values.auth_quote_attribution_ar.trim() || null,
-      auth_google_enabled: values.auth_google_enabled,
-      auth_apple_enabled: values.auth_apple_enabled,
     })
     setSaving(false)
     if (result.success) toast.success(t('authConfigSaved'))
@@ -137,26 +133,6 @@ export function AuthPageEditor({ initial }: { initial: Values }) {
           />
         </SettingsField>
 
-        {/* OAuth provider toggles */}
-        <div className="space-y-3 md:col-span-2">
-          <ProviderToggle
-            label={t('authGoogleLabel')}
-            hint={t('authProviderHint')}
-            enabled={values.auth_google_enabled}
-            onToggle={() =>
-              set('auth_google_enabled', !values.auth_google_enabled)
-            }
-          />
-          <ProviderToggle
-            label={t('authAppleLabel')}
-            hint={t('authProviderHint')}
-            enabled={values.auth_apple_enabled}
-            onToggle={() =>
-              set('auth_apple_enabled', !values.auth_apple_enabled)
-            }
-          />
-        </div>
-
         <div className="flex items-center justify-end md:col-span-2">
           <Button type="submit" disabled={!dirty || saving}>
             {saving ? <Loader2 className="size-4 animate-spin" /> : t('saveButton')}
@@ -164,41 +140,5 @@ export function AuthPageEditor({ initial }: { initial: Values }) {
         </div>
       </form>
     </SettingsCard>
-  )
-}
-
-function ProviderToggle({
-  label,
-  hint,
-  enabled,
-  onToggle,
-}: {
-  label: string
-  hint: string
-  enabled: boolean
-  onToggle: () => void
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-lg border border-white/8 bg-white/[0.02] p-4">
-      <div>
-        <p className="text-sm font-medium text-white">{label}</p>
-        <p className="text-muted-foreground text-xs">{hint}</p>
-      </div>
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-pressed={enabled}
-        aria-label={label}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none ${
-          enabled ? 'bg-emerald-500' : 'bg-white/10'
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform ${
-            enabled ? 'translate-x-5' : 'translate-x-0'
-          }`}
-        />
-      </button>
-    </div>
   )
 }

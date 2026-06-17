@@ -35,8 +35,6 @@ export function AuthTab({ config }: { config: AppConfig }) {
           auth_quote_ar: config.authQuoteAr ?? '',
           auth_quote_attribution: config.authQuoteAttribution ?? '',
           auth_quote_attribution_ar: config.authQuoteAttributionAr ?? '',
-          auth_google_enabled: config.authGoogleEnabled,
-          auth_apple_enabled: config.authAppleEnabled,
         }}
       />
     </>

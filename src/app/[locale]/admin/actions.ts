@@ -2055,8 +2055,6 @@ const authPageSchema = z.object({
   auth_quote_ar: z.string().trim().max(400).nullable(),
   auth_quote_attribution: z.string().trim().max(120).nullable(),
   auth_quote_attribution_ar: z.string().trim().max(120).nullable(),
-  auth_google_enabled: z.boolean(),
-  auth_apple_enabled: z.boolean(),
 })
 
 const liveStreamUrlSchema = z.object({

@@ -13,7 +13,6 @@ import { AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { mapAuthError } from '@/lib/auth-errors'
 import { getSafeAuthNextPath } from '@/lib/auth-navigation'
-import { OAuthButtons } from './oauth-buttons'
 
 const loginSchema = z.object({
   email: z.string().email('emailInvalid'),
@@ -28,13 +27,7 @@ const forgotSchema = z.object({
 
 type ForgotFormData = z.infer<typeof forgotSchema>
 
-export function LoginForm({
-  googleEnabled = false,
-  appleEnabled = false,
-}: {
-  googleEnabled?: boolean
-  appleEnabled?: boolean
-}) {
+export function LoginForm() {
   const t = useTranslations('auth')
   const tErrors = useTranslations('errors')
   const locale = useLocale()
@@ -250,8 +243,6 @@ export function LoginForm({
           ? t('signInButton') + '…'
           : t('signInButton')}
       </button>
-
-      <OAuthButtons googleEnabled={googleEnabled} appleEnabled={appleEnabled} />
     </form>
   )
 }

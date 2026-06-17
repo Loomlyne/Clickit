@@ -13,7 +13,6 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { mapAuthError } from '@/lib/auth-errors'
 import { signUpAction } from '@/app/[locale]/(viewer)/auth/actions'
-import { OAuthButtons } from './oauth-buttons'
 
 const signupSchema = z
   .object({
@@ -30,13 +29,7 @@ const signupSchema = z
 
 type SignupFormData = z.infer<typeof signupSchema>
 
-export function SignupForm({
-  googleEnabled = false,
-  appleEnabled = false,
-}: {
-  googleEnabled?: boolean
-  appleEnabled?: boolean
-}) {
+export function SignupForm() {
   const t = useTranslations('auth')
   const tErrors = useTranslations('errors')
   const router = useRouter()
@@ -237,8 +230,6 @@ export function SignupForm({
       >
         {isSubmitting ? t('signUpButton') + '…' : t('signUpButton')}
       </button>
-
-      <OAuthButtons googleEnabled={googleEnabled} appleEnabled={appleEnabled} />
     </form>
   )
 }

@@ -5,13 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LoginForm } from './login-form'
 import { SignupForm } from './signup-form'
 
-export function AuthPanel({
-  googleEnabled = false,
-  appleEnabled = false,
-}: {
-  googleEnabled?: boolean
-  appleEnabled?: boolean
-}) {
+export function AuthPanel() {
   const t = useTranslations('auth')
   return (
     <Tabs defaultValue="login" className="w-full">
@@ -20,10 +14,10 @@ export function AuthPanel({
         <TabsTrigger value="signup">{t('tabSignUp')}</TabsTrigger>
       </TabsList>
       <TabsContent value="login" className="mt-4 md:mt-6">
-        <LoginForm googleEnabled={googleEnabled} appleEnabled={appleEnabled} />
+        <LoginForm />
       </TabsContent>
       <TabsContent value="signup" className="mt-4 md:mt-6">
-        <SignupForm googleEnabled={googleEnabled} appleEnabled={appleEnabled} />
+        <SignupForm />
       </TabsContent>
     </Tabs>
   )

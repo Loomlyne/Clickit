@@ -98,10 +98,7 @@ export default async function AuthPage({
             {subheading}
           </p>
 
-          <AuthPanel
-            googleEnabled={config.authGoogleEnabled}
-            appleEnabled={config.authAppleEnabled}
-          />
+          <AuthPanel />
 
           <div className="mt-4 text-center md:mt-6">
             <Link
