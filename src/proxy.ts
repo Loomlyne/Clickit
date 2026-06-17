@@ -44,6 +44,16 @@ const PUBLIC_ALLOWLIST = [
   '/terms',
 ]
 
+/**
+ * Routes that ALWAYS require a signed-in user, even when "skip sign-in" is on.
+ * Watching is gated (the whole point of skip mode: browse freely, but you must
+ * sign in to watch); account/admin areas are user-specific.
+ *
+ * When auth_allow_skip is OFF, every non-public route requires auth anyway —
+ * this list only matters once skip is enabled, to keep watch/account locked.
+ */
+const SKIP_PROTECTED = ['/watch', '/my-list', '/profile', '/admin']
+
 const handleI18nRouting = createMiddleware(routing)
 
 /**
@@ -164,16 +174,27 @@ export async function proxy(request: NextRequest) {
   )
   const isAdminRoute =
     pathWithoutLocale === '/admin' || pathWithoutLocale.startsWith('/admin/')
+  const isSkipProtected = SKIP_PROTECTED.some(
+    (p) => pathWithoutLocale === p || pathWithoutLocale.startsWith(`${p}/`)
+  )
 
   if (!isPublic) {
     if (!userId) {
-      // Signed out → bounce to /auth, remembering the intended destination.
-      const url = request.nextUrl.clone()
-      url.pathname = `/${locale}/auth`
-      url.search = `?next=${pathWithoutLocale}`
-      return redirectWithCookies(url, intlResponse)
-    }
-    if (isAdminRoute) {
+      // Signed out. Normally bounce to /auth. BUT if the admin enabled
+      // "skip sign-in", anon visitors may browse — except watch/account/admin
+      // routes (SKIP_PROTECTED), which always demand an account.
+      let mustAuth = true
+      if (!isSkipProtected) {
+        const { authAllowSkip } = await getAppConfig()
+        mustAuth = !authAllowSkip
+      }
+      if (mustAuth) {
+        const url = request.nextUrl.clone()
+        url.pathname = `/${locale}/auth`
+        url.search = `?next=${pathWithoutLocale}`
+        return redirectWithCookies(url, intlResponse)
+      }
+    } else if (isAdminRoute) {
       // Signed in but not the admin → bounce to /watch. checkIsAdmin() (one DB
       // query) runs only for /admin/* requests, never on normal page loads.
       const isAdmin = await checkIsAdmin()

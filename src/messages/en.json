@@ -986,6 +986,8 @@
       "authQuoteArLabel": "Testimonial quote (Arabic)",
       "authQuoteAttributionLabel": "Quote attribution",
       "authQuoteAttributionArLabel": "Quote attribution (Arabic)",
+      "authAllowSkipLabel": "Allow skip sign-in",
+      "authAllowSkipHint": "Shows a \"Skip sign in\" link and lets visitors browse without an account. Watching a show still requires sign-in.",
       "authConfigSaved": "Sign-in page updated",
       "siteTitleLabel": "Site title",
       "siteDescriptionLabel": "Site description",

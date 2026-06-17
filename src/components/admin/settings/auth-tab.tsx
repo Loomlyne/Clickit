@@ -35,6 +35,7 @@ export function AuthTab({ config }: { config: AppConfig }) {
           auth_quote_ar: config.authQuoteAr ?? '',
           auth_quote_attribution: config.authQuoteAttribution ?? '',
           auth_quote_attribution_ar: config.authQuoteAttributionAr ?? '',
+          auth_allow_skip: config.authAllowSkip,
         }}
       />
     </>

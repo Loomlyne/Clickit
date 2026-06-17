@@ -986,6 +986,8 @@
       "authQuoteArLabel": "اقتباس الشهادة (بالعربية)",
       "authQuoteAttributionLabel": "نسبة الاقتباس",
       "authQuoteAttributionArLabel": "نسبة الاقتباس (بالعربية)",
+      "authAllowSkipLabel": "السماح بتخطّي تسجيل الدخول",
+      "authAllowSkipHint": "يُظهر رابط «تخطّي تسجيل الدخول» ويتيح للزوّار تصفّح الموقع دون حساب. مشاهدة أي عرض تظل تتطلّب تسجيل الدخول.",
       "authConfigSaved": "تم تحديث صفحة الدخول",
       "siteTitleLabel": "عنوان الموقع",
       "siteDescriptionLabel": "وصف الموقع",

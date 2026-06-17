@@ -19,6 +19,7 @@ type Values = {
   auth_quote_ar: string
   auth_quote_attribution: string
   auth_quote_attribution_ar: string
+  auth_allow_skip: boolean
 }
 
 export function AuthPageEditor({ initial }: { initial: Values }) {
@@ -46,6 +47,7 @@ export function AuthPageEditor({ initial }: { initial: Values }) {
       auth_quote_ar: values.auth_quote_ar.trim() || null,
       auth_quote_attribution: values.auth_quote_attribution.trim() || null,
       auth_quote_attribution_ar: values.auth_quote_attribution_ar.trim() || null,
+      auth_allow_skip: values.auth_allow_skip,
     })
     setSaving(false)
     if (result.success) toast.success(t('authConfigSaved'))
@@ -132,6 +134,35 @@ export function AuthPageEditor({ initial }: { initial: Values }) {
             maxLength={120}
           />
         </SettingsField>
+
+        {/* Skip sign-in toggle */}
+        <div className="md:col-span-2">
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-white/8 bg-white/[0.02] p-4">
+            <div>
+              <p className="text-sm font-medium text-white">
+                {t('authAllowSkipLabel')}
+              </p>
+              <p className="text-muted-foreground text-xs">
+                {t('authAllowSkipHint')}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => set('auth_allow_skip', !values.auth_allow_skip)}
+              aria-pressed={values.auth_allow_skip}
+              aria-label={t('authAllowSkipLabel')}
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none ${
+                values.auth_allow_skip ? 'bg-emerald-500' : 'bg-white/10'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform ${
+                  values.auth_allow_skip ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
 
         <div className="flex items-center justify-end md:col-span-2">
           <Button type="submit" disabled={!dirty || saving}>
