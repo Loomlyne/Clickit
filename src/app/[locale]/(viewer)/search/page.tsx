@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { searchShows, searchEpisodes } from '@/lib/queries'
 import { SearchResults } from '@/components/search/search-results'
+import type { Locale } from '@/lib/locale'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('search')
@@ -73,9 +74,10 @@ export default async function SearchPage({ searchParams }: Props) {
   }
 
   // Fetch results in parallel
+  const locale = (await getLocale()) as Locale
   const [shows, episodes] = await Promise.all([
-    searchShows(q),
-    searchEpisodes(q),
+    searchShows(q, locale),
+    searchEpisodes(q, locale),
   ])
 
   // No results state

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createPublicClient } from '@/lib/supabase/public'
 import type { Database } from '@/lib/database.types'
 import { DEFAULT_LOCALE, pickLocalized, type Locale } from '@/lib/locale'
+import { translateEnToAr } from '@/lib/translate'
 import { isEpisodeLive } from '@/lib/scheduling'
 
 export type DbShow = Database['public']['Tables']['shows']['Row']
@@ -77,6 +78,54 @@ export function mapShow(db: DbShow, locale: Locale = DEFAULT_LOCALE): ViewShow {
     heroVideoMobileUrl: db.hero_video_mobile_url ?? undefined,
     heroVideoMobileType: (db.hero_video_mobile_type as ViewShow['heroVideoMobileType']) ?? undefined,
   }
+}
+
+export async function localizedField(
+  locale: Locale,
+  en: string,
+  ar: string | null | undefined
+): Promise<string> {
+  const picked = pickLocalized(locale, en, ar)
+  if (locale === 'ar' && picked === en && en.trim()) {
+    return translateEnToAr(en)
+  }
+  return picked
+}
+
+export async function mapShowLocalized(
+  db: DbShow,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<ViewShow> {
+  if (locale === 'en') return mapShow(db, locale)
+
+  const [title, tagline, description] = await Promise.all([
+    localizedField(locale, db.title, db.title_ar),
+    localizedField(locale, db.tagline ?? '', db.tagline_ar),
+    localizedField(locale, db.description, db.description_ar),
+  ])
+
+  return { ...mapShow(db, locale), title, tagline, description }
+}
+
+export async function mapShowsLocalized(
+  dbs: DbShow[],
+  locale: Locale = DEFAULT_LOCALE
+): Promise<ViewShow[]> {
+  return Promise.all(dbs.map((db) => mapShowLocalized(db, locale)))
+}
+
+export async function mapEpisodeLocalized(
+  db: DbEpisode,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<ViewEpisode> {
+  if (locale === 'en') return mapEpisode(db, locale)
+
+  const [title, description] = await Promise.all([
+    localizedField(locale, db.title, db.title_ar),
+    localizedField(locale, db.description, db.description_ar),
+  ])
+
+  return { ...mapEpisode(db, locale), title, description }
 }
 
 export function mapCategory(db: DbCategory): ViewCategory {
@@ -199,7 +248,7 @@ export const getHeroVideo = unstable_cache(
 // data-cache lookup. With cache(), only the first lookup runs; the rest are
 // in-memory hits.
 export const getFeaturedShows = cache(unstable_cache(
-  async (): Promise<ViewShow[]> => {
+  async (locale: Locale = DEFAULT_LOCALE): Promise<ViewShow[]> => {
     const supabase = createPublicClient()
     // No limit: every featured show the admin selects cycles in the hero
     // carousel — whether that's 1 or 50.
@@ -219,17 +268,17 @@ export const getFeaturedShows = cache(unstable_cache(
         .eq('archived', false)
         .order('created_at', { ascending: false })
         .limit(3)
-      return (fallback ?? []).map((s) => mapShow(s))
+      return mapShowsLocalized(fallback ?? [], locale)
     }
 
-    return data.map((s) => mapShow(s))
+    return mapShowsLocalized(data, locale)
   },
   ['featured-shows'],
   { revalidate: 900, tags: ['shows'] } // 15 min — featured list changes occasionally
 ))
 
 export const getStreamingShows = unstable_cache(
-  async (): Promise<ViewShow[]> => {
+  async (locale: Locale = DEFAULT_LOCALE): Promise<ViewShow[]> => {
     const supabase = createPublicClient()
     const { data } = await supabase
       .from('shows')
@@ -238,7 +287,7 @@ export const getStreamingShows = unstable_cache(
       .eq('archived', false)
       .order('created_at', { ascending: false })
 
-    return (data ?? []).map((s) => mapShow(s))
+    return mapShowsLocalized(data ?? [], locale)
   },
   ['streaming-shows'],
   { revalidate: 3600, tags: ['shows'] } // 1 hr — show status rarely changes
@@ -264,7 +313,7 @@ export const getShowsByGenre = unstable_cache(
       .neq('id', excludeId)
       .order('created_at', { ascending: false })
 
-    return (data ?? []).map((s) => mapShow(s, locale))
+    return mapShowsLocalized(data ?? [], locale)
   },
   ['shows-by-genre'],
   { revalidate: 3600, tags: ['shows'] } // 1 hr — matches getStreamingShows
@@ -289,14 +338,14 @@ export const getOtherStreamingShows = unstable_cache(
       .order('created_at', { ascending: false })
       .limit(limit)
 
-    return (data ?? []).map((s) => mapShow(s, locale))
+    return mapShowsLocalized(data ?? [], locale)
   },
   ['other-streaming-shows'],
   { revalidate: 3600, tags: ['shows'] }
 )
 
 export const getComingSoonShows = unstable_cache(
-  async (): Promise<ViewShow[]> => {
+  async (locale: Locale = DEFAULT_LOCALE): Promise<ViewShow[]> => {
     const supabase = createPublicClient()
     const { data } = await supabase
       .from('shows')
@@ -305,7 +354,7 @@ export const getComingSoonShows = unstable_cache(
       .eq('archived', false)
       .order('created_at', { ascending: false })
 
-    return (data ?? []).map((s) => mapShow(s))
+    return mapShowsLocalized(data ?? [], locale)
   },
   ['coming-soon-shows'],
   { revalidate: 3600, tags: ['shows'] } // 1 hr
@@ -366,7 +415,7 @@ export const getCategories = unstable_cache(
 )
 
 export const getCategoryRails = unstable_cache(
-  async (): Promise<CategoryRail[]> => {
+  async (locale: Locale = DEFAULT_LOCALE): Promise<CategoryRail[]> => {
     const supabase = createPublicClient()
     const [categories, assignments] = await Promise.all([
       getCategories(),
@@ -386,26 +435,27 @@ export const getCategoryRails = unstable_cache(
       showsByCategory.set(row.category_id, existing)
     }
 
-    return categories
-      .map((category) => {
+    const rails = await Promise.all(
+      categories.map(async (category) => {
         const shows = (showsByCategory.get(category.id) ?? [])
           .sort((a, b) => b.created_at.localeCompare(a.created_at))
-          .map((show) => mapShow(show))
 
         return {
           ...category,
-          shows,
+          shows: await mapShowsLocalized(shows, locale),
         }
       })
-      .filter((category) => category.shows.length > 0)
+    )
+
+    return rails.filter((category) => category.shows.length > 0)
   },
   ['category-rails'],
   { revalidate: 3600, tags: ['categories', 'shows'] }
 )
 
 export const getCategoryRailBySlug = unstable_cache(
-  async (slug: string): Promise<CategoryRail | null> => {
-    const rails = await getCategoryRails()
+  async (slug: string, locale: Locale = DEFAULT_LOCALE): Promise<CategoryRail | null> => {
+    const rails = await getCategoryRails(locale)
     return rails.find((rail) => rail.slug === slug) ?? null
   },
   ['category-rail-by-slug'],
@@ -647,7 +697,8 @@ export async function getEpisodeProgress(
 // ---------------------------------------------------------------------------
 
 export async function getContinueWatchingEpisodes(
-  userId: string
+  userId: string,
+  locale: Locale = DEFAULT_LOCALE
 ): Promise<ContinueWatchingItem[]> {
   const supabase = await createClient()
   // Filter archived episodes + shows at the DB level instead of in memory. The
@@ -657,7 +708,7 @@ export async function getContinueWatchingEpisodes(
   // wasted bandwidth and CPU on progress rows we were about to drop anyway.
   const { data } = await supabase
     .from('watch_progress')
-    .select('progress_seconds, duration_seconds, episode_id, episodes!inner(id, title, episode_number, status, archived, youtube_video_id, show_id, season_id, seasons!inner(season_number), shows!inner(id, title, slug, brand_color, archived))')
+    .select('progress_seconds, duration_seconds, episode_id, episodes!inner(id, title, title_ar, episode_number, status, archived, youtube_video_id, show_id, season_id, seasons!inner(season_number), shows!inner(id, title, title_ar, slug, brand_color, archived))')
     .eq('user_id', userId)
     .eq('completed', false)
     .gt('progress_seconds', 0)
@@ -669,18 +720,21 @@ export async function getContinueWatchingEpisodes(
 
   if (!data) return []
 
-  return data
-    .slice(0, 10)
-    .map((row: any) => {
+  const items = await Promise.all(
+    data.slice(0, 10).map(async (row: any) => {
       const ep = row.episodes
       const dur = row.duration_seconds || 1
+      const [episodeTitle, showTitle] = await Promise.all([
+        localizedField(locale, ep.title, ep.title_ar),
+        localizedField(locale, ep.shows.title, ep.shows.title_ar),
+      ])
       return {
         episodeId: ep.id,
-        episodeTitle: ep.title,
+        episodeTitle,
         episodeNumber: ep.episode_number,
         seasonNumber: ep.seasons.season_number,
         showId: ep.shows.id,
-        showTitle: ep.shows.title,
+        showTitle,
         showSlug: ep.shows.slug,
         showBrandColor: (ep.shows.brand_color || 'brand-blue') as ViewShow['brandColor'],
         youtubeVideoId: ep.youtube_video_id ?? null,
@@ -689,6 +743,9 @@ export async function getContinueWatchingEpisodes(
         progressPercent: Math.min(Math.round((row.progress_seconds / dur) * 100), 99),
       }
     })
+  )
+
+  return items
 }
 
 // ---------------------------------------------------------------------------
@@ -716,7 +773,9 @@ export const getDistinctGenres = unstable_cache(
 // ---------------------------------------------------------------------------
 
 export const getScheduleShows = unstable_cache(
-  async (): Promise<
+  async (
+    locale: Locale = DEFAULT_LOCALE
+  ): Promise<
     (ViewShow & { broadcastDay: string | null; broadcastTime: string | null })[]
   > => {
     const supabase = createPublicClient()
@@ -728,11 +787,14 @@ export const getScheduleShows = unstable_cache(
       .not('broadcast_day', 'is', null)
       .order('broadcast_day')
 
-    return (data ?? []).map((s) => ({
-      ...mapShow(s),
-      broadcastDay: s.broadcast_day,
-      broadcastTime: s.broadcast_time,
-    }))
+    const rows = data ?? []
+    return Promise.all(
+      rows.map(async (s) => ({
+        ...(await mapShowLocalized(s, locale)),
+        broadcastDay: s.broadcast_day,
+        broadcastTime: s.broadcast_time,
+      }))
+    )
   },
   ['schedule-shows'],
   { revalidate: 3600, tags: ['shows'] } // 1 hr
@@ -743,28 +805,42 @@ export const getScheduleShows = unstable_cache(
 // ---------------------------------------------------------------------------
 
 export const getComingSoonEpisodes = unstable_cache(
-  async (): Promise<
+  async (
+    locale: Locale = DEFAULT_LOCALE
+  ): Promise<
     (ViewEpisode & { showTitle: string; showSlug: string; showBrandColor: ViewShow['brandColor'] })[]
   > => {
     const supabase = createPublicClient()
-    // Only episodes still genuinely upcoming: coming-soon AND either unscheduled
-    // or scheduled for the future. Once publish_at passes the episode is live, so
-    // it should drop off the Coming Soon page.
     const nowIso = new Date().toISOString()
     const { data } = await supabase
-      .from('episodes_view')
-      .select('*')
+      .from('episodes')
+      .select(
+        '*, shows!inner(title, title_ar, slug, brand_color, status, archived)'
+      )
+      .eq('archived', false)
       .eq('status', 'coming-soon')
+      .eq('shows.archived', false)
+      .in('shows.status', ['now-streaming', 'coming-soon'])
       .or(`publish_at.is.null,publish_at.gt.${nowIso}`)
       .order('created_at', { ascending: false })
       .limit(20)
 
-    return (data ?? []).map((e: any) => ({
-      ...mapEpisode(e as unknown as DbEpisode),
-      showTitle: e.show_title,
-      showSlug: e.show_slug,
-      showBrandColor: e.show_brand_color as ViewShow['brandColor'],
-    }))
+    return Promise.all(
+      (data ?? []).map(async (row: any) => {
+        const episode = await mapEpisodeLocalized(row as DbEpisode, locale)
+        const showTitle = await localizedField(
+          locale,
+          row.shows.title,
+          row.shows.title_ar
+        )
+        return {
+          ...episode,
+          showTitle,
+          showSlug: row.shows.slug,
+          showBrandColor: row.shows.brand_color as ViewShow['brandColor'],
+        }
+      })
+    )
   },
   ['coming-soon-episodes'],
   { revalidate: 900, tags: ['episodes'] } // 15 min
@@ -775,7 +851,7 @@ export const getComingSoonEpisodes = unstable_cache(
 // ---------------------------------------------------------------------------
 
 export const getAllShows = unstable_cache(
-  async (): Promise<ViewShow[]> => {
+  async (locale: Locale = DEFAULT_LOCALE): Promise<ViewShow[]> => {
     const supabase = createPublicClient()
     const { data } = await supabase
       .from('shows')
@@ -784,7 +860,7 @@ export const getAllShows = unstable_cache(
       .in('status', ['now-streaming', 'coming-soon'])
       .order('title')
 
-    return (data ?? []).map((s) => mapShow(s))
+    return mapShowsLocalized(data ?? [], locale)
   },
   ['all-shows'],
   { revalidate: 3600, tags: ['shows'] } // 1 hr
@@ -794,7 +870,10 @@ export const getAllShows = unstable_cache(
 // Search queries (Postgres FTS)
 // ---------------------------------------------------------------------------
 
-export async function searchShows(query: string): Promise<ViewShow[]> {
+export async function searchShows(
+  query: string,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<ViewShow[]> {
   if (!query || query.trim().length < 2) return []
   // Public catalog read — no session needed; skip the cookie overhead.
   const supabase = createPublicClient()
@@ -806,11 +885,12 @@ export async function searchShows(query: string): Promise<ViewShow[]> {
     .textSearch('fts', query, { type: 'websearch', config: 'english' })
     .limit(20)
 
-  return (data ?? []).map((s) => mapShow(s))
+  return mapShowsLocalized(data ?? [], locale)
 }
 
 export async function searchEpisodes(
-  query: string
+  query: string,
+  locale: Locale = DEFAULT_LOCALE
 ): Promise<
   (ViewEpisode & { showTitle: string; showSlug: string; showBrandColor: ViewShow['brandColor'] })[]
 > {
@@ -818,25 +898,38 @@ export async function searchEpisodes(
   const supabase = createPublicClient()
   const { data } = await supabase
     .from('episodes')
-    .select('*, shows!inner(title, slug, brand_color, status)')
+    .select('*, shows!inner(title, title_ar, slug, brand_color, status)')
     .eq('archived', false)
     .eq('status', 'published')
     .textSearch('fts', query, { type: 'websearch', config: 'english' })
     .limit(30)
 
-  return (data ?? []).map((e: any) => ({
-    ...mapEpisode(e),
-    showTitle: e.shows.title,
-    showSlug: e.shows.slug,
-    showBrandColor: e.shows.brand_color as ViewShow['brandColor'],
-  }))
+  return Promise.all(
+    (data ?? []).map(async (row: any) => {
+      const episode = await mapEpisodeLocalized(row as DbEpisode, locale)
+      const showTitle = await localizedField(
+        locale,
+        row.shows.title,
+        row.shows.title_ar
+      )
+      return {
+        ...episode,
+        showTitle,
+        showSlug: row.shows.slug,
+        showBrandColor: row.shows.brand_color as ViewShow['brandColor'],
+      }
+    })
+  )
 }
 
 // ---------------------------------------------------------------------------
 // Watchlist queries
 // ---------------------------------------------------------------------------
 
-export async function getWatchlistShows(userId: string): Promise<ViewShow[]> {
+export async function getWatchlistShows(
+  userId: string,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<ViewShow[]> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('watchlist')
@@ -845,10 +938,10 @@ export async function getWatchlistShows(userId: string): Promise<ViewShow[]> {
     .order('created_at', { ascending: false })
 
   if (!data) return []
-  return data
+  const shows = data
     .map((row: any) => row.shows)
-    .filter(Boolean)
-    .map((s) => mapShow(s))
+    .filter(Boolean) as DbShow[]
+  return mapShowsLocalized(shows, locale)
 }
 
 // ---------------------------------------------------------------------------
@@ -979,7 +1072,10 @@ export async function getWatchedShowIds(
 // Likes queries
 // ---------------------------------------------------------------------------
 
-export async function getLikedShows(userId: string): Promise<ViewShow[]> {
+export async function getLikedShows(
+  userId: string,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<ViewShow[]> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('likes')
@@ -988,10 +1084,10 @@ export async function getLikedShows(userId: string): Promise<ViewShow[]> {
     .order('created_at', { ascending: false })
 
   if (!data) return []
-  return data
+  const shows = data
     .map((row: any) => row.shows)
-    .filter(Boolean)
-    .map((s) => mapShow(s))
+    .filter(Boolean) as DbShow[]
+  return mapShowsLocalized(shows, locale)
 }
 
 export async function getShowLikeState(userId: string, showId: string): Promise<boolean> {

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 
 import { redirect } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
@@ -9,6 +9,7 @@ import { getFeaturedShows } from '@/lib/queries'
 import { getAppConfig } from '@/lib/config'
 import { createClient } from '@/lib/supabase/server'
 import { getSafeAuthNextPath } from '@/lib/auth-navigation'
+import type { Locale } from '@/lib/locale'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('common')
@@ -26,22 +27,22 @@ export default async function AuthPage({
   params: Promise<{ locale: string }>
 }) {
   const supabase = await createClient()
-  const [shows, config, t, authResult, query, routeParams] = await Promise.all([
-    getFeaturedShows(),
+  const locale = (await params).locale as Locale
+  const [shows, config, t, authResult, query] = await Promise.all([
+    getFeaturedShows(locale as Locale),
     getAppConfig(),
     getTranslations('auth'),
     supabase.auth.getUser(),
     searchParams,
-    params,
   ])
   if (authResult.data.user) {
     redirect({
       href: getSafeAuthNextPath(query?.next, '/watch'),
-      locale: routeParams.locale,
+      locale,
     })
   }
 
-  const isAr = routeParams.locale === 'ar'
+  const isAr = locale === 'ar'
   // Admin-configured copy wins; fall back to the bundled i18n strings.
   const heading =
     (isAr ? config.authHeadingAr : config.authHeading) ||

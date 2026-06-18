@@ -12,6 +12,7 @@ import {
   getLikedShows,
   getRecentlyWatched,
 } from '@/lib/queries'
+import type { Locale } from '@/lib/locale'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('profile')
@@ -43,11 +44,13 @@ export default async function ProfilePage() {
 
   const isAdmin = config?.admin_user_id === user.id
 
+  const locale = (await getIntlLocale()) as Locale
+
   // Fetch personalization data
   const [watchlistShows, likedShows, recentlyWatched, t, tCommon] =
     await Promise.all([
-      getWatchlistShows(user.id),
-      getLikedShows(user.id),
+      getWatchlistShows(user.id, locale),
+      getLikedShows(user.id, locale),
       getRecentlyWatched(user.id),
       getTranslations('profile'),
       getTranslations('common'),

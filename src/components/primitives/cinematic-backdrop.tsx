@@ -1,6 +1,6 @@
 import Image from 'next/image'
-import { extractYouTubeId } from '@/lib/youtube'
 import { resolveHeroMedia, type HeroMediaChoice } from '@/lib/hero-media'
+import { HeroVideoWithAudio } from '@/components/primitives/hero-video-with-audio'
 
 interface CinematicBackdropProps {
   brandColor: string
@@ -54,32 +54,14 @@ function VideoLayer({
    */
   poster?: string
 }) {
-  if (type === 'mp4') {
-    return (
-      <video
-        src={url}
-        autoPlay={!reducedMotion}
-        muted
-        loop={!reducedMotion}
-        playsInline
-        preload="metadata"
-        poster={poster}
-        className={className}
-        aria-hidden
-      />
-    )
-  }
-  const videoId = extractYouTubeId(url)
-  if (!videoId) return null
-  const autoplayFlag = reducedMotion ? '0' : '1'
-  const loopFlag = reducedMotion ? '0' : '1'
   return (
-    <iframe
-      src={`https://www.youtube.com/embed/${videoId}?autoplay=${autoplayFlag}&mute=1&loop=${loopFlag}&playlist=${videoId}&controls=0&rel=0&showinfo=0&iv_load_type=3&modestbranding=1`}
-      allow="autoplay"
-      title="Hero background"
+    <HeroVideoWithAudio
+      url={url}
+      type={type}
       className={className}
-      aria-hidden
+      reducedMotion={reducedMotion}
+      poster={poster}
+      title="Hero background"
     />
   )
 }

@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 
 import { Button } from '@/components/ui/button'
 import { EpisodeRow } from '@/components/series/episode-row'
@@ -11,6 +11,7 @@ import {
   type ViewShow,
 } from '@/lib/queries'
 import { BRAND_COLOR_HEX } from '@/lib/brand-colors'
+import type { Locale } from '@/lib/locale'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('comingSoon')
@@ -21,11 +22,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ComingSoonPage() {
+  const locale = (await getLocale()) as Locale
   const [t, tCommon, comingSoonShows, upcomingEpisodes] = await Promise.all([
     getTranslations('comingSoon'),
     getTranslations('common'),
-    getComingSoonShows(),
-    getComingSoonEpisodes(),
+    getComingSoonShows(locale),
+    getComingSoonEpisodes(locale),
   ])
 
   // Group upcoming episodes by show for section 2 display

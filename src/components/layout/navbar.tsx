@@ -147,73 +147,50 @@ export function Navbar({
         })()}
 
       {/* Nav links — hidden on mobile, MobileNav handles those */}
-      <nav className="hidden items-center gap-[22px] md:flex">
-        {!isLanding && (
-          <>
-            {(() => {
-              const liveHref = liveNavHref(liveStreamUrl)
-              const external = liveNavIsExternal(liveHref)
-              const pillClass = cn(
-                'inline-flex items-center gap-2 text-[13px] font-semibold tracking-tight text-white transition-opacity duration-200 hover:opacity-80'
-              )
-              const inner = (
-                <>
-                  <span className="relative flex size-2 shrink-0" aria-hidden>
-                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" />
-                    <span className="relative inline-flex size-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
-                  </span>
-                  {liveLabel}
-                </>
-              )
-              return external ? (
-                <a
-                  href={liveHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={pillClass}
-                >
-                  {inner}
-                </a>
-              ) : (
-                <Link href={liveHref} className={pillClass}>
-                  {inner}
-                </Link>
-              )
-            })()}
-            <Link href="/watch" prefetch className={navLinkClass(pathname === '/watch')}>
-              {t('watch')}
-            </Link>
-            <Link
-              href="/support"
-              prefetch
-              className={navLinkClass(pathname === '/support')}
-            >
-              {t('support')}
-            </Link>
-          </>
-        )}
-        {isLanding &&
-          (() => {
-            const isPortfolio = pathname === '/portfolio' || pathname === ''
-            const prefix = isPortfolio ? '' : '/portfolio'
-            return (
+      {!isLanding && (
+        <nav className="hidden items-center gap-[22px] md:flex">
+          {(() => {
+            const liveHref = liveNavHref(liveStreamUrl)
+            const external = liveNavIsExternal(liveHref)
+            const pillClass = cn(
+              'inline-flex items-center gap-2 text-[13px] font-semibold tracking-tight text-white transition-opacity duration-200 hover:opacity-80'
+            )
+            const inner = (
               <>
-                <a
-                  href={`${prefix}#shows`}
-                  className="rounded-full border border-white/12 bg-black/60 px-3.5 py-1.5 text-[13.5px] tracking-[0.08em] text-[var(--text-dim)] uppercase transition-colors duration-150 hover:bg-black/70 hover:text-[var(--text)]"
-                >
-                  {t('shows')}
-                </a>
-                <a
-                  href={`${prefix}#faq`}
-                  className="rounded-full border border-white/12 bg-black/60 px-3.5 py-1.5 text-[13.5px] tracking-[0.08em] text-[var(--text-dim)] uppercase transition-colors duration-150 hover:bg-black/70 hover:text-[var(--text)]"
-                >
-                  {t('faq')}
-                </a>
+                <span className="relative flex size-2 shrink-0" aria-hidden>
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" />
+                  <span className="relative inline-flex size-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
+                </span>
+                {liveLabel}
               </>
             )
+            return external ? (
+              <a
+                href={liveHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={pillClass}
+              >
+                {inner}
+              </a>
+            ) : (
+              <Link href={liveHref} className={pillClass}>
+                {inner}
+              </Link>
+            )
           })()}
-      </nav>
+          <Link href="/watch" prefetch className={navLinkClass(pathname === '/watch')}>
+            {t('watch')}
+          </Link>
+          <Link
+            href="/support"
+            prefetch
+            className={navLinkClass(pathname === '/support')}
+          >
+            {t('support')}
+          </Link>
+        </nav>
+      )}
 
       {/* Right side: auth (desktop) */}
       <div className="ms-auto hidden items-center gap-3.5 md:flex">

@@ -1,10 +1,11 @@
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getFeaturedShows } from '@/lib/queries'
+import type { Locale } from '@/lib/locale'
 
 export async function CtaBanner() {
   const [shows, t] = await Promise.all([
-    getFeaturedShows(),
+    getFeaturedShows((await getLocale()) as Locale),
     getTranslations('landing'),
   ])
   const backdrop = shows[2]?.heroImageUrl || shows[0]?.posterUrl
