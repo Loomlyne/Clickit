@@ -2,11 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { getAppConfig } from '@/lib/config'
 import { pickLocalized } from '@/lib/locale'
 import { getLocale } from '@/lib/locale-server'
-import { Navbar } from '@/components/layout/navbar'
-import { Footer } from '@/components/layout/footer'
+import { ViewerShell } from '@/components/layout/viewer-shell'
 import { SmoothScroll } from '@/components/providers/smooth-scroll'
 import { ViewerScrollPersistence } from '@/components/providers/viewer-scroll-persistence'
-import { MarqueeTicker } from '@/components/landing/marquee-ticker'
 import { EntryPreload } from '@/components/layout/entry-preload'
 
 export default async function ViewerLayout({
@@ -14,10 +12,6 @@ export default async function ViewerLayout({
 }: {
   children: React.ReactNode
 }) {
-  // getClaims() verifies the JWT locally (ES256 JWKS, cached) instead of calling
-  // the Supabase auth server. It still validates the signature; initialUser is
-  // only a flash-prevention hint — AuthSection re-derives the full session on
-  // the client. Saves an auth-server roundtrip on every hard page load.
   const supabase = await createClient()
   const [authResult, config, locale] = await Promise.all([
     supabase.auth.getClaims(),
@@ -27,8 +21,6 @@ export default async function ViewerLayout({
   const claims = authResult.data?.claims
   const user = claims ? { id: claims.sub, email: claims.email ?? '' } : null
 
-  // Localize the ticker server-side so the client component stays locale-agnostic.
-  // Each line shows its Arabic tag/text/tag2 when locale is ar (English fallback).
   const localizedTicker = {
     enabled: config.topTicker.enabled,
     items: config.topTicker.items.map((m) => ({
@@ -42,7 +34,6 @@ export default async function ViewerLayout({
 
   return (
     <>
-      {/* Server-rendered black cover — paints instantly before JS, prevents content flash */}
       <div
         id="preload-cover"
         aria-hidden="true"
@@ -51,20 +42,17 @@ export default async function ViewerLayout({
       <EntryPreload videoUrl={config.preloaderVideoUrl} />
       <SmoothScroll>
         <ViewerScrollPersistence />
-        <div className="relative min-h-screen bg-black">
-          <MarqueeTicker ticker={localizedTicker} />
-          <Navbar
-            initialUser={user}
-            liveStreamUrl={config.liveStreamUrl}
-            liveStreamLabel={config.liveStreamLabel}
-            liveStreamLabelAr={config.liveStreamLabelAr}
-            logoUrl={config.faviconUrl}
-          />
-          <div className="pt-16">
-            {children}
-          </div>
-        </div>
-        <Footer />
+        <ViewerShell
+          comingSoonGate={config.flags.comingSoonMode}
+          ticker={localizedTicker}
+          initialUser={user}
+          liveStreamUrl={config.liveStreamUrl}
+          liveStreamLabel={config.liveStreamLabel}
+          liveStreamLabelAr={config.liveStreamLabelAr}
+          logoUrl={config.faviconUrl}
+        >
+          {children}
+        </ViewerShell>
       </SmoothScroll>
     </>
   )

@@ -9,6 +9,7 @@ import { getFeaturedShows } from '@/lib/queries'
 import { getAppConfig } from '@/lib/config'
 import { createClient } from '@/lib/supabase/server'
 import { getSafeAuthNextPath } from '@/lib/auth-navigation'
+import { cn } from '@/lib/utils'
 import type { Locale } from '@/lib/locale'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -36,8 +37,14 @@ export default async function AuthPage({
     searchParams,
   ])
   if (authResult.data.user) {
+    const { data: configRow } = await supabase
+      .from('app_config')
+      .select('admin_user_id')
+      .eq('id', 1)
+      .single()
+    const isAdmin = configRow?.admin_user_id === authResult.data.user.id
     redirect({
-      href: getSafeAuthNextPath(query?.next, '/watch'),
+      href: getSafeAuthNextPath(query?.next, isAdmin ? '/admin' : '/watch'),
       locale,
     })
   }
@@ -60,7 +67,12 @@ export default async function AuthPage({
     config.authImageUrl || shows[1]?.heroImageUrl || shows[0]?.posterUrl
 
   return (
-    <div className="relative -mt-16 flex min-h-[calc(100dvh-4rem)] overflow-hidden">
+    <div
+      className={cn(
+        'relative flex min-h-[calc(100dvh-4rem)] overflow-hidden',
+        !config.flags.comingSoonMode && '-mt-16'
+      )}
+    >
       <BotIdInit />
 
       {/* LEFT — editorial hero */}

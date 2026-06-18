@@ -21,7 +21,7 @@ interface UserState {
 interface AuthSectionProps {
   initialUser?: { id: string; email: string } | null
   isLanding?: boolean
-  layout?: 'default' | 'sheet'
+  layout?: 'default' | 'sheet' | 'minimal'
 }
 
 export function AuthSection({
@@ -96,6 +96,16 @@ export function AuthSection({
   }
 
   if (!user) {
+    if (layout === 'minimal') {
+      return (
+        <Link
+          href="/auth"
+          className="inline-flex min-h-10 items-center justify-center rounded-full border border-white/12 bg-black/60 px-5 text-[13px] font-medium text-white transition-colors hover:bg-white/[0.06]"
+        >
+          {t('signIn')}
+        </Link>
+      )
+    }
     if (layout === 'sheet') {
       return (
         <Button
@@ -135,6 +145,18 @@ export function AuthSection({
       >
         <Link href="/auth">{t('signIn')}</Link>
       </Button>
+    )
+  }
+
+  if (layout === 'minimal') {
+    return (
+      <Link
+        href={isAdmin ? `/${locale}/admin` : '/profile'}
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-white/12 bg-black/60 px-5 text-[13px] font-medium text-white transition-colors hover:bg-white/[0.06]"
+      >
+        {isAdmin && <Shield className="size-4" />}
+        {isAdmin ? tNav('admin') : tNav('profile')}
+      </Link>
     )
   }
 
