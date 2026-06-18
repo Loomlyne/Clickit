@@ -71,3 +71,4 @@ _claude*
 _planning*
 .vercel/.cron-secret
 .gstack/
+.env*

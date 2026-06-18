@@ -74,10 +74,6 @@ export default async function AuthPage({
             }}
           />
         )}
-        <div className="absolute inset-0 bg-black/18" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/72 via-black/46 to-black/72" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-black/26 to-transparent" />
-
         <div className="relative flex h-full w-full flex-col justify-between p-12">
           {/* Middle: quote */}
           <div className="flex h-full max-w-md flex-col items-start justify-end">
