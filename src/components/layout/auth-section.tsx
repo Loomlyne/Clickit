@@ -22,12 +22,15 @@ interface AuthSectionProps {
   initialUser?: { id: string; email: string } | null
   isLanding?: boolean
   layout?: 'default' | 'sheet' | 'minimal'
+  /** Where to land after sign-out. Coming-soon gate uses /coming-soon. */
+  signOutRedirect?: string
 }
 
 export function AuthSection({
   initialUser,
   isLanding,
   layout = 'default',
+  signOutRedirect = '/watch',
 }: AuthSectionProps) {
   const t = useTranslations('common')
   const tNav = useTranslations('nav')
@@ -91,7 +94,7 @@ export function AuthSection({
     await supabase.auth.signOut()
     setUser(null)
     setIsAdmin(false)
-    router.replace('/watch')
+    router.replace(signOutRedirect)
     router.refresh()
   }
 
@@ -150,13 +153,12 @@ export function AuthSection({
 
   if (layout === 'minimal') {
     return (
-      <Link
-        href={isAdmin ? `/${locale}/admin` : '/profile'}
-        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-white/12 bg-black/60 px-5 text-[13px] font-medium text-white transition-colors hover:bg-white/[0.06]"
-      >
-        {isAdmin && <Shield className="size-4" />}
-        {isAdmin ? tNav('admin') : tNav('profile')}
-      </Link>
+      <UserDropdown email={user.email} isAdmin={isAdmin} onSignOut={signOut}>
+        <UserAvatar
+          name={user.displayName || user.email}
+          avatarUrl={user.avatarUrl}
+        />
+      </UserDropdown>
     )
   }
 

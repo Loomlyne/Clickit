@@ -3,6 +3,7 @@ import { getLocale as getIntlLocale, getTranslations } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getAppConfig } from '@/lib/config'
 import { AccountSettings } from '@/components/profile/account-settings'
 import { ProfileHeader } from '@/components/profile/profile-header'
 import { ProfileHistoryRow } from '@/components/profile/profile-history-row'
@@ -33,13 +34,14 @@ export default async function ProfilePage() {
     return redirect({ href: '/auth', locale })
   }
 
-  const [{ data: profile }, { data: config }] = await Promise.all([
+  const [{ data: profile }, { data: config }, appConfig] = await Promise.all([
     supabase
       .from('profiles')
       .select('display_name, avatar_url')
       .eq('id', user.id)
       .single(),
     supabase.from('app_config').select('admin_user_id').single(),
+    getAppConfig(),
   ])
 
   const isAdmin = config?.admin_user_id === user.id
@@ -67,6 +69,9 @@ export default async function ProfilePage() {
           email={email}
           avatarUrl={profile?.avatar_url ?? null}
           isAdmin={isAdmin}
+          signOutRedirect={
+            appConfig.flags.comingSoonMode ? '/coming-soon' : '/watch'
+          }
         />
 
         <AccountSettings displayName={displayName} email={email} />

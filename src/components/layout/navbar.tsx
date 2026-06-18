@@ -124,7 +124,11 @@ export function Navbar({
 
       {isMinimal ? (
         <div className="ms-auto flex items-center">
-          <AuthSection initialUser={initialUser} layout="minimal" />
+          <AuthSection
+            initialUser={initialUser}
+            layout="minimal"
+            signOutRedirect="/coming-soon"
+          />
         </div>
       ) : (
         <>
