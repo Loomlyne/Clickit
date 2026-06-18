@@ -237,7 +237,7 @@ export default async function SeriesDetailPage({ params }: Props) {
                 {t('emptyEpisodesDescription')}
               </p>
               <Link
-                href="/coming-soon"
+                href="/watch"
                 className="mt-4 inline-flex items-center text-sm text-white/60 transition-colors hover:text-white"
               >
                 {t('comingSoonEyebrow')} &rarr;

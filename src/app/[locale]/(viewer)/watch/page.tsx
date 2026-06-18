@@ -115,9 +115,9 @@ export default async function WatchPage({
       )}
       {comingSoon.length > 0 && (
         <ContentRail
+          sectionId="coming-soon"
           title={t('railComingSoon')}
           shows={comingSoon}
-          seeAllHref="/coming-soon"
         />
       )}
 

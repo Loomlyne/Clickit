@@ -1087,7 +1087,7 @@
       "flagFaqTitle": "Show FAQ section",
       "flagFaqDescription": "The expandable FAQ block near the bottom of the landing page.",
       "flagComingSoonTitle": "Coming-soon mode",
-      "flagComingSoonDescription": "Gate the whole site behind a splash page. Only /admin and /auth stay accessible. Non-admin visitors are redirected to /coming-soon.",
+      "flagComingSoonDescription": "Shows the Coming Soon splash site-wide. Only /admin and /auth stay reachable. Turn off to restore the full site — /coming-soon is then disabled.",
       "flagComingSoonWarning": "Hides the entire public catalog. Only turn on before launch or during maintenance.",
       "imageTooLarge": "Image must be under {max}MB",
       "uploaded": "Uploaded",

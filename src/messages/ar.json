@@ -1087,7 +1087,7 @@
       "flagFaqTitle": "إظهار قسم الأسئلة المتكررة",
       "flagFaqDescription": "كتلة الأسئلة المتكررة القابلة للتوسيع قرب أسفل الصفحة الرئيسية.",
       "flagComingSoonTitle": "وضع قريباً",
-      "flagComingSoonDescription": "يُخفي كامل الموقع خلف شاشة استقبال. فقط /admin و /auth يبقيان متاحَين. الزوار غير الإداريين يُعاد توجيههم إلى /coming-soon.",
+      "flagComingSoonDescription": "يعرض شاشة «قريباً» على كامل الموقع. يبقى /admin و /auth فقط متاحَين. عطّل الوضع لاستعادة الموقع — يُعطّل /coming-soon عندها.",
       "flagComingSoonWarning": "يُخفي كامل المكتبة العامة. شغّله فقط قبل الإطلاق أو أثناء الصيانة.",
       "imageTooLarge": "يجب أن تكون الصورة أقل من {max} م.ب.",
       "uploaded": "تم الرفع",

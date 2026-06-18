@@ -135,12 +135,26 @@ export async function proxy(request: NextRequest) {
   // prefix stripped, so /en/admin, /ar/admin both pass the allowlist.
   const { locale, pathWithoutLocale } = stripLocale(pathname)
 
+  const { flags } = await getAppConfig()
+
+  // /coming-soon is the gate splash only — not a public catalog route.
+  if (
+    pathWithoutLocale === '/coming-soon' ||
+    pathWithoutLocale.startsWith('/coming-soon/')
+  ) {
+    if (!flags.comingSoonMode) {
+      const url = request.nextUrl.clone()
+      url.pathname = `/${locale}/watch`
+      url.search = ''
+      return redirectWithCookies(url, intlResponse)
+    }
+  }
+
   const isAllowlisted = COMING_SOON_ALLOWLIST.some(
     (p) => pathWithoutLocale === p || pathWithoutLocale.startsWith(`${p}/`)
   )
 
   if (!isAllowlisted) {
-    const { flags } = await getAppConfig()
     if (flags.comingSoonMode) {
       const url = request.nextUrl.clone()
       url.pathname = `/${locale}/coming-soon`
