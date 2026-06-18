@@ -34,7 +34,7 @@ export function ShowArt({
           alt=""
           fill
           className="object-cover"
-          sizes="(max-width: 768px) 100vw, 400px"
+          sizes="(max-width: 640px) 120px, 180px"
           aria-hidden
         />
       )}

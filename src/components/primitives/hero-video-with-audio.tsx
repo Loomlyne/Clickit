@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Volume2, VolumeX } from 'lucide-react'
 import { extractYouTubeId } from '@/lib/youtube'
+import { resolveSupabaseVideoUrl } from '@/lib/supabase-media'
 
 function sendYouTubeCommand(
   iframe: HTMLIFrameElement,
@@ -43,6 +44,7 @@ export function HeroVideoWithAudio({
 
   const isAudioPlaying = audioUnlocked && !buttonMuted
   const ytId = type === 'youtube' ? extractYouTubeId(url) : null
+  const mp4Src = type === 'mp4' ? resolveSupabaseVideoUrl(url) : null
 
   const forceUnlock = useCallback(() => {
     setAudioUnlocked(true)
@@ -158,7 +160,7 @@ export function HeroVideoWithAudio({
       <>
         <video
           ref={videoRef}
-          src={url}
+          src={mp4Src ?? url}
           autoPlay={!reducedMotion}
           muted={!audioUnlocked || buttonMuted}
           loop={!reducedMotion}

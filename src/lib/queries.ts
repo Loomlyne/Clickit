@@ -6,6 +6,10 @@ import type { Database } from '@/lib/database.types'
 import { DEFAULT_LOCALE, pickLocalized, type Locale } from '@/lib/locale'
 import { translateEnToAr } from '@/lib/translate'
 import { isEpisodeLive } from '@/lib/scheduling'
+import {
+  resolveSupabaseVideoUrl,
+  stripStorageCacheBust,
+} from '@/lib/supabase-media'
 
 export type DbShow = Database['public']['Tables']['shows']['Row']
 export type DbSeason = Database['public']['Tables']['seasons']['Row']
@@ -69,13 +73,17 @@ export function mapShow(db: DbShow, locale: Locale = DEFAULT_LOCALE): ViewShow {
     // if one ever leaks through we conservatively present it as coming-soon.
     status: db.status === 'now-streaming' ? 'streaming' : 'coming-soon',
     brandColor: (db.brand_color || 'brand-blue') as ViewShow['brandColor'],
-    posterUrl: db.poster_url ?? undefined,
-    cardImageUrl: db.card_image_url ?? undefined,
-    heroImageUrl: db.hero_url ?? undefined,
-    heroImageMobileUrl: db.hero_image_mobile_url ?? undefined,
-    heroVideoUrl: db.hero_video_url ?? undefined,
+    posterUrl: stripStorageCacheBust(db.poster_url ?? undefined),
+    cardImageUrl: stripStorageCacheBust(db.card_image_url ?? undefined),
+    heroImageUrl: stripStorageCacheBust(db.hero_url ?? undefined),
+    heroImageMobileUrl: stripStorageCacheBust(db.hero_image_mobile_url ?? undefined),
+    heroVideoUrl: db.hero_video_url
+      ? resolveSupabaseVideoUrl(db.hero_video_url) ?? undefined
+      : undefined,
     heroVideoType: (db.hero_video_type as ViewShow['heroVideoType']) ?? undefined,
-    heroVideoMobileUrl: db.hero_video_mobile_url ?? undefined,
+    heroVideoMobileUrl: db.hero_video_mobile_url
+      ? resolveSupabaseVideoUrl(db.hero_video_mobile_url) ?? undefined
+      : undefined,
     heroVideoMobileType: (db.hero_video_mobile_type as ViewShow['heroVideoMobileType']) ?? undefined,
   }
 }
@@ -489,7 +497,7 @@ export const getNewEpisodes = unstable_cache(
       showTitle: e.shows.title,
       showSlug: e.shows.slug,
       showBrandColor: (e.shows.brand_color || 'brand-blue') as ViewShow['brandColor'],
-      showPosterUrl: e.shows.poster_url ?? undefined,
+      showPosterUrl: stripStorageCacheBust(e.shows.poster_url ?? undefined),
     }))
   },
   ['new-episodes'],

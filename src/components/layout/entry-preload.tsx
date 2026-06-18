@@ -3,11 +3,10 @@
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
+import { resolvePreloaderVideoUrl } from '@/lib/supabase-media'
 
 type PreloadPhase = 'entering' | 'playing' | 'exiting' | 'done'
 type MediaType = 'video' | 'image'
-
-const DEFAULT_PRELOADER_VIDEO = '/brand/clickit-preloader.mp4'
 
 const entryPreloadConfig = {
   mediaType: 'video' as MediaType,
@@ -49,7 +48,7 @@ export function EntryPreload({
 }: {
   videoUrl?: string | null
 }) {
-  const defaultSrc = videoUrl ?? DEFAULT_PRELOADER_VIDEO
+  const defaultSrc = resolvePreloaderVideoUrl(videoUrl)
   const videoRef = useRef<HTMLVideoElement>(null)
   const hasStartedVideoRef = useRef(false)
   const shouldShowRef = useRef(shouldShowEntryPreload())

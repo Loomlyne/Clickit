@@ -1,6 +1,10 @@
 import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { createPublicClient } from '@/lib/supabase/public'
+import {
+  resolveSupabaseVideoUrl,
+  stripStorageCacheBust,
+} from '@/lib/supabase-media'
 
 // ---------------------------------------------------------------------------
 // Shape of the admin-controlled site config (backed by app_config row id=1).
@@ -290,17 +294,23 @@ function mapConfig(row: RawConfigRow): AppConfig {
     siteDescriptionAr: row?.site_description_ar ?? null,
     siteTagline: row?.site_tagline ?? 'Every Story Clicks.',
     siteTaglineAr: row?.site_tagline_ar ?? null,
-    ogImageUrl: row?.og_image_url ?? null,
-    faviconUrl: row?.favicon_url ?? null,
-    faviconDarkUrl: row?.favicon_dark_url ?? null,
-    heroVideoUrl: row?.hero_video_url ?? null,
+    ogImageUrl: stripStorageCacheBust(row?.og_image_url ?? undefined) ?? null,
+    faviconUrl: stripStorageCacheBust(row?.favicon_url ?? undefined) ?? null,
+    faviconDarkUrl: stripStorageCacheBust(row?.favicon_dark_url ?? undefined) ?? null,
+    heroVideoUrl:
+      row?.hero_video_type === 'mp4' && row?.hero_video_url
+        ? resolveSupabaseVideoUrl(row.hero_video_url)
+        : row?.hero_video_url ?? null,
     heroVideoType: (row?.hero_video_type as 'mp4' | 'youtube' | null) ?? null,
-    heroVideoMobileUrl: row?.hero_video_mobile_url ?? null,
+    heroVideoMobileUrl:
+      row?.hero_video_mobile_type === 'mp4' && row?.hero_video_mobile_url
+        ? resolveSupabaseVideoUrl(row.hero_video_mobile_url)
+        : row?.hero_video_mobile_url ?? null,
     heroVideoMobileType:
       (row?.hero_video_mobile_type as 'mp4' | 'youtube' | null) ?? null,
     heroVideoMuted: row?.hero_video_muted ?? true,
     preloaderVideoUrl: row?.preloader_video_url ?? null,
-    authImageUrl: row?.auth_image_url ?? null,
+    authImageUrl: stripStorageCacheBust(row?.auth_image_url ?? undefined) ?? null,
     authHeading: row?.auth_heading ?? null,
     authHeadingAr: row?.auth_heading_ar ?? null,
     authSubheading: row?.auth_subheading ?? null,

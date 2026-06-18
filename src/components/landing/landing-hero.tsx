@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getAppConfig } from '@/lib/config'
 import { getIsMobile } from '@/lib/device'
 import { extractYouTubeId } from '@/lib/youtube'
+import { resolveSupabaseVideoUrl } from '@/lib/supabase-media'
 import { HeroBackgroundMedia } from './hero-background-media'
 
 // Fallback cinematic reel — admin can override via Settings → Branding → Hero video
@@ -56,7 +57,11 @@ export async function LandingHero() {
   return (
     <section className="relative -mt-[calc(var(--nav-h)_+_4rem)] min-h-dvh overflow-hidden">
       <HeroBackgroundMedia
-        mp4Url={heroVideoType === 'mp4' ? heroVideoUrl : null}
+        mp4Url={
+          heroVideoType === 'mp4'
+            ? resolveSupabaseVideoUrl(heroVideoUrl)
+            : null
+        }
         ytId={ytId}
         muted={heroVideoMuted}
         title={t('heroBackgroundTitle')}
