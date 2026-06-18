@@ -119,7 +119,7 @@ export function HeroMediaPicker({
           file,
           {
             contentType: 'video/mp4',
-            cacheControl: '3600',
+            cacheControl: '31536000',
           }
         )
 

@@ -6,6 +6,7 @@ import type { AppConfig } from '@/lib/config'
 import { HeroVideoManager } from '@/components/admin/hero-video-manager'
 import { SettingsCard } from './settings-card'
 import { ImageUploadField } from './image-upload-field'
+import { PreloaderVideoField } from './preloader-video-field'
 
 export function BrandingTab({ config }: { config: AppConfig }) {
   const t = useTranslations('admin.settings')
@@ -20,6 +21,13 @@ export function BrandingTab({ config }: { config: AppConfig }) {
 
   return (
     <>
+      <SettingsCard
+        title={t('preloaderVideoCardTitle')}
+        description={t('preloaderVideoCardDescription')}
+      >
+        <PreloaderVideoField currentUrl={config.preloaderVideoUrl} />
+      </SettingsCard>
+
       <SettingsCard
         title={t('heroVideoCardTitle')}
         description={t('heroVideoCardDescription')}

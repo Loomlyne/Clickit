@@ -1651,7 +1651,7 @@ export async function uploadArtwork(
       .upload(path, uploadBody, {
         upsert: false,
         contentType: uploadContentType,
-        cacheControl: '3600',
+        cacheControl: '31536000',
       })
 
     if (error) return { success: false, error: error.message }
@@ -1896,6 +1896,108 @@ export async function setHeroVideoMuted(muted: boolean): Promise<ActionResult> {
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to update audio setting',
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Preloader Video Management
+// ---------------------------------------------------------------------------
+
+const PRELOADER_VIDEO_PATH = 'preloader/video.mp4'
+
+export async function createPreloaderVideoUpload(file: {
+  name: string
+  size: number
+  type: string
+}): Promise<ActionResult<SignedVideoUploadTarget>> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    if (!isMp4File(file)) {
+      return { success: false, error: 'File must be an MP4 video' }
+    }
+
+    if (file.size > 20 * 1024 * 1024) {
+      return { success: false, error: 'Video must be under 20MB' }
+    }
+
+    const { data, error } = await admin.storage
+      .from('site-assets')
+      .createSignedUploadUrl(PRELOADER_VIDEO_PATH, { upsert: true })
+
+    if (error) return { success: false, error: error.message }
+
+    return { success: true, data: { path: data.path, token: data.token } }
+  } catch (err) {
+    console.error('[createPreloaderVideoUpload] failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Upload failed',
+    }
+  }
+}
+
+export async function savePreloaderVideoUpload(
+  path: string
+): Promise<ActionResult<string>> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    if (path !== PRELOADER_VIDEO_PATH) {
+      return { success: false, error: 'Invalid upload path' }
+    }
+
+    const { data: urlData } = admin.storage
+      .from('site-assets')
+      .getPublicUrl(path)
+
+    const publicUrl = `${urlData.publicUrl}?v=${Date.now()}`
+
+    const { error } = await admin
+      .from('app_config')
+      .update({ preloader_video_url: publicUrl } as never)
+      .eq('id', 1)
+
+    if (error) return { success: false, error: error.message }
+
+    updateTag('site-config')
+    revalidatePath('/', 'layout')
+    return { success: true, data: publicUrl }
+  } catch (err) {
+    console.error('[savePreloaderVideoUpload] failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Upload failed',
+    }
+  }
+}
+
+export async function removePreloaderVideo(): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    const { error } = await admin
+      .from('app_config')
+      .update({ preloader_video_url: null } as never)
+      .eq('id', 1)
+
+    if (error) return { success: false, error: error.message }
+
+    updateTag('site-config')
+    revalidatePath('/', 'layout')
+
+    await admin.storage.from('site-assets').remove([PRELOADER_VIDEO_PATH])
+
+    return { success: true }
+  } catch (err) {
+    console.error('[removePreloaderVideo] failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to remove video',
     }
   }
 }
@@ -2701,7 +2803,7 @@ export async function uploadSiteImage(
       .upload(path, body, {
         upsert: true,
         contentType: mime,
-        cacheControl: '3600',
+        cacheControl: '31536000',
       })
 
     if (uploadError) return { success: false, error: uploadError.message }
@@ -3153,7 +3255,7 @@ export async function uploadCastImage(
       .upload(path, file, {
         upsert: false,
         contentType: file.type,
-        cacheControl: '3600',
+        cacheControl: '31536000',
       })
 
     if (uploadError) return { success: false, error: uploadError.message }

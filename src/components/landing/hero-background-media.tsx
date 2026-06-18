@@ -214,6 +214,7 @@ export function HeroBackgroundMedia({
           muted={!audioUnlocked || buttonMuted}
           loop
           playsInline
+          preload="metadata"
           className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         />
         {muteButton}

@@ -200,7 +200,7 @@ export default async function SeriesDetailPage({ params }: Props) {
                       alt={c.name}
                       width={80}
                       height={80}
-                      unoptimized
+                      sizes="80px"
                       className="mx-auto mb-2 h-20 w-20 rounded-full object-cover"
                     />
                   ) : (

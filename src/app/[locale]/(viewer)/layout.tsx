@@ -48,7 +48,7 @@ export default async function ViewerLayout({
         aria-hidden="true"
         style={{ position: 'fixed', inset: 0, background: '#0a0a0a', zIndex: 997 }}
       />
-      <EntryPreload />
+      <EntryPreload videoUrl={config.preloaderVideoUrl} />
       <SmoothScroll>
         <ViewerScrollPersistence />
         <div className="relative min-h-screen bg-black">

@@ -80,7 +80,6 @@ export async function LandingHero() {
             width={280}
             height={72}
             priority
-            unoptimized={!!config.ogImageUrl}
             className="mb-3 h-auto w-48 sm:w-56 md:w-64"
           />
           <p className="mb-5 text-[17px] leading-snug text-[var(--text-dim)]">

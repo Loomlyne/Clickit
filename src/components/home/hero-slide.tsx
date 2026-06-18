@@ -91,9 +91,9 @@ export function HeroSlide({
           <span>{show.genre}</span>
         </div>
 
-        {/* Synopsis — hidden on mobile */}
+        {/* Synopsis */}
         <p
-          className="m-0 mb-4 hidden max-w-[560px] text-[16px] text-[var(--text-dim)] sm:mb-6 sm:block"
+          className="m-0 mb-4 max-w-[560px] text-[14px] text-[var(--text-dim)] sm:mb-6 sm:text-[16px]"
           style={{ textWrap: 'pretty' }}
         >
           {show.description}

@@ -29,7 +29,6 @@ export async function Footer() {
             width={486}
             height={199}
             className="h-auto w-full max-w-[clamp(200px,42vw,520px)]"
-            unoptimized={!!ogImageUrl}
             priority
           />
         </Link>

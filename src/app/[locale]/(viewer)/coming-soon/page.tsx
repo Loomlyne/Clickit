@@ -83,8 +83,8 @@ export default async function ComingSoonPage() {
                           alt={show.title}
                           width={320}
                           height={180}
+                          sizes="320px"
                           className="aspect-video w-full object-cover"
-                          unoptimized
                         />
                       ) : (
                         <div className="aspect-video w-full bg-[var(--bg-2)]" />

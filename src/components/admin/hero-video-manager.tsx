@@ -155,6 +155,11 @@ function HeroVariantPanel({
       toast.error(t('videoTooLarge'))
       return
     }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.warning(
+        'Video is over 8 MB — large hero clips drive Supabase cached egress. Compress to ~2–5 MB (720p H.264) or use a YouTube URL instead.'
+      )
+    }
 
     setBusy(true)
     try {
@@ -174,7 +179,7 @@ function HeroVariantPanel({
           uploadTarget.data.path,
           uploadTarget.data.token,
           file,
-          { contentType: 'video/mp4', cacheControl: '3600', upsert: true }
+          { contentType: 'video/mp4', cacheControl: '31536000', upsert: true }
         )
       if (uploadError) {
         toast.error(uploadError.message)

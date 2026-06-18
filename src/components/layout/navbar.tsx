@@ -108,7 +108,6 @@ export function Navbar({
           width={214}
           height={145}
           className="h-8 w-auto object-contain"
-          unoptimized={!!logoUrl}
           priority
         />
       </Link>

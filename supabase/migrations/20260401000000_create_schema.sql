@@ -9,6 +9,10 @@
 -- ============================================================
 -- CLEANUP: Drop pre-existing objects from prior migrations
 -- Tables dropped with CASCADE will also drop their triggers/policies
+-- NOTE: app_config is intentionally NOT dropped here — it holds
+-- admin settings (hero video, branding, etc.) that must survive
+-- re-applies. All other tables are safe to recreate from data
+-- that is managed via the admin panel.
 -- ============================================================
 drop trigger if exists on_auth_user_created on auth.users;
 drop table if exists public.watchlist cascade;
@@ -17,7 +21,6 @@ drop table if exists public.profiles cascade;
 drop table if exists public.episodes cascade;
 drop table if exists public.seasons cascade;
 drop table if exists public.shows cascade;
-drop table if exists public.app_config cascade;
 drop function if exists public.handle_new_user();
 drop function if exists public.update_updated_at();
 drop function if exists public.is_admin();
@@ -28,7 +31,7 @@ drop function if exists public.is_admin();
 -- To change admin: UPDATE public.app_config SET admin_user_id = 'new-uuid' WHERE id = 1;
 -- No migration required to change admin.
 -- ============================================================
-create table public.app_config (
+create table if not exists public.app_config (
   id integer primary key default 1 check (id = 1),
   admin_user_id uuid,
   created_at timestamptz not null default now(),
@@ -40,7 +43,7 @@ alter table public.app_config enable row level security;
 -- ============================================================
 -- SHOWS TABLE
 -- ============================================================
-create table public.shows (
+create table if not exists public.shows (
   id uuid primary key default gen_random_uuid(),
   title text not null,
   title_ar text,                          -- D-06: bilingual
@@ -70,7 +73,7 @@ alter table public.shows enable row level security;
 -- ============================================================
 -- SEASONS TABLE
 -- ============================================================
-create table public.seasons (
+create table if not exists public.seasons (
   id uuid primary key default gen_random_uuid(),
   show_id uuid not null references public.shows(id) on delete cascade,
   season_number integer not null,
@@ -87,7 +90,7 @@ alter table public.seasons enable row level security;
 -- ============================================================
 -- EPISODES TABLE
 -- ============================================================
-create table public.episodes (
+create table if not exists public.episodes (
   id uuid primary key default gen_random_uuid(),
   show_id uuid not null references public.shows(id) on delete cascade,
   season_id uuid not null references public.seasons(id) on delete cascade,
@@ -110,7 +113,7 @@ alter table public.episodes enable row level security;
 -- ============================================================
 -- PROFILES TABLE (FK to auth.users)
 -- ============================================================
-create table public.profiles (
+create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text,
   avatar_url text,
@@ -133,14 +136,14 @@ begin
 end;
 $$;
 
-create trigger on_auth_user_created
+create or replace trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
 -- ============================================================
 -- WATCH_PROGRESS TABLE (Phase 9 -- created now, used later)
 -- ============================================================
-create table public.watch_progress (
+create table if not exists public.watch_progress (
   user_id uuid not null references public.profiles(id) on delete cascade,
   episode_id uuid not null references public.episodes(id) on delete cascade,
   progress_seconds integer not null default 0,
@@ -155,7 +158,7 @@ alter table public.watch_progress enable row level security;
 -- ============================================================
 -- WATCHLIST TABLE (Phase 9 -- created now, used later)
 -- ============================================================
-create table public.watchlist (
+create table if not exists public.watchlist (
   user_id uuid not null references public.profiles(id) on delete cascade,
   show_id uuid not null references public.shows(id) on delete cascade,
   created_at timestamptz not null default now(),
@@ -167,35 +170,35 @@ alter table public.watchlist enable row level security;
 -- ============================================================
 -- INDEXES
 -- ============================================================
-create index idx_shows_slug on public.shows(slug);
-create index idx_shows_status on public.shows(status);
-create index idx_shows_genre on public.shows(genre);
-create index idx_seasons_show_id on public.seasons(show_id);
-create index idx_episodes_show_id on public.episodes(show_id);
-create index idx_episodes_season_id on public.episodes(season_id);
-create index idx_episodes_status on public.episodes(status);
-create index idx_watch_progress_user on public.watch_progress(user_id);
-create index idx_watchlist_user on public.watchlist(user_id);
+create index if not exists idx_shows_slug on public.shows(slug);
+create index if not exists idx_shows_status on public.shows(status);
+create index if not exists idx_shows_genre on public.shows(genre);
+create index if not exists idx_seasons_show_id on public.seasons(show_id);
+create index if not exists idx_episodes_show_id on public.episodes(show_id);
+create index if not exists idx_episodes_season_id on public.episodes(season_id);
+create index if not exists idx_episodes_status on public.episodes(status);
+create index if not exists idx_watch_progress_user on public.watch_progress(user_id);
+create index if not exists idx_watchlist_user on public.watchlist(user_id);
 
 -- ============================================================
 -- FULL TEXT SEARCH (for Phase 8 search feature)
 -- ============================================================
-alter table public.shows add column fts tsvector
+alter table public.shows add column if not exists fts tsvector
   generated always as (
     setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
     setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
     setweight(to_tsvector('english', coalesce(genre, '')), 'C')
   ) stored;
 
-create index idx_shows_fts on public.shows using gin(fts);
+create index if not exists idx_shows_fts on public.shows using gin(fts);
 
-alter table public.episodes add column fts tsvector
+alter table public.episodes add column if not exists fts tsvector
   generated always as (
     setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
     setweight(to_tsvector('english', coalesce(description, '')), 'B')
   ) stored;
 
-create index idx_episodes_fts on public.episodes using gin(fts);
+create index if not exists idx_episodes_fts on public.episodes using gin(fts);
 
 -- ============================================================
 -- UPDATED_AT TRIGGER
@@ -210,15 +213,15 @@ begin
 end;
 $$;
 
-create trigger set_updated_at before update on public.app_config
+create or replace trigger set_updated_at before update on public.app_config
   for each row execute procedure public.update_updated_at();
-create trigger set_updated_at before update on public.shows
+create or replace trigger set_updated_at before update on public.shows
   for each row execute procedure public.update_updated_at();
-create trigger set_updated_at before update on public.seasons
+create or replace trigger set_updated_at before update on public.seasons
   for each row execute procedure public.update_updated_at();
-create trigger set_updated_at before update on public.episodes
+create or replace trigger set_updated_at before update on public.episodes
   for each row execute procedure public.update_updated_at();
-create trigger set_updated_at before update on public.profiles
+create or replace trigger set_updated_at before update on public.profiles
   for each row execute procedure public.update_updated_at();
-create trigger set_updated_at before update on public.watch_progress
+create or replace trigger set_updated_at before update on public.watch_progress
   for each row execute procedure public.update_updated_at();

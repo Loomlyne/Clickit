@@ -7,9 +7,10 @@ import { motion } from 'motion/react'
 type PreloadPhase = 'entering' | 'playing' | 'exiting' | 'done'
 type MediaType = 'video' | 'image'
 
+const DEFAULT_PRELOADER_VIDEO = '/brand/clickit-preloader.mp4'
+
 const entryPreloadConfig = {
   mediaType: 'video' as MediaType,
-  src: 'https://lajguozmtissnnfccmej.supabase.co/storage/v1/object/public/site-assets/brand/clickit-preloader.mp4?v=logo-animation-20260514',
   imageAlt: 'Clickit',
   // Static-logo fallback hold (only used when the video can't play). Trimmed so
   // a stalled intro doesn't pin the viewer behind the splash for 2.5s.
@@ -31,11 +32,27 @@ const startupFallbackMs = 1100
 const hardReleaseMs = 3000
 
 let hasShownEntryPreloadThisDocument = false
+const SESSION_PRELOAD_KEY = 'cit-entry-preload-shown'
 
-export function EntryPreload() {
+function shouldShowEntryPreload(): boolean {
+  if (hasShownEntryPreloadThisDocument) return false
+  try {
+    if (sessionStorage.getItem(SESSION_PRELOAD_KEY) === '1') return false
+  } catch {
+    // Private mode / blocked storage — fall back to per-document dedup only.
+  }
+  return true
+}
+
+export function EntryPreload({
+  videoUrl,
+}: {
+  videoUrl?: string | null
+}) {
+  const defaultSrc = videoUrl ?? DEFAULT_PRELOADER_VIDEO
   const videoRef = useRef<HTMLVideoElement>(null)
   const hasStartedVideoRef = useRef(false)
-  const shouldShowRef = useRef(!hasShownEntryPreloadThisDocument)
+  const shouldShowRef = useRef(shouldShowEntryPreload())
   const [videoStarted, setVideoStarted] = useState(false)
   const [phase, setPhase] = useState<PreloadPhase>(
     shouldShowRef.current ? 'playing' : 'done'
@@ -43,7 +60,7 @@ export function EntryPreload() {
   const [mediaType, setMediaType] = useState<MediaType>(
     entryPreloadConfig.mediaType
   )
-  const [mediaSrc, setMediaSrc] = useState(entryPreloadConfig.src)
+  const [mediaSrc, setMediaSrc] = useState(defaultSrc)
 
   useEffect(() => {
     // Remove the server-rendered black cover — preloader (z-1000) already covers it
@@ -52,6 +69,11 @@ export function EntryPreload() {
     if (shouldShowRef.current) {
       const frame = window.requestAnimationFrame(() => {
         hasShownEntryPreloadThisDocument = true
+        try {
+          sessionStorage.setItem(SESSION_PRELOAD_KEY, '1')
+        } catch {
+          // Ignore — per-document dedup still applies.
+        }
       })
 
       return () => window.cancelAnimationFrame(frame)
