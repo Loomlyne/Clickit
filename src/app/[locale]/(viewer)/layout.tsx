@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getAppConfig } from '@/lib/config'
 import { pickLocalized } from '@/lib/locale'
 import { getLocale } from '@/lib/locale-server'
+import { Footer } from '@/components/layout/footer'
 import { ViewerShell } from '@/components/layout/viewer-shell'
 import { SmoothScroll } from '@/components/providers/smooth-scroll'
 import { ViewerScrollPersistence } from '@/components/providers/viewer-scroll-persistence'
@@ -43,6 +44,7 @@ export default async function ViewerLayout({
       <SmoothScroll>
         <ViewerScrollPersistence />
         <ViewerShell
+          footer={<Footer />}
           comingSoonGate={config.flags.comingSoonMode}
           ticker={localizedTicker}
           initialUser={user}

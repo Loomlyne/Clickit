@@ -2,12 +2,13 @@
 
 import { usePathname } from '@/i18n/navigation'
 import { Navbar } from '@/components/layout/navbar'
-import { Footer } from '@/components/layout/footer'
 import { MarqueeTicker } from '@/components/landing/marquee-ticker'
 import type { TopTickerConfig } from '@/lib/config'
 
 type ViewerShellProps = {
   children: React.ReactNode
+  /** Server-rendered footer slot — passed from the RSC layout, not imported here. */
+  footer: React.ReactNode
   comingSoonGate: boolean
   ticker: TopTickerConfig
   initialUser?: { id: string; email: string } | null
@@ -24,6 +25,7 @@ function isGateSurface(pathname: string, comingSoonGate: boolean) {
 
 export function ViewerShell({
   children,
+  footer,
   comingSoonGate,
   ticker,
   initialUser,
@@ -47,7 +49,7 @@ export function ViewerShell({
         variant={gateSurface ? 'minimal' : 'default'}
       />
       <div className={gateSurface ? undefined : 'pt-16'}>{children}</div>
-      {!gateSurface && <Footer />}
+      {!gateSurface && footer}
     </div>
   )
 }
