@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { Volume2, VolumeX } from 'lucide-react'
 
 /**
  * Trusted DOM events that grant "user activation" for unmuting media.
@@ -30,8 +31,10 @@ function sendYouTubeCommand(
  * When the admin enables audio we:
  * 1. Attempt unmuted autoplay immediately (works for returning visitors /
  *    browsers with a high media-engagement score).
- * 2. If blocked, keep muted autoplay so the hero still plays, then unmute on
- *    the visitor's first tap/click/keypress anywhere on the page.
+ * 2. If blocked, keep muted autoplay so the hero still plays. A small
+ *    speaker button (top-right, below the navbar) lets the visitor unmute
+ *    with one tap — this IS the required user gesture browsers need.
+ * 3. After unlock the user can re-mute / unmute via the same button.
  *
  * YouTube always starts muted in the embed URL (required for autoplay) and is
  * unmuted via the IFrame API once audio is unlocked.
@@ -58,9 +61,12 @@ export function HeroBackgroundMedia({
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const ytReadyRef = useRef(false)
   const pendingYtUnmuteRef = useRef(false)
-  // When admin mutes, audio is never unlocked. Otherwise start locked until
-  // direct autoplay succeeds or the visitor taps/clicks anywhere.
-  const [audioUnlocked, setAudioUnlocked] = useState(() => muted)
+  // audioUnlocked: browser has granted audio (gesture received or high MEI auto-play)
+  const [audioUnlocked, setAudioUnlocked] = useState(false)
+  // manualMute: user re-muted after unlock — they can toggle freely from here
+  const [manualMute, setManualMute] = useState(false)
+
+  const isAudioPlaying = !muted && audioUnlocked && !manualMute
 
   const unlockAudio = useCallback(() => {
     if (muted || audioUnlocked) return
@@ -85,6 +91,29 @@ export function HeroBackgroundMedia({
       }
     }
   }, [muted, audioUnlocked])
+
+  const handleMuteToggle = useCallback(() => {
+    if (!audioUnlocked) {
+      // Button click IS the user gesture — unlock audio immediately.
+      unlockAudio()
+      return
+    }
+    const next = !manualMute
+    setManualMute(next)
+
+    const video = videoRef.current
+    if (video) video.muted = next
+
+    const iframe = iframeRef.current
+    if (iframe && ytReadyRef.current) {
+      if (next) {
+        sendYouTubeCommand(iframe, 'mute')
+      } else {
+        sendYouTubeCommand(iframe, 'unMute')
+        sendYouTubeCommand(iframe, 'setVolume', [100])
+      }
+    }
+  }, [audioUnlocked, manualMute, unlockAudio])
 
   const flushPendingYouTubeUnmute = useCallback(() => {
     if (!pendingYtUnmuteRef.current || muted) return
@@ -128,7 +157,7 @@ export function HeroBackgroundMedia({
 
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
-  }, [ytId, flushPendingYouTubeUnmute])
+  }, [ytId, muted, flushPendingYouTubeUnmute])
 
   // MP4: try unmuted autoplay first; fall back to muted autoplay if blocked.
   useEffect(() => {
@@ -149,7 +178,7 @@ export function HeroBackgroundMedia({
       })
   }, [muted, mp4Url])
 
-  // First trusted user gesture unlocks audio when autoplay-with-sound was blocked.
+  // Global gesture listener — unlocks audio on any interaction while still locked.
   useEffect(() => {
     if (muted || audioUnlocked) return
 
@@ -174,23 +203,42 @@ export function HeroBackgroundMedia({
       JSON.stringify({ event: 'listening' }),
       '*'
     )
-    if (!muted && audioUnlocked) {
+    if (!muted && audioUnlocked && !manualMute) {
       sendYouTubeCommand(iframe, 'unMute')
       sendYouTubeCommand(iframe, 'setVolume', [100])
     }
-  }, [muted, audioUnlocked])
+  }, [muted, audioUnlocked, manualMute])
+
+  // Small speaker button — only shown when admin has audio enabled.
+  // Positioned top-right below the navbar so it's visible but unobtrusive.
+  const muteButton = !muted ? (
+    <button
+      onClick={handleMuteToggle}
+      aria-label={isAudioPlaying ? 'Mute' : 'Unmute'}
+      className="absolute top-[calc(var(--nav-h)+0.75rem)] right-4 z-20 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+    >
+      {isAudioPlaying ? (
+        <Volume2 className="h-[15px] w-[15px]" />
+      ) : (
+        <VolumeX className="h-[15px] w-[15px]" />
+      )}
+    </button>
+  ) : null
 
   if (mp4Url) {
     return (
-      <video
-        ref={videoRef}
-        src={mp4Url}
-        autoPlay
-        muted={muted || !audioUnlocked}
-        loop
-        playsInline
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-      />
+      <>
+        <video
+          ref={videoRef}
+          src={mp4Url}
+          autoPlay
+          muted={muted || !audioUnlocked || manualMute}
+          loop
+          playsInline
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+        />
+        {muteButton}
+      </>
     )
   }
 
@@ -213,17 +261,20 @@ export function HeroBackgroundMedia({
           minHeight: '100dvh',
         }
     return (
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <iframe
-          ref={iframeRef}
-          src={src}
-          allow="autoplay; encrypted-media"
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-          style={coverStyle}
-          title={title}
-          onLoad={handleIframeLoad}
-        />
-      </div>
+      <>
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <iframe
+            ref={iframeRef}
+            src={src}
+            allow="autoplay; encrypted-media"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={coverStyle}
+            title={title}
+            onLoad={handleIframeLoad}
+          />
+        </div>
+        {muteButton}
+      </>
     )
   }
 
