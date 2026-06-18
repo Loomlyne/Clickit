@@ -10,7 +10,6 @@ import {
   Film,
   Volume2,
   VolumeX,
-  AlertTriangle,
   Monitor,
   Smartphone,
 } from 'lucide-react'
@@ -115,12 +114,6 @@ export function HeroVideoManager({
             />
           </button>
         </div>
-        {!muted && (
-          <div className="mt-3 flex items-start gap-2 text-xs text-amber-400/80">
-            <AlertTriangle className="mt-0.5 size-3 shrink-0" />
-            <span>{t('autoplayWarning')}</span>
-          </div>
-        )}
       </div>
     </div>
   )
