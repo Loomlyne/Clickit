@@ -24,6 +24,8 @@ interface AuthSectionProps {
   layout?: 'default' | 'sheet' | 'minimal'
   /** Where to land after sign-out. Coming-soon gate uses /coming-soon. */
   signOutRedirect?: string
+  /** Coming-soon gate: hide profile link; show admin + sign out only. */
+  hideProfileLink?: boolean
 }
 
 export function AuthSection({
@@ -31,6 +33,7 @@ export function AuthSection({
   isLanding,
   layout = 'default',
   signOutRedirect = '/watch',
+  hideProfileLink = false,
 }: AuthSectionProps) {
   const t = useTranslations('common')
   const tNav = useTranslations('nav')
@@ -153,7 +156,12 @@ export function AuthSection({
 
   if (layout === 'minimal') {
     return (
-      <UserDropdown email={user.email} isAdmin={isAdmin} onSignOut={signOut}>
+      <UserDropdown
+        email={user.email}
+        isAdmin={isAdmin}
+        hideProfile={hideProfileLink}
+        onSignOut={signOut}
+      >
         <UserAvatar
           name={user.displayName || user.email}
           avatarUrl={user.avatarUrl}
@@ -214,7 +222,12 @@ export function AuthSection({
   }
 
   return (
-    <UserDropdown email={user.email} isAdmin={isAdmin} onSignOut={signOut}>
+    <UserDropdown
+      email={user.email}
+      isAdmin={isAdmin}
+      hideProfile={hideProfileLink}
+      onSignOut={signOut}
+    >
       <UserAvatar
         name={user.displayName || user.email}
         avatarUrl={user.avatarUrl}

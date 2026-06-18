@@ -17,6 +17,8 @@ interface UserDropdownProps {
   onSignOut: () => void
   isAdmin?: boolean
   email?: string
+  /** Hide profile link during coming-soon gate (only admin + sign out). */
+  hideProfile?: boolean
 }
 
 export function UserDropdown({
@@ -24,6 +26,7 @@ export function UserDropdown({
   onSignOut,
   isAdmin = false,
   email,
+  hideProfile = false,
 }: UserDropdownProps) {
   const tNav = useTranslations('nav')
   const tCommon = useTranslations('common')
@@ -31,20 +34,27 @@ export function UserDropdown({
   const router = useRouter()
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={8} className="w-[200px]">
+      <DropdownMenuContent
+        align="end"
+        sideOffset={8}
+        className="z-[200] w-[200px]"
+        data-lenis-prevent
+      >
         <DropdownMenuLabel className="text-muted-foreground font-normal">
           {email ?? tNav('profile')}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="focus:text-[var(--primary)] data-[highlighted]:text-[var(--primary)] focus:[&_svg]:text-[var(--primary)] data-[highlighted]:[&_svg]:text-[var(--primary)]"
-          onSelect={() => router.push('/profile')}
-        >
-          <User className="me-2 size-4 text-current" />
-          {tNav('profile')}
-        </DropdownMenuItem>
+        {!hideProfile && (
+          <DropdownMenuItem
+            className="focus:text-[var(--primary)] data-[highlighted]:text-[var(--primary)] focus:[&_svg]:text-[var(--primary)] data-[highlighted]:[&_svg]:text-[var(--primary)]"
+            onSelect={() => router.push('/profile')}
+          >
+            <User className="me-2 size-4 text-current" />
+            {tNav('profile')}
+          </DropdownMenuItem>
+        )}
         {isAdmin && (
           <>
             <DropdownMenuSeparator />

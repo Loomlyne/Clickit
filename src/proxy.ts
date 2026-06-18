@@ -11,18 +11,15 @@ import { getAppConfig } from '@/lib/config'
  * /ar/admin both pass through.
  *
  * - /coming-soon is the splash target
- * - /admin is the editor — admin needs to be able to turn the flag off
- * - /auth is the login screen — admin must be able to log in
- * - /support stays reachable for locked-out users
+ * - /admin is the editor — admin manages the site while gated
+ * - /auth is the login screen
  *
- * /api/* is also allowed, but it is matched against the full (non-stripped)
- * path because API routes do NOT have locale prefixes.
+ * Everyone (including admin) is redirected to /coming-soon for all other routes.
  */
 const COMING_SOON_ALLOWLIST = [
   '/coming-soon',
   '/admin',
   '/auth',
-  '/support',
 ]
 
 /**
@@ -143,26 +140,12 @@ export async function proxy(request: NextRequest) {
   )
 
   if (!isAllowlisted) {
-    // getAppConfig() is cached (15min) — no DB hit per request in the steady
-    // state. The cache tag 'site-config' is bumped when the admin saves
-    // feature flags, so the toggle takes effect within one revalidation cycle.
     const { flags } = await getAppConfig()
     if (flags.comingSoonMode) {
-      // Only consult app_config.admin_user_id when the gate is ACTUALLY
-      // active. 99% of requests skip this query entirely, saving ~100ms TTFB.
-      const isAdmin = await checkIsAdmin()
-      if (!isAdmin) {
-        const url = request.nextUrl.clone()
-        // Pitfall #5 (RTE-07): preserve the incoming locale prefix so the
-        // redirect lands on /en/coming-soon or /ar/coming-soon, never bare
-        // /coming-soon. When the incoming URL had no prefix, stripLocale
-        // returned routing.defaultLocale — redirect there.
-        url.pathname = `/${locale}/coming-soon`
-        url.search = ''
-        // Copy the merged cookies onto the coming-soon redirect — keeps the
-        // admin's session refresh alive even when they get gated.
-        return redirectWithCookies(url, intlResponse)
-      }
+      const url = request.nextUrl.clone()
+      url.pathname = `/${locale}/coming-soon`
+      url.search = ''
+      return redirectWithCookies(url, intlResponse)
     }
   }
 

@@ -81,7 +81,7 @@ export function Navbar({
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 flex items-center gap-3 border-b px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 md:gap-7 md:px-10 md:pt-[calc(env(safe-area-inset-top)+18px)] md:pb-[18px]',
+        'sticky top-0 z-[60] flex items-center gap-3 border-b px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 md:gap-7 md:px-10 md:pt-[calc(env(safe-area-inset-top)+18px)] md:pb-[18px]',
         'transition-[transform,background-color,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform',
         hidden ? '-translate-y-full' : 'translate-y-0',
         isMinimal &&
@@ -128,6 +128,7 @@ export function Navbar({
             initialUser={initialUser}
             layout="minimal"
             signOutRedirect="/coming-soon"
+            hideProfileLink
           />
         </div>
       ) : (
@@ -212,7 +213,7 @@ export function Navbar({
       )}
 
       {/* Right side: auth (desktop) */}
-      <div className="ms-auto hidden items-center gap-3.5 md:flex">
+      <div className="relative z-[1] ms-auto hidden items-center gap-3.5 md:flex">
         <div className="inline-flex items-center rounded-full border border-white/12 bg-black/60 p-1">
           <Link
             href={pathname || '/watch'}

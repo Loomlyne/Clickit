@@ -33,7 +33,7 @@ export function HeroSlide({
   const brandColorHex = BRAND_COLOR_HEX[show.brandColor]
 
   return (
-    <div className="absolute inset-0">
+    <div className="pointer-events-none absolute inset-0">
       {/* Background image with cinematic bloom */}
       <CinematicBackdrop
         brandColor={brandColorHex}
@@ -64,7 +64,7 @@ export function HeroSlide({
 
       {/* Content — positioned bottom-left, max 620px */}
       <div
-        className="absolute start-5 end-5 bottom-8 max-w-[620px] sm:start-10 sm:end-10 sm:bottom-20"
+        className="pointer-events-auto absolute start-5 end-5 bottom-8 max-w-[620px] sm:start-10 sm:end-10 sm:bottom-20"
         onMouseEnter={() => onContentHoverChange?.(true)}
         onMouseLeave={() => onContentHoverChange?.(false)}
       >
