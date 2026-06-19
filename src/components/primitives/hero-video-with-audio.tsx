@@ -4,17 +4,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Volume2, VolumeX } from 'lucide-react'
 import { extractYouTubeId } from '@/lib/youtube'
 import { resolveSupabaseVideoUrl } from '@/lib/supabase-media'
-
-function sendYouTubeCommand(
-  iframe: HTMLIFrameElement,
-  func: string,
-  args: unknown[] = []
-) {
-  iframe.contentWindow?.postMessage(
-    JSON.stringify({ event: 'command', func, args }),
-    '*'
-  )
-}
+import {
+  kickMutedAutoplay,
+  sendYouTubeCommand,
+  syncMp4Playback,
+} from '@/lib/media-audio'
 
 /**
  * Watch/browse hero video with a visitor-controlled mute toggle.
@@ -46,60 +40,69 @@ export function HeroVideoWithAudio({
   const ytId = type === 'youtube' ? extractYouTubeId(url) : null
   const mp4Src = type === 'mp4' ? resolveSupabaseVideoUrl(url) : null
 
-  const forceUnlock = useCallback(() => {
-    setAudioUnlocked(true)
-    setButtonMuted(false)
-
-    const video = videoRef.current
-    if (video) {
-      video.muted = false
-      video.volume = 1
-      void video.play().catch(() => {})
-    }
-
+  const applyYouTubeMute = useCallback((shouldMute: boolean) => {
     const iframe = iframeRef.current
-    if (iframe) {
-      if (ytReadyRef.current) {
-        sendYouTubeCommand(iframe, 'unMute')
-        sendYouTubeCommand(iframe, 'setVolume', [100])
-        sendYouTubeCommand(iframe, 'playVideo')
-      } else {
-        pendingYtUnmuteRef.current = true
-      }
+    if (!iframe || !ytReadyRef.current) return
+    if (shouldMute) {
+      sendYouTubeCommand(iframe, 'mute')
+    } else {
+      sendYouTubeCommand(iframe, 'unMute')
+      sendYouTubeCommand(iframe, 'setVolume', [100])
+      sendYouTubeCommand(iframe, 'playVideo')
     }
   }, [])
 
   const handleMuteToggle = useCallback(() => {
+    const video = videoRef.current
+
     if (!audioUnlocked) {
-      forceUnlock()
+      if (video) syncMp4Playback(video, false)
+
+      const iframe = iframeRef.current
+      if (iframe) {
+        if (ytReadyRef.current) {
+          applyYouTubeMute(false)
+        } else {
+          pendingYtUnmuteRef.current = true
+        }
+      }
+
+      setAudioUnlocked(true)
+      setButtonMuted(false)
       return
     }
+
     const next = !buttonMuted
+    if (video) syncMp4Playback(video, next)
+    applyYouTubeMute(next)
     setButtonMuted(next)
-
-    const video = videoRef.current
-    if (video) video.muted = next
-
-    const iframe = iframeRef.current
-    if (iframe && ytReadyRef.current) {
-      if (next) {
-        sendYouTubeCommand(iframe, 'mute')
-      } else {
-        sendYouTubeCommand(iframe, 'unMute')
-        sendYouTubeCommand(iframe, 'setVolume', [100])
-      }
-    }
-  }, [audioUnlocked, buttonMuted, forceUnlock])
+  }, [audioUnlocked, buttonMuted, applyYouTubeMute])
 
   const flushPendingYouTubeUnmute = useCallback(() => {
     if (!pendingYtUnmuteRef.current) return
     const iframe = iframeRef.current
     if (!iframe || !ytReadyRef.current) return
     pendingYtUnmuteRef.current = false
-    sendYouTubeCommand(iframe, 'unMute')
-    sendYouTubeCommand(iframe, 'setVolume', [100])
-    sendYouTubeCommand(iframe, 'playVideo')
-  }, [])
+    applyYouTubeMute(false)
+  }, [applyYouTubeMute])
+
+  useEffect(() => {
+    if (type !== 'mp4' || reducedMotion) return
+    const video = videoRef.current
+    if (!video) return
+
+    const ensurePlaying = () => {
+      if (video.paused) kickMutedAutoplay(video)
+    }
+
+    ensurePlaying()
+    video.addEventListener('loadeddata', ensurePlaying)
+    video.addEventListener('canplay', ensurePlaying)
+    return () => {
+      video.removeEventListener('loadeddata', ensurePlaying)
+      video.removeEventListener('canplay', ensurePlaying)
+    }
+  }, [type, mp4Src, url, reducedMotion])
 
   useEffect(() => {
     if (!ytId) return
@@ -135,10 +138,9 @@ export function HeroVideoWithAudio({
       '*'
     )
     if (audioUnlocked && !buttonMuted) {
-      sendYouTubeCommand(iframe, 'unMute')
-      sendYouTubeCommand(iframe, 'setVolume', [100])
+      applyYouTubeMute(false)
     }
-  }, [audioUnlocked, buttonMuted])
+  }, [audioUnlocked, buttonMuted, applyYouTubeMute])
 
   const muteButton = (
     <button
@@ -165,7 +167,7 @@ export function HeroVideoWithAudio({
           muted={!audioUnlocked || buttonMuted}
           loop={!reducedMotion}
           playsInline
-          preload="metadata"
+          preload="auto"
           poster={poster}
           className={className}
           aria-hidden

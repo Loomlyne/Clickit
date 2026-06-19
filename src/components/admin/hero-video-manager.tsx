@@ -24,6 +24,7 @@ import {
 } from '@/app/[locale]/admin/actions'
 import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
+import { probeLocalMp4HasAudio } from '@/lib/media-audio'
 
 type VideoConfig = { url: string; type: 'mp4' | 'youtube' } | null
 type HeroVariant = 'desktop' | 'mobile'
@@ -69,6 +70,7 @@ export function HeroVideoManager({
           aspectClassName="aspect-video w-full"
           hint={t('desktopVideoHint')}
           current={desktopVideo}
+          onMp4Saved={() => setMuted(false)}
         />
         <HeroVariantPanel
           variant="mobile"
@@ -77,6 +79,7 @@ export function HeroVideoManager({
           aspectClassName="mx-auto aspect-[9/16] w-full max-w-[200px]"
           hint={t('mobileVideoHint')}
           current={mobileVideo}
+          onMp4Saved={() => setMuted(false)}
         />
       </div>
 
@@ -131,6 +134,7 @@ function HeroVariantPanel({
   aspectClassName,
   hint,
   current,
+  onMp4Saved,
 }: {
   variant: HeroVariant
   label: string
@@ -138,6 +142,7 @@ function HeroVariantPanel({
   aspectClassName: string
   hint: string
   current: VideoConfig
+  onMp4Saved?: () => void
 }) {
   const t = useTranslations('admin.heroMedia')
   const [video, setVideo] = useState<VideoConfig>(current)
@@ -159,6 +164,13 @@ function HeroVariantPanel({
       toast.warning(
         'Video is over 8 MB — large hero clips drive Supabase cached egress. Compress to ~2–5 MB (720p H.264) or use a YouTube URL instead.'
       )
+    }
+
+    const hasAudio = await probeLocalMp4HasAudio(file)
+    if (!hasAudio) {
+      toast.error(t('videoNoAudioTrack'))
+      if (inputRef.current) inputRef.current.value = ''
+      return
     }
 
     setBusy(true)
@@ -193,7 +205,9 @@ function HeroVariantPanel({
       }
 
       setVideo({ url: result.data, type: 'mp4' })
+      onMp4Saved?.()
       toast.success(t('uploadVideoSuccess', { label }))
+      toast.message(t('videoAudioEnabled'))
     } catch {
       toast.error(t('uploadFailed'))
     } finally {

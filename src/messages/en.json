@@ -1406,7 +1406,9 @@
       "audioLabel": "Audio",
       "audioOn": "Audio on",
       "audioMuted": "Muted",
-      "autoplayWarning": "Browsers may block autoplay with audio — visitors may need to interact first"
+      "autoplayWarning": "Browsers may block autoplay with audio — visitors may need to interact first",
+      "videoNoAudioTrack": "This MP4 has no audio track. Re-export with audio enabled (AAC) and upload again.",
+      "videoAudioEnabled": "Hero audio enabled — visitors can unmute from the speaker button"
     },
     "episodesTable": {
       "moveUp": "Move up",

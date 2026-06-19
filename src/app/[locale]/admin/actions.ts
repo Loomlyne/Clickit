@@ -9,6 +9,7 @@ import { validateYouTubeUrl } from '@/lib/youtube'
 import { logAudit } from '@/lib/audit'
 import { generateSlug } from '@/lib/slug'
 import { fillArabic, translateToArabic, translateBatchToArabic } from '@/lib/translate'
+import { mp4BytesHasAudioTrack } from '@/lib/mp4-audio'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -1770,6 +1771,27 @@ export async function saveHeroVideoUpload(
       return { success: false, error: 'Invalid upload path' }
     }
 
+    const { data: uploadedFile, error: downloadError } = await admin.storage
+      .from('site-assets')
+      .download(path)
+
+    if (downloadError || !uploadedFile) {
+      return {
+        success: false,
+        error: downloadError?.message ?? 'Could not verify uploaded video',
+      }
+    }
+
+    const fileBytes = await uploadedFile.arrayBuffer()
+    if (!mp4BytesHasAudioTrack(fileBytes)) {
+      await admin.storage.from('site-assets').remove([path])
+      return {
+        success: false,
+        error:
+          'This MP4 has no audio track. Re-export with audio enabled (AAC) and upload again.',
+      }
+    }
+
     const { data: urlData } = admin.storage
       .from('site-assets')
       .getPublicUrl(path)
@@ -1781,6 +1803,7 @@ export async function saveHeroVideoUpload(
       .update({
         [HERO_URL_COLUMN[variant]]: publicUrl,
         [HERO_TYPE_COLUMN[variant]]: 'mp4',
+        hero_video_muted: false,
       } as never)
       .eq('id', 1)
 
@@ -1788,6 +1811,7 @@ export async function saveHeroVideoUpload(
 
     updateTag('site-config')
     revalidatePath('/')
+    revalidatePath('/portfolio')
     return { success: true, data: publicUrl }
   } catch (err) {
     console.error('[saveHeroVideoUpload] failed', err)
