@@ -714,10 +714,10 @@ export async function getContinueWatchingEpisodes(
   // plan, so Postgres skips rows for archived shows/episodes before the
   // network boundary. Old code filtered client-side — it still worked, but
   // wasted bandwidth and CPU on progress rows we were about to drop anyway.
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('watch_progress')
     .select(
-      'progress_seconds, duration_seconds, episode_id, episodes_view!inner(id, title, title_ar, episode_number, status, archived, youtube_video_id, show_id, show_title, show_title_ar, show_slug, show_brand_color, seasons!inner(season_number))'
+      'progress_seconds, duration_seconds, episode_id, episodes_view!inner(id, title, title_ar, episode_number, status, archived, youtube_video_id, show_id, show_title, show_slug, show_brand_color, seasons!inner(season_number), shows!inner(title_ar))'
     )
     .eq('user_id', userId)
     .eq('completed', false)
@@ -727,6 +727,11 @@ export async function getContinueWatchingEpisodes(
     .order('updated_at', { ascending: false })
     .limit(20)
 
+  if (error) {
+    console.error('[getContinueWatchingEpisodes]', error.message)
+    return []
+  }
+
   if (!data) return []
 
   const items = await Promise.all(
@@ -735,7 +740,7 @@ export async function getContinueWatchingEpisodes(
       const dur = row.duration_seconds || 1
       const [episodeTitle, showTitle] = await Promise.all([
         localizedField(locale, ep.title, ep.title_ar),
-        localizedField(locale, ep.show_title, ep.show_title_ar),
+        localizedField(locale, ep.show_title, ep.shows?.title_ar),
       ])
       return {
         episodeId: ep.id,
@@ -821,10 +826,10 @@ export const getComingSoonEpisodes = unstable_cache(
   > => {
     const supabase = createPublicClient()
     const nowIso = new Date().toISOString()
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('episodes_view')
       .select(
-        'id, show_id, season_id, episode_number, title, title_ar, description, description_ar, duration, status, publish_at, archived, created_at, updated_at, show_title, show_title_ar, show_slug, show_brand_color, show_status'
+        'id, show_id, season_id, episode_number, title, title_ar, description, description_ar, duration, status, publish_at, archived, created_at, updated_at, show_title, show_slug, show_brand_color, show_status, shows!inner(title_ar)'
       )
       .eq('status', 'coming-soon')
       .in('show_status', ['now-streaming', 'coming-soon'])
@@ -832,13 +837,18 @@ export const getComingSoonEpisodes = unstable_cache(
       .order('created_at', { ascending: false })
       .limit(20)
 
+    if (error) {
+      console.error('[getComingSoonEpisodes]', error.message)
+      return []
+    }
+
     return Promise.all(
       (data ?? []).map(async (row: any) => {
         const episode = await mapEpisodeLocalized(row as DbEpisode, locale)
         const showTitle = await localizedField(
           locale,
           row.show_title,
-          row.show_title_ar
+          row.shows?.title_ar
         )
         return {
           ...episode,

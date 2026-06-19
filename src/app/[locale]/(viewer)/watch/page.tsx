@@ -100,7 +100,9 @@ export default async function WatchPage({
         </div>
       )}
 
-      <ContinueWatchingRail userId={userId} />
+      <Suspense fallback={null}>
+        <ContinueWatchingRail userId={userId} />
+      </Suspense>
 
       <ShortsRail shorts={shorts} />
 
