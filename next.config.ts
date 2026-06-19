@@ -24,7 +24,7 @@ const withNextIntl = createNextIntlPlugin()
 // needs it, so this CSP token is added only outside production builds.
 const devScriptSrc = process.env.NODE_ENV === 'production' ? '' : " 'unsafe-" + "eval'"
 
-const CSP = [
+const cspDirectives = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${devScriptSrc} https://www.googletagmanager.com https://connect.facebook.net https://www.youtube.com https://s.ytimg.com https://va.vercel-scripts.com https://vercel.live`,
   "style-src 'self' 'unsafe-inline'",
@@ -38,8 +38,13 @@ const CSP = [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
-  'upgrade-insecure-requests',
-].join('; ')
+]
+// upgrade-insecure-requests breaks localhost HTTP dev: Server Actions POST to
+// http://localhost:3000 get upgraded to https://… which has no TLS listener → hang.
+if (process.env.NODE_ENV === 'production') {
+  cspDirectives.push('upgrade-insecure-requests')
+}
+const CSP = cspDirectives.join('; ')
 
 const nextConfig: NextConfig = {
   // React Compiler (stable in Next 16): auto-memoizes components to cut

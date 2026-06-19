@@ -13,6 +13,7 @@ import { AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { mapAuthError } from '@/lib/auth-errors'
 import { getSafeAuthNextPath } from '@/lib/auth-navigation'
+import { signInAction } from '@/app/[locale]/(viewer)/auth/actions'
 
 const loginSchema = z.object({
   email: z.string().email('emailInvalid'),
@@ -48,27 +49,16 @@ export function LoginForm() {
   async function onLogin(data: LoginFormData) {
     setServerError(null)
 
-    const supabase = createClient()
-    const { data: authData, error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    })
+    const result = await signInAction(data.email, data.password)
 
-    if (error) {
-      setServerError(mapAuthError(error.message))
+    if (!result.ok) {
+      setServerError(mapAuthError(result.error))
       return
     }
 
-    const { data: config } = await supabase
-      .from('app_config')
-      .select('admin_user_id')
-      .eq('id', 1)
-      .single()
-    const isAdmin = config?.admin_user_id === authData.user?.id
-
     const path = getSafeAuthNextPath(
       searchParams.get('next'),
-      isAdmin ? '/admin' : '/watch'
+      result.isAdmin ? '/admin' : '/watch'
     )
     toast.success(t('welcomeBack'))
     // Hard navigation: guarantees the browser sends the freshly persisted

@@ -42,14 +42,50 @@ const PUBLIC_ALLOWLIST = [
 ]
 
 /**
- * Routes that ALWAYS require a signed-in user, even when "skip sign-in" is on.
- * Watching is gated (the whole point of skip mode: browse freely, but you must
- * sign in to watch); account/admin areas are user-specific.
- *
- * When auth_allow_skip is OFF, every non-public route requires auth anyway —
- * this list only matters once skip is enabled, to keep watch/account locked.
+ * Routes that ALWAYS require a signed-in user, even when "skip sign-in" is on
+ * (account-specific areas). /watch is only gated when skip-sign-in is off.
  */
-const SKIP_PROTECTED = ['/watch', '/my-list', '/profile', '/admin']
+const SKIP_PROTECTED_ALWAYS = [
+  '/my-list',
+  '/profile',
+  '/admin',
+  '/design-system',
+]
+
+function isWatchPath(pathWithoutLocale: string): boolean {
+  return (
+    pathWithoutLocale === '/watch' ||
+    pathWithoutLocale.startsWith('/watch/')
+  )
+}
+
+/** True when anonymous users must sign in even if auth_allow_skip is enabled. */
+function isAuthRequiredDespiteSkip(
+  pathWithoutLocale: string,
+  authAllowSkip: boolean
+): boolean {
+  if (
+    SKIP_PROTECTED_ALWAYS.some(
+      (p) =>
+        pathWithoutLocale === p || pathWithoutLocale.startsWith(`${p}/`)
+    )
+  ) {
+    return true
+  }
+  // Skip mode opens the catalog + player; without it, /watch needs an account.
+  if (!authAllowSkip && isWatchPath(pathWithoutLocale)) {
+    return true
+  }
+  return false
+}
+
+/** Vercel BotID challenge/proxy paths — must stay locale-free (see withBotId). */
+const BOTID_PREFIX = '/149e9513-01fa-4fb0-aad4-566afd725d1b'
+
+function isBotIdPath(pathname: string): boolean {
+  const { pathWithoutLocale } = stripLocale(pathname)
+  return pathWithoutLocale.startsWith(BOTID_PREFIX)
+}
 
 const handleI18nRouting = createMiddleware(routing)
 
@@ -104,6 +140,17 @@ export async function proxy(request: NextRequest) {
   if (pathname === '/auth/callback') {
     const { response } = await updateSession(request)
     return response
+  }
+
+  // BotID loads c.js relative to the current URL, so on /en/auth the browser
+  // requests /en/149e9513-…/c.js. withBotId rewrites only match the root path;
+  // without this strip+rewrite, next-intl treats the script as a page → 500
+  // ("No intl context found") and auth Server Actions never get a challenge token.
+  if (isBotIdPath(pathname)) {
+    const { pathWithoutLocale } = stripLocale(pathname)
+    const url = request.nextUrl.clone()
+    url.pathname = pathWithoutLocale
+    return NextResponse.rewrite(url)
   }
 
   // Step 1: Run next-intl routing. This may return a 3xx redirect when the
@@ -171,18 +218,16 @@ export async function proxy(request: NextRequest) {
   )
   const isAdminRoute =
     pathWithoutLocale === '/admin' || pathWithoutLocale.startsWith('/admin/')
-  const isSkipProtected = SKIP_PROTECTED.some(
-    (p) => pathWithoutLocale === p || pathWithoutLocale.startsWith(`${p}/`)
-  )
 
   if (!isPublic) {
     if (!userId) {
-      // Signed out. Normally bounce to /auth. BUT if the admin enabled
-      // "skip sign-in", anon visitors may browse — except watch/account/admin
-      // routes (SKIP_PROTECTED), which always demand an account.
+      const { authAllowSkip } = await getAppConfig()
+      const mustAuthDespiteSkip = isAuthRequiredDespiteSkip(
+        pathWithoutLocale,
+        authAllowSkip
+      )
       let mustAuth = true
-      if (!isSkipProtected) {
-        const { authAllowSkip } = await getAppConfig()
+      if (!mustAuthDespiteSkip) {
         mustAuth = !authAllowSkip
       }
       if (mustAuth) {

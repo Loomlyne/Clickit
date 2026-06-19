@@ -77,6 +77,9 @@ export function AdvancedTab({
   const [pixel, setPixel] = useState(config.metaPixelId ?? '')
   const [yt, setYt] = useState('')
   const [savedHasYouTube, setSavedHasYouTube] = useState(hasYouTubeKey)
+  const [gaEnabled, setGaEnabled] = useState(Boolean(config.googleAnalyticsId))
+  const [pixelEnabled, setPixelEnabled] = useState(Boolean(config.metaPixelId))
+  const [ytEnabled, setYtEnabled] = useState(hasYouTubeKey)
   const [savingIntegrations, setSavingIntegrations] = useState(false)
 
   const t = useTranslations('admin.settings')
@@ -102,17 +105,43 @@ export function AdvancedTab({
 
   async function onSaveIntegrations(e: React.SyntheticEvent) {
     e.preventDefault()
+
+    const gaValue = gaEnabled ? ga.trim() : ''
+    const pixelValue = pixelEnabled ? pixel.trim() : ''
+
+    if (gaEnabled && gaValue && !/^G-[A-Z0-9]{4,20}$/.test(gaValue)) {
+      toast.error(t('invalidGoogleAnalyticsId'))
+      return
+    }
+    if (pixelEnabled && pixelValue && !/^[0-9]{6,20}$/.test(pixelValue)) {
+      toast.error(t('invalidMetaPixelId'))
+      return
+    }
+
     setSavingIntegrations(true)
+
+    let youtubeApiKey: string | null | undefined
+    if (!ytEnabled) {
+      youtubeApiKey = null
+    } else if (yt !== '') {
+      youtubeApiKey = yt.trim()
+    } else {
+      youtubeApiKey = undefined
+    }
+
     const result = await updateIntegrations({
-      google_analytics_id: ga.trim() || null,
-      meta_pixel_id: pixel.trim() || null,
-      youtube_api_key: yt === '' ? null : yt.trim(),
+      google_analytics_id: gaEnabled && gaValue ? gaValue : null,
+      meta_pixel_id: pixelEnabled && pixelValue ? pixelValue : null,
+      youtube_api_key: youtubeApiKey,
     })
     setSavingIntegrations(false)
     if (result.success) {
       toast.success(t('integrationsSaved'))
-      if (yt !== '') setSavedHasYouTube(true)
-      else if (yt === '' && !savedHasYouTube) setSavedHasYouTube(false)
+      if (!ytEnabled) {
+        setSavedHasYouTube(false)
+      } else if (yt !== '') {
+        setSavedHasYouTube(true)
+      }
     } else {
       toast.error(result.error ?? t('saveFailed'))
     }
@@ -147,61 +176,77 @@ export function AdvancedTab({
 
       <form onSubmit={onSaveIntegrations} className="space-y-6">
         <SettingsCard
-          title="Google Analytics"
-          description={t('googleAnalyticsDescription')}
+          title={t('analyticsTitle')}
+          description={t('analyticsDescription')}
         >
-          <SettingsField
-            label={t('measurementIdLabel')}
-            hint={t('measurementIdHint')}
-          >
-            <Input
-              value={ga}
-              onChange={(e) => setGa(e.target.value)}
-              placeholder={t('measurementIdPlaceholder')}
-              className="font-mono"
-              maxLength={40}
-            />
-          </SettingsField>
-        </SettingsCard>
-
-        <SettingsCard
-          title="Meta Pixel"
-          description={t('metaPixelDescription')}
-        >
-          <SettingsField label={t('pixelIdLabel')} hint={t('pixelIdHint')}>
-            <Input
-              value={pixel}
-              onChange={(e) => setPixel(e.target.value)}
-              placeholder="1234567890"
-              className="font-mono"
-              maxLength={40}
-            />
-          </SettingsField>
-        </SettingsCard>
-
-        <SettingsCard
-          title="YouTube Data API"
-          description={t('youtubeApiDescription')}
-          action={
-            <a
-              href="https://console.cloud.google.com/apis/credentials"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs font-medium text-white/60 hover:text-white"
+          <div className="space-y-4">
+            <IntegrationRow
+              title="Google Analytics"
+              description={t('googleAnalyticsDescription')}
+              enabled={gaEnabled}
+              onEnabledChange={setGaEnabled}
             >
-              {t('getKey')}
-              <ExternalLink className="size-3" />
-            </a>
-          }
-        >
-          <SettingsField label={t('apiKeyLabel')} hint={t('apiKeyHint')}>
-            <SecretField
-              value={yt}
-              onChange={setYt}
-              hasSavedValue={savedHasYouTube}
-              placeholder={t('apiKeyPlaceholder')}
-            />
-          </SettingsField>
+              <SettingsField
+                label={t('measurementIdLabel')}
+                hint={t('measurementIdHint')}
+              >
+                <Input
+                  value={ga}
+                  onChange={(e) => setGa(e.target.value)}
+                  placeholder={t('measurementIdPlaceholder')}
+                  className="font-mono"
+                  maxLength={40}
+                  disabled={!gaEnabled}
+                />
+              </SettingsField>
+            </IntegrationRow>
+
+            <IntegrationRow
+              title="Meta Pixel"
+              description={t('metaPixelDescription')}
+              enabled={pixelEnabled}
+              onEnabledChange={setPixelEnabled}
+            >
+              <SettingsField label={t('pixelIdLabel')} hint={t('pixelIdHint')}>
+                <Input
+                  value={pixel}
+                  onChange={(e) => setPixel(e.target.value)}
+                  placeholder="1234567890"
+                  className="font-mono"
+                  maxLength={40}
+                  disabled={!pixelEnabled}
+                />
+              </SettingsField>
+            </IntegrationRow>
+
+            <IntegrationRow
+              title="YouTube Data API"
+              description={t('youtubeApiDescription')}
+              enabled={ytEnabled}
+              onEnabledChange={setYtEnabled}
+              action={
+                <a
+                  href="https://console.cloud.google.com/apis/credentials"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-white/60 hover:text-white"
+                >
+                  {t('getKey')}
+                  <ExternalLink className="size-3" />
+                </a>
+              }
+            >
+              <SettingsField label={t('apiKeyLabel')} hint={t('apiKeyHint')}>
+                <SecretField
+                  value={yt}
+                  onChange={setYt}
+                  hasSavedValue={savedHasYouTube}
+                  placeholder={t('apiKeyPlaceholder')}
+                  disabled={!ytEnabled}
+                />
+              </SettingsField>
+            </IntegrationRow>
+          </div>
         </SettingsCard>
 
         <div className="flex items-center justify-end">
@@ -240,6 +285,46 @@ export function AdvancedTab({
         </div>
       </SettingsCard>
     </>
+  )
+}
+
+function IntegrationRow({
+  title,
+  description,
+  enabled,
+  onEnabledChange,
+  children,
+  action,
+}: {
+  title: string
+  description: string
+  enabled: boolean
+  onEnabledChange: (v: boolean) => void
+  children: React.ReactNode
+  action?: React.ReactNode
+}) {
+  return (
+    <div
+      className={`rounded-lg border border-white/8 bg-white/[0.02] p-4 transition-opacity ${
+        enabled ? '' : 'opacity-60'
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <Toggle value={enabled} onChange={onEnabledChange} />
+        <div className="min-w-0 flex-1 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-white">{title}</p>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                {description}
+              </p>
+            </div>
+            {action}
+          </div>
+          {children}
+        </div>
+      </div>
+    </div>
   )
 }
 

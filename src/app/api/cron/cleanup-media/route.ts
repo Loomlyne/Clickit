@@ -50,8 +50,9 @@ function extractStoragePath(
 export async function GET(req: Request) {
   // --- Auth guard ----------------------------------------------------------
   const authHeader = req.headers.get('authorization')
-  const expected = `Bearer ${process.env.CRON_SECRET}`
-  if (!process.env.CRON_SECRET || authHeader !== expected) {
+  const cronSecret = process.env.CRON_SECRET?.trim()
+  const expected = `Bearer ${cronSecret}`
+  if (!cronSecret || authHeader !== expected) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

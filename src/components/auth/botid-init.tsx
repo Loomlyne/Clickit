@@ -19,6 +19,10 @@ export function BotIdInit() {
   const pathname = usePathname()
 
   useEffect(() => {
+    // Local dev bypasses BotID server-side (auth/actions.ts). Loading c.js on
+    // localhost still fails without Vercel edge headers — skip client init here.
+    if (process.env.NODE_ENV !== 'production') return
+
     const normalized = pathname.startsWith('/') ? pathname : `/${pathname}`
     const protect = routing.locales.map((loc) => ({
       path: normalized === '/' ? `/${loc}` : `/${loc}${normalized}`,

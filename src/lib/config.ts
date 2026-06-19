@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { createPublicClient } from '@/lib/supabase/public'
@@ -112,7 +114,7 @@ export type AppConfig = {
   authQuoteAttribution: string | null
   authQuoteAttributionAr: string | null
   // When true, the auth page shows a "Skip sign-in" link and signed-out
-  // visitors may browse the site (but watch routes still require an account).
+  // visitors may browse and watch without an account (my-list/profile still gated).
   authAllowSkip: boolean
   // Structured content
   footer: FooterContent

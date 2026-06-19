@@ -22,11 +22,13 @@ export function SecretField({
   onChange,
   hasSavedValue,
   placeholder,
+  disabled,
 }: {
   value: string
   onChange: (v: string) => void
   hasSavedValue: boolean
   placeholder?: string
+  disabled?: boolean
 }) {
   const [reveal, setReveal] = useState(false)
   const [replacing, setReplacing] = useState(!hasSavedValue)
@@ -38,15 +40,17 @@ export function SecretField({
         <Input
           value="••••••••••••••••"
           readOnly
+          disabled={disabled}
           className="text-muted-foreground font-mono"
         />
         <button
           type="button"
+          disabled={disabled}
           onClick={() => {
             setReplacing(true)
             onChange('')
           }}
-          className="shrink-0 text-xs font-medium tracking-wider text-white/60 uppercase underline-offset-4 hover:text-white hover:underline"
+          className="shrink-0 text-xs font-medium tracking-wider text-white/60 uppercase underline-offset-4 hover:text-white hover:underline disabled:pointer-events-none disabled:opacity-40"
         >
           {t('replace')}
         </button>
@@ -63,12 +67,14 @@ export function SecretField({
         placeholder={placeholder}
         autoComplete="off"
         spellCheck={false}
+        disabled={disabled}
         className="font-mono"
       />
       <button
         type="button"
+        disabled={disabled}
         onClick={() => setReveal((r) => !r)}
-        className="shrink-0 text-white/60 hover:text-white"
+        className="shrink-0 text-white/60 hover:text-white disabled:pointer-events-none disabled:opacity-40"
         aria-label={reveal ? t('hideValue') : t('revealValue')}
       >
         {reveal ? <EyeOff className="size-4" /> : <Eye className="size-4" />}

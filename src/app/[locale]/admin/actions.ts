@@ -1577,6 +1577,17 @@ export async function reorderEpisode(
 // Artwork Upload / Delete
 // ---------------------------------------------------------------------------
 
+const ARTWORK_UPLOAD_SLOTS = [
+  'poster',
+  'card',
+  'hero',
+  'hero-mobile',
+  'logo',
+] as const
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 export async function uploadArtwork(
   formData: FormData
 ): Promise<ActionResult<string>> {
@@ -1595,6 +1606,19 @@ export async function uploadArtwork(
         slot,
       })
       return { success: false, error: 'Missing file, showId, or slot' }
+    }
+
+    if (
+      !UUID_RE.test(showId) ||
+      showId.includes('/') ||
+      showId.includes('..') ||
+      slot.includes('/') ||
+      slot.includes('..') ||
+      !ARTWORK_UPLOAD_SLOTS.includes(
+        slot as (typeof ARTWORK_UPLOAD_SLOTS)[number]
+      )
+    ) {
+      return { success: false, error: 'Invalid showId or slot' }
     }
 
     const ALLOWED_MIME = ['image/webp', 'image/png', 'image/jpeg']
@@ -2215,7 +2239,12 @@ const hrefOrEmpty = z
   .trim()
   .max(500)
   .refine(
-    (v) => v === '' || v.startsWith('/') || /^https?:\/\//i.test(v),
+    (v) =>
+      v === '' ||
+      (v.startsWith('/') &&
+        !v.startsWith('//') &&
+        !v.includes('\\')) ||
+      /^https?:\/\//i.test(v),
     'Must be empty, a path (/foo), or a URL'
   )
 
@@ -2237,9 +2266,26 @@ const ctaCopySchema = z.object({
 })
 
 const integrationsSchema = z.object({
-  google_analytics_id: z.string().trim().max(40).nullable(),
-  meta_pixel_id: z.string().trim().max(40).nullable(),
-  youtube_api_key: z.string().trim().max(100).nullable(),
+  google_analytics_id: z
+    .string()
+    .trim()
+    .max(40)
+    .nullable()
+    .refine(
+      (v) => v === null || v === '' || /^G-[A-Z0-9]{4,20}$/.test(v),
+      'Invalid Google Analytics ID'
+    ),
+  meta_pixel_id: z
+    .string()
+    .trim()
+    .max(40)
+    .nullable()
+    .refine(
+      (v) => v === null || v === '' || /^[0-9]{6,20}$/.test(v),
+      'Invalid Meta Pixel ID'
+    ),
+  /** Omit to leave the stored key unchanged; null clears it. */
+  youtube_api_key: z.string().trim().max(100).nullable().optional(),
 })
 
 const featureFlagsSchema = z.object({
@@ -2605,10 +2651,12 @@ export async function updateIntegrations(
     const user = await assertAdmin()
     const parsed = integrationsSchema.parse(input)
     // Empty strings from form inputs → null so DB stays clean
-    const cleaned = {
+    const cleaned: Record<string, string | null> = {
       google_analytics_id: parsed.google_analytics_id?.trim() || null,
       meta_pixel_id: parsed.meta_pixel_id?.trim() || null,
-      youtube_api_key: parsed.youtube_api_key?.trim() || null,
+    }
+    if (parsed.youtube_api_key !== undefined) {
+      cleaned.youtube_api_key = parsed.youtube_api_key?.trim() || null
     }
     const admin = createAdminClient()
     const { error } = await admin

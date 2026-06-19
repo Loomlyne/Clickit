@@ -62,8 +62,29 @@ export async function GET(request: Request) {
     }
   )
   if (!res.ok) {
+    let detail = ''
+    try {
+      const errBody = (await res.json()) as {
+        error?: { message?: string; errors?: { reason?: string }[] }
+      }
+      detail =
+        errBody.error?.message ??
+        errBody.error?.errors?.[0]?.reason ??
+        ''
+    } catch {
+      // ignore parse failure
+    }
+    console.error('[youtube-meta] Google API error', res.status, detail)
+    const hint =
+      res.status === 400
+        ? 'Check the API key, enable YouTube Data API v3 in Google Cloud, and ensure the key allows server requests (no browser-only referrer restriction).'
+        : res.status === 403
+          ? 'API key may be invalid, restricted, or quota exceeded.'
+          : ''
     return NextResponse.json(
-      { error: `YouTube API error: ${res.status}` },
+      {
+        error: `YouTube API error: ${res.status}${detail ? ` — ${detail}` : ''}${hint ? ` ${hint}` : ''}`,
+      },
       { status: 502 }
     )
   }
