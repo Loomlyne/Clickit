@@ -28,6 +28,31 @@ export function kickMutedAutoplay(video: HTMLVideoElement) {
   void video.play().catch(() => {})
 }
 
+/**
+ * Resume after stall/buffer outside a user gesture.
+ * Tries unmuted play when requested; on autoplay rejection falls back to muted
+ * so the hero never gets stuck paused. Resolves to whether sound is actually on.
+ */
+export function resumeMp4OutsideGesture(
+  video: HTMLVideoElement,
+  wantSound: boolean
+): Promise<boolean> {
+  if (!wantSound) {
+    kickMutedAutoplay(video)
+    return Promise.resolve(false)
+  }
+
+  video.muted = false
+  video.volume = 1
+  return video
+    .play()
+    .then(() => true)
+    .catch(() => {
+      kickMutedAutoplay(video)
+      return false
+    })
+}
+
 export function probeLocalMp4HasAudio(file: File): Promise<boolean> {
   return localMp4HasAudioTrack(file)
 }

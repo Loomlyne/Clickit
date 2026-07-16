@@ -5,7 +5,7 @@ import { Volume2, VolumeX } from 'lucide-react'
 import { extractYouTubeId } from '@/lib/youtube'
 import { resolveSupabaseVideoUrl } from '@/lib/supabase-media'
 import {
-  kickMutedAutoplay,
+  resumeMp4OutsideGesture,
   sendYouTubeCommand,
   syncMp4Playback,
 } from '@/lib/media-audio'
@@ -96,11 +96,14 @@ export function HeroVideoWithAudio({
 
     const ensurePlaying = () => {
       if (!video.paused) return
-      if (wantSoundRef.current) {
-        syncMp4Playback(video, false)
-      } else {
-        kickMutedAutoplay(video)
-      }
+      void resumeMp4OutsideGesture(video, wantSoundRef.current).then(
+        (soundOn) => {
+          if (!soundOn && wantSoundRef.current) {
+            wantSoundRef.current = false
+            setButtonMuted(true)
+          }
+        }
+      )
     }
 
     ensurePlaying()

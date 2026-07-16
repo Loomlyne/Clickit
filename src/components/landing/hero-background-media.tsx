@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from 're
 import { Volume2, VolumeX } from 'lucide-react'
 import {
   kickMutedAutoplay,
+  resumeMp4OutsideGesture,
   sendYouTubeCommand,
   syncMp4Playback,
 } from '@/lib/media-audio'
@@ -120,7 +121,8 @@ export function HeroBackgroundMedia({
   }, [ytId, muted, flushPendingYouTubeUnmute, applyYouTubeMute])
 
   // Keep autoplay alive — browsers often block the first attempt until data arrives.
-  // After the visitor unlocks sound, resume unmuted; never remute behind their back.
+  // Prefer sound when unlocked; if unmuted play is rejected (no gesture), fall back
+  // to muted so the hero never sticks paused, and sync the speaker UI.
   useEffect(() => {
     if (!mp4Url) return
     const video = videoRef.current
@@ -128,11 +130,14 @@ export function HeroBackgroundMedia({
 
     const ensurePlaying = () => {
       if (!video.paused) return
-      if (wantSoundRef.current) {
-        syncMp4Playback(video, false)
-      } else {
-        kickMutedAutoplay(video)
-      }
+      void resumeMp4OutsideGesture(video, wantSoundRef.current).then(
+        (soundOn) => {
+          if (!soundOn && wantSoundRef.current) {
+            wantSoundRef.current = false
+            setButtonMuted(true)
+          }
+        }
+      )
     }
 
     ensurePlaying()
