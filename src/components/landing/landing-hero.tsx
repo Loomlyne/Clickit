@@ -77,7 +77,7 @@ export async function LandingHero() {
         }`}
       />
 
-      <div className="relative flex min-h-dvh items-end px-4 pt-28 pb-8 sm:px-6 md:px-10 md:pb-10">
+      <div className="pointer-events-none relative z-10 flex min-h-dvh items-end px-4 pt-28 pb-8 sm:px-6 md:px-10 md:pb-10">
         <div className="w-full max-w-[560px]">
           <Image
             src={config.ogImageUrl ?? '/brand/Clickit_final_logo.svg'}
@@ -91,7 +91,7 @@ export async function LandingHero() {
             {(isAr ? config.heroDescriptionAr : config.heroDescription) ??
               t('heroDescription')}
           </p>
-          <div className="mb-6 md:mb-8">
+          <div className="pointer-events-auto mb-6 md:mb-8">
             <Link
               href={ctaHref}
               className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-5 py-3 text-[14px] font-medium uppercase tracking-[0.06em] whitespace-nowrap text-[var(--primary-foreground)] transition-all hover:bg-white sm:px-6 sm:py-3.5 sm:text-[15px]"

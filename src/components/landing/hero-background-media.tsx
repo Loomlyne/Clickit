@@ -14,6 +14,11 @@ import {
  * MP4 starts muted for autoplay; the speaker button is the user gesture that
  * unlocks audio. YouTube embeds start muted in the URL and are unmuted via
  * postMessage once the visitor taps the button.
+ *
+ * Important: never mark the UI as "unmuted" unless unmuted play() actually
+ * succeeded. Mobile browsers almost always reject unmuted autoplay — if we
+ * claim unlock anyway, kickMutedAutoplay remutes the element while the button
+ * still shows sound-on (broken on portrait phones).
  */
 export function HeroBackgroundMedia({
   mp4Url,
@@ -32,6 +37,7 @@ export function HeroBackgroundMedia({
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const ytReadyRef = useRef(false)
   const pendingYtUnmuteRef = useRef(false)
+  const wantSoundRef = useRef(false)
   const [audioUnlocked, setAudioUnlocked] = useState(false)
   const [buttonMuted, setButtonMuted] = useState(true)
 
@@ -65,12 +71,14 @@ export function HeroBackgroundMedia({
         }
       }
 
+      wantSoundRef.current = true
       setAudioUnlocked(true)
       setButtonMuted(false)
       return
     }
 
     const next = !buttonMuted
+    wantSoundRef.current = !next
     if (video) syncMp4Playback(video, next)
     applyYouTubeMute(next)
     setButtonMuted(next)
@@ -111,34 +119,63 @@ export function HeroBackgroundMedia({
     return () => window.removeEventListener('message', onMessage)
   }, [ytId, muted, flushPendingYouTubeUnmute, applyYouTubeMute])
 
-  // Keep muted autoplay alive — browsers often block the first attempt until data arrives.
+  // Keep autoplay alive — browsers often block the first attempt until data arrives.
+  // After the visitor unlocks sound, resume unmuted; never remute behind their back.
   useEffect(() => {
     if (!mp4Url) return
     const video = videoRef.current
     if (!video) return
 
     const ensurePlaying = () => {
-      if (video.paused) kickMutedAutoplay(video)
+      if (!video.paused) return
+      if (wantSoundRef.current) {
+        syncMp4Playback(video, false)
+      } else {
+        kickMutedAutoplay(video)
+      }
     }
 
     ensurePlaying()
     video.addEventListener('loadeddata', ensurePlaying)
     video.addEventListener('canplay', ensurePlaying)
+    video.addEventListener('stalled', ensurePlaying)
+    video.addEventListener('suspend', ensurePlaying)
     return () => {
       video.removeEventListener('loadeddata', ensurePlaying)
       video.removeEventListener('canplay', ensurePlaying)
+      video.removeEventListener('stalled', ensurePlaying)
+      video.removeEventListener('suspend', ensurePlaying)
     }
   }, [mp4Url])
 
   // When admin enables hero audio, try unmuted autoplay for high-MEI browsers.
+  // Only flip the UI to "unmuted" if play() actually succeeds — mobile Safari /
+  // Chrome reject this without a gesture and would otherwise desync the button.
   useEffect(() => {
     if (muted || !mp4Url) return
     const video = videoRef.current
     if (!video) return
 
-    syncMp4Playback(video, false)
-    setAudioUnlocked(true)
-    setButtonMuted(false)
+    let cancelled = false
+    video.muted = false
+    video.volume = 1
+    void video
+      .play()
+      .then(() => {
+        if (cancelled || video.muted) return
+        wantSoundRef.current = true
+        setAudioUnlocked(true)
+        setButtonMuted(false)
+      })
+      .catch(() => {
+        if (cancelled) return
+        wantSoundRef.current = false
+        kickMutedAutoplay(video)
+      })
+
+    return () => {
+      cancelled = true
+    }
   }, [muted, mp4Url])
 
   const handleIframeLoad = useCallback(() => {

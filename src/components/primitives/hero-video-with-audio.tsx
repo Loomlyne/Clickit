@@ -33,6 +33,7 @@ export function HeroVideoWithAudio({
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const ytReadyRef = useRef(false)
   const pendingYtUnmuteRef = useRef(false)
+  const wantSoundRef = useRef(false)
   const [audioUnlocked, setAudioUnlocked] = useState(false)
   const [buttonMuted, setButtonMuted] = useState(true)
 
@@ -67,12 +68,14 @@ export function HeroVideoWithAudio({
         }
       }
 
+      wantSoundRef.current = true
       setAudioUnlocked(true)
       setButtonMuted(false)
       return
     }
 
     const next = !buttonMuted
+    wantSoundRef.current = !next
     if (video) syncMp4Playback(video, next)
     applyYouTubeMute(next)
     setButtonMuted(next)
@@ -92,15 +95,22 @@ export function HeroVideoWithAudio({
     if (!video) return
 
     const ensurePlaying = () => {
-      if (video.paused) kickMutedAutoplay(video)
+      if (!video.paused) return
+      if (wantSoundRef.current) {
+        syncMp4Playback(video, false)
+      } else {
+        kickMutedAutoplay(video)
+      }
     }
 
     ensurePlaying()
     video.addEventListener('loadeddata', ensurePlaying)
     video.addEventListener('canplay', ensurePlaying)
+    video.addEventListener('stalled', ensurePlaying)
     return () => {
       video.removeEventListener('loadeddata', ensurePlaying)
       video.removeEventListener('canplay', ensurePlaying)
+      video.removeEventListener('stalled', ensurePlaying)
     }
   }, [type, mp4Src, url, reducedMotion])
 
