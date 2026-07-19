@@ -13,10 +13,10 @@ function getSnapshot() {
 }
 
 function getServerSnapshot() {
-  return false
+  return true
 }
 
-/** SSR-safe `prefers-reduced-motion: reduce` (defaults false on server). */
+/** SSR-safe `prefers-reduced-motion: reduce` (conservative on server). */
 export function usePrefersReducedMotion(): boolean {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }

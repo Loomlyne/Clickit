@@ -12,6 +12,10 @@ export interface HeroMediaInput {
   mobileImageUrl?: string
 }
 
+export interface HeroMediaOptions {
+  allowVideo?: boolean
+}
+
 /**
  * Resolves the single best hero media to render for a given viewport.
  *
@@ -28,6 +32,7 @@ export interface HeroMediaInput {
 export function resolveHeroMedia(
   isMobile: boolean,
   input: HeroMediaInput,
+  { allowVideo = true }: HeroMediaOptions = {}
 ): HeroMediaChoice {
   const {
     videoUrl,
@@ -39,17 +44,19 @@ export function resolveHeroMedia(
   } = input
 
   if (isMobile) {
-    if (mobileVideoUrl && mobileVideoType) {
+    if (allowVideo && mobileVideoUrl && mobileVideoType) {
       return { kind: 'video', url: mobileVideoUrl, type: mobileVideoType }
     }
     if (mobileImageUrl) return { kind: 'image', url: mobileImageUrl }
-    if (videoUrl && videoType) {
+    if (allowVideo && videoUrl && videoType) {
       return { kind: 'video', url: videoUrl, type: videoType }
     }
     if (imageUrl) return { kind: 'image', url: imageUrl }
     return null
   }
-  if (videoUrl && videoType) return { kind: 'video', url: videoUrl, type: videoType }
+  if (allowVideo && videoUrl && videoType) {
+    return { kind: 'video', url: videoUrl, type: videoType }
+  }
   if (imageUrl) return { kind: 'image', url: imageUrl }
   return null
 }

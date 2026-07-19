@@ -38,8 +38,10 @@ export function HeroVideoWithAudio({
   const [buttonMuted, setButtonMuted] = useState(true)
 
   const isAudioPlaying = audioUnlocked && !buttonMuted
-  const ytId = type === 'youtube' ? extractYouTubeId(url) : null
-  const mp4Src = type === 'mp4' ? resolveSupabaseVideoUrl(url) : null
+  const ytId =
+    !reducedMotion && type === 'youtube' ? extractYouTubeId(url) : null
+  const mp4Src =
+    !reducedMotion && type === 'mp4' ? resolveSupabaseVideoUrl(url) : null
 
   const applyYouTubeMute = useCallback((shouldMute: boolean) => {
     const iframe = iframeRef.current
@@ -155,6 +157,8 @@ export function HeroVideoWithAudio({
     }
   }, [audioUnlocked, buttonMuted, applyYouTubeMute])
 
+  if (reducedMotion) return null
+
   const muteButton = (
     <button
       type="button"
@@ -176,11 +180,11 @@ export function HeroVideoWithAudio({
         <video
           ref={videoRef}
           src={mp4Src ?? url}
-          autoPlay={!reducedMotion}
+          autoPlay
           muted={!audioUnlocked || buttonMuted}
-          loop={!reducedMotion}
+          loop
           playsInline
-          preload="auto"
+          preload="metadata"
           poster={poster}
           className={className}
           aria-hidden
@@ -195,7 +199,9 @@ export function HeroVideoWithAudio({
   const autoplayFlag = reducedMotion ? '0' : '1'
   const loopFlag = reducedMotion ? '0' : '1'
   const origin =
-    typeof window !== 'undefined' ? encodeURIComponent(window.location.origin) : ''
+    typeof window !== 'undefined'
+      ? encodeURIComponent(window.location.origin)
+      : ''
   const src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=${autoplayFlag}&mute=1&loop=${loopFlag}&playlist=${ytId}&controls=0&rel=0&showinfo=0&iv_load_policy=3&modestbranding=1&playsinline=1&enablejsapi=1&origin=${origin}`
 
   return (
