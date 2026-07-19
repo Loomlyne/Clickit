@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useEffect, useMemo, useState, useTransition } from 'react'
+import { Fragment, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronDown, ChevronUp, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -71,10 +71,6 @@ function ColorPicker({
 }) {
   const t = useTranslations('admin.categories')
   const [rawInput, setRawInput] = useState(value ?? '')
-
-  useEffect(() => {
-    setRawInput(value ?? '')
-  }, [value])
 
   const isValidHex = HEX_RE.test(rawInput)
   const previewColor = isValidHex ? rawInput : null
@@ -246,10 +242,10 @@ function CategoryEditor({
 
       <div
         className={cn(
-          'mt-5 rounded-lg border border-white/8 bg-white/[0.02] p-4 transition-[border-left-color]',
-          draft.color && 'border-l-[3px]'
+          'mt-5 rounded-lg border border-white/8 bg-white/[0.02] p-4 transition-[border-inline-start-color]',
+          draft.color && 'border-s-[3px]'
         )}
-        style={draft.color ? { borderLeftColor: draft.color } : undefined}
+        style={draft.color ? { borderInlineStartColor: draft.color } : undefined}
       >
         <ColorPicker
           value={draft.color}
@@ -538,6 +534,7 @@ export function CategoriesManager({
                   className="bg-white/[0.015] whitespace-normal"
                 >
                   <CategoryEditor
+                    key="create"
                     draft={draft}
                     saving={saving}
                     editing={false}
@@ -700,6 +697,7 @@ export function CategoriesManager({
                         className="bg-white/[0.015] whitespace-normal"
                       >
                         <CategoryEditor
+                          key={category.id}
                           draft={draft}
                           saving={saving}
                           editing
