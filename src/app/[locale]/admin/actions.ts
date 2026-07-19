@@ -10,6 +10,7 @@ import { logAudit } from '@/lib/audit'
 import { generateSlug } from '@/lib/slug'
 import { fillArabic, translateToArabic, translateBatchToArabic } from '@/lib/translate'
 import { mp4BytesHasAudioTrack } from '@/lib/mp4-audio'
+import type { Database } from '@/lib/database.types'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -2385,14 +2386,17 @@ export async function updateLiveStreamUrl(
     const user = await assertAdmin()
     const parsed = liveStreamUrlSchema.parse(input)
     const admin = createAdminClient()
+    const update: Database['public']['Tables']['app_config']['Update'] & {
+      live_stream_label: string | null
+      live_stream_label_ar: string | null
+    } = {
+      live_stream_url: parsed.live_stream_url,
+      live_stream_label: parsed.live_stream_label,
+      live_stream_label_ar: parsed.live_stream_label_ar,
+    }
     const { error } = await admin
       .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({
-        live_stream_url: parsed.live_stream_url,
-        live_stream_label: parsed.live_stream_label,
-        live_stream_label_ar: parsed.live_stream_label_ar,
-      } as any)
+      .update(update)
       .eq('id', 1)
     if (error) return { success: false, error: error.message }
     await auditConfigUpdate(user.id, [
