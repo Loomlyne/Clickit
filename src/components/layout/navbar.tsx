@@ -44,7 +44,6 @@ export function Navbar({
   useLenis(({ scroll }) => {
     const y = scroll
     const delta = y - lastScrollY.current
-    setScrolled(y > 24)
     if (isLanding) {
       setHidden(false)
     } else if (y < 80) {
@@ -57,10 +56,18 @@ export function Navbar({
     lastScrollY.current = y
   })
 
-  // Sync once on mount (Lenis only fires on real scroll events)
+  // Keep the background state synchronized even before Lenis emits its first frame.
   useEffect(() => {
-    setScrolled(window.scrollY > 24)
-    lastScrollY.current = window.scrollY
+    const syncScrollState = () => {
+      setScrolled(window.scrollY > 24)
+      lastScrollY.current = window.scrollY
+    }
+    const frame = requestAnimationFrame(syncScrollState)
+    window.addEventListener('scroll', syncScrollState, { passive: true })
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', syncScrollState)
+    }
   }, [])
 
   const navLinkClass = (active: boolean) =>
