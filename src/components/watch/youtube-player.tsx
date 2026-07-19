@@ -34,12 +34,20 @@ export function YouTubePlayer({
   const onReadyRef = useRef(onReady)
   const onStateChangeRef = useRef(onStateChange)
   const onErrorRef = useRef(onError)
-  onReadyRef.current = onReady
-  onStateChangeRef.current = onStateChange
-  onErrorRef.current = onError
 
-  const [isReady, setIsReady] = useState(false)
-  const [errorCode, setErrorCode] = useState<number | null>(null)
+  useEffect(() => {
+    onReadyRef.current = onReady
+    onStateChangeRef.current = onStateChange
+    onErrorRef.current = onError
+  }, [onError, onReady, onStateChange])
+
+  const [readyVideoId, setReadyVideoId] = useState<string | null>(null)
+  const [playerError, setPlayerError] = useState<{
+    videoId: string
+    code: number
+  } | null>(null)
+  const isReady = readyVideoId === videoId
+  const errorCode = playerError?.videoId === videoId ? playerError.code : null
 
   useEffect(() => {
     let cancelled = false
@@ -62,7 +70,7 @@ export function YouTubePlayer({
         events: {
           onReady: (event) => {
             if (cancelled) return
-            setIsReady(true)
+            setReadyVideoId(videoId)
             onReadyRef.current?.(event.target)
           },
           onStateChange: (event) => {
@@ -71,15 +79,13 @@ export function YouTubePlayer({
           },
           onError: (event) => {
             if (cancelled) return
-            setErrorCode(event.data)
+            setPlayerError({ videoId, code: event.data })
             onErrorRef.current?.(event.data)
           },
         },
       })
     }
 
-    setIsReady(false)
-    setErrorCode(null)
     init()
 
     return () => {
