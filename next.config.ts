@@ -1,7 +1,8 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 import bundleAnalyzer from '@next/bundle-analyzer'
 import { withBotId } from 'botid/next/config'
 import createNextIntlPlugin from 'next-intl/plugin'
+import { getPublicMediaOrigin } from './src/lib/supabase-media'
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
@@ -22,17 +23,30 @@ const withNextIntl = createNextIntlPlugin()
 // Dev-only relaxation: React + Turbopack rely on dynamic code execution in
 // development for fast refresh and callstack reconstruction. Production never
 // needs it, so this CSP token is added only outside production builds.
-const devScriptSrc = process.env.NODE_ENV === 'production' ? '' : " 'unsafe-" + "eval'"
+const devScriptSrc =
+  process.env.NODE_ENV === 'production' ? '' : " 'unsafe-" + "eval'"
+const publicMediaOrigin = getPublicMediaOrigin()
+const mediaImagePattern = publicMediaOrigin
+  ? (() => {
+      const origin = new URL(publicMediaOrigin)
+      return {
+        protocol: 'https' as const,
+        hostname: origin.hostname,
+        ...(origin.port ? { port: origin.port } : {}),
+        pathname: '/**',
+      }
+    })()
+  : null
 
 const cspDirectives = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${devScriptSrc} https://www.googletagmanager.com https://connect.facebook.net https://www.youtube.com https://s.ytimg.com https://va.vercel-scripts.com https://vercel.live`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
-  "media-src 'self' blob: https://*.supabase.co",
+  `media-src 'self' blob: https://*.supabase.co${publicMediaOrigin ? ` ${publicMediaOrigin}` : ''}`,
   "font-src 'self' data:",
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://stats.g.doubleclick.net https://va.vercel-scripts.com https://*.vercel-insights.com https://connect.facebook.net https://www.facebook.com https://www.youtube.com https://*.googlevideo.com https://youtubei.googleapis.com",
-  "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
+  'frame-src https://www.youtube.com https://www.youtube-nocookie.com',
   "worker-src 'self' blob:",
   "frame-ancestors 'self'",
   "object-src 'none'",
@@ -86,7 +100,8 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()',
+            value:
+              'camera=(), microphone=(), geolocation=(), browsing-topics=()',
           },
           { key: 'Content-Security-Policy', value: CSP },
         ],
@@ -94,7 +109,10 @@ const nextConfig: NextConfig = {
       {
         source: '/brand/:path*',
         headers: [
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
         ],
       },
     ]
@@ -136,12 +154,13 @@ const nextConfig: NextConfig = {
         hostname: 'lajguozmtissnnfccmej.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
+      ...(mediaImagePattern ? [mediaImagePattern] : []),
     ],
   },
-};
+}
 
 // withBotId wires the BotID challenge into Vercel's edge so sign-in/sign-up
 // requests carry a verifiable bot-score header. Server Actions gate on
 // checkBotId() before touching Supabase (see the auth actions under
 // src/app/[locale]/(viewer)/auth/actions.ts).
-export default withBundleAnalyzer(withBotId(withNextIntl(nextConfig)));
+export default withBundleAnalyzer(withBotId(withNextIntl(nextConfig)))

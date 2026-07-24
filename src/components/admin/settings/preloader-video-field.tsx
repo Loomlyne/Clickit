@@ -11,6 +11,7 @@ import {
   savePreloaderVideoUpload,
 } from '@/app/[locale]/admin/actions'
 import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client'
+import { resolvePreloaderVideoUrl } from '@/lib/supabase-media'
 
 const DEFAULT_PRELOADER_SRC = '/brand/clickit-preloader.mp4'
 
@@ -25,7 +26,7 @@ export function PreloaderVideoField({
   const [busy, setBusy] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const previewSrc = url ?? DEFAULT_PRELOADER_SRC
+  const previewSrc = resolvePreloaderVideoUrl(url) || DEFAULT_PRELOADER_SRC
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]

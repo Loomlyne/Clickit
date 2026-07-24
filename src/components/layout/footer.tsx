@@ -6,6 +6,7 @@ import { PLATFORM_MAP } from '@/lib/social-platforms'
 import type { SocialLinkItem } from '@/lib/config'
 import { pickLocalized } from '@/lib/locale'
 import { getLocale } from '@/lib/locale-server'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 export async function Footer() {
   const [{ footer, ogImageUrl }, t, tNav, locale] = await Promise.all([
@@ -95,8 +96,9 @@ export async function Footer() {
 function SocialIcon({ item }: { item: SocialLinkItem }) {
   const meta = PLATFORM_MAP[item.platform]
   const label = meta?.label ?? item.platform
+  const iconUrl = stripStorageCacheBust(item.iconUrl) ?? item.iconUrl
 
-  if (item.iconUrl) {
+  if (iconUrl) {
     return (
       <a
         href={item.url}
@@ -106,7 +108,7 @@ function SocialIcon({ item }: { item: SocialLinkItem }) {
         className="opacity-70 transition-opacity hover:opacity-100"
       >
         <Image
-          src={item.iconUrl}
+          src={iconUrl}
           alt={label}
           width={32}
           height={32}

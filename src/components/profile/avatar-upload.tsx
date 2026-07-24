@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Camera } from 'lucide-react'
 import { toast } from 'sonner'
 import { uploadAvatar } from '@/app/[locale]/(viewer)/profile/actions'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 interface AvatarUploadProps {
   currentUrl: string | null
@@ -20,6 +21,9 @@ export function AvatarUpload({
   const [preview, setPreview] = useState<string | null>(currentUrl)
   const [uploading, setUploading] = useState(false)
   const t = useTranslations('profile')
+  const imageSrc = preview?.startsWith('blob:')
+    ? preview
+    : (stripStorageCacheBust(preview) ?? preview)
 
   async function handleFile(file: File) {
     if (file.size > 2 * 1024 * 1024) {
@@ -68,7 +72,7 @@ export function AvatarUpload({
     >
       {preview ? (
         <img
-          src={preview}
+          src={imageSrc ?? preview}
           alt={t('avatarPicAlt')}
           className="size-full object-cover"
         />

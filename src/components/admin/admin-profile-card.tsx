@@ -2,6 +2,7 @@ import { Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import { User, Settings } from 'lucide-react'
 import { AdminPanel } from '@/components/admin/admin-shell'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 interface AdminProfileCardProps {
   email: string
@@ -16,12 +17,13 @@ export function AdminProfileCard({
 }: AdminProfileCardProps) {
   const t = useTranslations('admin.profileCard')
   const tNav = useTranslations('nav')
+  const resolvedAvatarUrl = stripStorageCacheBust(avatarUrl) ?? avatarUrl
   return (
     <AdminPanel className="p-5">
       <div className="flex items-center gap-4">
-        {avatarUrl ? (
+        {resolvedAvatarUrl ? (
           <img
-            src={avatarUrl}
+            src={resolvedAvatarUrl}
             alt=""
             className="h-12 w-12 rounded-full object-cover"
           />

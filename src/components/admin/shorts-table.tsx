@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/tooltip'
 import { toast } from 'sonner'
 import type { Database } from '@/lib/database.types'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 type Short = Database['public']['Tables']['shorts']['Row']
 
@@ -187,7 +188,8 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
     s.expires_at && new Date(s.expires_at) < new Date()
 
   const thumbnailSrc = (s: Short) =>
-    s.thumbnail_url || `https://i.ytimg.com/vi/${s.youtube_video_id}/hq720.jpg`
+    stripStorageCacheBust(s.thumbnail_url) ||
+    `https://i.ytimg.com/vi/${s.youtube_video_id}/hq720.jpg`
 
   const formatExpiry = (expiresAt: string | null) => {
     if (!expiresAt) return t('expiryNever')

@@ -7,6 +7,7 @@ import { Upload, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { uploadSiteImage, removeSiteImage } from '@/app/[locale]/admin/actions'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 /**
  * Reusable image upload field for OG image + favicon.
@@ -36,6 +37,7 @@ export function ImageUploadField({
   const [busy, setBusy] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const t = useTranslations('admin.settings')
+  const previewUrl = stripStorageCacheBust(url) ?? url
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -83,7 +85,7 @@ export function ImageUploadField({
           >
             {/* next/image with unoptimized for cache-busted dynamic URLs */}
             <Image
-              src={url}
+              src={previewUrl ?? url}
               alt={`${kind} preview`}
               fill
               unoptimized

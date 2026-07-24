@@ -241,7 +241,14 @@ export const getHeroVideo = unstable_cache(
       .single()
 
     if (!data?.hero_video_url || !data?.hero_video_type) return null
-    return { url: data.hero_video_url, type: data.hero_video_type as HeroVideo['type'] }
+    const type = data.hero_video_type as HeroVideo['type']
+    return {
+      url:
+        type === 'mp4'
+          ? (resolveSupabaseVideoUrl(data.hero_video_url) ?? data.hero_video_url)
+          : data.hero_video_url,
+      type,
+    }
   },
   ['hero-video'],
   { revalidate: 900, tags: ['site-config'] } // 15 min
@@ -484,9 +491,12 @@ export const getNewEpisodes = unstable_cache(
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
+    // The public episode projection deliberately comes from episodes_view.
+    // Base-table access excludes youtube_video_id so an anonymous client
+    // cannot fetch unpublished playback identifiers through PostgREST.
     const query = supabase
-      .from('episodes')
-      .select('*, shows!inner(title, slug, brand_color, poster_url, status)')
+      .from('episodes_view')
+      .select('*')
       .eq('status', 'published')
       .eq('archived', false)
       .gte('created_at', thirtyDaysAgo.toISOString())
@@ -496,11 +506,11 @@ export const getNewEpisodes = unstable_cache(
     const { data } = await query
 
     return (data ?? []).map((e: NewEpisodeRow) => ({
-      ...mapEpisode(e),
-      showTitle: e.shows.title,
-      showSlug: e.shows.slug,
-      showBrandColor: (e.shows.brand_color || 'brand-blue') as ViewShow['brandColor'],
-      showPosterUrl: stripStorageCacheBust(e.shows.poster_url ?? undefined),
+      ...mapEpisode(e as unknown as DbEpisode),
+      showTitle: e.show_title ?? '',
+      showSlug: e.show_slug ?? '',
+      showBrandColor: (e.show_brand_color || 'brand-blue') as ViewShow['brandColor'],
+      showPosterUrl: stripStorageCacheBust(e.show_poster_url ?? undefined),
     }))
   },
   ['new-episodes'],
@@ -1142,7 +1152,7 @@ export function mapShort(db: DbShort): ViewShort {
     youtubeVideoId: db.youtube_video_id,
     title: db.title,
     channelName: db.channel_name,
-    thumbnailUrl: db.thumbnail_url,
+    thumbnailUrl: stripStorageCacheBust(db.thumbnail_url ?? undefined) ?? null,
     durationSeconds: db.duration_seconds,
     genre: db.genre,
     sortOrder: db.sort_order ?? 0,

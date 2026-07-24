@@ -1,6 +1,8 @@
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
+import { redirect } from '@/i18n/navigation'
 import { SeasonTabs } from '@/components/admin/season-tabs'
 import { EditShowButton } from '@/components/admin/edit-show-button'
 import { CastEditor } from '@/components/admin/cast-editor'
@@ -15,8 +17,26 @@ export default async function ShowDetailPage({
   params: Promise<{ locale: string; id: string }>
 }) {
   const { id } = await params
-  const supabase = await createClient()
+  const viewer = await createClient()
   const tDash = await getTranslations('admin.dashboard')
+
+  // The public role intentionally cannot read episode playback identifiers.
+  // Re-check the admin identity before using the server-only client rather than
+  // relying on the parent layout guard for this privileged page read.
+  const {
+    data: { user },
+  } = await viewer.auth.getUser()
+  const { data: config } = await viewer
+    .from('app_config')
+    .select('admin_user_id')
+    .eq('id', 1)
+    .single()
+  if (!user || config?.admin_user_id !== user.id) {
+    const locale = await getLocale()
+    return redirect({ href: '/watch', locale })
+  }
+
+  const supabase = createAdminClient()
 
   const { data: show, error: showError } = await supabase
     .from('shows')

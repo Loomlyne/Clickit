@@ -8,6 +8,8 @@ import {
   stripStorageCacheBust,
 } from '@/lib/supabase-media'
 
+export { getYouTubeApiKey, hasYouTubeApiKey } from '@/lib/youtube-api-key'
+
 // ---------------------------------------------------------------------------
 // Shape of the admin-controlled site config (backed by app_config row id=1).
 // JSONB columns are typed strictly here; the DB stores them as jsonb so the
@@ -120,7 +122,7 @@ export type AppConfig = {
   footer: FooterContent
   ctaCopy: CtaCopy
   genreConfig: GenreConfig
-  // Integrations — note: youtubeApiKey is NEVER included in public reads
+  // Integrations. The YouTube Data API key is server-only and not config.
   googleAnalyticsId: string | null
   metaPixelId: string | null
   // Feature flags
@@ -214,7 +216,7 @@ export const DEFAULT_TOP_TICKER: TopTickerConfig = {
 // getAppConfig() — cached public read.
 //
 // - Uses the cookie-free createPublicClient (unstable_cache forbids next/headers).
-// - NEVER selects youtube_api_key (column privilege revoked for anon/auth).
+// - Never includes server-only secrets such as YOUTUBE_API_KEY.
 // - Tagged 'site-config' (same tag as getHeroVideo) so one updateTag call
 //   invalidates the whole site config on save.
 // ---------------------------------------------------------------------------
@@ -227,8 +229,8 @@ export const DEFAULT_TOP_TICKER: TopTickerConfig = {
 export const getAppConfig = cache(unstable_cache(
   async (): Promise<AppConfig> => {
     const supabase = createPublicClient()
-    // Select every non-sensitive column explicitly. youtube_api_key is
-    // deliberately omitted.
+    // Select every public config field explicitly. Server-only secrets are
+    // deliberately absent from app_config.
     const { data } = await supabase
       .from('app_config')
       .select(
@@ -455,23 +457,4 @@ function mergeTopTicker(v: unknown): TopTickerConfig {
     enabled,
     items: items.length > 0 ? items : DEFAULT_TOP_TICKER.items,
   }
-}
-
-// ---------------------------------------------------------------------------
-// Admin-only helper: reads the server-side-only youtube_api_key.
-// Called from server actions / API routes that run with service-role access
-// OR from the admin-authenticated supabase server client.
-// ---------------------------------------------------------------------------
-
-export async function getYouTubeApiKey(): Promise<string | null> {
-  // Uses the admin client (service role) to bypass the column REVOKE.
-  const { createAdminClient } = await import('@/lib/supabase/admin')
-  const supabase = createAdminClient()
-  const { data } = await supabase
-    .from('app_config')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .select('youtube_api_key' as any)
-    .eq('id', 1)
-    .single<{ youtube_api_key: string | null }>()
-  return data?.youtube_api_key ?? null
 }

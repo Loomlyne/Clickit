@@ -26,6 +26,7 @@ import {
 import { getLocale } from '@/lib/locale-server'
 import { getIsMobile } from '@/lib/device'
 import { siteUrl } from '@/lib/site-url'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 import { JsonLd } from '@/components/seo/json-ld'
 
 interface Props {
@@ -41,7 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // link still see Arabic copy in the WhatsApp/Slack preview.
   const view = mapShow(show, locale)
   const canonical = `/series/${show.slug}`
-  const ogImage = show.hero_url ?? show.poster_url ?? undefined
+  const ogImage = view.heroImageUrl ?? view.posterUrl
 
   return {
     title: `${view.title} | Clickit Story`,
@@ -98,6 +99,10 @@ export default async function SeriesDetailPage({ params }: Props) {
   ])
 
   const viewSeasons = seasons.map((s) => mapSeason(s, locale))
+  const viewCastMembers = (castMembers ?? []).map((member) => ({
+    ...member,
+    image_url: stripStorageCacheBust(member.image_url) ?? member.image_url,
+  }))
 
   // Group episodes by season (in-memory, no extra queries)
   const viewEpisodesBySeason: Record<string, ViewEpisode[]> = {}
@@ -183,12 +188,12 @@ export default async function SeriesDetailPage({ params }: Props) {
       />
 
       {/* Cast */}
-      {castMembers && castMembers.length > 0 && (
+      {viewCastMembers.length > 0 && (
         <div className="mt-12 px-6 md:px-12">
           <div className="mx-auto max-w-7xl">
             <div className="label mb-4">{t('cast')}</div>
             <div className="scrollbar-hide flex gap-5 overflow-x-auto pb-3">
-              {castMembers.map((c) => (
+              {viewCastMembers.map((c) => (
                 <div
                   key={c.id}
                   className="shrink-0 text-center"

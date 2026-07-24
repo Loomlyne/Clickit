@@ -8,12 +8,16 @@
     "analyze": "ANALYZE=true next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test:unit": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test 'tests/unit/**/*.test.ts'",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "node --import jiti/register --test 'tests/unit/**/*.test.ts'",
+    "test:e2e:smoke": "PLAYWRIGHT_SMOKE=1 playwright test tests/e2e/smoke.spec.ts",
     "gen-types": "supabase gen types typescript --project-id \"lajguozmtissnnfccmej\" --schema public > src/lib/database.types.ts",
     "rewrite-slugs": "node scripts/rewrite-slugs.mjs",
-    "fix-archived-show-duplicates": "node scripts/fix-archived-show-duplicates.mjs"
+    "fix-archived-show-duplicates": "node scripts/fix-archived-show-duplicates.mjs",
+    "r2:media": "node scripts/migrate-supabase-media-to-r2.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1094.0",
     "@hookform/resolvers": "^5.2.2",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.0",
@@ -57,10 +61,12 @@
     "eslint": "^9",
     "eslint-config-next": "^16.2.9",
     "eslint-config-prettier": "^10.1.8",
+    "jiti": "^2.6.1",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "supabase": "^2.84.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.114.0"
   }
 }

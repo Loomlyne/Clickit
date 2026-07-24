@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { uploadArtwork } from '@/app/[locale]/admin/actions'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 interface ArtworkUploadZoneProps {
   showId: string
@@ -44,6 +45,7 @@ export function ArtworkUploadZone({
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentUrl)
   const inputRef = useRef<HTMLInputElement>(null)
   const t = useTranslations('admin.artwork')
+  const displayUrl = stripStorageCacheBust(previewUrl) ?? previewUrl
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -119,7 +121,7 @@ export function ArtworkUploadZone({
         <div className="relative overflow-hidden rounded-lg border border-white/8 bg-white/[0.02]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={previewUrl}
+            src={displayUrl ?? previewUrl}
             alt={label}
             className="h-32 w-full object-cover"
           />

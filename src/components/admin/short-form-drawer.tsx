@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { createShort, updateShort } from '@/app/[locale]/admin/actions'
 import { extractYouTubeId } from '@/lib/youtube'
 import type { Database } from '@/lib/database.types'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 type Short = Database['public']['Tables']['shorts']['Row']
 
@@ -94,6 +95,8 @@ export function ShortFormDrawer({
   })
 
   const thumbnailUrl = watch('thumbnail_url')
+  const thumbnailPreviewUrl =
+    stripStorageCacheBust(thumbnailUrl) ?? thumbnailUrl
   const videoId = watch('youtube_video_id')
   const youtubeUrl = watch('youtube_url')
 
@@ -236,10 +239,10 @@ export function ShortFormDrawer({
           </div>
 
           {/* Preview thumbnail */}
-          {thumbnailUrl && (
+          {thumbnailPreviewUrl && (
             <div className="flex items-start gap-4 rounded-lg border border-white/8 bg-white/[0.02] p-3">
               <img
-                src={thumbnailUrl}
+                src={thumbnailPreviewUrl}
                 alt={t('thumbnailAlt')}
                 className="h-20 w-auto rounded object-cover"
               />
