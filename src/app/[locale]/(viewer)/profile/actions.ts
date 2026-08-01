@@ -4,9 +4,25 @@ import { revalidatePath } from 'next/cache'
 import {
   assertPublicMediaWriteReady,
   mirrorPublicMediaObject,
+  prepareMirroredPublicMediaDeletion,
 } from '@/lib/r2-media'
 import { createClient } from '@/lib/supabase/server'
 import { stripStorageCacheBust } from '@/lib/supabase-media'
+
+function getAvatarStoragePath(url: string | null | undefined) {
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    const prefix = '/storage/v1/object/public/avatars/'
+    if (!parsed.pathname.startsWith(prefix)) return null
+    const path = decodeURIComponent(parsed.pathname.slice(prefix.length))
+    return path && !path.startsWith('/') && !path.split('/').includes('..')
+      ? path
+      : null
+  } catch {
+    return null
+  }
+}
 
 export async function updateProfile(data: { display_name: string }) {
   const supabase = await createClient()
@@ -45,9 +61,39 @@ export async function uploadAvatar(formData: FormData) {
   if (!allowed.includes(file.type))
     throw new Error('Only WebP, PNG, or JPEG images allowed')
 
+  const { data: previousProfile, error: previousProfileError } = await supabase
+    .from('profiles')
+    .select('avatar_url')
+    .eq('id', user.id)
+    .single()
+  if (previousProfileError || !previousProfile) {
+    throw new Error(previousProfileError?.message ?? 'Could not load profile')
+  }
+
+  const cleanupAvatarMedia = async (targetPath: string) => {
+    try {
+      const deletion = await prepareMirroredPublicMediaDeletion('avatars', [
+        targetPath,
+      ])
+      const { error } = await supabase.storage
+        .from('avatars')
+        .remove([targetPath])
+      if (error) {
+        await deletion.rollback()
+        console.error('[uploadAvatar] media cleanup failed', error)
+        return
+      }
+      if (!(await deletion.commit())) {
+        console.error('[uploadAvatar] media cleanup failed')
+      }
+    } catch (error) {
+      console.error('[uploadAvatar] media cleanup failed', error)
+    }
+  }
+
   const ext =
     file.type.split('/')[1] === 'jpeg' ? 'jpg' : file.type.split('/')[1]
-  const path = `${user.id}/avatar.${ext}`
+  const path = `${user.id}/avatar-${Date.now()}.${ext}`
 
   assertPublicMediaWriteReady()
 
@@ -58,12 +104,22 @@ export async function uploadAvatar(formData: FormData) {
 
   if (uploadError) throw new Error(uploadError.message)
 
-  await mirrorPublicMediaObject({
-    bucket: 'avatars',
-    key: path,
-    body: file,
-    contentType: file.type,
-  })
+  try {
+    await mirrorPublicMediaObject({
+      bucket: 'avatars',
+      key: path,
+      body: file,
+      contentType: file.type,
+    })
+  } catch (error) {
+    const { error: removeError } = await supabase.storage
+      .from('avatars')
+      .remove([path])
+    if (removeError) {
+      console.error('[uploadAvatar] source cleanup failed', removeError)
+    }
+    throw error
+  }
 
   // Get public URL
   const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
@@ -77,7 +133,15 @@ export async function uploadAvatar(formData: FormData) {
     .update({ avatar_url: storedAvatarUrl, updated_at: new Date().toISOString() })
     .eq('id', user.id)
 
-  if (profileError) throw new Error(profileError.message)
+  if (profileError) {
+    await cleanupAvatarMedia(path)
+    throw new Error(profileError.message)
+  }
+
+  const previousPath = getAvatarStoragePath(previousProfile.avatar_url)
+  if (previousPath && previousPath !== path) {
+    await cleanupAvatarMedia(previousPath)
+  }
 
   revalidatePath('/profile')
   revalidatePath('/', 'layout') // refresh navbar avatar

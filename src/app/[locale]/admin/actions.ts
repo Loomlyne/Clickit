@@ -27,21 +27,64 @@ type ActionResult<T = unknown> = {
   data?: T
 }
 
-async function deleteMirroredPublicMedia(
+async function stageMirroredPublicMediaDeletion(
   admin: ReturnType<typeof createAdminClient>,
   bucket: 'show-artwork' | 'site-assets' | 'avatars',
   paths: string[]
 ): Promise<MirroredPublicMediaDeletion> {
   const r2Deletion = await prepareMirroredPublicMediaDeletion(bucket, paths)
-  const { error } = await admin.storage.from(bucket).remove(paths)
-  if (!error) return r2Deletion
+  return {
+    commit: async () => {
+      const { error } = await admin.storage.from(bucket).remove(paths)
+      if (error) {
+        await r2Deletion.rollback()
+        return false
+      }
+      return r2Deletion.commit()
+    },
+    rollback: r2Deletion.rollback,
+  }
+}
 
-  const restored = await r2Deletion.rollback()
-  throw new Error(
-    restored
-      ? error.message
-      : `${error.message}; R2 rollback also failed`
-  )
+async function removeMirroredPublicMedia(
+  admin: ReturnType<typeof createAdminClient>,
+  bucket: 'show-artwork' | 'site-assets' | 'avatars',
+  paths: string[]
+) {
+  const deletion = await stageMirroredPublicMediaDeletion(admin, bucket, paths)
+  return deletion.commit()
+}
+
+async function cleanupMirroredPublicMedia(
+  admin: ReturnType<typeof createAdminClient>,
+  bucket: 'show-artwork' | 'site-assets' | 'avatars',
+  paths: string[],
+  label: string
+) {
+  try {
+    if (!(await removeMirroredPublicMedia(admin, bucket, paths))) {
+      console.error(`${label} media cleanup failed`)
+    }
+  } catch (error) {
+    console.error(`${label} media cleanup failed`, error)
+  }
+}
+
+async function mirrorUploadedPublicMedia(
+  admin: ReturnType<typeof createAdminClient>,
+  input: Parameters<typeof mirrorPublicMediaObject>[0]
+) {
+  try {
+    await mirrorPublicMediaObject(input)
+  } catch (error) {
+    const { error: removeError } = await admin.storage
+      .from(input.bucket)
+      .remove([input.key])
+    if (removeError) {
+      console.error('[mirrorUploadedPublicMedia] source cleanup failed', removeError)
+    }
+    throw error
+  }
 }
 
 export type SignedVideoUploadTarget = {
@@ -917,7 +960,7 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
       const paths = await listShowFolderFiles(bucket, ['shows', id].join('/'))
       if (paths.length === 0) return
       stagedMediaDeletes.push(
-        await deleteMirroredPublicMedia(admin, bucket, paths)
+        await stageMirroredPublicMediaDeletion(admin, bucket, paths)
       )
     }
     try {
@@ -940,7 +983,7 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
       stagedMediaDeletes.map((deletion) => deletion.commit())
     )
     if (!backupCleanup.every(Boolean)) {
-      console.error('[deleteShowPermanently] R2 delete backup cleanup failed')
+      console.error('[deleteShowPermanently] media cleanup failed')
     }
 
     await logAudit({
@@ -1740,7 +1783,7 @@ export async function uploadArtwork(
 
     if (error) return { success: false, error: error.message }
 
-    await mirrorPublicMediaObject({
+    await mirrorUploadedPublicMedia(admin, {
       bucket: 'show-artwork',
       key: path,
       body: uploadBody,
@@ -1773,12 +1816,10 @@ export async function uploadArtwork(
 // Hero Video Management
 // ---------------------------------------------------------------------------
 
-// Desktop (horizontal 16:9) and mobile (vertical 9:16) hero clips live at fixed,
-// distinct storage paths so each variant can be replaced independently.
 type HeroVariant = 'desktop' | 'mobile'
-const HERO_VIDEO_PATH: Record<HeroVariant, string> = {
-  desktop: 'hero/video.mp4',
-  mobile: 'hero/video-mobile.mp4',
+const HERO_VIDEO_PREFIX: Record<HeroVariant, string> = {
+  desktop: 'hero/video',
+  mobile: 'hero/video-mobile',
 }
 const HERO_URL_COLUMN: Record<HeroVariant, 'hero_video_url' | 'hero_video_mobile_url'> = {
   desktop: 'hero_video_url',
@@ -1787,6 +1828,15 @@ const HERO_URL_COLUMN: Record<HeroVariant, 'hero_video_url' | 'hero_video_mobile
 const HERO_TYPE_COLUMN: Record<HeroVariant, 'hero_video_type' | 'hero_video_mobile_type'> = {
   desktop: 'hero_video_type',
   mobile: 'hero_video_mobile_type',
+}
+
+function createHeroVideoPath(variant: HeroVariant) {
+  return `${HERO_VIDEO_PREFIX[variant]}-${Date.now()}.mp4`
+}
+
+function isHeroVideoUploadPath(path: string, variant: HeroVariant) {
+  const prefix = HERO_VIDEO_PREFIX[variant].replace('/', '\\/')
+  return new RegExp(`^${prefix}-\\d+\\.mp4$`).test(path)
 }
 
 async function updateHeroVideoConfig(
@@ -1859,10 +1909,10 @@ export async function createHeroVideoUpload(
       return { success: false, error: 'Video must be under 50MB' }
     }
 
-    const path = HERO_VIDEO_PATH[variant]
+    const path = createHeroVideoPath(variant)
     const { data, error } = await admin.storage
       .from('site-assets')
-      .createSignedUploadUrl(path, { upsert: true })
+      .createSignedUploadUrl(path)
 
     if (error) return { success: false, error: error.message }
 
@@ -1884,9 +1934,12 @@ export async function saveHeroVideoUpload(
     await assertAdmin()
     const admin = createAdminClient()
 
-    if (path !== HERO_VIDEO_PATH[variant]) {
+    if (!isHeroVideoUploadPath(path, variant)) {
       return { success: false, error: 'Invalid upload path' }
     }
+
+    const previous = await getHeroVideoConfig(admin, variant)
+    if (previous.error) return { success: false, error: previous.error.message }
 
     const { data: uploadedFile, error: downloadError } = await admin.storage
       .from('site-assets')
@@ -1909,7 +1962,7 @@ export async function saveHeroVideoUpload(
       }
     }
 
-    await mirrorPublicMediaObject({
+    await mirrorUploadedPublicMedia(admin, {
       bucket: 'site-assets',
       key: path,
       body: uploadedFile,
@@ -1932,7 +1985,25 @@ export async function saveHeroVideoUpload(
       } as never)
       .eq('id', 1)
 
-    if (error) return { success: false, error: error.message }
+    if (error) {
+      await cleanupMirroredPublicMedia(
+        admin,
+        'site-assets',
+        [path],
+        '[saveHeroVideoUpload]'
+      )
+      return { success: false, error: error.message }
+    }
+
+    const previousPath = getPublicStoragePath(previous.url, 'site-assets')
+    if (previousPath && previousPath !== path) {
+      await cleanupMirroredPublicMedia(
+        admin,
+        'site-assets',
+        [previousPath],
+        '[saveHeroVideoUpload]'
+      )
+    }
 
     updateTag('site-config')
     revalidatePath('/')
@@ -1978,9 +2049,12 @@ export async function setHeroVideoUrl(
     const previous = await getHeroVideoConfig(admin, variant)
     if (previous.error) return { success: false, error: previous.error.message }
 
-    const r2Deletion = await prepareMirroredPublicMediaDeletion('site-assets', [
-      HERO_VIDEO_PATH[variant],
-    ])
+    const previousPath = getPublicStoragePath(previous.url, 'site-assets')
+    const mediaDeletion = previousPath
+      ? await stageMirroredPublicMediaDeletion(admin, 'site-assets', [
+          previousPath,
+        ])
+      : null
     const configError = await updateHeroVideoConfig(
       admin,
       variant,
@@ -1988,36 +2062,17 @@ export async function setHeroVideoUrl(
       'youtube'
     )
     if (configError) {
-      const restored = await r2Deletion.rollback()
+      const restored = await mediaDeletion?.rollback()
       return {
         success: false,
-        error: restored
+        error: restored !== false
           ? configError.message
           : 'Could not save the hero URL and restore R2 media',
       }
     }
 
-    const { error: removeError } = await admin.storage
-      .from('site-assets')
-      .remove([HERO_VIDEO_PATH[variant]])
-    if (removeError) {
-      const [restoredR2, restoredConfig] = await Promise.all([
-        r2Deletion.rollback(),
-        updateHeroVideoConfig(admin, variant, previous.url, previous.type).then(
-          (error) => !error
-        ),
-      ])
-      return {
-        success: false,
-        error:
-          restoredR2 && restoredConfig
-            ? 'Could not remove the existing hero video'
-            : 'Could not remove the existing hero video and restore its previous state',
-      }
-    }
-
-    if (!(await r2Deletion.commit())) {
-      console.error('[setHeroVideoUrl] R2 delete backup cleanup failed')
+    if (mediaDeletion && !(await mediaDeletion.commit())) {
+      console.error('[setHeroVideoUrl] media cleanup failed')
     }
 
     updateTag('site-config')
@@ -2043,41 +2098,25 @@ export async function removeHeroVideo(
     const previous = await getHeroVideoConfig(admin, variant)
     if (previous.error) return { success: false, error: previous.error.message }
 
-    const r2Deletion = await prepareMirroredPublicMediaDeletion('site-assets', [
-      HERO_VIDEO_PATH[variant],
-    ])
+    const previousPath = getPublicStoragePath(previous.url, 'site-assets')
+    const mediaDeletion = previousPath
+      ? await stageMirroredPublicMediaDeletion(admin, 'site-assets', [
+          previousPath,
+        ])
+      : null
     const configError = await updateHeroVideoConfig(admin, variant, null, null)
     if (configError) {
-      const restored = await r2Deletion.rollback()
+      const restored = await mediaDeletion?.rollback()
       return {
         success: false,
-        error: restored
+        error: restored !== false
           ? configError.message
           : 'Could not remove the hero video and restore R2 media',
       }
     }
 
-    const { error: removeError } = await admin.storage
-      .from('site-assets')
-      .remove([HERO_VIDEO_PATH[variant]])
-    if (removeError) {
-      const [restoredR2, restoredConfig] = await Promise.all([
-        r2Deletion.rollback(),
-        updateHeroVideoConfig(admin, variant, previous.url, previous.type).then(
-          (error) => !error
-        ),
-      ])
-      return {
-        success: false,
-        error:
-          restoredR2 && restoredConfig
-            ? 'Could not remove the hero video'
-            : 'Could not remove the hero video and restore its previous state',
-      }
-    }
-
-    if (!(await r2Deletion.commit())) {
-      console.error('[removeHeroVideo] R2 delete backup cleanup failed')
+    if (mediaDeletion && !(await mediaDeletion.commit())) {
+      console.error('[removeHeroVideo] media cleanup failed')
     }
 
     updateTag('site-config')
@@ -2124,7 +2163,13 @@ export async function setHeroVideoMuted(muted: boolean): Promise<ActionResult> {
 // Preloader Video Management
 // ---------------------------------------------------------------------------
 
-const PRELOADER_VIDEO_PATH = 'preloader/video.mp4'
+function createPreloaderVideoPath() {
+  return `preloader/video-${Date.now()}.mp4`
+}
+
+function isPreloaderVideoUploadPath(path: string) {
+  return /^preloader\/video-\d+\.mp4$/.test(path)
+}
 
 export async function createPreloaderVideoUpload(file: {
   name: string
@@ -2144,9 +2189,10 @@ export async function createPreloaderVideoUpload(file: {
       return { success: false, error: 'Video must be under 20MB' }
     }
 
+    const path = createPreloaderVideoPath()
     const { data, error } = await admin.storage
       .from('site-assets')
-      .createSignedUploadUrl(PRELOADER_VIDEO_PATH, { upsert: true })
+      .createSignedUploadUrl(path)
 
     if (error) return { success: false, error: error.message }
 
@@ -2167,9 +2213,25 @@ export async function savePreloaderVideoUpload(
     await assertAdmin()
     const admin = createAdminClient()
 
-    if (path !== PRELOADER_VIDEO_PATH) {
+    if (!isPreloaderVideoUploadPath(path)) {
       return { success: false, error: 'Invalid upload path' }
     }
+
+    const { data: previousConfig, error: previousConfigError } = await admin
+      .from('app_config')
+      .select('preloader_video_url')
+      .eq('id', 1)
+      .single()
+    if (previousConfigError || !previousConfig) {
+      return {
+        success: false,
+        error: previousConfigError?.message ?? 'Could not load site config',
+      }
+    }
+
+    const previousUrl = (
+      previousConfig as unknown as { preloader_video_url: string | null }
+    ).preloader_video_url
 
     const { data: uploadedFile, error: downloadError } = await admin.storage
       .from('site-assets')
@@ -2181,7 +2243,7 @@ export async function savePreloaderVideoUpload(
       }
     }
 
-    await mirrorPublicMediaObject({
+    await mirrorUploadedPublicMedia(admin, {
       bucket: 'site-assets',
       key: path,
       body: uploadedFile,
@@ -2200,7 +2262,25 @@ export async function savePreloaderVideoUpload(
       .update({ preloader_video_url: publicUrl } as never)
       .eq('id', 1)
 
-    if (error) return { success: false, error: error.message }
+    if (error) {
+      await cleanupMirroredPublicMedia(
+        admin,
+        'site-assets',
+        [path],
+        '[savePreloaderVideoUpload]'
+      )
+      return { success: false, error: error.message }
+    }
+
+    const previousPath = getPublicStoragePath(previousUrl, 'site-assets')
+    if (previousPath && previousPath !== path) {
+      await cleanupMirroredPublicMedia(
+        admin,
+        'site-assets',
+        [previousPath],
+        '[savePreloaderVideoUpload]'
+      )
+    }
 
     updateTag('site-config')
     revalidatePath('/', 'layout')
@@ -2231,50 +2311,32 @@ export async function removePreloaderVideo(): Promise<ActionResult> {
       }
     }
 
-    const r2Deletion = await prepareMirroredPublicMediaDeletion('site-assets', [
-      PRELOADER_VIDEO_PATH,
-    ])
+    const previousPreloaderUrl = (
+      previousConfig as unknown as { preloader_video_url: string | null }
+    ).preloader_video_url
+    const previousPath = getPublicStoragePath(previousPreloaderUrl, 'site-assets')
+    const mediaDeletion = previousPath
+      ? await stageMirroredPublicMediaDeletion(admin, 'site-assets', [
+          previousPath,
+        ])
+      : null
     const { error: configError } = await admin
       .from('app_config')
       .update({ preloader_video_url: null } as never)
       .eq('id', 1)
 
     if (configError) {
-      const restored = await r2Deletion.rollback()
+      const restored = await mediaDeletion?.rollback()
       return {
         success: false,
-        error: restored
+        error: restored !== false
           ? configError.message
           : 'Could not remove the preloader video and restore R2 media',
       }
     }
 
-    const { error: removeError } = await admin.storage
-      .from('site-assets')
-      .remove([PRELOADER_VIDEO_PATH])
-    if (removeError) {
-      const previousPreloaderUrl = (
-        previousConfig as unknown as { preloader_video_url: string | null }
-      ).preloader_video_url
-      const [restoredR2, restoredConfig] = await Promise.all([
-        r2Deletion.rollback(),
-        admin
-          .from('app_config')
-          .update({ preloader_video_url: previousPreloaderUrl } as never)
-          .eq('id', 1)
-          .then(({ error }) => !error),
-      ])
-      return {
-        success: false,
-        error:
-          restoredR2 && restoredConfig
-            ? 'Could not remove the preloader video'
-            : 'Could not remove the preloader video and restore its previous state',
-      }
-    }
-
-    if (!(await r2Deletion.commit())) {
-      console.error('[removePreloaderVideo] R2 delete backup cleanup failed')
+    if (mediaDeletion && !(await mediaDeletion.commit())) {
+      console.error('[removePreloaderVideo] media cleanup failed')
     }
 
     updateTag('site-config')
@@ -2363,7 +2425,7 @@ export async function saveShowVideoUpload(
       }
     }
 
-    await mirrorPublicMediaObject({
+    await mirrorUploadedPublicMedia(admin, {
       bucket: 'site-assets',
       key: path,
       body: uploadedFile,
@@ -3117,13 +3179,23 @@ export async function uploadSiteImage(
     if (!ext)
       return { success: false, error: `Unsupported image type: ${mime}` }
 
-    const pathMap: Record<typeof kind & string, string> = {
-      og: `settings/og.${ext}`,
-      favicon: `settings/favicon.${ext}`,
-      'favicon-dark': `settings/favicon-dark.${ext}`,
-      auth: `settings/auth.${ext}`,
+    const column = SITE_IMAGE_COLUMN[kind]
+    const { data: previousConfig, error: previousConfigError } = await admin
+      .from('app_config')
+      .select(column)
+      .eq('id', 1)
+      .single()
+    if (previousConfigError || !previousConfig) {
+      return {
+        success: false,
+        error: previousConfigError?.message ?? 'Could not load site config',
+      }
     }
-    const path = pathMap[kind]
+
+    const previousUrl = (
+      previousConfig as unknown as Record<string, string | null>
+    )[column]
+    const path = `settings/${kind}-${Date.now()}.${ext}`
 
     let body: Blob = file
     if (mime === 'image/svg+xml') {
@@ -3133,14 +3205,14 @@ export async function uploadSiteImage(
     const { error: uploadError } = await admin.storage
       .from('site-assets')
       .upload(path, body, {
-        upsert: true,
+        upsert: false,
         contentType: mime,
         cacheControl: '31536000',
       })
 
     if (uploadError) return { success: false, error: uploadError.message }
 
-    await mirrorPublicMediaObject({
+    await mirrorUploadedPublicMedia(admin, {
       bucket: 'site-assets',
       key: path,
       body,
@@ -3154,14 +3226,31 @@ export async function uploadSiteImage(
     // Cache-bust the URL so browsers always pick up the latest upload
     const bustedUrl = `${urlData.publicUrl}?v=${Date.now()}`
 
-    const column = SITE_IMAGE_COLUMN[kind]
     const { error: dbError } = await admin
       .from('app_config')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update({ [column]: bustedUrl } as any)
       .eq('id', 1)
 
-    if (dbError) return { success: false, error: dbError.message }
+    if (dbError) {
+      await cleanupMirroredPublicMedia(
+        admin,
+        'site-assets',
+        [path],
+        '[uploadSiteImage]'
+      )
+      return { success: false, error: dbError.message }
+    }
+
+    const previousPath = getPublicStoragePath(previousUrl, 'site-assets')
+    if (previousPath && previousPath !== path) {
+      await cleanupMirroredPublicMedia(
+        admin,
+        'site-assets',
+        [previousPath],
+        '[uploadSiteImage]'
+      )
+    }
 
     bumpSiteConfigCache()
     return { success: true, data: bustedUrl }
@@ -3181,12 +3270,38 @@ export async function removeSiteImage(
     await assertAdmin()
     const admin = createAdminClient()
     const column = SITE_IMAGE_COLUMN[kind]
+    const { data: previousConfig, error: previousConfigError } = await admin
+      .from('app_config')
+      .select(column)
+      .eq('id', 1)
+      .single()
+    if (previousConfigError || !previousConfig) {
+      return {
+        success: false,
+        error: previousConfigError?.message ?? 'Could not load site config',
+      }
+    }
+
+    const previousUrl = (
+      previousConfig as unknown as Record<string, string | null>
+    )[column]
     const { error } = await admin
       .from('app_config')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update({ [column]: null } as any)
       .eq('id', 1)
     if (error) return { success: false, error: error.message }
+
+    const previousPath = getPublicStoragePath(previousUrl, 'site-assets')
+    if (previousPath) {
+      await cleanupMirroredPublicMedia(
+        admin,
+        'site-assets',
+        [previousPath],
+        '[removeSiteImage]'
+      )
+    }
+
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
@@ -3232,7 +3347,7 @@ export async function uploadSocialIcon(
 
     if (uploadError) return { success: false, error: uploadError.message }
 
-    await mirrorPublicMediaObject({
+    await mirrorUploadedPublicMedia(admin, {
       bucket: 'site-assets',
       key: path,
       body,
@@ -3625,7 +3740,7 @@ export async function uploadCastImage(
 
     if (uploadError) return { success: false, error: uploadError.message }
 
-    await mirrorPublicMediaObject({
+    await mirrorUploadedPublicMedia(admin, {
       bucket: 'show-artwork',
       key: path,
       body: file,
@@ -3664,30 +3779,16 @@ export async function deleteCastMember(id: string): Promise<ActionResult> {
     }
 
     const imagePath = getPublicStoragePath(cast.image_url, 'show-artwork')
-    const r2Deletion = imagePath
-      ? await prepareMirroredPublicMediaDeletion('show-artwork', [imagePath])
+    const mediaDeletion = imagePath
+      ? await stageMirroredPublicMediaDeletion(admin, 'show-artwork', [
+          imagePath,
+        ])
       : null
-
-    if (imagePath) {
-      const { error: removeError } = await admin.storage
-        .from('show-artwork')
-        .remove([imagePath])
-      if (removeError) {
-        const restored = await r2Deletion?.rollback()
-        return {
-          success: false,
-          error:
-            restored === false
-              ? 'Could not remove cast media and restore R2'
-              : 'Could not remove cast media from storage',
-        }
-      }
-    }
 
     const { error } = await admin.from('show_cast').delete().eq('id', id)
 
     if (error) {
-      const restored = await r2Deletion?.rollback()
+      const restored = await mediaDeletion?.rollback()
       return {
         success: false,
         error:
@@ -3697,8 +3798,8 @@ export async function deleteCastMember(id: string): Promise<ActionResult> {
       }
     }
 
-    if (r2Deletion && !(await r2Deletion.commit())) {
-      console.error('[deleteCastMember] R2 delete backup cleanup failed')
+    if (mediaDeletion && !(await mediaDeletion.commit())) {
+      console.error('[deleteCastMember] media cleanup failed')
     }
 
     await logAudit({

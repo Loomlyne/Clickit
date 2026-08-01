@@ -1,5 +1,5 @@
 /**
- * Public media resolves to R2 when NEXT_PUBLIC_MEDIA_ORIGIN is configured.
+ * Public media resolves to R2 only after the verified cutover marker is set.
  * Before that cutover, Supabase videos retain the range-safe proxy fallback.
  */
 
@@ -8,6 +8,8 @@ const SUPABASE_PUBLIC_OBJECT_PREFIX = '/storage/v1/object/public/'
 const DEFAULT_PRELOADER_VIDEO = '/brand/clickit-preloader.mp4'
 
 const PUBLIC_BUCKETS = new Set(['show-artwork', 'site-assets', 'avatars'])
+
+const PUBLIC_MEDIA_CUTOVER_READY = 'verified'
 
 type SupabasePublicObject = {
   bucket: string
@@ -18,9 +20,15 @@ type SupabasePublicObject = {
  * path prefix, so the migration keeps each object at `bucket/key`.
  */
 export function getPublicMediaOrigin(
-  configuredOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+  configuredOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN,
+  configuredReady = process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
 ): string | null {
-  if (!configuredOrigin) return null
+  if (
+    !configuredOrigin ||
+    configuredReady?.trim() !== PUBLIC_MEDIA_CUTOVER_READY
+  ) {
+    return null
+  }
 
   try {
     const origin = new URL(configuredOrigin.trim())
@@ -78,9 +86,10 @@ function getSupabasePublicObject(
 export function toPublicR2MediaUrl(
   rawUrl: string,
   supabaseHost = getSupabaseProjectHost(),
-  configuredOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+  configuredOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN,
+  configuredReady = process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
 ): string | null {
-  const mediaOrigin = getPublicMediaOrigin(configuredOrigin)
+  const mediaOrigin = getPublicMediaOrigin(configuredOrigin, configuredReady)
   const object = getSupabasePublicObject(rawUrl, supabaseHost)
   if (!mediaOrigin || !object || !PUBLIC_BUCKETS.has(object.bucket)) return null
 
@@ -97,9 +106,10 @@ export function toPublicR2MediaUrl(
 
 export function isPublicR2MediaUrl(
   rawUrl: string | null | undefined,
-  configuredOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+  configuredOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN,
+  configuredReady = process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
 ): boolean {
-  const mediaOrigin = getPublicMediaOrigin(configuredOrigin)
+  const mediaOrigin = getPublicMediaOrigin(configuredOrigin, configuredReady)
   if (!rawUrl || !mediaOrigin) return false
 
   try {

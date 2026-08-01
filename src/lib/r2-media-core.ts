@@ -56,6 +56,7 @@ export type MirroredPublicMediaDeletion = {
 }
 
 const R2_DELETE_BACKUP_PREFIX = '__clickit-delete-backups'
+const R2_WRITE_BACKUP_PREFIX = '__clickit-write-backups'
 
 function configuredValue(
   env: R2Environment,
@@ -109,6 +110,10 @@ function createR2Client(configuration: R2Configuration): R2Client {
 }
 
 function mirrorRequired(env: R2Environment) {
+  if (env.NEXT_PUBLIC_MEDIA_CUTOVER_READY?.trim() !== 'verified') {
+    return false
+  }
+
   const configuredOrigin = env.NEXT_PUBLIC_MEDIA_ORIGIN?.trim()
   if (!configuredOrigin) return false
 
@@ -179,12 +184,24 @@ export async function mirrorPublicMediaObject(
   }
 
   const client = options.client ?? createR2Client(configuration)
+  let objectKey: string | null = null
+  let backupKey: string | null = null
+  let writeStarted = false
+
   try {
-    const key = r2ObjectKey(input.bucket, input.key)
+    objectKey = r2ObjectKey(input.bucket, input.key)
+    backupKey = await createR2WriteBackup(
+      client,
+      configuration,
+      objectKey,
+      options.transactionId ?? randomUUID()
+    )
+
+    writeStarted = true
     await client.send(
       new PutObjectCommand({
         Bucket: configuration.bucket,
-        Key: key,
+        Key: objectKey,
         Body: await r2Body(input.body),
         ContentType: input.contentType,
         CacheControl: input.cacheControl,
@@ -192,13 +209,20 @@ export async function mirrorPublicMediaObject(
     )
 
     const head = await client.send(
-      new HeadObjectCommand({ Bucket: configuration.bucket, Key: key })
+      new HeadObjectCommand({ Bucket: configuration.bucket, Key: objectKey })
     )
     if (!matchesMirroredObject(head, input)) {
       throw new Error('R2 mirror verification failed')
     }
   } catch {
+    if (objectKey && writeStarted) {
+      await rollbackR2Write(client, configuration, objectKey, backupKey)
+    }
     throw new Error('Could not mirror public media to R2')
+  }
+
+  if (backupKey) {
+    await deleteR2ObjectKeys(client, configuration, [backupKey])
   }
 
   return true
@@ -254,6 +278,58 @@ async function deleteR2ObjectKeys(
   }
 
   return false
+}
+
+async function createR2WriteBackup(
+  client: R2Client,
+  configuration: R2Configuration,
+  objectKey: string,
+  transactionId: string
+) {
+  const backupKey = `${R2_WRITE_BACKUP_PREFIX}/${transactionId}/${objectKey}`
+
+  try {
+    await client.send(
+      new CopyObjectCommand({
+        Bucket: configuration.bucket,
+        Key: backupKey,
+        CopySource: r2CopySource(configuration.bucket, objectKey),
+        MetadataDirective: 'COPY',
+      })
+    )
+  } catch (error) {
+    if (isMissingR2Object(error)) return null
+    throw error
+  }
+
+  return backupKey
+}
+
+async function rollbackR2Write(
+  client: R2Client,
+  configuration: R2Configuration,
+  objectKey: string,
+  backupKey: string | null
+) {
+  if (!backupKey) {
+    return deleteR2ObjectKeys(client, configuration, [objectKey])
+  }
+
+  try {
+    await client.send(
+      new CopyObjectCommand({
+        Bucket: configuration.bucket,
+        Key: objectKey,
+        CopySource: r2CopySource(configuration.bucket, backupKey),
+        MetadataDirective: 'COPY',
+      })
+    )
+  } catch {
+    return false
+  }
+
+  await deleteR2ObjectKeys(client, configuration, [backupKey])
+  return true
 }
 
 function noOpMirroredPublicMediaDeletion(): MirroredPublicMediaDeletion {

@@ -195,8 +195,10 @@ test('streams a full 200 response without buffering it', async () => {
 test('keeps the public CDN URL contract and avoids nested proxy URLs', () => {
   const originalSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const originalMediaOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+  const originalMediaCutoverReady = process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
   delete process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+  delete process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
 
   try {
     const storageUrl =
@@ -224,14 +226,56 @@ test('keeps the public CDN URL contract and avoids nested proxy URLs', () => {
     } else {
       process.env.NEXT_PUBLIC_MEDIA_ORIGIN = originalMediaOrigin
     }
+    if (originalMediaCutoverReady === undefined) {
+      delete process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
+    } else {
+      process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY = originalMediaCutoverReady
+    }
+  }
+})
+
+test('retains the range-safe fallback until the cutover is marked verified', () => {
+  const originalSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const originalMediaOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+  const originalMediaCutoverReady = process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
+  process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
+  process.env.NEXT_PUBLIC_MEDIA_ORIGIN = 'https://media.example.com'
+  delete process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
+
+  try {
+    const source =
+      'https://example.supabase.co/storage/v1/object/public/show-artwork/hero.mp4?v=7'
+    assert.equal(getPublicMediaOrigin(), null)
+    assert.equal(
+      toCdnStorageUrl(source),
+      '/api/cdn/storage?url=https%3A%2F%2Fexample.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fshow-artwork%2Fhero.mp4'
+    )
+  } finally {
+    if (originalSupabaseUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL
+    } else {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = originalSupabaseUrl
+    }
+    if (originalMediaOrigin === undefined) {
+      delete process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+    } else {
+      process.env.NEXT_PUBLIC_MEDIA_ORIGIN = originalMediaOrigin
+    }
+    if (originalMediaCutoverReady === undefined) {
+      delete process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
+    } else {
+      process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY = originalMediaCutoverReady
+    }
   }
 })
 
 test('maps Supabase public media to direct R2 bucket and key paths after cutover', () => {
   const originalSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const originalMediaOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+  const originalMediaCutoverReady = process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
   process.env.NEXT_PUBLIC_MEDIA_ORIGIN = 'https://media.example.com/'
+  process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY = 'verified'
 
   try {
     const source =
@@ -258,14 +302,21 @@ test('maps Supabase public media to direct R2 bucket and key paths after cutover
     } else {
       process.env.NEXT_PUBLIC_MEDIA_ORIGIN = originalMediaOrigin
     }
+    if (originalMediaCutoverReady === undefined) {
+      delete process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
+    } else {
+      process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY = originalMediaCutoverReady
+    }
   }
 })
 
 test('rejects non-origin media configuration and retains the range-safe fallback', () => {
   const originalSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const originalMediaOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+  const originalMediaCutoverReady = process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
   process.env.NEXT_PUBLIC_MEDIA_ORIGIN = 'https://media.example.com/media'
+  process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY = 'verified'
 
   try {
     const source =
@@ -290,14 +341,21 @@ test('rejects non-origin media configuration and retains the range-safe fallback
     } else {
       process.env.NEXT_PUBLIC_MEDIA_ORIGIN = originalMediaOrigin
     }
+    if (originalMediaCutoverReady === undefined) {
+      delete process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
+    } else {
+      process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY = originalMediaCutoverReady
+    }
   }
 })
 
 test('does not cut over buckets that are absent from the migration manifest', () => {
   const originalSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const originalMediaOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+  const originalMediaCutoverReady = process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
   process.env.NEXT_PUBLIC_MEDIA_ORIGIN = 'https://media.example.com'
+  process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY = 'verified'
 
   try {
     const source =
@@ -314,6 +372,11 @@ test('does not cut over buckets that are absent from the migration manifest', ()
       delete process.env.NEXT_PUBLIC_MEDIA_ORIGIN
     } else {
       process.env.NEXT_PUBLIC_MEDIA_ORIGIN = originalMediaOrigin
+    }
+    if (originalMediaCutoverReady === undefined) {
+      delete process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
+    } else {
+      process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY = originalMediaCutoverReady
     }
   }
 })
