@@ -1,6 +1,5 @@
 import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
-import type { QueryData } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { createPublicClient } from '@/lib/supabase/public'
 import type { Database } from '@/lib/database.types'
@@ -241,14 +240,7 @@ export const getHeroVideo = unstable_cache(
       .single()
 
     if (!data?.hero_video_url || !data?.hero_video_type) return null
-    const type = data.hero_video_type as HeroVideo['type']
-    return {
-      url:
-        type === 'mp4'
-          ? (resolveSupabaseVideoUrl(data.hero_video_url) ?? data.hero_video_url)
-          : data.hero_video_url,
-      type,
-    }
+    return { url: data.hero_video_url, type: data.hero_video_type as HeroVideo['type'] }
   },
   ['hero-video'],
   { revalidate: 900, tags: ['site-config'] } // 15 min
@@ -491,26 +483,21 @@ export const getNewEpisodes = unstable_cache(
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-    // The public episode projection deliberately comes from episodes_view.
-    // Base-table access excludes youtube_video_id so an anonymous client
-    // cannot fetch unpublished playback identifiers through PostgREST.
-    const query = supabase
-      .from('episodes_view')
-      .select('*')
+    const { data } = await supabase
+      .from('episodes')
+      .select('*, shows!inner(title, slug, brand_color, poster_url, status)')
       .eq('status', 'published')
       .eq('archived', false)
       .gte('created_at', thirtyDaysAgo.toISOString())
       .order('created_at', { ascending: false })
       .limit(20)
-    type NewEpisodeRow = QueryData<typeof query>[number]
-    const { data } = await query
 
-    return (data ?? []).map((e: NewEpisodeRow) => ({
-      ...mapEpisode(e as unknown as DbEpisode),
-      showTitle: e.show_title ?? '',
-      showSlug: e.show_slug ?? '',
-      showBrandColor: (e.show_brand_color || 'brand-blue') as ViewShow['brandColor'],
-      showPosterUrl: stripStorageCacheBust(e.show_poster_url ?? undefined),
+    return (data ?? []).map((e: any) => ({
+      ...mapEpisode(e),
+      showTitle: e.shows.title,
+      showSlug: e.shows.slug,
+      showBrandColor: (e.shows.brand_color || 'brand-blue') as ViewShow['brandColor'],
+      showPosterUrl: stripStorageCacheBust(e.shows.poster_url ?? undefined),
     }))
   },
   ['new-episodes'],
@@ -727,7 +714,7 @@ export async function getContinueWatchingEpisodes(
   // plan, so Postgres skips rows for archived shows/episodes before the
   // network boundary. Old code filtered client-side — it still worked, but
   // wasted bandwidth and CPU on progress rows we were about to drop anyway.
-  const query = supabase
+  const { data, error } = await supabase
     .from('watch_progress')
     .select(
       'progress_seconds, duration_seconds, episode_id, episodes_view!inner(id, title, title_ar, episode_number, status, archived, youtube_video_id, show_id, show_title, show_slug, show_brand_color, seasons!inner(season_number), shows!inner(title_ar))'
@@ -739,8 +726,6 @@ export async function getContinueWatchingEpisodes(
     .eq('episodes_view.status', 'published')
     .order('updated_at', { ascending: false })
     .limit(20)
-  type ContinueWatchingRow = QueryData<typeof query>[number]
-  const { data, error } = await query
 
   if (error) {
     console.error('[getContinueWatchingEpisodes]', error.message)
@@ -750,21 +735,21 @@ export async function getContinueWatchingEpisodes(
   if (!data) return []
 
   const items = await Promise.all(
-    data.slice(0, 10).map(async (row: ContinueWatchingRow) => {
+    data.slice(0, 10).map(async (row: any) => {
       const ep = row.episodes_view
       const dur = row.duration_seconds || 1
       const [episodeTitle, showTitle] = await Promise.all([
-        localizedField(locale, ep.title!, ep.title_ar),
-        localizedField(locale, ep.show_title!, ep.shows?.title_ar),
+        localizedField(locale, ep.title, ep.title_ar),
+        localizedField(locale, ep.show_title, ep.shows?.title_ar),
       ])
       return {
-        episodeId: ep.id!,
+        episodeId: ep.id,
         episodeTitle,
-        episodeNumber: ep.episode_number!,
+        episodeNumber: ep.episode_number,
         seasonNumber: ep.seasons.season_number,
-        showId: ep.show_id!,
+        showId: ep.show_id,
         showTitle,
-        showSlug: ep.show_slug!,
+        showSlug: ep.show_slug,
         showBrandColor: (ep.show_brand_color || 'brand-blue') as ViewShow['brandColor'],
         youtubeVideoId: ep.youtube_video_id ?? null,
         progressSeconds: row.progress_seconds,
@@ -841,7 +826,7 @@ export const getComingSoonEpisodes = unstable_cache(
   > => {
     const supabase = createPublicClient()
     const nowIso = new Date().toISOString()
-    const query = supabase
+    const { data, error } = await supabase
       .from('episodes_view')
       .select(
         'id, show_id, season_id, episode_number, title, title_ar, description, description_ar, duration, status, publish_at, archived, created_at, updated_at, show_title, show_slug, show_brand_color, show_status, shows!inner(title_ar)'
@@ -851,8 +836,6 @@ export const getComingSoonEpisodes = unstable_cache(
       .or(`publish_at.is.null,publish_at.gt.${nowIso}`)
       .order('created_at', { ascending: false })
       .limit(20)
-    type ComingSoonRow = QueryData<typeof query>[number]
-    const { data, error } = await query
 
     if (error) {
       console.error('[getComingSoonEpisodes]', error.message)
@@ -860,27 +843,17 @@ export const getComingSoonEpisodes = unstable_cache(
     }
 
     return Promise.all(
-      (data ?? []).map(async (row: ComingSoonRow) => {
-        const [title, description, showTitle] = await Promise.all([
-          localizedField(locale, row.title!, row.title_ar),
-          localizedField(locale, row.description!, row.description_ar),
-          localizedField(locale, row.show_title!, row.shows?.title_ar),
-        ])
+      (data ?? []).map(async (row: any) => {
+        const episode = await mapEpisodeLocalized(row as DbEpisode, locale)
+        const showTitle = await localizedField(
+          locale,
+          row.show_title,
+          row.shows?.title_ar
+        )
         return {
-          id: row.id!,
-          showId: row.show_id!,
-          seasonId: row.season_id!,
-          episodeNumber: row.episode_number!,
-          title,
-          description,
-          duration: row.duration,
-          status: row.status as ViewEpisode['status'],
-          youtubeId: null,
-          publishedAt: row.created_at ?? undefined,
-          publishAt: row.publish_at,
-          isLive: isEpisodeLive(row.status!, row.publish_at),
+          ...episode,
           showTitle,
-          showSlug: row.show_slug!,
+          showSlug: row.show_slug,
           showBrandColor: row.show_brand_color as ViewShow['brandColor'],
         }
       })
@@ -919,17 +892,15 @@ export async function getWatchlistShows(
   locale: Locale = DEFAULT_LOCALE
 ): Promise<ViewShow[]> {
   const supabase = await createClient()
-  const query = supabase
+  const { data } = await supabase
     .from('watchlist')
     .select('show_id, created_at, shows(*)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
-  type WatchlistRow = QueryData<typeof query>[number]
-  const { data } = await query
 
   if (!data) return []
   const shows = data
-    .map((row: WatchlistRow) => row.shows)
+    .map((row: any) => row.shows)
     .filter(Boolean) as DbShow[]
   return mapShowsLocalized(shows, locale)
 }
@@ -955,7 +926,7 @@ export type RecentlyWatchedItem = {
 export async function getRecentlyWatched(userId: string): Promise<RecentlyWatchedItem[]> {
   const supabase = await createClient()
   // Same archived-at-the-DB pattern as getContinueWatchingEpisodes above.
-  const query = supabase
+  const { data } = await supabase
     .from('watch_progress')
     .select('progress_seconds, duration_seconds, completed, updated_at, episode_id, episodes!inner(id, title, episode_number, status, archived, season_id, show_id, seasons!inner(season_number), shows!inner(title, slug, brand_color, archived))')
     .eq('user_id', userId)
@@ -964,14 +935,12 @@ export async function getRecentlyWatched(userId: string): Promise<RecentlyWatche
     .eq('episodes.shows.archived', false)
     .order('updated_at', { ascending: false })
     .limit(20)
-  type RecentlyWatchedRow = QueryData<typeof query>[number]
-  const { data } = await query
 
   if (!data) return []
 
   return data
     .slice(0, 10)
-    .map((row: RecentlyWatchedRow) => {
+    .map((row: any) => {
       const ep = row.episodes
       return {
         episodeId: ep.id,
@@ -995,12 +964,11 @@ export async function getEpisodesProgress(
 ): Promise<Record<string, { progressPercent: number; completed: boolean }>> {
   if (episodeIds.length === 0) return {}
   const supabase = await createClient()
-  const query = supabase
+  const { data } = await supabase
     .from('watch_progress')
     .select('episode_id, progress_seconds, duration_seconds, completed')
     .eq('user_id', userId)
     .in('episode_id', episodeIds)
-  const { data } = await query
 
   if (!data) return {}
 
@@ -1045,19 +1013,16 @@ export async function getWatchedShowIds(
 ): Promise<Set<string>> {
   if (showIds.length === 0) return new Set()
   const supabase = await createClient()
-  const query = supabase
+  const { data } = await supabase
     .from('watch_progress')
     .select('episodes!inner(show_id)')
     .eq('user_id', userId)
     .gt('progress_seconds', 0)
     .in('episodes.show_id', showIds)
-  type WatchedShowRow = QueryData<typeof query>[number]
-  const { data } = await query
-  const rows: WatchedShowRow[] = data ?? []
 
   const watchedIds = new Set<string>()
-  for (const row of rows) {
-    const showId = row.episodes?.show_id
+  for (const row of data ?? []) {
+    const showId = (row as any).episodes?.show_id as string | undefined
     if (showId) watchedIds.add(showId)
   }
 
@@ -1073,17 +1038,15 @@ export async function getLikedShows(
   locale: Locale = DEFAULT_LOCALE
 ): Promise<ViewShow[]> {
   const supabase = await createClient()
-  const query = supabase
+  const { data } = await supabase
     .from('likes')
     .select('show_id, created_at, shows(*)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
-  type LikedShowRow = QueryData<typeof query>[number]
-  const { data } = await query
 
   if (!data) return []
   const shows = data
-    .map((row: LikedShowRow) => row.shows)
+    .map((row: any) => row.shows)
     .filter(Boolean) as DbShow[]
   return mapShowsLocalized(shows, locale)
 }
@@ -1152,7 +1115,7 @@ export function mapShort(db: DbShort): ViewShort {
     youtubeVideoId: db.youtube_video_id,
     title: db.title,
     channelName: db.channel_name,
-    thumbnailUrl: stripStorageCacheBust(db.thumbnail_url ?? undefined) ?? null,
+    thumbnailUrl: db.thumbnail_url,
     durationSeconds: db.duration_seconds,
     genre: db.genre,
     sortOrder: db.sort_order ?? 0,

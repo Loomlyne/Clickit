@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { motion, AnimatePresence } from 'motion/react'
 import { Plus, Check } from 'lucide-react'
@@ -23,7 +23,7 @@ export function WatchlistToggleButton({
   userId,
 }: WatchlistToggleButtonProps) {
   const { isInList, toggle } = useWatchlist(showId, initialSaved, userId)
-  const [justAdded, setJustAdded] = useState(false)
+  const justAddedRef = useRef(false)
   const t = useTranslations('show')
 
   const handleClick = (e?: React.MouseEvent) => {
@@ -31,7 +31,7 @@ export function WatchlistToggleButton({
       e.preventDefault()
       e.stopPropagation()
     }
-    if (!isInList) setJustAdded(true)
+    if (!isInList) justAddedRef.current = true
     toggle()
   }
 
@@ -41,7 +41,7 @@ export function WatchlistToggleButton({
     <span className="relative flex items-center justify-center">
       {/* Confirmation ring on add */}
       <AnimatePresence>
-        {isInList && justAdded && (
+        {isInList && justAddedRef.current && (
           <motion.span
             key="ring"
             className={cn(
@@ -53,7 +53,7 @@ export function WatchlistToggleButton({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.45, ease: 'easeOut' }}
             onAnimationComplete={() => {
-              setJustAdded(false)
+              justAddedRef.current = false
             }}
           />
         )}

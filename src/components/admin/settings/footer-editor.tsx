@@ -21,7 +21,6 @@ import {
 } from '@/app/[locale]/admin/actions'
 import type { FooterContent, SocialLinkItem } from '@/lib/config'
 import { SOCIAL_PLATFORMS } from '@/lib/social-platforms'
-import { stripStorageCacheBust } from '@/lib/supabase-media'
 import { SettingsCard, SettingsField } from './settings-card'
 
 export function FooterEditor({ initial }: { initial: FooterContent }) {
@@ -255,7 +254,6 @@ function SocialIconUpload({
 }) {
   const [busy, setBusy] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const displayUrl = stripStorageCacheBust(currentUrl) ?? currentUrl
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -286,7 +284,7 @@ function SocialIconUpload({
           title="Remove icon"
         >
           <Image
-            src={displayUrl}
+            src={currentUrl}
             alt="icon"
             width={24}
             height={24}

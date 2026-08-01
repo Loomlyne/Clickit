@@ -27,17 +27,15 @@ export function useIdleTimer(delay: number, options: UseIdleTimerOptions = {}): 
 
   useEffect(() => {
     if (disabled) {
+      setIsIdle(false)
       if (timerRef.current) clearTimeout(timerRef.current)
       return
     }
-    const frame = startOnMount
-      ? requestAnimationFrame(resetTimer)
-      : null
+    if (startOnMount) resetTimer()
     return () => {
-      if (frame !== null) cancelAnimationFrame(frame)
       if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [disabled, resetTimer, startOnMount])
 
-  return { isIdle: disabled ? false : isIdle, resetTimer }
+  return { isIdle, resetTimer }
 }

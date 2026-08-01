@@ -9,8 +9,9 @@ import { extractYouTubeId } from '@/lib/youtube'
  * Admin-only endpoint. Given a YouTube URL, returns:
  *   { title, thumbnail, durationSeconds, channelTitle, publishedAt }
  *
- * Reads the YouTube Data API v3 key from the server environment. Returns 503
- * when no key is set so the client can hide the "Fetch" button.
+ * Reads the YouTube Data API v3 key from app_config — stored server-side only
+ * (column-level REVOKE on anon/authenticated). Returns 503 when no key is set
+ * so the client can hide the "Fetch" button.
  */
 export async function GET(request: Request) {
   // Auth: must be signed-in admin.

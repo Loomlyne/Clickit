@@ -47,9 +47,7 @@ export function EntryPreload({
   // until after mount — avoids hydration mismatch + parentNode errors.
   const [active, setActive] = useState(false)
   const [phase, setPhase] = useState<PreloadPhase>('playing')
-  const [startedVideoSource, setStartedVideoSource] = useState<string | null>(
-    null
-  )
+  const [videoStarted, setVideoStarted] = useState(false)
   const [mediaType, setMediaType] = useState<MediaType>(
     entryPreloadConfig.mediaType
   )
@@ -68,8 +66,7 @@ export function EntryPreload({
     } catch {
       // Ignore — per-document dedup still applies.
     }
-    const frame = requestAnimationFrame(() => setActive(true))
-    return () => cancelAnimationFrame(frame)
+    setActive(true)
   }, [])
 
   useEffect(() => {
@@ -131,6 +128,7 @@ export function EntryPreload({
     }
 
     hasStartedVideoRef.current = false
+    setVideoStarted(false)
     video.currentTime = 0
 
     const switchToImageFallback = () => {
@@ -151,7 +149,7 @@ export function EntryPreload({
         .play()
         .then(() => {
           hasStartedVideoRef.current = true
-          setStartedVideoSource(mediaSrc)
+          setVideoStarted(true)
         })
         .catch(() => {})
     }
@@ -223,18 +221,18 @@ export function EntryPreload({
             tabIndex={-1}
             onPlaying={() => {
               hasStartedVideoRef.current = true
-              setStartedVideoSource(mediaSrc)
+              setVideoStarted(true)
             }}
             onTimeUpdate={(event) => {
               if (event.currentTarget.currentTime > 0) {
                 hasStartedVideoRef.current = true
-                setStartedVideoSource(mediaSrc)
+                setVideoStarted(true)
               }
             }}
             onEnded={() => setPhase('exiting')}
             onError={handleVideoError}
           />
-          {startedVideoSource !== mediaSrc && phase !== 'entering' ? (
+          {!videoStarted && phase !== 'entering' ? (
             <PreloadImage src={entryPreloadConfig.imageFallbackSrc} />
           ) : null}
         </>

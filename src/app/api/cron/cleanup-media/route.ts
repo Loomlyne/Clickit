@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { prepareMirroredPublicMediaDeletion } from '@/lib/r2-media'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 /**
@@ -42,17 +41,10 @@ function extractStoragePath(
   bucket: string
 ): string | null {
   if (!publicUrl) return null
-  try {
-    const parsed = new URL(publicUrl)
-    const marker = `/storage/v1/object/public/${bucket}/`
-    if (!parsed.pathname.startsWith(marker)) return null
-    const path = decodeURIComponent(parsed.pathname.slice(marker.length))
-    return path && !path.startsWith('/') && !path.split('/').includes('..')
-      ? path
-      : null
-  } catch {
-    return null
-  }
+  const marker = `/storage/v1/object/public/${bucket}/`
+  const idx = publicUrl.indexOf(marker)
+  if (idx === -1) return null
+  return publicUrl.slice(idx + marker.length)
 }
 
 export async function GET(req: Request) {
@@ -88,22 +80,15 @@ async function runCleanup() {
   const cutoff = new Date(startedAt - MIN_AGE_MS)
 
   // --- Step 1: gather all URLs currently referenced by the DB --------------
-  const [{ data: shows, error: showsError }, { data: cast, error: castError }] =
-    await Promise.all([
-      admin
-        .from('shows')
-        .select(
-          'hero_url, hero_image_mobile_url, poster_url, card_image_url, logo_url, hero_video_url, hero_video_mobile_url'
-        ),
-      admin.from('show_cast').select('image_url'),
-    ])
+  const { data: shows, error: showsError } = await admin
+    .from('shows')
+    .select(
+      'hero_url, hero_image_mobile_url, poster_url, card_image_url, logo_url, hero_video_url, hero_video_mobile_url'
+    )
 
-  if (showsError || castError) {
+  if (showsError) {
     return NextResponse.json(
-      {
-        error: 'Failed to load media references',
-        details: showsError?.message ?? castError?.message,
-      },
+      { error: 'Failed to load shows', details: showsError.message },
       { status: 500 }
     )
   }
@@ -142,13 +127,9 @@ async function runCleanup() {
     if (mobileVideoPath) referencedVideos.add(mobileVideoPath)
   }
 
-  for (const member of cast ?? []) {
-    const imagePath = extractStoragePath(member.image_url, SHOW_ARTWORK_BUCKET)
-    if (imagePath) referencedArtwork.add(imagePath)
-  }
-
   // --- Step 2: walk storage and compute orphans ----------------------------
-  // Supabase's list() returns one level at a time, so walk every nested path.
+  // We only enumerate the `shows/` subtree. Each show has at most one folder.
+  // Supabase's list() returns one level at a time, so we iterate per-show.
 
   const artworkOrphans: string[] = []
   const videoOrphans: string[] = []
@@ -159,49 +140,43 @@ async function runCleanup() {
     orphanFilenamePattern: RegExp,
     collect: string[]
   ) {
-    async function scanPrefix(prefix: string) {
-      let offset = 0
-      for (;;) {
-        const { data: entries, error: listError } = await admin.storage
-          .from(bucket)
-          .list(prefix, { limit: 1000, offset })
-        if (listError) throw new Error('Could not scan media storage')
-        if (!entries) return
+    const { data: showFolders, error: listShowsErr } = await admin.storage
+      .from(bucket)
+      .list('shows', { limit: 1000 })
+    if (listShowsErr || !showFolders) return
 
-        for (const entry of entries) {
-          if (!entry.name) continue
-          const fullPath = `${prefix}/${entry.name}`
-          if (!entry.id) {
-            await scanPrefix(fullPath)
-            continue
-          }
-          if (!orphanFilenamePattern.test(entry.name)) continue
+    for (const folder of showFolders) {
+      // Skip non-folder entries (shouldn't happen under shows/ but defensive)
+      if (!folder.name || folder.id) continue
+      const { data: files, error: filesErr } = await admin.storage
+        .from(bucket)
+        .list(`shows/${folder.name}`, { limit: 1000 })
+      if (filesErr || !files) continue
 
-          // Skip files newer than the safety cutoff (still might be in an open
-          // drawer that hasn't saved yet)
-          const createdAt = entry.created_at ? new Date(entry.created_at) : null
-          if (createdAt && createdAt > cutoff) continue
+      for (const file of files) {
+        if (!file.name) continue
+        if (!orphanFilenamePattern.test(file.name)) continue
 
-          if (!referenced.has(fullPath)) collect.push(fullPath)
-        }
+        // Skip files newer than the safety cutoff (still might be in an open
+        // drawer that hasn't saved yet)
+        const createdAt = file.created_at ? new Date(file.created_at) : null
+        if (createdAt && createdAt > cutoff) continue
 
-        if (entries.length < 1000) return
-        offset += entries.length
+        const fullPath = `shows/${folder.name}/${file.name}`
+        if (!referenced.has(fullPath)) collect.push(fullPath)
       }
     }
-
-    await scanPrefix('shows')
   }
 
-  // Artwork bucket: versioned filenames for hero, hero-mobile, poster, card,
-  // logo, and nested cast portraits. All artwork slots now use timestamped
-  // names after the poster/logo versioning fix. Stable-path legacy files (poster.webp,
+  // Artwork bucket: versioned filenames for hero, hero-mobile, poster, logo.
+  // All four slots now use the {slot}-{timestamp}.{ext} pattern after the
+  // poster/logo versioning fix. Stable-path legacy files (poster.webp,
   // logo.png, hero.webp from pre-migration shows) won't match this regex
   // and are left untouched — their DB URLs still point at them.
   await scanBucket(
     SHOW_ARTWORK_BUCKET,
     referencedArtwork,
-    /^(?:(hero(-mobile)?|poster|card|logo)-\d+|\d+)\.(webp|png|jpg|jpeg)$/,
+    /^(hero(-mobile)?|poster|logo)-\d+\.(webp|png|jpg|jpeg)$/,
     artworkOrphans
   )
   // Videos bucket: hero-desktop-*.mp4, hero-mobile-*.mp4
@@ -217,44 +192,20 @@ async function runCleanup() {
   let videoDeleted = 0
   const errors: string[] = []
 
-  async function deleteOrphans(
-    label: 'artwork' | 'video',
-    bucket: typeof SHOW_ARTWORK_BUCKET | typeof SITE_ASSETS_BUCKET,
-    paths: string[]
-  ) {
-    if (paths.length === 0) return 0
-
-    let r2Deletion
-    try {
-      r2Deletion = await prepareMirroredPublicMediaDeletion(bucket, paths)
-    } catch {
-      errors.push(`${label}: R2 deletion preparation failed`)
-      return 0
-    }
-
-    const { error } = await admin.storage.from(bucket).remove(paths)
-    if (error) {
-      const restored = await r2Deletion.rollback()
-      errors.push(
-        restored
-          ? `${label}: ${error.message}`
-          : `${label}: source delete failed and R2 rollback failed`
-      )
-      return 0
-    }
-
-    if (!(await r2Deletion.commit())) {
-      errors.push(`${label}: R2 delete backup cleanup failed`)
-    }
-    return paths.length
+  if (artworkOrphans.length > 0) {
+    const { error } = await admin.storage
+      .from(SHOW_ARTWORK_BUCKET)
+      .remove(artworkOrphans)
+    if (error) errors.push(`artwork: ${error.message}`)
+    else artworkDeleted = artworkOrphans.length
   }
-
-  artworkDeleted = await deleteOrphans(
-    'artwork',
-    SHOW_ARTWORK_BUCKET,
-    artworkOrphans
-  )
-  videoDeleted = await deleteOrphans('video', SITE_ASSETS_BUCKET, videoOrphans)
+  if (videoOrphans.length > 0) {
+    const { error } = await admin.storage
+      .from(SITE_ASSETS_BUCKET)
+      .remove(videoOrphans)
+    if (error) errors.push(`video: ${error.message}`)
+    else videoDeleted = videoOrphans.length
+  }
 
   const durationMs = Date.now() - startedAt
 

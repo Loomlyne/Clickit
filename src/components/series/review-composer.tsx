@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
@@ -40,34 +40,29 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const loadReviews = useCallback(
-    async (supabase = createClient()) => {
-      const { data, error } = await supabase
-        .from('reviews')
-        .select(
-          'id, show_id, user_id, stars, body, created_at, profiles:profiles!reviews_user_id_fkey(display_name, avatar_url)'
-        )
-        .eq('show_id', showId)
-        .order('created_at', { ascending: false })
+  async function loadReviews(supabase = createClient()) {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select(
+        'id, show_id, user_id, stars, body, created_at, profiles:profiles!reviews_user_id_fkey(display_name, avatar_url)'
+      )
+      .eq('show_id', showId)
+      .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error('[review-composer] load failed', error)
-        setLoadError(error.message)
-        return
-      }
+    if (error) {
+      console.error('[review-composer] load failed', error)
+      setLoadError(error.message)
+      return
+    }
 
-      setReviews(data as unknown as Review[])
-      setLoadError(null)
-    },
-    [showId]
-  )
+    setReviews(data as unknown as Review[])
+    setLoadError(null)
+  }
 
   // Fetch reviews + subscribe to real-time
   useEffect(() => {
     const supabase = createClient()
-    const initialLoad = window.setTimeout(() => {
-      void loadReviews(supabase)
-    }, 0)
+    void loadReviews(supabase)
 
     const channel = supabase
       .channel(`reviews:${showId}`)
@@ -86,10 +81,9 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
       .subscribe()
 
     return () => {
-      window.clearTimeout(initialLoad)
       supabase.removeChannel(channel)
     }
-  }, [loadReviews, showId])
+  }, [showId])
 
   const submitReview = async () => {
     if (!userId || !draftText.trim() || draftStars === 0) return

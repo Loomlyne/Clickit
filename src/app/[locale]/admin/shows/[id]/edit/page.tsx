@@ -9,7 +9,6 @@ import { StatusBadge } from '@/components/admin/status-badge'
 import { Button } from '@/components/ui/button'
 import { Link } from '@/i18n/navigation'
 import type { Database } from '@/lib/database.types'
-import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 type Show = Database['public']['Tables']['shows']['Row']
 const brandAccentByColor: Record<string, string> = {
@@ -25,9 +24,8 @@ function getBrandAccent(show: Show) {
 }
 
 function EditMediaPreview({ show, accent }: { show: Show; accent: string }) {
-  const rawImageUrl =
+  const imageUrl =
     show.card_image_url ?? show.hero_url ?? show.poster_url ?? null
-  const imageUrl = stripStorageCacheBust(rawImageUrl) ?? rawImageUrl
 
   return (
     <div className="relative overflow-hidden rounded-lg border border-white/10 bg-[#0f0f0f]">

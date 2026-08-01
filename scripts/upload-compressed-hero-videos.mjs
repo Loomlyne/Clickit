@@ -6,7 +6,6 @@
 import { readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { createClient } from '@supabase/supabase-js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -45,55 +44,12 @@ for (const path of envCandidates) {
     // try next
   }
 }
-const value = (name) => env[name]?.trim() || process.env[name]?.trim() || ''
-const url = value('NEXT_PUBLIC_SUPABASE_URL')
-const key = value('SUPABASE_SERVICE_ROLE_KEY')
+const url = env.NEXT_PUBLIC_SUPABASE_URL
+const key = env.SUPABASE_SERVICE_ROLE_KEY
 if (!url || !key) {
   console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
   process.exit(1)
 }
-
-function isValidPublicMediaOrigin(origin) {
-  if (!origin) return false
-  try {
-    const parsed = new URL(origin)
-    return (
-      parsed.protocol === 'https:' &&
-      !parsed.username &&
-      !parsed.password &&
-      parsed.pathname === '/' &&
-      !parsed.search &&
-      !parsed.hash
-    )
-  } catch {
-    return false
-  }
-}
-
-const r2Values = {
-  accountId: value('CLOUDFLARE_ACCOUNT_ID'),
-  bucket: value('CLOUDFLARE_R2_BUCKET'),
-  accessKeyId: value('R2_ACCESS_KEY_ID'),
-  secretAccessKey: value('R2_SECRET_ACCESS_KEY'),
-}
-const r2Configured = Object.values(r2Values).every(Boolean)
-if (isValidPublicMediaOrigin(value('NEXT_PUBLIC_MEDIA_ORIGIN')) && !r2Configured) {
-  console.error(
-    'R2 media mirroring is required while NEXT_PUBLIC_MEDIA_ORIGIN is enabled.'
-  )
-  process.exit(1)
-}
-
-const r2 = r2Configured
-  ? new S3Client({
-      region: 'auto',
-      endpoint: `https://${r2Values.accountId}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId: r2Values.accessKeyId,
-        secretAccessKey: r2Values.secretAccessKey,
-      },
-    })
-  : null
 
 const supabase = createClient(url, key)
 const tmpDir = resolve(root, '.tmp/hero-compress')
@@ -107,35 +63,6 @@ const uploads = [
 ]
 
 const version = String(Date.now())
-
-async function mirrorHeroVideo(path, body) {
-  if (!r2) return
-
-  const key = `site-assets/${path}`
-  try {
-    await r2.send(
-      new PutObjectCommand({
-        Bucket: r2Values.bucket,
-        Key: key,
-        Body: body,
-        ContentType: 'video/mp4',
-        CacheControl: '31536000',
-      })
-    )
-    const head = await r2.send(
-      new HeadObjectCommand({ Bucket: r2Values.bucket, Key: key })
-    )
-    if (
-      head.ContentLength !== body.length ||
-      head.ContentType !== 'video/mp4' ||
-      head.CacheControl !== '31536000'
-    ) {
-      throw new Error('verification failed')
-    }
-  } catch {
-    throw new Error('Could not mirror hero video to R2')
-  }
-}
 
 for (const item of uploads) {
   const body = readFileSync(resolve(tmpDir, item.local))
@@ -151,13 +78,6 @@ for (const item of uploads) {
 
   if (error) {
     console.error(`Upload failed for ${item.path}:`, error.message)
-    process.exit(1)
-  }
-
-  try {
-    await mirrorHeroVideo(item.path, body)
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : 'R2 mirror failed')
     process.exit(1)
   }
 

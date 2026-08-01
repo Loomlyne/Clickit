@@ -14,13 +14,8 @@ import {
 } from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
 import type { Database } from '@/lib/database.types'
-import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 type CastMember = Database['public']['Tables']['show_cast']['Row']
-
-function resolveCastImageUrl(url: string) {
-  return url.startsWith('blob:') ? url : (stripStorageCacheBust(url) ?? url)
-}
 
 interface CastEditorProps {
   showId: string
@@ -261,7 +256,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
               {c.image_url ? (
                 <div className="relative mx-auto mb-2 h-16 w-16 overflow-hidden rounded-full">
                   <Image
-                    src={resolveCastImageUrl(c.image_url)}
+                    src={c.image_url}
                     alt={c.name}
                     fill
                     unoptimized

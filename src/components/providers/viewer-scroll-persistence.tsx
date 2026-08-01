@@ -48,12 +48,10 @@ export function ViewerScrollPersistence() {
   const pathname = usePathname()
   const lenis = useLenis()
   const lenisRef = useRef(lenis)
-  const pathnameRef = useRef(pathname)
+  lenisRef.current = lenis
 
-  useEffect(() => {
-    lenisRef.current = lenis
-    pathnameRef.current = pathname
-  }, [lenis, pathname])
+  const pathnameRef = useRef(pathname)
+  pathnameRef.current = pathname
 
   const restoreScrollForPath = useCallback((path: string) => {
     if (typeof window === 'undefined') return

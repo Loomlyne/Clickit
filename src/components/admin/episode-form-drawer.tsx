@@ -383,7 +383,6 @@ export function EpisodeFormDrawer({
                   control={form.control}
                   render={({ field }) => (
                     <YouTubeUrlInput
-                      key={`${episode?.id ?? 'new'}-${open ? 'open' : 'closed'}`}
                       value={field.value ?? ''}
                       onChange={(videoId) => field.onChange(videoId ?? '')}
                     />

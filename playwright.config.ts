@@ -1,9 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const isSmokeRun = process.env.PLAYWRIGHT_SMOKE === '1'
-const playwrightPort = Number(process.env.PLAYWRIGHT_PORT ?? 3000)
-const webServerCommand = isSmokeRun ? 'npm run start' : 'npm run dev'
-
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
@@ -12,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'line',
   use: {
-    baseURL: `http://127.0.0.1:${playwrightPort}`,
+    baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
   },
   projects: [
@@ -22,9 +18,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `${webServerCommand} -- --hostname 127.0.0.1 --port ${playwrightPort}`,
-    port: playwrightPort,
-    reuseExistingServer: !process.env.CI && !isSmokeRun,
-    timeout: 120_000,
+    command: 'npm run dev',
+    port: 3000,
+    reuseExistingServer: true,
   },
 })

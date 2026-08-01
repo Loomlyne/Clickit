@@ -11,6 +11,7 @@ import {
   Moon,
   RefreshCw,
   AlertTriangle,
+  ExternalLink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +22,7 @@ import {
 } from '@/app/[locale]/admin/actions'
 import type { AppConfig, FeatureFlags } from '@/lib/config'
 import { SettingsCard, SettingsField } from './settings-card'
+import { SecretField } from './secret-field'
 
 type FlagMeta = {
   key: keyof FeatureFlags
@@ -73,8 +75,11 @@ export function AdvancedTab({
 
   const [ga, setGa] = useState(config.googleAnalyticsId ?? '')
   const [pixel, setPixel] = useState(config.metaPixelId ?? '')
+  const [yt, setYt] = useState('')
+  const [savedHasYouTube, setSavedHasYouTube] = useState(hasYouTubeKey)
   const [gaEnabled, setGaEnabled] = useState(Boolean(config.googleAnalyticsId))
   const [pixelEnabled, setPixelEnabled] = useState(Boolean(config.metaPixelId))
+  const [ytEnabled, setYtEnabled] = useState(hasYouTubeKey)
   const [savingIntegrations, setSavingIntegrations] = useState(false)
 
   const t = useTranslations('admin.settings')
@@ -115,13 +120,28 @@ export function AdvancedTab({
 
     setSavingIntegrations(true)
 
+    let youtubeApiKey: string | null | undefined
+    if (!ytEnabled) {
+      youtubeApiKey = null
+    } else if (yt !== '') {
+      youtubeApiKey = yt.trim()
+    } else {
+      youtubeApiKey = undefined
+    }
+
     const result = await updateIntegrations({
       google_analytics_id: gaEnabled && gaValue ? gaValue : null,
       meta_pixel_id: pixelEnabled && pixelValue ? pixelValue : null,
+      youtube_api_key: youtubeApiKey,
     })
     setSavingIntegrations(false)
     if (result.success) {
       toast.success(t('integrationsSaved'))
+      if (!ytEnabled) {
+        setSavedHasYouTube(false)
+      } else if (yt !== '') {
+        setSavedHasYouTube(true)
+      }
     } else {
       toast.error(result.error ?? t('saveFailed'))
     }
@@ -199,20 +219,33 @@ export function AdvancedTab({
               </SettingsField>
             </IntegrationRow>
 
-            <div className="rounded-lg border border-white/8 bg-white/[0.02] p-4">
-              <p className="text-sm font-medium text-white">YouTube Data API</p>
-              <p className="text-muted-foreground mt-0.5 text-xs">
-                {t('youtubeApiDescription')}
-              </p>
-              <p className="mt-3 text-xs font-medium text-white/80">
-                {hasYouTubeKey
-                  ? t('youtubeApiConfigured')
-                  : t('youtubeApiMissing')}
-              </p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {t('youtubeApiEnvironmentHint')}
-              </p>
-            </div>
+            <IntegrationRow
+              title="YouTube Data API"
+              description={t('youtubeApiDescription')}
+              enabled={ytEnabled}
+              onEnabledChange={setYtEnabled}
+              action={
+                <a
+                  href="https://console.cloud.google.com/apis/credentials"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-white/60 hover:text-white"
+                >
+                  {t('getKey')}
+                  <ExternalLink className="size-3" />
+                </a>
+              }
+            >
+              <SettingsField label={t('apiKeyLabel')} hint={t('apiKeyHint')}>
+                <SecretField
+                  value={yt}
+                  onChange={setYt}
+                  hasSavedValue={savedHasYouTube}
+                  placeholder={t('apiKeyPlaceholder')}
+                  disabled={!ytEnabled}
+                />
+              </SettingsField>
+            </IntegrationRow>
           </div>
         </SettingsCard>
 

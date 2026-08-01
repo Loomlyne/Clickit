@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
@@ -28,23 +28,17 @@ export function ShortsOverlay({
   const current = shorts[idx]
   const hasPrev = idx > 0
   const hasNext = idx < shorts.length - 1
-  const goPrev = useCallback(() => {
-    if (!hasPrev) return
-    setProgress(0)
-    setIdx((index) => index - 1)
-  }, [hasPrev])
-  const goNext = useCallback(() => {
-    if (!hasNext) return
-    setProgress(0)
-    setIdx((index) => index + 1)
-  }, [hasNext])
+  const goPrev = () => setIdx((i) => i - 1)
+  const goNext = () => setIdx((i) => i + 1)
 
   // Keyboard nav
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
-      else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') goNext()
-      else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') goPrev()
+      else if ((e.key === 'ArrowDown' || e.key === 'ArrowRight') && hasNext)
+        goNext()
+      else if ((e.key === 'ArrowUp' || e.key === 'ArrowLeft') && hasPrev)
+        goPrev()
       else if (e.key === ' ') {
         e.preventDefault()
         setPaused((value) => !value)
@@ -54,33 +48,25 @@ export function ShortsOverlay({
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [goNext, goPrev, onClose])
+  }, [hasNext, hasPrev, onClose])
+
+  useEffect(() => {
+    setProgress(0)
+  }, [idx])
 
   useEffect(() => {
     if (paused) return
-    let advanceTimer: number | undefined
     const timer = window.setInterval(() => {
       setProgress((value) => {
-        const nextProgress = value + 0.5
-        if (nextProgress < 100) return nextProgress
-        if (advanceTimer === undefined) {
-          advanceTimer = window.setTimeout(() => {
-            advanceTimer = undefined
-            if (hasNext) {
-              goNext()
-            } else {
-              setProgress(0)
-            }
-          }, 0)
+        if (value >= 100) {
+          if (hasNext) goNext()
+          return 0
         }
-        return 100
+        return value + 0.5
       })
     }, 100)
-    return () => {
-      window.clearInterval(timer)
-      if (advanceTimer !== undefined) window.clearTimeout(advanceTimer)
-    }
-  }, [goNext, hasNext, paused])
+    return () => window.clearInterval(timer)
+  }, [hasNext, paused])
 
   // Lock body scroll
   useEffect(() => {

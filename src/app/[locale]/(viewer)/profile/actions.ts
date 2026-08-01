@@ -1,10 +1,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import {
-  assertPublicMediaWriteReady,
-  mirrorPublicMediaObject,
-} from '@/lib/r2-media'
 import { createClient } from '@/lib/supabase/server'
 
 export async function updateProfile(data: { display_name: string }) {
@@ -48,21 +44,12 @@ export async function uploadAvatar(formData: FormData) {
     file.type.split('/')[1] === 'jpeg' ? 'jpg' : file.type.split('/')[1]
   const path = `${user.id}/avatar.${ext}`
 
-  assertPublicMediaWriteReady()
-
   // Upload (upsert replaces existing)
   const { error: uploadError } = await supabase.storage
     .from('avatars')
     .upload(path, file, { upsert: true })
 
   if (uploadError) throw new Error(uploadError.message)
-
-  await mirrorPublicMediaObject({
-    bucket: 'avatars',
-    key: path,
-    body: file,
-    contentType: file.type,
-  })
 
   // Get public URL
   const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)

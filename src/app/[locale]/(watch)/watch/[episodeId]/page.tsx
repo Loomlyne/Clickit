@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const canonical = `/${locale}/watch/${episodeId}`
   const ogImage = data.episode.youtube_video_id
     ? `https://img.youtube.com/vi/${data.episode.youtube_video_id}/maxresdefault.jpg`
-    : (show.heroImageUrl ?? show.posterUrl)
+    : (data.show.hero_url ?? data.show.poster_url ?? undefined)
 
   return {
     title: `${ep.title} | ${show.title} | Clickit Story`,

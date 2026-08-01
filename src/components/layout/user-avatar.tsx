@@ -4,7 +4,6 @@
 import { forwardRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
-import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 interface UserAvatarProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   name: string
@@ -14,7 +13,6 @@ interface UserAvatarProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 export const UserAvatar = forwardRef<HTMLButtonElement, UserAvatarProps>(
   function UserAvatar({ name, avatarUrl, className, ...props }, ref) {
     const t = useTranslations('nav')
-    const resolvedAvatarUrl = stripStorageCacheBust(avatarUrl) ?? avatarUrl
     return (
       <button
         ref={ref}
@@ -29,8 +27,8 @@ export const UserAvatar = forwardRef<HTMLButtonElement, UserAvatarProps>(
         )}
         {...props}
       >
-        {resolvedAvatarUrl ? (
-          <img src={resolvedAvatarUrl} alt={name} className="size-full object-cover" />
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={name} className="size-full object-cover" />
         ) : (
           name.charAt(0).toUpperCase()
         )}

@@ -20,10 +20,6 @@ import {
 } from '@/app/[locale]/admin/actions'
 import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
-import {
-  resolveSupabaseVideoUrl,
-  stripStorageCacheBust,
-} from '@/lib/supabase-media'
 
 type Mode = 'image' | 'mp4' | 'youtube'
 
@@ -179,11 +175,6 @@ export function HeroMediaPicker({
   const isMobile = variant === 'mobile'
   const aspectBadge = isMobile ? '9:16' : '16:9'
   const sourceHint = mode === 'mp4' ? videoHint : imageHint
-  const imagePreviewUrl =
-    stripStorageCacheBust(currentImageUrl) ?? currentImageUrl
-  const videoPreviewUrl = currentVideoUrl
-    ? (resolveSupabaseVideoUrl(currentVideoUrl) ?? currentVideoUrl)
-    : null
 
   const modes: { id: Mode; label: string; icon: typeof ImageIcon }[] = [
     { id: 'image', label: t('imageMode'), icon: ImageIcon },
@@ -196,9 +187,9 @@ export function HeroMediaPicker({
   const fileHandler = mode === 'mp4' ? handleMp4Upload : handleImageUpload
 
   const mediaPreview =
-    contentType === 'mp4' && videoPreviewUrl ? (
+    contentType === 'mp4' && currentVideoUrl ? (
       <video
-        src={videoPreviewUrl}
+        src={currentVideoUrl}
         muted
         autoPlay
         loop
@@ -217,9 +208,9 @@ export function HeroMediaPicker({
           />
         ) : null
       })()
-    ) : imagePreviewUrl ? (
+    ) : currentImageUrl ? (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={imagePreviewUrl} alt="" className="h-full w-full object-cover" />
+      <img src={currentImageUrl} alt="" className="h-full w-full object-cover" />
     ) : null
 
   return (

@@ -25,7 +25,6 @@ import {
 import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
 import { probeLocalMp4HasAudio } from '@/lib/media-audio'
-import { resolveSupabaseVideoUrl } from '@/lib/supabase-media'
 
 type VideoConfig = { url: string; type: 'mp4' | 'youtube' } | null
 type HeroVariant = 'desktop' | 'mobile'
@@ -262,10 +261,6 @@ function HeroVariantPanel({
   }
 
   const ytId = video?.type === 'youtube' ? extractYouTubeId(video.url) : null
-  const mp4PreviewUrl =
-    video?.type === 'mp4'
-      ? (resolveSupabaseVideoUrl(video.url) ?? video.url)
-      : null
 
   return (
     <div className="rounded-lg border border-white/8 bg-white/[0.02] p-4">
@@ -280,9 +275,9 @@ function HeroVariantPanel({
           <div
             className={`relative overflow-hidden rounded-lg border border-white/8 bg-black ${aspectClassName}`}
           >
-            {video.type === 'mp4' && mp4PreviewUrl ? (
+            {video.type === 'mp4' ? (
               <video
-                src={mp4PreviewUrl}
+                src={video.url}
                 muted
                 autoPlay
                 loop

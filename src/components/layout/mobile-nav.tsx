@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
@@ -28,6 +28,11 @@ export function MobileNav({ initialUser, logoUrl }: MobileNavProps = {}) {
   const pathname = usePathname()
   const t = useTranslations('nav')
 
+  // Auto-close when route changes
+  useEffect(() => {
+    setOpen(false)
+  }, [pathname])
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
@@ -39,9 +44,6 @@ export function MobileNav({ initialUser, logoUrl }: MobileNavProps = {}) {
 
       <SheetContent
         side="top"
-        onClick={(event) => {
-          if ((event.target as HTMLElement).closest('a')) setOpen(false)
-        }}
         className="flex w-full flex-col rounded-b-[4px] border-x-0 border-t-0 p-0"
       >
         <SheetHeader className="border-b border-white/[0.06] px-6 py-5">

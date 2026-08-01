@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
@@ -24,6 +24,25 @@ export function YouTubeUrlInput({
     isVideoId ? value : value ? extractYouTubeId(value) : null
   )
   const [validationError, setValidationError] = useState<string | null>(null)
+
+  // Sync when value prop changes externally (e.g., form reset)
+  useEffect(() => {
+    const isId = value && value.length === 11 && !value.includes('/')
+    if (isId) {
+      setExtractedId(value)
+      setRawUrl('')
+      setValidationError(null)
+    } else if (value) {
+      setRawUrl(value)
+      const id = extractYouTubeId(value)
+      setExtractedId(id)
+      setValidationError(id ? null : t('extractError'))
+    } else {
+      setRawUrl('')
+      setExtractedId(null)
+      setValidationError(null)
+    }
+  }, [value, t])
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const url = e.target.value
