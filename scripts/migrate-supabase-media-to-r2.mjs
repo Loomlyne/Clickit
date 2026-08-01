@@ -29,8 +29,13 @@ import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { createClient } from '@supabase/supabase-js'
 
-const { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } =
-  await import('@aws-sdk/client-s3')
+const {
+  GetObjectCommand,
+  HeadBucketCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} = await import('@aws-sdk/client-s3')
 
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DEFAULT_MANIFEST_PATH = resolve(
@@ -105,6 +110,10 @@ function createR2Client() {
     endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
     credentials: { accessKeyId, secretAccessKey },
   })
+}
+
+export async function assertR2BucketAccess(client, bucket) {
+  await client.send(new HeadBucketCommand({ Bucket: bucket }))
 }
 
 function normalizedDestinationMetadata(metadata) {
@@ -619,6 +628,7 @@ async function executeManifest(options) {
     requiredEnv('NEXT_PUBLIC_SUPABASE_URL')
   )
   const r2Client = createR2Client()
+  await assertR2BucketAccess(r2Client, bucket)
 
   const tempDir = await fs.mkdtemp(join(tmpdir(), 'clickit-r2-media-'))
   let failures = 0

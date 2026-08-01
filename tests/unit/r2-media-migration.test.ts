@@ -4,9 +4,14 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import { test } from 'node:test'
-import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
+import {
+  GetObjectCommand,
+  HeadBucketCommand,
+  PutObjectCommand,
+} from '@aws-sdk/client-s3'
 
 import {
+  assertR2BucketAccess,
   assertManifestSourceOrigin,
   assertManifestDestinationBucket,
   createR2MediaManifest,
@@ -275,6 +280,24 @@ test('R2 migration uses S3 commands for direct object transfer', async () => {
   } finally {
     await rm(temporaryDirectory, { recursive: true, force: true })
   }
+})
+
+test('R2 migration preflights R2 bucket access before source transfer', async () => {
+  const commands: unknown[] = []
+  const client = {
+    async send(command: unknown) {
+      commands.push(command)
+      return {}
+    },
+  }
+
+  await assertR2BucketAccess(client, 'test-r2-bucket')
+
+  assert.equal(commands.length, 1)
+  assert.ok(commands[0] instanceof HeadBucketCommand)
+  assert.deepEqual((commands[0] as HeadBucketCommand).input, {
+    Bucket: 'test-r2-bucket',
+  })
 })
 
 test('R2 migration rejects matching bytes with mismatched destination metadata', () => {
