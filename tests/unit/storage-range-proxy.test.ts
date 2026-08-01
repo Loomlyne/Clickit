@@ -2,7 +2,15 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import { proxyStorageObject } from '../../src/lib/storage-range-proxy.ts'
-import { toCdnStorageUrl } from '../../src/lib/supabase-media.ts'
+import {
+  getPublicMediaOrigin,
+  isPublicR2MediaUrl,
+  isSupabaseStorageUrl,
+  resolvePreloaderVideoUrl,
+  resolveSupabaseVideoUrl,
+  stripStorageCacheBust,
+  toCdnStorageUrl,
+} from '../../src/lib/supabase-media.ts'
 
 const TARGET = new URL(
   'https://example.supabase.co/storage/v1/object/public/show-artwork/hero.mp4'
@@ -67,7 +75,6 @@ test('streams exactly 1,024 validated bytes for bytes=0-1023', async () => {
   assert.equal(response.headers.get('vercel-cdn-cache-control'), 'no-store')
   assert.equal((await response.arrayBuffer()).byteLength, 1024)
 })
-
 for (const range of ['bytes=broken', 'bytes=0-10,20-30']) {
   test(`rejects ${range} before fetching upstream`, async () => {
     let fetchCount = 0
@@ -187,7 +194,9 @@ test('streams a full 200 response without buffering it', async () => {
 
 test('keeps the public CDN URL contract and avoids nested proxy URLs', () => {
   const originalSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const originalMediaOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
+  delete process.env.NEXT_PUBLIC_MEDIA_ORIGIN
 
   try {
     const storageUrl =
@@ -209,6 +218,102 @@ test('keeps the public CDN URL contract and avoids nested proxy URLs', () => {
       delete process.env.NEXT_PUBLIC_SUPABASE_URL
     } else {
       process.env.NEXT_PUBLIC_SUPABASE_URL = originalSupabaseUrl
+    }
+    if (originalMediaOrigin === undefined) {
+      delete process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+    } else {
+      process.env.NEXT_PUBLIC_MEDIA_ORIGIN = originalMediaOrigin
+    }
+  }
+})
+
+test('maps Supabase public media to direct R2 bucket and key paths after cutover', () => {
+  const originalSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const originalMediaOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+  process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
+  process.env.NEXT_PUBLIC_MEDIA_ORIGIN = 'https://media.example.com/'
+
+  try {
+    const source =
+      'https://example.supabase.co/storage/v1/object/public/site-assets/hero/video%20one.mp4?v=7&download=1'
+    const r2 =
+      'https://media.example.com/site-assets/hero/video%20one.mp4?v=7&download=1'
+
+    assert.equal(getPublicMediaOrigin(), 'https://media.example.com')
+    assert.equal(stripStorageCacheBust(source), r2)
+    assert.equal(toCdnStorageUrl(source), r2)
+    assert.equal(resolveSupabaseVideoUrl(source), r2)
+    assert.equal(resolvePreloaderVideoUrl(source), r2)
+    assert.equal(isSupabaseStorageUrl(r2), false)
+    assert.equal(isPublicR2MediaUrl(r2), true)
+    assert.equal(toCdnStorageUrl(r2), r2)
+  } finally {
+    if (originalSupabaseUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL
+    } else {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = originalSupabaseUrl
+    }
+    if (originalMediaOrigin === undefined) {
+      delete process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+    } else {
+      process.env.NEXT_PUBLIC_MEDIA_ORIGIN = originalMediaOrigin
+    }
+  }
+})
+
+test('rejects non-origin media configuration and retains the range-safe fallback', () => {
+  const originalSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const originalMediaOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+  process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
+  process.env.NEXT_PUBLIC_MEDIA_ORIGIN = 'https://media.example.com/media'
+
+  try {
+    const source =
+      'https://example.supabase.co/storage/v1/object/public/show-artwork/hero.mp4?v=7'
+    assert.equal(getPublicMediaOrigin(), null)
+    assert.equal(
+      toCdnStorageUrl(source),
+      '/api/cdn/storage?url=https%3A%2F%2Fexample.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fshow-artwork%2Fhero.mp4'
+    )
+    assert.equal(
+      resolvePreloaderVideoUrl(source),
+      '/brand/clickit-preloader.mp4'
+    )
+  } finally {
+    if (originalSupabaseUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL
+    } else {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = originalSupabaseUrl
+    }
+    if (originalMediaOrigin === undefined) {
+      delete process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+    } else {
+      process.env.NEXT_PUBLIC_MEDIA_ORIGIN = originalMediaOrigin
+    }
+  }
+})
+
+test('does not cut over buckets that are absent from the migration manifest', () => {
+  const originalSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const originalMediaOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+  process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
+  process.env.NEXT_PUBLIC_MEDIA_ORIGIN = 'https://media.example.com'
+
+  try {
+    const source =
+      'https://example.supabase.co/storage/v1/object/public/future-bucket/new.mp4'
+    assert.equal(stripStorageCacheBust(source), source)
+    assert.equal(isPublicR2MediaUrl(source), false)
+  } finally {
+    if (originalSupabaseUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL
+    } else {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = originalSupabaseUrl
+    }
+    if (originalMediaOrigin === undefined) {
+      delete process.env.NEXT_PUBLIC_MEDIA_ORIGIN
+    } else {
+      process.env.NEXT_PUBLIC_MEDIA_ORIGIN = originalMediaOrigin
     }
   }
 })

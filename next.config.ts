@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import bundleAnalyzer from '@next/bundle-analyzer'
 import { withBotId } from 'botid/next/config'
 import createNextIntlPlugin from 'next-intl/plugin'
+import { getPublicMediaOrigin } from './src/lib/supabase-media'
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
@@ -23,13 +24,25 @@ const withNextIntl = createNextIntlPlugin()
 // development for fast refresh and callstack reconstruction. Production never
 // needs it, so this CSP token is added only outside production builds.
 const devScriptSrc = process.env.NODE_ENV === 'production' ? '' : " 'unsafe-" + "eval'"
+const publicMediaOrigin = getPublicMediaOrigin()
+const mediaImagePattern = publicMediaOrigin
+  ? (() => {
+      const origin = new URL(publicMediaOrigin)
+      return {
+        protocol: 'https' as const,
+        hostname: origin.hostname,
+        ...(origin.port ? { port: origin.port } : {}),
+        pathname: '/**',
+      }
+    })()
+  : null
 
 const cspDirectives = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${devScriptSrc} https://www.googletagmanager.com https://connect.facebook.net https://www.youtube.com https://s.ytimg.com https://va.vercel-scripts.com https://vercel.live`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
-  "media-src 'self' blob: https://*.supabase.co",
+  `media-src 'self' blob: https://*.supabase.co${publicMediaOrigin ? ` ${publicMediaOrigin}` : ''}`,
   "font-src 'self' data:",
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://stats.g.doubleclick.net https://va.vercel-scripts.com https://*.vercel-insights.com https://connect.facebook.net https://www.facebook.com https://www.youtube.com https://*.googlevideo.com https://youtubei.googleapis.com",
   "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
@@ -136,6 +149,7 @@ const nextConfig: NextConfig = {
         hostname: 'lajguozmtissnnfccmej.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
+      ...(mediaImagePattern ? [mediaImagePattern] : []),
     ],
   },
 };

@@ -10,6 +10,12 @@ import { logAudit } from '@/lib/audit'
 import { generateSlug } from '@/lib/slug'
 import { fillArabic, translateToArabic, translateBatchToArabic } from '@/lib/translate'
 import { mp4BytesHasAudioTrack } from '@/lib/mp4-audio'
+import {
+  assertPublicMediaWriteReady,
+  mirrorPublicMediaObject,
+  prepareMirroredPublicMediaDeletion,
+} from '@/lib/r2-media'
+import type { MirroredPublicMediaDeletion } from '@/lib/r2-media'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -19,6 +25,23 @@ type ActionResult<T = unknown> = {
   success: boolean
   error?: string
   data?: T
+}
+
+async function deleteMirroredPublicMedia(
+  admin: ReturnType<typeof createAdminClient>,
+  bucket: 'show-artwork' | 'site-assets' | 'avatars',
+  paths: string[]
+): Promise<MirroredPublicMediaDeletion> {
+  const r2Deletion = await prepareMirroredPublicMediaDeletion(bucket, paths)
+  const { error } = await admin.storage.from(bucket).remove(paths)
+  if (!error) return r2Deletion
+
+  const restored = await r2Deletion.rollback()
+  throw new Error(
+    restored
+      ? error.message
+      : `${error.message}; R2 rollback also failed`
+  )
 }
 
 export type SignedVideoUploadTarget = {
@@ -863,27 +886,62 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
     // matching real filenames and permanent delete became a silent no-op. The
     // listing approach works for both legacy stable-path rows and versioned
     // rows — whatever is in the folder gets deleted.
-    async function purgeShowFolder(bucket: string) {
-      const { data: files } = await admin.storage
-        .from(bucket)
-        .list(`shows/${id}`, { limit: 1000 })
-      if (!files || files.length === 0) return
-      const paths = files
-        .filter((f) => f.name && !f.id) // defensive: skip folder entries
-        .map((f) => `shows/${id}/${f.name}`)
-      if (paths.length > 0) {
-        await admin.storage.from(bucket).remove(paths)
+    const stagedMediaDeletes: MirroredPublicMediaDeletion[] = []
+    async function listShowFolderFiles(bucket: string, prefix: string) {
+      const paths: string[] = []
+      let offset = 0
+
+      for (;;) {
+        const { data, error: listError } = await admin.storage
+          .from(bucket)
+          .list(prefix, { limit: 1000, offset })
+        if (listError) throw new Error('Could not list show media')
+
+        const entries = data ?? []
+        for (const entry of entries) {
+          if (!entry.name) continue
+          const path = prefix + '/' + entry.name
+          if (entry.id) {
+            paths.push(path)
+          } else {
+            paths.push(...(await listShowFolderFiles(bucket, path)))
+          }
+        }
+
+        if (entries.length < 1000) return paths
+        offset += entries.length
       }
     }
-    await Promise.all([
-      purgeShowFolder('show-artwork'), // poster, hero, hero-mobile, logo
-      purgeShowFolder('site-assets'), // hero videos
-    ])
+
+    async function purgeShowFolder(bucket: 'show-artwork' | 'site-assets') {
+      const paths = await listShowFolderFiles(bucket, ['shows', id].join('/'))
+      if (paths.length === 0) return
+      stagedMediaDeletes.push(
+        await deleteMirroredPublicMedia(admin, bucket, paths)
+      )
+    }
+    try {
+      await purgeShowFolder('show-artwork') // poster, hero, hero-mobile, logo
+      await purgeShowFolder('site-assets') // hero videos
+    } catch (mediaError) {
+      await Promise.all(stagedMediaDeletes.map((deletion) => deletion.rollback()))
+      throw mediaError
+    }
 
     // Then delete DB record — CASCADE handles seasons/episodes
     const { error } = await admin.from('shows').delete().eq('id', id)
 
-    if (error) return { success: false, error: error.message }
+    if (error) {
+      await Promise.all(stagedMediaDeletes.map((deletion) => deletion.rollback()))
+      return { success: false, error: error.message }
+    }
+
+    const backupCleanup = await Promise.all(
+      stagedMediaDeletes.map((deletion) => deletion.commit())
+    )
+    if (!backupCleanup.every(Boolean)) {
+      console.error('[deleteShowPermanently] R2 delete backup cleanup failed')
+    }
 
     await logAudit({
       adminUserId: user.id,
@@ -1594,6 +1652,7 @@ export async function uploadArtwork(
 ): Promise<ActionResult<string>> {
   try {
     await assertAdmin()
+    assertPublicMediaWriteReady()
     const admin = createAdminClient()
 
     const file = formData.get('file') as File | null
@@ -1681,6 +1740,14 @@ export async function uploadArtwork(
 
     if (error) return { success: false, error: error.message }
 
+    await mirrorPublicMediaObject({
+      bucket: 'show-artwork',
+      key: path,
+      body: uploadBody,
+      contentType: uploadContentType,
+      cacheControl: '31536000',
+    })
+
     const { data: urlData } = admin.storage
       .from('show-artwork')
       .getPublicUrl(path)
@@ -1722,6 +1789,55 @@ const HERO_TYPE_COLUMN: Record<HeroVariant, 'hero_video_type' | 'hero_video_mobi
   mobile: 'hero_video_mobile_type',
 }
 
+async function updateHeroVideoConfig(
+  admin: ReturnType<typeof createAdminClient>,
+  variant: HeroVariant,
+  url: string | null,
+  type: 'mp4' | 'youtube' | null
+) {
+  const { error } = await admin
+    .from('app_config')
+    .update({
+      [HERO_URL_COLUMN[variant]]: url,
+      [HERO_TYPE_COLUMN[variant]]: type,
+    } as never)
+    .eq('id', 1)
+  return error
+}
+
+async function getHeroVideoConfig(
+  admin: ReturnType<typeof createAdminClient>,
+  variant: HeroVariant
+) {
+  const { data, error } = await admin
+    .from('app_config')
+    .select()
+    .eq('id', 1)
+    .single()
+  if (error || !data) {
+    return { error: error ?? new Error('Missing site config') }
+  }
+
+  const config = data as unknown as {
+    hero_video_url: string | null
+    hero_video_type: 'mp4' | 'youtube' | null
+    hero_video_mobile_url: string | null
+    hero_video_mobile_type: 'mp4' | 'youtube' | null
+  }
+
+  return {
+    error: null,
+    url:
+      variant === 'desktop'
+        ? config.hero_video_url
+        : config.hero_video_mobile_url,
+    type:
+      variant === 'desktop'
+        ? config.hero_video_type
+        : config.hero_video_mobile_type,
+  }
+}
+
 export async function createHeroVideoUpload(
   file: {
     name: string
@@ -1732,6 +1848,7 @@ export async function createHeroVideoUpload(
 ): Promise<ActionResult<SignedVideoUploadTarget>> {
   try {
     await assertAdmin()
+    assertPublicMediaWriteReady()
     const admin = createAdminClient()
 
     if (!isMp4File(file)) {
@@ -1792,6 +1909,14 @@ export async function saveHeroVideoUpload(
       }
     }
 
+    await mirrorPublicMediaObject({
+      bucket: 'site-assets',
+      key: path,
+      body: uploadedFile,
+      contentType: 'video/mp4',
+      cacheControl: '31536000',
+    })
+
     const { data: urlData } = admin.storage
       .from('site-assets')
       .getPublicUrl(path)
@@ -1850,31 +1975,53 @@ export async function setHeroVideoUrl(
     // Store canonical form so viewers always get a predictable embed URL.
     const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`
 
-    const { error } = await admin
-      .from('app_config')
-      .update({
-        [HERO_URL_COLUMN[variant]]: canonicalUrl,
-        [HERO_TYPE_COLUMN[variant]]: 'youtube',
-      } as never)
-      .eq('id', 1)
+    const previous = await getHeroVideoConfig(admin, variant)
+    if (previous.error) return { success: false, error: previous.error.message }
 
-    if (error) {
-      console.error('[setHeroVideoUrl] db update failed', {
-        videoId,
-        error: error.message,
-      })
-      return { success: false, error: error.message }
+    const r2Deletion = await prepareMirroredPublicMediaDeletion('site-assets', [
+      HERO_VIDEO_PATH[variant],
+    ])
+    const configError = await updateHeroVideoConfig(
+      admin,
+      variant,
+      canonicalUrl,
+      'youtube'
+    )
+    if (configError) {
+      const restored = await r2Deletion.rollback()
+      return {
+        success: false,
+        error: restored
+          ? configError.message
+          : 'Could not save the hero URL and restore R2 media',
+      }
+    }
+
+    const { error: removeError } = await admin.storage
+      .from('site-assets')
+      .remove([HERO_VIDEO_PATH[variant]])
+    if (removeError) {
+      const [restoredR2, restoredConfig] = await Promise.all([
+        r2Deletion.rollback(),
+        updateHeroVideoConfig(admin, variant, previous.url, previous.type).then(
+          (error) => !error
+        ),
+      ])
+      return {
+        success: false,
+        error:
+          restoredR2 && restoredConfig
+            ? 'Could not remove the existing hero video'
+            : 'Could not remove the existing hero video and restore its previous state',
+      }
+    }
+
+    if (!(await r2Deletion.commit())) {
+      console.error('[setHeroVideoUrl] R2 delete backup cleanup failed')
     }
 
     updateTag('site-config')
     revalidatePath('/')
-
-    // Switching to a YouTube hero abandons any previously uploaded MP4 for this
-    // variant (which lives at a fixed path). Delete it to reclaim storage —
-    // AFTER the config flip + revalidation above, so the live hero has already
-    // switched to YouTube and never references a file we removed. Ignore errors
-    // (e.g. there was no MP4 to begin with).
-    await admin.storage.from('site-assets').remove([HERO_VIDEO_PATH[variant]])
 
     return { success: true }
   } catch (err) {
@@ -1893,23 +2040,48 @@ export async function removeHeroVideo(
     await assertAdmin()
     const admin = createAdminClient()
 
-    const { error } = await admin
-      .from('app_config')
-      .update({
-        [HERO_URL_COLUMN[variant]]: null,
-        [HERO_TYPE_COLUMN[variant]]: null,
-      } as never)
-      .eq('id', 1)
+    const previous = await getHeroVideoConfig(admin, variant)
+    if (previous.error) return { success: false, error: previous.error.message }
 
-    if (error) return { success: false, error: error.message }
+    const r2Deletion = await prepareMirroredPublicMediaDeletion('site-assets', [
+      HERO_VIDEO_PATH[variant],
+    ])
+    const configError = await updateHeroVideoConfig(admin, variant, null, null)
+    if (configError) {
+      const restored = await r2Deletion.rollback()
+      return {
+        success: false,
+        error: restored
+          ? configError.message
+          : 'Could not remove the hero video and restore R2 media',
+      }
+    }
+
+    const { error: removeError } = await admin.storage
+      .from('site-assets')
+      .remove([HERO_VIDEO_PATH[variant]])
+    if (removeError) {
+      const [restoredR2, restoredConfig] = await Promise.all([
+        r2Deletion.rollback(),
+        updateHeroVideoConfig(admin, variant, previous.url, previous.type).then(
+          (error) => !error
+        ),
+      ])
+      return {
+        success: false,
+        error:
+          restoredR2 && restoredConfig
+            ? 'Could not remove the hero video'
+            : 'Could not remove the hero video and restore its previous state',
+      }
+    }
+
+    if (!(await r2Deletion.commit())) {
+      console.error('[removeHeroVideo] R2 delete backup cleanup failed')
+    }
 
     updateTag('site-config')
     revalidatePath('/')
-
-    // Remove the MP4 from storage only AFTER the config is cleared +
-    // revalidated, so the live hero never points at a deleted file. Ignore
-    // not-found errors (e.g. the hero was a YouTube URL with no MP4).
-    await admin.storage.from('site-assets').remove([HERO_VIDEO_PATH[variant]])
 
     return { success: true }
   } catch (err) {
@@ -1961,6 +2133,7 @@ export async function createPreloaderVideoUpload(file: {
 }): Promise<ActionResult<SignedVideoUploadTarget>> {
   try {
     await assertAdmin()
+    assertPublicMediaWriteReady()
     const admin = createAdminClient()
 
     if (!isMp4File(file)) {
@@ -1998,6 +2171,24 @@ export async function savePreloaderVideoUpload(
       return { success: false, error: 'Invalid upload path' }
     }
 
+    const { data: uploadedFile, error: downloadError } = await admin.storage
+      .from('site-assets')
+      .download(path)
+    if (downloadError || !uploadedFile) {
+      return {
+        success: false,
+        error: downloadError?.message ?? 'Could not verify uploaded video',
+      }
+    }
+
+    await mirrorPublicMediaObject({
+      bucket: 'site-assets',
+      key: path,
+      body: uploadedFile,
+      contentType: 'video/mp4',
+      cacheControl: '31536000',
+    })
+
     const { data: urlData } = admin.storage
       .from('site-assets')
       .getPublicUrl(path)
@@ -2028,17 +2219,66 @@ export async function removePreloaderVideo(): Promise<ActionResult> {
     await assertAdmin()
     const admin = createAdminClient()
 
-    const { error } = await admin
+    const { data: previousConfig, error: previousConfigError } = await admin
+      .from('app_config')
+      .select()
+      .eq('id', 1)
+      .single()
+    if (previousConfigError || !previousConfig) {
+      return {
+        success: false,
+        error: previousConfigError?.message ?? 'Could not load site config',
+      }
+    }
+
+    const r2Deletion = await prepareMirroredPublicMediaDeletion('site-assets', [
+      PRELOADER_VIDEO_PATH,
+    ])
+    const { error: configError } = await admin
       .from('app_config')
       .update({ preloader_video_url: null } as never)
       .eq('id', 1)
 
-    if (error) return { success: false, error: error.message }
+    if (configError) {
+      const restored = await r2Deletion.rollback()
+      return {
+        success: false,
+        error: restored
+          ? configError.message
+          : 'Could not remove the preloader video and restore R2 media',
+      }
+    }
+
+    const { error: removeError } = await admin.storage
+      .from('site-assets')
+      .remove([PRELOADER_VIDEO_PATH])
+    if (removeError) {
+      const previousPreloaderUrl = (
+        previousConfig as unknown as { preloader_video_url: string | null }
+      ).preloader_video_url
+      const [restoredR2, restoredConfig] = await Promise.all([
+        r2Deletion.rollback(),
+        admin
+          .from('app_config')
+          .update({ preloader_video_url: previousPreloaderUrl } as never)
+          .eq('id', 1)
+          .then(({ error }) => !error),
+      ])
+      return {
+        success: false,
+        error:
+          restoredR2 && restoredConfig
+            ? 'Could not remove the preloader video'
+            : 'Could not remove the preloader video and restore its previous state',
+      }
+    }
+
+    if (!(await r2Deletion.commit())) {
+      console.error('[removePreloaderVideo] R2 delete backup cleanup failed')
+    }
 
     updateTag('site-config')
     revalidatePath('/', 'layout')
-
-    await admin.storage.from('site-assets').remove([PRELOADER_VIDEO_PATH])
 
     return { success: true }
   } catch (err) {
@@ -2065,6 +2305,7 @@ export async function createShowVideoUpload(file: {
 }): Promise<ActionResult<SignedVideoUploadTarget>> {
   try {
     await assertAdmin()
+    assertPublicMediaWriteReady()
     const admin = createAdminClient()
     const { name, size, type, showId, variant } = file
 
@@ -2112,6 +2353,24 @@ export async function saveShowVideoUpload(
     }
 
     const admin = createAdminClient()
+    const { data: uploadedFile, error: downloadError } = await admin.storage
+      .from('site-assets')
+      .download(path)
+    if (downloadError || !uploadedFile) {
+      return {
+        success: false,
+        error: downloadError?.message ?? 'Could not verify uploaded video',
+      }
+    }
+
+    await mirrorPublicMediaObject({
+      bucket: 'site-assets',
+      key: path,
+      body: uploadedFile,
+      contentType: 'video/mp4',
+      cacheControl: '31536000',
+    })
+
     const { data: urlData } = admin.storage
       .from('site-assets')
       .getPublicUrl(path)
@@ -2832,6 +3091,7 @@ export async function uploadSiteImage(
 ): Promise<ActionResult<string>> {
   try {
     await assertAdmin()
+    assertPublicMediaWriteReady()
     const admin = createAdminClient()
 
     const file = formData.get('file') as File | null
@@ -2879,6 +3139,14 @@ export async function uploadSiteImage(
       })
 
     if (uploadError) return { success: false, error: uploadError.message }
+
+    await mirrorPublicMediaObject({
+      bucket: 'site-assets',
+      key: path,
+      body,
+      contentType: mime,
+      cacheControl: '31536000',
+    })
 
     const { data: urlData } = admin.storage
       .from('site-assets')
@@ -2935,6 +3203,7 @@ export async function uploadSocialIcon(
 ): Promise<ActionResult<string>> {
   try {
     await assertAdmin()
+    assertPublicMediaWriteReady()
     const admin = createAdminClient()
 
     const file = formData.get('file') as File | null
@@ -2962,6 +3231,14 @@ export async function uploadSocialIcon(
       .upload(path, body, { upsert: false, contentType: file.type, cacheControl: '31536000' })
 
     if (uploadError) return { success: false, error: uploadError.message }
+
+    await mirrorPublicMediaObject({
+      bucket: 'site-assets',
+      key: path,
+      body,
+      contentType: file.type,
+      cacheControl: '31536000',
+    })
 
     const { data: urlData } = admin.storage.from('site-assets').getPublicUrl(path)
     return { success: true, data: urlData.publicUrl }
@@ -3251,6 +3528,21 @@ const castSchema = z.object({
   sort_order: z.number().int().optional(),
 })
 
+function getPublicStoragePath(url: string | null, bucket: string) {
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    const prefix = '/storage/v1/object/public/' + bucket + '/'
+    if (!parsed.pathname.startsWith(prefix)) return null
+    const path = decodeURIComponent(parsed.pathname.slice(prefix.length))
+    return path && !path.startsWith('/') && !path.split('/').includes('..')
+      ? path
+      : null
+  } catch {
+    return null
+  }
+}
+
 export async function addCastMember(
   data: z.input<typeof castSchema>
 ): Promise<ActionResult> {
@@ -3292,6 +3584,7 @@ export async function uploadCastImage(
 ): Promise<ActionResult<string>> {
   try {
     await assertAdmin()
+    assertPublicMediaWriteReady()
     const admin = createAdminClient()
 
     const file = formData.get('file') as File | null
@@ -3332,6 +3625,14 @@ export async function uploadCastImage(
 
     if (uploadError) return { success: false, error: uploadError.message }
 
+    await mirrorPublicMediaObject({
+      bucket: 'show-artwork',
+      key: path,
+      body: file,
+      contentType: file.type,
+      cacheControl: '31536000',
+    })
+
     const { data: urlData } = admin.storage
       .from('show-artwork')
       .getPublicUrl(path)
@@ -3350,9 +3651,55 @@ export async function deleteCastMember(id: string): Promise<ActionResult> {
     const user = await assertAdmin()
     const admin = createAdminClient()
 
+    const { data: cast, error: castError } = await admin
+      .from('show_cast')
+      .select('image_url')
+      .eq('id', id)
+      .single()
+    if (castError || !cast) {
+      return {
+        success: false,
+        error: castError?.message ?? 'Cast member not found',
+      }
+    }
+
+    const imagePath = getPublicStoragePath(cast.image_url, 'show-artwork')
+    const r2Deletion = imagePath
+      ? await prepareMirroredPublicMediaDeletion('show-artwork', [imagePath])
+      : null
+
+    if (imagePath) {
+      const { error: removeError } = await admin.storage
+        .from('show-artwork')
+        .remove([imagePath])
+      if (removeError) {
+        const restored = await r2Deletion?.rollback()
+        return {
+          success: false,
+          error:
+            restored === false
+              ? 'Could not remove cast media and restore R2'
+              : 'Could not remove cast media from storage',
+        }
+      }
+    }
+
     const { error } = await admin.from('show_cast').delete().eq('id', id)
 
-    if (error) return { success: false, error: error.message }
+    if (error) {
+      const restored = await r2Deletion?.rollback()
+      return {
+        success: false,
+        error:
+          restored === false
+            ? 'Could not delete cast and restore R2 media'
+            : error.message,
+      }
+    }
+
+    if (r2Deletion && !(await r2Deletion.commit())) {
+      console.error('[deleteCastMember] R2 delete backup cleanup failed')
+    }
 
     await logAudit({
       adminUserId: user.id,

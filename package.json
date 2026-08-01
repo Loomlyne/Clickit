@@ -11,9 +11,11 @@
     "test:unit": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test 'tests/unit/**/*.test.ts'",
     "gen-types": "supabase gen types typescript --project-id \"lajguozmtissnnfccmej\" --schema public > src/lib/database.types.ts",
     "rewrite-slugs": "node scripts/rewrite-slugs.mjs",
-    "fix-archived-show-duplicates": "node scripts/fix-archived-show-duplicates.mjs"
+    "fix-archived-show-duplicates": "node scripts/fix-archived-show-duplicates.mjs",
+    "r2:media": "node scripts/migrate-supabase-media-to-r2.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1101.0",
     "@hookform/resolvers": "^5.2.2",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.0",
