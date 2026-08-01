@@ -484,8 +484,10 @@ export const getNewEpisodes = unstable_cache(
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
     const { data } = await supabase
-      .from('episodes')
-      .select('*, shows!inner(title, slug, brand_color, poster_url, status)')
+      .from('episodes_view')
+      .select(
+        'id, show_id, season_id, episode_number, title, title_ar, description, description_ar, duration, status, publish_at, archived, created_at, updated_at, youtube_video_id, show_title, show_slug, show_brand_color, show_poster_url'
+      )
       .eq('status', 'published')
       .eq('archived', false)
       .gte('created_at', thirtyDaysAgo.toISOString())
@@ -494,10 +496,10 @@ export const getNewEpisodes = unstable_cache(
 
     return (data ?? []).map((e: any) => ({
       ...mapEpisode(e),
-      showTitle: e.shows.title,
-      showSlug: e.shows.slug,
-      showBrandColor: (e.shows.brand_color || 'brand-blue') as ViewShow['brandColor'],
-      showPosterUrl: stripStorageCacheBust(e.shows.poster_url ?? undefined),
+      showTitle: e.show_title ?? '',
+      showSlug: e.show_slug ?? '',
+      showBrandColor: (e.show_brand_color || 'brand-blue') as ViewShow['brandColor'],
+      showPosterUrl: stripStorageCacheBust(e.show_poster_url ?? undefined),
     }))
   },
   ['new-episodes'],
