@@ -16,11 +16,7 @@ Clickit Story (CIT) is a Next.js 16 streaming platform (viewer + admin) backed b
 
 ### First-time / manual setup (not in update script)
 
-1. **Docker daemon** — if using local Supabase, start Docker before `supabase start`:
-   ```bash
-   sudo dockerd > /tmp/dockerd.log 2>&1 &
-   sudo chmod 666 /var/run/docker.sock   # until user is in docker group
-   ```
+1. **Docker**: if using local Supabase, start Docker Desktop and confirm `docker info` succeeds before `supabase start`. On a cloud VM, use the environment's supported Docker setup. Never start `dockerd` manually or relax `/var/run/docker.sock` permissions.
 2. **Local Supabase** — from repo root:
    ```bash
    npx supabase start          # applies migrations + seed on first run
