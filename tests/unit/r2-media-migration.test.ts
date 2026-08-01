@@ -7,6 +7,7 @@ import { test } from 'node:test'
 import {
   GetObjectCommand,
   HeadBucketCommand,
+  HeadObjectCommand,
   PutObjectCommand,
 } from '@aws-sdk/client-s3'
 
@@ -16,10 +17,12 @@ import {
   assertManifestDestinationBucket,
   createR2MediaManifest,
   downloadR2Object,
+  downloadSourceObject,
   putR2Object,
   r2DestinationMetadataMatches,
   sourceIdentityMatches,
   validateR2MediaManifest,
+  verifyR2DestinationMetadata,
 } from '../../scripts/migrate-supabase-media-to-r2.mjs'
 
 test('R2 migration manifest keeps the Supabase bucket and object key unchanged', () => {
@@ -300,6 +303,48 @@ test('R2 migration preflights R2 bucket access before source transfer', async ()
   })
 })
 
+test('R2 migration includes the downloaded source byte size in metadata', async () => {
+  const temporaryDirectory = await mkdtemp(
+    join(tmpdir(), 'clickit-r2-migration-')
+  )
+  const destinationPath = join(temporaryDirectory, 'source-object')
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async () =>
+    new Response('media', {
+      status: 200,
+      headers: {
+        'content-length': '5',
+        'content-type': 'video/mp4',
+        'cache-control': 'public, max-age=31536000',
+      },
+    })
+
+  try {
+    const source = await downloadSourceObject(
+      {
+        sourceBucket: 'site-assets',
+        sourceKey: 'hero.mp4',
+        destinationKey: 'site-assets/hero.mp4',
+        source: {
+          size: 5,
+          etag: null,
+          lastModified: null,
+          contentType: 'video/mp4',
+          cacheControl: 'public, max-age=31536000',
+        },
+      },
+      'https://example.supabase.co',
+      destinationPath
+    )
+
+    assert.equal(source.size, 5)
+    assert.equal(source.metadata.size, 5)
+  } finally {
+    globalThis.fetch = originalFetch
+    await rm(temporaryDirectory, { recursive: true, force: true })
+  }
+})
+
 test('R2 migration rejects matching bytes with mismatched destination metadata', () => {
   const source = {
     size: 1024,
@@ -326,4 +371,49 @@ test('R2 migration rejects matching bytes with mismatched destination metadata',
     }),
     false
   )
+})
+
+test('R2 migration retries destination metadata before failing verification', async () => {
+  const source = {
+    size: 1024,
+    contentType: 'video/mp4',
+    cacheControl: 'public, max-age=31536000',
+    contentDisposition: null,
+    contentEncoding: null,
+    contentLanguage: 'en',
+  }
+  const matchingDestination = {
+    ContentLength: 1024,
+    ContentType: 'video/mp4',
+    CacheControl: 'public, max-age=31536000',
+    ContentLanguage: 'en',
+  }
+  const commands: unknown[] = []
+  const client = {
+    async send(command: unknown) {
+      commands.push(command)
+      return commands.length === 1
+        ? { ...matchingDestination, ContentType: 'application/octet-stream' }
+        : matchingDestination
+    },
+  }
+
+  const destination = await verifyR2DestinationMetadata(
+    client,
+    'test-r2-bucket',
+    'site-assets/hero.mp4',
+    source,
+    { attempts: 2, delayMs: 0 }
+  )
+
+  assert.equal(commands.length, 2)
+  assert.ok(commands.every((command) => command instanceof HeadObjectCommand))
+  assert.deepEqual(destination, {
+    size: 1024,
+    contentType: 'video/mp4',
+    cacheControl: 'public, max-age=31536000',
+    contentDisposition: null,
+    contentEncoding: null,
+    contentLanguage: 'en',
+  })
 })

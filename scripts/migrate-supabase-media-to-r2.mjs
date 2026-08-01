@@ -139,14 +139,26 @@ export function r2DestinationMetadataMatches(source, destination) {
   )
 }
 
-async function verifyR2DestinationMetadata(client, bucket, key, source) {
-  const destination = await client.send(
-    new HeadObjectCommand({ Bucket: bucket, Key: key })
-  )
-  if (!r2DestinationMetadataMatches(source, destination)) {
-    throw new Error(`R2 metadata mismatch for ${key}`)
+export async function verifyR2DestinationMetadata(
+  client,
+  bucket,
+  key,
+  source,
+  { attempts = 5, delayMs = 250 } = {}
+) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const destination = await client.send(
+      new HeadObjectCommand({ Bucket: bucket, Key: key })
+    )
+    if (r2DestinationMetadataMatches(source, destination)) {
+      return normalizedDestinationMetadata(destination)
+    }
+    if (attempt + 1 < attempts && delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs * (attempt + 1)))
+    }
   }
-  return normalizedDestinationMetadata(destination)
+
+  throw new Error(`R2 metadata mismatch for ${key}`)
 }
 
 function publicObjectUrl(sourceOrigin, bucket, key) {
@@ -339,7 +351,7 @@ function assertSourceIdentityMatches(object, response) {
   }
 }
 
-async function downloadSourceObject(object, sourceOrigin, path) {
+export async function downloadSourceObject(object, sourceOrigin, path) {
   const response = await fetch(
     publicObjectUrl(sourceOrigin, object.sourceBucket, object.sourceKey),
     { cache: 'no-store', headers: { 'Accept-Encoding': 'identity' } }
@@ -381,6 +393,7 @@ async function downloadSourceObject(object, sourceOrigin, path) {
     sha256: sha256.digest('hex'),
     md5: md5.digest('base64'),
     metadata: {
+      size,
       contentType:
         nullableString(response.headers.get('content-type')) ??
         object.source.contentType,
