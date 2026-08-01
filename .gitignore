@@ -59,6 +59,7 @@ next-env.d.ts
 test-results/
 
 # tool state
+.tmp/
 .agents/
 .codex/
 .context/

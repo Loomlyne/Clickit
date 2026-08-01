@@ -311,7 +311,8 @@ function mapConfig(row: RawConfigRow): AppConfig {
     heroVideoMobileType:
       (row?.hero_video_mobile_type as 'mp4' | 'youtube' | null) ?? null,
     heroVideoMuted: row?.hero_video_muted ?? true,
-    preloaderVideoUrl: row?.preloader_video_url ?? null,
+    preloaderVideoUrl:
+      stripStorageCacheBust(row?.preloader_video_url ?? undefined) ?? null,
     authImageUrl: stripStorageCacheBust(row?.auth_image_url ?? undefined) ?? null,
     authHeading: row?.auth_heading ?? null,
     authHeadingAr: row?.auth_heading_ar ?? null,

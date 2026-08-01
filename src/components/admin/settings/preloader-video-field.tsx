@@ -11,6 +11,7 @@ import {
   savePreloaderVideoUpload,
 } from '@/app/[locale]/admin/actions'
 import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client'
+import { resolveSupabaseVideoUrl } from '@/lib/supabase-media'
 
 const DEFAULT_PRELOADER_SRC = '/brand/clickit-preloader.mp4'
 
@@ -21,7 +22,8 @@ export function PreloaderVideoField({
 }) {
   const t = useTranslations('admin.settings')
   const tHero = useTranslations('admin.heroMedia')
-  const [url, setUrl] = useState<string | null>(currentUrl)
+  const resolvedCurrentUrl = resolveSupabaseVideoUrl(currentUrl) ?? currentUrl
+  const [url, setUrl] = useState<string | null>(resolvedCurrentUrl)
   const [busy, setBusy] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -70,7 +72,7 @@ export function PreloaderVideoField({
         return
       }
 
-      setUrl(result.data)
+      setUrl(resolveSupabaseVideoUrl(result.data) ?? result.data)
       toast.success(t('preloaderVideoUploaded'))
     } catch {
       toast.error(t('uploadFailed'))

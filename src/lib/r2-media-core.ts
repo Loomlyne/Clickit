@@ -256,37 +256,6 @@ async function deleteR2ObjectKeys(
   return false
 }
 
-async function restoreR2Backups(
-  client: R2Client,
-  configuration: R2Configuration,
-  backups: MirroredMediaDeleteBackup[]
-) {
-  let restored = true
-  for (const backup of backups) {
-    let copied = false
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        await client.send(
-          new CopyObjectCommand({
-            Bucket: configuration.bucket,
-            Key: backup.objectKey,
-            CopySource: r2CopySource(configuration.bucket, backup.backupKey),
-            MetadataDirective: 'COPY',
-          })
-        )
-        copied = true
-        break
-      } catch {
-        // Retry once before retaining the durable backup for manual recovery.
-      }
-    }
-    if (!copied) {
-      restored = false
-    }
-  }
-  return restored
-}
-
 function noOpMirroredPublicMediaDeletion(): MirroredPublicMediaDeletion {
   return {
     commit: async () => true,
@@ -311,8 +280,6 @@ export async function prepareMirroredPublicMediaDeletion(
   const client = options.client ?? createR2Client(configuration)
   const transactionId = options.transactionId ?? randomUUID()
   const backups: MirroredMediaDeleteBackup[] = []
-  let backupsCleaned = false
-  let retainBackups = false
 
   try {
     for (const key of keys) {
@@ -335,56 +302,35 @@ export async function prepareMirroredPublicMediaDeletion(
 
       backups.push({ objectKey, backupKey })
     }
-
-    const deleted = await deleteR2ObjectKeys(
+  } catch {
+    await deleteR2ObjectKeys(
       client,
       configuration,
-      backups.map((backup) => backup.objectKey)
+      backups.map((backup) => backup.backupKey)
     )
-    if (!deleted) {
-      const restored = await restoreR2Backups(client, configuration, backups)
-      if (!restored) {
-        retainBackups = true
-        throw new Error('R2 deletion rollback failed')
-      }
-      const cleaned = await deleteR2ObjectKeys(
-        client,
-        configuration,
-        backups.map((backup) => backup.backupKey)
-      )
-      backupsCleaned = cleaned
-      if (!cleaned) {
-        throw new Error('R2 deletion rollback failed')
-      }
-      throw new Error('R2 deletion failed')
-    }
-  } catch {
-    if (!backupsCleaned && !retainBackups) {
-      await deleteR2ObjectKeys(
-        client,
-        configuration,
-        backups.map((backup) => backup.backupKey)
-      )
-    }
     throw new Error('Could not prepare public media deletion in R2')
   }
 
   return {
-    commit: () =>
+    commit: async () => {
+      const deleted = await deleteR2ObjectKeys(
+        client,
+        configuration,
+        backups.map((backup) => backup.objectKey)
+      )
+      if (!deleted) return false
+
+      return deleteR2ObjectKeys(
+        client,
+        configuration,
+        backups.map((backup) => backup.backupKey)
+      )
+    },
+    rollback: () =>
       deleteR2ObjectKeys(
         client,
         configuration,
         backups.map((backup) => backup.backupKey)
       ),
-    rollback: async () => {
-      const restored = await restoreR2Backups(client, configuration, backups)
-      if (!restored) return false
-      const cleaned = await deleteR2ObjectKeys(
-        client,
-        configuration,
-        backups.map((backup) => backup.backupKey)
-      )
-      return restored && cleaned
-    },
   }
 }

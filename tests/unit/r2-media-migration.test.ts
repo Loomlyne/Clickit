@@ -158,6 +158,23 @@ test('R2 migration rejects same-length source changes from ETag or last-modified
   )
 })
 
+test('R2 migration compares Last-Modified at HTTP second precision', () => {
+  assert.equal(
+    sourceIdentityMatches(
+      {
+        size: 1024,
+        etag: '"source-v1"',
+        lastModified: '2026-07-24T12:00:00.574Z',
+      },
+      {
+        etag: 'source-v1',
+        lastModified: 'Fri, 24 Jul 2026 12:00:00 GMT',
+      }
+    ),
+    true
+  )
+})
+
 test('R2 migration rejects source responses missing reviewed identity headers', () => {
   const manifestSource = {
     size: 1024,

@@ -21,6 +21,7 @@ import {
 } from '@/app/[locale]/admin/actions'
 import type { FooterContent, SocialLinkItem } from '@/lib/config'
 import { SOCIAL_PLATFORMS } from '@/lib/social-platforms'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 import { SettingsCard, SettingsField } from './settings-card'
 
 export function FooterEditor({ initial }: { initial: FooterContent }) {
@@ -284,7 +285,7 @@ function SocialIconUpload({
           title="Remove icon"
         >
           <Image
-            src={currentUrl}
+            src={stripStorageCacheBust(currentUrl) ?? currentUrl}
             alt="icon"
             width={24}
             height={24}

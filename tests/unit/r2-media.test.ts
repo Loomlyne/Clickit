@@ -164,7 +164,7 @@ test('fails closed before source deletion when cutover lacks R2 credentials', as
   assert.equal(sourceRemovalCalls, 0)
 })
 
-test('backs up R2 media before deletion and restores it when source deletion fails', async () => {
+test('stages R2 media before deletion without removing the live object', async () => {
   const commands: unknown[] = []
   const client = {
     async send(command: unknown) {
@@ -183,7 +183,7 @@ test('backs up R2 media before deletion and restores it when source deletion fai
     }
   )
 
-  assert.equal(commands.length, 2)
+  assert.equal(commands.length, 1)
   assert.ok(commands[0] instanceof CopyObjectCommand)
   assert.deepEqual((commands[0] as CopyObjectCommand).input, {
     Bucket: 'test-r2-bucket',
@@ -191,27 +191,10 @@ test('backs up R2 media before deletion and restores it when source deletion fai
     CopySource: 'test-r2-bucket/site-assets/hero/video.mp4',
     MetadataDirective: 'COPY',
   })
+  assert.equal(await deletion.rollback(), true)
+  assert.equal(commands.length, 2)
   assert.ok(commands[1] instanceof DeleteObjectsCommand)
   assert.deepEqual((commands[1] as DeleteObjectsCommand).input, {
-    Bucket: 'test-r2-bucket',
-    Delete: {
-      Objects: [{ Key: 'site-assets/hero/video.mp4' }],
-      Quiet: true,
-    },
-  })
-
-  assert.equal(await deletion.rollback(), true)
-  assert.equal(commands.length, 4)
-  assert.ok(commands[2] instanceof CopyObjectCommand)
-  assert.deepEqual((commands[2] as CopyObjectCommand).input, {
-    Bucket: 'test-r2-bucket',
-    Key: 'site-assets/hero/video.mp4',
-    CopySource:
-      'test-r2-bucket/__clickit-delete-backups/transaction-1/site-assets/hero/video.mp4',
-    MetadataDirective: 'COPY',
-  })
-  assert.ok(commands[3] instanceof DeleteObjectsCommand)
-  assert.deepEqual((commands[3] as DeleteObjectsCommand).input, {
     Bucket: 'test-r2-bucket',
     Delete: {
       Objects: [
@@ -224,7 +207,7 @@ test('backs up R2 media before deletion and restores it when source deletion fai
   })
 })
 
-test('clears the randomized R2 backup after a successful source deletion', async () => {
+test('deletes R2 media only when the dependent deletion commits', async () => {
   const commands: unknown[] = []
   const client = {
     async send(command: unknown) {
@@ -244,6 +227,12 @@ test('clears the randomized R2 backup after a successful source deletion', async
   )
 
   assert.equal(await deletion.commit(), true)
+  assert.equal(commands.length, 3)
+  assert.ok(commands[1] instanceof DeleteObjectsCommand)
+  assert.deepEqual((commands[1] as DeleteObjectsCommand).input.Delete, {
+    Objects: [{ Key: 'avatars/user-1/avatar.webp' }],
+    Quiet: true,
+  })
   assert.ok(commands[2] instanceof DeleteObjectsCommand)
   assert.deepEqual((commands[2] as DeleteObjectsCommand).input.Delete, {
     Objects: [
@@ -255,7 +244,7 @@ test('clears the randomized R2 backup after a successful source deletion', async
   })
 })
 
-test('does not call source removal when R2 preparation cannot delete the original', async () => {
+test('retains the staged backup when committed R2 deletion fails', async () => {
   const commands: unknown[] = []
   const client = {
     async send(command: unknown) {
@@ -269,32 +258,18 @@ test('does not call source removal when R2 preparation cannot delete the origina
       return {}
     },
   }
-  let sourceRemovalCalls = 0
-
-  await assert.rejects(
-    (async () => {
-      const deletion = await prepareMirroredPublicMediaDeletion(
-        'site-assets',
-        ['hero/video.mp4'],
-        {
-          env: configuredEnv,
-          client: client as never,
-          transactionId: 'transaction-2',
-        }
-      )
-      sourceRemovalCalls += 1
-      await deletion.commit()
-    })(),
-    /Could not prepare public media deletion in R2/
+  const deletion = await prepareMirroredPublicMediaDeletion(
+    'site-assets',
+    ['hero/video.mp4'],
+    {
+      env: configuredEnv,
+      client: client as never,
+      transactionId: 'transaction-2',
+    }
   )
-  assert.equal(sourceRemovalCalls, 0)
-  assert.ok(commands[3] instanceof CopyObjectCommand)
-  assert.deepEqual((commands[3] as CopyObjectCommand).input, {
-    Bucket: 'test-r2-bucket',
-    Key: 'site-assets/hero/video.mp4',
-    CopySource:
-      'test-r2-bucket/__clickit-delete-backups/transaction-2/site-assets/hero/video.mp4',
-    MetadataDirective: 'COPY',
-  })
-  assert.ok(commands[4] instanceof DeleteObjectsCommand)
+  assert.equal(await deletion.commit(), false)
+  assert.equal(commands.length, 3)
+  assert.ok(commands[0] instanceof CopyObjectCommand)
+  assert.ok(commands[1] instanceof DeleteObjectsCommand)
+  assert.ok(commands[2] instanceof DeleteObjectsCommand)
 })

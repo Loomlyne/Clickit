@@ -294,7 +294,7 @@ function normalizedLastModified(value) {
   const timestamp = Date.parse(lastModified)
   return Number.isNaN(timestamp)
     ? lastModified
-    : new Date(timestamp).toISOString()
+    : new Date(Math.floor(timestamp / 1000) * 1000).toISOString()
 }
 
 export function sourceIdentityMatches(manifestSource, responseIdentity = {}) {

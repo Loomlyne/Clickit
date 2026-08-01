@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { uploadArtwork } from '@/app/[locale]/admin/actions'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 interface ArtworkUploadZoneProps {
   showId: string
@@ -41,7 +42,8 @@ export function ArtworkUploadZone({
   aspectHint,
 }: ArtworkUploadZoneProps) {
   const [uploading, setUploading] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(currentUrl)
+  const resolvedCurrentUrl = stripStorageCacheBust(currentUrl) ?? currentUrl
+  const [previewUrl, setPreviewUrl] = useState<string | null>(resolvedCurrentUrl)
   const inputRef = useRef<HTMLInputElement>(null)
   const t = useTranslations('admin.artwork')
 
@@ -75,8 +77,9 @@ export function ArtworkUploadZone({
         return
       }
 
-      setPreviewUrl(result.data!)
-      onUploadComplete(result.data!)
+      const publicUrl = result.data!
+      setPreviewUrl(stripStorageCacheBust(publicUrl) ?? publicUrl)
+      onUploadComplete(publicUrl)
     } catch {
       toast.error(t('uploadFailedToast'))
     } finally {

@@ -10,6 +10,7 @@ import { UserDropdown } from './user-dropdown'
 import { createClient } from '@/lib/supabase/client'
 import { User, LogOut, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 interface UserState {
   email: string
@@ -69,7 +70,10 @@ export function AuthSection({
         id: userId,
         email,
         displayName: profileRes.data?.display_name ?? null,
-        avatarUrl: profileRes.data?.avatar_url ?? null,
+        avatarUrl:
+          stripStorageCacheBust(profileRes.data?.avatar_url) ??
+          profileRes.data?.avatar_url ??
+          null,
       })
       setIsAdmin(configRes.data?.admin_user_id === userId)
     }

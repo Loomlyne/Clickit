@@ -25,6 +25,7 @@ import {
 import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
 import { probeLocalMp4HasAudio } from '@/lib/media-audio'
+import { resolveSupabaseVideoUrl } from '@/lib/supabase-media'
 
 type VideoConfig = { url: string; type: 'mp4' | 'youtube' } | null
 type HeroVariant = 'desktop' | 'mobile'
@@ -277,7 +278,7 @@ function HeroVariantPanel({
           >
             {video.type === 'mp4' ? (
               <video
-                src={video.url}
+                src={resolveSupabaseVideoUrl(video.url) ?? video.url}
                 muted
                 autoPlay
                 loop

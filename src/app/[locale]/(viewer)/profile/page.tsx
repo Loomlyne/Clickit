@@ -14,6 +14,7 @@ import {
   getRecentlyWatched,
 } from '@/lib/queries'
 import type { Locale } from '@/lib/locale'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('profile')
@@ -67,7 +68,11 @@ export default async function ProfilePage() {
         <ProfileHeader
           displayName={displayName}
           email={email}
-          avatarUrl={profile?.avatar_url ?? null}
+          avatarUrl={
+            stripStorageCacheBust(profile?.avatar_url) ??
+            profile?.avatar_url ??
+            null
+          }
           isAdmin={isAdmin}
           signOutRedirect={
             appConfig.flags.comingSoonMode ? '/coming-soon' : '/watch'

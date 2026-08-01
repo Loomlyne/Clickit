@@ -27,6 +27,7 @@ import { getLocale } from '@/lib/locale-server'
 import { getIsMobile } from '@/lib/device'
 import { siteUrl } from '@/lib/site-url'
 import { JsonLd } from '@/components/seo/json-ld'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -41,7 +42,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // link still see Arabic copy in the WhatsApp/Slack preview.
   const view = mapShow(show, locale)
   const canonical = `/series/${show.slug}`
-  const ogImage = show.hero_url ?? show.poster_url ?? undefined
+  const ogImage = stripStorageCacheBust(
+    show.hero_url ?? show.poster_url ?? undefined
+  )
 
   return {
     title: `${view.title} | Clickit Story`,
@@ -196,7 +199,7 @@ export default async function SeriesDetailPage({ params }: Props) {
                 >
                   {c.image_url ? (
                     <Image
-                      src={c.image_url}
+                      src={stripStorageCacheBust(c.image_url) ?? c.image_url}
                       alt={c.name}
                       width={80}
                       height={80}

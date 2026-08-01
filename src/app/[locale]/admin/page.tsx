@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { ShowsTable } from '@/components/admin/shows-table'
 import { AdminProfileCard } from '@/components/admin/admin-profile-card'
 import type { Database } from '@/lib/database.types'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 type CategoryJoin = { name_en: string; slug: string; color: string | null }
 type ShowCategoryRow = Pick<
@@ -62,7 +63,11 @@ export default async function AdminPage() {
       <AdminProfileCard
         email={user?.email ?? ''}
         displayName={profile?.display_name ?? null}
-        avatarUrl={profile?.avatar_url ?? null}
+        avatarUrl={
+          stripStorageCacheBust(profile?.avatar_url) ??
+          profile?.avatar_url ??
+          null
+        }
       />
 
       <ShowsTable shows={shows ?? []} categoriesByShowId={categoriesByShowId} />

@@ -6,6 +6,7 @@ import {
   mirrorPublicMediaObject,
 } from '@/lib/r2-media'
 import { createClient } from '@/lib/supabase/server'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 export async function updateProfile(data: { display_name: string }) {
   const supabase = await createClient()
@@ -68,17 +69,20 @@ export async function uploadAvatar(formData: FormData) {
   const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
 
   // Add cache-bust param so browsers refetch after update
-  const avatarUrl = `${urlData.publicUrl}?v=${Date.now()}`
+  const storedAvatarUrl = `${urlData.publicUrl}?v=${Date.now()}`
 
   // Update profile row
   const { error: profileError } = await supabase
     .from('profiles')
-    .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
+    .update({ avatar_url: storedAvatarUrl, updated_at: new Date().toISOString() })
     .eq('id', user.id)
 
   if (profileError) throw new Error(profileError.message)
 
   revalidatePath('/profile')
   revalidatePath('/', 'layout') // refresh navbar avatar
-  return { avatarUrl }
+  return {
+    avatarUrl:
+      stripStorageCacheBust(storedAvatarUrl) ?? storedAvatarUrl,
+  }
 }
