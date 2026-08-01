@@ -7,6 +7,7 @@ import { Upload, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { uploadSiteImage, removeSiteImage } from '@/app/[locale]/admin/actions'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 /**
  * Reusable image upload field for OG image + favicon.
@@ -22,7 +23,7 @@ export function ImageUploadField({
   previewClassName = 'size-32',
   previewBgClassName = 'bg-black/40',
 }: {
-  kind: 'og' | 'favicon' | 'favicon-dark'
+  kind: 'og' | 'favicon' | 'favicon-dark' | 'auth'
   currentUrl: string | null
   accept: string
   maxMb?: number
@@ -32,7 +33,8 @@ export function ImageUploadField({
    *  surface when previewing an icon meant for light browser themes. */
   previewBgClassName?: string
 }) {
-  const [url, setUrl] = useState<string | null>(currentUrl)
+  const resolvedCurrentUrl = stripStorageCacheBust(currentUrl) ?? currentUrl
+  const [url, setUrl] = useState<string | null>(resolvedCurrentUrl)
   const [busy, setBusy] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const t = useTranslations('admin.settings')
@@ -54,7 +56,10 @@ export function ImageUploadField({
         toast.error(result.error ?? t('uploadFailed'))
         return
       }
-      setUrl(result.data ?? null)
+      const publicUrl = result.data ?? null
+      setUrl(
+        publicUrl ? stripStorageCacheBust(publicUrl) ?? publicUrl : null
+      )
       toast.success(t('uploaded'))
     } finally {
       setBusy(false)

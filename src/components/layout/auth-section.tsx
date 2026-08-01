@@ -10,6 +10,7 @@ import { UserDropdown } from './user-dropdown'
 import { createClient } from '@/lib/supabase/client'
 import { User, LogOut, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 interface UserState {
   email: string
@@ -21,13 +22,19 @@ interface UserState {
 interface AuthSectionProps {
   initialUser?: { id: string; email: string } | null
   isLanding?: boolean
-  layout?: 'default' | 'sheet'
+  layout?: 'default' | 'sheet' | 'minimal'
+  /** Where to land after sign-out. Coming-soon gate uses /coming-soon. */
+  signOutRedirect?: string
+  /** Coming-soon gate: hide profile link; show admin + sign out only. */
+  hideProfileLink?: boolean
 }
 
 export function AuthSection({
   initialUser,
   isLanding,
   layout = 'default',
+  signOutRedirect = '/watch',
+  hideProfileLink = false,
 }: AuthSectionProps) {
   const t = useTranslations('common')
   const tNav = useTranslations('nav')
@@ -63,7 +70,10 @@ export function AuthSection({
         id: userId,
         email,
         displayName: profileRes.data?.display_name ?? null,
-        avatarUrl: profileRes.data?.avatar_url ?? null,
+        avatarUrl:
+          stripStorageCacheBust(profileRes.data?.avatar_url) ??
+          profileRes.data?.avatar_url ??
+          null,
       })
       setIsAdmin(configRes.data?.admin_user_id === userId)
     }
@@ -91,11 +101,21 @@ export function AuthSection({
     await supabase.auth.signOut()
     setUser(null)
     setIsAdmin(false)
-    router.replace('/watch')
+    router.replace(signOutRedirect)
     router.refresh()
   }
 
   if (!user) {
+    if (layout === 'minimal') {
+      return (
+        <Link
+          href="/auth"
+          className="inline-flex min-h-10 items-center justify-center rounded-full border border-white/12 bg-black/60 px-5 text-[13px] font-medium text-white transition-colors hover:bg-white/[0.06]"
+        >
+          {t('signIn')}
+        </Link>
+      )
+    }
     if (layout === 'sheet') {
       return (
         <Button
@@ -135,6 +155,22 @@ export function AuthSection({
       >
         <Link href="/auth">{t('signIn')}</Link>
       </Button>
+    )
+  }
+
+  if (layout === 'minimal') {
+    return (
+      <UserDropdown
+        email={user.email}
+        isAdmin={isAdmin}
+        hideProfile={hideProfileLink}
+        onSignOut={signOut}
+      >
+        <UserAvatar
+          name={user.displayName || user.email}
+          avatarUrl={user.avatarUrl}
+        />
+      </UserDropdown>
     )
   }
 
@@ -190,7 +226,12 @@ export function AuthSection({
   }
 
   return (
-    <UserDropdown email={user.email} isAdmin={isAdmin} onSignOut={signOut}>
+    <UserDropdown
+      email={user.email}
+      isAdmin={isAdmin}
+      hideProfile={hideProfileLink}
+      onSignOut={signOut}
+    >
       <UserAvatar
         name={user.displayName || user.email}
         avatarUrl={user.avatarUrl}

@@ -5,6 +5,7 @@ import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getWatchlistShows } from '@/lib/queries'
 import { PortraitShowCard } from '@/components/shows/portrait-show-card'
+import type { Locale } from '@/lib/locale'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('myList')
@@ -28,7 +29,7 @@ export default async function MyListPage() {
   const [t, tCommon, shows] = await Promise.all([
     getTranslations('myList'),
     getTranslations('common'),
-    getWatchlistShows(user.id),
+    getWatchlistShows(user.id, (await getLocale()) as Locale),
   ])
 
   return (

@@ -9,11 +9,11 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
 import { AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { mapAuthError } from '@/lib/auth-errors'
 import { getSafeAuthNextPath } from '@/lib/auth-navigation'
+import { signInAction } from '@/app/[locale]/(viewer)/auth/actions'
 
 const loginSchema = z.object({
   email: z.string().email('emailInvalid'),
@@ -49,27 +49,16 @@ export function LoginForm() {
   async function onLogin(data: LoginFormData) {
     setServerError(null)
 
-    const supabase = createClient()
-    const { data: authData, error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    })
+    const result = await signInAction(data.email, data.password)
 
-    if (error) {
-      setServerError(mapAuthError(error.message))
+    if (!result.ok) {
+      setServerError(mapAuthError(result.error))
       return
     }
 
-    const { data: config } = await supabase
-      .from('app_config')
-      .select('admin_user_id')
-      .eq('id', 1)
-      .single()
-    const isAdmin = config?.admin_user_id === authData.user?.id
-
     const path = getSafeAuthNextPath(
       searchParams.get('next'),
-      isAdmin ? '/admin' : '/watch'
+      result.isAdmin ? '/admin' : '/watch'
     )
     toast.success(t('welcomeBack'))
     // Hard navigation: guarantees the browser sends the freshly persisted
@@ -244,30 +233,6 @@ export function LoginForm() {
           ? t('signInButton') + '…'
           : t('signInButton')}
       </button>
-
-      <div className="relative my-3 md:my-4">
-        <Separator />
-        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--bg-0)] px-3 text-xs text-white/40">
-          {t('orContinueWith')}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => toast.info(t('googleSSOComingSoon'))}
-          className="inline-flex items-center justify-center rounded-full border border-[var(--line)] bg-[var(--bg-2)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--bg-3)]"
-        >
-          Google
-        </button>
-        <button
-          type="button"
-          onClick={() => toast.info(t('appleSSOComingSoon'))}
-          className="inline-flex items-center justify-center rounded-full border border-[var(--line)] bg-[var(--bg-2)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--bg-3)]"
-        >
-          Apple
-        </button>
-      </div>
     </form>
   )
 }

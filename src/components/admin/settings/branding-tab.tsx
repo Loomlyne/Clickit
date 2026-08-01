@@ -6,21 +6,37 @@ import type { AppConfig } from '@/lib/config'
 import { HeroVideoManager } from '@/components/admin/hero-video-manager'
 import { SettingsCard } from './settings-card'
 import { ImageUploadField } from './image-upload-field'
+import { PreloaderVideoField } from './preloader-video-field'
 
 export function BrandingTab({ config }: { config: AppConfig }) {
   const t = useTranslations('admin.settings')
-  const currentVideo =
+  const desktopVideo =
     config.heroVideoUrl && config.heroVideoType
       ? { url: config.heroVideoUrl, type: config.heroVideoType }
+      : null
+  const mobileVideo =
+    config.heroVideoMobileUrl && config.heroVideoMobileType
+      ? { url: config.heroVideoMobileUrl, type: config.heroVideoMobileType }
       : null
 
   return (
     <>
       <SettingsCard
+        title={t('preloaderVideoCardTitle')}
+        description={t('preloaderVideoCardDescription')}
+      >
+        <PreloaderVideoField currentUrl={config.preloaderVideoUrl} />
+      </SettingsCard>
+
+      <SettingsCard
         title={t('heroVideoCardTitle')}
         description={t('heroVideoCardDescription')}
       >
-        <HeroVideoManager currentVideo={currentVideo} />
+        <HeroVideoManager
+          desktopVideo={desktopVideo}
+          mobileVideo={mobileVideo}
+          heroVideoMuted={config.heroVideoMuted}
+        />
       </SettingsCard>
 
       <SettingsCard

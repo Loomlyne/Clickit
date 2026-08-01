@@ -1,6 +1,6 @@
 import Image from 'next/image'
-import { extractYouTubeId } from '@/lib/youtube'
 import { resolveHeroMedia, type HeroMediaChoice } from '@/lib/hero-media'
+import { HeroVideoWithAudio } from '@/components/primitives/hero-video-with-audio'
 
 interface CinematicBackdropProps {
   brandColor: string
@@ -22,16 +22,14 @@ interface CinematicBackdropProps {
    */
   isMobile?: boolean
   /**
-   * When true, disables video autoplay (both <video> and YouTube iframe) in
-   * respect of the user's prefers-reduced-motion OS setting. The video still
-   * mounts but stays paused on its poster/first frame. YouTube iframes omit
-   * the autoplay flag so they load without animating.
+   * When true, omits video and YouTube sources in respect of the user's
+   * prefers-reduced-motion OS setting and renders a static fallback.
    */
   reducedMotion?: boolean
   /**
    * When false, the video is NOT mounted — the poster image is rendered
-   * instead. Carousel slides pass this so only the visible (and next) slide
-   * loads a video, not all N at once. Defaults true for non-carousel usages.
+   * instead. Carousel slides pass this so only the visible slide loads video.
+   * Defaults true for non-carousel usages.
    */
   isActive?: boolean
 }
@@ -54,32 +52,14 @@ function VideoLayer({
    */
   poster?: string
 }) {
-  if (type === 'mp4') {
-    return (
-      <video
-        src={url}
-        autoPlay={!reducedMotion}
-        muted
-        loop={!reducedMotion}
-        playsInline
-        preload="metadata"
-        poster={poster}
-        className={className}
-        aria-hidden
-      />
-    )
-  }
-  const videoId = extractYouTubeId(url)
-  if (!videoId) return null
-  const autoplayFlag = reducedMotion ? '0' : '1'
-  const loopFlag = reducedMotion ? '0' : '1'
   return (
-    <iframe
-      src={`https://www.youtube.com/embed/${videoId}?autoplay=${autoplayFlag}&mute=1&loop=${loopFlag}&playlist=${videoId}&controls=0&rel=0&showinfo=0&iv_load_type=3&modestbranding=1`}
-      allow="autoplay"
-      title="Hero background"
+    <HeroVideoWithAudio
+      url={url}
+      type={type}
       className={className}
-      aria-hidden
+      reducedMotion={reducedMotion}
+      poster={poster}
+      title="Hero background"
     />
   )
 }
@@ -110,21 +90,26 @@ export function CinematicBackdrop({
   // render ONLY the matching variant. Prevents double-download of desktop +
   // mobile media on mobile devices.
   const useServerViewport = typeof isMobile === 'boolean'
+  const allowVideo = isActive && !reducedMotion
   const resolved: MediaChoice = useServerViewport
-    ? resolveHeroMedia(isMobile, {
-        videoUrl,
-        videoType,
-        mobileVideoUrl,
-        mobileVideoType,
-        imageUrl,
-        mobileImageUrl,
-      })
+    ? resolveHeroMedia(
+        isMobile,
+        {
+          videoUrl,
+          videoType,
+          mobileVideoUrl,
+          mobileVideoType,
+          imageUrl,
+          mobileImageUrl,
+        },
+        { allowVideo: isActive && !reducedMotion }
+      )
     : null
 
   // Fallback path (auth pages etc. — no isMobile threaded, no videos): keep
   // CSS-responsive two-branch rendering for backward compatibility.
-  const desktopHasVideo = !!(videoUrl && videoType)
-  const mobileHasVideo = !!(mobileVideoUrl && mobileVideoType)
+  const desktopHasVideo = !!(allowVideo && videoUrl && videoType)
+  const mobileHasVideo = !!(allowVideo && mobileVideoUrl && mobileVideoType)
   const mobileUsesDesktopVideo = !mobileHasVideo && desktopHasVideo
 
   return (
@@ -137,24 +122,13 @@ export function CinematicBackdrop({
       {useServerViewport ? (
         /* Viewport-aware: single variant, no CSS hiding needed */
         resolved?.kind === 'video' ? (
-          isActive ? (
-            <VideoLayer
-              url={resolved.url}
-              type={resolved.type}
-              className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-80"
-              reducedMotion={reducedMotion}
-              poster={isMobile ? (mobileImageUrl ?? imageUrl) : imageUrl}
-            />
-          ) : (isMobile ? (mobileImageUrl ?? imageUrl) : imageUrl) ? (
-            <Image
-              src={(isMobile ? (mobileImageUrl ?? imageUrl) : imageUrl) as string}
-              alt=""
-              fill
-              className="object-cover opacity-80"
-              sizes="100vw"
-              aria-hidden
-            />
-          ) : null
+          <VideoLayer
+            url={resolved.url}
+            type={resolved.type}
+            className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-80"
+            reducedMotion={reducedMotion}
+            poster={isMobile ? (mobileImageUrl ?? imageUrl) : imageUrl}
+          />
         ) : resolved?.kind === 'image' ? (
           <Image
             src={resolved.url}

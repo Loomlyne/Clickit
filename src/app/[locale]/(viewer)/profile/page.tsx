@@ -3,17 +3,18 @@ import { getLocale as getIntlLocale, getTranslations } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getLocale } from '@/lib/locale'
-import { ProfileForm } from '@/components/profile/profile-form'
+import { getAppConfig } from '@/lib/config'
+import { AccountSettings } from '@/components/profile/account-settings'
 import { ProfileHeader } from '@/components/profile/profile-header'
 import { ProfileHistoryRow } from '@/components/profile/profile-history-row'
 import { PortraitShowCard } from '@/components/shows/portrait-show-card'
-import { LanguagePreference } from '@/components/profile/language-preference'
 import {
   getWatchlistShows,
   getLikedShows,
   getRecentlyWatched,
 } from '@/lib/queries'
+import type { Locale } from '@/lib/locale'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('profile')
@@ -34,24 +35,26 @@ export default async function ProfilePage() {
     return redirect({ href: '/auth', locale })
   }
 
-  const [{ data: profile }, { data: config }] = await Promise.all([
+  const [{ data: profile }, { data: config }, appConfig] = await Promise.all([
     supabase
       .from('profiles')
       .select('display_name, avatar_url')
       .eq('id', user.id)
       .single(),
     supabase.from('app_config').select('admin_user_id').single(),
+    getAppConfig(),
   ])
 
   const isAdmin = config?.admin_user_id === user.id
 
+  const locale = (await getIntlLocale()) as Locale
+
   // Fetch personalization data
-  const [watchlistShows, likedShows, recentlyWatched, locale, t, tCommon] =
+  const [watchlistShows, likedShows, recentlyWatched, t, tCommon] =
     await Promise.all([
-      getWatchlistShows(user.id),
-      getLikedShows(user.id),
+      getWatchlistShows(user.id, locale),
+      getLikedShows(user.id, locale),
       getRecentlyWatched(user.id),
-      getLocale(),
       getTranslations('profile'),
       getTranslations('common'),
     ])
@@ -65,98 +68,89 @@ export default async function ProfilePage() {
         <ProfileHeader
           displayName={displayName}
           email={email}
-          avatarUrl={profile?.avatar_url ?? null}
+          avatarUrl={
+            stripStorageCacheBust(profile?.avatar_url) ??
+            profile?.avatar_url ??
+            null
+          }
           isAdmin={isAdmin}
+          signOutRedirect={
+            appConfig.flags.comingSoonMode ? '/coming-soon' : '/watch'
+          }
         />
 
-        <div
-          id="account-settings"
-          className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6"
-        >
-          <h3 className="font-display mb-4 text-lg font-semibold tracking-[-0.02em] text-white">
-            {t('accountHeading')}
-          </h3>
-          <ProfileForm displayName={displayName} />
-        </div>
+        <AccountSettings displayName={displayName} email={email} />
 
-        <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
-          <h3 className="font-display mb-1 text-lg font-semibold tracking-[-0.02em] text-white">
-            {t('languageHeading')}
-          </h3>
-          <p className="mb-4 text-sm text-[var(--text-mute)]">
-            {t('languageDescription')}
-          </p>
-          <LanguagePreference current={locale} />
-        </div>
-
-        <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
-              {t('myListHeading')}
+        <div className="grid gap-8 lg:grid-cols-2">
+          <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
+                {t('myListHeading')}
+                {watchlistShows.length > 0 && (
+                  <span className="ms-2 font-mono text-sm font-normal text-[var(--text-mute)]">
+                    {watchlistShows.length}
+                  </span>
+                )}
+              </h3>
               {watchlistShows.length > 0 && (
-                <span className="ms-2 font-mono text-sm font-normal text-[var(--text-mute)]">
-                  {watchlistShows.length}
-                </span>
+                <Link
+                  href="/my-list"
+                  className="text-sm text-[var(--text-dim)] transition-colors hover:text-white"
+                >
+                  {t('myListSeeAll')} &rarr;
+                </Link>
               )}
-            </h3>
-            {watchlistShows.length > 0 && (
-              <Link
-                href="/my-list"
-                className="text-sm text-[var(--text-dim)] transition-colors hover:text-white"
-              >
-                {t('myListSeeAll')} &rarr;
-              </Link>
+            </div>
+            {watchlistShows.length > 0 ? (
+              <div className="relative before:pointer-events-none before:absolute before:inset-y-0 before:end-0 before:z-10 before:w-10 before:bg-[linear-gradient(90deg,transparent,var(--bg-1))]">
+                <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-1">
+                  {watchlistShows.slice(0, 8).map((show) => (
+                    <div key={show.id} className="w-32 flex-shrink-0">
+                      <PortraitShowCard show={show} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="py-6 text-center text-sm text-[var(--text-mute)]">
+                {t('myListEmpty')}.{' '}
+                <Link
+                  href="/watch"
+                  className="text-[var(--text-dim)] underline hover:text-white"
+                >
+                  {tCommon('browseShows')}
+                </Link>
+              </p>
             )}
           </div>
-          {watchlistShows.length > 0 ? (
-            <div className="relative before:pointer-events-none before:absolute before:inset-y-0 before:end-0 before:z-10 before:w-10 before:bg-[linear-gradient(90deg,transparent,var(--bg-1))]">
-              <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-1">
-                {watchlistShows.slice(0, 8).map((show) => (
-                  <div key={show.id} className="w-32 flex-shrink-0">
-                    <PortraitShowCard show={show} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <p className="py-6 text-center text-sm text-[var(--text-mute)]">
-              {t('myListEmpty')}.{' '}
-              <Link
-                href="/watch"
-                className="text-[var(--text-dim)] underline hover:text-white"
-              >
-                {tCommon('browseShows')}
-              </Link>
-            </p>
-          )}
-        </div>
 
-        <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
-              {t('likedHeading')}
-              {likedShows.length > 0 && (
-                <span className="ms-2 font-mono text-sm font-normal text-[var(--text-mute)]">
-                  {likedShows.length}
-                </span>
-              )}
-            </h3>
-          </div>
-          {likedShows.length > 0 ? (
-            <div className="relative before:pointer-events-none before:absolute before:inset-y-0 before:end-0 before:z-10 before:w-10 before:bg-[linear-gradient(90deg,transparent,var(--bg-1))]">
-              <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-1">
-                {likedShows.slice(0, 8).map((show) => (
-                  <div key={show.id} className="w-32 flex-shrink-0">
-                    <PortraitShowCard show={show} />
-                  </div>
-                ))}
-              </div>
+          <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-white">
+                {t('likedHeading')}
+                {likedShows.length > 0 && (
+                  <span className="ms-2 font-mono text-sm font-normal text-[var(--text-mute)]">
+                    {likedShows.length}
+                  </span>
+                )}
+              </h3>
             </div>
-          ) : (
-            <p className="py-6 text-center text-sm text-[var(--text-mute)]">
-              {t('likedEmpty')}
-            </p>
-          )}
+            {likedShows.length > 0 ? (
+              <div className="relative before:pointer-events-none before:absolute before:inset-y-0 before:end-0 before:z-10 before:w-10 before:bg-[linear-gradient(90deg,transparent,var(--bg-1))]">
+                <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-1">
+                  {likedShows.slice(0, 8).map((show) => (
+                    <div key={show.id} className="w-32 flex-shrink-0">
+                      <PortraitShowCard show={show} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="py-6 text-center text-sm text-[var(--text-mute)]">
+                {t('likedEmpty')}
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6">

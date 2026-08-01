@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { SeasonTabs } from '@/components/admin/season-tabs'
@@ -16,6 +17,7 @@ export default async function ShowDetailPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
+  const admin = createAdminClient()
   const tDash = await getTranslations('admin.dashboard')
 
   const { data: show, error: showError } = await supabase
@@ -34,7 +36,7 @@ export default async function ShowDetailPage({
         .select('*')
         .eq('show_id', id)
         .order('season_number', { ascending: true }),
-      supabase
+      admin
         .from('episodes')
         .select('*')
         .eq('show_id', id)
@@ -84,7 +86,12 @@ export default async function ShowDetailPage({
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <AdminBackLink href="/admin">{tDash('allShows')}</AdminBackLink>
+        <div className="min-w-0 space-y-1.5">
+          <AdminBackLink href="/admin">{tDash('allShows')}</AdminBackLink>
+          <h1 className="text-foreground truncate text-xl font-semibold tracking-tight sm:text-2xl">
+            {show.title}
+          </h1>
+        </div>
         <EditShowButton show={show} />
       </div>
 

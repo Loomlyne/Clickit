@@ -1,8 +1,9 @@
 // Continue Watching Rail — server component, native flex scroll
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { DragScroll } from '@/components/primitives/drag-scroll'
 import { getContinueWatchingEpisodes } from '@/lib/queries'
 import { ContinueWatchingCard } from '@/components/home/continue-watching-card'
+import type { Locale } from '@/lib/locale'
 
 interface ContinueWatchingRailProps {
   userId: string | null
@@ -14,7 +15,7 @@ export async function ContinueWatchingRail({
   if (!userId) return null
 
   const [items, t] = await Promise.all([
-    getContinueWatchingEpisodes(userId),
+    getContinueWatchingEpisodes(userId, (await getLocale()) as Locale),
     getTranslations('watch'),
   ])
 

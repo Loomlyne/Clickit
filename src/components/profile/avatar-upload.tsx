@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Camera } from 'lucide-react'
 import { toast } from 'sonner'
 import { uploadAvatar } from '@/app/[locale]/(viewer)/profile/actions'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 interface AvatarUploadProps {
   currentUrl: string | null
@@ -17,7 +18,8 @@ export function AvatarUpload({
 }: AvatarUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const objectUrlRef = useRef<string | null>(null)
-  const [preview, setPreview] = useState<string | null>(currentUrl)
+  const resolvedCurrentUrl = stripStorageCacheBust(currentUrl) ?? currentUrl
+  const [preview, setPreview] = useState<string | null>(resolvedCurrentUrl)
   const [uploading, setUploading] = useState(false)
   const t = useTranslations('profile')
 
@@ -40,10 +42,10 @@ export function AvatarUpload({
       const result = await uploadAvatar(formData)
       URL.revokeObjectURL(objectUrl)
       objectUrlRef.current = null
-      setPreview(result.avatarUrl)
+      setPreview(stripStorageCacheBust(result.avatarUrl) ?? result.avatarUrl)
       toast.success(t('avatarUpdated'))
     } catch (err) {
-      setPreview(currentUrl)
+      setPreview(resolvedCurrentUrl)
       console.error(
         '[avatar-upload] upload failed:',
         err instanceof Error ? err.message : err

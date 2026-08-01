@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getLegalPageBySlug, getAllLegalPages } from '@/lib/queries'
-import { getLocale, pickLocalized } from '@/lib/locale'
+import { pickLocalized } from '@/lib/locale'
+import { getLocale } from '@/lib/locale-server'
 import { LegalPageContent } from '@/components/legal/legal-page-content'
 
 export async function generateStaticParams() {

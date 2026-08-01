@@ -39,9 +39,11 @@ async function gateAgainstBots(
         isVerifiedBot: result.isVerifiedBot,
         bypassed: result.bypassed,
       })
-      // BotID has produced false negatives on real auth requests in this app.
-      // Keep the signal, but do not block sign-in/sign-up availability here.
-      return null
+      return {
+        ok: false,
+        error:
+          'Request blocked for security. Please try again or contact support if this persists.',
+      }
     }
   } catch (err) {
     // If BotID itself throws (misconfig, network), do not hard-block auth —

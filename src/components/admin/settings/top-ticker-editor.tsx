@@ -14,9 +14,6 @@ const emptyRow = (): TopTickerItem => ({
   tag: '',
   text: '',
   tag2: '',
-  tag_ar: '',
-  text_ar: '',
-  tag2_ar: '',
 })
 
 export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
@@ -24,11 +21,9 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
   const [rows, setRows] = useState<TopTickerItem[]>(
     initial.items.length > 0
       ? initial.items.map((r) => ({
-          ...r,
+          tag: r.tag,
+          text: r.text,
           tag2: r.tag2 ?? '',
-          tag_ar: r.tag_ar ?? '',
-          text_ar: r.text_ar ?? '',
-          tag2_ar: r.tag2_ar ?? '',
         }))
       : [emptyRow()]
   )
@@ -41,9 +36,6 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
       tag: r.tag.trim(),
       text: r.text.trim(),
       tag2: (r.tag2 ?? '').trim(),
-      tag_ar: (r.tag_ar ?? '').trim(),
-      text_ar: (r.text_ar ?? '').trim(),
-      tag2_ar: (r.tag2_ar ?? '').trim(),
     })),
   }
   const normalizedDraft = {
@@ -53,9 +45,6 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
         tag: r.tag.trim(),
         text: r.text.trim(),
         tag2: (r.tag2 ?? '').trim(),
-        tag_ar: (r.tag_ar ?? '').trim(),
-        text_ar: (r.text_ar ?? '').trim(),
-        tag2_ar: (r.tag2_ar ?? '').trim(),
       }))
       .filter((r) => r.tag.length > 0 || r.text.length > 0 || (r.tag2 ?? '').length > 0),
   }
@@ -70,9 +59,6 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
         tag: r.tag.trim(),
         text: r.text.trim(),
         tag2: r.tag2?.trim() || undefined,
-        tag_ar: r.tag_ar?.trim() || undefined,
-        text_ar: r.text_ar?.trim() || undefined,
-        tag2_ar: r.tag2_ar?.trim() || undefined,
       }))
       .filter((r) => r.tag.length > 0 || r.text.length > 0 || (r.tag2?.trim() ?? '').length > 0)
     const result = await updateTopTicker({ enabled, items })
@@ -215,63 +201,6 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
                 >
                   <Trash2 className="size-4" />
                 </Button>
-              </div>
-
-              {/* Arabic — shown on the ticker when the viewer locale is ar */}
-              <div className="flex flex-col gap-3 border-t border-white/5 pt-3 md:flex-row md:items-end">
-                <div className="min-w-0 flex-1 md:max-w-[160px]">
-                  <SettingsField label={`${t('tagLabel')} (Arabic)`}>
-                    <Input
-                      dir="rtl"
-                      value={row.tag_ar ?? ''}
-                      maxLength={24}
-                      onChange={(e) =>
-                        setRows((rs) =>
-                          rs.map((x, i) =>
-                            i === index ? { ...x, tag_ar: e.target.value } : x
-                          )
-                        )
-                      }
-                      className="rounded-[12px] font-[family-name:var(--font-lbc)] font-bold text-sm"
-                    />
-                  </SettingsField>
-                </div>
-                <div className="min-w-0 flex-[2]">
-                  <SettingsField label={`${t('textLabel')} (Arabic)`}>
-                    <Input
-                      dir="rtl"
-                      value={row.text_ar ?? ''}
-                      maxLength={240}
-                      onChange={(e) =>
-                        setRows((rs) =>
-                          rs.map((x, i) =>
-                            i === index ? { ...x, text_ar: e.target.value } : x
-                          )
-                        )
-                      }
-                      className="rounded-[12px] font-[family-name:var(--font-lbc)] font-bold"
-                    />
-                  </SettingsField>
-                </div>
-                <div className="min-w-0 flex-1 md:max-w-[160px]">
-                  <SettingsField label={`${t('tagLabel')} (Arabic)`}>
-                    <Input
-                      dir="rtl"
-                      value={row.tag2_ar ?? ''}
-                      maxLength={24}
-                      onChange={(e) =>
-                        setRows((rs) =>
-                          rs.map((x, i) =>
-                            i === index ? { ...x, tag2_ar: e.target.value } : x
-                          )
-                        )
-                      }
-                      className="rounded-[12px] font-[family-name:var(--font-lbc)] font-bold text-sm"
-                    />
-                  </SettingsField>
-                </div>
-                {/* spacer to align with the remove button column above */}
-                <div className="hidden size-9 shrink-0 md:block" aria-hidden />
               </div>
             </div>
           ))}

@@ -1,6 +1,12 @@
+import 'server-only'
+
 import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { createPublicClient } from '@/lib/supabase/public'
+import {
+  resolveSupabaseVideoUrl,
+  stripStorageCacheBust,
+} from '@/lib/supabase-media'
 
 // ---------------------------------------------------------------------------
 // Shape of the admin-controlled site config (backed by app_config row id=1).
@@ -88,9 +94,28 @@ export type AppConfig = {
   faviconUrl: string | null
   /** Dark-mode favicon variant. Served via prefers-color-scheme: dark; falls back to faviconUrl. */
   faviconDarkUrl: string | null
-  // Hero video (existing)
+  // Hero video (existing) — desktop / horizontal 16:9
   heroVideoUrl: string | null
   heroVideoType: 'mp4' | 'youtube' | null
+  // Hero video — mobile / vertical 9:16 (falls back to desktop when unset)
+  heroVideoMobileUrl: string | null
+  heroVideoMobileType: 'mp4' | 'youtube' | null
+  heroVideoMuted: boolean
+  /** Entry splash logo animation. Null falls back to /brand/clickit-preloader.mp4. */
+  preloaderVideoUrl: string | null
+  // Sign-in page — admin-editable image, copy (EN/AR) and OAuth toggles
+  authImageUrl: string | null
+  authHeading: string | null
+  authHeadingAr: string | null
+  authSubheading: string | null
+  authSubheadingAr: string | null
+  authQuote: string | null
+  authQuoteAr: string | null
+  authQuoteAttribution: string | null
+  authQuoteAttributionAr: string | null
+  // When true, the auth page shows a "Skip sign-in" link and signed-out
+  // visitors may browse and watch without an account (my-list/profile still gated).
+  authAllowSkip: boolean
   // Structured content
   footer: FooterContent
   ctaCopy: CtaCopy
@@ -104,6 +129,10 @@ export type AppConfig = {
   topTicker: TopTickerConfig
   /** Optional YouTube (or same-host) live stream; nav falls back to /watch#now-streaming when null. */
   liveStreamUrl: string | null
+  /** Custom EN label for the navbar Now Live pill. Null falls back to i18n. */
+  liveStreamLabel: string | null
+  /** Custom AR label. Shown when locale is ar; null falls back to EN or i18n. */
+  liveStreamLabelAr: string | null
   /** Landing hero paragraph below the logo. Null means use the i18n fallback. */
   heroDescription: string | null
   /** Arabic landing hero paragraph. Shown when locale is ar; null falls back to i18n. */
@@ -203,7 +232,7 @@ export const getAppConfig = cache(unstable_cache(
     const { data } = await supabase
       .from('app_config')
       .select(
-        'site_title, site_description, site_description_ar, site_tagline, site_tagline_ar, og_image_url, favicon_url, favicon_dark_url, hero_video_url, hero_video_type, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, hero_description, hero_description_ar, portfolio_heading, portfolio_heading_ar' as string
+        'site_title, site_description, site_description_ar, site_tagline, site_tagline_ar, og_image_url, favicon_url, favicon_dark_url, hero_video_url, hero_video_type, hero_video_mobile_url, hero_video_mobile_type, hero_video_muted, preloader_video_url, auth_image_url, auth_heading, auth_heading_ar, auth_subheading, auth_subheading_ar, auth_quote, auth_quote_ar, auth_quote_attribution, auth_quote_attribution_ar, auth_allow_skip, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, live_stream_label, live_stream_label_ar, hero_description, hero_description_ar, portfolio_heading, portfolio_heading_ar' as string
       )
       .eq('id', 1)
       .single<RawConfigRow>()
@@ -230,6 +259,20 @@ type RawConfigRow = {
   favicon_dark_url: string | null
   hero_video_url: string | null
   hero_video_type: string | null
+  hero_video_mobile_url: string | null
+  hero_video_mobile_type: string | null
+  hero_video_muted: boolean | null
+  preloader_video_url: string | null
+  auth_image_url: string | null
+  auth_heading: string | null
+  auth_heading_ar: string | null
+  auth_subheading: string | null
+  auth_subheading_ar: string | null
+  auth_quote: string | null
+  auth_quote_ar: string | null
+  auth_quote_attribution: string | null
+  auth_quote_attribution_ar: string | null
+  auth_allow_skip: boolean | null
   footer_content: unknown
   cta_copy: unknown
   genre_config: unknown
@@ -238,6 +281,8 @@ type RawConfigRow = {
   feature_flags: unknown
   top_ticker: unknown
   live_stream_url: string | null
+  live_stream_label: string | null
+  live_stream_label_ar: string | null
   hero_description: string | null
   hero_description_ar: string | null
   portfolio_heading: string | null
@@ -251,11 +296,33 @@ function mapConfig(row: RawConfigRow): AppConfig {
     siteDescriptionAr: row?.site_description_ar ?? null,
     siteTagline: row?.site_tagline ?? 'Every Story Clicks.',
     siteTaglineAr: row?.site_tagline_ar ?? null,
-    ogImageUrl: row?.og_image_url ?? null,
-    faviconUrl: row?.favicon_url ?? null,
-    faviconDarkUrl: row?.favicon_dark_url ?? null,
-    heroVideoUrl: row?.hero_video_url ?? null,
+    ogImageUrl: stripStorageCacheBust(row?.og_image_url ?? undefined) ?? null,
+    faviconUrl: stripStorageCacheBust(row?.favicon_url ?? undefined) ?? null,
+    faviconDarkUrl: stripStorageCacheBust(row?.favicon_dark_url ?? undefined) ?? null,
+    heroVideoUrl:
+      row?.hero_video_type === 'mp4' && row?.hero_video_url
+        ? resolveSupabaseVideoUrl(row.hero_video_url)
+        : row?.hero_video_url ?? null,
     heroVideoType: (row?.hero_video_type as 'mp4' | 'youtube' | null) ?? null,
+    heroVideoMobileUrl:
+      row?.hero_video_mobile_type === 'mp4' && row?.hero_video_mobile_url
+        ? resolveSupabaseVideoUrl(row.hero_video_mobile_url)
+        : row?.hero_video_mobile_url ?? null,
+    heroVideoMobileType:
+      (row?.hero_video_mobile_type as 'mp4' | 'youtube' | null) ?? null,
+    heroVideoMuted: row?.hero_video_muted ?? true,
+    preloaderVideoUrl:
+      stripStorageCacheBust(row?.preloader_video_url ?? undefined) ?? null,
+    authImageUrl: stripStorageCacheBust(row?.auth_image_url ?? undefined) ?? null,
+    authHeading: row?.auth_heading ?? null,
+    authHeadingAr: row?.auth_heading_ar ?? null,
+    authSubheading: row?.auth_subheading ?? null,
+    authSubheadingAr: row?.auth_subheading_ar ?? null,
+    authQuote: row?.auth_quote ?? null,
+    authQuoteAr: row?.auth_quote_ar ?? null,
+    authQuoteAttribution: row?.auth_quote_attribution ?? null,
+    authQuoteAttributionAr: row?.auth_quote_attribution_ar ?? null,
+    authAllowSkip: row?.auth_allow_skip ?? false,
     footer: mergeFooter(row?.footer_content),
     ctaCopy: mergeCta(row?.cta_copy),
     genreConfig: isObject(row?.genre_config) ? (row!.genre_config as GenreConfig) : {},
@@ -264,6 +331,8 @@ function mapConfig(row: RawConfigRow): AppConfig {
     flags: mergeFlags(row?.feature_flags),
     topTicker: mergeTopTicker(row?.top_ticker),
     liveStreamUrl: row?.live_stream_url ?? null,
+    liveStreamLabel: row?.live_stream_label ?? null,
+    liveStreamLabelAr: row?.live_stream_label_ar ?? null,
     heroDescription: row?.hero_description ?? null,
     heroDescriptionAr: row?.hero_description_ar ?? null,
     portfolioHeading: row?.portfolio_heading ?? null,

@@ -11,18 +11,15 @@ import { getAppConfig } from '@/lib/config'
  * /ar/admin both pass through.
  *
  * - /coming-soon is the splash target
- * - /admin is the editor — admin needs to be able to turn the flag off
- * - /auth is the login screen — admin must be able to log in
- * - /support stays reachable for locked-out users
+ * - /admin is the editor — admin manages the site while gated
+ * - /auth is the login screen
  *
- * /api/* is also allowed, but it is matched against the full (non-stripped)
- * path because API routes do NOT have locale prefixes.
+ * Everyone (including admin) is redirected to /coming-soon for all other routes.
  */
 const COMING_SOON_ALLOWLIST = [
   '/coming-soon',
   '/admin',
   '/auth',
-  '/support',
 ]
 
 /**
@@ -43,6 +40,52 @@ const PUBLIC_ALLOWLIST = [
   '/privacy',
   '/terms',
 ]
+
+/**
+ * Routes that ALWAYS require a signed-in user, even when "skip sign-in" is on
+ * (account-specific areas). /watch is only gated when skip-sign-in is off.
+ */
+const SKIP_PROTECTED_ALWAYS = [
+  '/my-list',
+  '/profile',
+  '/admin',
+  '/design-system',
+]
+
+function isWatchPath(pathWithoutLocale: string): boolean {
+  return (
+    pathWithoutLocale === '/watch' ||
+    pathWithoutLocale.startsWith('/watch/')
+  )
+}
+
+/** True when anonymous users must sign in even if auth_allow_skip is enabled. */
+function isAuthRequiredDespiteSkip(
+  pathWithoutLocale: string,
+  authAllowSkip: boolean
+): boolean {
+  if (
+    SKIP_PROTECTED_ALWAYS.some(
+      (p) =>
+        pathWithoutLocale === p || pathWithoutLocale.startsWith(`${p}/`)
+    )
+  ) {
+    return true
+  }
+  // Skip mode opens the catalog + player; without it, /watch needs an account.
+  if (!authAllowSkip && isWatchPath(pathWithoutLocale)) {
+    return true
+  }
+  return false
+}
+
+/** Vercel BotID challenge/proxy paths — must stay locale-free (see withBotId). */
+const BOTID_PREFIX = '/149e9513-01fa-4fb0-aad4-566afd725d1b'
+
+function isBotIdPath(pathname: string): boolean {
+  const { pathWithoutLocale } = stripLocale(pathname)
+  return pathWithoutLocale.startsWith(BOTID_PREFIX)
+}
 
 const handleI18nRouting = createMiddleware(routing)
 
@@ -99,6 +142,17 @@ export async function proxy(request: NextRequest) {
     return response
   }
 
+  // BotID loads c.js relative to the current URL, so on /en/auth the browser
+  // requests /en/149e9513-…/c.js. withBotId rewrites only match the root path;
+  // without this strip+rewrite, next-intl treats the script as a page → 500
+  // ("No intl context found") and auth Server Actions never get a challenge token.
+  if (isBotIdPath(pathname)) {
+    const { pathWithoutLocale } = stripLocale(pathname)
+    const url = request.nextUrl.clone()
+    url.pathname = pathWithoutLocale
+    return NextResponse.rewrite(url)
+  }
+
   // Step 1: Run next-intl routing. This may return a 3xx redirect when the
   // pathname is missing a locale prefix (e.g., / → /en/).
   const intlResponse = handleI18nRouting(request)
@@ -128,31 +182,31 @@ export async function proxy(request: NextRequest) {
   // prefix stripped, so /en/admin, /ar/admin both pass the allowlist.
   const { locale, pathWithoutLocale } = stripLocale(pathname)
 
+  const { flags } = await getAppConfig()
+
+  // /coming-soon is the gate splash only — not a public catalog route.
+  if (
+    pathWithoutLocale === '/coming-soon' ||
+    pathWithoutLocale.startsWith('/coming-soon/')
+  ) {
+    if (!flags.comingSoonMode) {
+      const url = request.nextUrl.clone()
+      url.pathname = `/${locale}/watch`
+      url.search = ''
+      return redirectWithCookies(url, intlResponse)
+    }
+  }
+
   const isAllowlisted = COMING_SOON_ALLOWLIST.some(
     (p) => pathWithoutLocale === p || pathWithoutLocale.startsWith(`${p}/`)
   )
 
   if (!isAllowlisted) {
-    // getAppConfig() is cached (15min) — no DB hit per request in the steady
-    // state. The cache tag 'site-config' is bumped when the admin saves
-    // feature flags, so the toggle takes effect within one revalidation cycle.
-    const { flags } = await getAppConfig()
     if (flags.comingSoonMode) {
-      // Only consult app_config.admin_user_id when the gate is ACTUALLY
-      // active. 99% of requests skip this query entirely, saving ~100ms TTFB.
-      const isAdmin = await checkIsAdmin()
-      if (!isAdmin) {
-        const url = request.nextUrl.clone()
-        // Pitfall #5 (RTE-07): preserve the incoming locale prefix so the
-        // redirect lands on /en/coming-soon or /ar/coming-soon, never bare
-        // /coming-soon. When the incoming URL had no prefix, stripLocale
-        // returned routing.defaultLocale — redirect there.
-        url.pathname = `/${locale}/coming-soon`
-        url.search = ''
-        // Copy the merged cookies onto the coming-soon redirect — keeps the
-        // admin's session refresh alive even when they get gated.
-        return redirectWithCookies(url, intlResponse)
-      }
+      const url = request.nextUrl.clone()
+      url.pathname = `/${locale}/coming-soon`
+      url.search = ''
+      return redirectWithCookies(url, intlResponse)
     }
   }
 
@@ -167,13 +221,22 @@ export async function proxy(request: NextRequest) {
 
   if (!isPublic) {
     if (!userId) {
-      // Signed out → bounce to /auth, remembering the intended destination.
-      const url = request.nextUrl.clone()
-      url.pathname = `/${locale}/auth`
-      url.search = `?next=${pathWithoutLocale}`
-      return redirectWithCookies(url, intlResponse)
-    }
-    if (isAdminRoute) {
+      const { authAllowSkip } = await getAppConfig()
+      const mustAuthDespiteSkip = isAuthRequiredDespiteSkip(
+        pathWithoutLocale,
+        authAllowSkip
+      )
+      let mustAuth = true
+      if (!mustAuthDespiteSkip) {
+        mustAuth = !authAllowSkip
+      }
+      if (mustAuth) {
+        const url = request.nextUrl.clone()
+        url.pathname = `/${locale}/auth`
+        url.search = `?next=${pathWithoutLocale}`
+        return redirectWithCookies(url, intlResponse)
+      }
+    } else if (isAdminRoute) {
       // Signed in but not the admin → bounce to /watch. checkIsAdmin() (one DB
       // query) runs only for /admin/* requests, never on normal page loads.
       const isAdmin = await checkIsAdmin()

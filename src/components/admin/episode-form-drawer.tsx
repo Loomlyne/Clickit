@@ -212,7 +212,7 @@ export function EpisodeFormDrawer({
   }, [watchedVideoId, form, t])
 
   async function onSubmit(data: EpisodeFormData) {
-    const sourceData = isEdit ? data : { ...data, ...inheritedEpisodeFields }
+    const sourceData = data
     const normalized = {
       ...sourceData,
       title_ar: sourceData.title_ar || null,
@@ -267,49 +267,23 @@ export function EpisodeFormDrawer({
         >
           <div className="flex-1 space-y-8 overflow-y-auto px-6 py-5">
             <Section title={t('sectionInfo')}>
-              {isEdit ? (
-                <>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="col-span-2">
-                      <Field
-                        label={t('titleLabel')}
-                        required
-                        error={
-                          errors.title?.message
-                            ? tErrors(errors.title.message as never)
-                            : undefined
-                        }
-                      >
-                        <Input
-                          {...form.register('title')}
-                          placeholder={t('episodeTitlePlaceholder')}
-                        />
-                      </Field>
-                    </div>
-                    <Field
-                      label={t('episodeNumberLabel')}
-                      required
-                      error={
-                        errors.episode_number?.message
-                          ? tErrors(errors.episode_number.message as never)
-                          : undefined
-                      }
-                    >
-                      <Input
-                        type="number"
-                        min={1}
-                        {...form.register('episode_number', {
-                          valueAsNumber: true,
-                        })}
-                      />
-                    </Field>
-                  </div>
-
-                  <Field label={t('titleArLabel')}>
-                    <Input dir="rtl" {...form.register('title_ar')} />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <Field
+                    label={t('titleLabel')}
+                    required
+                    error={
+                      errors.title?.message
+                        ? tErrors(errors.title.message as never)
+                        : undefined
+                    }
+                  >
+                    <Input
+                      {...form.register('title')}
+                      placeholder={t('episodeTitlePlaceholder')}
+                    />
                   </Field>
-                </>
-              ) : (
+                </div>
                 <Field
                   label={t('episodeNumberLabel')}
                   required
@@ -327,7 +301,11 @@ export function EpisodeFormDrawer({
                     })}
                   />
                 </Field>
-              )}
+              </div>
+
+              <Field label={t('titleArLabel')}>
+                <Input dir="rtl" {...form.register('title_ar')} />
+              </Field>
 
               <div className="space-y-1.5">
                 <Label className="text-sm">
@@ -448,33 +426,29 @@ export function EpisodeFormDrawer({
                 )}
               </Field>
 
-              {isEdit && (
-                <>
-                  <Field
-                    label={t('descriptionLabel')}
-                    required
-                    error={
-                      errors.description?.message
-                        ? tErrors(errors.description.message as never)
-                        : undefined
-                    }
-                  >
-                    <Textarea
-                      rows={5}
-                      {...form.register('description')}
-                      placeholder={t('descriptionPlaceholder')}
-                    />
-                  </Field>
+              <Field
+                label={t('descriptionLabel')}
+                required
+                error={
+                  errors.description?.message
+                    ? tErrors(errors.description.message as never)
+                    : undefined
+                }
+              >
+                <Textarea
+                  rows={5}
+                  {...form.register('description')}
+                  placeholder={t('descriptionPlaceholder')}
+                />
+              </Field>
 
-                  <Field label={t('descriptionArLabel')}>
-                    <Textarea
-                      rows={5}
-                      dir="rtl"
-                      {...form.register('description_ar')}
-                    />
-                  </Field>
-                </>
-              )}
+              <Field label={t('descriptionArLabel')}>
+                <Textarea
+                  rows={5}
+                  dir="rtl"
+                  {...form.register('description_ar')}
+                />
+              </Field>
             </Section>
           </div>
 

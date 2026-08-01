@@ -10,7 +10,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { ContactForm } from '@/components/support/contact-form'
 import { getFaqsPublic } from '@/lib/queries'
-import { getLocale, pickLocalized } from '@/lib/locale'
+import { pickLocalized } from '@/lib/locale'
+import { getLocale } from '@/lib/locale-server'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('support')

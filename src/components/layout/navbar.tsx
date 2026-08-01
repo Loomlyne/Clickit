@@ -9,22 +9,35 @@ import { cn } from '@/lib/utils'
 import { AuthSection } from './auth-section'
 import { MobileNav } from './mobile-nav'
 import { liveNavHref, liveNavIsExternal } from './nav-links'
+import { pickLocalized, type Locale } from '@/lib/locale'
 
 interface NavbarProps {
   initialUser?: { id: string; email: string } | null
   liveStreamUrl?: string | null
+  liveStreamLabel?: string | null
+  liveStreamLabelAr?: string | null
   logoUrl?: string | null
+  variant?: 'default' | 'minimal'
 }
 
-export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
+export function Navbar({
+  initialUser,
+  liveStreamUrl,
+  liveStreamLabel,
+  liveStreamLabelAr,
+  logoUrl,
+  variant = 'default',
+}: NavbarProps) {
   const pathname = usePathname()
   const locale = useLocale()
   const t = useTranslations('nav')
   const [scrolled, setScrolled] = useState(false)
   const [hidden, setHidden] = useState(false)
   const lastScrollY = useRef(0)
+  const isMinimal = variant === 'minimal'
   const isLanding =
-    pathname === '/portfolio' || pathname === '' || pathname.startsWith('/auth')
+    !isMinimal &&
+    (pathname === '/portfolio' || pathname === '' || pathname.startsWith('/auth'))
 
   // Direction-aware show/hide via Lenis. Hide on scroll down, show on scroll up.
   // Landing pages keep the nav pinned — hiding it reveals body bg behind the hero.
@@ -58,31 +71,41 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
         : 'text-[var(--text-dim)]'
     )
 
+  const customLiveLabel = pickLocalized(
+    locale as Locale,
+    liveStreamLabel ?? '',
+    liveStreamLabelAr
+  ).trim()
+  const liveLabel = customLiveLabel || t('nowLive')
+
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 flex items-center gap-3 border-b px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 md:gap-7 md:px-10 md:pt-[calc(env(safe-area-inset-top)+18px)] md:pb-[18px]',
+        'sticky top-0 z-[60] flex items-center gap-3 border-b px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 md:gap-7 md:px-10 md:pt-[calc(env(safe-area-inset-top)+18px)] md:pb-[18px]',
         'transition-[transform,background-color,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform',
         hidden ? '-translate-y-full' : 'translate-y-0',
-        // Frosted blur everywhere except the landing hero at the top (truly transparent there)
-        !(isLanding && !scrolled) && 'backdrop-blur-[18px]',
-        isLanding &&
+        isMinimal &&
+          'border-[var(--line)] bg-[rgba(10,10,10,0.96)] backdrop-blur-[18px]',
+        !isMinimal &&
+          isLanding &&
           !scrolled &&
           'border-transparent bg-transparent',
-        isLanding &&
+        !isMinimal &&
+          isLanding &&
           scrolled &&
           'border-[var(--line)] bg-[rgba(10,10,10,0.96)]',
-        !isLanding &&
+        !isMinimal &&
+          !isLanding &&
           'border-[var(--line)] bg-[linear-gradient(180deg,rgba(10,10,10,0.95),rgba(10,10,10,0.65))]',
-        !isLanding && scrolled && 'bg-[rgba(10,10,10,0.96)]'
+        !isMinimal && !isLanding && scrolled && 'bg-[rgba(10,10,10,0.96)]'
       )}
       style={{
         WebkitBackdropFilter:
-          isLanding && !scrolled ? undefined : 'blur(18px)',
+          isMinimal || !(isLanding && !scrolled) ? 'blur(18px)' : undefined,
       }}
     >
       <Link
-        href="/watch"
+        href={isMinimal ? '/coming-soon' : '/watch'}
         aria-label={t('home')}
         className="flex min-h-11 items-center"
       >
@@ -91,12 +114,25 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
           alt="Clickit"
           width={214}
           height={145}
-          className="h-8 w-auto object-contain"
-          unoptimized={!!logoUrl}
+          className={cn(
+            'w-auto object-contain',
+            isMinimal ? 'h-7' : 'h-8'
+          )}
           priority
         />
       </Link>
 
+      {isMinimal ? (
+        <div className="ms-auto flex items-center">
+          <AuthSection
+            initialUser={initialUser}
+            layout="minimal"
+            signOutRedirect="/coming-soon"
+            hideProfileLink
+          />
+        </div>
+      ) : (
+        <>
       {/* Mobile: keep "Now Live" near the logo */}
       {!isLanding &&
         (() => {
@@ -111,7 +147,7 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" />
                 <span className="relative inline-flex size-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
               </span>
-              {t('nowLive')}
+              {liveLabel}
             </>
           )
           return external ? (
@@ -131,77 +167,54 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
         })()}
 
       {/* Nav links — hidden on mobile, MobileNav handles those */}
-      <nav className="hidden items-center gap-[22px] md:flex">
-        {!isLanding && (
-          <>
-            {(() => {
-              const liveHref = liveNavHref(liveStreamUrl)
-              const external = liveNavIsExternal(liveHref)
-              const pillClass = cn(
-                'inline-flex items-center gap-2 text-[13px] font-semibold tracking-tight text-white transition-opacity duration-200 hover:opacity-80'
-              )
-              const inner = (
-                <>
-                  <span className="relative flex size-2 shrink-0" aria-hidden>
-                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" />
-                    <span className="relative inline-flex size-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
-                  </span>
-                  {t('nowLive')}
-                </>
-              )
-              return external ? (
-                <a
-                  href={liveHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={pillClass}
-                >
-                  {inner}
-                </a>
-              ) : (
-                <Link href={liveHref} className={pillClass}>
-                  {inner}
-                </Link>
-              )
-            })()}
-            <Link href="/watch" prefetch className={navLinkClass(pathname === '/watch')}>
-              {t('watch')}
-            </Link>
-            <Link
-              href="/support"
-              prefetch
-              className={navLinkClass(pathname === '/support')}
-            >
-              {t('support')}
-            </Link>
-          </>
-        )}
-        {isLanding &&
-          (() => {
-            const isPortfolio = pathname === '/portfolio' || pathname === ''
-            const prefix = isPortfolio ? '' : '/portfolio'
-            return (
+      {!isLanding && (
+        <nav className="hidden items-center gap-[22px] md:flex">
+          {(() => {
+            const liveHref = liveNavHref(liveStreamUrl)
+            const external = liveNavIsExternal(liveHref)
+            const pillClass = cn(
+              'inline-flex items-center gap-2 text-[13px] font-semibold tracking-tight text-white transition-opacity duration-200 hover:opacity-80'
+            )
+            const inner = (
               <>
-                <a
-                  href={`${prefix}#shows`}
-                  className="px-0.5 py-1.5 text-[13.5px] tracking-[0.08em] text-[var(--text-dim)] uppercase transition-colors duration-150 hover:text-[var(--text)]"
-                >
-                  {t('shows')}
-                </a>
-                <a
-                  href={`${prefix}#faq`}
-                  className="px-0.5 py-1.5 text-[13.5px] tracking-[0.08em] text-[var(--text-dim)] uppercase transition-colors duration-150 hover:text-[var(--text)]"
-                >
-                  {t('faq')}
-                </a>
+                <span className="relative flex size-2 shrink-0" aria-hidden>
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" />
+                  <span className="relative inline-flex size-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
+                </span>
+                {liveLabel}
               </>
             )
+            return external ? (
+              <a
+                href={liveHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={pillClass}
+              >
+                {inner}
+              </a>
+            ) : (
+              <Link href={liveHref} className={pillClass}>
+                {inner}
+              </Link>
+            )
           })()}
-      </nav>
+          <Link href="/watch" prefetch className={navLinkClass(pathname === '/watch')}>
+            {t('watch')}
+          </Link>
+          <Link
+            href="/support"
+            prefetch
+            className={navLinkClass(pathname === '/support')}
+          >
+            {t('support')}
+          </Link>
+        </nav>
+      )}
 
       {/* Right side: auth (desktop) */}
-      <div className="ms-auto hidden items-center gap-3.5 md:flex">
-        <div className="inline-flex items-center rounded-full border border-white/12 bg-white/[0.03] p-1">
+      <div className="relative z-[1] ms-auto hidden items-center gap-3.5 md:flex">
+        <div className="inline-flex items-center rounded-full border border-white/12 bg-black/60 p-1">
           <Link
             href={pathname || '/watch'}
             locale="en"
@@ -235,7 +248,7 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
 
       {/* Mobile: locale switch + hamburger */}
       <div className="ms-auto flex items-center gap-2 md:hidden">
-        <div className="inline-flex items-center rounded-full border border-white/12 bg-white/[0.03] p-1">
+        <div className="inline-flex items-center rounded-full border border-white/12 bg-black/60 p-1">
           <Link
             href={pathname || '/watch'}
             locale="en"
@@ -266,6 +279,8 @@ export function Navbar({ initialUser, liveStreamUrl, logoUrl }: NavbarProps) {
         </div>
         <MobileNav initialUser={initialUser} liveStreamUrl={liveStreamUrl} logoUrl={logoUrl} />
       </div>
+        </>
+      )}
     </header>
   )
 }

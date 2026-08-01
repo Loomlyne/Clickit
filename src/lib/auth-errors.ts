@@ -9,6 +9,8 @@ const AUTH_ERROR_MAP: Record<string, string> = {
     'Please wait a moment before trying again.',
   'Invalid email or password': 'Email or password is incorrect.',
   'Email link is invalid or has expired': 'This link has expired. Please request a new one.',
+  'Request blocked for security. Please try again or contact support if this persists.':
+    'Request blocked for security. Please try again or contact support if this persists.',
 }
 
 export function mapAuthError(rawMessage: string): string {

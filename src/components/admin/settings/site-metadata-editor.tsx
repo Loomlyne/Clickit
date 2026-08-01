@@ -16,8 +16,6 @@ type Values = {
   site_description_ar: string
   site_tagline: string
   site_tagline_ar: string
-  hero_description: string
-  hero_description_ar: string
 }
 
 export function SiteMetadataEditor({ initial }: { initial: Values }) {
@@ -30,9 +28,7 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
     values.site_description !== initial.site_description ||
     values.site_description_ar !== initial.site_description_ar ||
     values.site_tagline !== initial.site_tagline ||
-    values.site_tagline_ar !== initial.site_tagline_ar ||
-    values.hero_description !== initial.hero_description ||
-    values.hero_description_ar !== initial.hero_description_ar
+    values.site_tagline_ar !== initial.site_tagline_ar
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault()
@@ -43,8 +39,6 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
       site_description_ar: values.site_description_ar || null,
       site_tagline: values.site_tagline,
       site_tagline_ar: values.site_tagline_ar || null,
-      hero_description: values.hero_description || null,
-      hero_description_ar: values.hero_description_ar || null,
     })
     setSaving(false)
     if (result.success) toast.success(t('siteMetadataSaved'))
@@ -83,8 +77,8 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
         </SettingsField>
 
         <SettingsField
-          label={`${t('siteTaglineLabel')} (Arabic)`}
-          hint="Shown when the viewer switches to Arabic. Leave blank to fall back to English."
+          label={t('siteTaglineArLabel')}
+          hint={t('siteTaglineArHint')}
         >
           <Input
             dir="rtl"
@@ -114,8 +108,8 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
         </SettingsField>
 
         <SettingsField
-          label={`${t('seoDescriptionLabel')} (Arabic)`}
-          hint="Arabic meta description shown when the viewer is on the Arabic locale."
+          label={t('seoDescriptionArLabel')}
+          hint={t('seoDescriptionArHint')}
         >
           <Textarea
             dir="rtl"
@@ -129,24 +123,6 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
             className="rounded-[12px] md:col-span-2"
           />
         </SettingsField>
-
-        <div className="md:col-span-2">
-          <SettingsField
-            label={t('heroDescriptionLabel')}
-            hint={t('heroDescriptionHint')}
-          >
-            <Textarea
-              value={values.hero_description}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, hero_description: e.target.value }))
-              }
-              placeholder={t('heroDescriptionPlaceholder')}
-              maxLength={500}
-              rows={3}
-              className="rounded-[12px]"
-            />
-          </SettingsField>
-        </div>
 
         <div className="flex items-center justify-end md:col-span-2">
           <Button type="submit" disabled={!dirty || saving}>

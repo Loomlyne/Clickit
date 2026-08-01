@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Pencil, Plus, Trash2, Loader2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -64,6 +65,8 @@ const emptyDraft = (): Draft => ({
 })
 
 export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
+  const t = useTranslations('admin.settings')
+  const tc = useTranslations('common')
   const [pages, setPages] = useState<LegalPage[]>(initial)
   const [draft, setDraft] = useState<Draft | null>(null)
   const [saving, setSaving] = useState(false)
@@ -107,7 +110,7 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
     const result = await upsertLegalPage(draft)
     setSaving(false)
     if (!result.success) {
-      toast.error(result.error ?? 'Failed to save legal page')
+      toast.error(result.error ?? t('legalSaveFailed'))
       return
     }
     const saved = result.data as LegalPage
@@ -117,7 +120,7 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
         : [...prev, saved]
     )
     setDraft(null)
-    toast.success(draft.id ? 'Legal page updated' : 'Legal page created')
+    toast.success(draft.id ? t('legalUpdated') : t('legalCreated'))
   }
 
   async function onDelete() {
@@ -126,43 +129,43 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
     const result = await deleteLegalPage(deleteTarget.id)
     setDeleting(false)
     if (!result.success) {
-      toast.error(result.error ?? 'Failed to delete legal page')
+      toast.error(result.error ?? t('legalDeleteFailed'))
       return
     }
     setPages((prev) => prev.filter((p) => p.id !== deleteTarget.id))
     setDeleteTarget(null)
-    toast.success('Legal page deleted')
+    toast.success(t('legalDeleted'))
   }
 
   return (
     <>
       <SettingsCard
-        title="Legal Pages"
-        description="Manage Terms of Use, Privacy Policy, and other legal documents."
+        title={t('legalCardTitle')}
+        description={t('legalCardDescription')}
         action={
           <Button size="sm" className="gap-1.5" onClick={openNew}>
             <Plus className="size-3.5" />
-            Add Page
+            {t('legalAdd')}
           </Button>
         }
       >
         {pages.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <FileText className="size-8 text-white/20" />
-            <p className="text-sm text-white/40">No legal pages yet</p>
+            <p className="text-sm text-white/40">{t('legalEmpty')}</p>
             <Button size="sm" variant="outline" onClick={openNew} className="mt-1">
               <Plus className="mr-1.5 size-3.5" />
-              Add first page
+              {t('legalAddFirst')}
             </Button>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead className="hidden sm:table-cell">Slug</TableHead>
-                <TableHead className="hidden md:table-cell">Updated</TableHead>
-                <TableHead className="w-[88px] text-right">Actions</TableHead>
+                <TableHead>{t('legalColTitle')}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t('legalColSlug')}</TableHead>
+                <TableHead className="hidden md:table-cell">{t('legalColUpdated')}</TableHead>
+                <TableHead className="w-[88px] text-right">{t('legalColActions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -184,7 +187,7 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                         variant="ghost"
                         className="size-8 text-white/50 hover:text-white"
                         onClick={() => openEdit(page)}
-                        aria-label="Edit"
+                        aria-label={tc('edit')}
                       >
                         <Pencil className="size-3.5" />
                       </Button>
@@ -193,7 +196,7 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                         variant="ghost"
                         className="size-8 text-white/50 hover:text-red-300"
                         onClick={() => setDeleteTarget(page)}
-                        aria-label="Delete"
+                        aria-label={tc('delete')}
                       >
                         <Trash2 className="size-3.5" />
                       </Button>
@@ -210,33 +213,33 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
       <Sheet open={!!draft} onOpenChange={(open) => !open && setDraft(null)}>
         <SheetContent side="right" className="w-full sm:max-w-2xl">
           <SheetHeader className="px-6 pt-6">
-            <SheetTitle>{draft?.id ? 'Edit Legal Page' : 'New Legal Page'}</SheetTitle>
+            <SheetTitle>{draft?.id ? t('legalSheetEditTitle') : t('legalSheetNewTitle')}</SheetTitle>
             <SheetDescription>
-              Content supports plain text. Use line breaks for paragraphs.
+              {t('legalSheetDescription')}
             </SheetDescription>
           </SheetHeader>
 
           {draft && (
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-              <SettingsField label="Title">
+              <SettingsField label={t('legalTitleLabel')}>
                 <Input
                   value={draft.title}
                   maxLength={200}
-                  placeholder="Terms of Use"
+                  placeholder={t('legalTitlePlaceholder')}
                   onChange={(e) => onTitleChange(e.target.value)}
                   className="rounded-[12px]"
                 />
               </SettingsField>
 
               <SettingsField
-                label="Title (Arabic)"
-                hint="Shown when the viewer switches to Arabic. Leave blank to fall back to English."
+                label={t('legalTitleArLabel')}
+                hint={t('legalTitleArHint')}
               >
                 <Input
                   dir="rtl"
                   value={draft.title_ar}
                   maxLength={200}
-                  placeholder="شروط الاستخدام"
+                  placeholder={t('legalTitleArPlaceholder')}
                   onChange={(e) =>
                     setDraft((d) => (d ? { ...d, title_ar: e.target.value } : d))
                   }
@@ -244,11 +247,11 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                 />
               </SettingsField>
 
-              <SettingsField label="Slug" hint="URL path: /legal/[slug]">
+              <SettingsField label={t('legalSlugLabel')} hint={t('legalSlugHint')}>
                 <Input
                   value={draft.slug}
                   maxLength={80}
-                  placeholder="terms-of-use"
+                  placeholder={t('legalSlugPlaceholder')}
                   onChange={(e) => {
                     setSlugTouched(true)
                     setDraft((d) =>
@@ -259,7 +262,7 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                 />
               </SettingsField>
 
-              <SettingsField label="Sort Order" hint="Lower number = displayed first">
+              <SettingsField label={t('sortOrderLabel')} hint={t('legalSortHint')}>
                 <Input
                   type="number"
                   min={0}
@@ -275,11 +278,11 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                 />
               </SettingsField>
 
-              <SettingsField label="Content">
+              <SettingsField label={t('legalContentLabel')}>
                 <Textarea
                   value={draft.content}
                   rows={20}
-                  placeholder="Enter the full legal text here..."
+                  placeholder={t('legalContentPlaceholder')}
                   onChange={(e) =>
                     setDraft((d) => (d ? { ...d, content: e.target.value } : d))
                   }
@@ -288,14 +291,14 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
               </SettingsField>
 
               <SettingsField
-                label="Content (Arabic)"
-                hint="Arabic body shown on the Arabic locale. Leave blank to fall back to English."
+                label={t('legalContentArLabel')}
+                hint={t('legalContentArHint')}
               >
                 <Textarea
                   dir="rtl"
                   value={draft.content_ar}
                   rows={20}
-                  placeholder="أدخل النص القانوني الكامل هنا..."
+                  placeholder={t('legalContentArPlaceholder')}
                   onChange={(e) =>
                     setDraft((d) => (d ? { ...d, content_ar: e.target.value } : d))
                   }
@@ -311,13 +314,13 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
               onClick={() => setDraft(null)}
               disabled={saving}
             >
-              Cancel
+              {tc('cancel')}
             </Button>
             <Button onClick={onSave} disabled={saving || !draft?.title || !draft?.slug}>
               {saving ? (
                 <Loader2 className="mr-2 size-4 animate-spin" />
               ) : null}
-              {draft?.id ? 'Save Changes' : 'Create Page'}
+              {draft?.id ? t('legalSaveChanges') : t('legalCreate')}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -327,9 +330,9 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Delete legal page"
-        description={`Permanently delete "${deleteTarget?.title}"? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('legalDeleteTitle')}
+        description={t('legalDeleteConfirm', { title: deleteTarget?.title ?? '' })}
+        confirmLabel={tc('delete')}
         onConfirm={onDelete}
         destructive
         loading={deleting}

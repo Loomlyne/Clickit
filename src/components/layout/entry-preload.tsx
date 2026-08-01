@@ -3,16 +3,14 @@
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
+import { resolvePreloaderVideoUrl } from '@/lib/supabase-media'
 
 type PreloadPhase = 'entering' | 'playing' | 'exiting' | 'done'
 type MediaType = 'video' | 'image'
 
 const entryPreloadConfig = {
   mediaType: 'video' as MediaType,
-  src: 'https://lajguozmtissnnfccmej.supabase.co/storage/v1/object/public/site-assets/brand/clickit-preloader.mp4?v=logo-animation-20260514',
   imageAlt: 'Clickit',
-  // Static-logo fallback hold (only used when the video can't play). Trimmed so
-  // a stalled intro doesn't pin the viewer behind the splash for 2.5s.
   imageHoldMs: 1400,
   imageFallbackSrc: '/brand/Clickit_final_logo.svg',
 }
@@ -21,45 +19,58 @@ const enterDuration = 0.9
 const exitDuration = 0.9
 const playRetryMs = 250
 const enterFallbackMs = 1100
-// If the intro video hasn't begun within this window, bail to the static logo
-// instead of staring at a black screen. Lowered 2000 → 1100.
 const startupFallbackMs = 1100
-// Absolute worst-case cap: force the splash away even if the video never fires
-// `ended` (stalled/looping on a slow connection). The happy path still exits on
-// the video's natural `onEnded`, so this only shortens the degraded case.
-// Lowered 5000 → 3000 so first interaction is never blocked more than ~3s.
 const hardReleaseMs = 3000
 
 let hasShownEntryPreloadThisDocument = false
+const SESSION_PRELOAD_KEY = 'cit-entry-preload-shown'
 
-export function EntryPreload() {
+function shouldShowEntryPreload(): boolean {
+  if (hasShownEntryPreloadThisDocument) return false
+  try {
+    if (sessionStorage.getItem(SESSION_PRELOAD_KEY) === '1') return false
+  } catch {
+    // Private mode / blocked storage — fall back to per-document dedup only.
+  }
+  return true
+}
+
+export function EntryPreload({
+  videoUrl,
+}: {
+  videoUrl?: string | null
+}) {
+  const defaultSrc = resolvePreloaderVideoUrl(videoUrl)
   const videoRef = useRef<HTMLVideoElement>(null)
   const hasStartedVideoRef = useRef(false)
-  const shouldShowRef = useRef(!hasShownEntryPreloadThisDocument)
+  // Client-only: sessionStorage differs from server, so never render the splash
+  // until after mount — avoids hydration mismatch + parentNode errors.
+  const [active, setActive] = useState(false)
+  const [phase, setPhase] = useState<PreloadPhase>('playing')
   const [videoStarted, setVideoStarted] = useState(false)
-  const [phase, setPhase] = useState<PreloadPhase>(
-    shouldShowRef.current ? 'playing' : 'done'
-  )
   const [mediaType, setMediaType] = useState<MediaType>(
     entryPreloadConfig.mediaType
   )
-  const [mediaSrc, setMediaSrc] = useState(entryPreloadConfig.src)
+  const [mediaSrc, setMediaSrc] = useState(defaultSrc)
 
   useEffect(() => {
-    // Remove the server-rendered black cover — preloader (z-1000) already covers it
     document.getElementById('preload-cover')?.remove()
 
-    if (shouldShowRef.current) {
-      const frame = window.requestAnimationFrame(() => {
-        hasShownEntryPreloadThisDocument = true
-      })
-
-      return () => window.cancelAnimationFrame(frame)
+    if (!shouldShowEntryPreload()) {
+      return
     }
+
+    hasShownEntryPreloadThisDocument = true
+    try {
+      sessionStorage.setItem(SESSION_PRELOAD_KEY, '1')
+    } catch {
+      // Ignore — per-document dedup still applies.
+    }
+    setActive(true)
   }, [])
 
   useEffect(() => {
-    if (phase === 'done') {
+    if (!active || phase === 'done') {
       return
     }
 
@@ -72,9 +83,11 @@ export function EntryPreload() {
       document.body.style.overflow = previousBodyOverflow
       document.documentElement.style.overflow = previousHtmlOverflow
     }
-  }, [phase])
+  }, [active, phase])
 
   useEffect(() => {
+    if (!active) return
+
     const enterTimer = window.setTimeout(() => {
       setPhase((currentPhase) =>
         currentPhase === 'entering' ? 'playing' : currentPhase
@@ -90,10 +103,10 @@ export function EntryPreload() {
       window.clearTimeout(enterTimer)
       window.clearTimeout(releaseTimer)
     }
-  }, [])
+  }, [active])
 
   useEffect(() => {
-    if (phase !== 'playing' || mediaType !== 'image') {
+    if (!active || phase !== 'playing' || mediaType !== 'image') {
       return
     }
 
@@ -102,10 +115,10 @@ export function EntryPreload() {
     }, entryPreloadConfig.imageHoldMs)
 
     return () => window.clearTimeout(exitTimer)
-  }, [mediaType, phase])
+  }, [active, mediaType, phase])
 
   useEffect(() => {
-    if (phase !== 'playing' || mediaType !== 'video') {
+    if (!active || phase !== 'playing' || mediaType !== 'video') {
       return
     }
 
@@ -153,9 +166,9 @@ export function EntryPreload() {
       window.clearInterval(retryTimer)
       window.clearTimeout(fallbackTimer)
     }
-  }, [mediaSrc, mediaType, phase])
+  }, [active, mediaSrc, mediaType, phase])
 
-  if (phase === 'done') {
+  if (!active || phase === 'done') {
     return null
   }
 

@@ -17,12 +17,12 @@ const typographyRoles = [
   },
   {
     role: 'Body',
-    spec: 'Geist (EN) · LBC Bold (AR) · 16 / 700 / 1.7',
+    spec: 'LBC · all locales · 16 / 700 / 1.7',
     sizeClass: 'text-base',
     weightClass: 'font-normal',
     lineHeightClass: 'leading-7',
     sample:
-      'Body copy stays clean, neutral, and airy. Geist drives English surfaces and LBC Bold handles Arabic so both locales feel like one product.',
+      'Body copy stays clean, neutral, and airy. LBC drives every surface so English and Arabic feel like one product.',
   },
   {
     role: 'Label',
@@ -60,7 +60,7 @@ export default function TypographyPage() {
             <p className="text-muted-foreground text-xs tracking-[0.24em] uppercase">
               Body · English
             </p>
-            <p className="text-foreground mt-3 text-lg">Geist</p>
+            <p className="text-foreground font-display mt-3 text-lg">LBC</p>
           </div>
           <div className="rounded-[12px] border border-white/10 bg-black/20 p-5">
             <p className="text-muted-foreground text-xs tracking-[0.24em] uppercase">

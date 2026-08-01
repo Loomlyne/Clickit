@@ -9,6 +9,14 @@ import { validateYouTubeUrl } from '@/lib/youtube'
 import { logAudit } from '@/lib/audit'
 import { generateSlug } from '@/lib/slug'
 import { fillArabic, translateToArabic, translateBatchToArabic } from '@/lib/translate'
+import { mp4BytesHasAudioTrack } from '@/lib/mp4-audio'
+import {
+  assertPublicMediaWriteReady,
+  mirrorPublicMediaObject,
+  prepareMirroredPublicMediaDeletion,
+  R2MediaRollbackError,
+} from '@/lib/r2-media'
+import type { MirroredPublicMediaDeletion } from '@/lib/r2-media'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -18,6 +26,67 @@ type ActionResult<T = unknown> = {
   success: boolean
   error?: string
   data?: T
+}
+
+async function stageMirroredPublicMediaDeletion(
+  admin: ReturnType<typeof createAdminClient>,
+  bucket: 'show-artwork' | 'site-assets' | 'avatars',
+  paths: string[]
+): Promise<MirroredPublicMediaDeletion> {
+  const r2Deletion = await prepareMirroredPublicMediaDeletion(bucket, paths)
+  return {
+    commit: async () => {
+      const { error } = await admin.storage.from(bucket).remove(paths)
+      if (error) {
+        await r2Deletion.rollback()
+        return false
+      }
+      return r2Deletion.commit()
+    },
+    rollback: r2Deletion.rollback,
+  }
+}
+
+async function removeMirroredPublicMedia(
+  admin: ReturnType<typeof createAdminClient>,
+  bucket: 'show-artwork' | 'site-assets' | 'avatars',
+  paths: string[]
+) {
+  const deletion = await stageMirroredPublicMediaDeletion(admin, bucket, paths)
+  return deletion.commit()
+}
+
+async function cleanupMirroredPublicMedia(
+  admin: ReturnType<typeof createAdminClient>,
+  bucket: 'show-artwork' | 'site-assets' | 'avatars',
+  paths: string[],
+  label: string
+) {
+  try {
+    if (!(await removeMirroredPublicMedia(admin, bucket, paths))) {
+      console.error(`${label} media cleanup failed`)
+    }
+  } catch (error) {
+    console.error(`${label} media cleanup failed`, error)
+  }
+}
+
+async function mirrorUploadedPublicMedia(
+  admin: ReturnType<typeof createAdminClient>,
+  input: Parameters<typeof mirrorPublicMediaObject>[0]
+) {
+  try {
+    await mirrorPublicMediaObject(input)
+  } catch (error) {
+    if (error instanceof R2MediaRollbackError) throw error
+    const { error: removeError } = await admin.storage
+      .from(input.bucket)
+      .remove([input.key])
+    if (removeError) {
+      console.error('[mirrorUploadedPublicMedia] source cleanup failed', removeError)
+    }
+    throw error
+  }
 }
 
 export type SignedVideoUploadTarget = {
@@ -862,27 +931,62 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
     // matching real filenames and permanent delete became a silent no-op. The
     // listing approach works for both legacy stable-path rows and versioned
     // rows — whatever is in the folder gets deleted.
-    async function purgeShowFolder(bucket: string) {
-      const { data: files } = await admin.storage
-        .from(bucket)
-        .list(`shows/${id}`, { limit: 1000 })
-      if (!files || files.length === 0) return
-      const paths = files
-        .filter((f) => f.name && !f.id) // defensive: skip folder entries
-        .map((f) => `shows/${id}/${f.name}`)
-      if (paths.length > 0) {
-        await admin.storage.from(bucket).remove(paths)
+    const stagedMediaDeletes: MirroredPublicMediaDeletion[] = []
+    async function listShowFolderFiles(bucket: string, prefix: string) {
+      const paths: string[] = []
+      let offset = 0
+
+      for (;;) {
+        const { data, error: listError } = await admin.storage
+          .from(bucket)
+          .list(prefix, { limit: 1000, offset })
+        if (listError) throw new Error('Could not list show media')
+
+        const entries = data ?? []
+        for (const entry of entries) {
+          if (!entry.name) continue
+          const path = prefix + '/' + entry.name
+          if (entry.id) {
+            paths.push(path)
+          } else {
+            paths.push(...(await listShowFolderFiles(bucket, path)))
+          }
+        }
+
+        if (entries.length < 1000) return paths
+        offset += entries.length
       }
     }
-    await Promise.all([
-      purgeShowFolder('show-artwork'), // poster, hero, hero-mobile, logo
-      purgeShowFolder('site-assets'), // hero videos
-    ])
+
+    async function purgeShowFolder(bucket: 'show-artwork' | 'site-assets') {
+      const paths = await listShowFolderFiles(bucket, ['shows', id].join('/'))
+      if (paths.length === 0) return
+      stagedMediaDeletes.push(
+        await stageMirroredPublicMediaDeletion(admin, bucket, paths)
+      )
+    }
+    try {
+      await purgeShowFolder('show-artwork') // poster, hero, hero-mobile, logo
+      await purgeShowFolder('site-assets') // hero videos
+    } catch (mediaError) {
+      await Promise.all(stagedMediaDeletes.map((deletion) => deletion.rollback()))
+      throw mediaError
+    }
 
     // Then delete DB record — CASCADE handles seasons/episodes
     const { error } = await admin.from('shows').delete().eq('id', id)
 
-    if (error) return { success: false, error: error.message }
+    if (error) {
+      await Promise.all(stagedMediaDeletes.map((deletion) => deletion.rollback()))
+      return { success: false, error: error.message }
+    }
+
+    const backupCleanup = await Promise.all(
+      stagedMediaDeletes.map((deletion) => deletion.commit())
+    )
+    if (!backupCleanup.every(Boolean)) {
+      console.error('[deleteShowPermanently] media cleanup failed')
+    }
 
     await logAudit({
       adminUserId: user.id,
@@ -1399,6 +1503,113 @@ export async function archiveEpisode(
   }
 }
 
+export async function restoreEpisode(id: string): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const admin = createAdminClient()
+
+    const { data: ep, error: fetchError } = await admin
+      .from('episodes')
+      .select('id, show_id, title')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !ep) return { success: false, error: 'Episode not found' }
+
+    // Restoring just flips archived. The unique (season_id, episode_number)
+    // constraint covers archived rows too, so the episode's number is already
+    // free table-wide — un-archiving can never collide.
+    const { error } = await admin
+      .from('episodes')
+      .update({ archived: false })
+      .eq('id', id)
+
+    if (error) return { success: false, error: error.message }
+
+    // Recompute the show's episode_count (non-archived only).
+    const { count } = await admin
+      .from('episodes')
+      .select('*', { count: 'exact', head: true })
+      .eq('show_id', ep.show_id)
+      .eq('archived', false)
+
+    await admin
+      .from('shows')
+      .update({ episode_count: count ?? 0 })
+      .eq('id', ep.show_id)
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'restore',
+      entity: 'episode',
+      entityId: id,
+      diff: { id, title: ep.title },
+    })
+
+    revalidatePath('/admin/archive')
+    revalidatePath(`/admin/shows/${ep.show_id}`)
+    bumpCatalogCache()
+    updateTag('episodes')
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to restore episode',
+    }
+  }
+}
+
+export async function deleteEpisodePermanently(
+  id: string
+): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const admin = createAdminClient()
+
+    const { data: ep } = await admin
+      .from('episodes')
+      .select('title, show_id')
+      .eq('id', id)
+      .single()
+
+    // CASCADE handles watch progress / likes tied to the episode.
+    const { error } = await admin.from('episodes').delete().eq('id', id)
+    if (error) return { success: false, error: error.message }
+
+    if (ep?.show_id) {
+      const { count } = await admin
+        .from('episodes')
+        .select('*', { count: 'exact', head: true })
+        .eq('show_id', ep.show_id)
+        .eq('archived', false)
+      await admin
+        .from('shows')
+        .update({ episode_count: count ?? 0 })
+        .eq('id', ep.show_id)
+    }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'delete',
+      entity: 'episode',
+      entityId: id,
+      diff: { id, title: ep?.title },
+    })
+
+    revalidatePath('/admin/archive')
+    bumpCatalogCache()
+    updateTag('episodes')
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to delete episode',
+    }
+  }
+}
+
 export async function reorderEpisode(
   episodeId: string,
   direction: 'up' | 'down'
@@ -1470,11 +1681,23 @@ export async function reorderEpisode(
 // Artwork Upload / Delete
 // ---------------------------------------------------------------------------
 
+const ARTWORK_UPLOAD_SLOTS = [
+  'poster',
+  'card',
+  'hero',
+  'hero-mobile',
+  'logo',
+] as const
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 export async function uploadArtwork(
   formData: FormData
 ): Promise<ActionResult<string>> {
   try {
     await assertAdmin()
+    assertPublicMediaWriteReady()
     const admin = createAdminClient()
 
     const file = formData.get('file') as File | null
@@ -1488,6 +1711,19 @@ export async function uploadArtwork(
         slot,
       })
       return { success: false, error: 'Missing file, showId, or slot' }
+    }
+
+    if (
+      !UUID_RE.test(showId) ||
+      showId.includes('/') ||
+      showId.includes('..') ||
+      slot.includes('/') ||
+      slot.includes('..') ||
+      !ARTWORK_UPLOAD_SLOTS.includes(
+        slot as (typeof ARTWORK_UPLOAD_SLOTS)[number]
+      )
+    ) {
+      return { success: false, error: 'Invalid showId or slot' }
     }
 
     const ALLOWED_MIME = ['image/webp', 'image/png', 'image/jpeg']
@@ -1544,10 +1780,18 @@ export async function uploadArtwork(
       .upload(path, uploadBody, {
         upsert: false,
         contentType: uploadContentType,
-        cacheControl: '3600',
+        cacheControl: '31536000',
       })
 
     if (error) return { success: false, error: error.message }
+
+    await mirrorUploadedPublicMedia(admin, {
+      bucket: 'show-artwork',
+      key: path,
+      body: uploadBody,
+      contentType: uploadContentType,
+      cacheControl: '31536000',
+    })
 
     const { data: urlData } = admin.storage
       .from('show-artwork')
@@ -1574,13 +1818,89 @@ export async function uploadArtwork(
 // Hero Video Management
 // ---------------------------------------------------------------------------
 
-export async function createHeroVideoUpload(file: {
-  name: string
-  size: number
-  type: string
-}): Promise<ActionResult<SignedVideoUploadTarget>> {
+type HeroVariant = 'desktop' | 'mobile'
+const HERO_VIDEO_PREFIX: Record<HeroVariant, string> = {
+  desktop: 'hero/video',
+  mobile: 'hero/video-mobile',
+}
+const HERO_URL_COLUMN: Record<HeroVariant, 'hero_video_url' | 'hero_video_mobile_url'> = {
+  desktop: 'hero_video_url',
+  mobile: 'hero_video_mobile_url',
+}
+const HERO_TYPE_COLUMN: Record<HeroVariant, 'hero_video_type' | 'hero_video_mobile_type'> = {
+  desktop: 'hero_video_type',
+  mobile: 'hero_video_mobile_type',
+}
+
+function createHeroVideoPath(variant: HeroVariant) {
+  return `${HERO_VIDEO_PREFIX[variant]}-${Date.now()}.mp4`
+}
+
+function isHeroVideoUploadPath(path: string, variant: HeroVariant) {
+  const prefix = HERO_VIDEO_PREFIX[variant].replace('/', '\\/')
+  return new RegExp(`^${prefix}-\\d+\\.mp4$`).test(path)
+}
+
+async function updateHeroVideoConfig(
+  admin: ReturnType<typeof createAdminClient>,
+  variant: HeroVariant,
+  url: string | null,
+  type: 'mp4' | 'youtube' | null
+) {
+  const { error } = await admin
+    .from('app_config')
+    .update({
+      [HERO_URL_COLUMN[variant]]: url,
+      [HERO_TYPE_COLUMN[variant]]: type,
+    } as never)
+    .eq('id', 1)
+  return error
+}
+
+async function getHeroVideoConfig(
+  admin: ReturnType<typeof createAdminClient>,
+  variant: HeroVariant
+) {
+  const { data, error } = await admin
+    .from('app_config')
+    .select()
+    .eq('id', 1)
+    .single()
+  if (error || !data) {
+    return { error: error ?? new Error('Missing site config') }
+  }
+
+  const config = data as unknown as {
+    hero_video_url: string | null
+    hero_video_type: 'mp4' | 'youtube' | null
+    hero_video_mobile_url: string | null
+    hero_video_mobile_type: 'mp4' | 'youtube' | null
+  }
+
+  return {
+    error: null,
+    url:
+      variant === 'desktop'
+        ? config.hero_video_url
+        : config.hero_video_mobile_url,
+    type:
+      variant === 'desktop'
+        ? config.hero_video_type
+        : config.hero_video_mobile_type,
+  }
+}
+
+export async function createHeroVideoUpload(
+  file: {
+    name: string
+    size: number
+    type: string
+  },
+  variant: HeroVariant = 'desktop'
+): Promise<ActionResult<SignedVideoUploadTarget>> {
   try {
     await assertAdmin()
+    assertPublicMediaWriteReady()
     const admin = createAdminClient()
 
     if (!isMp4File(file)) {
@@ -1591,10 +1911,10 @@ export async function createHeroVideoUpload(file: {
       return { success: false, error: 'Video must be under 50MB' }
     }
 
-    const path = 'hero/video.mp4'
+    const path = createHeroVideoPath(variant)
     const { data, error } = await admin.storage
       .from('site-assets')
-      .createSignedUploadUrl(path, { upsert: true })
+      .createSignedUploadUrl(path)
 
     if (error) return { success: false, error: error.message }
 
@@ -1609,15 +1929,48 @@ export async function createHeroVideoUpload(file: {
 }
 
 export async function saveHeroVideoUpload(
-  path: string
+  path: string,
+  variant: HeroVariant = 'desktop'
 ): Promise<ActionResult<string>> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
 
-    if (path !== 'hero/video.mp4') {
+    if (!isHeroVideoUploadPath(path, variant)) {
       return { success: false, error: 'Invalid upload path' }
     }
+
+    const previous = await getHeroVideoConfig(admin, variant)
+    if (previous.error) return { success: false, error: previous.error.message }
+
+    const { data: uploadedFile, error: downloadError } = await admin.storage
+      .from('site-assets')
+      .download(path)
+
+    if (downloadError || !uploadedFile) {
+      return {
+        success: false,
+        error: downloadError?.message ?? 'Could not verify uploaded video',
+      }
+    }
+
+    const fileBytes = await uploadedFile.arrayBuffer()
+    if (!mp4BytesHasAudioTrack(fileBytes)) {
+      await admin.storage.from('site-assets').remove([path])
+      return {
+        success: false,
+        error:
+          'This MP4 has no audio track. Re-export with audio enabled (AAC) and upload again.',
+      }
+    }
+
+    await mirrorUploadedPublicMedia(admin, {
+      bucket: 'site-assets',
+      key: path,
+      body: uploadedFile,
+      contentType: 'video/mp4',
+      cacheControl: '31536000',
+    })
 
     const { data: urlData } = admin.storage
       .from('site-assets')
@@ -1627,13 +1980,36 @@ export async function saveHeroVideoUpload(
 
     const { error } = await admin
       .from('app_config')
-      .update({ hero_video_url: publicUrl, hero_video_type: 'mp4' })
+      .update({
+        [HERO_URL_COLUMN[variant]]: publicUrl,
+        [HERO_TYPE_COLUMN[variant]]: 'mp4',
+        hero_video_muted: false,
+      } as never)
       .eq('id', 1)
 
-    if (error) return { success: false, error: error.message }
+    if (error) {
+      await cleanupMirroredPublicMedia(
+        admin,
+        'site-assets',
+        [path],
+        '[saveHeroVideoUpload]'
+      )
+      return { success: false, error: error.message }
+    }
+
+    const previousPath = getPublicStoragePath(previous.url, 'site-assets')
+    if (previousPath && previousPath !== path) {
+      await cleanupMirroredPublicMedia(
+        admin,
+        'site-assets',
+        [previousPath],
+        '[saveHeroVideoUpload]'
+      )
+    }
 
     updateTag('site-config')
     revalidatePath('/')
+    revalidatePath('/portfolio')
     return { success: true, data: publicUrl }
   } catch (err) {
     console.error('[saveHeroVideoUpload] failed', err)
@@ -1645,7 +2021,8 @@ export async function saveHeroVideoUpload(
 }
 
 export async function setHeroVideoUrl(
-  youtubeUrl: string
+  youtubeUrl: string,
+  variant: HeroVariant = 'desktop'
 ): Promise<ActionResult> {
   try {
     await assertAdmin()
@@ -1671,28 +2048,37 @@ export async function setHeroVideoUrl(
     // Store canonical form so viewers always get a predictable embed URL.
     const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`
 
-    const { error } = await admin
-      .from('app_config')
-      .update({ hero_video_url: canonicalUrl, hero_video_type: 'youtube' })
-      .eq('id', 1)
+    const previous = await getHeroVideoConfig(admin, variant)
+    if (previous.error) return { success: false, error: previous.error.message }
 
-    if (error) {
-      console.error('[setHeroVideoUrl] db update failed', {
-        videoId,
-        error: error.message,
-      })
-      return { success: false, error: error.message }
+    const previousPath = getPublicStoragePath(previous.url, 'site-assets')
+    const mediaDeletion = previousPath
+      ? await stageMirroredPublicMediaDeletion(admin, 'site-assets', [
+          previousPath,
+        ])
+      : null
+    const configError = await updateHeroVideoConfig(
+      admin,
+      variant,
+      canonicalUrl,
+      'youtube'
+    )
+    if (configError) {
+      const restored = await mediaDeletion?.rollback()
+      return {
+        success: false,
+        error: restored !== false
+          ? configError.message
+          : 'Could not save the hero URL and restore R2 media',
+      }
+    }
+
+    if (mediaDeletion && !(await mediaDeletion.commit())) {
+      console.error('[setHeroVideoUrl] media cleanup failed')
     }
 
     updateTag('site-config')
     revalidatePath('/')
-
-    // Switching to a YouTube hero abandons any previously uploaded MP4 (which
-    // always lives at the fixed hero/video.mp4 path). Delete it to reclaim
-    // storage — AFTER the config flip + revalidation above, so the live hero
-    // has already switched to YouTube and never references a file we removed.
-    // Ignore errors (e.g. there was no MP4 to begin with).
-    await admin.storage.from('site-assets').remove(['hero/video.mp4'])
 
     return { success: true }
   } catch (err) {
@@ -1704,14 +2090,60 @@ export async function setHeroVideoUrl(
   }
 }
 
-export async function removeHeroVideo(): Promise<ActionResult> {
+export async function removeHeroVideo(
+  variant: HeroVariant = 'desktop'
+): Promise<ActionResult> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
 
+    const previous = await getHeroVideoConfig(admin, variant)
+    if (previous.error) return { success: false, error: previous.error.message }
+
+    const previousPath = getPublicStoragePath(previous.url, 'site-assets')
+    const mediaDeletion = previousPath
+      ? await stageMirroredPublicMediaDeletion(admin, 'site-assets', [
+          previousPath,
+        ])
+      : null
+    const configError = await updateHeroVideoConfig(admin, variant, null, null)
+    if (configError) {
+      const restored = await mediaDeletion?.rollback()
+      return {
+        success: false,
+        error: restored !== false
+          ? configError.message
+          : 'Could not remove the hero video and restore R2 media',
+      }
+    }
+
+    if (mediaDeletion && !(await mediaDeletion.commit())) {
+      console.error('[removeHeroVideo] media cleanup failed')
+    }
+
+    updateTag('site-config')
+    revalidatePath('/')
+
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to remove video',
+    }
+  }
+}
+
+export async function setHeroVideoMuted(muted: boolean): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    // hero_video_muted not yet in generated database.types — `as never` is the
+    // codebase convention for columns added by a migration before gen-types runs.
     const { error } = await admin
       .from('app_config')
-      .update({ hero_video_url: null, hero_video_type: null })
+      .update({ hero_video_muted: muted } as never)
       .eq('id', 1)
 
     if (error) return { success: false, error: error.message }
@@ -1719,14 +2151,202 @@ export async function removeHeroVideo(): Promise<ActionResult> {
     updateTag('site-config')
     revalidatePath('/')
 
-    // Remove the MP4 from storage only AFTER the config is cleared +
-    // revalidated, so the live hero never points at a deleted file. Ignore
-    // not-found errors (e.g. the hero was a YouTube URL with no MP4).
-    await admin.storage.from('site-assets').remove(['hero/video.mp4'])
-
     return { success: true }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to update audio setting',
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Preloader Video Management
+// ---------------------------------------------------------------------------
+
+function createPreloaderVideoPath() {
+  return `preloader/video-${Date.now()}.mp4`
+}
+
+function isPreloaderVideoUploadPath(path: string) {
+  return /^preloader\/video-\d+\.mp4$/.test(path)
+}
+
+export async function createPreloaderVideoUpload(file: {
+  name: string
+  size: number
+  type: string
+}): Promise<ActionResult<SignedVideoUploadTarget>> {
+  try {
+    await assertAdmin()
+    assertPublicMediaWriteReady()
+    const admin = createAdminClient()
+
+    if (!isMp4File(file)) {
+      return { success: false, error: 'File must be an MP4 video' }
+    }
+
+    if (file.size > 20 * 1024 * 1024) {
+      return { success: false, error: 'Video must be under 20MB' }
+    }
+
+    const path = createPreloaderVideoPath()
+    const { data, error } = await admin.storage
+      .from('site-assets')
+      .createSignedUploadUrl(path)
+
+    if (error) return { success: false, error: error.message }
+
+    return { success: true, data: { path: data.path, token: data.token } }
+  } catch (err) {
+    console.error('[createPreloaderVideoUpload] failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Upload failed',
+    }
+  }
+}
+
+export async function savePreloaderVideoUpload(
+  path: string
+): Promise<ActionResult<string>> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    if (!isPreloaderVideoUploadPath(path)) {
+      return { success: false, error: 'Invalid upload path' }
+    }
+
+    const { data: previousConfig, error: previousConfigError } = await admin
+      .from('app_config')
+      .select('preloader_video_url')
+      .eq('id', 1)
+      .single()
+    if (previousConfigError || !previousConfig) {
+      return {
+        success: false,
+        error: previousConfigError?.message ?? 'Could not load site config',
+      }
+    }
+
+    const previousUrl = (
+      previousConfig as unknown as { preloader_video_url: string | null }
+    ).preloader_video_url
+
+    const { data: uploadedFile, error: downloadError } = await admin.storage
+      .from('site-assets')
+      .download(path)
+    if (downloadError || !uploadedFile) {
+      return {
+        success: false,
+        error: downloadError?.message ?? 'Could not verify uploaded video',
+      }
+    }
+
+    await mirrorUploadedPublicMedia(admin, {
+      bucket: 'site-assets',
+      key: path,
+      body: uploadedFile,
+      contentType: 'video/mp4',
+      cacheControl: '31536000',
+    })
+
+    const { data: urlData } = admin.storage
+      .from('site-assets')
+      .getPublicUrl(path)
+
+    const publicUrl = `${urlData.publicUrl}?v=${Date.now()}`
+
+    const { error } = await admin
+      .from('app_config')
+      .update({ preloader_video_url: publicUrl } as never)
+      .eq('id', 1)
+
+    if (error) {
+      await cleanupMirroredPublicMedia(
+        admin,
+        'site-assets',
+        [path],
+        '[savePreloaderVideoUpload]'
+      )
+      return { success: false, error: error.message }
+    }
+
+    const previousPath = getPublicStoragePath(previousUrl, 'site-assets')
+    if (previousPath && previousPath !== path) {
+      await cleanupMirroredPublicMedia(
+        admin,
+        'site-assets',
+        [previousPath],
+        '[savePreloaderVideoUpload]'
+      )
+    }
+
+    updateTag('site-config')
+    revalidatePath('/', 'layout')
+    return { success: true, data: publicUrl }
+  } catch (err) {
+    console.error('[savePreloaderVideoUpload] failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Upload failed',
+    }
+  }
+}
+
+export async function removePreloaderVideo(): Promise<ActionResult> {
+  try {
+    await assertAdmin()
+    const admin = createAdminClient()
+
+    const { data: previousConfig, error: previousConfigError } = await admin
+      .from('app_config')
+      .select()
+      .eq('id', 1)
+      .single()
+    if (previousConfigError || !previousConfig) {
+      return {
+        success: false,
+        error: previousConfigError?.message ?? 'Could not load site config',
+      }
+    }
+
+    const previousPreloaderUrl = (
+      previousConfig as unknown as { preloader_video_url: string | null }
+    ).preloader_video_url
+    const previousPath = getPublicStoragePath(previousPreloaderUrl, 'site-assets')
+    const mediaDeletion = previousPath
+      ? await stageMirroredPublicMediaDeletion(admin, 'site-assets', [
+          previousPath,
+        ])
+      : null
+    const { error: configError } = await admin
+      .from('app_config')
+      .update({ preloader_video_url: null } as never)
+      .eq('id', 1)
+
+    if (configError) {
+      const restored = await mediaDeletion?.rollback()
+      return {
+        success: false,
+        error: restored !== false
+          ? configError.message
+          : 'Could not remove the preloader video and restore R2 media',
+      }
+    }
+
+    if (mediaDeletion && !(await mediaDeletion.commit())) {
+      console.error('[removePreloaderVideo] media cleanup failed')
+    }
+
+    updateTag('site-config')
+    revalidatePath('/', 'layout')
+
+    return { success: true }
+  } catch (err) {
+    console.error('[removePreloaderVideo] failed', err)
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to remove video',
@@ -1749,6 +2369,7 @@ export async function createShowVideoUpload(file: {
 }): Promise<ActionResult<SignedVideoUploadTarget>> {
   try {
     await assertAdmin()
+    assertPublicMediaWriteReady()
     const admin = createAdminClient()
     const { name, size, type, showId, variant } = file
 
@@ -1796,6 +2417,24 @@ export async function saveShowVideoUpload(
     }
 
     const admin = createAdminClient()
+    const { data: uploadedFile, error: downloadError } = await admin.storage
+      .from('site-assets')
+      .download(path)
+    if (downloadError || !uploadedFile) {
+      return {
+        success: false,
+        error: downloadError?.message ?? 'Could not verify uploaded video',
+      }
+    }
+
+    await mirrorUploadedPublicMedia(admin, {
+      bucket: 'site-assets',
+      key: path,
+      body: uploadedFile,
+      contentType: 'video/mp4',
+      cacheControl: '31536000',
+    })
+
     const { data: urlData } = admin.storage
       .from('site-assets')
       .getPublicUrl(path)
@@ -1878,8 +2517,18 @@ const siteMetadataSchema = z.object({
   site_description_ar: z.string().trim().max(300).nullable(),
   site_tagline: z.string().trim().min(1, 'Tagline is required').max(120),
   site_tagline_ar: z.string().trim().max(120).nullable(),
-  hero_description: z.string().trim().max(500).nullable(),
-  hero_description_ar: z.string().trim().max(500).nullable(),
+})
+
+const authPageSchema = z.object({
+  auth_heading: z.string().trim().max(120).nullable(),
+  auth_heading_ar: z.string().trim().max(120).nullable(),
+  auth_subheading: z.string().trim().max(300).nullable(),
+  auth_subheading_ar: z.string().trim().max(300).nullable(),
+  auth_quote: z.string().trim().max(400).nullable(),
+  auth_quote_ar: z.string().trim().max(400).nullable(),
+  auth_quote_attribution: z.string().trim().max(120).nullable(),
+  auth_quote_attribution_ar: z.string().trim().max(120).nullable(),
+  auth_allow_skip: z.boolean(),
 })
 
 const liveStreamUrlSchema = z.object({
@@ -1892,6 +2541,16 @@ const liveStreamUrlSchema = z.object({
       (v) => v === null || validateYouTubeUrl(v) !== null,
       'Must be empty or a valid YouTube URL'
     ),
+  live_stream_label: z
+    .string()
+    .max(40)
+    .nullish()
+    .transform((v) => (!v || v.trim() === '' ? null : v.trim())),
+  live_stream_label_ar: z
+    .string()
+    .max(40)
+    .nullish()
+    .transform((v) => (!v || v.trim() === '' ? null : v.trim())),
 })
 
 const footerSchema = z.object({
@@ -1927,7 +2586,12 @@ const hrefOrEmpty = z
   .trim()
   .max(500)
   .refine(
-    (v) => v === '' || v.startsWith('/') || /^https?:\/\//i.test(v),
+    (v) =>
+      v === '' ||
+      (v.startsWith('/') &&
+        !v.startsWith('//') &&
+        !v.includes('\\')) ||
+      /^https?:\/\//i.test(v),
     'Must be empty, a path (/foo), or a URL'
   )
 
@@ -1949,9 +2613,26 @@ const ctaCopySchema = z.object({
 })
 
 const integrationsSchema = z.object({
-  google_analytics_id: z.string().trim().max(40).nullable(),
-  meta_pixel_id: z.string().trim().max(40).nullable(),
-  youtube_api_key: z.string().trim().max(100).nullable(),
+  google_analytics_id: z
+    .string()
+    .trim()
+    .max(40)
+    .nullable()
+    .refine(
+      (v) => v === null || v === '' || /^G-[A-Z0-9]{4,20}$/.test(v),
+      'Invalid Google Analytics ID'
+    ),
+  meta_pixel_id: z
+    .string()
+    .trim()
+    .max(40)
+    .nullable()
+    .refine(
+      (v) => v === null || v === '' || /^[0-9]{6,20}$/.test(v),
+      'Invalid Meta Pixel ID'
+    ),
+  /** Omit to leave the stored key unchanged; null clears it. */
+  youtube_api_key: z.string().trim().max(100).nullable().optional(),
 })
 
 const featureFlagsSchema = z.object({
@@ -2030,10 +2711,18 @@ export async function updateLiveStreamUrl(
     const { error } = await admin
       .from('app_config')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ live_stream_url: parsed.live_stream_url } as any)
+      .update({
+        live_stream_url: parsed.live_stream_url,
+        live_stream_label: parsed.live_stream_label,
+        live_stream_label_ar: parsed.live_stream_label_ar,
+      } as any)
       .eq('id', 1)
     if (error) return { success: false, error: error.message }
-    await auditConfigUpdate(user.id, ['live_stream_url'])
+    await auditConfigUpdate(user.id, [
+      'live_stream_url',
+      'live_stream_label',
+      'live_stream_label_ar',
+    ])
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
@@ -2051,11 +2740,59 @@ export async function updateSiteMetadata(
   try {
     const user = await assertAdmin()
     const parsed = siteMetadataSchema.parse(input)
+
+    // Auto-fill blank Arabic fields from their English source (DeepL).
+    parsed.site_description_ar = await fillArabic(
+      parsed.site_description,
+      parsed.site_description_ar
+    )
+    parsed.site_tagline_ar = await fillArabic(parsed.site_tagline, parsed.site_tagline_ar)
+
     const admin = createAdminClient()
     const { error } = await admin
       .from('app_config')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update(parsed as any)
+      .eq('id', 1)
+    if (error) return { success: false, error: error.message }
+    await auditConfigUpdate(user.id, Object.keys(parsed))
+    bumpSiteConfigCache()
+    return { success: true }
+  } catch (err) {
+    console.error('[admin/actions] mutation failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to save',
+    }
+  }
+}
+
+export async function updateAuthPageConfig(
+  input: z.input<typeof authPageSchema>
+): Promise<ActionResult> {
+  try {
+    const user = await assertAdmin()
+    const parsed = authPageSchema.parse(input)
+
+    // Auto-fill blank Arabic copy from the English source (DeepL).
+    parsed.auth_heading_ar = await fillArabic(
+      parsed.auth_heading,
+      parsed.auth_heading_ar
+    )
+    parsed.auth_subheading_ar = await fillArabic(
+      parsed.auth_subheading,
+      parsed.auth_subheading_ar
+    )
+    parsed.auth_quote_ar = await fillArabic(parsed.auth_quote, parsed.auth_quote_ar)
+    parsed.auth_quote_attribution_ar = await fillArabic(
+      parsed.auth_quote_attribution,
+      parsed.auth_quote_attribution_ar
+    )
+
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('app_config')
+      .update(parsed as never)
       .eq('id', 1)
     if (error) return { success: false, error: error.message }
     await auditConfigUpdate(user.id, Object.keys(parsed))
@@ -2076,6 +2813,10 @@ export async function updateFooterContent(
   try {
     const user = await assertAdmin()
     const parsed = footerSchema.parse(input)
+
+    // Auto-fill blank Arabic tagline from English (DeepL).
+    parsed.taglineAr = (await fillArabic(parsed.tagline, parsed.taglineAr)) ?? ''
+
     const admin = createAdminClient()
     const { error } = await admin
       .from('app_config')
@@ -2100,8 +2841,6 @@ const portfolioContentSchema = z.object({
   hero_description_ar: z.string().trim().max(500).nullable(),
   portfolio_heading: z.string().trim().max(200).nullable(),
   portfolio_heading_ar: z.string().trim().max(200).nullable(),
-  footer_tagline: z.string().trim().max(300),
-  footer_tagline_ar: z.string().trim().max(300),
 })
 
 export async function updatePortfolioContent(
@@ -2110,41 +2849,24 @@ export async function updatePortfolioContent(
   try {
     const user = await assertAdmin()
     const parsed = portfolioContentSchema.parse(input)
-    const admin = createAdminClient()
 
-    // Read the CURRENT footer_content fresh from the DB — NOT the cached
-    // getAppConfig(), which silently falls back to DEFAULT_FOOTER (social: [])
-    // on a read miss/error and would clobber admin-managed fields (social
-    // links, contact, legal) when this read-modify-write saves it back. Fail
-    // closed: if we can't read the current blob, abort rather than overwrite.
-    const { data: cfgRow, error: readErr } = await admin
-      .from('app_config')
-      .select('footer_content')
-      .eq('id', 1)
-      .single<{ footer_content: unknown }>()
-    if (readErr || !cfgRow) {
-      return {
-        success: false,
-        error: readErr?.message ?? 'Could not read current footer content',
-      }
-    }
-    const currentFooter =
-      cfgRow.footer_content && typeof cfgRow.footer_content === 'object'
-        ? (cfgRow.footer_content as Record<string, unknown>)
-        : {}
+    // Auto-fill blank Arabic fields from their English source (DeepL).
+    parsed.hero_description_ar = await fillArabic(
+      parsed.hero_description,
+      parsed.hero_description_ar
+    )
+    parsed.portfolio_heading_ar = await fillArabic(
+      parsed.portfolio_heading,
+      parsed.portfolio_heading_ar
+    )
+
+    const admin = createAdminClient()
 
     const updatePayload = {
       hero_description: parsed.hero_description,
       hero_description_ar: parsed.hero_description_ar,
       portfolio_heading: parsed.portfolio_heading,
       portfolio_heading_ar: parsed.portfolio_heading_ar,
-      // Spread the raw stored blob so social/contact/legal pass through
-      // untouched; only the tagline fields this editor owns are overwritten.
-      footer_content: {
-        ...currentFooter,
-        tagline: parsed.footer_tagline,
-        taglineAr: parsed.footer_tagline_ar,
-      },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any
     const { error } = await admin
@@ -2158,8 +2880,6 @@ export async function updatePortfolioContent(
       'hero_description_ar',
       'portfolio_heading',
       'portfolio_heading_ar',
-      'footer_content.tagline',
-      'footer_content.taglineAr',
     ])
     bumpSiteConfigCache()
     return { success: true }
@@ -2278,10 +2998,12 @@ export async function updateIntegrations(
     const user = await assertAdmin()
     const parsed = integrationsSchema.parse(input)
     // Empty strings from form inputs → null so DB stays clean
-    const cleaned = {
+    const cleaned: Record<string, string | null> = {
       google_analytics_id: parsed.google_analytics_id?.trim() || null,
       meta_pixel_id: parsed.meta_pixel_id?.trim() || null,
-      youtube_api_key: parsed.youtube_api_key?.trim() || null,
+    }
+    if (parsed.youtube_api_key !== undefined) {
+      cleaned.youtube_api_key = parsed.youtube_api_key?.trim() || null
     }
     const admin = createAdminClient()
     const { error } = await admin
@@ -2340,7 +3062,15 @@ export async function updateTopTicker(
   try {
     const user = await assertAdmin()
     const parsed = topTickerSchema.parse(input)
-    const items = parsed.items
+    type TickerItem = {
+      tag: string
+      text: string
+      tag2?: string
+      tag_ar?: string
+      text_ar?: string
+      tag2_ar?: string
+    }
+    const items: TickerItem[] = parsed.items
       .map((row) => ({
         tag: row.tag.trim(),
         text: row.text.trim(),
@@ -2350,6 +3080,22 @@ export async function updateTopTicker(
         ...(row.tag2_ar?.trim() && { tag2_ar: row.tag2_ar.trim() }),
       }))
       .filter((row) => row.tag.length > 0 || row.text.length > 0 || (row.tag2 ?? '').length > 0)
+
+    // Auto-fill blank Arabic fields from English in one batched DeepL call.
+    const enTexts: string[] = []
+    const slots: Array<[number, 'tag_ar' | 'text_ar' | 'tag2_ar']> = []
+    items.forEach((it, idx) => {
+      if (!it.tag_ar && it.tag) { enTexts.push(it.tag); slots.push([idx, 'tag_ar']) }
+      if (!it.text_ar && it.text) { enTexts.push(it.text); slots.push([idx, 'text_ar']) }
+      if (!it.tag2_ar && it.tag2) { enTexts.push(it.tag2); slots.push([idx, 'tag2_ar']) }
+    })
+    if (enTexts.length > 0) {
+      const translated = await translateBatchToArabic(enTexts)
+      translated.forEach((tr, i) => {
+        const slot = slots[i]
+        if (slot && tr?.trim()) items[slot[0]][slot[1]] = tr
+      })
+    }
 
     if (parsed.enabled && items.length === 0) {
       return {
@@ -2397,6 +3143,7 @@ const SITE_IMAGE_COLUMN = {
   og: 'og_image_url',
   favicon: 'favicon_url',
   'favicon-dark': 'favicon_dark_url',
+  auth: 'auth_image_url',
 } as const
 
 type SiteImageKind = keyof typeof SITE_IMAGE_COLUMN
@@ -2408,6 +3155,7 @@ export async function uploadSiteImage(
 ): Promise<ActionResult<string>> {
   try {
     await assertAdmin()
+    assertPublicMediaWriteReady()
     const admin = createAdminClient()
 
     const file = formData.get('file') as File | null
@@ -2433,12 +3181,23 @@ export async function uploadSiteImage(
     if (!ext)
       return { success: false, error: `Unsupported image type: ${mime}` }
 
-    const pathMap: Record<typeof kind & string, string> = {
-      og: `settings/og.${ext}`,
-      favicon: `settings/favicon.${ext}`,
-      'favicon-dark': `settings/favicon-dark.${ext}`,
+    const column = SITE_IMAGE_COLUMN[kind]
+    const { data: previousConfig, error: previousConfigError } = await admin
+      .from('app_config')
+      .select(column)
+      .eq('id', 1)
+      .single()
+    if (previousConfigError || !previousConfig) {
+      return {
+        success: false,
+        error: previousConfigError?.message ?? 'Could not load site config',
+      }
     }
-    const path = pathMap[kind]
+
+    const previousUrl = (
+      previousConfig as unknown as Record<string, string | null>
+    )[column]
+    const path = `settings/${kind}-${Date.now()}.${ext}`
 
     let body: Blob = file
     if (mime === 'image/svg+xml') {
@@ -2448,12 +3207,20 @@ export async function uploadSiteImage(
     const { error: uploadError } = await admin.storage
       .from('site-assets')
       .upload(path, body, {
-        upsert: true,
+        upsert: false,
         contentType: mime,
-        cacheControl: '3600',
+        cacheControl: '31536000',
       })
 
     if (uploadError) return { success: false, error: uploadError.message }
+
+    await mirrorUploadedPublicMedia(admin, {
+      bucket: 'site-assets',
+      key: path,
+      body,
+      contentType: mime,
+      cacheControl: '31536000',
+    })
 
     const { data: urlData } = admin.storage
       .from('site-assets')
@@ -2461,14 +3228,31 @@ export async function uploadSiteImage(
     // Cache-bust the URL so browsers always pick up the latest upload
     const bustedUrl = `${urlData.publicUrl}?v=${Date.now()}`
 
-    const column = SITE_IMAGE_COLUMN[kind]
     const { error: dbError } = await admin
       .from('app_config')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update({ [column]: bustedUrl } as any)
       .eq('id', 1)
 
-    if (dbError) return { success: false, error: dbError.message }
+    if (dbError) {
+      await cleanupMirroredPublicMedia(
+        admin,
+        'site-assets',
+        [path],
+        '[uploadSiteImage]'
+      )
+      return { success: false, error: dbError.message }
+    }
+
+    const previousPath = getPublicStoragePath(previousUrl, 'site-assets')
+    if (previousPath && previousPath !== path) {
+      await cleanupMirroredPublicMedia(
+        admin,
+        'site-assets',
+        [previousPath],
+        '[uploadSiteImage]'
+      )
+    }
 
     bumpSiteConfigCache()
     return { success: true, data: bustedUrl }
@@ -2488,12 +3272,38 @@ export async function removeSiteImage(
     await assertAdmin()
     const admin = createAdminClient()
     const column = SITE_IMAGE_COLUMN[kind]
+    const { data: previousConfig, error: previousConfigError } = await admin
+      .from('app_config')
+      .select(column)
+      .eq('id', 1)
+      .single()
+    if (previousConfigError || !previousConfig) {
+      return {
+        success: false,
+        error: previousConfigError?.message ?? 'Could not load site config',
+      }
+    }
+
+    const previousUrl = (
+      previousConfig as unknown as Record<string, string | null>
+    )[column]
     const { error } = await admin
       .from('app_config')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update({ [column]: null } as any)
       .eq('id', 1)
     if (error) return { success: false, error: error.message }
+
+    const previousPath = getPublicStoragePath(previousUrl, 'site-assets')
+    if (previousPath) {
+      await cleanupMirroredPublicMedia(
+        admin,
+        'site-assets',
+        [previousPath],
+        '[removeSiteImage]'
+      )
+    }
+
     bumpSiteConfigCache()
     return { success: true }
   } catch (err) {
@@ -2510,6 +3320,7 @@ export async function uploadSocialIcon(
 ): Promise<ActionResult<string>> {
   try {
     await assertAdmin()
+    assertPublicMediaWriteReady()
     const admin = createAdminClient()
 
     const file = formData.get('file') as File | null
@@ -2537,6 +3348,14 @@ export async function uploadSocialIcon(
       .upload(path, body, { upsert: false, contentType: file.type, cacheControl: '31536000' })
 
     if (uploadError) return { success: false, error: uploadError.message }
+
+    await mirrorUploadedPublicMedia(admin, {
+      bucket: 'site-assets',
+      key: path,
+      body,
+      contentType: file.type,
+      cacheControl: '31536000',
+    })
 
     const { data: urlData } = admin.storage.from('site-assets').getPublicUrl(path)
     return { success: true, data: urlData.publicUrl }
@@ -2593,9 +3412,16 @@ export async function createShort(
     const parsed = shortSchema.parse(data)
     const admin = createAdminClient()
 
+    const { data: lastShort } = await admin
+      .from('shorts')
+      .select('sort_order')
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
     const { data: short, error } = await admin
       .from('shorts')
-      .insert(parsed)
+      .insert({ ...parsed, sort_order: (lastShort?.sort_order ?? -1) + 1 })
       .select()
       .single()
 
@@ -2701,26 +3527,28 @@ export async function reorderShort(
 
     if (fetchError) return { success: false, error: fetchError.message }
 
-    const currentIndex = (shorts ?? []).findIndex((short) => short.id === id)
-    const pair = swapByDirection(shorts ?? [], currentIndex, direction)
-    if (!pair) return { success: false, error: 'No short to swap with' }
+    const ordered = [...(shorts ?? [])]
+    const currentIndex = ordered.findIndex((short) => short.id === id)
+    if (currentIndex === -1) return { success: false, error: 'Short not found' }
     const adjacentIndex =
       direction === 'up' ? currentIndex - 1 : currentIndex + 1
-    const currentSortOrder = pair.current.sort_order ?? currentIndex
-    const adjacentSortOrder = pair.adjacent.sort_order ?? adjacentIndex
+    if (adjacentIndex < 0 || adjacentIndex >= ordered.length) {
+      return { success: false, error: 'No short to swap with' }
+    }
 
-    const [first, second] = await Promise.all([
-      admin
-        .from('shorts')
-        .update({ sort_order: adjacentSortOrder })
-        .eq('id', pair.current.id),
-      admin
-        .from('shorts')
-        .update({ sort_order: currentSortOrder })
-        .eq('id', pair.adjacent.id),
-    ])
+    // Swap the two rows in the array, then normalize every short's sort_order
+    // to its sequential index. This avoids the all-zeros collision that made
+    // a two-item value swap a no-op, and keeps sort_orders clean going forward.
+    const moving = ordered[currentIndex]!
+    ordered[currentIndex] = ordered[adjacentIndex]!
+    ordered[adjacentIndex] = moving
 
-    const error = first.error ?? second.error
+    const results = await Promise.all(
+      ordered.map((short, index) =>
+        admin.from('shorts').update({ sort_order: index }).eq('id', short.id)
+      )
+    )
+    const error = results.find((result) => result.error)?.error
     if (error) return { success: false, error: error.message }
 
     await logAudit({
@@ -2730,8 +3558,7 @@ export async function reorderShort(
       entityId: id,
       diff: {
         direction,
-        swapped_with: pair.adjacent.id,
-        ordered_titles: [pair.current.title, pair.adjacent.title],
+        ordered_ids: ordered.map((short) => short.id),
       },
     })
 
@@ -2818,6 +3645,21 @@ const castSchema = z.object({
   sort_order: z.number().int().optional(),
 })
 
+function getPublicStoragePath(url: string | null, bucket: string) {
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    const prefix = '/storage/v1/object/public/' + bucket + '/'
+    if (!parsed.pathname.startsWith(prefix)) return null
+    const path = decodeURIComponent(parsed.pathname.slice(prefix.length))
+    return path && !path.startsWith('/') && !path.split('/').includes('..')
+      ? path
+      : null
+  } catch {
+    return null
+  }
+}
+
 export async function addCastMember(
   data: z.input<typeof castSchema>
 ): Promise<ActionResult> {
@@ -2859,6 +3701,7 @@ export async function uploadCastImage(
 ): Promise<ActionResult<string>> {
   try {
     await assertAdmin()
+    assertPublicMediaWriteReady()
     const admin = createAdminClient()
 
     const file = formData.get('file') as File | null
@@ -2894,10 +3737,18 @@ export async function uploadCastImage(
       .upload(path, file, {
         upsert: false,
         contentType: file.type,
-        cacheControl: '3600',
+        cacheControl: '31536000',
       })
 
     if (uploadError) return { success: false, error: uploadError.message }
+
+    await mirrorUploadedPublicMedia(admin, {
+      bucket: 'show-artwork',
+      key: path,
+      body: file,
+      contentType: file.type,
+      cacheControl: '31536000',
+    })
 
     const { data: urlData } = admin.storage
       .from('show-artwork')
@@ -2917,9 +3768,41 @@ export async function deleteCastMember(id: string): Promise<ActionResult> {
     const user = await assertAdmin()
     const admin = createAdminClient()
 
+    const { data: cast, error: castError } = await admin
+      .from('show_cast')
+      .select('image_url')
+      .eq('id', id)
+      .single()
+    if (castError || !cast) {
+      return {
+        success: false,
+        error: castError?.message ?? 'Cast member not found',
+      }
+    }
+
+    const imagePath = getPublicStoragePath(cast.image_url, 'show-artwork')
+    const mediaDeletion = imagePath
+      ? await stageMirroredPublicMediaDeletion(admin, 'show-artwork', [
+          imagePath,
+        ])
+      : null
+
     const { error } = await admin.from('show_cast').delete().eq('id', id)
 
-    if (error) return { success: false, error: error.message }
+    if (error) {
+      const restored = await mediaDeletion?.rollback()
+      return {
+        success: false,
+        error:
+          restored === false
+            ? 'Could not delete cast and restore R2 media'
+            : error.message,
+      }
+    }
+
+    if (mediaDeletion && !(await mediaDeletion.commit())) {
+      console.error('[deleteCastMember] media cleanup failed')
+    }
 
     await logAudit({
       adminUserId: user.id,
@@ -2989,6 +3872,10 @@ export async function upsertLegalPage(
 
     const supabase = await createClient()
     const { id, ...fields } = parsed.data
+
+    // Auto-fill blank Arabic fields from their English source (DeepL).
+    fields.title_ar = await fillArabic(fields.title, fields.title_ar)
+    fields.content_ar = await fillArabic(fields.content, fields.content_ar)
 
     if (id) {
       const { data, error } = await supabase
@@ -3081,6 +3968,10 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
 
     const supabase = await createClient()
     const { id, ...fields } = parsed.data
+
+    // Auto-fill blank Arabic fields from their English source (DeepL).
+    fields.question_ar = await fillArabic(fields.question, fields.question_ar)
+    fields.answer_ar = await fillArabic(fields.answer, fields.answer_ar)
 
     if (id) {
       const { data, error } = await supabase

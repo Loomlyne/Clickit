@@ -21,6 +21,7 @@ import {
 } from '@/app/[locale]/admin/actions'
 import type { FooterContent, SocialLinkItem } from '@/lib/config'
 import { SOCIAL_PLATFORMS } from '@/lib/social-platforms'
+import { stripStorageCacheBust } from '@/lib/supabase-media'
 import { SettingsCard, SettingsField } from './settings-card'
 
 export function FooterEditor({ initial }: { initial: FooterContent }) {
@@ -79,8 +80,8 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
             />
           </SettingsField>
           <SettingsField
-            label={`${t('footerTaglineLabel')} (Arabic)`}
-            hint="Shown when the viewer switches to Arabic. Leave blank to fall back to English."
+            label={t('footerTaglineArLabel')}
+            hint={t('footerTaglineArHint')}
           >
             <Textarea
               dir="rtl"
@@ -90,17 +91,6 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
               onChange={(e) => setV({ ...v, taglineAr: e.target.value })}
               className="rounded-[12px]"
               placeholder="من الإمارات إلى العالم…"
-            />
-          </SettingsField>
-          <SettingsField
-            label={t('catalogStatLabel')}
-            hint={t('catalogStatHint')}
-          >
-            <Input
-              maxLength={80}
-              value={v.stat}
-              onChange={(e) => setV({ ...v, stat: e.target.value })}
-              className="rounded-[12px]"
             />
           </SettingsField>
           <SettingsField
@@ -295,7 +285,7 @@ function SocialIconUpload({
           title="Remove icon"
         >
           <Image
-            src={currentUrl}
+            src={stripStorageCacheBust(currentUrl) ?? currentUrl}
             alt="icon"
             width={24}
             height={24}

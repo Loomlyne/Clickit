@@ -130,6 +130,13 @@ function purgeShowFolder(bucket, showId) {
 
 loadEnvLocal()
 
+if (process.env.NEXT_PUBLIC_MEDIA_ORIGIN?.trim()) {
+  console.error(
+    'This one-shot source-only cleanup is disabled after the R2 public-media cutover.'
+  )
+  process.exit(1)
+}
+
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
   console.error('NEXT_PUBLIC_SUPABASE_URL is not set (check .env.local)')
   process.exit(1)

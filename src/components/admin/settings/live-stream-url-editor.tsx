@@ -11,20 +11,31 @@ import { SettingsCard, SettingsField } from './settings-card'
 
 export function LiveStreamUrlEditor({
   initialUrl,
+  initialLabel,
+  initialLabelAr,
 }: {
   initialUrl: string | null
+  initialLabel: string | null
+  initialLabelAr: string | null
 }) {
-  const [value, setValue] = useState(initialUrl ?? '')
+  const [url, setUrl] = useState(initialUrl ?? '')
+  const [label, setLabel] = useState(initialLabel ?? '')
+  const [labelAr, setLabelAr] = useState(initialLabelAr ?? '')
   const [saving, setSaving] = useState(false)
   const t = useTranslations('admin.settings')
 
-  const dirty = value !== (initialUrl ?? '')
+  const dirty =
+    url !== (initialUrl ?? '') ||
+    label !== (initialLabel ?? '') ||
+    labelAr !== (initialLabelAr ?? '')
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
     const result = await updateLiveStreamUrl({
-      live_stream_url: value === '' ? null : value,
+      live_stream_url: url === '' ? null : url,
+      live_stream_label: label === '' ? null : label,
+      live_stream_label_ar: labelAr === '' ? null : labelAr,
     })
     setSaving(false)
     if (result.success) {
@@ -40,10 +51,30 @@ export function LiveStreamUrlEditor({
       description={t('liveStreamDescription')}
     >
       <form onSubmit={onSave} className="grid gap-4">
+        <SettingsField label={t('liveStreamLabelLabel')} hint={t('liveStreamLabelHint')}>
+          <Input
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder={t('liveStreamLabelPlaceholder')}
+            maxLength={40}
+          />
+        </SettingsField>
+        <SettingsField
+          label={t('liveStreamLabelArLabel')}
+          hint={t('liveStreamLabelArHint')}
+        >
+          <Input
+            value={labelAr}
+            onChange={(e) => setLabelAr(e.target.value)}
+            placeholder={t('liveStreamLabelArPlaceholder')}
+            maxLength={40}
+            dir="rtl"
+          />
+        </SettingsField>
         <SettingsField label={t('youtubeUrlLabel')} hint={t('liveStreamHint')}>
           <Input
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
             placeholder="https://www.youtube.com/watch?v=… or https://youtu.be/…"
             maxLength={500}
             className="font-mono text-sm"
@@ -54,7 +85,7 @@ export function LiveStreamUrlEditor({
             {saving ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
-              t('saveLiveUrl')
+              t('saveLiveStream')
             )}
           </Button>
         </div>

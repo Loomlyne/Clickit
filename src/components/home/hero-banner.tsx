@@ -2,10 +2,10 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { useReducedMotion } from 'motion/react'
 
 import type { ViewShow } from '@/lib/queries'
 import { HeroSlide } from '@/components/home/hero-slide'
+import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 
 const INTERVAL = 3000
 const SLIDE_DURATION = 600
@@ -24,7 +24,7 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
-  const shouldReduceMotion = useReducedMotion()
+  const shouldReduceMotion = usePrefersReducedMotion()
 
   const n = shows.length
   // Clone first slide at end — seamless infinite forward loop
@@ -85,9 +85,9 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
               show={show}
               firstEpisodeId={firstEpisodeId}
               hasWatched={hasWatched}
-              isActive={i === activeIndex || i === activeIndex + 1}
+              isActive={i === activeIndex}
               isMobile={isMobile}
-              reducedMotion={shouldReduceMotion ?? false}
+              reducedMotion={shouldReduceMotion}
               onContentHoverChange={setIsPaused}
             />
           </div>

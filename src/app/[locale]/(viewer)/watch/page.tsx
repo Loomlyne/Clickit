@@ -19,6 +19,7 @@ import {
   getShortsForBrowse,
 } from '@/lib/queries'
 import { getIsMobile } from '@/lib/device'
+import type { Locale } from '@/lib/locale'
 
 export default async function WatchPage({
   searchParams,
@@ -28,13 +29,14 @@ export default async function WatchPage({
   const supabase = await createClient()
   const params = await searchParams
   const categorySlug = params?.category?.trim() || null
+  const locale = (await getLocale()) as Locale
 
   const [
     {
       data: { user },
     },
     featured,
-  ] = await Promise.all([supabase.auth.getUser(), getFeaturedShows()])
+  ] = await Promise.all([supabase.auth.getUser(), getFeaturedShows(locale)])
   const userId = user?.id ?? null
 
   // Stage 2: everything else in parallel, including first-episode map which
@@ -44,19 +46,17 @@ export default async function WatchPage({
     comingSoon,
     shorts,
     isMobile,
-    locale,
     categoryRails,
     activeCategory,
     firstEpisodeMap,
     t,
   ] = await Promise.all([
-    getStreamingShows(),
-    getComingSoonShows(),
+    getStreamingShows(locale),
+    getComingSoonShows(locale),
     getShortsForBrowse(),
     getIsMobile(),
-    getLocale(),
-    getCategoryRails(),
-    categorySlug ? getCategoryRailBySlug(categorySlug) : Promise.resolve(null),
+    getCategoryRails(locale),
+    categorySlug ? getCategoryRailBySlug(categorySlug, locale) : Promise.resolve(null),
     getFirstEpisodesForShows(featured.map((s) => s.id)),
     getTranslations('watch'),
   ])
@@ -100,7 +100,9 @@ export default async function WatchPage({
         </div>
       )}
 
-      <ContinueWatchingRail userId={userId} />
+      <Suspense fallback={null}>
+        <ContinueWatchingRail userId={userId} />
+      </Suspense>
 
       <ShortsRail shorts={shorts} />
 
@@ -110,13 +112,14 @@ export default async function WatchPage({
           title={t('railPrograms')}
           shows={streaming}
           seeAllHref="/watch"
+          minCards={0}
         />
       )}
       {comingSoon.length > 0 && (
         <ContentRail
+          sectionId="coming-soon"
           title={t('railComingSoon')}
           shows={comingSoon}
-          seeAllHref="/coming-soon"
         />
       )}
 

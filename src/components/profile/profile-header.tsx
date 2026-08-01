@@ -12,6 +12,7 @@ interface ProfileHeaderProps {
   email: string
   avatarUrl: string | null
   isAdmin: boolean
+  signOutRedirect?: string
 }
 
 export function ProfileHeader({
@@ -19,6 +20,7 @@ export function ProfileHeader({
   email,
   avatarUrl,
   isAdmin,
+  signOutRedirect = '/watch',
 }: ProfileHeaderProps) {
   const router = useRouter()
   const locale = useLocale()
@@ -33,7 +35,7 @@ export function ProfileHeader({
     setSigningOut(true)
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.replace('/watch')
+    router.replace(signOutRedirect)
     router.refresh()
   }
 

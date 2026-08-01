@@ -1,13 +1,16 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 
 import { redirect } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
 import { AuthPanel } from '@/components/auth/auth-panel'
 import { BotIdInit } from '@/components/auth/botid-init'
 import { getFeaturedShows } from '@/lib/queries'
+import { getAppConfig } from '@/lib/config'
 import { createClient } from '@/lib/supabase/server'
 import { getSafeAuthNextPath } from '@/lib/auth-navigation'
+import { cn } from '@/lib/utils'
+import type { Locale } from '@/lib/locale'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('common')
@@ -25,24 +28,51 @@ export default async function AuthPage({
   params: Promise<{ locale: string }>
 }) {
   const supabase = await createClient()
-  const [shows, t, authResult, query, routeParams] = await Promise.all([
-    getFeaturedShows(),
+  const locale = (await params).locale as Locale
+  const [shows, config, t, authResult, query] = await Promise.all([
+    getFeaturedShows(locale as Locale),
+    getAppConfig(),
     getTranslations('auth'),
     supabase.auth.getUser(),
     searchParams,
-    params,
   ])
   if (authResult.data.user) {
+    const { data: configRow } = await supabase
+      .from('app_config')
+      .select('admin_user_id')
+      .eq('id', 1)
+      .single()
+    const isAdmin = configRow?.admin_user_id === authResult.data.user.id
     redirect({
-      href: getSafeAuthNextPath(query?.next, '/watch'),
-      locale: routeParams.locale,
+      href: getSafeAuthNextPath(query?.next, isAdmin ? '/admin' : '/watch'),
+      locale,
     })
   }
 
-  const backdrop = shows[1]?.heroImageUrl || shows[0]?.posterUrl
+  const isAr = locale === 'ar'
+  // Admin-configured copy wins; fall back to the bundled i18n strings.
+  const heading =
+    (isAr ? config.authHeadingAr : config.authHeading) ||
+    t('welcomeBackHeading')
+  const subheading =
+    (isAr ? config.authSubheadingAr : config.authSubheading) ||
+    t('welcomeBackSubheading')
+  const quote = (isAr ? config.authQuoteAr : config.authQuote) || t('quote')
+  const quoteAttribution =
+    (isAr ? config.authQuoteAttributionAr : config.authQuoteAttribution) ||
+    t('quoteAttribution')
+
+  // Admin-uploaded side image wins; otherwise reuse a featured-show backdrop.
+  const backdrop =
+    config.authImageUrl || shows[1]?.heroImageUrl || shows[0]?.posterUrl
 
   return (
-    <div className="relative -mt-16 flex min-h-[calc(100dvh-4rem)] overflow-hidden">
+    <div
+      className={cn(
+        'relative flex min-h-[calc(100dvh-4rem)] overflow-hidden',
+        !config.flags.comingSoonMode && '-mt-16'
+      )}
+    >
       <BotIdInit />
 
       {/* LEFT — editorial hero */}
@@ -56,19 +86,13 @@ export default async function AuthPage({
             }}
           />
         )}
-        <div className="absolute inset-0 bg-black/18" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/72 via-black/46 to-black/72" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-black/26 to-transparent" />
-
         <div className="relative flex h-full w-full flex-col justify-between p-12">
           {/* Middle: quote */}
           <div className="flex h-full max-w-md flex-col items-start justify-end">
             <h2 className="mb-4 font-[family-name:var(--font-display)] text-[32px] leading-[1.15] font-normal tracking-[-0.01em] text-white">
-              &ldquo;{t('quote')}&rdquo;
+              &ldquo;{quote}&rdquo;
             </h2>
-            <div className="mono text-[11px] text-white/40">
-              — {t('quoteAttribution')}
-            </div>
+            <div className="mono text-[11px] text-white/40">— {quoteAttribution}</div>
           </div>
         </div>
       </div>
@@ -77,22 +101,26 @@ export default async function AuthPage({
       <div className="flex w-full items-center justify-center bg-[var(--bg-0)] px-5 py-8 sm:px-6 md:py-12 lg:w-1/2 lg:py-16">
         <div className="w-full max-w-[420px]">
           <h1 className="mb-2 font-[family-name:var(--font-display)] text-[32px] font-normal tracking-[-0.01em] md:text-[36px]">
-            {t('welcomeBackHeading')}
+            {heading}
           </h1>
           <p className="mb-6 text-[15px] text-[var(--text-dim)] md:mb-8">
-            {t('welcomeBackSubheading')}
+            {subheading}
           </p>
 
           <AuthPanel />
 
-          <div className="mt-4 text-center md:mt-6">
-            <Link
-              href="/watch"
-              className="inline-flex min-h-11 items-center font-[family-name:var(--font-mono)] text-[13px] tracking-[0.08em] text-[var(--text-mute)] uppercase transition-colors hover:text-[var(--text)]"
-            >
-              {t('skipSignIn')} →
-            </Link>
-          </div>
+          {/* Skip sign-in — only when the admin has enabled it. Lands on the
+              watch catalog; my-list/profile still require an account. */}
+          {config.authAllowSkip && (
+            <div className="mt-4 text-center md:mt-6">
+              <Link
+                href="/watch"
+                className="inline-flex min-h-11 items-center font-[family-name:var(--font-mono)] text-[13px] tracking-[0.08em] text-[var(--text-mute)] uppercase transition-colors hover:text-[var(--text)]"
+              >
+                {t('skipSignIn')} →
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 

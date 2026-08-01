@@ -332,13 +332,15 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {s.title}
+                      <div className="flex max-w-[200px] items-start gap-2 md:max-w-[360px]">
+                        <span className="line-clamp-2 break-words">
+                          {s.title}
+                        </span>
                         <a
                           href={`https://youtube.com/shorts/${s.youtube_video_id}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-muted-foreground hover:text-foreground"
+                          className="text-muted-foreground hover:text-foreground mt-0.5 shrink-0"
                         >
                           <ExternalLink className="size-3" />
                         </a>

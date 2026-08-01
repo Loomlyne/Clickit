@@ -1,66 +1,40 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('Coming Soon Page', () => {
-  test.beforeEach(async ({ page }) => {
+test.describe('Coming Soon gate splash', () => {
+  test('redirects to watch when gate is off', async ({ page }) => {
     await page.goto('/coming-soon')
+    // When coming-soon mode is disabled (default in most envs), bounce to watch.
+    await expect(page).toHaveURL(/\/watch/, { timeout: 10_000 })
   })
 
-  // CATL-07: Page renders with title
-  test('coming soon page displays page title', async ({ page }) => {
-    const heading = page.getByRole('heading', {
-      name: 'Coming Soon',
-      exact: true,
+  test.describe('when gate is on', () => {
+    test.beforeEach(async ({ page }) => {
+      // Skip catalog-era assertions — splash only exists with the feature flag.
+      test.skip(
+        process.env.E2E_COMING_SOON_GATE !== '1',
+        'Set E2E_COMING_SOON_GATE=1 with comingSoonMode enabled in app_config'
+      )
+      await page.goto('/coming-soon')
     })
-    await expect(heading).toBeVisible()
-  })
 
-  test('coming soon page displays subtitle', async ({ page }) => {
-    const subtitle = page.getByText('New shows and episodes on the way.')
-    await expect(subtitle).toBeVisible()
-  })
-
-  // CATL-07: Unreleased shows section
-  test('upcoming shows section is visible', async ({ page }) => {
-    const sectionHeading = page.getByRole('heading', {
-      name: 'Upcoming Shows',
+    test('shows splash heading and description', async ({ page }) => {
+      await expect(
+        page.getByRole('heading', { name: 'Coming Soon', exact: true })
+      ).toBeVisible()
+      await expect(
+        page.getByText('The full platform launches shortly.')
+      ).toBeVisible()
     })
-    await expect(sectionHeading).toBeVisible()
-  })
 
-  test('shows coming-soon show card (Poets Platform)', async ({ page }) => {
-    // Poets Platform is the coming-soon show in mock data
-    const showTitle = page.getByText('Poets Platform').first()
-    await expect(showTitle).toBeVisible()
-  })
-
-  test('coming-soon show card has Coming Soon badge', async ({ page }) => {
-    // ComingSoonShowCard renders a Badge with "Coming Soon"
-    const badge = page
-      .locator('[data-slot="badge"]')
-      .filter({ hasText: 'Coming Soon' })
-      .first()
-    await expect(badge).toBeVisible()
-  })
-
-  // CATL-07: Upcoming episodes section
-  test('new episodes section is visible', async ({ page }) => {
-    const sectionHeading = page.getByRole('heading', {
-      name: 'New Episodes Dropping Soon',
+    test('does not show the old upcoming-shows catalog', async ({ page }) => {
+      await expect(
+        page.getByRole('heading', { name: "What we're releasing next." })
+      ).not.toBeVisible()
+      await expect(page.getByText('Remind me')).not.toBeVisible()
     })
-    await expect(sectionHeading).toBeVisible()
-  })
 
-  test('upcoming episodes show episode rows from streaming shows', async ({
-    page,
-  }) => {
-    // Streaming shows with coming-soon episodes should appear here
-    // Check that at least one episode row with a duration chip is visible
-    const durationChip = page.getByText(/\d+ min/).first()
-    await expect(durationChip).toBeVisible({ timeout: 5000 })
-  })
-
-  // Page metadata
-  test('page has correct title', async ({ page }) => {
-    await expect(page).toHaveTitle(/Coming Soon.*Clickit Story/)
+    test('page has correct title', async ({ page }) => {
+      await expect(page).toHaveTitle(/Coming Soon.*Clickit Story/)
+    })
   })
 })
