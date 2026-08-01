@@ -52,7 +52,9 @@ export function stripStorageCacheBust(
     const parsed = new URL(url)
     parsed.searchParams.delete('v')
     const search = parsed.searchParams.toString()
-    return search ? `${parsed.origin}${parsed.pathname}?${search}` : `${parsed.origin}${parsed.pathname}`
+    return search
+      ? `${parsed.origin}${parsed.pathname}?${search}`
+      : `${parsed.origin}${parsed.pathname}`
   } catch {
     return url.split('?')[0]
   }
@@ -65,6 +67,7 @@ export function stripStorageCacheBust(
 export function toCdnStorageUrl(
   url: string | null | undefined
 ): string | undefined {
+  if (url?.startsWith('/api/cdn/storage?')) return url
   const clean = stripStorageCacheBust(url)
   if (!clean || !isSupabaseStorageUrl(clean)) return clean
 
