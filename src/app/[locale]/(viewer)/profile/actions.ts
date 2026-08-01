@@ -5,6 +5,7 @@ import {
   assertPublicMediaWriteReady,
   mirrorPublicMediaObject,
   prepareMirroredPublicMediaDeletion,
+  R2MediaRollbackError,
 } from '@/lib/r2-media'
 import { createClient } from '@/lib/supabase/server'
 import { stripStorageCacheBust } from '@/lib/supabase-media'
@@ -112,6 +113,7 @@ export async function uploadAvatar(formData: FormData) {
       contentType: file.type,
     })
   } catch (error) {
+    if (error instanceof R2MediaRollbackError) throw error
     const { error: removeError } = await supabase.storage
       .from('avatars')
       .remove([path])

@@ -14,6 +14,7 @@ import {
   assertPublicMediaWriteReady,
   mirrorPublicMediaObject,
   prepareMirroredPublicMediaDeletion,
+  R2MediaRollbackError,
 } from '@/lib/r2-media'
 import type { MirroredPublicMediaDeletion } from '@/lib/r2-media'
 
@@ -77,6 +78,7 @@ async function mirrorUploadedPublicMedia(
   try {
     await mirrorPublicMediaObject(input)
   } catch (error) {
+    if (error instanceof R2MediaRollbackError) throw error
     const { error: removeError } = await admin.storage
       .from(input.bucket)
       .remove([input.key])

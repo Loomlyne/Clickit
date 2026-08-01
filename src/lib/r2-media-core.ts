@@ -55,6 +55,13 @@ export type MirroredPublicMediaDeletion = {
   rollback: () => Promise<boolean>
 }
 
+export class R2MediaRollbackError extends Error {
+  constructor() {
+    super('Could not restore public media in R2')
+    this.name = 'R2MediaRollbackError'
+  }
+}
+
 const R2_DELETE_BACKUP_PREFIX = '__clickit-delete-backups'
 const R2_WRITE_BACKUP_PREFIX = '__clickit-write-backups'
 
@@ -214,15 +221,24 @@ export async function mirrorPublicMediaObject(
     if (!matchesMirroredObject(head, input)) {
       throw new Error('R2 mirror verification failed')
     }
+
+    if (
+      backupKey &&
+      !(await deleteR2ObjectKeys(client, configuration, [backupKey]))
+    ) {
+      throw new Error('R2 write backup cleanup failed')
+    }
   } catch {
     if (objectKey && writeStarted) {
-      await rollbackR2Write(client, configuration, objectKey, backupKey)
+      const rolledBack = await rollbackR2Write(
+        client,
+        configuration,
+        objectKey,
+        backupKey
+      )
+      if (!rolledBack) throw new R2MediaRollbackError()
     }
     throw new Error('Could not mirror public media to R2')
-  }
-
-  if (backupKey) {
-    await deleteR2ObjectKeys(client, configuration, [backupKey])
   }
 
   return true
@@ -328,8 +344,7 @@ async function rollbackR2Write(
     return false
   }
 
-  await deleteR2ObjectKeys(client, configuration, [backupKey])
-  return true
+  return deleteR2ObjectKeys(client, configuration, [backupKey])
 }
 
 function noOpMirroredPublicMediaDeletion(): MirroredPublicMediaDeletion {
@@ -372,7 +387,9 @@ export async function prepareMirroredPublicMediaDeletion(
           })
         )
       } catch (error) {
-        if (isMissingR2Object(error)) continue
+        if (isMissingR2Object(error)) {
+          throw new Error('R2 mirror object is missing')
+        }
         throw error
       }
 

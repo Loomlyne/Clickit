@@ -8,7 +8,7 @@
     "analyze": "ANALYZE=true next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test:unit": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test 'tests/unit/**/*.test.ts'",
+    "test:unit": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test 'tests/unit/*.test.ts' 'tests/unit/**/*.test.ts'",
     "gen-types": "supabase gen types typescript --project-id \"lajguozmtissnnfccmej\" --schema public > src/lib/database.types.ts",
     "rewrite-slugs": "node scripts/rewrite-slugs.mjs",
     "fix-archived-show-duplicates": "node scripts/fix-archived-show-duplicates.mjs",

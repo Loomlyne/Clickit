@@ -20,6 +20,7 @@ const {
   assertPublicMediaWriteReady,
   mirrorPublicMediaObject,
   prepareMirroredPublicMediaDeletion,
+  R2MediaRollbackError,
 } = await import('../../src/lib/r2-media-core.ts')
 
 const configuredEnv = {
@@ -168,6 +169,48 @@ test('restores an overwritten R2 object when mirror verification fails', async (
   assert.ok(commands[4] instanceof DeleteObjectsCommand)
 })
 
+test('signals an R2 rollback failure without treating the mirror as cleaned up', async () => {
+  const commands: unknown[] = []
+  const client = {
+    async send(command: unknown) {
+      commands.push(command)
+      if (command instanceof CopyObjectCommand) {
+        throw { name: 'NoSuchKey' }
+      }
+      if (command instanceof HeadObjectCommand) {
+        return {
+          ContentLength: 2,
+          ContentType: 'image/webp',
+          CacheControl: '31536000',
+        }
+      }
+      if (command instanceof DeleteObjectsCommand) {
+        return { Errors: [{ Key: 'show-artwork/shows/show-1/poster.webp' }] }
+      }
+      return {}
+    },
+  }
+
+  await assert.rejects(
+    mirrorPublicMediaObject(
+      {
+        bucket: 'show-artwork',
+        key: 'shows/show-1/poster.webp',
+        body: new Uint8Array([1, 2, 3]),
+        contentType: 'image/webp',
+        cacheControl: '31536000',
+      },
+      { env: configuredEnv, client: client as never }
+    ),
+    R2MediaRollbackError
+  )
+
+  assert.equal(
+    commands.filter((command) => command instanceof DeleteObjectsCommand).length,
+    2
+  )
+})
+
 test('normalizes Blob media bodies to a Node Buffer before PutObject', async () => {
   const commands: unknown[] = []
   const client = {
@@ -239,6 +282,32 @@ test('fails closed before source deletion when cutover lacks R2 credentials', as
       await deletion.commit()
     })(),
     /R2 media mirroring is required/
+  )
+  assert.equal(sourceRemovalCalls, 0)
+})
+
+test('retains source media when its R2 mirror is missing', async () => {
+  let sourceRemovalCalls = 0
+  const client = {
+    async send(command: unknown) {
+      if (command instanceof CopyObjectCommand) {
+        throw { name: 'NoSuchKey' }
+      }
+      return {}
+    },
+  }
+
+  await assert.rejects(
+    (async () => {
+      const deletion = await prepareMirroredPublicMediaDeletion(
+        'site-assets',
+        ['hero/video.mp4'],
+        { env: configuredEnv, client: client as never }
+      )
+      sourceRemovalCalls += 1
+      await deletion.commit()
+    })(),
+    /Could not prepare public media deletion in R2/
   )
   assert.equal(sourceRemovalCalls, 0)
 })
