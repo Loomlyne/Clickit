@@ -4,7 +4,7 @@ import { checkBotId } from 'botid/server'
 import { createClient } from '@/lib/supabase/server'
 
 /**
- * Server Actions for sign-in / sign-up, gated by BotID.
+ * Server Actions for sign-in / sign-up, observed (not gated) by BotID.
  *
  * Why Server Actions instead of calling supabase.auth.signInWithPassword()
  * directly from the client: BotID's check runs server-side against headers
@@ -21,50 +21,35 @@ type AuthResult =
   | { ok: true; userId: string; isAdmin: boolean }
   | { ok: false; error: string }
 
-async function gateAgainstBots(
-  context: string
-): Promise<null | { ok: false; error: string }> {
+// Detect-and-log only: BotID false-positives here locked a real admin out of
+// sign-in entirely, and Supabase Auth already rate-limits credential attempts.
+// Availability > strict gating for a single-admin media app. Matches the same
+// policy applied to the contact/newsletter actions.
+async function logBotSignal(context: string): Promise<void> {
   try {
     const result = await checkBotId({
-      // In dev, bypass the challenge so local testing isn't blocked. In prod,
-      // real humans pass normally; bots get blocked.
       developmentOptions: {
         isDevelopment: process.env.NODE_ENV !== 'production',
         bypass: process.env.NODE_ENV !== 'production' ? 'HUMAN' : undefined,
       },
     })
     if (!result.isHuman) {
-      console.warn('[auth]', context, 'BotID rejected non-human request', {
+      console.warn('[auth]', context, 'BotID flagged non-human', {
         isBot: result.isBot,
         isVerifiedBot: result.isVerifiedBot,
         bypassed: result.bypassed,
       })
-      return {
-        ok: false,
-        error:
-          'Request blocked for security. Please try again or contact support if this persists.',
-      }
     }
   } catch (err) {
-    // If BotID itself throws (misconfig, network), do not hard-block auth —
-    // log loudly and let the request through. Availability > overly strict
-    // bot gating for a single-admin media app.
-    console.error(
-      '[auth]',
-      context,
-      'BotID check failed (allowing through)',
-      err
-    )
+    console.error('[auth]', context, 'BotID check failed', err)
   }
-  return null
 }
 
 export async function signInAction(
   email: string,
   password: string
 ): Promise<AuthResult> {
-  const blocked = await gateAgainstBots('signIn')
-  if (blocked) return blocked
+  await logBotSignal('signIn')
 
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -95,8 +80,7 @@ export async function signUpAction(
   password: string,
   displayName: string
 ): Promise<AuthResult> {
-  const blocked = await gateAgainstBots('signUp')
-  if (blocked) return blocked
+  await logBotSignal('signUp')
 
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signUp({ email, password })
