@@ -792,7 +792,10 @@ export const getScheduleShows = unstable_cache(
   async (
     locale: Locale = DEFAULT_LOCALE
   ): Promise<
-    (ViewShow & { broadcastDay: string | null; broadcastTime: string | null })[]
+    (ViewShow & {
+      broadcastDay: string[] | null
+      broadcastTime: string | null
+    })[]
   > => {
     const supabase = createPublicClient()
     const { data } = await supabase

@@ -32,6 +32,7 @@ import { HeroMediaPicker } from '@/components/admin/hero-media-picker'
 import { ArtworkUploadZone } from '@/components/admin/artwork-upload-zone'
 import { generateSlug } from '@/lib/slug'
 import { createShow, updateShow } from '@/app/[locale]/admin/actions'
+import { cn } from '@/lib/utils'
 import type { Database } from '@/lib/database.types'
 
 const showFormSchema = z.object({
@@ -51,7 +52,7 @@ const showFormSchema = z.object({
     'brand-orange',
   ]),
   status: z.enum(['draft', 'coming-soon', 'now-streaming']),
-  broadcast_day: z.string().optional().nullable(),
+  broadcast_day: z.array(z.string()).default([]),
   broadcast_time: z.string().optional().nullable(),
   poster_url: z.string().optional().nullable(),
   card_image_url: z.string().optional().nullable(),
@@ -136,7 +137,7 @@ function getFormDefaults(
       genre: '',
       brand_color: 'brand-blue',
       status: 'draft',
-      broadcast_day: '',
+      broadcast_day: [],
       broadcast_time: '',
       poster_url: '',
       card_image_url: '',
@@ -161,7 +162,7 @@ function getFormDefaults(
     genre: show.genre,
     brand_color: show.brand_color as ShowFormData['brand_color'],
     status: show.status as ShowFormData['status'],
-    broadcast_day: show.broadcast_day ?? '',
+    broadcast_day: show.broadcast_day ?? [],
     broadcast_time: show.broadcast_time ?? '',
     poster_url: show.poster_url ?? '',
     card_image_url: show.card_image_url ?? '',
@@ -231,9 +232,13 @@ export function ShowForm({
     const primaryCategoryName = categories.find(
       (category) => category.id === category_id
     )?.name_en
-    const normalized: Omit<ShowFormData, 'genre' | 'category_id'> & {
+    const normalized: Omit<
+      ShowFormData,
+      'genre' | 'category_id' | 'broadcast_day'
+    > & {
       genre: string
       category_ids: string[]
+      broadcast_day: string[] | null
       id?: string
     } = {
       ...rest,
@@ -242,7 +247,7 @@ export function ShowForm({
       description_ar: data.description_ar || null,
       tagline: data.tagline || null,
       tagline_ar: data.tagline_ar || null,
-      broadcast_day: data.broadcast_day || null,
+      broadcast_day: data.broadcast_day.length ? data.broadcast_day : null,
       broadcast_time: data.broadcast_time || null,
       poster_url: data.poster_url || null,
       card_image_url: data.card_image_url || null,
@@ -274,6 +279,7 @@ export function ShowForm({
   const selectedCategoryName = categories.find(
     (category) => category.id === selectedCategoryId
   )?.name_en
+  const selectedBroadcastDays = form.watch('broadcast_day') ?? []
 
   function selectCategory(categoryId: string) {
     // Replace, never append. The dropdown closes on select (radio item default).
@@ -489,23 +495,35 @@ export function ShowForm({
       <Section title={t('scheduleSection')}>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <Field label={t('broadcastDayLabel')}>
-            <Select
-              value={form.watch('broadcast_day') ?? ''}
-              onValueChange={(val) =>
-                form.setValue('broadcast_day', val || null)
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t('selectDayPlaceholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                {DAYS.map((d) => (
-                  <SelectItem key={d} value={d}>
+            <div className="flex flex-wrap gap-2">
+              {DAYS.map((d) => {
+                const selected = selectedBroadcastDays.includes(d)
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() =>
+                      form.setValue(
+                        'broadcast_day',
+                        selected
+                          ? selectedBroadcastDays.filter((day) => day !== d)
+                          : [...selectedBroadcastDays, d],
+                        { shouldDirty: true }
+                      )
+                    }
+                    className={cn(
+                      'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                      selected
+                        ? 'border-primary bg-primary/16 text-primary-foreground'
+                        : 'border-white/14 bg-white/[0.04] text-muted-foreground hover:bg-white/[0.08]'
+                    )}
+                  >
                     {t(`day${d}` as never)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  </button>
+                )
+              })}
+            </div>
           </Field>
           <Field label={t('broadcastTimeLabel')}>
             <Input type="time" {...form.register('broadcast_time')} />

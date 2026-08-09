@@ -648,7 +648,7 @@ export type Database = {
         Row: {
           archived: boolean
           brand_color: string
-          broadcast_day: string | null
+          broadcast_day: string[] | null
           broadcast_time: string | null
           card_image_url: string | null
           created_at: string
@@ -680,7 +680,7 @@ export type Database = {
         Insert: {
           archived?: boolean
           brand_color?: string
-          broadcast_day?: string | null
+          broadcast_day?: string[] | null
           broadcast_time?: string | null
           card_image_url?: string | null
           created_at?: string
@@ -712,7 +712,7 @@ export type Database = {
         Update: {
           archived?: boolean
           brand_color?: string
-          broadcast_day?: string | null
+          broadcast_day?: string[] | null
           broadcast_time?: string | null
           card_image_url?: string | null
           created_at?: string

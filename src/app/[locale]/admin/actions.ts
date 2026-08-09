@@ -211,7 +211,7 @@ const showSchema = z
       'brand-orange',
     ]),
     status: z.enum(['draft', 'coming-soon', 'now-streaming']),
-    broadcast_day: z.string().optional().nullable(),
+    broadcast_day: z.array(z.string()).optional().nullable(),
     broadcast_time: z.string().optional().nullable(),
     poster_url: optionalUrl,
     card_image_url: optionalUrl,

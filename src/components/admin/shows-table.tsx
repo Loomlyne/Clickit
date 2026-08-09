@@ -420,8 +420,8 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                     {show.episode_count}
                   </TableCell>
                   <TableCell className="text-muted-foreground hidden text-sm lg:table-cell">
-                    {show.broadcast_day && show.broadcast_time
-                      ? `${show.broadcast_day} ${show.broadcast_time}`
+                    {show.broadcast_day?.length && show.broadcast_time
+                      ? `${show.broadcast_day.join(', ')} ${show.broadcast_time}`
                       : '---'}
                   </TableCell>
                   <TableCell>
