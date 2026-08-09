@@ -1,7 +1,7 @@
 'use client'
 
 import { useOptimistic, useState, useTransition } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Archive, ChevronDown, ChevronUp, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -59,6 +59,18 @@ export function EpisodesTable({
   const t = useTranslations('admin.episodeForm')
   const tTable = useTranslations('admin.episodesTable')
   const tCommon = useTranslations('common')
+  const locale = useLocale()
+
+  // Scheduled times are authored and published in UAE time — show them in it,
+  // not in whoever's browser timezone happens to be open.
+  const formatAirTime = (iso: string) =>
+    new Intl.DateTimeFormat(locale === 'ar' ? 'ar-AE' : 'en-GB', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Dubai',
+    }).format(new Date(iso))
   const [isPending, startTransition] = useTransition()
   const [editEpisode, setEditEpisode] = useState<Episode | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -179,6 +191,11 @@ export function EpisodesTable({
                 </TableCell>
                 <TableCell className="pt-4">
                   <StatusBadge status={episode.status} />
+                  {episode.publish_at && episode.status !== 'published' && (
+                    <span className="text-muted-foreground mt-1.5 block text-xs">
+                      {formatAirTime(episode.publish_at)}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="pt-4">
                   <div className="flex items-center justify-end gap-2">

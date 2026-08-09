@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { SeasonTabs } from '@/components/admin/season-tabs'
 import { EditShowButton } from '@/components/admin/edit-show-button'
+import { ScheduleEpisodesButton } from '@/components/admin/schedule-episodes-button'
 import { CastEditor } from '@/components/admin/cast-editor'
 import { AdminBackLink, AdminPanel } from '@/components/admin/admin-shell'
 import type { Database } from '@/lib/database.types'
@@ -92,7 +93,10 @@ export default async function ShowDetailPage({
             {show.title}
           </h1>
         </div>
-        <EditShowButton show={show} />
+        <div className="flex flex-wrap items-center gap-2">
+          <ScheduleEpisodesButton showId={id} />
+          <EditShowButton show={show} />
+        </div>
       </div>
 
       <AdminPanel className="border-[#2e2e2e] bg-[#171717] p-5 md:p-6">

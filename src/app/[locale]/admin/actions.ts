@@ -10,6 +10,7 @@ import { logAudit } from '@/lib/audit'
 import { generateSlug } from '@/lib/slug'
 import { fillArabic, translateToArabic, translateBatchToArabic } from '@/lib/translate'
 import { mp4BytesHasAudioTrack } from '@/lib/mp4-audio'
+import { nextBroadcastSlots } from '@/lib/scheduling'
 import {
   assertPublicMediaWriteReady,
   mirrorPublicMediaObject,
@@ -1673,6 +1674,215 @@ export async function reorderEpisode(
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to reorder episode',
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Bulk episode scheduling
+// ---------------------------------------------------------------------------
+
+export type PlannedEpisodeSlot = {
+  episodeId: string
+  seasonNumber: number
+  episodeNumber: number
+  title: string
+  /** UTC ISO instant the episode goes live. */
+  publishAt: string
+  /** False when the episode has no YouTube id — it would air with no video. */
+  hasVideo: boolean
+}
+
+/**
+ * Work out which episodes a bulk schedule would touch, and when each would air.
+ *
+ * Shared by the preview dialog and by applyShowSchedule so the two can never
+ * disagree about ordering or eligibility. Slots are always recomputed against
+ * the current clock rather than trusted from the client, which also means an
+ * episode can never be scheduled into the past.
+ *
+ * Eligible = not archived and not already published. Published episodes are
+ * live; re-flowing them would pull them back off the site.
+ */
+async function planShowSchedule(
+  showId: string
+): Promise<
+  | { ok: false; error: string }
+  | { ok: true; plan: PlannedEpisodeSlot[] }
+> {
+  const admin = createAdminClient()
+
+  const { data: show, error: showError } = await admin
+    .from('shows')
+    .select('broadcast_day, broadcast_time')
+    .eq('id', showId)
+    .single()
+
+  if (showError || !show) return { ok: false, error: 'Show not found' }
+
+  const days = show.broadcast_day ?? []
+  if (days.length === 0 || !show.broadcast_time) {
+    return {
+      ok: false,
+      error:
+        'Set the broadcast days and time on this show before scheduling episodes.',
+    }
+  }
+
+  const [{ data: episodes, error: epError }, { data: seasons }] =
+    await Promise.all([
+      admin
+        .from('episodes')
+        .select('id, title, episode_number, season_id, youtube_video_id')
+        .eq('show_id', showId)
+        .eq('archived', false)
+        .neq('status', 'published'),
+      admin.from('seasons').select('id, season_number').eq('show_id', showId),
+    ])
+
+  if (epError) return { ok: false, error: epError.message }
+
+  const seasonNumberById = new Map(
+    (seasons ?? []).map((s) => [s.id, s.season_number])
+  )
+
+  // Air in story order: season first, then episode number within it.
+  const ordered = (episodes ?? []).slice().sort((a, b) => {
+    const seasonDelta =
+      (seasonNumberById.get(a.season_id) ?? 0) -
+      (seasonNumberById.get(b.season_id) ?? 0)
+    return seasonDelta !== 0
+      ? seasonDelta
+      : a.episode_number - b.episode_number
+  })
+
+  const slots = nextBroadcastSlots(days, show.broadcast_time, ordered.length)
+
+  return {
+    ok: true,
+    plan: ordered.slice(0, slots.length).map((ep, i) => ({
+      episodeId: ep.id,
+      seasonNumber: seasonNumberById.get(ep.season_id) ?? 0,
+      episodeNumber: ep.episode_number,
+      title: ep.title,
+      publishAt: slots[i],
+      hasVideo: Boolean(ep.youtube_video_id),
+    })),
+  }
+}
+
+/**
+ * Preview a bulk schedule without writing anything. Drives the confirmation
+ * dialog so the admin sees every generated air date before committing.
+ */
+export async function previewShowSchedule(
+  showId: string
+): Promise<ActionResult<PlannedEpisodeSlot[]>> {
+  try {
+    await assertAdmin()
+    const result = await planShowSchedule(showId)
+    if (!result.ok) return { success: false, error: result.error }
+    return { success: true, data: result.plan }
+  } catch (err) {
+    console.error('[admin/actions] schedule preview failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to build schedule',
+    }
+  }
+}
+
+/**
+ * Apply the bulk schedule: every eligible episode becomes `coming-soon` with a
+ * `publish_at`, so the existing auto-publish machinery takes it live at that
+ * minute (see lib/scheduling.isEpisodeLive and the publish-scheduled cron).
+ */
+export async function applyShowSchedule(
+  showId: string
+): Promise<ActionResult<{ scheduled: number }>> {
+  try {
+    const user = await assertAdmin()
+    const result = await planShowSchedule(showId)
+    if (!result.ok) return { success: false, error: result.error }
+    if (result.plan.length === 0) {
+      return { success: false, error: 'No unpublished episodes to schedule.' }
+    }
+
+    const admin = createAdminClient()
+    for (const slot of result.plan) {
+      const { error } = await admin
+        .from('episodes')
+        .update({ status: 'coming-soon', publish_at: slot.publishAt })
+        .eq('id', slot.episodeId)
+      if (error) return { success: false, error: error.message }
+    }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'update',
+      entity: 'show',
+      entityId: showId,
+      diff: {
+        scheduled: result.plan.length,
+        firstAirs: result.plan[0]?.publishAt,
+        lastAirs: result.plan[result.plan.length - 1]?.publishAt,
+      },
+    })
+
+    revalidatePath(`/admin/shows/${showId}`)
+    updateTag('episodes')
+    updateTag('shows')
+    return { success: true, data: { scheduled: result.plan.length } }
+  } catch (err) {
+    console.error('[admin/actions] schedule apply failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to schedule episodes',
+    }
+  }
+}
+
+/**
+ * Undo a bulk schedule. Only touches episodes still waiting to air — anything
+ * already published stays published, since pulling live episodes offline is
+ * never what "cancel the schedule" is meant to do.
+ */
+export async function unscheduleShowEpisodes(
+  showId: string
+): Promise<ActionResult<{ cleared: number }>> {
+  try {
+    const user = await assertAdmin()
+    const admin = createAdminClient()
+
+    const { data: cleared, error } = await admin
+      .from('episodes')
+      .update({ status: 'draft', publish_at: null })
+      .eq('show_id', showId)
+      .eq('archived', false)
+      .eq('status', 'coming-soon')
+      .not('publish_at', 'is', null)
+      .select('id')
+
+    if (error) return { success: false, error: error.message }
+
+    await logAudit({
+      adminUserId: user.id,
+      action: 'update',
+      entity: 'show',
+      entityId: showId,
+      diff: { unscheduled: cleared?.length ?? 0 },
+    })
+
+    revalidatePath(`/admin/shows/${showId}`)
+    updateTag('episodes')
+    updateTag('shows')
+    return { success: true, data: { cleared: cleared?.length ?? 0 } }
+  } catch (err) {
+    console.error('[admin/actions] unschedule failed', err)
+    return {
+      success: false,
+      error:
+        err instanceof Error ? err.message : 'Failed to unschedule episodes',
     }
   }
 }

@@ -1467,6 +1467,20 @@
     "confirmDialog": {
       "processing": "Processing..."
     },
+    "scheduleEpisodes": {
+      "button": "Schedule episodes",
+      "title": "Schedule episodes",
+      "description": "These episodes will go live automatically at these times (UAE time). Nothing is saved until you confirm.",
+      "loading": "Working out the schedule...",
+      "empty": "No unpublished episodes to schedule.",
+      "missingVideoWarning": "{count, plural, one {# episode has no YouTube video yet} other {# episodes have no YouTube video yet}} — they will go live with nothing to play.",
+      "confirmButton": "{count, plural, one {Schedule # episode} other {Schedule # episodes}}",
+      "unscheduleButton": "Cancel schedule",
+      "saving": "Scheduling...",
+      "scheduled": "{count, plural, one {# episode scheduled} other {# episodes scheduled}}",
+      "unscheduled": "{count, plural, one {# episode unscheduled} other {# episodes unscheduled}}",
+      "failed": "Could not schedule episodes."
+    },
     "emptyState": {
       "defaultLabel": "Empty State"
     },

@@ -50,6 +50,67 @@ export function dubaiLocalToUtcIso(local: string | null | undefined): string | n
 }
 
 /**
+ * Weekday names as stored in `shows.broadcast_day`, indexed to match
+ * Date#getUTCDay() (0 = Sunday).
+ */
+const WEEKDAY_NAMES = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+]
+
+const DAY_MS = 24 * 60 * 60 * 1000
+const DUBAI_OFFSET_MS = 4 * 60 * 60 * 1000
+
+/**
+ * Build the next `count` broadcast slots for a show, as UTC ISO strings.
+ *
+ * Given the show's broadcast days (e.g. ['Monday', 'Friday']) and time
+ * ('21:00:00'), walks forward from `from` and returns each matching weekday at
+ * that Dubai wall-clock time. A show airing twice a week yields two slots per
+ * week, in calendar order.
+ *
+ * Slots at or before `from` are skipped, so scheduling on a Friday afternoon for
+ * a Friday show starts next Friday rather than silently publishing an episode
+ * into the past.
+ */
+export function nextBroadcastSlots(
+  days: string[] | null | undefined,
+  time: string | null | undefined,
+  count: number,
+  from: Date = new Date()
+): string[] {
+  const wanted = new Set(days ?? [])
+  if (wanted.size === 0 || !time || count <= 0) return []
+
+  // '21:00:00' and '21:00' both mean the same wall-clock time.
+  const hhmm = time.slice(0, 5)
+  const slots: string[] = []
+
+  // Read Dubai calendar dates by shifting into the fixed +04:00 offset and then
+  // using the UTC field getters — the Gulf never observes DST, so this holds.
+  const cursor = new Date(from.getTime() + DUBAI_OFFSET_MS)
+  cursor.setUTCHours(0, 0, 0, 0)
+
+  // One slot per matching weekday; scanning count*7 days plus a week of slack is
+  // always enough, even when only a single day is selected.
+  const horizon = count * 7 + 14
+  for (let i = 0; i < horizon && slots.length < count; i++) {
+    const day = new Date(cursor.getTime() + i * DAY_MS)
+    if (!wanted.has(WEEKDAY_NAMES[day.getUTCDay()])) continue
+
+    const iso = dubaiLocalToUtcIso(`${day.toISOString().slice(0, 10)}T${hhmm}`)
+    if (iso && new Date(iso).getTime() > from.getTime()) slots.push(iso)
+  }
+
+  return slots
+}
+
+/**
  * Convert a stored UTC ISO timestamp into a Dubai wall-clock string suitable for
  * a `<input type="datetime-local">` value ("YYYY-MM-DDTHH:mm").
  * Returns '' for null/empty so it can seed a controlled input.
