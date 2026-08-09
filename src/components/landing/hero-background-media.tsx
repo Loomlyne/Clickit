@@ -39,8 +39,25 @@ export function HeroBackgroundMedia({
   const wantSoundRef = useRef(false)
   const [audioUnlocked, setAudioUnlocked] = useState(false)
   const [buttonMuted, setButtonMuted] = useState(true)
+  const [ytIframeReady, setYtIframeReady] = useState(false)
 
   const isAudioPlaying = audioUnlocked && !buttonMuted
+
+  // Defer creating the YouTube iframe (~500KB of YouTube JS) until just after
+  // the initial paint, so it doesn't compete with critical page load. The
+  // `timeout` bounds the worst case so the hero never feels sluggish to start.
+  useEffect(() => {
+    if (!ytId) return
+    const hasIdleCallback = typeof window.requestIdleCallback === 'function'
+    if (hasIdleCallback) {
+      const id = window.requestIdleCallback(() => setYtIframeReady(true), {
+        timeout: 300,
+      })
+      return () => window.cancelIdleCallback(id)
+    }
+    const id = window.setTimeout(() => setYtIframeReady(true), 300)
+    return () => window.clearTimeout(id)
+  }, [ytId])
 
   const applyYouTubeMute = useCallback((shouldMute: boolean) => {
     const iframe = iframeRef.current
@@ -214,15 +231,17 @@ export function HeroBackgroundMedia({
     return (
       <>
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <iframe
-            ref={iframeRef}
-            src={src}
-            allow="autoplay; encrypted-media"
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-            style={coverStyle}
-            title={title}
-            onLoad={handleIframeLoad}
-          />
+          {ytIframeReady && (
+            <iframe
+              ref={iframeRef}
+              src={src}
+              allow="autoplay; encrypted-media"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+              style={coverStyle}
+              title={title}
+              onLoad={handleIframeLoad}
+            />
+          )}
         </div>
         {muteButton}
       </>
