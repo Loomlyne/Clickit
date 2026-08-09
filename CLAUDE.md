@@ -17,6 +17,12 @@ A Netflix-style cinematic streaming platform for Clickit Story — a UAE-based d
 - **Content growth**: Slow — platform must look good with few shows initially, not feel empty
 <!-- GSD:project-end -->
 
+## Deployment Notes
+
+- **Vercel deploys silently block on git author identity — and the obvious fix is paywalled.** All commits push as GitHub user `Loomlyne` (`223640340+Loomlyne@users.noreply.github.com`), which is not a member of the `clickit-s-projects` Vercel team that owns this project. Builds succeed fine (`readyState: READY` on the build sub-resource within seconds), but the deployment itself sits at `readyState: BLOCKED` and never promotes to production — indefinitely, not just slow. Reproduces identically via git push or `vercel deploy --prod` from the CLI. Confirmed in the dashboard: deployments show "Blocked" with tooltip "loomlyne is not a member of this team." `clickit-s-projects` is on the free **Hobby plan**, which caps the team at one member and gates "Invite Members" behind a Pro upgrade — so the obvious fix (add Loomlyne to the team) isn't available without paying. `clickitstory@gmail.com` also has no GitHub account connected. Real options: (1) upgrade to Pro and invite `koussay.zayani0@gmail.com`, or (2) connect a GitHub identity to `clickitstory@gmail.com`'s Vercel account, add it as a `Loomlyne/Clickit` collaborator, and switch git's local push credentials to it. Deployment Protection ("Vercel Authentication") is a separate, unrelated setting on this project — it gates viewing raw `*.vercel.app` URLs, not this.
+- **`vercel ls`/`vercel inspect` human-readable output always shows `UNKNOWN` status** for this project's access token — it can list deployments/URLs but not resolve the real state in that view. Use `vercel inspect <url> --format json` to see the actual `readyState`.
+- Raw `https://clickit-xxxxx-clickit-s-projects.vercel.app` per-deployment URLs are gated behind Vercel's own auth (return HTTP 200 serving a "Redirecting..." login page, not real app content) — checking status codes against them proves nothing. Verify against the real production domain (`www.clickitstory.ae`) instead.
+
 <!-- GSD:stack-start source:research/STACK.md -->
 ## Technology Stack
 
