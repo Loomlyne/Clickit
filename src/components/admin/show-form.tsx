@@ -22,6 +22,7 @@ import {
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -32,7 +33,6 @@ import { HeroMediaPicker } from '@/components/admin/hero-media-picker'
 import { ArtworkUploadZone } from '@/components/admin/artwork-upload-zone'
 import { generateSlug } from '@/lib/slug'
 import { createShow, updateShow } from '@/app/[locale]/admin/actions'
-import { cn } from '@/lib/utils'
 import type { Database } from '@/lib/database.types'
 
 const showFormSchema = z.object({
@@ -280,6 +280,12 @@ export function ShowForm({
     (category) => category.id === selectedCategoryId
   )?.name_en
   const selectedBroadcastDays = form.watch('broadcast_day') ?? []
+  // Always store/show days in week order, not the order they were ticked.
+  const byWeekOrder = (days: string[]) =>
+    [...days].sort((a, b) => DAYS.indexOf(a) - DAYS.indexOf(b))
+  const selectedBroadcastDaysLabel = byWeekOrder(selectedBroadcastDays)
+    .map((d) => t(`day${d}` as never))
+    .join(', ')
 
   function selectCategory(categoryId: string) {
     // Replace, never append. The dropdown closes on select (radio item default).
@@ -495,35 +501,47 @@ export function ShowForm({
       <Section title={t('scheduleSection')}>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <Field label={t('broadcastDayLabel')}>
-            <div className="flex flex-wrap gap-2">
-              {DAYS.map((d) => {
-                const selected = selectedBroadcastDays.includes(d)
-                return (
-                  <button
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 w-full justify-between rounded-lg border-white/10 bg-white/[0.04] px-4 text-start text-sm font-normal shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-white/[0.06]"
+                >
+                  <span className="min-w-0 flex-1 truncate">
+                    {selectedBroadcastDaysLabel || t('selectDayPlaceholder')}
+                  </span>
+                  <ChevronDown className="size-4 shrink-0 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)] rounded-[12px] bg-[#11151d]/98 p-1 shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl"
+              >
+                {DAYS.map((d) => (
+                  <DropdownMenuCheckboxItem
                     key={d}
-                    type="button"
-                    aria-pressed={selected}
-                    onClick={() =>
+                    checked={selectedBroadcastDays.includes(d)}
+                    // Keep the menu open so several days can be ticked in one go.
+                    onSelect={(event) => event.preventDefault()}
+                    onCheckedChange={(checked) =>
                       form.setValue(
                         'broadcast_day',
-                        selected
-                          ? selectedBroadcastDays.filter((day) => day !== d)
-                          : [...selectedBroadcastDays, d],
+                        byWeekOrder(
+                          checked
+                            ? [...selectedBroadcastDays, d]
+                            : selectedBroadcastDays.filter((day) => day !== d)
+                        ),
                         { shouldDirty: true }
                       )
                     }
-                    className={cn(
-                      'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
-                      selected
-                        ? 'border-primary bg-primary/16 text-primary-foreground'
-                        : 'border-white/14 bg-white/[0.04] text-muted-foreground hover:bg-white/[0.08]'
-                    )}
+                    className="rounded-[12px] py-2 ps-8 pe-3"
                   >
                     {t(`day${d}` as never)}
-                  </button>
-                )
-              })}
-            </div>
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </Field>
           <Field label={t('broadcastTimeLabel')}>
             <Input type="time" {...form.register('broadcast_time')} />
