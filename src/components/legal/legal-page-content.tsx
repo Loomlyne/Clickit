@@ -1,14 +1,21 @@
+import { getTranslations } from 'next-intl/server'
+import { getLocale } from '@/lib/locale-server'
+
 /**
  * Renders admin-authored plain-text legal content.
  * Blank lines become paragraph breaks; single newlines become line breaks.
  */
-export function LegalPageContent({
+export async function LegalPageContent({
   content,
   updatedAt,
 }: {
   content: string
   updatedAt?: string
 }) {
+  const [t, locale] = await Promise.all([
+    getTranslations('legal'),
+    getLocale(),
+  ])
   const paragraphs = content
     .split(/\n{2,}/)
     .map((p) => p.trim())
@@ -23,12 +30,11 @@ export function LegalPageContent({
       ))}
       {updatedAt && (
         <p className="mono border-t border-[var(--line)] pt-8 text-[11px] text-[var(--text-mute)]">
-          Last updated:{' '}
-          {new Date(updatedAt).toLocaleDateString('en-GB', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-          })}
+          {t('lastUpdatedLabel')}{' '}
+          {new Date(updatedAt).toLocaleDateString(
+            locale === 'ar' ? 'ar-AE' : 'en-US',
+            { day: 'numeric', month: 'long', year: 'numeric' }
+          )}
         </p>
       )}
     </div>
