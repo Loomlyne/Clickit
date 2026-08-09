@@ -1,5 +1,3 @@
-'use client'
-
 import { Link } from '@/i18n/navigation'
 import { Badge } from '@/components/ui/badge'
 import type { ViewShow } from '@/lib/queries'

@@ -1,5 +1,3 @@
-'use client'
-
 import type { AppConfig } from '@/lib/config'
 import { SiteMetadataEditor } from './site-metadata-editor'
 import { LiveStreamUrlEditor } from './live-stream-url-editor'

@@ -1,5 +1,3 @@
-'use client'
-
 import type { LegalPage, Faq } from '@/app/[locale]/admin/actions'
 import { LegalPagesEditor } from './legal-pages-editor'
 import { FaqsEditor } from './faqs-editor'
