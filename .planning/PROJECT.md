@@ -122,6 +122,14 @@ A signed-in viewer opens a show and an episode from YouTube plays immediately, w
 | Straight cutover, no staging | Koss's choice | — Pending |
 | GitHub Actions for CI + deploy | Free on a public repo, gates before deploy | — Pending |
 | Wire every dead control rather than remove | Koss's rule: shown controls must be live | — Pending |
+| Workers Free first; Paid ($5/mo) only if measured CPU fails | Koss: try Free first | — Pending |
+| Resend on Koss's existing Pro account | Already paid; no extra cost | — Pending |
+| Email code also creates accounts | Fewest steps to watch | — Pending |
+| New-episode alerts as one daily digest, Dubai evening | Fewer emails | — Pending |
+| TOTP two-step sign-in for both admins at launch | Protects the catalog | — Pending |
+| Arabic UI uses Arabic-Indic digits ٠-٩ | Koss's choice | — Pending |
+| Cloudflare image resizing, free tier only, never paid overage | No surprise cost; original image at the cap | — Pending |
+| Stray NS ignat/nataly not in ClickitStory, ALMAR, cf default/koussay/obox | Investigate in Phase 1 before NS change | — Pending |
 
 ## Evolution
 
