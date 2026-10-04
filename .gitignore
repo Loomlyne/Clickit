@@ -63,7 +63,6 @@ test-results/
 .agents/
 .codex/
 .context/
-.planning/
 .aidesigner/
 
 # junk files
