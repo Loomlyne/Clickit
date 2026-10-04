@@ -130,11 +130,82 @@
 
 ## Traceability
 
-Filled by roadmap.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| SAFE-01 | Phase 1 | Pending |
+| SAFE-02 | Phase 1 | Pending |
+| SAFE-03 | Phase 1 | Pending |
+| SAFE-04 | Phase 1 | Pending |
+| SAFE-05 | Phase 1 | Pending |
+| PLAT-01 | Phase 2 | Pending |
+| PLAT-02 | Phase 2 | Pending |
+| PLAT-03 | Phase 2 | Pending |
+| PLAT-04 | Phase 2 | Pending |
+| PLAT-05 | Phase 2 | Pending |
+| PLAT-06 | Phase 2 | Pending |
+| PLAT-07 | Phase 2 | Pending |
+| PLAT-08 | Phase 2 | Pending |
+| PLAT-09 | Phase 2 | Pending |
+| PLAT-10 | Phase 8 | Pending |
+| DNS-01 | Phase 1 | Pending |
+| DNS-02 | Phase 3 | Pending |
+| DNS-03 | Phase 3 | Pending |
+| DNS-04 | Phase 3 | Pending |
+| MEDIA-01 | Phase 2 | Pending |
+| MEDIA-02 | Phase 3 | Pending |
+| MEDIA-03 | Phase 3 | Pending |
+| MEDIA-04 | Phase 2 | Pending |
+| MEDIA-05 | Phase 2 | Pending |
+| MEDIA-06 | Phase 2 | Pending |
+| MEDIA-07 | Phase 8 | Pending |
+| AUTH-01 | Phase 5 | Pending |
+| AUTH-02 | Phase 5 | Pending |
+| AUTH-03 | Phase 5 | Pending |
+| AUTH-04 | Phase 5 | Pending |
+| AUTH-05 | Phase 5 | Pending |
+| AUTH-06 | Phase 5 | Pending |
+| AUTH-07 | Phase 5 | Pending |
+| AUTH-08 | Phase 5 | Pending |
+| MAIL-01 | Phase 5 | Pending |
+| MAIL-02 | Phase 1 | Pending |
+| MAIL-03 | Phase 5 | Pending |
+| MAIL-04 | Phase 5 | Pending |
+| MAIL-05 | Phase 5 | Pending |
+| MAIL-06 | Phase 5 | Pending |
+| MAIL-07 | Phase 5 | Pending |
+| YT-01 | Phase 6 | Pending |
+| YT-02 | Phase 6 | Pending |
+| YT-03 | Phase 6 | Pending |
+| YT-04 | Phase 6 | Pending |
+| YT-05 | Phase 6 | Pending |
+| YT-06 | Phase 6 | Pending |
+| YT-07 | Phase 6 | Pending |
+| PROD-01 | Phase 7 | Pending |
+| PROD-02 | Phase 7 | Pending |
+| PROD-03 | Phase 7 | Pending |
+| PROD-04 | Phase 7 | Pending |
+| PROD-05 | Phase 7 | Pending |
+| PROD-06 | Phase 7 | Pending |
+| PROD-07 | Phase 7 | Pending |
+| PROD-08 | Phase 7 | Pending |
+| PROD-09 | Phase 7 | Pending |
+| AR-01 | Phase 7 | Pending |
+| AR-02 | Phase 7 | Pending |
+| AR-03 | Phase 7 | Pending |
+| DS-01 | Phase 4 | Pending |
+| DS-02 | Phase 4 | Pending |
+| DS-03 | Phase 4 | Pending |
+| DS-04 | Phase 4 | Pending |
+| QA-01 | Phase 8 | Pending |
+| QA-02 | Phase 8 | Pending |
+| QA-03 | Phase 8 | Pending |
+| QA-04 | Phase 8 | Pending |
+
+**Coverage:**
+- v1 requirements: 68 total
+- Mapped to phases: 68
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-10-04*
-*Last updated: 2026-10-04 after initialization*
+*Last updated: 2026-10-04 after roadmap creation*

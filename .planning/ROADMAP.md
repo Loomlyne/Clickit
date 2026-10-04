@@ -1,0 +1,151 @@
+# Roadmap: Clickit Story (CIT)
+
+## Overview
+
+The live app at www.clickitstory.ae cannot deploy on Vercel, so no code reaches production until a Cloudflare Worker serves the domain. The order is risk-first. First come the changes that can ship while Vercel still serves: migration safety, CI, the DNS zone and the Resend mail domain. Next, the Worker and the R2 media path are proved on workers.dev. Then the straight cutover happens. After the cutover come design (signed before any customer-facing screen is built), accounts and email, YouTube import and the player, product completeness with search and Arabic RTL, and finally hardening and the owner-gated contract cleanup once the proof window ends. Supabase stays the system of record throughout, and the live database is never wiped.
+
+**Owner-gated convention:** a step marked **[OWNER]** is done by Koss himself, as one numbered step, and the work waits for him. Such steps are never autonomous. They cover DNS and registrar changes, secrets and key rotation, live database writes and deletes, the Vercel and Cloudflare dashboards, Supabase dashboard settings, emails to real people, any pricing or plan change, and every Ship.
+
+## Phases
+
+**Phase Numbering:**
+- Integer phases (1, 2, 3): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+Decimal phases appear between their surrounding integers in numeric order.
+
+- [ ] **Phase 1: Safe Ground** - Migrations can't harm live, CI gates every PR, clickitstory.ae zone on Cloudflare with Resend DNS (all of it ships while Vercel still serves)
+- [ ] **Phase 2: Worker and R2 Media on workers.dev** - The full app runs on Cloudflare Workers with gates, cache, crons, Turnstile, analytics and direct-to-R2 uploads, proved on workers.dev
+- [ ] **Phase 3: Production Cutover** - www and the apex are served by the Worker, media URLs are rewritten to R2, and rollback stays open through the proof window
+- [ ] **Phase 4: Design System Truth** - Tokens, DESIGN.md and a Claude Design canvas match the live look and are signed by Koss before any new screen is built
+- [ ] **Phase 5: Accounts and Email** - Sign-up wall, email-code sign-in, two TOTP admins, branded auth and app emails through Resend and a queue
+- [ ] **Phase 6: YouTube Import and Player** - A whole season imports from one playlist link, and the player resumes each episode and follows YouTube's embed rules
+- [ ] **Phase 7: Product Completeness, Search and Arabic** - Every shown control works, search covers EN+AR, and the full viewer UI is correct in Arabic RTL
+- [ ] **Phase 8: Hardening and Contract Cleanup** - E2E coverage, dead code and Vercel gone, CSP tightened, Supabase Storage emptied after the proof window
+
+## Phase Details
+
+### Phase 1: Safe Ground
+**Goal**: Nothing pushed to main can damage the live database, every PR is gated, and clickitstory.ae is a zone in the ClickitStory Cloudflare account that Resend can send from. No downtime, and Vercel keeps serving.
+**Depends on**: Nothing (first phase)
+**Requirements**: SAFE-01, SAFE-02, SAFE-03, SAFE-04, SAFE-05, DNS-01, MAIL-02
+**Success Criteria** (what must be TRUE):
+  1. A PR that adds `drop`/`truncate`/`delete` to a migration, or fails lint, typecheck, unit tests or the build, shows a red check and cannot merge. A clean PR shows green.
+  2. The live migration history matches the files. The destructive first migration and the seed migrations are no-ops in place. A live push runs only after Koss approves a CI dry-run.
+  3. A recorded read-only live audit exists. It covers applied migrations vs files, the `is_admin` source used by RLS, every media-URL column, and the Supabase plan and backups. The owner of the stray `ignat`/`nataly` nameservers is found or ruled out, and this happens before any NS change.
+  4. `dig NS clickitstory.ae` against every `.ae` registry server returns only the ClickitStory Cloudflare pair. www.clickitstory.ae stays up throughout the move.
+  5. Resend shows clickitstory.ae as verified, and a test send passes SPF, DKIM and DMARC.
+**Owner-gated**: [OWNER] Supabase plan/backup check in the dashboard; [OWNER] approve each live migration dry-run; [OWNER] add the zone and re-create the records DNS-only; [OWNER] change the NS at tasjeel.ae; [OWNER] add the domain in Resend (on his Pro account) and set the DNS records.
+**Research flag**: Find who owns the NS pair, the .ae NS-change procedure, and the CF-assigned pair.
+**Plans**: TBD
+
+### Phase 2: Worker and R2 Media on workers.dev
+**Goal**: The complete app runs on Cloudflare Workers (OpenNext, ClickitStory account, Next 16.3.8+) at its workers.dev URL with the same behaviour viewers and admins have today. Media uploads go straight to R2, so nothing blocks the cutover.
+**Depends on**: Phase 1
+**Requirements**: PLAT-01, PLAT-02, PLAT-03, PLAT-04, PLAT-05, PLAT-06, PLAT-07, PLAT-08, PLAT-09, MEDIA-01, MEDIA-04, MEDIA-05, MEDIA-06
+**Success Criteria** (what must be TRUE):
+  1. On workers.dev, these route checks pass: a signed-out visitor is sent to sign-in from every gated page, a non-admin is refused `/admin`, and coming-soon mode and locale routing behave as they do on the live site. The gate suite passes (the `proxy.ts` spike runs first; the fallback is edge `middleware.ts`).
+  2. An admin edit made on workers.dev is visible to a viewer within 10 seconds. The scheduled-publish and media-cleanup crons run from Cron Triggers when triggered (cleanup stays off for Supabase originals). Rate limits key on `CF-Connecting-IP`, fail closed, and compare the cron secret in constant time.
+  3. Sign-in, sign-up, contact and newsletter show Turnstile, and a request without a valid token is refused. Cloudflare Web Analytics records page views. BotID and the Vercel analytics and speed-insights packages are gone.
+  4. An admin uploads artwork, an avatar and a site asset, and each goes from the browser straight to R2 and displays from `media.clickitstory.ae`. An SVG carrying a script is sanitised or rejected. Images resize on the free tier and fall back to the original at the cap, never to a broken image. Hero videos play as fast-start MP4 on Safari, Chrome and mobile.
+  5. CPU per page is measured on Workers Free and recorded. A merge to main deploys only after the CI gates pass and Koss approves the production environment.
+**Owner-gated**: [OWNER] create the R2, D1 and Queue resources and the media custom domain in the ClickitStory account (never the default wrangler login); [OWNER] set the Worker secrets and the Turnstile keys; [OWNER] enable Supabase CAPTCHA; [OWNER] add the GitHub Environment with Koss as the required reviewer; [OWNER] if pages fail on Free, decide on Workers Paid ($5/mo); [OWNER] decide on Image Transformations (free tier only); [OWNER] UAT on workers.dev.
+**Research flag**: `proxy.ts` under OpenNext 1.20.x; R2/D1 cache and purge interplay; `unstable_cache` through the D1 tag cache; R2 CORS syntax; presign headers; image loader zone settings.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 3: Production Cutover
+**Goal**: Viewers at www.clickitstory.ae and the apex are served by the Worker. Every media URL in the database points at R2, the old Vercel deployment can no longer write to live data, and rollback stays possible until the proof window ends.
+**Depends on**: Phase 2
+**Requirements**: DNS-02, DNS-03, DNS-04, MEDIA-02, MEDIA-03
+**Success Criteria** (what must be TRUE):
+  1. Opening https://www.clickitstory.ae and the apex returns `server: cloudflare` with real HTML. A real account can sign in and play an episode on the live domain.
+  2. The Vercel crons were off before the flip, and no Vercel cron runs against live Supabase afterwards. The service-role key in use is the newly rotated one.
+  3. All 86 Supabase Storage objects exist in R2 with matching checksums. A backup/mapping table exists. A DB-wide search finds zero old-host media URLs, and every image and video on the live site loads from `media.clickitstory.ae`.
+  4. A written rollback path to Vercel exists and stays usable until Koss closes the proof window.
+**Owner-gated**: [OWNER] run the expand migrations on live after a dry-run; [OWNER] switch off the Vercel crons and env in the Vercel dashboard; [OWNER] attach the Worker custom domain to www and the apex; [OWNER] run the media copy script and approve the live URL rewrite; [OWNER] rotate the Supabase service-role key; [OWNER] Ship.
+**Plans**: TBD
+
+### Phase 4: Design System Truth
+**Goal**: One signed design truth (LBC, #ffcc00, #0a0a0a, 8px radius) exists in tokens, docs and a Claude Design canvas before any new viewer, admin or email screen is coded.
+**Depends on**: Phase 3 (the design work itself can start in parallel with Phases 2-3; code ships after the cutover)
+**Requirements**: DS-01, DS-02, DS-03, DS-04
+**Success Criteria** (what must be TRUE):
+  1. DESIGN.md and `/design-system` show the live look: LBC, #ffcc00 accent, #0a0a0a surfaces and an 8px base radius. No indigo-era values remain.
+  2. A search of `src/` finds no hard-coded hex colours or arbitrary radii outside the token files, and one brand-colour map serves the whole app. The live site looks unchanged.
+  3. The Claude Design canvas shows foundations, viewer screens (including the OTP sign-in, the RTL treatment and an RMF-compliant player), admin screens (playlist import preview, inbox) and the email templates. Koss has signed it.
+  4. A signed-out visitor or a non-admin viewer opening `/design-system` is refused.
+**Owner-gated**: [OWNER] sign the canvas (it blocks UI build in Phases 5-7); [OWNER] Ship.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 5: Accounts and Email
+**Goal**: Only signed-in viewers get past the landing and legal pages. Viewers can join or sign in with a 6-digit email code or a password. Both admins work under their own TOTP-protected accounts, and every auth and app email arrives branded from `Clickit Story <no-reply@clickitstory.ae>`, once, in the viewer's language.
+**Depends on**: Phase 4
+**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, AUTH-08, MAIL-01, MAIL-03, MAIL-04, MAIL-05, MAIL-06, MAIL-07
+**Success Criteria** (what must be TRUE):
+  1. A signed-out visitor can open only the landing page and the legal pages, and every other page sends them to sign-in. A never-seen email address can create an account and sign in with a 6-digit code (pasted, auto-filled, or typed as Arabic-Indic digits). Email and password still work, and a password can be added later from the profile.
+  2. Password reset, email confirmation and email change all succeed when the link is opened on a different device from the one that asked for it. Every auth email arrives from `Clickit Story <no-reply@clickitstory.ae>`, branded, in EN or AR to match the viewer.
+  3. Issam and Nejib each sign in to their own admin account, pass an authenticator-app code to enter `/admin`, and see every admin function. The audit log names which admin made each change. Leaked-password protection is on, and the anon-callable YouTube-ID function no longer answers anonymous calls.
+  4. A new viewer gets exactly one welcome email. A support message produces an auto-reply to the sender and an admin copy they can reply to. A newsletter sign-up is active only after the confirmation link is clicked.
+  5. A viewer with a show on My List gets one Dubai-evening digest when new episodes publish, can turn it off in the profile, and can unsubscribe with one click from the email. A retried or failed send never duplicates and is retried from the queue.
+**Owner-gated**: [OWNER] set Supabase custom SMTP to Resend, the email templates (Confirm signup and Magic Link included), the OTP expiry and the auth email rate limit; [OWNER] turn on leaked-password protection; [OWNER] insert Nejib's admin row and enrol both TOTP devices; [OWNER] approve each live migration; [OWNER] approve the first emails to real users; [OWNER] Ship.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 6: YouTube Import and Player
+**Goal**: An admin puts a whole YouTube season on the platform from one playlist link, or adds one episode from one video link. Viewers switching episodes resume where they left off, in a player that follows YouTube's embed rules.
+**Depends on**: Phase 5 (it needs `requireAdmin` and the two-admin audit)
+**Requirements**: YT-01, YT-02, YT-03, YT-04, YT-05, YT-06, YT-07
+**Success Criteria** (what must be TRUE):
+  1. An admin pastes a playlist link and sees every video with its title, thumbnail, duration and status before importing. Private, deleted, non-embeddable and UAE-blocked videos are flagged and excluded. Imported episodes land as drafts. Importing the same playlist again adds nothing.
+  2. An admin adds a single episode from a YouTube link, and an invalid or fake ID is refused by the server. The YouTube API key exists only as a Worker secret, and the old database copy is gone.
+  3. A viewer watches part of episode A, switches to B, then back to A, and each resumes at its own saved position.
+  4. Nothing is drawn over the playing video (the autoplay-next card sits off the player). Player chrome and captions follow the site language. A removed or blocked video shows a branded error state.
+  5. Reordering episodes never leaves a gap or a duplicate, and a failed reorder shows an error.
+**Owner-gated**: [OWNER] create the restricted YouTube API key and set it as a Worker secret; [OWNER] rotate the old key; [OWNER] approve the migration that removes the DB key column copy; [OWNER] Ship.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 7: Product Completeness, Search and Arabic
+**Goal**: Every control shown in the app does what it says, viewers find any show or episode in English or Arabic, and the whole viewer UI is correct at `/ar` in right-to-left.
+**Depends on**: Phase 6
+**Requirements**: PROD-01, PROD-02, PROD-03, PROD-04, PROD-05, PROD-06, PROD-07, PROD-08, PROD-09, AR-01, AR-02, AR-03
+**Success Criteria** (what must be TRUE):
+  1. In Settings, turning the genres-grid, CTA or FAQ toggle on or off shows or hides that section on the live site. CTA copy and genre colours edited in Settings change the live site. An admin can delete a season after confirming, and can set a support message to New, Open, Resolved or Spam. Only real weekdays can be saved as broadcast days.
+  2. Searching an English title, an Arabic title (with or without tashkeel or alef variants), or an episode name returns the right published shows and episodes.
+  3. Reviews show the reviewer's name, and a viewer can edit and delete their own review. The shorts rail and overlay work with only one autoplaying player at a time.
+  4. At `/ar`, rails, carousels, icons and forms mirror correctly and numbers show as ٠-٩, while the English UI shows 0-9. Lint fails on any new left/right-specific style.
+  5. Production holds no picsum posters, test YouTube IDs or fake cast from Koss's approved list.
+**Owner-gated**: [OWNER] approve the placeholder list, then the live delete (backed up, never a CI migration); [OWNER] approve the search migration on live; [OWNER] UAT the Arabic screens; [OWNER] Ship.
+**Research flag**: Arabic Snowball stemmer and normalization against real titles.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 8: Hardening and Contract Cleanup
+**Goal**: The core journeys are protected by end-to-end tests, the codebase carries no dead code and no trace of Vercel, the CSP is tight, and after the proof window the old storage and the old host are gone.
+**Depends on**: Phase 7, plus the end of the Phase 3 proof window
+**Requirements**: QA-01, QA-02, QA-03, QA-04, PLAT-10, MEDIA-07
+**Success Criteria** (what must be TRUE):
+  1. CI runs end-to-end tests for sign-in (password and code), browse, watch with resume, and admin playlist import, and they pass against a build of main.
+  2. The repo has no unrendered components, unused queries, duplicate files, starter SVGs or stale Playwright specs. It also has no Vercel artefact: no `vercel.json`, `@vercel/*`, `botid`, `VERCEL_*` fallbacks, `.vercelignore` or `check-cron.sh`. CLAUDE.md, AGENTS.md, MEMORY.md and .hermes.md describe Cloudflare + Supabase.
+  3. The live CSP has no wildcard image source, no `supabase.co`, `picsum` or `unsplash` hosts, and no script `unsafe-inline` where it can be avoided. The site still renders and plays.
+  4. After Koss approves, Supabase Storage is empty and the Vercel project is deleted. The live site keeps working, with every media URL on R2.
+**Owner-gated**: [OWNER] close the proof window; [OWNER] approve the contract migrations (drop `admin_user_id` and `youtube_api_key`); [OWNER] empty Supabase Storage; [OWNER] delete the Vercel project and domain; [OWNER] Ship.
+**Plans**: TBD
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8. Design work in Phase 4 may run in a worktree during Phases 2-3. Its code ships after the cutover.
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Safe Ground | 0/TBD | Not started | - |
+| 2. Worker and R2 Media on workers.dev | 0/TBD | Not started | - |
+| 3. Production Cutover | 0/TBD | Not started | - |
+| 4. Design System Truth | 0/TBD | Not started | - |
+| 5. Accounts and Email | 0/TBD | Not started | - |
+| 6. YouTube Import and Player | 0/TBD | Not started | - |
+| 7. Product Completeness, Search and Arabic | 0/TBD | Not started | - |
+| 8. Hardening and Contract Cleanup | 0/TBD | Not started | - |
