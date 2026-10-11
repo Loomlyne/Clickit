@@ -44,7 +44,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Goal**: Every admin server action in `src/app/[locale]/admin/actions.ts` validates its input with a schema, scopes ids to their parent, leaves an audit row for each destructive or renumbering write, and fails whole or not at all. Source: two read-only agent audits of all 66 actions (50 confirmed findings: 2 high, 19 medium, 29 low); see `.planning/research/ADMIN-ACTIONS-AUDIT-DRAFT.md`.
 **Depends on**: Phase 1
 **Requirements**: ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-04, ADMIN-05
-**Decisions locked**: new SVG uploads are rejected (PNG/WebP/AVIF only; stored SVGs untouched); permanent delete requires archived first; atomicity by app-level ordering and compensation, no migration.
+**Decisions locked**: new SVG uploads are rejected (raster only: PNG, WebP, AVIF; JPEG for OG, auth and social images; ICO for the favicon, amended by Koss 2026-10-11; stored SVGs untouched); permanent delete requires archived first; atomicity by app-level ordering and compensation, no migration.
 **Success Criteria** (what must be TRUE):
   1. A conflict-restore call with a zero, negative, fractional or NaN episode number, or an episode id from another show, is refused and changes nothing. Every restore and renumber writes an audit row.
   2. `updateSeason` and `updateEpisode` reject malformed payloads, and every action taking an id rejects non-UUIDs; `direction` and hero `variant` reject values outside their enums.
