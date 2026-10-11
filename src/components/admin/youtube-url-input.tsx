@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
@@ -17,32 +17,32 @@ export function YouTubeUrlInput({
   error,
 }: YouTubeUrlInputProps) {
   const t = useTranslations('admin.youtubeInput')
-  // Determine if initial value is a bare video ID (11 chars, no slashes)
-  const isVideoId = value && value.length === 11 && !value.includes('/')
-  const [rawUrl, setRawUrl] = useState(isVideoId ? '' : value)
-  const [extractedId, setExtractedId] = useState<string | null>(
-    isVideoId ? value : value ? extractYouTubeId(value) : null
-  )
-  const [validationError, setValidationError] = useState<string | null>(null)
-
-  // Sync when value prop changes externally (e.g., form reset)
-  useEffect(() => {
-    const isId = value && value.length === 11 && !value.includes('/')
-    if (isId) {
-      setExtractedId(value)
-      setRawUrl('')
-      setValidationError(null)
-    } else if (value) {
-      setRawUrl(value)
-      const id = extractYouTubeId(value)
-      setExtractedId(id)
-      setValidationError(id ? null : t('extractError'))
-    } else {
-      setRawUrl('')
-      setExtractedId(null)
-      setValidationError(null)
+  // Derive local input state from the value prop (bare video ID or full URL)
+  const derive = (v: string) => {
+    const isId = !!v && v.length === 11 && !v.includes('/')
+    if (isId) return { rawUrl: '', extractedId: v as string | null, invalid: false }
+    if (v) {
+      const id = extractYouTubeId(v)
+      return { rawUrl: v, extractedId: id, invalid: !id }
     }
-  }, [value, t])
+    return { rawUrl: '', extractedId: null as string | null, invalid: false }
+  }
+  const [rawUrl, setRawUrl] = useState(() => derive(value).rawUrl)
+  const [extractedId, setExtractedId] = useState<string | null>(
+    () => derive(value).extractedId
+  )
+  const [invalid, setInvalid] = useState(() => derive(value).invalid)
+  const validationError = invalid ? t('extractError') : null
+
+  // Sync when value prop changes externally (e.g., form reset), during render
+  const [prevValue, setPrevValue] = useState(value)
+  if (prevValue !== value) {
+    setPrevValue(value)
+    const d = derive(value)
+    setRawUrl(d.rawUrl)
+    setExtractedId(d.extractedId)
+    setInvalid(d.invalid)
+  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const url = e.target.value
@@ -50,7 +50,7 @@ export function YouTubeUrlInput({
 
     if (!url) {
       setExtractedId(null)
-      setValidationError(null)
+      setInvalid(false)
       onChange(null, '')
       return
     }
@@ -59,10 +59,10 @@ export function YouTubeUrlInput({
     setExtractedId(id)
 
     if (id) {
-      setValidationError(null)
+      setInvalid(false)
       onChange(id, url)
     } else {
-      setValidationError(t('extractError'))
+      setInvalid(true)
       onChange(null, url)
     }
   }

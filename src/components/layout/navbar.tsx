@@ -59,6 +59,8 @@ export function Navbar({
 
   // Sync once on mount (Lenis only fires on real scroll events)
   useEffect(() => {
+    // Browser-only read after hydration (SSR must render unscrolled), so it cannot be derived in render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setScrolled(window.scrollY > 24)
     lastScrollY.current = window.scrollY
   }, [])

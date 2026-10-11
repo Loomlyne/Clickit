@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
@@ -28,10 +28,12 @@ export function MobileNav({ initialUser, logoUrl }: MobileNavProps = {}) {
   const pathname = usePathname()
   const t = useTranslations('nav')
 
-  // Auto-close when route changes
-  useEffect(() => {
+  // Auto-close when route changes (derived during render)
+  const [prevPathname, setPrevPathname] = useState(pathname)
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname)
     setOpen(false)
-  }, [pathname])
+  }
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

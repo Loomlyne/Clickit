@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useEffect, useMemo, useState, useTransition } from 'react'
+import { Fragment, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronDown, ChevronUp, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -71,10 +71,12 @@ function ColorPicker({
 }) {
   const t = useTranslations('admin.categories')
   const [rawInput, setRawInput] = useState(value ?? '')
-
-  useEffect(() => {
+  // Re-sync the text field when the value prop changes (derived during render).
+  const [prevValue, setPrevValue] = useState(value)
+  if (prevValue !== value) {
+    setPrevValue(value)
     setRawInput(value ?? '')
-  }, [value])
+  }
 
   const isValidHex = HEX_RE.test(rawInput)
   const previewColor = isValidHex ? rawInput : null

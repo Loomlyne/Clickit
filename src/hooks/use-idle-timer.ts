@@ -25,12 +25,16 @@ export function useIdleTimer(delay: number, options: UseIdleTimerOptions = {}): 
     timerRef.current = setTimeout(() => setIsIdle(true), delay)
   }, [delay, disabled])
 
+  // While disabled, idle is forced off (adjusted during render, not in an effect)
+  if (disabled && isIdle) setIsIdle(false)
+
   useEffect(() => {
     if (disabled) {
-      setIsIdle(false)
       if (timerRef.current) clearTimeout(timerRef.current)
       return
     }
+    // resetTimer sets state, but only to clear idle when the timer (re)starts; no render-time equivalent.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (startOnMount) resetTimer()
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)

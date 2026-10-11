@@ -66,6 +66,8 @@ export function EntryPreload({
     } catch {
       // Ignore — per-document dedup still applies.
     }
+    // Mount-only flag: must flip after hydration (sessionStorage is client-only), so it cannot be derived in render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActive(true)
   }, [])
 
@@ -128,7 +130,6 @@ export function EntryPreload({
     }
 
     hasStartedVideoRef.current = false
-    setVideoStarted(false)
     video.currentTime = 0
 
     const switchToImageFallback = () => {

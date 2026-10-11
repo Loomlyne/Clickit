@@ -62,6 +62,8 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
   // Fetch reviews + subscribe to real-time
   useEffect(() => {
     const supabase = createClient()
+    // Data fetch on mount/showId change: loadReviews only sets state after the awaited query resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadReviews(supabase)
 
     const channel = supabase

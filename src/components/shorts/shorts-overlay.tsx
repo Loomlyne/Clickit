@@ -50,9 +50,12 @@ export function ShortsOverlay({
     return () => window.removeEventListener('keydown', onKey)
   }, [hasNext, hasPrev, onClose])
 
-  useEffect(() => {
+  // Restart the progress bar whenever the short changes (derived during render)
+  const [prevIdx, setPrevIdx] = useState(idx)
+  if (prevIdx !== idx) {
+    setPrevIdx(idx)
     setProgress(0)
-  }, [idx])
+  }
 
   useEffect(() => {
     if (paused) return
