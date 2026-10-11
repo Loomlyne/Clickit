@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { motion, AnimatePresence } from 'motion/react'
 import { Heart } from 'lucide-react'
@@ -38,11 +38,11 @@ export function LikeButton({
   userId,
 }: LikeButtonProps) {
   const { isLiked, toggle } = useLikes(showId, initialLiked, userId)
-  const justLikedRef = useRef(false)
+  const [justLiked, setJustLiked] = useState(false)
   const t = useTranslations('show')
 
   const handleClick = () => {
-    if (!isLiked) justLikedRef.current = true
+    if (!isLiked) setJustLiked(true)
     toggle()
   }
 
@@ -61,7 +61,7 @@ export function LikeButton({
     >
       {/* Ring pulse on like */}
       <AnimatePresence>
-        {isLiked && justLikedRef.current && (
+        {isLiked && justLiked && (
           <motion.span
             key="ring"
             className="absolute inset-0 rounded-full border-2 border-pink-400/60"
@@ -70,7 +70,7 @@ export function LikeButton({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
             onAnimationComplete={() => {
-              justLikedRef.current = false
+              setJustLiked(false)
             }}
           />
         )}
@@ -78,7 +78,7 @@ export function LikeButton({
 
       {/* Particle burst */}
       <AnimatePresence>
-        {isLiked && justLikedRef.current && (
+        {isLiked && justLiked && (
           <>
             {PARTICLES.map((p, i) => (
               <motion.span

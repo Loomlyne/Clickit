@@ -34,12 +34,22 @@ export function YouTubePlayer({
   const onReadyRef = useRef(onReady)
   const onStateChangeRef = useRef(onStateChange)
   const onErrorRef = useRef(onError)
-  onReadyRef.current = onReady
-  onStateChangeRef.current = onStateChange
-  onErrorRef.current = onError
+  // Sync after each render; declared before the player effect so it runs first.
+  useEffect(() => {
+    onReadyRef.current = onReady
+    onStateChangeRef.current = onStateChange
+    onErrorRef.current = onError
+  })
 
   const [isReady, setIsReady] = useState(false)
   const [errorCode, setErrorCode] = useState<number | null>(null)
+  // Reset ready/error state when the video changes (derived during render)
+  const [prevVideoId, setPrevVideoId] = useState(videoId)
+  if (prevVideoId !== videoId) {
+    setPrevVideoId(videoId)
+    setIsReady(false)
+    setErrorCode(null)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -78,8 +88,6 @@ export function YouTubePlayer({
       })
     }
 
-    setIsReady(false)
-    setErrorCode(null)
     init()
 
     return () => {
