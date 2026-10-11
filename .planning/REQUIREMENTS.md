@@ -13,6 +13,14 @@
 - [ ] **SAFE-04**: A read-only live audit is recorded: applied migrations vs files, admin check in RLS, every column holding a media URL, Supabase plan and backups
 - [ ] **SAFE-05**: Owner of the stray Cloudflare nameservers (ignat/nataly) is found or ruled out before any NS change
 
+### Admin actions (ADMIN)
+
+- [ ] **ADMIN-01**: Restore and conflict-restore flows validate episode numbers, scope ids to their show, audit every write and roll back on failure
+- [ ] **ADMIN-02**: Every admin action parses its input with a schema (UUID ids, enums, season/episode payloads)
+- [ ] **ADMIN-03**: Permanent deletes require an archived item; every destructive or renumbering write leaves an audit row
+- [ ] **ADMIN-04**: Multi-step admin writes fail whole or not at all, and no update error is swallowed; counts and cache tags stay correct
+- [ ] **ADMIN-05**: New SVG uploads are rejected, hero video size is enforced on the server, and untranslated English is never saved into Arabic fields
+
 ### Platform (PLAT)
 
 - [ ] **PLAT-01**: The app builds and runs on Cloudflare Workers (OpenNext) in the ClickitStory account, on Next 16.3.8+
@@ -137,6 +145,11 @@
 | SAFE-03 | Phase 1 | Pending |
 | SAFE-04 | Phase 1 | Pending |
 | SAFE-05 | Phase 1 | Pending |
+| ADMIN-01 | Phase 1.1 | Pending |
+| ADMIN-02 | Phase 1.1 | Pending |
+| ADMIN-03 | Phase 1.1 | Pending |
+| ADMIN-04 | Phase 1.1 | Pending |
+| ADMIN-05 | Phase 1.1 | Pending |
 | PLAT-01 | Phase 2 | Pending |
 | PLAT-02 | Phase 2 | Pending |
 | PLAT-03 | Phase 2 | Pending |
@@ -202,8 +215,8 @@
 | QA-04 | Phase 8 | Pending |
 
 **Coverage:**
-- v1 requirements: 68 total
-- Mapped to phases: 68
+- v1 requirements: 73 total
+- Mapped to phases: 73
 - Unmapped: 0
 
 ---
