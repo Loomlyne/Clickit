@@ -494,7 +494,13 @@ export const getNewEpisodes = unstable_cache(
       .order('created_at', { ascending: false })
       .limit(20)
 
-    return (data ?? []).map((e: any) => ({
+    type NewEpisodeRow = DbEpisode & {
+      show_title?: string | null
+      show_slug?: string | null
+      show_brand_color?: string | null
+      show_poster_url?: string | null
+    }
+    return ((data ?? []) as unknown as NewEpisodeRow[]).map((e) => ({
       ...mapEpisode(e),
       showTitle: e.show_title ?? '',
       showSlug: e.show_slug ?? '',
@@ -706,6 +712,24 @@ export async function getEpisodeProgress(
 // Continue watching
 // ---------------------------------------------------------------------------
 
+type ContinueWatchingRow = {
+  progress_seconds: number
+  duration_seconds: number | null
+  episodes_view: {
+    id: string
+    title: string
+    title_ar: string | null
+    episode_number: number
+    show_id: string
+    show_title: string
+    show_slug: string
+    show_brand_color: string | null
+    youtube_video_id: string | null
+    seasons: { season_number: number }
+    shows?: { title_ar: string | null } | null
+  }
+}
+
 export async function getContinueWatchingEpisodes(
   userId: string,
   locale: Locale = DEFAULT_LOCALE
@@ -737,7 +761,7 @@ export async function getContinueWatchingEpisodes(
   if (!data) return []
 
   const items = await Promise.all(
-    data.slice(0, 10).map(async (row: any) => {
+    (data as unknown as ContinueWatchingRow[]).slice(0, 10).map(async (row) => {
       const ep = row.episodes_view
       const dur = row.duration_seconds || 1
       const [episodeTitle, showTitle] = await Promise.all([
@@ -823,6 +847,13 @@ export const getScheduleShows = unstable_cache(
 // Coming soon episodes query
 // ---------------------------------------------------------------------------
 
+type ComingSoonRow = DbEpisode & {
+  show_title: string
+  show_slug: string
+  show_brand_color: string
+  shows?: { title_ar: string | null } | null
+}
+
 export const getComingSoonEpisodes = unstable_cache(
   async (
     locale: Locale = DEFAULT_LOCALE
@@ -848,8 +879,8 @@ export const getComingSoonEpisodes = unstable_cache(
     }
 
     return Promise.all(
-      (data ?? []).map(async (row: any) => {
-        const episode = await mapEpisodeLocalized(row as DbEpisode, locale)
+      ((data ?? []) as unknown as ComingSoonRow[]).map(async (row) => {
+        const episode = await mapEpisodeLocalized(row, locale)
         const showTitle = await localizedField(
           locale,
           row.show_title,
@@ -904,8 +935,8 @@ export async function getWatchlistShows(
     .order('created_at', { ascending: false })
 
   if (!data) return []
-  const shows = data
-    .map((row: any) => row.shows)
+  const shows = (data as unknown as { shows: DbShow | null }[])
+    .map((row) => row.shows)
     .filter(Boolean) as DbShow[]
   return mapShowsLocalized(shows, locale)
 }
@@ -928,6 +959,20 @@ export type RecentlyWatchedItem = {
   updatedAt: string
 }
 
+type RecentlyWatchedRow = {
+  progress_seconds: number
+  duration_seconds: number | null
+  completed: boolean
+  updated_at: string
+  episodes: {
+    id: string
+    title: string
+    episode_number: number
+    seasons: { season_number: number }
+    shows: { title: string; slug: string; brand_color: string | null }
+  }
+}
+
 export async function getRecentlyWatched(userId: string): Promise<RecentlyWatchedItem[]> {
   const supabase = await createClient()
   // Same archived-at-the-DB pattern as getContinueWatchingEpisodes above.
@@ -943,9 +988,9 @@ export async function getRecentlyWatched(userId: string): Promise<RecentlyWatche
 
   if (!data) return []
 
-  return data
+  return (data as unknown as RecentlyWatchedRow[])
     .slice(0, 10)
-    .map((row: any) => {
+    .map((row) => {
       const ep = row.episodes
       return {
         episodeId: ep.id,
@@ -1027,7 +1072,7 @@ export async function getWatchedShowIds(
 
   const watchedIds = new Set<string>()
   for (const row of data ?? []) {
-    const showId = (row as any).episodes?.show_id as string | undefined
+    const showId = (row as unknown as { episodes?: { show_id?: string } | null }).episodes?.show_id
     if (showId) watchedIds.add(showId)
   }
 
@@ -1050,8 +1095,8 @@ export async function getLikedShows(
     .order('created_at', { ascending: false })
 
   if (!data) return []
-  const shows = data
-    .map((row: any) => row.shows)
+  const shows = (data as unknown as { shows: DbShow | null }[])
+    .map((row) => row.shows)
     .filter(Boolean) as DbShow[]
   return mapShowsLocalized(shows, locale)
 }
