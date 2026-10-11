@@ -1,5 +1,5 @@
 {
-  "model_profile": "quality",
+  "model_profile": "adaptive",
   "commit_docs": true,
   "parallelization": true,
   "search_gitignored": false,
@@ -63,7 +63,6 @@
   "phase_naming": "sequential",
   "agent_skills": {},
   "features": {},
-  "resolve_model_ids": "omit",
   "mode": "interactive",
   "granularity": "standard",
   "claude_md_path": ".planning/CLAUDE.generated.md"
