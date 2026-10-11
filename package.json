@@ -12,7 +12,8 @@
     "gen-types": "supabase gen types typescript --project-id \"lajguozmtissnnfccmej\" --schema public > src/lib/database.types.ts",
     "rewrite-slugs": "node scripts/rewrite-slugs.mjs",
     "fix-archived-show-duplicates": "node scripts/fix-archived-show-duplicates.mjs",
-    "r2:media": "node scripts/migrate-supabase-media-to-r2.mjs"
+    "r2:media": "node scripts/migrate-supabase-media-to-r2.mjs",
+    "gate:local": "npm run lint && npm run test:unit && npm run build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1101.0",
