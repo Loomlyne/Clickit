@@ -15,6 +15,7 @@ The live app at www.clickitstory.ae cannot deploy on Vercel, so no code reaches 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Safe Ground** - Migrations can't harm live, CI gates every PR, clickitstory.ae zone on Cloudflare with Resend DNS (all of it ships while Vercel still serves)
+- [ ] **Phase 1.1: Admin Actions Hardening (INSERTED)** - Every admin server action validates input, scopes ids, audits destructive writes and fails whole or not at all
 - [ ] **Phase 2: Worker and R2 Media on workers.dev** - The full app runs on Cloudflare Workers with gates, cache, crons, Turnstile, analytics and direct-to-R2 uploads, proved on workers.dev
 - [ ] **Phase 3: Production Cutover** - www and the apex are served by the Worker, media URLs are rewritten to R2, and rollback stays open through the proof window
 - [ ] **Phase 4: Design System Truth** - Tokens, DESIGN.md and a Claude Design canvas match the live look and are signed by Koss before any new screen is built
@@ -38,6 +39,38 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Owner-gated**: [OWNER] Supabase plan/backup check in the dashboard; [OWNER] approve each live migration dry-run; [OWNER] add the zone and re-create the records DNS-only; [OWNER] change the NS at tasjeel.ae; [OWNER] add the domain in Resend (on his Pro account) and set the DNS records.
 **Research flag**: Find who owns the NS pair, the .ae NS-change procedure, and the CF-assigned pair.
 **Plans**: TBD
+
+### Phase 1.1: Admin Actions Hardening (INSERTED)
+**Goal**: Every admin server action in `src/app/[locale]/admin/actions.ts` validates its input with a schema, scopes ids to their parent, leaves an audit row for each destructive or renumbering write, and fails whole or not at all. Source: two read-only agent audits of all 66 actions (50 confirmed findings: 2 high, 19 medium, 29 low); see `.planning/research/ADMIN-ACTIONS-AUDIT-DRAFT.md`.
+**Depends on**: Phase 1
+**Requirements**: ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-04, ADMIN-05
+**Decisions locked**: new SVG uploads are rejected (PNG/WebP/AVIF only; stored SVGs untouched); permanent delete requires archived first; atomicity by app-level ordering and compensation, no migration.
+**Success Criteria** (what must be TRUE):
+  1. A conflict-restore call with a zero, negative, fractional or NaN episode number, or an episode id from another show, is refused and changes nothing. Every restore and renumber writes an audit row.
+  2. `updateSeason` and `updateEpisode` reject malformed payloads, and every action taking an id rejects non-UUIDs; `direction` and hero `variant` reject values outside their enums.
+  3. `deleteShowPermanently` and `deleteEpisodePermanently` refuse an item that is not archived; `deleteSeason`, `updateSeason` and `removeHeroVideo` leave an audit row.
+  4. A forced failure midway through `updateShow`, `archiveShow`, `restoreShow`, `applyShowSchedule`, `reorderEpisode` or a conflict restore leaves the data as it was before the call, and the error is returned, not swallowed.
+  5. An SVG upload is refused; a hero video over 50MB is refused on the server whatever size the client reports; saving the top ticker never stores English text in an Arabic field.
+  6. Each failing input above has a unit test that failed before the fix. Lint, typecheck, unit tests and build pass.
+**Owner-gated**: [OWNER] UAT; [OWNER] Ship. No live database change and no migration.
+**Research flag**: None; findings carry line numbers (they drift).
+**Plans**: 13 plans (6 waves)
+
+Plans:
+- [ ] 01.1-01-PLAN.md — W1: pure schemas and guards (ids, direction, hero variant, fixes, rename, season/episode update, requireArchived)
+- [ ] 01.1-02-PLAN.md — W1: fake Supabase, ports, compensation runner, strict audit, counts, show namespace helpers
+- [ ] 01.1-03-PLAN.md — W1: media guards (SVG reject, hero size), strict Arabic translation, ticker fill
+- [ ] 01.1-04-PLAN.md — W2: UI: delete only on archived items (D-08), SVG-free pickers, ticker warning toast
+- [ ] 01.1-05-PLAN.md — W2: archive/restore/conflict-restore core with tests
+- [ ] 01.1-06-PLAN.md — W2: show writes core (category sync, archive-first delete, reorder)
+- [ ] 01.1-07-PLAN.md — W2: season and episode create/update/delete core
+- [ ] 01.1-08-PLAN.md — W2: episode archive/restore/delete/reorder core
+- [ ] 01.1-09-PLAN.md — W2: bulk schedule and unschedule core
+- [ ] 01.1-10-PLAN.md — W3: wire shows, categories, toggleFeatured into actions.ts
+- [ ] 01.1-11-PLAN.md — W4: wire seasons, episodes, scheduling into actions.ts
+- [ ] 01.1-12-PLAN.md — W5: hero video, SVG, ticker, remaining id validation in actions.ts
+- [ ] 01.1-13-PLAN.md — W6: gate, 21-finding coverage, [OWNER] UAT on a local stack
+**Overlap note**: Phase 2 criterion 4 (SVG sanitised or rejected) is met here by rejecting SVG.
 
 ### Phase 2: Worker and R2 Media on workers.dev
 **Goal**: The complete app runs on Cloudflare Workers (OpenNext, ClickitStory account, Next 16.3.8+) at its workers.dev URL with the same behaviour viewers and admins have today. Media uploads go straight to R2, so nothing blocks the cutover.
@@ -137,11 +170,12 @@ Decimal phases appear between their surrounding integers in numeric order.
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8. Design work in Phase 4 may run in a worktree during Phases 2-3. Its code ships after the cutover.
+Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 → 8. Design work in Phase 4 may run in a worktree during Phases 2-3. Its code ships after the cutover.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Safe Ground | 0/TBD | Not started | - |
+| 1.1. Admin Actions Hardening (INSERTED) | 0/13 | Not started | - |
 | 2. Worker and R2 Media on workers.dev | 0/TBD | Not started | - |
 | 3. Production Cutover | 0/TBD | Not started | - |
 | 4. Design System Truth | 0/TBD | Not started | - |
