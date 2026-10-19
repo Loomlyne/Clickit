@@ -60,7 +60,7 @@ Plans:
 - [x] 01.1-01-PLAN.md — W1: pure schemas and guards (ids, direction, hero variant, fixes, rename, season/episode update, requireArchived)
 - [x] 01.1-02-PLAN.md — W1: fake Supabase, ports, compensation runner, strict audit, counts, show namespace helpers
 - [x] 01.1-03-PLAN.md — W1: media guards (SVG reject, hero size), strict Arabic translation, ticker fill
-- [ ] 01.1-04-PLAN.md — W2: UI: delete only on archived items (D-08), SVG-free pickers, ticker warning toast
+- [x] 01.1-04-PLAN.md — W2: UI: delete only on archived items (D-08), SVG-free pickers, ticker warning toast
 - [ ] 01.1-05-PLAN.md — W2: archive/restore/conflict-restore core with tests
 - [ ] 01.1-06-PLAN.md — W2: show writes core (category sync, archive-first delete, reorder)
 - [ ] 01.1-07-PLAN.md — W2: season and episode create/update/delete core
@@ -175,7 +175,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Safe Ground | 0/TBD | Not started | - |
-| 1.1. Admin Actions Hardening (INSERTED) | 3/13 | In Progress|  |
+| 1.1. Admin Actions Hardening (INSERTED) | 4/13 | In Progress|  |
 | 2. Worker and R2 Media on workers.dev | 0/TBD | Not started | - |
 | 3. Production Cutover | 0/TBD | Not started | - |
 | 4. Design System Truth | 0/TBD | Not started | - |
