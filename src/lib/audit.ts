@@ -84,3 +84,37 @@ export async function logAudit(args: AuditArgs): Promise<void> {
     console.error('[audit] unexpected failure', err)
   }
 }
+
+/**
+ * Strict variant: same insert, but the error is returned instead of swallowed.
+ * Destructive cores use it so they can refuse to delete when the audit row
+ * cannot be written.
+ */
+export async function logAuditStrict(
+  args: AuditArgs
+): Promise<{ error: string | null }> {
+  try {
+    const admin = createAdminClient()
+    const { error } = await admin.from('admin_audit_log').insert({
+      admin_user_id: args.adminUserId,
+      action_type: args.action,
+      entity_type: args.entity,
+      entity_id: args.entityId ?? null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      diff: (args.diff ?? null) as any,
+    })
+    if (error) {
+      console.error('[audit] strict insert failed', {
+        action: args.action,
+        entity: args.entity,
+        entityId: args.entityId,
+        err: error.message,
+      })
+      return { error: error.message }
+    }
+    return { error: null }
+  } catch (err) {
+    console.error('[audit] unexpected strict failure', err)
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+}
