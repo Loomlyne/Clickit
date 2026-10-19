@@ -1,5 +1,6 @@
 import { createHash } from 'crypto'
 import { unstable_cache } from 'next/cache'
+import { translateBatchStrictCore } from './arabic-text'
 
 async function translateEnToArUncached(text: string): Promise<string> {
   const key = process.env.GOOGLE_TRANSLATE_API_KEY
@@ -100,7 +101,24 @@ export async function translateBatchToArabic(texts: string[]): Promise<string[]>
 }
 
 /**
+ * Strict batch translation: null per slot on any failure, never English, never cached.
+ */
+export async function translateBatchToArabicStrict(texts: string[]): Promise<(string | null)[]> {
+  if (texts.length === 0) return []
+  return translateBatchStrictCore(texts, {
+    apiKey: process.env.GOOGLE_TRANSLATE_API_KEY,
+    fetchImpl: globalThis.fetch,
+  })
+}
+
+export async function translateToArabicStrict(text: string): Promise<string | null> {
+  const [result] = await translateBatchToArabicStrict([text])
+  return result ?? null
+}
+
+/**
  * Return the existing Arabic value when present; otherwise auto-translate English.
+ * Returns null when translation fails (never English).
  */
 export async function fillArabic(
   en: string | null | undefined,
@@ -108,5 +126,5 @@ export async function fillArabic(
 ): Promise<string | null> {
   if (ar?.trim()) return ar.trim()
   if (!en?.trim()) return null
-  return translateEnToAr(en)
+  return translateToArabicStrict(en)
 }
