@@ -46,7 +46,7 @@ export function BrandingTab({ config }: { config: AppConfig }) {
         <ImageUploadField
           kind="og"
           currentUrl={config.ogImageUrl}
-          accept="image/png,image/jpeg,image/webp"
+          accept="image/png,image/jpeg,image/webp,image/avif"
           maxMb={5}
           previewClassName="aspect-[1200/630] w-full max-w-sm"
           hint={t('ogImageHint')}
@@ -82,7 +82,7 @@ export function BrandingTab({ config }: { config: AppConfig }) {
             <ImageUploadField
               kind="favicon"
               currentUrl={config.faviconUrl}
-              accept="image/png,image/x-icon,image/svg+xml"
+              accept="image/png,image/x-icon"
               maxMb={1}
               previewClassName="size-20"
               previewBgClassName="bg-white"
@@ -106,7 +106,7 @@ export function BrandingTab({ config }: { config: AppConfig }) {
             <ImageUploadField
               kind="favicon-dark"
               currentUrl={config.faviconDarkUrl}
-              accept="image/png,image/x-icon,image/svg+xml"
+              accept="image/png,image/x-icon"
               maxMb={1}
               previewClassName="size-20"
               previewBgClassName="bg-black"
