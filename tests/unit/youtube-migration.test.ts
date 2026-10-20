@@ -112,7 +112,7 @@ test('renumber_season: invoker, fixed search_path, shared advisory lock', () => 
   const fn = fnBlock('public.renumber_season')
   assert.match(
     fn,
-    /returns table \(episode_id uuid, old_number integer, new_number integer\)/
+    /returns table \(\s*episode_id uuid,\s*old_number integer,\s*new_number integer\s*\)/
   )
   assert.match(fn, /language plpgsql/)
   assert.match(fn, /security invoker/)
@@ -236,13 +236,17 @@ test('Vault key functions: three definers in private, three invoker wrappers', (
   const meta = fnBlock('private.youtube_key_meta')
   assert.match(
     meta,
-    /returns table \(has_key boolean, last4 text, updated_at timestamptz\)/
+    /returns table \(\s*has_key boolean,\s*last4 text,\s*updated_at timestamptz\s*\)/
   )
   assert.match(meta, /security definer/)
   assert.match(meta, /set search_path = ''/)
   assert.match(meta, /right\(ds\.decrypted_secret, 4\)/)
   assert.match(meta, /false, null::text, null::timestamptz/)
-  assert.doesNotMatch(meta, /ds\.decrypted_secret\s*,|ds\.decrypted_secret\s+as/)
+  // The plaintext only ever leaves meta as its last four characters.
+  assert.equal(
+    (meta.match(/ds\.decrypted_secret\b/g) ?? []).length,
+    (meta.match(/right\(ds\.decrypted_secret, 4\)/g) ?? []).length
+  )
 
   for (const name of ['get_youtube_key', 'set_youtube_key', 'youtube_key_meta']) {
     const w = fnBlock(`public.${name}`)
