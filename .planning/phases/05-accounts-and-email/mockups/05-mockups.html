@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Phase 5 options</title>
+<style>
+  /* Real Clickit tokens from src/styles/globals.css (2026-10-20). Font: LBC from src/fonts. */
+  @font-face { font-family: LBC; src: url(../../../../src/fonts/lbc-regular.woff2) format('woff2'); font-weight: 400; }
+  @font-face { font-family: LBC; src: url(../../../../src/fonts/lbc-bold.woff2) format('woff2'); font-weight: 700; }
+  :root {
+    --bg-0:#090909; --bg-1:#101010; --bg-2:#191919; --bg-3:#2A2A2A; --bg-4:#424242;
+    --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.14);
+    --text:#F4F4F4; --text-dim:#CCCCCC; --text-mute:#A1A1A1;
+    --accent:#ffcc00; --accent-fg:#090909; --danger:#ff3b30;
+    --r-field:8px; --r-card:12px; --r-panel:16px; --control:44px;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#1d1d1d; font-family:LBC, ui-sans-serif, system-ui, sans-serif; color:var(--text); }
+  section { padding:28px; background:#1d1d1d; width:max-content; }
+  section > h2 { margin:0 0 4px; font-size:20px; color:#fff; }
+  section > p.q { margin:0 0 18px; color:#bbb; font-size:14px; max-width:1100px; }
+  .row { display:flex; gap:28px; align-items:flex-start; }
+  .opt { display:flex; flex-direction:column; gap:10px; }
+  .tag { font-size:14px; color:#fff; font-weight:700; }
+  .tag small { font-weight:400; color:#bbb; }
+  .rec { color:var(--accent); }
+  .phone { width:375px; height:700px; background:var(--bg-0); border-radius:28px; border:1px solid var(--bg-3); overflow:hidden; position:relative; }
+  .nav { height:60px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; border-bottom:1px solid var(--line); }
+  .logo { font-weight:700; letter-spacing:.02em; font-size:17px; }
+  .logo b { color:var(--accent); }
+  .lang { font-size:13px; color:var(--text-mute); }
+  .body { padding:28px 22px; }
+  h1 { font-size:28px; line-height:1.15; margin:0 0 8px; font-weight:700; }
+  .sub { color:var(--text-dim); font-size:15px; margin:0 0 22px; }
+  label { display:block; font-size:13px; color:var(--text-dim); margin:0 0 6px; }
+  .field { height:var(--control); border-radius:var(--r-field); background:var(--bg-1); border:1px solid var(--line-2); display:flex; align-items:center; padding:0 14px; color:var(--text); font-size:15px; margin-bottom:14px; justify-content:space-between; }
+  .field.ph { color:var(--text-mute); }
+  .eye { width:20px; height:20px; border:2px solid var(--text-mute); border-radius:50% 50% 50% 50%/60% 60% 40% 40%; position:relative; }
+  .eye::after { content:''; position:absolute; width:6px; height:6px; background:var(--text-mute); border-radius:50%; left:5px; top:5px; }
+  .btn { height:var(--control); border-radius:999px; background:var(--accent); color:var(--accent-fg); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; margin-top:6px; }
+  .btn.ghost { background:transparent; color:var(--text); border:1px solid var(--line-2); }
+  .link { color:var(--text); text-decoration:underline; text-underline-offset:3px; font-size:14px; text-align:center; margin-top:16px; }
+  .muted { color:var(--text-mute); font-size:13px; }
+  .center { text-align:center; }
+  .tabs { display:grid; grid-template-columns:1fr 1fr; background:var(--bg-2); border-radius:999px; padding:4px; margin-bottom:22px; }
+  .tabs div { height:36px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--text-dim); }
+  .tabs div.on { background:var(--bg-4); color:var(--text); font-weight:700; }
+  .boxes { display:flex; gap:8px; margin:6px 0 16px; }
+  .boxes div { width:46px; height:54px; border-radius:var(--r-field); background:var(--bg-1); border:1px solid var(--line-2); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:700; }
+  .boxes div.f { border-color:var(--accent); }
+  .divider { display:flex; align-items:center; gap:10px; color:var(--text-mute); font-size:12px; margin:18px 0; }
+  .divider::before, .divider::after { content:''; flex:1; height:1px; background:var(--line); }
+  .poster { height:190px; border-radius:var(--r-card); background:linear-gradient(160deg,#3a2c08,#14110a 55%,#090909); border:1px solid var(--line); display:flex; align-items:flex-end; padding:14px; margin-bottom:18px; position:relative; overflow:hidden; }
+  .poster::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 70% 25%, rgba(255,204,0,.35), transparent 55%); }
+  .poster span { position:relative; font-weight:700; font-size:20px; }
+  .chip { display:inline-block; font-size:12px; color:var(--accent-fg); background:var(--accent); border-radius:999px; padding:3px 10px; font-weight:700; margin-bottom:10px; }
+  .qr { width:150px; height:150px; margin:6px auto 12px; background:
+      repeating-linear-gradient(90deg,#fff 0 10px,#000 10px 20px), #fff; border:10px solid #fff; border-radius:8px; opacity:.92;
+      -webkit-mask: repeating-linear-gradient(0deg,#000 0 10px,transparent 10px 14px); }
+  .steps { display:flex; gap:6px; margin-bottom:18px; }
+  .steps div { flex:1; height:4px; border-radius:4px; background:var(--bg-3); }
+  .steps div.on { background:var(--accent); }
+  .overlay { position:absolute; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; }
+  .modal { width:330px; background:var(--bg-1); border:1px solid var(--line-2); border-radius:var(--r-panel); padding:22px; }
+  .adminbg { padding:18px; opacity:.5; }
+  .adminbg .bar { height:16px; border-radius:6px; background:var(--bg-2); margin-bottom:12px; }
+  .note { font-size:12px; color:#bbb; max-width:375px; }
+  /* email */
+  .mail { width:420px; border-radius:14px; overflow:hidden; border:1px solid #333; }
+  .mail .client { background:#f1f1f1; color:#222; font-size:12px; padding:10px 14px; border-bottom:1px solid #ddd; font-family: system-ui, sans-serif; }
+  .mail .client b { color:#000; }
+  .m-light { background:#ffffff; color:#111; padding:0 0 18px; font-family:LBC, system-ui, sans-serif; }
+  .m-light .hd { background:#090909; padding:18px 24px; }
+  .m-light .in { padding:22px 24px 4px; }
+  .m-light h3 { margin:0 0 10px; font-size:22px; }
+  .m-light p { margin:0 0 14px; font-size:14px; color:#333; line-height:1.5; }
+  .code { font-size:34px; letter-spacing:10px; font-weight:700; background:#f6f6f6; border:1px solid #e5e5e5; border-radius:8px; padding:12px 0; text-align:center; margin:4px 0 16px; color:#090909; }
+  .mbtn { display:inline-block; background:#ffcc00; color:#090909; font-weight:700; padding:12px 22px; border-radius:999px; font-size:14px; }
+  .ft { font-size:11px; color:#777; padding:14px 24px 0; border-top:1px solid #eee; margin-top:14px; line-height:1.5; }
+  .m-dark { background:#090909; color:#F4F4F4; padding:0 0 18px; font-family:LBC, system-ui, sans-serif; }
+  .m-dark .hd { padding:18px 24px; border-bottom:1px solid rgba(255,255,255,.08); }
+  .m-dark .in { padding:22px 24px 4px; }
+  .m-dark h3 { margin:0 0 10px; font-size:22px; }
+  .m-dark p { margin:0 0 14px; font-size:14px; color:#CCCCCC; line-height:1.5; }
+  .m-dark .code { background:#191919; border-color:#2A2A2A; color:#ffcc00; }
+  .m-dark .ft { color:#A1A1A1; border-top-color:rgba(255,255,255,.08); }
+</style>
+</head>
+<body>
+
+<!-- Q1 sign-in screen -->
+<section id="q1">
+  <h2>Q1 — Sign-in screen: how code and password sit together</h2>
+  <p class="q">Example: Sara types her email. A: she gets a code by default; "Use a password instead" swaps the field. B: two tabs. C: password first, code as the fallback link.</p>
+  <div class="row">
+    <div class="opt"><div class="tag rec">A (recommended) <small>Code first, password one tap away</small></div>
+      <div class="phone"><div class="nav"><div class="logo">CLICK<b>IT</b> STORY</div><div class="lang">العربية</div></div>
+        <div class="body">
+          <h1>Sign in or join</h1><p class="sub">Enter your email. We'll send you a 6-digit code.</p>
+          <label>Email</label><div class="field">sara@example.com</div>
+          <div class="btn">Send code</div>
+          <div class="link">Use a password instead</div>
+          <div class="divider">THEN</div>
+          <label>Code sent to sara@example.com</label>
+          <div class="boxes"><div>4</div><div>8</div><div>1</div><div class="f">٥</div><div></div><div></div></div>
+          <div class="muted center">Resend code in 0:42 · Paste or type ٠-٩ / 0-9</div>
+        </div></div></div>
+    <div class="opt"><div class="tag">B <small>Two tabs: Code | Password</small></div>
+      <div class="phone"><div class="nav"><div class="logo">CLICK<b>IT</b> STORY</div><div class="lang">العربية</div></div>
+        <div class="body">
+          <h1>Sign in or join</h1><p class="sub">Choose how you want to sign in.</p>
+          <div class="tabs"><div class="on">Email code</div><div>Password</div></div>
+          <label>Email</label><div class="field">sara@example.com</div>
+          <div class="btn">Send code</div>
+          <p class="muted center" style="margin-top:18px">New here? The code creates your account.</p>
+        </div></div></div>
+    <div class="opt"><div class="tag">C <small>Password first, code as fallback</small></div>
+      <div class="phone"><div class="nav"><div class="logo">CLICK<b>IT</b> STORY</div><div class="lang">العربية</div></div>
+        <div class="body">
+          <h1>Welcome back</h1><p class="sub">Sign in to keep watching.</p>
+          <label>Email</label><div class="field">sara@example.com</div>
+          <label>Password</label><div class="field ph">••••••••<span class="eye"></span></div>
+          <div class="btn">Sign in</div>
+          <div class="link">Email me a code instead</div>
+          <div class="link">Forgot password?</div>
+          <p class="muted center" style="margin-top:18px">No account? <u>Create one</u></p>
+        </div></div></div>
+  </div>
+</section>
+
+<!-- Q3 first-time name step -->
+<section id="q3">
+  <h2>Q3 — A brand-new viewer after their first code</h2>
+  <p class="q">Example: Omar enters a never-seen email and the code. A: one short screen asks his name and shows the terms line, then he lands on Browse. B: he lands on Browse at once; the name is "Omar" from his email until he edits his profile.</p>
+  <div class="row">
+    <div class="opt"><div class="tag rec">A (recommended) <small>One "your name" step</small></div>
+      <div class="phone"><div class="nav"><div class="logo">CLICK<b>IT</b> STORY</div><div class="lang">العربية</div></div>
+        <div class="body">
+          <div class="steps"><div class="on"></div><div class="on"></div></div>
+          <h1>Welcome to Clickit Story</h1><p class="sub">What should we call you? This name shows on your reviews.</p>
+          <label>Your name</label><div class="field">Omar Haddad</div>
+          <p class="muted">By continuing you agree to the <u>Terms</u> and <u>Privacy Policy</u>.</p>
+          <div class="btn">Start watching</div>
+          <div class="link">Add a password later in Profile</div>
+        </div></div></div>
+    <div class="opt"><div class="tag">B <small>No extra step</small></div>
+      <div class="phone"><div class="nav"><div class="logo">CLICK<b>IT</b> STORY</div><div class="lang">العربية</div></div>
+        <div class="body">
+          <p class="muted" style="margin-bottom:10px">Browse</p>
+          <div class="poster"><span>Sample Show</span></div>
+          <div class="poster" style="height:120px"><span>Another Show</span></div>
+          <p class="muted">Display name set to "omar.haddad" from the email; editable in Profile.</p>
+        </div></div></div>
+  </div>
+</section>
+
+<!-- Q4 shared link -->
+<section id="q4">
+  <h2>Q4 — Someone opens a shared show link while signed out</h2>
+  <p class="q">Example: Lina gets a WhatsApp link to "Sample Show". A: the sign-in page shows that show's poster and title, and after the code she lands on the show. B: the plain sign-in page; after sign-in she still lands on the show.</p>
+  <div class="row">
+    <div class="opt"><div class="tag rec">A (recommended) <small>Sign-in shows what they are about to watch</small></div>
+      <div class="phone"><div class="nav"><div class="logo">CLICK<b>IT</b> STORY</div><div class="lang">العربية</div></div>
+        <div class="body">
+          <div class="poster"><span>Sample Show</span></div>
+          <div class="chip">FREE WITH AN ACCOUNT</div>
+          <h1 style="font-size:24px">Sign in to watch Sample Show</h1>
+          <label>Email</label><div class="field">lina@example.com</div>
+          <div class="btn">Send code</div>
+          <div class="link">Use a password instead</div>
+        </div></div></div>
+    <div class="opt"><div class="tag">B <small>Plain sign-in</small></div>
+      <div class="phone"><div class="nav"><div class="logo">CLICK<b>IT</b> STORY</div><div class="lang">العربية</div></div>
+        <div class="body">
+          <h1>Sign in or join</h1><p class="sub">Enter your email. We'll send you a 6-digit code.</p>
+          <label>Email</label><div class="field">lina@example.com</div>
+          <div class="btn">Send code</div>
+          <div class="link">Use a password instead</div>
+        </div></div></div>
+  </div>
+  <p class="note" style="margin-top:12px">Both: link previews in WhatsApp/X still show the show's title and poster (crawlers get the meta tags, never the episodes).</p>
+</section>
+
+<!-- Q7 admin code -->
+<section id="q7">
+  <h2>Q7 — Admin authenticator step (first time: set up; after that: 6-digit code)</h2>
+  <p class="q">Example: Nejib signs in and opens /admin. A: a full page asks for the authenticator code before any admin screen loads; first time it shows the QR to scan. B: the admin page loads blurred behind a pop-up that asks for the code.</p>
+  <div class="row">
+    <div class="opt"><div class="tag rec">A (recommended) <small>Full page before /admin — first visit</small></div>
+      <div class="phone"><div class="nav"><div class="logo">CLICK<b>IT</b> STORY <span class="muted">ADMIN</span></div><div class="lang">EN</div></div>
+        <div class="body">
+          <div class="steps"><div class="on"></div><div></div></div>
+          <h1 style="font-size:24px">Protect your admin account</h1><p class="sub">Scan with Google Authenticator, 1Password or Microsoft Authenticator.</p>
+          <div class="qr"></div>
+          <p class="muted center">Can't scan? Key: JBSW Y3DP EHPK 3PXP</p>
+          <div class="btn">Next: enter the code</div>
+        </div></div></div>
+    <div class="opt"><div class="tag rec">A (recommended) <small>Every later admin sign-in</small></div>
+      <div class="phone"><div class="nav"><div class="logo">CLICK<b>IT</b> STORY <span class="muted">ADMIN</span></div><div class="lang">EN</div></div>
+        <div class="body">
+          <h1 style="font-size:24px">Enter your authenticator code</h1><p class="sub">Open your authenticator app and type the 6-digit code for Clickit Story.</p>
+          <div class="boxes"><div>2</div><div>9</div><div>0</div><div>4</div><div>1</div><div class="f">7</div></div>
+          <div class="btn">Verify</div>
+          <div class="link">Lost your phone? Contact Koss</div>
+        </div></div></div>
+    <div class="opt"><div class="tag">B <small>Pop-up over the admin page</small></div>
+      <div class="phone"><div class="nav"><div class="logo">CLICK<b>IT</b> STORY <span class="muted">ADMIN</span></div><div class="lang">EN</div></div>
+        <div class="adminbg"><div class="bar" style="width:60%"></div><div class="bar"></div><div class="bar"></div><div class="bar" style="width:80%"></div><div class="bar"></div><div class="bar"></div><div class="bar" style="width:70%"></div></div>
+        <div class="overlay"><div class="modal">
+          <h1 style="font-size:20px">Authenticator code</h1>
+          <div class="boxes" style="gap:6px"><div style="width:40px">2</div><div style="width:40px">9</div><div style="width:40px">0</div><div style="width:40px">4</div><div style="width:40px">1</div><div style="width:40px" class="f">7</div></div>
+          <div class="btn">Verify</div>
+        </div></div></div></div>
+  </div>
+</section>
+
+<!-- Q12 email look -->
+<section id="q12">
+  <h2>Q12 — Look of every Clickit email (auth and app)</h2>
+  <p class="q">Example: the sign-in code email. A: black header with the logo, white body, yellow button — reads well in every mail app, including dark mode. B: fully black like the site.</p>
+  <div class="row">
+    <div class="opt"><div class="tag rec">A (recommended) <small>Black header, white body</small></div>
+      <div class="mail"><div class="client"><b>Clickit Story</b> &lt;no-reply@clickitstory.ae&gt;<br>Your Clickit Story code: 481523</div>
+        <div class="m-light"><div class="hd"><span class="logo" style="color:#F4F4F4">CLICK<b>IT</b> STORY</span></div>
+          <div class="in"><h3>Your sign-in code</h3><p>Enter this code on Clickit Story. It works for 15 minutes.</p>
+            <div class="code">481523</div>
+            <p>Didn't ask for it? Ignore this email; nobody can sign in without the code.</p></div>
+          <div class="ft">Clickit Story · Spacelight Studios FZ LLC, Abu Dhabi<br>Help: clickitstory.ae/support</div></div></div></div>
+    <div class="opt"><div class="tag">B <small>Fully black</small></div>
+      <div class="mail"><div class="client"><b>Clickit Story</b> &lt;no-reply@clickitstory.ae&gt;<br>Your Clickit Story code: 481523</div>
+        <div class="m-dark"><div class="hd"><span class="logo">CLICK<b>IT</b> STORY</span></div>
+          <div class="in"><h3>Your sign-in code</h3><p>Enter this code on Clickit Story. It works for 15 minutes.</p>
+            <div class="code">481523</div>
+            <p>Didn't ask for it? Ignore this email; nobody can sign in without the code.</p></div>
+          <div class="ft">Clickit Story · Spacelight Studios FZ LLC, Abu Dhabi<br>Help: clickitstory.ae/support</div></div></div></div>
+    <div class="opt"><div class="tag rec">A in Arabic <small>same layout, right-to-left</small></div>
+      <div class="mail" dir="rtl"><div class="client" dir="rtl"><b>Clickit Story</b> &lt;no-reply@clickitstory.ae&gt;<br>رمز الدخول إلى Clickit Story: 481523</div>
+        <div class="m-light"><div class="hd"><span class="logo" style="color:#F4F4F4">CLICK<b>IT</b> STORY</span></div>
+          <div class="in"><h3>رمز الدخول</h3><p>أدخل هذا الرمز في Clickit Story. صالح لمدة 15 دقيقة.</p>
+            <div class="code" dir="ltr">481523</div>
+            <p>لم تطلب الرمز؟ تجاهل هذه الرسالة.</p></div>
+          <div class="ft">Clickit Story · Spacelight Studios FZ LLC، أبوظبي</div></div></div></div>
+  </div>
+</section>
+
+</body>
+</html>
