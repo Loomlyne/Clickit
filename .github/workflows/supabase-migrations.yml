@@ -1,7 +1,9 @@
 name: Supabase Migrations
 
-# Auto-applies pending Supabase migrations to the production database whenever
-# migration files change on main. Runs in parallel with the Vercel app deploy.
+# Applies pending Supabase migrations to the production database. MANUAL ONLY:
+# live migrations are the Clickit control session's job, on Koss's word
+# (owner rule, 2026-10-20). It never runs on push; start it from the Actions tab
+# ("Run workflow") only after the controller has the go-ahead.
 #
 # Requires one GitHub repo secret:
 #   SUPABASE_DB_URL = the production project's Session-pooler connection string
@@ -16,11 +18,7 @@ name: Supabase Migrations
 #   - Job timeout caps a hung/abused run.
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'supabase/migrations/**'
-  workflow_dispatch: {} # allow manual run from the Actions tab
+  workflow_dispatch: {} # manual only; no push trigger (owner rule 2026-10-20)
 
 # Default the whole workflow to the minimum scope; the migrate job needs nothing
 # more than reading the checked-out code.
