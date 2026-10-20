@@ -97,7 +97,7 @@ Plans:
 - [x] 02-09-PLAN.md — W3: Custom next/image loader and media-origin rules, next.config images
 - [ ] 02-10-PLAN.md — W4: Remote spike: [OWNER] account resources, [CONTROL] first workers.dev deploy, secrets and dashboards, early CPU sample
 - [x] 02-11-PLAN.md — W3: Turnstile server side, fail-closed limiter, captchaToken on auth actions, BotID removed from server and proxy
-- [ ] 02-12-PLAN.md — W4: Upload infrastructure: kinds, magic bytes, aws4fetch presign, finalize with delete-on-failure
+- [x] 02-12-PLAN.md — W4: Upload infrastructure: kinds, magic bytes, aws4fetch presign, finalize with delete-on-failure
 - [ ] 02-13-PLAN.md — W4: Turnstile widget on sign-in, sign-up, reset, contact, newsletter as signed; BotID client removed
 - [ ] 02-14-PLAN.md — W5: Vercel code removal, CSP builder, Cloudflare Web Analytics beacon, no-vercel test
 - [ ] 02-15-PLAN.md — W5: Image finalize core and actions (artwork, site image, social icon, cast, avatar)
@@ -201,7 +201,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 |-------|----------------|--------|-----------|
 | 1. Safe Ground | 0/TBD | Not started | - |
 | 1.1. Admin Actions Hardening (INSERTED) | 12/13 | In Progress|  |
-| 2. Worker and R2 Media on workers.dev | 10/22 | In Progress|  |
+| 2. Worker and R2 Media on workers.dev | 11/22 | In Progress|  |
 | 3. Production Cutover | 0/TBD | Not started | - |
 | 4. Design System Truth | 0/TBD | Not started | - |
 | 5. Accounts and Email | 0/TBD | Not started | - |
