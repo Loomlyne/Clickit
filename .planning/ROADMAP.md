@@ -86,11 +86,11 @@ Plans:
 **Plans**: 22 plans (11 waves; run one plan at a time, never two builds at once). Proposed roadmap/requirement edits 1-9 are in 02-CONTEXT.md, not applied until Koss signs them (plan 02-05).
 
 Plans:
-- [ ] 02-01-PLAN.md — W1: Local spike: 01.1 precondition, [OWNER] package check, Next 16.4.2 + OpenNext 1.20.12 upgrade, base wrangler/OpenNext config, account guard, proxy.ts preview check, bundle/startup, cron URL
+- [x] 02-01-PLAN.md — W1: Local spike: 01.1 precondition, [OWNER] package check, Next 16.4.2 + OpenNext 1.20.12 upgrade, base wrangler/OpenNext config, account guard, proxy.ts preview check, bundle/startup, cron URL
 - [ ] 02-02-PLAN.md — W2: Runbook upkeep and the R2 CORS rule builder
 - [ ] 02-03-PLAN.md — W2: Media Worker clickit-media (Range/206, 304, ETag, AVIF/WebP negotiation, original fallback, allowlist, SVG CSP)
 - [ ] 02-04-PLAN.md — W2: Pure security helpers: constant-time cron auth, cron map, CF-Connecting-IP, fail-closed rate limit, Turnstile siteverify
-- [ ] 02-05-PLAN.md — W1: [OWNER] Mockups signed (Turnstile placement, upload states) + roadmap edits 1-9 signed and applied as a planning note
+- [x] 02-05-PLAN.md — W1: [OWNER] Mockups signed (Turnstile placement, upload states) + roadmap edits 1-9 signed and applied as a planning note
 - [ ] 02-06-PLAN.md — W3: Build targets, stamp and deploy guard, cf:* scripts, .env.example
 - [ ] 02-07-PLAN.md — W3: Worker port: scheduled() to cron routes, bindings accessor, _headers, site-url without Vercel fallbacks, check scripts
 - [ ] 02-08-PLAN.md — W3: Copy script: dry-run report, sharp WebP/AVIF variants, faststart remux, idempotency, checksum reports, verify-every-object script
@@ -201,7 +201,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 |-------|----------------|--------|-----------|
 | 1. Safe Ground | 0/TBD | Not started | - |
 | 1.1. Admin Actions Hardening (INSERTED) | 12/13 | In Progress|  |
-| 2. Worker and R2 Media on workers.dev | 0/22 | Planned (plan gate signed 2026-10-20) | - |
+| 2. Worker and R2 Media on workers.dev | 2/22 | In Progress|  |
 | 3. Production Cutover | 0/TBD | Not started | - |
 | 4. Design System Truth | 0/TBD | Not started | - |
 | 5. Accounts and Email | 0/TBD | Not started | - |

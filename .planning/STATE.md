@@ -75,6 +75,9 @@ Recent decisions affecting current work:
 - [Phase 01.1]: runAdminAction revalidates in finally on success/wrote/throw; revalidate errors logged only
 - [Phase 01.1]: Plan 11: revalidation show id comes from core result; client id only as UUID-checked fallback
 - [Phase 01.1]: Hero cores share one tail: audit row written before staged media deletion commits; audit failure restores config and rolls back
+- [Phase 02-01]: proxy.ts runs as the OpenNext Node middleware under local preview; no edge middleware.ts fallback needed
+- [Phase 02-01]: Worker gzip bundle is 3079.28 KiB, 7 KiB over 3 MiB; confirm the real Free size limit at the plan 02-10 deploy
+- [Phase 02-01]: react-hooks/set-state-in-effect set to warn after the eslint-config-next 16.4.2 bump; refactor deferred (phase 02 deferred-items.md)
 
 ### Pending Todos
 
@@ -102,6 +105,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-20T00:46:09.826Z
-Stopped at: Completed 01.1-12-PLAN.md
+Last session: 2026-10-20T10:35:00Z
+Stopped at: Completed 02-01-PLAN.md (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above still shows 01.1, controller owns it)
 Resume file: None
