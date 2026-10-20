@@ -6,7 +6,9 @@ import Image from 'next/image'
 import { Upload, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { uploadSiteImage, removeSiteImage } from '@/app/[locale]/admin/actions'
+import { finalizeSiteImageUpload, removeSiteImage } from '@/app/[locale]/admin/actions'
+import { uploadImageDirect, type UploadProgress } from '@/lib/browser-upload'
+import { UploadStatus, notifyUploadError, notifyUploaded } from '@/components/admin/upload-status'
 import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 /**
@@ -36,35 +38,43 @@ export function ImageUploadField({
   const resolvedCurrentUrl = stripStorageCacheBust(currentUrl) ?? currentUrl
   const [url, setUrl] = useState<string | null>(resolvedCurrentUrl)
   const [busy, setBusy] = useState(false)
+  const [progress, setProgress] = useState<UploadProgress | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const t = useTranslations('admin.settings')
 
-  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.size > maxMb * 1024 * 1024) {
-      toast.error(t('imageTooLarge', { max: maxMb }))
-      return
-    }
-    setBusy(true)
+  // Browser -> R2 directly (requestMediaUpload, PUT, finalize); the finalize action
+  // writes the app_config column and the audit row.
+  async function uploadFile(file: File) {
+    setProgress({ fileName: file.name, fileSize: file.size, percent: 0, phase: 'uploading', variantCount: 0 })
     try {
-      const fd = new FormData()
-      fd.set('file', file)
-      fd.set('kind', kind)
-      const result = await uploadSiteImage(fd)
-      if (!result.success) {
-        toast.error(result.error ?? t('uploadFailed'))
+      const result = await uploadImageDirect({
+        file,
+        kind: 'site-image',
+        slot: kind,
+        finalize: ({ key, variantKeys }) => finalizeSiteImageUpload({ kind, key, variantKeys }),
+        onProgress: setProgress,
+      })
+      if (!result.ok) {
+        notifyUploadError(result.error, {
+          retry: () => void uploadFile(file),
+          tooLargeMessage: t('imageTooLarge', { max: maxMb }),
+        })
         return
       }
-      const publicUrl = result.data ?? null
-      setUrl(
-        publicUrl ? stripStorageCacheBust(publicUrl) ?? publicUrl : null
-      )
-      toast.success(t('uploaded'))
+      setUrl(stripStorageCacheBust(result.url) ?? result.url)
+      notifyUploaded({ message: t('uploaded'), safariFallback: result.safariFallback })
+    } catch {
+      toast.error(t('uploadFailed'))
     } finally {
-      setBusy(false)
+      setProgress(null)
       if (inputRef.current) inputRef.current.value = ''
     }
+  }
+
+  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    void uploadFile(file)
   }
 
   async function onRemove() {
@@ -108,7 +118,9 @@ export function ImageUploadField({
         </div>
       )}
 
-      {busy ? (
+      {progress ? (
+        <UploadStatus progress={progress} />
+      ) : busy ? (
         <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] px-4 py-3 text-sm">
           <Loader2 className="size-4 animate-spin" />
           {t('working')}

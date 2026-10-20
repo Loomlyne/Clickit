@@ -17,9 +17,11 @@ import {
 } from '@/components/ui/select'
 import {
   updateFooterContent,
-  uploadSocialIcon,
+  finalizeSocialIconUpload,
 } from '@/app/[locale]/admin/actions'
 import type { FooterContent, SocialLinkItem } from '@/lib/config'
+import { uploadImageDirect } from '@/lib/browser-upload'
+import { notifyUploadError, notifyUploaded } from '@/components/admin/upload-status'
 import { SOCIAL_PLATFORMS } from '@/lib/social-platforms'
 import { stripStorageCacheBust } from '@/lib/supabase-media'
 import { SettingsCard, SettingsField } from './settings-card'
@@ -255,24 +257,37 @@ function SocialIconUpload({
 }) {
   const [busy, setBusy] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const t = useTranslations('admin.settings')
 
-  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
+  // Browser -> R2 directly. The icon is a small 36px control with no zone, so the
+  // existing spinner stays and messages are toasts. The finalize action writes no
+  // database row: the returned url is saved with the footer form, as before.
+  async function uploadFile(file: File) {
     setBusy(true)
     try {
-      const fd = new FormData()
-      fd.set('file', file)
-      const result = await uploadSocialIcon(fd)
-      if (!result.success) {
-        toast.error(result.error ?? 'Upload failed')
+      const result = await uploadImageDirect({
+        file,
+        kind: 'social-icon',
+        finalize: ({ key, variantKeys }) => finalizeSocialIconUpload({ key, variantKeys }),
+      })
+      if (!result.ok) {
+        notifyUploadError(result.error, { retry: () => void uploadFile(file) })
         return
       }
-      onUploaded(result.data ?? '')
+      onUploaded(result.url)
+      notifyUploaded({ message: t('uploaded'), safariFallback: result.safariFallback })
+    } catch {
+      toast.error(t('uploadFailed'))
     } finally {
       setBusy(false)
       if (inputRef.current) inputRef.current.value = ''
     }
+  }
+
+  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    void uploadFile(file)
   }
 
   return (

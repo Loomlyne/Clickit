@@ -16,8 +16,10 @@ import { Button } from '@/components/ui/button'
 import {
   createShowVideoUpload,
   saveShowVideoUpload,
-  uploadArtwork,
+  finalizeArtworkUpload,
 } from '@/app/[locale]/admin/actions'
+import { uploadImageDirect, type UploadProgress } from '@/lib/browser-upload'
+import { UploadStatus, notifyUploadError, notifyUploaded } from '@/components/admin/upload-status'
 import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
 import {
@@ -51,6 +53,7 @@ export function HeroMediaPicker({
   const initialMode: Mode = currentVideoType ?? 'image'
   const [mode, setMode] = useState<Mode>(initialMode)
   const [uploading, setUploading] = useState(false)
+  const [imageProgress, setImageProgress] = useState<UploadProgress | null>(null)
   const [youtubeInput, setYoutubeInput] = useState(
     currentVideoType === 'youtube' ? (currentVideoUrl ?? '') : ''
   )
@@ -68,33 +71,44 @@ export function HeroMediaPicker({
   const resolvedVideoUrl =
     resolveSupabaseVideoUrl(currentVideoUrl) ?? currentVideoUrl
 
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error(t('imageTooLarge'))
-      return
-    }
+  // Hero image: browser -> R2 directly (02-17). commit:false keeps today's behaviour:
+  // the drawer holds the new URL and writes it on Save.
+  async function uploadHeroImage(file: File) {
     setUploading(true)
+    setImageProgress({ fileName: file.name, fileSize: file.size, percent: 0, phase: 'uploading', variantCount: 0 })
     try {
-      const formData = new FormData()
-      formData.set('file', file)
-      formData.set('showId', showId)
-      formData.set('slot', imageSlot)
-      const result = await uploadArtwork(formData)
-      if (!result.success) {
-        toast.error(result.error ?? t('uploadFailed'))
+      const result = await uploadImageDirect({
+        file,
+        kind: 'artwork',
+        slot: imageSlot,
+        showId,
+        finalize: ({ key, variantKeys }) =>
+          finalizeArtworkUpload({ showId, slot: imageSlot, key, variantKeys, commit: false }),
+        onProgress: setImageProgress,
+      })
+      if (!result.ok) {
+        notifyUploadError(result.error, {
+          retry: () => void uploadHeroImage(file),
+          tooLargeMessage: t('imageTooLarge'),
+        })
         return
       }
-      onImageChange(result.data!)
+      onImageChange(result.url)
       onVideoChange(null)
-      toast.success(t('uploadHeroSuccess', { label }))
+      notifyUploaded({ message: t('uploadHeroSuccess', { label }), safariFallback: result.safariFallback })
     } catch {
       toast.error(t('uploadFailed'))
     } finally {
+      setImageProgress(null)
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
+  }
+
+  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    void uploadHeroImage(file)
   }
 
   async function handleMp4Upload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -275,10 +289,16 @@ export function HeroMediaPicker({
         )}
 
         {uploading ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60">
-            <Loader2 className="size-6 animate-spin text-white/70" />
-            <p className="text-xs text-white/60">{t('uploadingVideo')}</p>
-          </div>
+          imageProgress ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/60 p-3">
+              <UploadStatus progress={imageProgress} className="w-full" />
+            </div>
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60">
+              <Loader2 className="size-6 animate-spin text-white/70" />
+              <p className="text-xs text-white/60">{t('uploadingVideo')}</p>
+            </div>
+          )
         ) : hasContent ? (
           <>
             {mediaPreview}

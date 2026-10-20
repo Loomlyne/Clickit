@@ -10,9 +10,11 @@ import { Label } from '@/components/ui/label'
 import {
   addCastMember,
   deleteCastMember,
-  uploadCastImage,
+  finalizeCastImageUpload,
 } from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
+import { uploadImageDirect, type UploadProgress } from '@/lib/browser-upload'
+import { UploadStatus, notifyUploadError, notifyUploaded } from '@/components/admin/upload-status'
 import type { Database } from '@/lib/database.types'
 import { stripStorageCacheBust } from '@/lib/supabase-media'
 
@@ -28,6 +30,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
   const tCommon = useTranslations('common')
   const [cast, setCast] = useState(initialCast)
   const [adding, setAdding] = useState(false)
+  const [progress, setProgress] = useState<UploadProgress | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [name, setName] = useState('')
   const [role, setRole] = useState('')
@@ -57,16 +60,35 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
     let uploadedImageUrl: string | null = null
 
     if (imageFile) {
-      const formData = new FormData()
-      formData.set('file', imageFile)
-      formData.set('showId', showId)
-      const uploadResult = await uploadCastImage(formData)
-      if (!uploadResult.success) {
+      // Browser -> R2 directly; the finalize action checks the object and returns its URL.
+      // No cast row exists yet, so the URL is saved with addCastMember below.
+      setProgress({ fileName: imageFile.name, fileSize: imageFile.size, percent: 0, phase: 'uploading', variantCount: 0 })
+      let uploadResult: Awaited<ReturnType<typeof uploadImageDirect>>
+      try {
+        uploadResult = await uploadImageDirect({
+          file: imageFile,
+          kind: 'cast-image',
+          showId,
+          finalize: ({ key, variantKeys }) => finalizeCastImageUpload({ showId, key, variantKeys }),
+          onProgress: setProgress,
+        })
+      } catch {
+        setProgress(null)
         setAdding(false)
-        toast.error(uploadResult.error || t('toastImageUploadFailed'))
+        toast.error(t('toastImageUploadFailed'))
         return
       }
-      uploadedImageUrl = uploadResult.data ?? null
+      setProgress(null)
+      if (!uploadResult.ok) {
+        setAdding(false)
+        notifyUploadError(uploadResult.error, {
+          retry: () => void handleAdd(),
+          tooLargeMessage: t('toastImageTooLarge'),
+        })
+        return
+      }
+      notifyUploaded({ safariFallback: uploadResult.safariFallback })
+      uploadedImageUrl = uploadResult.url
     }
 
     const result = await addCastMember({
@@ -226,6 +248,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
               </div>
             </div>
           </div>
+          {progress && <UploadStatus progress={progress} />}
           <div className="flex gap-2">
             <Button
               size="sm"

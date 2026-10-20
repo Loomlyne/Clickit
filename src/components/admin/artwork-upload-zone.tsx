@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useTranslations } from 'next-intl'
-import { Upload, Loader2, MoreVertical, Trash2, Replace } from 'lucide-react'
+import { Upload, MoreVertical, Trash2, Replace } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,7 +11,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { uploadArtwork } from '@/app/[locale]/admin/actions'
+import { finalizeArtworkUpload } from '@/app/[locale]/admin/actions'
+import { uploadImageDirect, type UploadProgress } from '@/lib/browser-upload'
+import { UploadStatus, notifyUploadError, notifyUploaded } from '@/components/admin/upload-status'
 import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 interface ArtworkUploadZoneProps {
@@ -41,51 +43,50 @@ export function ArtworkUploadZone({
   label,
   aspectHint,
 }: ArtworkUploadZoneProps) {
-  const [uploading, setUploading] = useState(false)
+  const [progress, setProgress] = useState<UploadProgress | null>(null)
   const resolvedCurrentUrl = stripStorageCacheBust(currentUrl) ?? currentUrl
   const [previewUrl, setPreviewUrl] = useState<string | null>(resolvedCurrentUrl)
   const inputRef = useRef<HTMLInputElement>(null)
   const t = useTranslations('admin.artwork')
+  const tSettings = useTranslations('admin.settings')
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    const maxSize = MAX_SIZE_BYTES[slot]
-    if (file.size > maxSize) {
-      const maxMB = maxSize / (1024 * 1024)
-      toast.error(t('fileTooLarge', { max: maxMB, slot }))
-      return
-    }
-
-    setUploading(true)
-
+  // Browser -> R2 directly (requestMediaUpload, PUT, finalize). commit:false keeps
+  // today's behaviour: the new URL is held by the drawer and written on Save.
+  async function uploadFile(file: File) {
+    const maxMB = MAX_SIZE_BYTES[slot] / (1024 * 1024)
+    setProgress({ fileName: file.name, fileSize: file.size, percent: 0, phase: 'uploading', variantCount: 0 })
     try {
-      const formData = new FormData()
-      formData.set('file', file)
-      formData.set('showId', showId)
-      formData.set('slot', slot)
-
-      const result = await uploadArtwork(formData)
-
-      if (!result.success) {
-        toast.error(
-          t('uploadFailedWithError', {
-            error: result.error ?? t('uploadFailedToast'),
-          })
-        )
+      const result = await uploadImageDirect({
+        file,
+        kind: 'artwork',
+        slot,
+        showId,
+        finalize: ({ key, variantKeys }) =>
+          finalizeArtworkUpload({ showId, slot, key, variantKeys, commit: false }),
+        onProgress: setProgress,
+      })
+      if (!result.ok) {
+        notifyUploadError(result.error, {
+          retry: () => void uploadFile(file),
+          tooLargeMessage: t('fileTooLarge', { max: maxMB, slot }),
+        })
         return
       }
-
-      const publicUrl = result.data!
-      setPreviewUrl(stripStorageCacheBust(publicUrl) ?? publicUrl)
-      onUploadComplete(publicUrl)
+      setPreviewUrl(stripStorageCacheBust(result.url) ?? result.url)
+      onUploadComplete(result.url)
+      notifyUploaded({ message: tSettings('uploaded'), safariFallback: result.safariFallback })
     } catch {
       toast.error(t('uploadFailedToast'))
     } finally {
-      setUploading(false)
+      setProgress(null)
       if (inputRef.current) inputRef.current.value = ''
     }
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    void uploadFile(file)
   }
 
   // Delete nulls the form state only. We do NOT delete the storage file here —
@@ -101,15 +102,13 @@ export function ArtworkUploadZone({
     toast.success(t('clearedToast', { label }))
   }
 
-  // Uploading state
-  if (uploading) {
+  // Uploading state (signed: progress inside the zone, messages as toasts)
+  if (progress) {
     return (
       <div className="space-y-2">
         <p className="text-sm font-medium">{label}</p>
-        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6">
-          <Loader2 className="text-muted-foreground size-6 animate-spin" />
-          <p className="text-muted-foreground text-sm">{t('uploading')}</p>
-        </div>
+        <UploadStatus progress={progress} />
+        <p className="text-muted-foreground text-xs">{aspectHint}</p>
       </div>
     )
   }
