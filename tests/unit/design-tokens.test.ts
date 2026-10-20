@@ -2,6 +2,16 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { buildRadius } from './helpers/ui-system-radius.ts'
+import {
+  SIGNED_TOKENS,
+  SIGNED_FONT_PREFIX,
+  RADIUS_CODEMOD,
+  SHADOW_CODEMOD,
+  STATUS_TONES,
+  normalizeCssValue,
+  contrastRatio,
+} from '../../src/lib/design-truth.ts'
+import { cn } from '../../src/lib/utils.ts'
 
 const css = readFileSync(new URL('../../src/styles/globals.css', import.meta.url), 'utf8')
 const uiConfig = JSON.parse(
@@ -215,4 +225,137 @@ test('surface and text colour keys reference the base palette (no duplicate hex)
   assert.equal(decl(themeInline, '--color-text-secondary'), 'var(--text-dim)')
   assert.equal(decl(themeInline, '--color-text-muted'), 'var(--text-mute)')
   assert.equal(/--color-surface-[1-4]\s*:\s*#/.test(css), false)
+})
+
+// ---------------------------------------------------------------------------
+// design-truth.ts: signed values, codemod maps, normaliser, contrast
+// ---------------------------------------------------------------------------
+
+/** Declaration of a token wherever it lives: :root, @theme static, then @theme inline. */
+function declAnywhere(name: string): string | undefined {
+  return decl(root, name) ?? staticDecl(name) ?? decl(themeInline, name)
+}
+
+test('cn(): named radius utilities beat the standard scale', () => {
+  assert.equal(cn('rounded-lg', 'rounded-card'), 'rounded-card')
+  assert.equal(cn('rounded-full', 'rounded-card'), 'rounded-card')
+  assert.equal(cn('rounded-t-lg', 'rounded-t-panel'), 'rounded-t-panel')
+  assert.equal(cn('rounded-hairline', 'rounded-xs'), 'rounded-xs')
+})
+
+test('cn(): named shadow utilities beat the standard scale', () => {
+  assert.equal(cn('shadow-md', 'shadow-soft'), 'shadow-soft')
+  assert.equal(cn('shadow-popover', 'shadow-inset-hairline'), 'shadow-inset-hairline')
+  assert.equal(cn('drop-shadow-lg', 'drop-shadow-splash'), 'drop-shadow-splash')
+})
+
+test('normalizeCssValue(): hex forms', () => {
+  assert.equal(normalizeCssValue('#fc0'), '#FFCC00')
+  assert.equal(normalizeCssValue(' #ffcc00 '), '#FFCC00')
+  assert.equal(normalizeCssValue('#ffffff14'), 'rgba(255, 255, 255, 0.08)')
+  assert.equal(normalizeCssValue('#ffffffff'), '#FFFFFF')
+})
+
+test('normalizeCssValue(): rgb/rgba forms', () => {
+  assert.equal(normalizeCssValue('rgba(255,255,255,.08)'), 'rgba(255, 255, 255, 0.08)')
+  assert.equal(normalizeCssValue('rgba(255, 255, 255, 0.08)'), 'rgba(255, 255, 255, 0.08)')
+  assert.equal(normalizeCssValue('rgb(255 255 255 / 0.08)'), 'rgba(255, 255, 255, 0.08)')
+  assert.equal(normalizeCssValue('rgb(255, 204, 0)'), '#FFCC00')
+  assert.equal(
+    normalizeCssValue('0 24px 80px rgba(0,0,0,.38)'),
+    '0 24px 80px rgba(0, 0, 0, 0.38)'
+  )
+})
+
+test('normalizeCssValue(): other strings pass through', () => {
+  assert.equal(normalizeCssValue('999px'), '999px')
+  assert.equal(normalizeCssValue(''), '')
+  assert.equal(normalizeCssValue('var(--text-mute)'), 'var(--text-mute)')
+  assert.equal(normalizeCssValue('rgb(var(--ink-legacy-rgb) / 0.96)'), 'rgb(var(--ink-legacy-rgb) / 0.96)')
+})
+
+test('contrastRatio(): WCAG 2.x on the signed pairs', () => {
+  assert.equal(contrastRatio('#F4F4F4', '#101010').toFixed(1), '17.3')
+  assert.equal(contrastRatio('#090909', '#ffcc00').toFixed(1), '13.2')
+  assert.equal(contrastRatio('#A1A1A1', '#101010').toFixed(1), '7.4')
+  assert.equal(contrastRatio('#000000', '#ffffff').toFixed(1), '21.0')
+})
+
+test('SIGNED_TOKENS: every entry equals its declaration in globals.css', () => {
+  const names = Object.keys(SIGNED_TOKENS)
+  assert.ok(names.length >= 60, `expected the full pinned set, got ${names.length}`)
+  for (const name of names) {
+    const actual = declAnywhere(name)
+    assert.notEqual(actual, undefined, `${name} is not declared in globals.css`)
+    assert.equal(normalizeCssValue(actual ?? ''), normalizeCssValue(SIGNED_TOKENS[name]), name)
+  }
+})
+
+test('SIGNED_TOKENS: covers the headline truth', () => {
+  for (const name of ['--bg-0', '--primary', '--primary-foreground', '--radius', '--shadow-popover', '--color-brand-green-safe', '--status-success']) {
+    assert.ok(name in SIGNED_TOKENS, name)
+  }
+  assert.equal(normalizeCssValue(SIGNED_TOKENS['--bg-0']), '#090909'.toUpperCase())
+  assert.equal(SIGNED_FONT_PREFIX, 'var(--font-lbc)')
+})
+
+const NAMED_ROLES = ['chip', 'control', 'shell', 'field', 'card', 'media', 'panel']
+
+/** Resolve a radius utility key (card, md, hairline ...) to px using globals.css only. */
+function resolveRadiusKey(key: string): number {
+  if (NAMED_ROLES.includes(key)) {
+    const viaTheme = decl(themeInline, `--radius-${key}`)
+    const m = /^var\((--uis-r-[a-z]+)\)$/.exec(viaTheme ?? '')
+    assert.ok(m, `--radius-${key} must be var(--uis-r-*) in @theme inline`)
+    return parseInt(decl(root, m[1]) ?? '', 10)
+  }
+  return parseInt(staticDecl(`--radius-${key}`) ?? '', 10)
+}
+
+test('RADIUS_CODEMOD: every row resolves to the bracket px it replaces', () => {
+  assert.ok(RADIUS_CODEMOD.length >= 10)
+  for (const row of RADIUS_CODEMOD) {
+    const toKey = /^rounded(?:-(?:t|b|l|r|s|e|tl|tr|bl|br))?-(.+)$/.exec(row.to)?.[1]
+    assert.ok(toKey, `bad target ${row.to}`)
+    const resolved = resolveRadiusKey(toKey)
+    assert.equal(resolved, row.px, `${row.from} -> ${row.to}`)
+
+    const bracket = /\[(.+)\]$/.exec(row.from)?.[1]
+    assert.ok(bracket, `bad source ${row.from}`)
+    const fromPx = bracket.endsWith('px')
+      ? parseInt(bracket, 10)
+      : parseInt(decl(root, /^var\((.+)\)$/.exec(bracket)?.[1] ?? '') ?? '', 10)
+    assert.equal(fromPx, row.px, `${row.from} px`)
+  }
+  const hairline = RADIUS_CODEMOD.find((r) => r.from === 'rounded-[1px]')
+  assert.equal(hairline?.to, 'rounded-hairline')
+})
+
+test('SHADOW_CODEMOD: every row maps to the token holding the same value', () => {
+  assert.ok(SHADOW_CODEMOD.length >= 10)
+  for (const row of SHADOW_CODEMOD) {
+    const tokenName = `--${row.to}`
+    const tokenValue = staticDecl(tokenName)
+    assert.notEqual(tokenValue, undefined, `${row.to} has no token`)
+    const bracket = /\[(.+)\]$/.exec(row.from)?.[1] ?? ''
+    if (bracket.startsWith('var(')) {
+      assert.equal(bracket, `var(${tokenName})`, row.from)
+      continue
+    }
+    const sourceValue = bracket.replace(/_/g, ' ')
+    const same = normalizeCssValue(sourceValue) === normalizeCssValue(tokenValue ?? '')
+    if (row.changes === 'D-03') assert.equal(same, false, `${row.from} is flagged D-03 but is identical`)
+    else assert.equal(same, true, `${row.from} -> ${row.to}`)
+  }
+  const d03 = SHADOW_CODEMOD.filter((r) => r.changes === 'D-03').map((r) => r.from)
+  assert.deepEqual(d03.sort(), ['shadow-[0_16px_40px_rgba(96,115,255,0.28)]', 'shadow-[0_24px_80px_rgba(0,0,0,0.45)]'].sort())
+})
+
+test('STATUS_TONES: four tones, vars declared in :root, classes renamed', () => {
+  assert.deepEqual(STATUS_TONES.map((t) => t.tone), ['success', 'warning', 'danger', 'neutral'])
+  for (const tone of STATUS_TONES) {
+    assert.notEqual(decl(root, tone.cssVar), undefined, tone.cssVar)
+    assert.equal(tone.oldClasses.length, tone.newClasses.length)
+    for (const cls of tone.newClasses) assert.match(cls, /status-/)
+  }
 })
