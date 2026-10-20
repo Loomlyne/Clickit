@@ -42,6 +42,12 @@ Then wait.
 
 ### R2 buckets and CORS
 
+**Step 4b [KOSS] - enable R2 on the account (once)**
+Why: the API answers code 10042 ("R2 not enabled") for the ClickitStory account today, so Step 5 fails until this is done.
+Where: dash.cloudflare.com, ClickitStory account, R2 Object Storage, "Get started" / "Purchase R2 Plan" (Free tier: 10 GB storage, 1M Class A, 10M Class B operations per month).
+Expected: the R2 Overview page with "Create bucket". If the screen asks for a payment method or a paid plan, stop and report it (rule 6): the controller asks Koss as a priced question before anything is entered.
+Then wait.
+
 **Step 5 [KOSS] - create the media bucket**
 Command: `HOME=/Users/koss/.clickit-cloudflare npx wrangler r2 bucket create clickit-media`
 Expected: "Created bucket 'clickit-media'" (if it says it already exists in this account, report that; do not delete anything).
@@ -78,7 +84,7 @@ Then wait.
 
 **Step 11 [KOSS] - create the workers.dev build env file**
 Command: `umask 077 && open -e /Users/koss/.clickit-cloudflare/clickit.workersdev.env` (create it if TextEdit asks), and type these five lines with the real values:
-`NEXT_PUBLIC_SUPABASE_URL=https://lajguozmtissnnfccmej.supabase.co`, `NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon/publishable key from the Supabase dashboard, API settings>`, `NEXT_PUBLIC_SITE_URL=https://clickit.<SUB>.workers.dev`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY=` (left empty until Step 20), `NEXT_PUBLIC_CF_BEACON_TOKEN=` (left empty until Step 22). Save.
+`NEXT_PUBLIC_SUPABASE_URL=https://lajguozmtissnnfccmej.supabase.co`, `NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon/publishable key from the Supabase dashboard, API settings>`, `NEXT_PUBLIC_SITE_URL=https://clickit.<SUB>.workers.dev`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY=<site key>` (do **Step 20 now, before Step 12**: the deploy guard from plan 02-13 refuses a build with no real Turnstile site key or with a Cloudflare test key), `NEXT_PUBLIC_CF_BEACON_TOKEN=` (left empty until Step 22). Save.
 Check: `grep -c -E '^NEXT_PUBLIC_(SUPABASE_URL|SUPABASE_ANON_KEY|SITE_URL|TURNSTILE_SITE_KEY|CF_BEACON_TOKEN)=' /Users/koss/.clickit-cloudflare/clickit.workersdev.env`
 Expected: `5`. Media origin and the cutover flag are NOT in this file; the build script sets them per target (plan 02-06).
 Then wait.
@@ -130,7 +136,7 @@ Then wait.
 
 ### Turnstile and Web Analytics
 
-**Step 20 [KOSS] - create the Turnstile widget**
+**Step 20 [KOSS] - create the Turnstile widget (run it during Step 11, before the first deploy in Step 12)**
 Where: dash.cloudflare.com, ClickitStory account, Turnstile, Add widget. Name `clickit`; Hostnames: `clickit.<SUB>.workers.dev`, `www.clickitstory.ae`, `clickitstory.ae`; Widget mode: the mode Koss signed in plan 02-05 (recommended: Managed). Free plan.
 Expected: a Site Key and a Secret Key. Put the Site Key (public) into `/Users/koss/.clickit-cloudflare/clickit.workersdev.env` as `NEXT_PUBLIC_TURNSTILE_SITE_KEY=<site key>`. Keep the page open for Step 21.
 Then wait.
@@ -262,3 +268,4 @@ Plan 02-02, 2026-10-20. Checked line by line against 02-CONTEXT.md (D-01..D-05, 
 4. **Script names and flags match plans 02-06 and 02-08** - pass. `cf:deploy:workersdev -- --media-flag off|verified --media-origin --verify-report`, `cf:deploy:media`, `r2:media -- --refresh`/`--execute`, `scripts/media/verify-media-host.mjs --origin --report`. Step 12's guard list extended to match 02-06 checkDeploy (stamp equals HEAD, clean tree, HEAD pushed). The CORS step uses `scripts/cf/r2-cors.mjs --app-origin` (built in this plan).
 5. **Part B P3-1..P3-13** - pass. All 13 marked "Phase 3, not now"; P3-13 (Vercel deletion) is last; P3-6 (Vercel crons off) precedes P3-8 (Worker crons on, schedules equal vercel.json); P3-7 Supabase CAPTCHA; P3-10 DB URL rewrite with backup table and Koss's approval; P3-11 service role rotation.
 6. **No secret value, placeholder secret or real key** - pass. Only `<anon/publishable key ...>` style descriptions and public ids (Supabase project ref, Cloudflare account id). A grep for JWT-shaped strings and Supabase secret-key prefixes prints 0.
+6. **2026-10-20, work session C after plans 02-13/02-19** - fixed. The 02-13 deploy guard refuses a missing Turnstile site key, so Step 20 now runs inside Step 11, before Step 12. Added Step 4b (enable R2; the account answers 10042 today) with the rule-6 payment-method stop.
