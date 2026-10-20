@@ -110,6 +110,7 @@ None yet.
 | admin errors | raw Supabase error messages reach the admin UI; map them to plain messages | open | 2026-10-20 (PR #23 review) |
 | admin tests | no export-level test that every server action calls assertAdmin (only per-action scans) | open | 2026-10-20 (PR #23 review) |
 | admin design | app-level compensation instead of DB transactions (D-05): revisit with an RPC per multi-step write | open | 2026-10-20 (PR #23 review) |
+| admin deletes | shorts, reviews, FAQs and legal pages still hard-delete with no archive-first rule (shorts already has an `archived` column); only the audit snapshot keeps the content | open | 2026-10-20 (PR #23 fix verification L4) |
 
 ## Session Continuity
 

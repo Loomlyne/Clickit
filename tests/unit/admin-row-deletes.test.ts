@@ -13,8 +13,8 @@ const SHORT = id('e')
 function world() {
   const f = createFakeSupabase({
     shows: [{ id: SHOW, title: 'Doctor Care' }],
-    legal_pages: [{ id: LEGAL, slug: 'terms', title: 'Terms', title_ar: 'الشروط', content: 'x' }],
-    faqs: [{ id: FAQ, question: 'How?', question_ar: null, answer: 'Like this', sort_order: 0 }],
+    legal_pages: [{ id: LEGAL, slug: 'terms', title: 'Terms', title_ar: 'الشروط', content: 'Body EN', content_ar: 'نص', sort_order: 1 }],
+    faqs: [{ id: FAQ, question: 'How?', question_ar: null, answer: 'Like this', answer_ar: 'هكذا', sort_order: 0 }],
     reviews: [{ id: REVIEW, show_id: SHOW, user_id: 'user-9', stars: 2, body: 'Too short', created_at: '2026-10-01' }],
     shorts: [{ id: SHORT, title: 'Clip', youtube_video_id: 'abc', channel_name: 'C', is_featured: false, archived: false }],
   })
@@ -102,4 +102,19 @@ test('review: a failed show lookup refuses the delete, no audit row', async () =
   assert.equal(r.success, false)
   assert.equal(f.auditRows().length, 0)
   assert.equal(f.snapshot().reviews!.length, 1)
+})
+
+test('legal page and FAQ snapshots keep the full text so a hard delete stays recoverable', async () => {
+  for (const col of ['content', 'content_ar', 'title', 'title_ar', 'slug']) assert.match(ROW_DELETE.legalPage.columns, new RegExp(`\\b${col}\\b`))
+  for (const col of ['question', 'question_ar', 'answer', 'answer_ar']) assert.match(ROW_DELETE.faq.columns, new RegExp(`\\b${col}\\b`))
+  const a = world()
+  await deleteRowAuditedCore(a.f.client, a.deps, ROW_DELETE.legalPage, LEGAL)
+  const legal = a.f.auditRows()[1]!.diff.snapshot
+  assert.equal(legal.content, 'Body EN')
+  assert.equal(legal.content_ar, 'نص')
+  const b = world()
+  await deleteRowAuditedCore(b.f.client, b.deps, ROW_DELETE.faq, FAQ)
+  const faq = b.f.auditRows()[1]!.diff.snapshot
+  assert.equal(faq.answer, 'Like this')
+  assert.equal(faq.answer_ar, 'هكذا')
 })

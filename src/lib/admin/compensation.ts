@@ -116,6 +116,8 @@ type AuditedDeleteInput = {
 export type AuditedDeleteResult = {
   ok: boolean
   wrote: boolean
+  /** Every step ran; only the closing audit row may have failed. */
+  committed?: boolean
   attemptId?: string
   error?: string
 }
@@ -176,11 +178,12 @@ export async function runAuditedDelete(
     return {
       ok: false,
       wrote: true,
+      committed: true,
       attemptId,
       error:
         input.messages?.terminalFailed?.(attemptId) ??
         `The item was deleted, but the closing audit row could not be written. The pending audit row remains (attempt_id ${attemptId}).`,
     }
   }
-  return { ok: true, wrote: true, attemptId }
+  return { ok: true, wrote: true, committed: true, attemptId }
 }

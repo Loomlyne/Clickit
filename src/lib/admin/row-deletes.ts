@@ -16,8 +16,8 @@ export type RowDeleteSpec = {
 }
 
 export const ROW_DELETE: Record<'legalPage' | 'faq' | 'review' | 'short', RowDeleteSpec> = {
-  legalPage: { table: 'legal_pages', entity: 'legal_page', label: 'legal page', columns: 'id, slug, title, title_ar' },
-  faq: { table: 'faqs', entity: 'faq', label: 'FAQ', columns: 'id, question, question_ar, sort_order' },
+  legalPage: { table: 'legal_pages', entity: 'legal_page', label: 'legal page', columns: 'id, slug, title, title_ar, content, content_ar, sort_order' },
+  faq: { table: 'faqs', entity: 'faq', label: 'FAQ', columns: 'id, question, question_ar, answer, answer_ar, sort_order' },
   review: {
     table: 'reviews',
     entity: 'review',

@@ -19,6 +19,13 @@ const SHOW_PATH = `shows/${SHOW}/hero-desktop-3000.mp4`
 function world(opts: { infoSize?: number; blobSize?: number } = {}) {
   const fake = createFakeSupabase({
     app_config: [{ id: 1, preloader_video_url: OLD_URL }],
+    shows: [
+      {
+        id: SHOW,
+        hero_video_url: `https://cdn.test/site-assets/shows/${SHOW}/hero-desktop-1000.mp4`,
+        hero_video_mobile_url: null,
+      },
+    ],
   })
   const log = { removed: [] as string[][], mirrored: [] as string[], cleaned: [] as string[][], downloads: 0 }
   const ports: VideoUploadPorts = {
@@ -157,4 +164,49 @@ test('show: failed pending audit row drops the upload, nothing mirrored', async 
   assert.equal(r.wrote, false)
   assert.deepEqual(w.log.mirrored, [])
   assert.deepEqual(w.log.removed, [[SHOW_PATH]])
+})
+
+test('preloader: re-sending the live path is refused before any storage call, nothing removed', async () => {
+  const w = world({ infoSize: 30 * MB })
+  const r = await savePreloaderVideoCore(w.ports, w.deps, { path: 'preloader/video-1000.mp4' })
+  assert.equal(r.success, false)
+  assert.equal(r.wrote, false)
+  assert.match(r.error ?? '', /already the live video/)
+  assert.deepEqual(w.log.removed, [])
+  assert.deepEqual(w.log.cleaned, [])
+  assert.equal(w.log.downloads, 0)
+  assert.equal(w.fake.auditRows().length, 0)
+  assert.equal(url(w), OLD_URL)
+})
+
+test('preloader: a failed closing audit row keeps the new video live, still cleans the previous file', async () => {
+  const w = world()
+  w.fake.failOn({ table: 'admin_audit_log', op: 'insert', nth: 2 })
+  const r = await savePreloaderVideoCore(w.ports, w.deps, { path: NEW_PATH })
+  assert.equal(r.success, false)
+  assert.equal(r.wrote, true)
+  assert.match(r.error ?? '', /video was saved, but the closing audit row could not be written/)
+  assert.equal(url(w), `https://cdn.test/site-assets/${NEW_PATH}?v=7`)
+  assert.deepEqual(w.log.removed, [])
+  assert.deepEqual(w.log.cleaned, [['preloader/video-1000.mp4']])
+})
+
+test('show: re-sending a live show video path is refused, nothing removed, no audit', async () => {
+  const w = world({ infoSize: 60 * MB })
+  const live = `shows/${SHOW}/hero-desktop-1000.mp4`
+  const r = await saveShowVideoCore(w.ports, w.deps, { path: live })
+  assert.equal(r.success, false)
+  assert.equal(r.wrote, false)
+  assert.match(r.error ?? '', /already the live video/)
+  assert.deepEqual(w.log.removed, [])
+  assert.equal(w.log.downloads, 0)
+  assert.equal(w.fake.auditRows().length, 0)
+})
+
+test('show: an unknown show is refused before any storage call', async () => {
+  const w = world()
+  const other = 'bbbbbbbb-0000-4000-8000-000000000002'
+  const r = await saveShowVideoCore(w.ports, w.deps, { path: `shows/${other}/hero-mobile-5.mp4` })
+  assert.deepEqual(r, { success: false, error: 'Show not found.', wrote: false })
+  assert.deepEqual(w.log.removed, [])
 })

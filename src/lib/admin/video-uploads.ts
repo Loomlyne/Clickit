@@ -38,6 +38,8 @@ export type VideoUploadPorts = Pick<HeroVideoPorts, 'db' | 'storage' | 'storageP
 type Deps = { audit: AuditWriter; adminUserId: string }
 type UploadResult<T = unknown> = CoreResult<T>
 
+const LIVE_PATH = 'This file is already the live video; upload a new file instead.'
+
 const MESSAGES = {
   pendingFailed: 'Could not write the audit record; the video was not saved.',
   terminalFailed: (attemptId: string) =>
@@ -88,14 +90,16 @@ export async function savePreloaderVideoCore(
   const path = input.path
   if (!isPreloaderVideoUploadPath(path)) return { success: false, error: 'Invalid upload path', wrote: false }
 
-  const checked = await verifiedBlob(ports, path, PRELOADER_VIDEO_LIMIT)
-  if (!checked.ok) return { success: false, error: checked.error, wrote: false }
-  const blob = checked.blob
-
+  // Read the live value first: nothing below may remove or clean up the live file.
   const { data, error } = await ports.db.from('app_config').select('preloader_video_url').eq('id', 1).single()
   if (error || !data) return { success: false, error: error?.message ?? 'Could not load site config', wrote: false }
   const previousUrl = (data as unknown as { preloader_video_url: string | null }).preloader_video_url ?? null
   const previousPath = ports.storagePathFromUrl(previousUrl)
+  if (previousPath === path) return { success: false, error: LIVE_PATH, wrote: false }
+
+  const checked = await verifiedBlob(ports, path, PRELOADER_VIDEO_LIMIT)
+  if (!checked.ok) return { success: false, error: checked.error, wrote: false }
+  const blob = checked.blob
   const publicUrl = `${ports.storage.publicUrl(path)}?v=${ports.now()}`
 
   const writeUrl = (url: string | null) => async () => {
@@ -119,15 +123,24 @@ export async function savePreloaderVideoCore(
     ],
     messages: MESSAGES,
   })
-  // wrote=false only when the pending row failed: nothing ran, so drop the upload.
-  // A failed mirror removes its own source; a failed config write undoes the mirror.
+
+  // cleanup logs its own failure and never throws; a leftover file is swept later.
+  const cleanupPrevious = async () => {
+    if (previousPath && previousPath !== path) await ports.media.cleanup([previousPath])
+  }
   if (!res.ok) {
+    // The new file is live when every step ran and only the closing audit row failed.
+    if (res.committed) {
+      await cleanupPrevious()
+      return { success: false, error: res.error, wrote: true }
+    }
+    // wrote=false only when the pending row failed: nothing ran, so drop the upload.
+    // A failed mirror removes its own source; a failed config write undoes the mirror.
     if (!res.wrote) await ports.storage.remove([path])
     return { success: false, error: res.error, wrote: res.wrote }
   }
 
-  // cleanup logs its own failure and never throws; a leftover file is swept later.
-  if (previousPath && previousPath !== path) await ports.media.cleanup([previousPath])
+  await cleanupPrevious()
   return { success: true, data: publicUrl, wrote: true }
 }
 
@@ -140,6 +153,18 @@ export async function saveShowVideoCore(
   const parsed = parseShowVideoUploadPath(input.path)
   if (!parsed) return { success: false, error: 'Invalid upload path', wrote: false }
   const path = input.path as string
+
+  // Never touch a file the show already serves (a re-sent live path would be removed on failure).
+  const show = await ports.db
+    .from('shows')
+    .select('hero_video_url, hero_video_mobile_url')
+    .eq('id', parsed.showId)
+    .maybeSingle()
+  if (show.error) return { success: false, error: show.error.message, wrote: false }
+  if (!show.data) return { success: false, error: 'Show not found.', wrote: false }
+  const row = show.data as unknown as { hero_video_url: string | null; hero_video_mobile_url: string | null }
+  const livePaths = [row.hero_video_url, row.hero_video_mobile_url].map((u) => ports.storagePathFromUrl(u ?? null))
+  if (livePaths.includes(path)) return { success: false, error: LIVE_PATH, wrote: false }
 
   const checked = await verifiedBlob(ports, path, SHOW_VIDEO_LIMIT)
   if (!checked.ok) return { success: false, error: checked.error, wrote: false }
