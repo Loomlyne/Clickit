@@ -1,0 +1,151 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+
+import {
+  classifyChanges,
+  scanSql,
+} from '../../scripts/migration-guard.mjs'
+
+function kinds(sql: string) {
+  return scanSql(sql).findings.map((f) => f.kind)
+}
+
+test('fixture 1: plain create/alter add column pass', () => {
+  assert.equal(scanSql('create table t (id int);').findings.length, 0)
+  assert.equal(scanSql('alter table t add column x int;').findings.length, 0)
+})
+
+test('fixture 2: non-destructive delete/drop/trunc lookalikes pass', () => {
+  const samples = [
+    'create table c (t_id int references t(id) on delete cascade);',
+    'create table c (t_id int references t(id) on delete set null);',
+    'create policy p on t for delete using (true);',
+    'grant select, delete on t to authenticated;',
+    'alter table t add column deleted_at timestamptz;',
+    'alter table t add column drop_cover_url text;',
+    "select date_trunc('day', now());",
+  ]
+  for (const sql of samples) {
+    assert.equal(scanSql(sql).findings.length, 0, sql)
+  }
+})
+
+test('fixture 3: drop not null/default/identity/expression pass', () => {
+  for (const form of ['not null', 'default', 'identity', 'expression']) {
+    const sql = `alter table t alter column c drop ${form};`
+    assert.equal(scanSql(sql).findings.length, 0, sql)
+  }
+})
+
+test('fixture 4: drop forms are findings on the right line', () => {
+  const stmts = [
+    'DROP TABLE t;',
+    'drop policy if exists p on t;',
+    'alter table t drop column c;',
+    'alter table t drop constraint k;',
+  ]
+  for (const stmt of stmts) {
+    const { findings } = scanSql(`select 1;\n${stmt}\n`)
+    assert.equal(findings.length, 1, stmt)
+    assert.equal(findings[0].kind, 'drop')
+    assert.equal(findings[0].line, 2)
+    assert.equal(findings[0].text, stmt)
+  }
+})
+
+test('fixture 5: same-line waiver passes and records the reason', () => {
+  const stmts = [
+    'DROP TABLE t;',
+    'drop policy if exists p on t;',
+    'alter table t drop column c;',
+    'alter table t drop constraint k;',
+  ]
+  for (const stmt of stmts) {
+    const result = scanSql(`${stmt} -- safe-drop: recreated below\n`)
+    assert.equal(result.findings.length, 0, stmt)
+    assert.equal(result.waived.length, 1, stmt)
+    assert.equal(result.waived[0].reason, 'recreated below')
+    assert.equal(result.waived[0].kind, 'drop')
+    assert.equal(result.waived[0].line, 1)
+  }
+})
+
+test('fixture 6: empty reason, other-line waiver and waiver in a string do not waive', () => {
+  assert.deepEqual(kinds('drop table t; -- safe-drop:\n'), ['drop'])
+  assert.deepEqual(kinds('drop table t; -- safe-drop:   \n'), ['drop'])
+  assert.deepEqual(kinds('-- safe-drop: reason\ndrop table t;\n'), ['drop'])
+  assert.deepEqual(kinds("select '-- safe-drop: x'; drop table t;\n"), ['drop'])
+})
+
+test('fixture 7: keywords inside comments are ignored; lines stay correct', () => {
+  assert.equal(scanSql('-- drop table t\nselect 1;').findings.length, 0)
+  assert.equal(scanSql('/* truncate t */ select 1;').findings.length, 0)
+  assert.equal(
+    scanSql('/* a /* delete from t */ b */ select 1;').findings.length,
+    0,
+  )
+  const { findings } = scanSql('/* line1\nline2\nline3 */\ndrop table t;\n')
+  assert.equal(findings.length, 1)
+  assert.equal(findings[0].line, 4)
+  // text after nested comment close is code again
+  assert.deepEqual(kinds('/* a /* b */ drop table t */ select 1;'), [])
+  assert.deepEqual(kinds('/* a /* b */ c */ drop table t;'), ['drop'])
+})
+
+test('fixture 8: truncate is a finding', () => {
+  assert.deepEqual(kinds('truncate t;'), ['truncate'])
+  assert.deepEqual(kinds('TRUNCATE TABLE t RESTART IDENTITY;'), ['truncate'])
+})
+
+test('fixture 9: delete as DML is a finding', () => {
+  assert.deepEqual(kinds('delete from t'), ['delete-from'])
+  const multi = scanSql('select 1;\ndelete\n from t;')
+  assert.equal(multi.findings.length, 1)
+  assert.equal(multi.findings[0].kind, 'delete-from')
+  assert.equal(multi.findings[0].line, 2)
+  assert.deepEqual(kinds('delete /* c */ from t'), ['delete-from'])
+  assert.deepEqual(
+    kinds('merge into t using s on (t.id = s.id) when matched then delete;'),
+    ['then-delete'],
+  )
+})
+
+test('fixture 10: string and dollar-quoted text is scanned', () => {
+  assert.deepEqual(
+    kinds(
+      'create function f() returns void as $$ begin delete from t; end $$ language plpgsql;',
+    ),
+    ['delete-from'],
+  )
+  assert.deepEqual(
+    kinds('create function g() returns void as $f$\nbegin\n  drop table t;\nend\n$f$ language plpgsql;'),
+    ['drop'],
+  )
+  assert.deepEqual(kinds("execute 'drop table t';"), ['drop'])
+  // comment markers inside a dollar body are still comments (code context)
+  const body = scanSql('do $$ begin\n  -- drop table t\n  null;\nend $$;')
+  assert.equal(body.findings.length, 0)
+})
+
+test('fixture 11: -- inside a string does not start a comment', () => {
+  const { findings } = scanSql("select 'a--b'; drop table t;")
+  assert.equal(findings.length, 1)
+  assert.equal(findings[0].kind, 'drop')
+  // escaped quote inside a string
+  assert.deepEqual(kinds("select 'it''s -- not a comment'; drop table t;"), ['drop'])
+  // E-string honours backslash escape
+  assert.deepEqual(kinds("select E'it\\'s -- x'; drop table t;"), ['drop'])
+  // double-quoted identifier containing --
+  assert.deepEqual(kinds('select "a--b"; drop table t;'), ['drop'])
+})
+
+test('classifyChanges parses name-status -z output', () => {
+  const out = classifyChanges('A\0x.sql\0M\0y.sql\0R100\0old.sql\0new.sql\0D\0z.sql\0')
+  assert.deepEqual(out, [
+    { status: 'A', path: 'x.sql' },
+    { status: 'M', path: 'y.sql' },
+    { status: 'R100', path: 'new.sql', oldPath: 'old.sql' },
+    { status: 'D', path: 'z.sql' },
+  ])
+  assert.deepEqual(classifyChanges(''), [])
+})
