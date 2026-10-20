@@ -40,7 +40,7 @@ PR: pending
 - Node 24 in CI (RESEARCH A3).
 - `supabase/setup-cli` v3.0.1 with CLI 2.119.0 in CI (A5); first proof is the post-merge read-only dry-run.
 - `supabase db reset --local` through the CLI (the local stack belonged to Phase 1.1; proof used a scratch database with psql; runbook step 12).
-- Environments `live-db` and `live-db-plan`, their secrets, the ruleset (runbook steps 3 to 6).
+- Environments `live-db` and `live-db-plan` (branch policy `main`), their secrets, deletion of the repo-level `SUPABASE_DB_URL`, the ruleset (runbook steps 3, 4, 4b, 5, 6).
 - Non-admin push block semantics of the ruleset (A2).
 - First live dry-run (runbook step 8).
 - Supabase plan tier and backup status (runbook step 11).
@@ -49,24 +49,27 @@ PR: pending
 
 ## Plan-gate defaults used (signed by Koss 2026-10-20)
 
-- Second environment `live-db-plan`: created in the runbook (workflow works either way).
+- Second environment `live-db-plan`: created in the runbook (required: the dry-run reads its environment secret).
 - Ruleset extras `non_fast_forward`, `deletion`: not included (literal D-08).
-- Repo secret `SUPABASE_DB_URL`: deleted by the owner after the first good dry-run (runbook step 10).
+- Repo secret `SUPABASE_DB_URL`: deleted by the owner. Timing moved by review CR-02 from "after the first good dry-run" to BEFORE the Phase 1 squash merge (runbook step 4b); Koss signed the deletion, the earlier timing is a change he should see at Ship.
+- `live-db-plan` is mandatory (CR-02); the "if declined, the dry-run reads the repo-level secret" fallback is removed.
 - Break Fast Daily seed days: five weekday names.
 - Supabase CLI pin: bumped to 2.119.0.
 - Approving account for `live-db`: `Loomlyne` (id 223640340).
 
 ## Merge freeze
 
-After this PR's squash merge, no other PR merges to `main` until runbook steps 3 to 6 (`live-db` and `live-db-plan` environments, their secrets, the ruleset) are created and read back. Better still, the controller creates and reads back the environments and ruleset before the squash merge (the plan is signed): GitHub auto-creates a missing environment with no reviewers when a workflow references it, so no `Apply live migrations` dispatch before the readback.
+The Phase 1 squash merge itself waits for the controller runbook's pre-merge block (review CR-02), in this order: create `live-db` (reviewer `Loomlyne`) and `live-db-plan`, both with deployment-branch policy `main` only (step 3); Koss puts the DB URL in both environment secrets (step 4); Koss DELETES the repo-wide `SUPABASE_DB_URL` (step 4b); the controller reads all of it back, including that the repo-level secret is gone (step 5). Why: `workflow_dispatch` runs the workflow from the ref the dispatcher picks, so while a repo-level `SUPABASE_DB_URL` exists a writer can dispatch an edited branch copy (no `environment:`, no "Main only" step) and write to live without approval. The "Main only" steps are diagnostics; the real protection is environment-only secrets plus the `main` branch policy plus the required reviewer.
+
+After the merge, no other PR merges to `main` until the ruleset (step 6) is created and read back. No `Apply live migrations` dispatch before step 5 passes: GitHub auto-creates a missing environment with no reviewers when a workflow references it.
 
 ## Approval gate is procedural
 
 The same GitHub account (`Loomlyne`, Koss's admin token, also on this Mac) both dispatches and approves, so GitHub cannot tell an agent from Koss. The rule: Koss approves in the Actions UI himself; the controller never approves and never calls the `pending_deployments` API (RESEARCH Pitfalls 10 and 11; `prevent_self_review: false` on purpose).
 
-## Controller steps after Ship
+## Controller steps before the merge and after Ship
 
-See `.planning/phases/01-safe-ground/01-CONTROLLER-RUNBOOK.md`. Known conflict: the Phase 2 branch `claude/phase-02-execute-19d86a` edits the same `package.json` scripts block (base wins, re-add `typecheck`, `guard:migrations`).
+See `.planning/phases/01-safe-ground/01-CONTROLLER-RUNBOOK.md` (pre-merge block: steps 2, 3, 4, 4b, 5; then step 1 and the squash merge; then steps 6 to 12). Known conflict: the Phase 2 branch `claude/phase-02-execute-19d86a` edits the same `package.json` scripts block (base wins, re-add `typecheck`, `guard:migrations`).
 
 ## UAT (type/click -> expected)
 

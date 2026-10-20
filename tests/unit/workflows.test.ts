@@ -189,6 +189,15 @@ test('apply: pg_dump_taken input exists and apply fails unless it is true', () =
   assert.match(b, /::error::Take a local pg_dump first/)
 })
 
+test('apply (CR-02): comments name the real protection, not the main-only step', () => {
+  const t = apply()
+  assert.doesNotMatch(t, /main-only step still limits/)
+  assert.doesNotMatch(t, /repo-level\s+#?\s*SUPABASE_DB_URL, and/)
+  assert.match(t, /diagnostics, not protection/)
+  assert.match(t, /ONLY as an environment secret/)
+  assert.match(t, /deployments from `main` only/)
+})
+
 test('apply: pinned CLI version, pinned actions, least privilege, safe concurrency, timeouts', () => {
   const t = apply()
   assert.match(t, /version: 2\.119\.0/)

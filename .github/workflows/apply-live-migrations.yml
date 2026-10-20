@@ -18,12 +18,19 @@ name: Apply live migrations
 #   - The database URL is a secret named SUPABASE_DB_URL (Session-pooler connection
 #     string), passed only through env and never echoed.
 #
-# Environments: `live-db` MUST exist with Koss as required reviewer before the first
-# dispatch (the plan 04 runbook orders this and reads it back); GitHub auto-creates a
-# missing environment WITHOUT reviewers, which would let `apply` run unapproved.
-# `live-db-plan` holds the read-only dry-run secret; if it is not created, GitHub
-# auto-creates it with no rules on first use and the job reads the repo-level
-# SUPABASE_DB_URL, and the main-only step still limits it to main.
+# What protects live (review CR-02): workflow_dispatch runs this file from whatever ref
+# the dispatcher picks, so a branch can carry an edited copy of it. The "Main only"
+# steps below live in that same editable file: they are diagnostics, not protection.
+# The protection is outside the file:
+#   - SUPABASE_DB_URL exists ONLY as an environment secret, in `live-db-plan` (dry-run)
+#     and `live-db` (apply). There is no repo-level copy, so a copy of this workflow
+#     without `environment:` gets no database URL.
+#   - Both environments allow deployments from `main` only (custom deployment-branch
+#     policy), so a branch copy that names them is refused before any secret is read.
+#   - `live-db` requires Koss as reviewer.
+# The runbook creates both environments, sets the secrets, deletes the repo-level
+# secret and reads it all back BEFORE this file reaches main. GitHub auto-creates a
+# missing environment WITHOUT reviewers or branch policy, so no dispatch before that.
 #
 # Security posture:
 #   - Least-privilege GITHUB_TOKEN (read-only; these jobs never write to the repo).

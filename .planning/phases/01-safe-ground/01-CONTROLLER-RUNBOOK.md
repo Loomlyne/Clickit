@@ -1,19 +1,24 @@
 # Phase 1 Controller Runbook: environments, secrets, ruleset, backup, first dry-run
 
-**READ FIRST. GitHub auto-creates a missing environment with NO reviewers when a workflow references it.** The controller must create `live-db` (required reviewer `Loomlyne`) and `live-db-plan`, and the ruleset, and read them back BEFORE the Phase 1 PR is squash-merged. The plan is signed, so the controller may do this now. No `Apply live migrations` dispatch happens before that readback (steps 3, 5, 6). Dispatching while `live-db` is missing would let `apply` run unapproved.
+**READ FIRST. The approval gate is only real once the repo-level `SUPABASE_DB_URL` is gone (review CR-02).** `workflow_dispatch` runs the workflow file from the ref the dispatcher picks, so anyone with write access can push a branch with an edited copy (no `environment:`, no "Main only" step) and dispatch it. While a repo-level `SUPABASE_DB_URL` exists, that copy reads it and writes to live with no dry-run and no approval; a same-repo PR workflow can read it too. The "Main only" steps in the workflow are inside the file such a branch controls, so they are diagnostics, not protection. The real protection is: the secret exists ONLY as an environment secret, in `live-db-plan` and `live-db`, and both environments allow deployments from `main` only (deployment-branch policy), with `live-db` requiring Koss as reviewer. A branch copy that names the environments is refused by the branch policy; a copy that drops `environment:` gets no secret.
 
-Purpose: these are the repo-settings and live steps the Phase 1 work session may not run itself (no live DB, no `gh api` writes, no workflow runs, no settings change). Every step is tagged either `[CONTROLLER after Ship]` (the controller runs it) or `[OWNER]` (one numbered step for Koss in his own terminal or the GitHub UI, then wait). Steps tagged `[CONTROLLER]` only (step 7) are local and read-only against live.
+So BEFORE the Phase 1 PR is squash-merged, in this order: create `live-db` (required reviewer `Loomlyne`, branch policy `main`) and `live-db-plan` (branch policy `main`) (step 3); Koss puts the DB URL in both environment secrets (step 4); Koss DELETES the repo-wide `SUPABASE_DB_URL` (step 4b); the controller reads all of it back (step 5). No squash merge and no `Apply live migrations` dispatch until step 5 passes. GitHub also auto-creates a missing environment with NO reviewers when a workflow references it, which is a second reason the environments must exist first. The plan is signed, so the controller may run these now.
+
+Purpose: these are the repo-settings and live steps the Phase 1 work session may not run itself (no live DB, no `gh api` writes, no workflow runs, no settings change). Every step is tagged `[CONTROLLER before merge]` or `[CONTROLLER after Ship]` (the controller runs it), or `[OWNER]` (one numbered step for Koss in his own terminal or the GitHub UI, then wait). Steps tagged `[CONTROLLER]` only (step 7) are local and read-only against live.
 
 Rules:
 - An agent never approves a deployment (RESEARCH Pitfall 11). Approval is Koss clicking in the Actions UI.
 - No secret, connection string or password goes into chat, a file, a commit or the PR (the repo is public).
 - Heavy local work shares `/Users/koss/.clickit-heavy.lock`.
 - Cloudflare is not involved in this runbook. GitHub account is `Loomlyne` (admin).
-- Scheduling note: steps 3 to 6 may run before the squash merge (the plan is signed) and must be read back before it. Step 1 (check-run readback) comes first for the ruleset, never the other way round.
+- Execution order (step numbers are kept stable because other documents cite them):
+  1. Before the squash merge: step 2 (approving account), step 3 (environments, branch policy `main`), step 4 (environment secrets), step 4b (delete the repo-level secret), step 5 (read back all of it). Stop at the first mismatch.
+  2. Step 1 (check-run names on the PR head), then Koss's Ship, then the squash merge.
+  3. After the merge: step 6 (ruleset; step 1 always before it), step 7 (local backup), step 8 (first dry-run), step 9 (approval rule), step 11 (owner backup check), step 12 (CLI reset proof).
 
 ## 0. Merge freeze
 
-After the Phase 1 squash merge, no other PR merges to `main` until steps 3 to 6 (environments `live-db` and `live-db-plan`, their secrets, the ruleset) are created AND read back as expected. Phase 2 (`claude/phase-02-execute-19d86a`) edits the same `package.json` scripts block: whoever lands second resolves it with base winning, then re-adding `typecheck`, `guard:migrations` and the `gate:local` order.
+The Phase 1 squash merge itself waits until steps 2, 3, 4, 4b and 5 have run and read back as expected. After the merge, no other PR merges to `main` until step 6 (the ruleset) is created AND read back. Phase 2 (`claude/phase-02-execute-19d86a`) edits the same `package.json` scripts block: whoever lands second resolves it with base winning, then re-adding `typecheck`, `guard:migrations` and the `gate:local` order.
 
 ## 1. `[CONTROLLER after Ship]` Precondition: check names exist
 
@@ -25,7 +30,7 @@ gh api repos/Loomlyne/Clickit/commits/<PR-head-sha>/check-runs --jq '.check_runs
 
 Expected: `["gate",15368,"success"]` and `["migration-guard",15368,"success"]`. Stop otherwise.
 
-Then squash merge the PR. The squash carries the new workflow without a `push` trigger, so the old auto-apply cannot fire (Pitfall 8; live already holds all 58 versions, nothing would be pending anyway).
+Then, only if step 5 passed (environments with branch policy `main`, both environment secrets set, NO repo-level `SUPABASE_DB_URL`), squash merge the PR. The squash carries the new workflow without a `push` trigger, so the old auto-apply cannot fire (Pitfall 8; live already holds all 58 versions, nothing would be pending anyway).
 
 ## 2. `[OWNER]` Confirm the approving account
 
@@ -37,18 +42,20 @@ gh api users/Loomlyne --jq .id
 
 Expected `223640340`. If that is not the account Koss approves with, stop and tell the controller; steps 3 and 5 change.
 
-## 3. `[CONTROLLER after Ship]` Create the environments (D-02)
+## 3. `[CONTROLLER before merge]` Create the environments (D-02)
 
-`live-db-plan` is the read-only planning environment (no reviewer, `main` only). Signed by Koss at plan gate (was: pending Koss at plan gate); default = create it (RESEARCH Open Question 1), signed 2026-10-20. If Koss declines: skip the `live-db-plan` commands; the dry-run job then reads the repo-level secret and step 10 is skipped.
+`live-db-plan` is the planning environment for the dry-run job (no reviewer, `main` only). It is mandatory (review CR-02): the dry-run needs its own environment secret because the repo-level secret is deleted in step 4b. Signed by Koss at plan gate (default = create it, RESEARCH Open Question 1, signed 2026-10-20); the earlier "if Koss declines, use the repo-level secret" fallback is removed because it keeps the CR-02 bypass open.
+
+Both environments MUST use a custom deployment-branch policy with the single branch `main` (`custom_branch_policies: true` plus the `name=main` branch policy below). That policy is what stops a branch copy of the workflow (dispatched with `--ref <branch>`) from getting the environment secrets; the "Main only" step in the workflow does not.
 
 ```bash
-# 3a) live-db-plan: no reviewer, main only
+# 3a) live-db-plan: no reviewer, deployments from main only
 gh api --method PUT repos/Loomlyne/Clickit/environments/live-db-plan --input - <<'JSON'
 { "deployment_branch_policy": { "protected_branches": false, "custom_branch_policies": true } }
 JSON
 gh api --method POST repos/Loomlyne/Clickit/environments/live-db-plan/deployment-branch-policies -f name=main -f type=branch
 
-# 3b) live-db: required reviewer Loomlyne, no self-review block, main only
+# 3b) live-db: required reviewer Loomlyne, no self-review block, deployments from main only
 gh api --method PUT repos/Loomlyne/Clickit/environments/live-db --input - <<'JSON'
 {
   "prevent_self_review": false,
@@ -63,14 +70,22 @@ Notes: `protected_branches` and `custom_branch_policies` must be opposites (else
 
 Rollback: `gh api --method DELETE repos/Loomlyne/Clickit/environments/<name>`.
 
-## 4. `[OWNER]` Set the environment secrets from his own terminal
+## 4. `[OWNER]` Set the environment secrets from his own terminal (before merge)
 
 Each command prompts for the value (the Supabase Session-pooler connection string). Nothing in chat or in a file. One line, then wait for the controller's readback; then the second line.
 
 1. `gh secret set SUPABASE_DB_URL --repo Loomlyne/Clickit --env live-db-plan`
 2. `gh secret set SUPABASE_DB_URL --repo Loomlyne/Clickit --env live-db`
 
-## 5. `[CONTROLLER after Ship]` Read back both environments (stop condition)
+## 4b. `[OWNER]` Delete the repo-level secret (before merge, review CR-02)
+
+Only after the controller has read back `SUPABASE_DB_URL` in BOTH environment secret lists (step 4). This replaces the old step 10 ("delete after the first good dry-run"): the dry-run reads only the `live-db-plan` environment secret, so nothing needs the repo-level copy, and while it exists any writer can bypass both environments.
+
+1. `gh secret delete SUPABASE_DB_URL --repo Loomlyne/Clickit`
+
+Never re-add a repo-level `SUPABASE_DB_URL` while `apply-live-migrations.yml` is on `main`; it reopens the bypass.
+
+## 5. `[CONTROLLER before merge]` Read back environments, secrets and the absent repo secret (stop condition)
 
 ```bash
 gh api repos/Loomlyne/Clickit/environments/live-db --jq '{name,reviewers:[.protection_rules[]|select(.type=="required_reviewers")|.reviewers[].reviewer.login],prevent_self_review:([.protection_rules[]|select(.type=="required_reviewers")|.prevent_self_review]|first),bp:.deployment_branch_policy}'
@@ -79,9 +94,10 @@ gh api repos/Loomlyne/Clickit/environments/live-db-plan --jq '{name,reviewers:[.
 gh api repos/Loomlyne/Clickit/environments/live-db-plan/deployment-branch-policies --jq '.branch_policies[]|[.name,.type]'
 gh secret list --repo Loomlyne/Clickit --env live-db
 gh secret list --repo Loomlyne/Clickit --env live-db-plan
+gh secret list --repo Loomlyne/Clickit
 ```
 
-Expected: `live-db` reviewer login `Loomlyne`, `prevent_self_review` false, branch policy `["main","branch"]`; `live-db-plan` no reviewers, branch policy `["main","branch"]`; `SUPABASE_DB_URL` listed in both secret lists. Stop if anything differs. Do not dispatch while `live-db` is missing or has no reviewer.
+Expected: `live-db` reviewer login `Loomlyne`, `prevent_self_review` false, `bp` = `{"protected_branches":false,"custom_branch_policies":true}`, branch policies exactly `["main","branch"]`; `live-db-plan` no reviewers, same `bp`, branch policies exactly `["main","branch"]`; `SUPABASE_DB_URL` listed in both environment secret lists; `SUPABASE_DB_URL` NOT listed by the last command (repo-level secrets). Stop if anything differs: no squash merge and no dispatch until this passes. Do not dispatch while `live-db` is missing or has no reviewer.
 
 ## 6. `[CONTROLLER after Ship]` Create the ruleset on `main` (D-08)
 
@@ -165,13 +181,9 @@ If the dry-run errors (local file sorting before the last remote version, or a r
 
 Koss reads the dry-run summary, then clicks "Review deployments" and Approve in the Actions UI himself. The controller never calls `POST .../pending_deployments` and never approves. The same GitHub account dispatches and approves, so GitHub cannot tell an agent from Koss: this gate is procedural.
 
-## 10. `[OWNER]` Delete the repo-level secret after the first good dry-run
+## 10. Moved to step 4b
 
-Signed by Koss at plan gate (was: pending Koss at plan gate); default = delete (signed 2026-10-20), only if `live-db-plan` exists with its own secret and step 8 passed:
-
-1. `gh secret delete SUPABASE_DB_URL --repo Loomlyne/Clickit`
-
-Rollback: `[OWNER]` re-adds it with `gh secret set SUPABASE_DB_URL --repo Loomlyne/Clickit` (prompts for the value).
+The repo-level secret is now deleted BEFORE the squash merge (step 4b, review CR-02), not after the first dry-run. Koss signed "delete" at the plan gate (2026-10-20); only the timing moved earlier. Nothing to do here.
 
 ## 11. `[OWNER]` SAFE-04 owner gate: plan tier and backups
 
@@ -195,10 +207,12 @@ Then run the count query used in `/Users/koss/.clickit-checks/p1-scratch-proof.s
 | Ruleset | `gh api --method DELETE repos/Loomlyne/Clickit/rulesets/<ID>` |
 | Environment | `gh api --method DELETE repos/Loomlyne/Clickit/environments/<name>` |
 | Environment secret | `[OWNER]` `gh secret set ... --env <name>` again (overwrites) |
-| Repo secret | `[OWNER]` `gh secret set SUPABASE_DB_URL --repo Loomlyne/Clickit` |
+| Repo secret | Do not roll back while `apply-live-migrations.yml` is on `main` (re-adding it reopens the CR-02 bypass). Only together with reverting the workflow, with Koss's word: `[OWNER]` `gh secret set SUPABASE_DB_URL --repo Loomlyne/Clickit` |
 | Workflows and guard | A PR reverting the Phase 1 squash commit (also restores the old push-apply, so only with Koss's word) |
 
 ## 14. Notes
+
+- What actually protects live (review CR-02): the DB URL exists only as an environment secret; both environments accept deployments from `main` only; `live-db` requires Koss's approval. The workflow's "Main only" steps are diagnostics.
 
 - The guard in CI is the base branch copy (`git show HEAD^1`), so a PR cannot weaken the guard that judges it. Residual (Pitfall 9, accepted): the Phase 1 PR itself and PRs that edit `pr-gate.yml` are judged by their own text.
 - Allow-list `to` SHAs in `scripts/migration-guard.mjs` must be refreshed after any later edit of the five neutralised migrations.
