@@ -1,31 +1,29 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
+
 import { Link, useRouter } from '@/i18n/navigation'
-import { AutoplayOverlay } from '@/components/watch/autoplay-overlay'
-import {
-  EpisodeTray,
-  WATCH_TRAY_SNAP_POINTS,
-  type WatchTraySnapPoint,
-} from '@/components/watch/episode-tray'
+import { Button } from '@/components/ui/button'
 import { Tr } from '@/components/i18n/tr'
+import { EpisodeList } from '@/components/watch/episode-list'
+import { WatchActions, useWatchAnnouncer } from '@/components/watch/watch-actions'
 import { useProgressTracker } from '@/hooks/use-progress-tracker'
-import { useIdleTimer } from '@/hooks/use-idle-timer'
-import { useWatchlist } from '@/hooks/use-watchlist'
-import { useLikes } from '@/hooks/use-likes'
-import { toast } from 'sonner'
+import { formatClock, isolate } from '@/lib/i18n-format'
 import {
-  ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
-  Bookmark,
-  Heart,
-  Share2,
-} from 'lucide-react'
+  nextPositions,
+  resumeSecondsFor,
+  seedPositions,
+  type PositionEvent,
+  type PositionsMap,
+} from '@/lib/watch/resume'
 import type { ViewEpisode, ViewShow, ViewSeason } from '@/lib/queries'
-import { BRAND_COLOR_BG } from '@/lib/brand-colors'
+
+// Stacked watch page (D-08, UI-SPEC section 3): a solid top bar, the black
+// 16:9 stage, the control bar, then the scrolling episode section. Nothing is
+// ever drawn over the YouTube iframe (YouTube required minimum functionality).
 
 const YouTubePlayer = dynamic(
   () =>
@@ -34,14 +32,16 @@ const YouTubePlayer = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <div
-        className="flex h-full min-h-0 w-full flex-1 items-center justify-center bg-black"
-        aria-hidden
-      />
-    ),
+    loading: () => <div className="size-full bg-black" aria-hidden />,
   }
 )
+
+type ServerProgress = {
+  progressPercent: number
+  completed: boolean
+  progressSeconds: number
+  durationSeconds: number
+}
 
 interface WatchShellProps {
   episode: ViewEpisode
@@ -49,13 +49,39 @@ interface WatchShellProps {
   season: ViewSeason
   seasons: ViewSeason[]
   episodesBySeason: Record<string, ViewEpisode[]>
-  prevEpisode: ViewEpisode | null
-  nextEpisode: ViewEpisode | null
+  /** Unused: the shell derives previous / next from the current episode. */
+  prevEpisode?: ViewEpisode | null
+  /** Unused: the shell derives previous / next from the current episode. */
+  nextEpisode?: ViewEpisode | null
+  /** @deprecated The start comes from `progressMap` (resume rules). */
   initialProgressSeconds?: number
   userId?: string | null
-  initialSaved?: boolean // default false, used by useWatchlist in Plan 02
-  initialLiked?: boolean // default false, used by useLikes in Plan 02
-  progressMap?: Record<string, { progressPercent: number; completed: boolean }>
+  initialSaved?: boolean
+  initialLiked?: boolean
+  progressMap?: Record<string, ServerProgress>
+}
+
+/** A playable episode is live and has a video (the series page rule). */
+function canPlay(episode: ViewEpisode | null): episode is ViewEpisode {
+  return Boolean(episode && episode.isLive && episode.youtubeId)
+}
+
+/** The player's clock, or NaN when the player cannot answer. */
+function readClock(player: YT.Player): { seconds: number; duration: number } {
+  try {
+    return { seconds: player.getCurrentTime(), duration: player.getDuration() }
+  } catch {
+    return { seconds: Number.NaN, duration: Number.NaN }
+  }
+}
+
+/** The YouTube id the player is on, or null. */
+function videoIdOf(player: YT.Player | null): string | null {
+  try {
+    return player?.getVideoData?.()?.video_id || null
+  } catch {
+    return null
+  }
 }
 
 export function WatchShell({
@@ -64,81 +90,53 @@ export function WatchShell({
   season,
   seasons,
   episodesBySeason,
-  prevEpisode,
-  nextEpisode,
-  initialProgressSeconds,
   userId,
   initialSaved = false,
   initialLiked = false,
   progressMap = {},
 }: WatchShellProps) {
-  // currentEpisode in state so Plan 02's handleEpisodeSwitch can update it
-  // without remounting the iframe (videoId prop stays frozen at episode.youtubeId)
-  const [currentEpisode, setCurrentEpisode] = useState(episode)
-  // currentNextEpisode is derived state, recalculated on every episode switch
-  // so autoplay always queues the episode after the *current* one, not the initial prop.
-  const [currentNextEpisode, setCurrentNextEpisode] = useState(nextEpisode)
-  // currentPrevEpisode mirrors currentNextEpisode, recalculated on every episode switch
-  // so the prev arrow always targets the episode before the *current* one.
-  const [currentPrevEpisode, setCurrentPrevEpisode] = useState(prevEpisode)
-  const [playerInstance, setPlayerInstance] = useState<YT.Player | null>(null)
-  const [showAutoplay, setShowAutoplay] = useState(false)
-  const [isPaused, setIsPaused] = useState(false)
-  const [activeSeasonId, setActiveSeasonId] = useState(episode.seasonId)
-  const [traySnapPoint, setTraySnapPoint] = useState<WatchTraySnapPoint>(
-    WATCH_TRAY_SNAP_POINTS[0]
-  )
-
-  // playerRef seeded here, Plan 02 calls playerRef.current.loadVideoById()
-  const playerRef = useRef<YT.Player | null>(null)
-
   const router = useRouter()
   const locale = useLocale()
   const t = useTranslations('watch')
+  const tPlayer = useTranslations('player')
+  const tCommon = useTranslations('common')
+  const { announce, node: announcerNode } = useWatchAnnouncer()
 
-  // episodeId must be currentEpisode.id (state), NOT episode.id (initial prop).
-  // Plan 02 updates currentEpisode before calling loadVideoById so the hook's
-  // save closure targets the new episode immediately.
-  const { forceFlush } = useProgressTracker(
-    playerInstance,
-    currentEpisode.id,
-    userId ?? null
-  )
+  // Current episode in state: a switch swaps the video in the same player
+  // (loadVideoById) instead of remounting the iframe.
+  const [currentEpisode, setCurrentEpisode] = useState(episode)
+  const [activeSeasonId, setActiveSeasonId] = useState(episode.seasonId)
+  const [playerInstance, setPlayerInstance] = useState<YT.Player | null>(null)
+  const playerRef = useRef<YT.Player | null>(null)
+  const boxRef = useRef<HTMLDivElement>(null)
 
-  const { isIdle, resetTimer } = useIdleTimer(3000, {
-    initialIdle: false,
-    startOnMount: true,
-    disabled: isPaused,
-  })
-  const chromeClass = isIdle
-    ? 'opacity-0 pointer-events-none'
-    : 'opacity-100 pointer-events-auto'
-
-  const { isInList, toggle: toggleWatchlist } = useWatchlist(
-    show.id,
-    initialSaved,
-    userId ?? null
-  )
-  const { isLiked: isShowLiked, toggle: toggleLike } = useLikes(
-    show.id,
-    initialLiked,
-    userId ?? null
-  )
-
-  function handleShare() {
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      navigator.share({ url: window.location.href }).catch(() => {
-        /* user dismissed */
-      })
-    } else {
-      navigator.clipboard.writeText(window.location.href).then(() => {
-        toast.success(t('linkCopied'))
-      })
-    }
+  // Per-episode positions for this session (A -> B -> A resumes each one where
+  // it was). The ref is read by handlers; the state drives the list's bars.
+  const [positions, setPositions] = useState<PositionsMap>(() => seedPositions(progressMap))
+  const positionsRef = useRef(positions)
+  function applyPositions(event: PositionEvent) {
+    positionsRef.current = nextPositions(positionsRef.current, event)
+    setPositions(positionsRef.current)
   }
 
-  const currentSeason = seasons.find((s) => s.id === currentEpisode.seasonId)
-  const seasonNumber = currentSeason?.seasonNumber ?? season.seasonNumber
+  // Where the current episode started; > 0 shows "Resumed at m:ss".
+  const [resumeFrom, setResumeFrom] = useState(() => resumeSecondsFor(positions[episode.id]))
+  // The video the player is created with (first mount only; later switches load).
+  const [mountVideo] = useState(() => ({ videoId: episode.youtubeId, startSeconds: resumeFrom }))
+
+  const { forceFlush, resetBaseline } = useProgressTracker(
+    playerInstance,
+    currentEpisode.id,
+    userId ?? null,
+    currentEpisode.youtubeId ?? undefined
+  )
+
+  // The tracker zeroes its baseline whenever the episode or player changes;
+  // put the resume point back after that (declared after the tracker, so it
+  // runs after the tracker's own effect).
+  useEffect(() => {
+    resetBaseline(resumeFrom)
+  }, [currentEpisode.id, playerInstance, resumeFrom, resetBaseline])
 
   // Derive the episode that follows `current` by scanning episodesBySeason.
   // Cross-season: if current is the last episode in its season, returns the
@@ -149,9 +147,7 @@ export function WatchShell({
     if (idx !== -1 && idx < seasonEps.length - 1) return seasonEps[idx + 1]
     const currentSeason = seasons.find((s) => s.id === current.seasonId)
     if (!currentSeason) return null
-    const nextSeason = seasons.find(
-      (s) => s.seasonNumber === currentSeason.seasonNumber + 1
-    )
+    const nextSeason = seasons.find((s) => s.seasonNumber === currentSeason.seasonNumber + 1)
     if (!nextSeason) return null
     const nextSeasonEps = episodesBySeason[nextSeason.id] ?? []
     return nextSeasonEps[0] ?? null
@@ -165,47 +161,73 @@ export function WatchShell({
     if (idx > 0) return seasonEps[idx - 1]
     const currentSeason = seasons.find((s) => s.id === current.seasonId)
     if (!currentSeason) return null
-    const prevSeason = seasons.find(
-      (s) => s.seasonNumber === currentSeason.seasonNumber - 1
-    )
+    const prevSeason = seasons.find((s) => s.seasonNumber === currentSeason.seasonNumber - 1)
     if (!prevSeason) return null
     const prevSeasonEps = episodesBySeason[prevSeason.id] ?? []
     return prevSeasonEps[prevSeasonEps.length - 1] ?? null
   }
 
-  function handleEpisodeSwitch(newEpisode: ViewEpisode) {
-    if (!playerRef.current || !newEpisode.youtubeId) return
-    // 1. Save outgoing position, closure still has old episodeId
+  const prevTarget = findPrevEpisode(currentEpisode)
+  const nextTarget = findNextEpisode(currentEpisode)
+  const prevPlayable = canPlay(prevTarget) ? prevTarget : null
+  const nextPlayable = canPlay(nextTarget) ? nextTarget : null
+
+  // Switch order (D-10): 1. outgoing clock into the map, 2. save it, 3. set
+  // the new episode, 4. tracker baseline at the new start, 5. load at the
+  // episode's own saved position.
+  function handleEpisodeSwitch(target: ViewEpisode) {
+    if (!target.youtubeId) return
+    const player = playerRef.current
+
+    if (player && videoIdOf(player) === currentEpisode.youtubeId) {
+      const clock = readClock(player)
+      applyPositions({
+        type: 'leave',
+        episodeId: currentEpisode.id,
+        seconds: clock.seconds,
+        duration: clock.duration,
+      })
+    }
+
     forceFlush()
-    // 2. Dismiss overlay if it's visible (e.g. user picks a different episode
-    //    while the 8-second countdown is running, Phase 33 episode drawer path)
-    setShowAutoplay(false)
-    // 3. Update episode state and recalculate the next pointer
-    setCurrentEpisode(newEpisode)
-    setCurrentNextEpisode(findNextEpisode(newEpisode))
-    setCurrentPrevEpisode(findPrevEpisode(newEpisode))
-    setActiveSeasonId(newEpisode.seasonId)
-    setIsPaused(false)
-    // 4. Swap video without remounting the iframe
-    playerRef.current.loadVideoById({
-      videoId: newEpisode.youtubeId,
-      startSeconds: 0,
-    })
-    // 5. Sync URL without triggering a Next.js re-render
+
+    const startSeconds = resumeSecondsFor(positionsRef.current[target.id])
+    setCurrentEpisode(target)
+    setActiveSeasonId(target.seasonId)
+    setResumeFrom(startSeconds)
+
+    resetBaseline(startSeconds)
+
+    player?.loadVideoById({ videoId: target.youtubeId, startSeconds })
+
+    // Sync URL without triggering a Next.js re-render
     window.history.replaceState(
       window.history.state ?? null,
       '',
-      `/${locale}/watch/${newEpisode.id}`
+      `/${locale}/watch/${target.id}`
     )
   }
 
-  // Stable callback for AutoplayOverlay, useCallback prevents the overlay's
-  // useEffect([onPlayNow]) from restarting the 8-second countdown on each render.
-  const handlePlayNow = useCallback(() => {
-    setShowAutoplay(false)
-    if (currentNextEpisode) handleEpisodeSwitch(currentNextEpisode)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentNextEpisode])
+  // "Start from the beginning": back to 0:00, the tracker saves from 0, and
+  // focus goes to the stage box so it is not lost when the button unmounts.
+  function handleStartOver() {
+    const player = playerRef.current
+    if (!player) return
+    player.seekTo(0, true)
+    applyPositions({ type: 'restart', episodeId: currentEpisode.id })
+    resetBaseline(0)
+    setResumeFrom(0)
+    boxRef.current?.focus()
+  }
+
+  function handleStateChange(state: number) {
+    if (state === 0) {
+      // Ended: completed, back at 0:00 for the next visit.
+      applyPositions({ type: 'ended', episodeId: currentEpisode.id })
+      forceFlush()
+    }
+    if (state === 2) forceFlush()
+  }
 
   // Bounce back to series if episode has no video
   useEffect(() => {
@@ -214,177 +236,216 @@ export function WatchShell({
     }
   }, [episode.youtubeId, router, show.slug])
 
-  if (!episode.youtubeId) return null
+  if (!episode.youtubeId || !mountVideo.videoId) return null
 
-  const playerBottom = WATCH_TRAY_SNAP_POINTS[0]
+  const currentSeason = seasons.find((s) => s.id === currentEpisode.seasonId)
+  const seasonNumber = currentSeason?.seasonNumber ?? season.seasonNumber
+  const seasonEpisodes = episodesBySeason[currentEpisode.seasonId] ?? []
+  const seasonEpisodeLong = tPlayer('seasonEpisodeLong', {
+    season: seasonNumber,
+    episode: currentEpisode.episodeNumber,
+  })
+  const episodeOfTotal = tPlayer('episodeOfTotal', {
+    current: currentEpisode.episodeNumber,
+    total: Math.max(seasonEpisodes.length, currentEpisode.episodeNumber),
+  })
+
+  const actionProps = {
+    showId: show.id,
+    showTitle: show.title,
+    userId: userId ?? null,
+    initialSaved,
+    initialLiked,
+    announce,
+  }
 
   return (
     <div
-      className="fixed inset-0 h-dvh min-h-svh overflow-hidden bg-black"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      onPointerMove={resetTimer}
-      onPointerDown={resetTimer}
-      onTouchStart={resetTimer}
-      onKeyDown={resetTimer}
+      className="flex h-dvh flex-col overflow-hidden bg-[var(--bg-0)] pb-[env(safe-area-inset-bottom)] [@media(orientation:landscape)_and_(max-height:500px)]:h-auto [@media(orientation:landscape)_and_(max-height:500px)]:min-h-dvh [@media(orientation:landscape)_and_(max-height:500px)]:overflow-visible"
     >
-      {/* Player */}
-      <div
-        className="absolute top-0 right-0 left-0 transition-[bottom] duration-300 ease-out [&>div]:aspect-auto [&>div]:h-full [&>div]:min-h-0"
-        style={{ bottom: playerBottom }}
-      >
-        <YouTubePlayer
-          videoId={episode.youtubeId}
-          brandColor={BRAND_COLOR_BG[show.brandColor]}
-          onReady={(player) => {
-            playerRef.current = player
-            setPlayerInstance(player)
-            if (initialProgressSeconds && initialProgressSeconds > 0) {
-              player.seekTo(initialProgressSeconds, true)
-            }
-          }}
-          onStateChange={(state) => {
-            if (state === 0) {
-              // Video ended
-              setIsPaused(false)
-              forceFlush()
-              if (currentNextEpisode) setShowAutoplay(true)
-            }
-            if (state === 2) {
-              // Paused, flush progress and force chrome visible
-              setIsPaused(true)
-              forceFlush()
-              resetTimer()
-            }
-            if (state === 1) {
-              // Playing/resumed, restart idle countdown
-              setIsPaused(false)
-              resetTimer()
-            }
-          }}
-        />
-      </div>
+      {announcerNode}
 
-      {/* Auto-hide chrome, top overlay strip */}
-      <div
-        className={`fixed top-0 right-0 left-0 z-20 flex items-center justify-between border-b border-[var(--line)] bg-[var(--bg-0)]/90 px-4 [padding-top:max(1rem,env(safe-area-inset-top))] pb-8 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.65)] backdrop-blur-md transition-opacity duration-200 ease-in-out ${chromeClass}`}
-        inert={isIdle}
-      >
-        {/* Left: back to show */}
-        <Link
-          href={`/series/${show.slug}`}
-          className="flex min-h-11 items-center gap-1.5 text-sm text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
-          aria-label={t('backToShow', { title: show.title })}
-          tabIndex={isIdle ? -1 : 0}
+      {/* Top bar: static, solid, in normal flow (never over the stage). */}
+      <header className="flex-none border-b border-[var(--line)] bg-[var(--bg-0)] pt-[env(safe-area-inset-top)]">
+        <div className="flex h-14 items-center gap-2 px-2 md:h-[72px] md:gap-4 md:px-5">
+          <Link
+            href={`/series/${show.slug}`}
+            aria-label={t('backToShow', { title: isolate(show.title) })}
+            className="flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-0)] focus-visible:outline-none md:hidden"
+          >
+            <ArrowLeft className="size-5 rtl:rotate-180" aria-hidden />
+          </Link>
+          <Link
+            href={`/series/${show.slug}`}
+            className="inline-flex min-h-11 max-w-[30%] shrink-0 items-center gap-2 rounded-full text-sm text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-0)] focus-visible:outline-none max-md:hidden"
+          >
+            <ArrowLeft className="size-5 shrink-0 rtl:rotate-180" aria-hidden />
+            <bdi className="truncate">{show.title}</bdi>
+          </Link>
+
+          <div className="min-w-0 flex-1 text-center">
+            <h1 className="truncate text-sm font-bold text-[var(--text)]">
+              <bdi>{currentEpisode.title}</bdi>
+            </h1>
+            <p className="truncate text-[11px] text-[var(--text-mute)]">
+              <span className="md:hidden">
+                <Tr
+                  k="seasonEpisodeShort"
+                  values={{ season: seasonNumber, episode: currentEpisode.episodeNumber }}
+                />
+              </span>
+              <span className="max-md:hidden">{seasonEpisodeLong}</span>
+            </p>
+          </div>
+
+          {/* Share on phones; Watchlist, Like and Share from md up. */}
+          <WatchActions {...actionProps} variant="top" include={['watchlist', 'like', 'share']} />
+        </div>
+      </header>
+
+      {/* Stage: black, 16:9 box centred, letterboxed when wider. */}
+      <div className="relative flex flex-none justify-center bg-black h-[max(200px,min(56.25vw,calc(100dvh_-_356px_-_env(safe-area-inset-top))))] md:h-[max(200px,min(56.25vw,calc(100dvh_-_372px_-_env(safe-area-inset-top))))] [@media(orientation:landscape)_and_(max-height:500px)]:h-[calc(100dvh_-_56px_-_env(safe-area-inset-top))]!">
+        <div
+          ref={boxRef}
+          role="region"
+          aria-label={tPlayer('videoPlayerAria')}
+          tabIndex={-1}
+          className="relative aspect-video h-full min-h-[200px] max-w-full min-w-[200px] outline-none focus:outline-none"
         >
-          <ArrowLeft className="size-5" />
-          {show.title}
-        </Link>
-
-        {/* Center: episode title + S/E badge */}
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-sm leading-none font-medium text-[var(--text)]">
-            {currentEpisode.title}
-          </span>
-          <span className="font-mono text-xs leading-none text-[var(--text-mute)]">
-            <Tr
-              k="seasonEpisodeShort"
-              values={{
-                season: seasonNumber,
-                episode: currentEpisode.episodeNumber,
-              }}
-            />
-          </span>
-        </div>
-
-        {/* Right: action buttons */}
-        <div className="flex items-center">
-          <button
-            onClick={toggleWatchlist}
-            className="flex size-11 items-center justify-center text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
-            aria-label={
-              isInList ? t('removeFromWatchlist') : t('addToWatchlist')
-            }
-            aria-pressed={isInList}
-            tabIndex={isIdle ? -1 : 0}
-          >
-            <Bookmark
-              className={`size-5 ${isInList ? 'fill-[var(--primary)] text-[var(--primary)]' : ''}`}
-            />
-          </button>
-          <button
-            onClick={toggleLike}
-            className="flex size-11 items-center justify-center text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
-            aria-label={isShowLiked ? t('unlikeShow') : t('likeShow')}
-            aria-pressed={isShowLiked}
-            tabIndex={isIdle ? -1 : 0}
-          >
-            <Heart
-              className={`size-5 ${isShowLiked ? 'fill-[var(--primary)] text-[var(--primary)]' : ''}`}
-            />
-          </button>
-          <button
-            onClick={handleShare}
-            className="flex size-11 items-center justify-center text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
-            aria-label={t('shareEpisode')}
-            tabIndex={isIdle ? -1 : 0}
-          >
-            <Share2 className="size-5" />
-          </button>
+          <YouTubePlayer
+            videoId={mountVideo.videoId}
+            startSeconds={mountVideo.startSeconds}
+            onReady={(player) => {
+              playerRef.current = player
+              setPlayerInstance(player)
+            }}
+            onStateChange={handleStateChange}
+          />
         </div>
       </div>
 
-      {/* Auto-hide chrome, prev episode arrow */}
-      {currentPrevEpisode && (
-        <button
-          onClick={() => handleEpisodeSwitch(currentPrevEpisode)}
-          className={`fixed start-3 top-1/2 z-20 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-opacity duration-200 ease-in-out ${chromeClass}`}
+      {/* Control bar under the video. */}
+      <div className="flex-none h-[60px] grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-[var(--line)] bg-[var(--bg-1)] px-3 py-2 md:px-5">
+        <Button
+          variant="outline"
+          size="icon-lg"
+          className="border-[var(--line)] bg-white/[0.04] md:hidden"
+          disabled={!prevPlayable}
+          onClick={() => prevPlayable && handleEpisodeSwitch(prevPlayable)}
           aria-label={t('previousEpisode')}
-          tabIndex={isIdle ? -1 : 0}
         >
-          <ChevronLeft className="size-5 text-white rtl:rotate-180" />
-        </button>
-      )}
+          <ChevronLeft className="size-5 rtl:rotate-180" aria-hidden />
+        </Button>
+        <Button
+          variant="outline"
+          className="min-h-11 px-6 py-2 text-sm font-bold max-md:hidden"
+          disabled={!prevPlayable}
+          onClick={() => prevPlayable && handleEpisodeSwitch(prevPlayable)}
+        >
+          <ChevronLeft className="size-4 rtl:rotate-180" aria-hidden />
+          {tCommon('previous')}
+        </Button>
 
-      {/* Auto-hide chrome, next episode arrow */}
-      {currentNextEpisode && (
-        <button
-          onClick={() => handleEpisodeSwitch(currentNextEpisode)}
-          className={`fixed end-3 top-1/2 z-20 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-opacity duration-200 ease-in-out ${chromeClass}`}
+        <div className="min-w-0 text-center">
+          <p className="truncate text-sm font-bold text-[var(--text)] max-md:hidden">
+            <bdi>{currentEpisode.title}</bdi>
+          </p>
+          <StatusLine
+            resumedAt={
+              resumeFrom > 0
+                ? tPlayer('resumedAt', { time: formatClock(resumeFrom, locale) })
+                : null
+            }
+            freshDesktop={seasonEpisodeLong}
+            freshPhone={episodeOfTotal}
+            startFromBeginning={tPlayer('startFromBeginning')}
+            startOver={tPlayer('startOver')}
+            onStartOver={handleStartOver}
+          />
+        </div>
+
+        <Button
+          variant="outline"
+          size="icon-lg"
+          className="border-[var(--line)] bg-white/[0.04] md:hidden"
+          disabled={!nextPlayable}
+          onClick={() => nextPlayable && handleEpisodeSwitch(nextPlayable)}
           aria-label={t('nextEpisode')}
-          tabIndex={isIdle ? -1 : 0}
         >
-          <ChevronRight className="size-5 text-white rtl:rotate-180" />
-        </button>
-      )}
+          <ChevronRight className="size-5 rtl:rotate-180" aria-hidden />
+        </Button>
+        <Button
+          variant="outline"
+          className="min-h-11 px-6 py-2 text-sm font-bold max-md:hidden"
+          disabled={!nextPlayable}
+          onClick={() => nextPlayable && handleEpisodeSwitch(nextPlayable)}
+        >
+          {t('nextEpisode')}
+          <ChevronRight className="size-4 rtl:rotate-180" aria-hidden />
+        </Button>
+      </div>
 
-      {/* AutoplayOverlay, sibling of player div, not child (cross-origin pointer events) */}
-      {showAutoplay && currentNextEpisode && (
-        <AutoplayOverlay
-          nextEpisode={{
-            id: currentNextEpisode.id,
-            title: currentNextEpisode.title,
-            seasonNumber:
-              seasons.find((s) => s.id === currentNextEpisode.seasonId)
-                ?.seasonNumber ?? 1,
-            episodeNumber: currentNextEpisode.episodeNumber,
-          }}
-          onPlayNow={handlePlayNow}
-          onCancel={() => setShowAutoplay(false)}
-        />
-      )}
-
-      <EpisodeTray
-        show={show}
+      {/* Episode section: the only part that scrolls. */}
+      <EpisodeList
         seasons={seasons}
         episodesBySeason={episodesBySeason}
-        currentEpisode={currentEpisode}
+        currentEpisodeId={currentEpisode.id}
         activeSeasonId={activeSeasonId}
-        activeSnapPoint={traySnapPoint}
-        progressMap={progressMap}
         onSeasonChange={setActiveSeasonId}
-        onSnapPointChange={setTraySnapPoint}
-        onEpisodeSelect={handleEpisodeSwitch}
+        onSelect={handleEpisodeSwitch}
+        progressMap={positions}
+        locale={locale}
+        seasonRowEnd={
+          <WatchActions {...actionProps} variant="season-row" include={['watchlist', 'like']} />
+        }
       />
     </div>
+  )
+}
+
+/**
+ * The control bar's status line (UI-SPEC 3.5). Resumed: "Resumed at m:ss ·"
+ * plus the start-over button; otherwise the fresh-start text. Checker flag e:
+ * only the inner "Resumed at" span truncates; the element that wraps the
+ * button never clips, so its 12px hit-area stretch stays whole.
+ */
+function StatusLine({
+  resumedAt,
+  freshDesktop,
+  freshPhone,
+  startFromBeginning,
+  startOver,
+  onStartOver,
+}: {
+  resumedAt: string | null
+  freshDesktop: string
+  freshPhone: string
+  startFromBeginning: string
+  startOver: string
+  onStartOver: () => void
+}) {
+  if (!resumedAt) {
+    return (
+      <p className="truncate text-sm text-[var(--text-mute)]">
+        <span className="md:hidden">{freshPhone}</span>
+        <span className="max-md:hidden">{freshDesktop}</span>
+      </p>
+    )
+  }
+  return (
+    <p className="flex min-w-0 items-center justify-center text-sm whitespace-nowrap text-[var(--text-mute)]">
+      <span className="min-w-0 truncate">{resumedAt}</span>
+      <span aria-hidden className="shrink-0 px-1">
+        ·
+      </span>
+      <button
+        type="button"
+        className="relative shrink-0 text-[var(--text-dim)] underline underline-offset-4 hover:text-[var(--text)] after:absolute after:-inset-x-3 after:-inset-y-3 after:content-[''] focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:outline-none"
+        onClick={onStartOver}
+      >
+        <span className="md:hidden">{startOver}</span>
+        <span className="max-md:hidden">{startFromBeginning}</span>
+      </button>
+    </p>
   )
 }

@@ -75,12 +75,13 @@ function functionBody(src: string, name: string): string {
 type Tag = { name: string; attrs: string; index: number; closing: boolean; selfClosing: boolean }
 
 /**
- * JSX tags in source order. A tag starts with `<` after whitespace, `(`, `{`,
- * `>`, `?`, `:` or `&`, so TypeScript generics (`useState<number>`) are skipped;
- * `=>` inside attributes does not end a tag.
+ * JSX tags in source order. An opening tag starts with `<` after whitespace,
+ * `(`, `{`, `}`, `>`, `?`, `:` or `&`, so TypeScript generics
+ * (`useState<number>`) are skipped; a closing `</` matches anywhere; `=>`
+ * inside attributes does not end a tag.
  */
 function jsxTags(src: string): Tag[] {
-  const re = /(?<=^|[\s({>?:&])<(\/?)([A-Za-z][\w.]*)\b((?:[^>]|=>)*)>/g
+  const re = /(?:(?<=^|[\s({}>?:&])|(?=<\/))<(\/?)([A-Za-z][\w.]*)\b((?:[^>]|=>)*)>/g
   return [...src.matchAll(re)].map((m) => ({
     name: m[2],
     attrs: m[3],
@@ -210,10 +211,13 @@ for (const path of [SHELL_PATH, LIST_PATH, PLAYER_PATH, UPNEXT_PATH, ERROR_PATH]
 
 test('watch-shell: the start-over button parent never clips its hit area (flag e)', () => {
   const c = code(read(SHELL_PATH))
-  const label = c.search(/'startFromBeginning'|'startOver'/)
-  assert.notEqual(label, -1, 'start-over label present')
-  const button = c.lastIndexOf('<button', label)
-  assert.notEqual(button, -1, 'start-over is a <button>')
+  assert.match(c, /'startFromBeginning'/, 'desktop label used')
+  assert.match(c, /'startOver'/, 'phone label used')
+  // The <button> whose content renders the start-over label.
+  const button = [...c.matchAll(/<button\b/g)]
+    .map((m) => m.index ?? 0)
+    .find((at) => /startFromBeginning|startOver/.test(c.slice(at, c.indexOf('</button>', at))))
+  assert.ok(button !== undefined, 'start-over is a <button>')
   const tag = c.slice(button, c.indexOf('>', c.indexOf('className', button)))
   assert.match(tag, /after:-inset-x-3/, 'hit area stretches 12px sideways')
   assert.match(tag, /after:-inset-y-3/, 'hit area stretches 12px up and down')
