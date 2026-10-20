@@ -1,7 +1,7 @@
 # Phase 5: Accounts and Email - Context
 
 **Gathered:** 2026-10-20
-**Status:** SIGNED 2026-10-20 ~18:05 CET — Koss's answers relayed by the controller (Q1-Q3, Q5-Q11, Q13-Q15, Q17, Q18 = A; Q4 = B; Q12 = C; Q16 n/a; Q19 = B). Q12 picture signature and plan gate are separate (`05-PLAN-GATE.md`).
+**Status:** SIGNED 2026-10-20 ~18:05 CET — Koss's answers relayed by the controller (Q1-Q3, Q5-Q11, Q13-Q15, Q17, Q18 = A; Q4 = B; Q12 = C; Q16 n/a; Q19 = B). Q12 picture signed ~19:00 CET. Plan gate SIGNED ~19:45 CET: G20 A (execute after Phase 2 merges), G21 accepted, G23 A (D-40 two-PR order as quoted), G24 A x4 (second authenticator skippable, lost-phone line plain text, name-step password note plain text, /auth heading fixed "Sign in or join"), G25 A (support reply "within 48 hours").
 **Signed:** each D-xx tagged `(Qn)` now records Koss's answer. Changed from the recommended option: D-03 (Q4 = B), D-27 (Q12 = C), D-33 (Q16 n/a), postal line (Q19 = B); D-16 seed changed by a live fact (the current `app_config.admin_user_id` is a test account).
 
 <domain>
