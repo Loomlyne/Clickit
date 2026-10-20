@@ -45,6 +45,7 @@ import {
   restoreEpisodeCore,
   deleteEpisodePermanentlyCore,
   reorderEpisodeCore,
+  renumberSeasonCore,
 } from '@/lib/admin/episode-lifecycle'
 import {
   commitImportCore,
@@ -1028,6 +1029,33 @@ export async function reorderEpisode(
   )
 }
 
+/**
+ * Renumber a season's episodes 1 to N in their current order (one SQL call,
+ * all or nothing). Archived episodes keep their place in the order.
+ */
+export async function renumberSeason(
+  showId: string,
+  seasonId: string
+): Promise<ActionResult<{ showId?: string; map?: unknown }>> {
+  return runAdminAction(
+    youtubeAdminEnv,
+    (ctx) =>
+      renumberSeasonCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        showId,
+        seasonId
+      ),
+    {
+      fallbackError: 'Failed to renumber episodes',
+      revalidate: (r) => {
+        if (!revalidateShowPage(r, showId)) bumpCatalogCache()
+        updateTag('episodes')
+      },
+    }
+  )
+}
+
 // ---------------------------------------------------------------------------
 // YouTube import and single-link fetch (Phase 6)
 // ---------------------------------------------------------------------------
@@ -1146,21 +1174,47 @@ export async function fetchYouTubeMeta(
 
 export type { PlannedEpisodeSlot } from '@/lib/admin/show-schedule'
 
+/** The import selects at most this many episodes (IMPORT_MAX_ITEMS). */
+const MAX_SCHEDULE_SELECTION = 200
+
+/**
+ * Shape check for an optional episode selection from the client. Each id is
+ * parsed by planShowScheduleCore; this only refuses non-arrays and oversize lists.
+ */
+function parseEpisodeSelection(
+  raw: unknown
+): { ok: true; value: string[] | undefined } | { ok: false; error: string } {
+  if (raw === undefined) return { ok: true, value: undefined }
+  if (
+    !Array.isArray(raw) ||
+    raw.length === 0 ||
+    raw.length > MAX_SCHEDULE_SELECTION ||
+    !raw.every((v) => typeof v === 'string')
+  ) {
+    return { ok: false, error: 'Some selected episodes cannot be scheduled.' }
+  }
+  return { ok: true, value: raw as string[] }
+}
+
 /**
  * Preview a bulk schedule without writing anything. Drives the confirmation
  * dialog so the admin sees every generated air date before committing.
  */
 export async function previewShowSchedule(
-  showId: string
+  showId: string,
+  episodeIds?: string[]
 ): Promise<ActionResult<PlannedEpisodeSlot[]>> {
   try {
     await assertAdmin()
     const parsed = parseId(showId, 'show')
     if (!parsed.ok) return { success: false, error: parsed.error }
+    const selection = parseEpisodeSelection(episodeIds)
+    if (!selection.ok) return { success: false, error: selection.error }
     const result = await planShowScheduleCore(
       createAdminClient(),
       parsed.value,
-      new Date()
+      new Date(),
+      selection.value
     )
     if (!result.ok) return { success: false, error: result.error }
     return { success: true, data: result.plan }
@@ -1179,16 +1233,24 @@ export async function previewShowSchedule(
  * minute (see lib/scheduling.isEpisodeLive and the publish-scheduled cron).
  */
 export async function applyShowSchedule(
-  showId: string
+  showId: string,
+  episodeIds?: string[]
 ): Promise<ActionResult<{ scheduled?: number }>> {
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      applyShowScheduleCore(
-        ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, now: new Date() },
-        showId
-      ),
+    async (ctx) => {
+      const deps = { audit: ctx.audit, adminUserId: ctx.adminUserId, now: new Date() }
+      if (episodeIds === undefined) return applyShowScheduleCore(ctx.db, deps, showId)
+      // A chosen subset (the import success state, D-07): plan it here and hand
+      // the plan over; the core's slot-conflict and changed-row checks still run.
+      const parsed = parseId(showId, 'show')
+      if (!parsed.ok) return { success: false, error: parsed.error, wrote: false }
+      const selection = parseEpisodeSelection(episodeIds)
+      if (!selection.ok) return { success: false, error: selection.error, wrote: false }
+      const plan = await planShowScheduleCore(ctx.db, parsed.value, deps.now, selection.value)
+      if (!plan.ok) return { success: false, error: plan.error, wrote: false }
+      return applyShowScheduleCore(ctx.db, { ...deps, planOverride: plan.plan }, parsed.value)
+    },
     {
       fallbackError: 'Failed to schedule episodes',
       revalidate: (result) => {
