@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { saveVideoCore } from '../../src/lib/admin/hero-video.ts'
 import {
@@ -335,4 +336,53 @@ test('same key as the stored one is never staged for deletion', async () => {
   const r = await saveVideoCore(w.ports, w.deps, { key: NEW_KEY, target: 'hero-desktop' })
   assert.equal(r.success, true)
   assert.deepEqual(w.calls.stage, [])
+})
+
+// ---- source scan of the three finalize actions (plan 02-16, task 2) ----
+const src = readFileSync('src/app/[locale]/admin/actions.ts', 'utf8')
+function bodyOf(name: string): string {
+  const start = src.indexOf(`export async function ${name}(`)
+  assert.notEqual(start, -1, `${name} not found`)
+  const next = src.indexOf('\nexport ', start + 10)
+  return src.slice(start, next === -1 ? undefined : next)
+}
+
+test('source scan: the three video finalize actions run through the runner and saveVideoCore', () => {
+  for (const name of ['finalizeHeroVideoUpload', 'finalizePreloaderVideoUpload', 'finalizeShowVideoUpload']) {
+    const b = bodyOf(name)
+    assert.ok(b.includes('runAdminAction('), `${name} lacks runAdminAction(`)
+    assert.ok(b.includes('saveVideoCore('), `${name} lacks saveVideoCore(`)
+    assert.ok(b.includes('videoPorts('), `${name} lacks videoPorts(`)
+    assert.ok(b.includes('safeParse('), `${name} lacks zod input parsing`)
+    assert.ok(!/FormData|File\b|arrayBuffer|Blob/.test(b), `${name} must not handle file bytes`)
+  }
+  assert.ok(bodyOf('finalizeShowVideoUpload').includes('commit'))
+  assert.ok(/showId: z\.string\(\)\.regex\(UUID_RE/.test(src))
+  assert.ok(/key: z\.string\(\)\.min\(1\)\.max\(300\)/.test(src))
+})
+
+test('source scan: the R2 video ports read a 4 MiB range through the MEDIA binding and never download', () => {
+  const start = src.indexOf('async function videoPorts(')
+  assert.notEqual(start, -1)
+  const end = src.indexOf('\nexport ', start)
+  const ports = src.slice(start, end)
+  assert.ok(ports.includes('finalizeUploadedObject('))
+  assert.ok(ports.includes('env.MEDIA'))
+  assert.ok(ports.includes('range: { offset: 0, length: maxBytes }'))
+  assert.ok(!ports.includes('download('))
+  assert.ok(!ports.includes('storage.from('), 'no Supabase Storage call: Supabase originals are never deleted')
+  assert.ok(ports.includes('r2KeysForUrl('))
+})
+
+test('source scan: the old create*/save* video actions still exist until plan 02-19', () => {
+  for (const name of [
+    'createHeroVideoUpload',
+    'saveHeroVideoUpload',
+    'createPreloaderVideoUpload',
+    'savePreloaderVideoUpload',
+    'createShowVideoUpload',
+    'saveShowVideoUpload',
+  ]) {
+    assert.ok(src.includes(`export async function ${name}(`), `${name} was removed early`)
+  }
 })

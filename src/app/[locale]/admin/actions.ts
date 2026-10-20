@@ -60,6 +60,7 @@ import {
   createHeroVideoPath,
   removeHeroVideoCore,
   saveHeroVideoCore,
+  saveVideoCore,
   setHeroVideoUrlCore,
   type HeroVideoPorts,
 } from '@/lib/admin/hero-video'
@@ -1304,6 +1305,9 @@ export async function createHeroVideoUpload(
   }
 }
 
+// Legacy: kept compiling until plan 02-19 deletes it (02-18 switches the client to
+// finalizeHeroVideoUpload). The core now takes an R2 key, so a Supabase-signed-upload
+// path is refused with 'Invalid upload key'.
 export async function saveHeroVideoUpload(
   path: string,
   variant: HeroVariant = 'desktop'
@@ -3172,6 +3176,115 @@ export async function finalizeCastImageUpload(
     {
       fallbackError: 'Failed to upload cast image',
       revalidate: (r) => (r?.wrote ? bumpCatalogCache() : undefined),
+    }
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Video finalize actions (plan 02-16): the browser PUT the MP4 to R2 with a presigned
+// URL; these check it and write the target. No video bytes pass through an action.
+// ---------------------------------------------------------------------------
+
+const finalizeVideoKeySchema = z.object({ key: z.string().min(1).max(300) })
+
+const finalizeHeroVideoSchema = finalizeVideoKeySchema.extend({
+  variant: z.enum(['desktop', 'mobile'], { message: 'Invalid hero variant.' }),
+})
+
+export async function finalizeHeroVideoUpload(
+  input: z.input<typeof finalizeHeroVideoSchema>
+): Promise<ActionResult<string> & { mediaCleanupFailed?: boolean }> {
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = finalizeHeroVideoSchema.safeParse(input)
+      if (!parsed.success) {
+        return { success: false, error: formatZodError(parsed.error), wrote: false }
+      }
+      const { variant, key } = parsed.data
+      const r = await saveVideoCore(
+        await videoPorts(ctx.db),
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        { key, target: variant === 'mobile' ? 'hero-mobile' : 'hero-desktop' }
+      )
+      if (r.mediaCleanupFailed) console.error('[finalizeHeroVideoUpload] media cleanup failed')
+      return r
+    },
+    {
+      fallbackError: 'Upload failed',
+      revalidate: (r) => {
+        if (!r?.wrote) return
+        updateTag('site-config')
+        revalidatePath('/')
+        revalidatePath('/portfolio')
+      },
+    }
+  )
+}
+
+export async function finalizePreloaderVideoUpload(
+  input: z.input<typeof finalizeVideoKeySchema>
+): Promise<ActionResult<string> & { mediaCleanupFailed?: boolean }> {
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = finalizeVideoKeySchema.safeParse(input)
+      if (!parsed.success) {
+        return { success: false, error: formatZodError(parsed.error), wrote: false }
+      }
+      const r = await saveVideoCore(
+        await videoPorts(ctx.db),
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        { key: parsed.data.key, target: 'preloader' }
+      )
+      if (r.mediaCleanupFailed) console.error('[finalizePreloaderVideoUpload] media cleanup failed')
+      return r
+    },
+    {
+      fallbackError: 'Upload failed',
+      revalidate: (r) => {
+        if (!r?.wrote) return
+        updateTag('site-config')
+        revalidatePath('/', 'layout')
+      },
+    }
+  )
+}
+
+const finalizeShowVideoSchema = finalizeHeroVideoSchema.extend({
+  showId: z.string().regex(UUID_RE, 'Invalid show id.'),
+  /**
+   * Default true: the show's hero video columns are written. A form that holds the new url
+   * in its own state until Save (as the show drawer does today) passes false.
+   */
+  commit: z.boolean().default(true),
+})
+
+export async function finalizeShowVideoUpload(
+  input: z.input<typeof finalizeShowVideoSchema>
+): Promise<ActionResult<string> & { mediaCleanupFailed?: boolean }> {
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = finalizeShowVideoSchema.safeParse(input)
+      if (!parsed.success) {
+        return { success: false, error: formatZodError(parsed.error), wrote: false }
+      }
+      const { showId, variant, key, commit } = parsed.data
+      const r = await saveVideoCore(
+        await videoPorts(ctx.db),
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        { key, target: 'show', showId, variant, commit }
+      )
+      if (r.mediaCleanupFailed) console.error('[finalizeShowVideoUpload] media cleanup failed')
+      return r
+    },
+    {
+      fallbackError: 'Upload failed',
+      revalidate: (r) => {
+        if (!r?.wrote) return
+        bumpCatalogCache()
+      },
     }
   )
 }
