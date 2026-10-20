@@ -20,9 +20,9 @@ Rules:
 
 The Phase 1 squash merge itself waits until steps 2, 3, 4, 4b and 5 have run and read back as expected. After the merge, no other PR merges to `main` until step 6 (the ruleset) is created AND read back. Phase 2 (`claude/phase-02-execute-19d86a`) edits the same `package.json` scripts block: whoever lands second resolves it with base winning, then re-adding `typecheck`, `guard:migrations` and the `gate:local` order.
 
-## 1. `[CONTROLLER after Ship]` Precondition: check names exist
+## 1. `[CONTROLLER before Ship]` Precondition: check names exist
 
-Needs Koss's Ship. The Phase 1 PR head must have shown check runs named exactly `gate` and `migration-guard` from the GitHub Actions app (id 15368), otherwise the ruleset would block every PR forever (Pitfall 7):
+Runs on the open PR, before Koss's Ship (see execution order). The Phase 1 PR head must have shown check runs named exactly `gate` and `migration-guard` from the GitHub Actions app (id 15368), otherwise the ruleset would block every PR forever (Pitfall 7):
 
 ```bash
 gh api repos/Loomlyne/Clickit/commits/<PR-head-sha>/check-runs --jq '.check_runs[]|[.name,.app.id,.conclusion]'
