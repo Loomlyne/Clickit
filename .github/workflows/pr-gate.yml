@@ -76,8 +76,15 @@ jobs:
 
       - name: Classify change set
         id: scope
+        # Fails closed: a git error or an empty list counts as code (everything runs).
+        # --no-renames lists both sides of a move, so src/a.ts -> docs/a.md is code.
+        # A here-string, not a pipe, so grep -q exiting early cannot raise SIGPIPE.
         run: |
-          if git diff --name-only HEAD^1 HEAD | grep -qvE '(\.md$|^docs/|^\.planning/)'; then
+          set -euo pipefail
+          if ! changed="$(git diff --no-renames --name-only HEAD^1 HEAD)"; then
+            echo "::warning::git diff failed; treating the change set as code"
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          elif [ -z "$changed" ] || grep -qvE '(\.md$|^docs/|^\.planning/)' <<< "$changed"; then
             echo "code=true" >> "$GITHUB_OUTPUT"
           else
             echo "code=false" >> "$GITHUB_OUTPUT"

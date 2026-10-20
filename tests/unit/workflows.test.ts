@@ -108,6 +108,84 @@ test('pr-gate: gate always reports; heavy steps are gated by the scope step', ()
   assert.doesNotMatch(t, /gate:local/)
 })
 
+/** The literal `run: |` block of the step whose `id:` or `name:` line matches `marker`. */
+function runBlockOf(text: string, marker: RegExp) {
+  const lines = text.split('\n')
+  const at = lines.findIndex((l) => marker.test(l))
+  assert.ok(at >= 0, `step ${marker} not found`)
+  const runAt = lines.findIndex((l, i) => i > at && /^\s+run: \|\s*$/.test(l))
+  assert.ok(runAt > at, `run block for ${marker} not found`)
+  const indent = (lines[runAt + 1].match(/^ */) ?? [''])[0].length
+  const body: string[] = []
+  for (const line of lines.slice(runAt + 1)) {
+    if (line.trim() !== '' && (line.match(/^ */) ?? [''])[0].length < indent) break
+    body.push(line.slice(indent))
+  }
+  return body.join('\n')
+}
+
+test('pr-gate (WR-02): scope step fails closed and ignores rename detection', () => {
+  const script = runBlockOf(jobBlock(gate(), 'gate'), /id: scope/)
+  assert.match(script, /^set -euo pipefail$/m)
+  assert.ok(script.includes('git diff --no-renames --name-only HEAD^1 HEAD'))
+  assert.doesNotMatch(gate(), /git diff --name-only/)
+  // the git-failure branch writes code=true
+  assert.match(script, /if ! changed="\$\(git diff[^\n]*\)"; then\n[^\n]*\n\s*echo "code=true"/)
+})
+
+test('pr-gate (WR-02): scope step classifies real change sets (run locally with bash)', async () => {
+  const { mkdtemp, mkdir, writeFile, readFile, rm } = await import('node:fs/promises')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const { execFileSync, spawnSync } = await import('node:child_process')
+  const script = runBlockOf(jobBlock(gate(), 'gate'), /id: scope/)
+  const env = {
+    ...process.env,
+    GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@example.test',
+    GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@example.test',
+  }
+  const git = (cwd: string, ...args: string[]) => execFileSync('git', args, { cwd, env, stdio: 'ignore' })
+  async function classify(setup: (repo: string) => Promise<void>, twoCommits = true) {
+    const repo = await mkdtemp(join(tmpdir(), 'scope-'))
+    try {
+      git(repo, 'init', '-q', '-b', 'main')
+      await mkdir(join(repo, 'src'), { recursive: true })
+      await mkdir(join(repo, 'docs'), { recursive: true })
+      await writeFile(join(repo, 'src', 'a.ts'), 'export const a = 1\n')
+      await writeFile(join(repo, 'README.md'), '# r\n')
+      git(repo, 'add', '-A')
+      git(repo, 'commit', '-q', '-m', 'base')
+      if (twoCommits) {
+        await setup(repo)
+        git(repo, 'add', '-A')
+        git(repo, 'commit', '-q', '-m', 'head')
+      }
+      const out = join(repo, '.gh-output')
+      await writeFile(out, '')
+      const r = spawnSync('bash', ['-c', script], { cwd: repo, env: { ...env, GITHUB_OUTPUT: out }, encoding: 'utf8' })
+      assert.equal(r.status, 0, r.stdout + r.stderr)
+      return (await readFile(out, 'utf8')).trim()
+    } finally {
+      await rm(repo, { recursive: true, force: true })
+    }
+  }
+  // moving code into docs/ is a code change (rename detection would hide it)
+  assert.equal(
+    await classify(async (repo) => git(repo, 'mv', 'src/a.ts', 'docs/a.md')),
+    'code=true',
+  )
+  assert.equal(
+    await classify(async (repo) => writeFile(join(repo, 'README.md'), '# r\nmore\n')),
+    'code=false',
+  )
+  assert.equal(
+    await classify(async (repo) => writeFile(join(repo, 'src', 'a.ts'), 'export const a = 2\n')),
+    'code=true',
+  )
+  // git error (no HEAD^1): fail closed, run everything
+  assert.equal(await classify(async () => {}, false), 'code=true')
+})
+
 test('pr-gate: migration-guard runs the BASE copy of the guard, never the PR copy directly', () => {
   const t = gate()
   const b = jobBlock(t, 'migration-guard')
