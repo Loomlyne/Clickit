@@ -104,7 +104,6 @@
     "accountCreated": "تم إنشاء الحساب! أهلاً بك في كلِك إت ستوري.",
     "termsAccept": "أوافق على <terms>شروط الخدمة</terms> و<privacy>سياسة الخصوصية</privacy>",
     "showPassword": "إظهار كلمة المرور",
-    "hidePassword": "إخفاء كلمة المرور",
     "callbackError": "تعذّر التحقق من هويتك",
     "googleSSOComingSoon": "تسجيل الدخول عبر جوجل قريباً",
     "appleSSOComingSoon": "تسجيل الدخول عبر آبل قريباً",

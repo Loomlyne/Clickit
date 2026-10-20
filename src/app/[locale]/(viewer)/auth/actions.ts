@@ -86,7 +86,7 @@ export async function signUpAction(
   // Same minimum as the form, enforced here too so a direct call to the
   // Server Action cannot create a shorter password. The client maps the
   // 'passwordMin' key to the localized errors.passwordMin message.
-  if (password.length < PASSWORD_MIN) {
+  if (typeof password !== 'string' || password.length < PASSWORD_MIN) {
     return { ok: false, error: 'passwordMin' }
   }
 

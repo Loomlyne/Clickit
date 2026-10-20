@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
-import { passwordScore, passwordStrength } from './password-rules'
+import { passwordStrength } from './password-rules'
 
 type PasswordFieldProps = Omit<React.ComponentProps<'input'>, 'type'> & {
   label: string
@@ -41,8 +41,10 @@ export function PasswordField({
   const inputId = id ?? autoId
   const errorId = `${inputId}-error`
   const strengthId = `${inputId}-strength`
-  const score = strengthOf === undefined ? 0 : passwordScore(strengthOf)
   const level = passwordStrength(strengthOf ?? '')
+  // Bars follow the level, never the raw criteria count, so a short password
+  // can't show three filled bars next to "weak".
+  const filled = !strengthOf ? 0 : level === 'weak' ? 1 : level === 'good' ? 3 : 4
 
   return (
     <div>
@@ -83,7 +85,7 @@ export function PasswordField({
                 key={step}
                 className={cn(
                   'h-1 rounded-full',
-                  score >= step ? 'bg-[var(--primary)]' : 'bg-[var(--bg-3)]'
+                  filled >= step ? 'bg-[var(--primary)]' : 'bg-[var(--bg-3)]'
                 )}
               />
             ))}
