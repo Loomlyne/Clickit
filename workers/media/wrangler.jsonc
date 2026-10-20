@@ -1,5 +1,11 @@
-// media.clickitstory.ae — ClickitStory account only.
-// Deploy: HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deploy -c workers/media/wrangler.jsonc [--env supabase-only]
+// media.clickitstory.ae — ClickitStory account only (controller deploys).
+//
+// PRODUCTION DEPLOYS USE `--env supabase-only` (or the bare top level, which is
+// the same: no R2) UNTIL THE R2 MIRROR GATE IN DNS-PLAN.md §5d PASSES. Never
+// deploy `--env r2` before that: R2-first would serve stale bytes for any image
+// the app overwrote in Supabase but not in R2.
+//
+//   HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deploy -c workers/media/wrangler.jsonc --env supabase-only
 {
   "name": "clickit-media",
   "main": "src/index.ts",
@@ -11,19 +17,26 @@
   "vars": {
     "SUPABASE_URL": "https://lajguozmtissnnfccmej.supabase.co"
   },
-  // Target state: R2 first. Needs R2 enabled and bucket clickit-media created.
-  "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "clickit-media" }],
   // clickitstory.ae zone is Active in this account since 2026-10-20.
   "routes": [{ "pattern": "media.clickitstory.ae", "custom_domain": true }],
+  // No R2 binding at the top level on purpose: a bare `wrangler deploy` cannot flip production to R2-first.
   "env": {
-    // Same Worker name, no R2 binding: serves Supabase originals while R2 is off.
+    // Production today: same Worker, Supabase originals only.
     "supabase-only": {
       "name": "clickit-media",
       "routes": [{ "pattern": "media.clickitstory.ae", "custom_domain": true }],
       "vars": {
         "SUPABASE_URL": "https://lajguozmtissnnfccmej.supabase.co"
+      }
+    },
+    // R2 first, Supabase fallback. Only after the gate in DNS-PLAN.md §5d passes.
+    "r2": {
+      "name": "clickit-media",
+      "routes": [{ "pattern": "media.clickitstory.ae", "custom_domain": true }],
+      "vars": {
+        "SUPABASE_URL": "https://lajguozmtissnnfccmej.supabase.co"
       },
-      "r2_buckets": []
+      "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "clickit-media" }]
     }
   }
 }

@@ -81,7 +81,7 @@ b. **Apex (Koss decides).** Either
 
 c. **Attach `media.clickitstory.ae` (controller deploys).** `workers/media/wrangler.jsonc`
    has `"routes": [{ "pattern": "media.clickitstory.ae", "custom_domain": true }]`
-   at the top level and in `env.supabase-only`. Command:
+   at the top level and in both envs (`supabase-only`, `r2`). Command:
    `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deploy -c workers/media/wrangler.jsonc --env supabase-only`.
    Cloudflare creates the `media` record and its certificate.
    Check: `curl -sI https://media.clickitstory.ae/site-assets/settings/favicon.png`
@@ -89,14 +89,17 @@ c. **Attach `media.clickitstory.ae` (controller deploys).** `workers/media/wrang
 
 d. **R2 later (gate).** Enable R2 + create bucket `clickit-media`, copy objects
    (`npm run r2:media` dry run, then `--execute` on Koss's word). Before any
-   default-env (R2-first) deploy, prove that the app writes every upload to
+   `--env r2` (R2-first) deploy, prove that the app writes every upload to
    this bucket: all four of `CLOUDFLARE_ACCOUNT_ID` (= `e329b099…`),
    `CLOUDFLARE_R2_BUCKET` (= `clickit-media`), `R2_ACCESS_KEY_ID`,
    `R2_SECRET_ACCESS_KEY` are set in the running app, **and**
    `NEXT_PUBLIC_MEDIA_CUTOVER_READY=verified` (`src/lib/r2-media-core.ts`
    `getR2Configuration` / `mirrorRequired`). Otherwise an admin overwrite of a
    fixed key (avatars, `settings/og.png`, the hero video) updates Supabase but
-   not R2, and the Worker keeps serving old bytes. Until proven: `supabase-only`.
+   not R2, and the Worker keeps serving old bytes. Until proven, production
+   deploys use `--env supabase-only`; never deploy `--env r2` before the gate
+   passes. R2 was enabled on the account on 2026-10-20; the binding exists only
+   in env `r2`, so a bare `wrangler deploy` stays Supabase-only.
 
 e. **Standing check.** Schedule `npm run media:health` (cron or a Worker cron).
 
