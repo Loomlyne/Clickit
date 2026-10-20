@@ -90,7 +90,7 @@ test('the secret never appears in the URL or headers', async () => {
 test('fake signer: receives a PUT request with Content-Type and signQuery + allHeaders', async () => {
   const seen: { method?: string; ct?: string | null; opts?: unknown; expires?: string | null } = {}
   class FakeAws {
-    constructor(public cfg: Record<string, unknown>) {
+    constructor(cfg: Record<string, unknown>) {
       seen.opts = { cfg }
     }
     async sign(req: Request, init: unknown) {
