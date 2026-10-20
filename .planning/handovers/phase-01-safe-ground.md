@@ -37,6 +37,12 @@ PR: https://github.com/Loomlyne/Clickit/pull/26
 - `/gsd-secure-phase 1`: `01-SECURITY.md`, 26/26 threats closed (4 by transfer to runbook steps that must run before the squash merge), `threats_open: 0`.
 - GSD verifier: `01-VERIFICATION.md` status `human_needed` (8/8 code-side truths; remaining items are the controller/owner steps below).
 
+## Controller follow-ups (2026-10-20, after review of record)
+
+- Guard: an added or modified migration that is a symlink (git mode 120000) is now a violation (the review reproduced a bypass: the guard scanned the link text). A new migration whose version sorts before the highest base migration is now a violation, not a warning. Tests: `migration-guard.test.ts` 25/25; both new tests fail on the previous guard.
+- `supabase/seed.sql`: seeded shows get `sort_order` 1..15 in seed order. Note: the old chain (`20260520000000_add_show_sort_order`) produced 0..14 ordered by `created_at desc, id`; all 15 seed shows share one `created_at`, so that order was effectively random by UUID. Scratch proof re-run: `sort_order=1,...,15|15`, counts `1|15|21|94|6|45|58`, refusal on re-run, shared DB unchanged (`/Users/koss/.clickit-checks/p1-scratch-proof2.log`, `exit=0`).
+- Unproven until the first real apply: the `live-db` reviewer check in `apply-live-migrations.yml` (the "required reviewer" step, ~lines 139-157) calls the environments API with `GITHUB_TOKEN`. If the token cannot read it, the step fails closed and apply refuses; the controller verifies it on the first real apply.
+
 ## NOT verified
 
 - Both workflows on GitHub until this PR's own run (never run to test them, D-06).
