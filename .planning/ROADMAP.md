@@ -100,7 +100,7 @@ Plans:
 - [x] 02-12-PLAN.md — W4: Upload infrastructure: kinds, magic bytes, aws4fetch presign, finalize with delete-on-failure
 - [x] 02-13-PLAN.md — W4: Turnstile widget on sign-in, sign-up, reset, contact, newsletter as signed; BotID client removed
 - [x] 02-14-PLAN.md — W5: Vercel code removal, CSP builder, Cloudflare Web Analytics beacon, no-vercel test
-- [ ] 02-15-PLAN.md — W5: Image finalize core and actions (artwork, site image, social icon, cast, avatar)
+- [x] 02-15-PLAN.md — W5: Image finalize core and actions (artwork, site image, social icon, cast, avatar)
 - [ ] 02-16-PLAN.md — W6: Video finalize on R2 (hero, preloader, show) with fast-start and audio checks
 - [ ] 02-17-PLAN.md — W6: Browser image uploads direct to R2 with WebP variants and the signed UI
 - [ ] 02-18-PLAN.md — W7: Browser video uploads direct to R2 with the signed UI
@@ -201,7 +201,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 |-------|----------------|--------|-----------|
 | 1. Safe Ground | 0/TBD | Not started | - |
 | 1.1. Admin Actions Hardening (INSERTED) | 12/13 | In Progress|  |
-| 2. Worker and R2 Media on workers.dev | 13/22 | In Progress|  |
+| 2. Worker and R2 Media on workers.dev | 14/22 | In Progress|  |
 | 3. Production Cutover | 0/TBD | Not started | - |
 | 4. Design System Truth | 0/TBD | Not started | - |
 | 5. Accounts and Email | 0/TBD | Not started | - |
