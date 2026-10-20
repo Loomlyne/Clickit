@@ -5,10 +5,10 @@ export async function ComingSoonSplash() {
   const t = await getTranslations('comingSoon')
 
   return (
-    <div className="relative flex min-h-[calc(100dvh-4.5rem)] flex-col items-center justify-center overflow-hidden px-6 py-16">
+    <div className="relative flex min-h-[calc(100dvh-var(--nav-h))] flex-col items-center justify-center overflow-hidden px-6 py-16">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(112,130,255,0.14),transparent_55%),radial-gradient(ellipse_60%_50%_at_50%_100%,rgba(255,255,255,0.04),transparent_60%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(255,204,0,0.09),transparent_55%),radial-gradient(ellipse_60%_50%_at_50%_100%,rgba(255,255,255,0.04),transparent_60%)]"
       />
       <div
         aria-hidden
@@ -25,11 +25,11 @@ export async function ComingSoonSplash() {
           className="h-auto w-[min(72vw,420px)] object-contain drop-shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
         />
 
-        <p className="mono mt-10 text-[11px] tracking-[0.28em] text-[var(--text-mute)] uppercase">
+        <p className="mt-10 font-[family-name:var(--font-app)] text-[11px] tracking-[0.28em] text-[var(--text-mute)] uppercase">
           {t('gateEyebrow')}
         </p>
 
-        <h1 className="font-display mt-4 text-[clamp(2.75rem,10vw,5.5rem)] leading-[0.95] font-normal tracking-[-0.03em] text-white">
+        <h1 className="font-display mt-4 text-[clamp(2.75rem,10vw,5.5rem)] leading-[0.95] font-normal tracking-[-0.03em] text-[var(--text)]">
           {t('gateHeading')}
         </h1>
 
