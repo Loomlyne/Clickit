@@ -1,6 +1,5 @@
 # Hand-over: Phase 1 Safe Ground
 
-DRAFT: written before push; the orchestrator pushes, opens the PR and fills the `PR:` line.
 
 Branch `claude/phase-01-safe-ground-dc6bbe` -> remote `phase-01-safe-ground`. Base: `origin/main` d517ddc merged in (merge commit cca94fb; base won the STATE.md conflict). Work session; nothing deployed, no live DB access, no repo setting changed, no GitHub workflow run.
 Final commit: the PR head is authoritative (`git log -1` on the branch after this file's commit).
@@ -33,7 +32,10 @@ PR: pending
 - Scratch-database proof of the full 58-migration chain plus seed (log `/Users/koss/.clickit-checks/p1-scratch-proof.log`, `exit=0`): `counts=1|15|21|94|6|45|58`, seed refusal on a non-empty database (`seed.sql refuses to run: public.shows is not empty`), shared database fingerprint unchanged (`58|17|94` before and after), scratch database removed.
 - Guard against `origin/main`: exit 0, 0 violations.
 - Workflow YAML parses (`ruby -ryaml`); 17 workflow text tests pass.
-- After the code-review fixes (CR-01, CR-02, WR-02, WR-03, WR-04; 2026-10-20T13:40Z, head 7bd062e): guard, workflow and neutralisation tests 61 pass, 0 fail; `npx tsc --noEmit` clean; `npm run lint` 0 errors, 17 pre-existing warnings (none in touched files); guard against `origin/main` exit 0, `5 files checked, 0 violations`; both workflows parse with `ruby -ryaml`; allow-list `to` blobs still match (no migration changed). Full `gate:local` and `next build` not re-run after the fixes.
+- After the code-review fixes (CR-01, CR-02, WR-02, WR-03, WR-04; 2026-10-20T13:40Z, head 7bd062e): guard, workflow and neutralisation tests 61 pass, 0 fail; `npx tsc --noEmit` clean; `npm run lint` 0 errors, 17 pre-existing warnings (none in touched files); guard against `origin/main` exit 0, `5 files checked, 0 violations`; both workflows parse with `ruby -ryaml`; allow-list `to` blobs still match (no migration changed).
+- Final `npm run gate:local` after the review fixes, the security audit and merging `origin/main` 2f56e55 (head 791dd05, `npm ci` first, placeholder public env, under the heavy lock): log `/Users/koss/.clickit-checks/p1-gate2.log`, start 13:47:13Z, lint 0 errors, typecheck clean, unit tests 519 pass / 0 fail, guard `5 files checked, 0 violations`, `next build` 55/55 pages, last line `exit=0`.
+- `/gsd-secure-phase 1`: `01-SECURITY.md`, 26/26 threats closed (4 by transfer to runbook steps that must run before the squash merge), `threats_open: 0`.
+- GSD verifier: `01-VERIFICATION.md` status `human_needed` (8/8 code-side truths; remaining items are the controller/owner steps below).
 
 ## NOT verified
 
