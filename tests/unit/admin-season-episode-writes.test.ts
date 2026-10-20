@@ -169,7 +169,8 @@ test('deleteSeasonCore: success writes pending before the delete, committed afte
   assert.ok(auditIdx >= 0 && auditIdx < delIdx)
   const s = row(f, 'shows', S1)!
   assert.equal(s.season_count, 0)
-  assert.equal(s.episode_count, 0)
+  // The fake has no FK cascade; the two visible episodes remain, the archived one is not counted.
+  assert.equal(s.episode_count, 2)
 })
 
 test('deleteSeasonCore: failed pending audit row deletes nothing', async () => {
