@@ -72,3 +72,11 @@ Example: Phase 5 can start coding sign-in as soon as Foundations, Viewer and Ema
 - **B.** One signature for the whole canvas; nothing in Phases 5-7 starts until all boards are signed.
 
 Answer:
+
+### Q9. LBC font in Claude Design (no picture: licence question)
+The canvas boards look right only if they use LBC. That means uploading the two LBC font files (400 and 700) into the private "Clickit Story" canvas.
+Example: the email-code sign-in board renders its title in LBC, as on the site.
+- **A (recommended, if the licence allows it).** Yes, the LBC licence allows the upload; the boards use LBC.
+- **B.** No upload; the boards use a system font stand-in, and type is checked against the live site instead.
+
+Answer:
