@@ -77,6 +77,13 @@ The Worker cron trigger for `/api/cron/youtube-recheck` (`30 1 * * *`) is added 
 - Refresh unless edited, rolled-back transaction on the local stack (2026-10-21 00:0x CET), after a fresh `db reset --local` (exit 0): `has_function_privilege` false for anon/authenticated on `record_youtube_checks` and `record_short_checks`, true for service_role. Episode with an admin-typed title and no check yet → run 1 kept "Admin typed title", set `title_edited=true`, left the matching description unflagged, stamped `youtube_checked_at`. Run 2 → title kept; unedited `title_ar` refreshed to the YouTube Arabic text; unedited `description` refreshed; an empty YouTube `description_ar` changed nothing. Short with `title_edited` → title kept, `channel_name` and `thumbnail_url` refreshed.
 - Hand-edited `database.types.ts` entries match `supabase gen types --local` for `episodes`, `shorts`, `record_youtube_checks`, `record_short_checks` (only difference: `fts` `unknown` vs `never`, pre-existing CLI drift).
 
+### Re-review notes (APPROVE with 3 low notes, 2026-10-21)
+
+- **Note 2, viewer reports after a clear:** `player-error-report.ts` counts only reports created after both now − 24 h and the episode's last check (`youtube_checked_at`). After the daily check clears the flag, 3 new distinct viewers are needed. Because every daily run stamps `youtube_checked_at`, the 3 reports must fall between two runs. Commit a5c6bc9.
+- **Note 1, first-check baseline:** new `episodes.youtube_text_baseline_at`. The baseline runs only when YouTube returned the video (`status = 'ok'`). A field is flagged only when YouTube's text is non-empty and differs. `youtube_checked_at` keeps its health-panel meaning and is still stamped every run. Import and verified single-link create set the baseline. Commit 493368d. **Accepted gap:** a legacy field whose YouTube text is empty at baseline (usually `title_ar` on an English video) is not flagged; if YouTube later gets text there, the next check replaces the stored text.
+- Real SQL on the local stack (fresh `db reset --local`, exit 0, 00:17 CET, rolled back): a removed video → checked-at stamped, no flags, baseline null; the next ok run with an empty YouTube description → title flagged and kept, description not flagged, baseline set; the next run with a YouTube description → description refreshed, title kept. The hand-edited types match `gen types --local` (only `fts` drift).
+- **Before the cutover, confirm the live PostgREST max_rows is ≥ 1000 (readAllPages).**
+
 ### Known limits after the fixes
 
 - `record_youtube_checks` refuses more than 5000 rows per call; with paging the daily check would fail above 5000 episodes (catalog ≈ 300). Batch the write if the catalog ever nears that.
