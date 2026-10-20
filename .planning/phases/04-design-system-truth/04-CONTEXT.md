@@ -1,7 +1,7 @@
 # Phase 4: Design System Truth - Context
 
 **Gathered:** 2026-10-20
-**Status:** SIGNED 2026-10-20 18:33 CET — Koss answered "all recommended" (D-01..D-06, D-08 = A; Q9 LBC upload = yes); D-07 = C (scheme-adaptive emails, answered as Phase 5 Q12). Plan gate and canvas signatures are separate (04-GATE.md §2-3).
+**Status:** SIGNED 2026-10-20 18:33 CET — Koss answered "all recommended" (D-01..D-06, D-08 = A; Q9 LBC upload = yes); D-07 = C (scheme-adaptive emails, answered as Phase 5 Q12; Phase 5 email picture `05-q12-schemes.png` signed). D-06 = A confirmed by Koss 18:45 CET as final. Plan gate signed 18:48 CET; canvas signatures open (04-GATE.md §3).
 
 <domain>
 ## Phase Boundary
@@ -103,6 +103,7 @@ Not in this phase: building the OTP sign-in, emails, import or inbox screens in 
 
 - Generating `globals.css` from `ui.config.json` with the ui-system CLI (needs ui-system local-font support first; today the values were applied by hand and are pinned by tests).
 - A light theme: not in scope (dark only).
+- After Phases 5–6 ship, a separate job moves the proven Clickit patterns into Loomlyne/ui-system as general components, its own repo PR (Koss, 2026-10-20 18:45 CET): playlist import preview, 6-digit code boxes, up-next bar, key field with the right-side eye, status chips, skeletons, the admin TOTP page. Not a Phase 4 plan; the UI System repo is not changed in Phase 4. Seed brief and a two-theme sheet from the withdrawn draft: shared notes `P4-uis-later/`.
 - Moving category colours to the brand map (Q4 B) — only if Koss picks it; it needs a live write.
 
 </deferred>

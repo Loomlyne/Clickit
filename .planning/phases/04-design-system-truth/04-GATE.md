@@ -1,7 +1,7 @@
 # Phase 4 — Design System Truth: gate for Koss
 
 Work session branch `claude/phase-04-design-system-truth-26dcc6`. Planning files only: no code, no database write, no deploy.
-Status 2026-10-20 18:33 CET: Koss answered "all recommended" in the Phase 4 session (Q1-Q6, Q8 = A; Q9 = yes); Q7 = C earlier via Phase 5 Q12. Plan gate (§2) and canvas signatures (§3) still open.
+Status 2026-10-20 18:48 CET: Koss answered "all recommended" (Q1-Q6, Q8 = A; Q9 = yes); Q7 = C via Phase 5 Q12; Q6 = A confirmed by Koss at 18:45 CET as his final call (an earlier "UI System first" relay is withdrawn; it became a deferred item). Plan gate (§2) signed 18:48 CET. Canvas signatures (§3) open.
 
 How the controller records an answer: write the letter and date in the "Koss" column, e.g. `A (Koss, 2026-10-21)`. "All recommended" fills every row with A.
 
@@ -40,7 +40,7 @@ Q7 note: answered as Phase 5 Q12 and relayed by the controller — emails follow
 
 Plans in the same wave run one after another in this one branch.
 
-Plan gate answer (Koss): 
+Plan gate answer (Koss): signed 2026-10-20 18:48 CET
 
 Visible-change ledger if all A: dropdown menus (still 98% opaque) and toasts go from blue-black to #101010; the /portfolio "Browse shows" hover and glow go from indigo to dark yellow; the preload cover and the avatar initials move #0a0a0a → #090909 (one step, not visible); one new admin-only page `/admin/design-system` and its sidebar link. Everything else keeps its exact pixel value through tokens (scrims, the navbar live dot, the 1px bar, cinema gradients).
 
@@ -72,6 +72,6 @@ Conflicts only if Koss answers B: Q1=B moves every surface one step (P6 spec val
 
 ## 6. Email tokens for Phase 5 (Q7 answered C)
 
-Phase 4 ships `src/lib/email-tokens.ts` (literal hex, no CSS variables) and a DESIGN.md email section, taken from Phase 5's picture `05-q12.png` (`.m-light` / `.m-dark` in `05-mockups.html`). Phase 5 owns the templates and may refine these values; its signed picture wins. Phase 4 pins light footer text #767676 (4.54:1): Phase 5's picture shows #777777 (4.48:1, just under AA); same look. Phase 4 owns the colour values in `email-tokens.ts`; Phase 5 owns layout and copy.
+Phase 4 ships `src/lib/email-tokens.ts` (literal hex, no CSS variables) and a DESIGN.md email section, taken from Phase 5's signed picture `05-q12-schemes.png` (source `05-q12-schemes.html`; Phase 5 commit 65fd496, D-27 = Q12 C). Phase 5 owns the templates and may refine these values; its signed picture wins. Phase 4 pins light footer text #767676 (4.54:1): Phase 5's picture shows #777777 (4.48:1, just under AA); same look. Phase 4 owns the colour values in `email-tokens.ts`; Phase 5 owns layout and copy.
 - Light (default): header #090909, header text #F4F4F4, body #ffffff, heading #111111, text #333333, code box #f6f6f6 / border #e5e5e5 / digits #090909, button #ffcc00 with #090909 ink (pill), footer text #767676, divider #eeeeee.
 - Dark (`prefers-color-scheme: dark`): page and body #090909, heading #F4F4F4, text #CCCCCC, dividers #1d1d1d, code box #191919 / border #2A2A2A / digits #ffcc00, same button, footer text #A1A1A1.

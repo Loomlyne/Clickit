@@ -135,6 +135,8 @@ Plans:
 - [ ] 04-13-PLAN.md — W9: [Q1/Q2/Q3] codemod 5/5 (admin + admin.css), rule to error, banned-literal tests, ledger; gate
 - [ ] 04-14-PLAN.md — W10: [orchestrator] reviewer pass on board legends, [OWNER] four signatures (D-08); final gate
 
+Deferred (not a Phase 4 plan): After Phases 5–6 ship, a separate job moves the proven Clickit patterns into Loomlyne/ui-system as general components, its own repo PR (Koss, 2026-10-20 18:45 CET): playlist import preview, 6-digit code boxes, up-next bar, key field with the right-side eye, status chips, skeletons, the admin TOTP page. Not a Phase 4 plan; the UI System repo is not changed in Phase 4.
+
 ### Phase 5: Accounts and Email
 **Goal**: Only signed-in viewers get past the landing and legal pages. Viewers can join or sign in with a 6-digit email code or a password. Both admins work under their own TOTP-protected accounts, and every auth and app email arrives branded from `Clickit Story <no-reply@clickitstory.ae>`, once, in the viewer's language.
 **Depends on**: Phase 4
