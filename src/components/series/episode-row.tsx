@@ -44,7 +44,7 @@ export function EpisodeRow({
       {/* Thumbnail area — wider: 160px mobile, 180px md+ */}
       <div
         className={cn(
-          'relative aspect-video w-[120px] flex-shrink-0 overflow-hidden rounded-[11px] sm:w-[160px] md:w-[180px]',
+          'relative aspect-video w-[120px] flex-shrink-0 overflow-hidden rounded-media sm:w-[160px] md:w-[180px]',
           isDimmed && 'opacity-45'
         )}
       >
@@ -170,7 +170,7 @@ export function EpisodeRow({
       <div
         id={`episode-${episode.id}`}
         aria-current="true"
-        className="group flex cursor-default items-start gap-4 rounded-[12px] border border-[var(--uis-line-strong)] bg-[var(--bg-2)] p-4"
+        className="group flex cursor-default items-start gap-4 rounded-card border border-[var(--uis-line-strong)] bg-[var(--bg-2)] p-4"
       >
         {rowContent}
       </div>
@@ -183,7 +183,7 @@ export function EpisodeRow({
         <Link
           id={`episode-${episode.id}`}
           href={`/watch/${episode.id}`}
-          className="group focus-visible:ring-ring flex cursor-pointer items-start gap-4 rounded-[12px] border border-transparent p-4 transition-colors duration-200 hover:border-[var(--line)] hover:bg-[var(--bg-1)] focus-visible:ring-2 focus-visible:outline-none"
+          className="group focus-visible:ring-ring flex cursor-pointer items-start gap-4 rounded-card border border-transparent p-4 transition-colors duration-200 hover:border-[var(--line)] hover:bg-[var(--bg-1)] focus-visible:ring-2 focus-visible:outline-none"
         >
           {rowContent}
         </Link>
@@ -194,7 +194,7 @@ export function EpisodeRow({
   return (
     <div
       aria-disabled="true"
-      className="flex cursor-default items-start gap-4 rounded-[12px] p-4"
+      className="flex cursor-default items-start gap-4 rounded-card p-4"
     >
       {rowContent}
     </div>

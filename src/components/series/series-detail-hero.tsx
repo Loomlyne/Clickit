@@ -104,8 +104,8 @@ export function SeriesDetailHero({
           className="pointer-events-none absolute inset-0"
           style={{
             background: `
-              linear-gradient(180deg, transparent 0%, rgba(10,10,10,0.4) 40%, var(--bg-0) 98%),
-              linear-gradient(90deg, rgba(10,10,10,0.8) 0%, transparent 60%)
+              linear-gradient(180deg, transparent 0%, rgb(var(--ink-legacy-rgb) / 0.4) 40%, var(--bg-0) 98%),
+              linear-gradient(90deg, rgb(var(--ink-legacy-rgb) / 0.8) 0%, transparent 60%)
             `,
           }}
         />
