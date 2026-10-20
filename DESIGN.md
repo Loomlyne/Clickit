@@ -234,7 +234,7 @@ Rules:
 | `hint` | `#555555` | Hint text |
 | `codeBox` | `#F6F6F6` | Code box background |
 | `codeBorder` | `#E5E5E5` | Code box border |
-| `code` | `#090909` | Code digits |
+| `code` | `#111111` | Code digits |
 | `rule` | `#E5E5E5` | Divider |
 | `footer` | `#767676` | Footer text |
 
@@ -253,6 +253,7 @@ Rules:
 | `codeBox` | `#191919` | Code box background |
 | `codeBorder` | `#2A2A2A` | Code box border |
 | `code` | `#ffcc00` | Code digits |
+| `rule` | `#222222` | Footer divider |
 | `footer` | `#A1A1A1` | Footer text |
 
 ### Button (both schemes)
