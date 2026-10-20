@@ -36,7 +36,8 @@ Final manifest with per-object SHA-256/MD5: `/Users/koss/.clickit-checks/r2-wran
 2. Per object (4 at a time): download the PUBLIC Supabase URL, SHA-256 + MD5, size must equal the manifest, MD5 must equal a single-part Supabase eTag.
 3. `wrangler r2 object get --remote`: if R2 already holds identical bytes → `verified-existing`; if missing → `wrangler r2 object put --remote`, then `get` again and compare size + SHA-256 + MD5 → `copied-and-verified`.
 4. An R2 object whose bytes differ from the source is refused unless `--update-changed` (re-sync).
-5. `--verify` re-downloads both sides for every object and writes nothing.
+5. `--verify` re-downloads both sides for every object and writes nothing; it warns when the manifest is over 1 h old.
+6. Safety: wrangler runs with `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_API_KEY` / `CLOUDFLARE_EMAIL` removed and `CLOUDFLARE_ACCOUNT_ID=e329b099…` pinned; `wrangler whoami` must list only that account or the run aborts. Source downloads and wrangler calls time out after 5 min. `--refresh` is refused with `--execute` / `--verify`. Unit tests: `tests/unit/r2-wrangler-copy.test.ts`.
 
 Logs: `/Users/koss/.clickit-checks/r2-copy-20261020-1333.log` (pass 1), `…-1353-pass2.log` (pass 2), each ending in `exit=`.
 Temp bytes lived in `.tmp/r2-copy-work/` and are removed by the script; the manifest stays in `.tmp/` locally.
@@ -60,11 +61,12 @@ The last command must end with `"failures": 0`. Notes:
 
 Only when the Cloudflare app is the one taking uploads (the frozen Vercel admin would keep writing to Supabase only):
 
-1. Job C app live with R2 writes enabled: `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_R2_BUCKET=clickit-media`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` set on the app Worker (gate in `workers/media/DNS-PLAN.md` §5d), or uploads paused.
+1. Job C app live with R2 writes enabled: `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_R2_BUCKET=clickit-media`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` and `NEXT_PUBLIC_MEDIA_CUTOVER_READY=verified` set on the app Worker (gate in `workers/media/DNS-PLAN.md` §5d), or uploads paused.
 2. Fresh re-sync (the three commands above), `--verify` → `"failures": 0`.
-3. `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deploy -c workers/media/wrangler.jsonc --env r2`
-4. Check: `curl -sI https://media.clickitstory.ae/site-assets/settings/og.png | grep -i x-media-source` → `r2`; `npm run media:health -- --verify-bytes` all ok.
-5. Rollback: `… deploy -c workers/media/wrangler.jsonc --env supabase-only`.
+3. Re-run `npm run r2:copy -- --verify` immediately before the `--env r2` deploy (no uploads in between) → `"failures": 0` and no manifest-age warning.
+4. `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deploy -c workers/media/wrangler.jsonc --env r2`
+5. Check: `curl -sI https://media.clickitstory.ae/site-assets/settings/og.png | grep -i x-media-source` → `r2`; `npm run media:health -- --verify-bytes` all ok.
+6. Rollback: `… deploy -c workers/media/wrangler.jsonc --env supabase-only`.
 
 ## Frozen live admin: do uploads fail? (read-only check, nothing tested on the live site)
 

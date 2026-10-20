@@ -44,8 +44,12 @@ const DEFAULTS = {
   wranglerVersion: '4.151.2',
   concurrency: 4,
 }
+const CLICKIT_ACCOUNT_ID = 'e329b099b6e4272fc0915a99832e47fe'
+const SOURCE_TIMEOUT_MS = 5 * 60 * 1000
+const COMMAND_TIMEOUT_MS = 5 * 60 * 1000
+const MANIFEST_MAX_AGE_MS = 60 * 60 * 1000
 
-function parseOptions(args) {
+export function parseOptions(args) {
   const options = {
     mode: 'manifest',
     refresh: false,
@@ -75,10 +79,13 @@ function parseOptions(args) {
   if (options.updateChanged && options.mode !== 'execute') {
     throw new Error('--update-changed only applies to --execute')
   }
+  if (options.refresh && options.mode !== 'manifest') {
+    throw new Error('--refresh only applies to the manifest step (no --execute / --verify)')
+  }
   return options
 }
 
-function destinationKey(bucket, key) {
+export function destinationKey(bucket, key) {
   if (!bucket || !key || key.startsWith('/') || key.split('/').some((part) => !part || part === '.' || part === '..')) {
     throw new Error(`Invalid source object path ${bucket}/${key}`)
   }
@@ -105,7 +112,7 @@ async function listSourceObjects(projectRef, buckets) {
   const { stdout } = await run(
     'supabase',
     ['db', 'query', '--linked', '--project-ref', projectRef, '--output-format', 'json', sql],
-    { cwd: PROJECT_ROOT, maxBuffer: 64 * 1024 * 1024 }
+    { cwd: PROJECT_ROOT, maxBuffer: 64 * 1024 * 1024, timeout: COMMAND_TIMEOUT_MS }
   )
   const rows = JSON.parse(stdout.slice(stdout.indexOf('{'))).rows
   if (!Array.isArray(rows)) throw new Error('Unexpected supabase db query output')
@@ -169,17 +176,45 @@ async function createManifest(options) {
 
 // ---------- copy / verify ----------
 
+// Only the ClickitStory OAuth login: no inherited tokens or account overrides.
+export function wranglerEnv(baseEnv = process.env) {
+  const env = { ...baseEnv }
+  for (const name of ['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_API_KEY', 'CLOUDFLARE_EMAIL', 'CLOUDFLARE_ACCOUNT_ID']) {
+    delete env[name]
+  }
+  return {
+    ...env,
+    HOME: DEFAULTS.wranglerHome,
+    CLOUDFLARE_ACCOUNT_ID: CLICKIT_ACCOUNT_ID,
+    WRANGLER_SEND_METRICS: 'false',
+  }
+}
+
 function wrangler(args) {
   return run('npx', ['-y', `wrangler@${DEFAULTS.wranglerVersion}`, ...args], {
     cwd: PROJECT_ROOT,
-    env: { ...process.env, HOME: DEFAULTS.wranglerHome, WRANGLER_SEND_METRICS: 'false' },
+    env: wranglerEnv(),
     maxBuffer: 16 * 1024 * 1024,
+    timeout: COMMAND_TIMEOUT_MS,
   })
 }
 
-function isMissingObject(error) {
-  const output = `${error?.stdout ?? ''}\n${error?.stderr ?? ''}\n${error?.message ?? ''}`
-  return /does not exist|not found|NoSuchKey|10007/i.test(output)
+const stripAnsi = (text) => text.replace(/\u001b\[[0-9;]*m/g, '')
+
+// Every 32-hex account id wrangler whoami prints must be the ClickitStory one.
+export function assertClickitAccount(whoamiOutput) {
+  const ids = [...new Set(stripAnsi(whoamiOutput).match(/\b[0-9a-f]{32}\b/g) ?? [])]
+  if (ids.length !== 1 || ids[0] !== CLICKIT_ACCOUNT_ID) {
+    throw new Error(`wrangler is not on the ClickitStory account only (saw ${ids.join(', ') || 'none'}); aborting`)
+  }
+}
+
+// Wrangler's own [ERROR] line only (stdout/stderr), never error.message: it holds the argv and so the key.
+export function isMissingObject(error) {
+  return `${error?.stderr ?? ''}\n${error?.stdout ?? ''}`
+    .split('\n')
+    .map((line) => stripAnsi(line).trim())
+    .some((line) => /\[ERROR\]/.test(line) && /The specified key does not exist|\bobject not found\b|\b10007\b/i.test(line))
 }
 
 async function hashFile(path) {
@@ -198,6 +233,7 @@ async function downloadSource(object, sourceOrigin, path) {
   const response = await fetch(publicObjectUrl(sourceOrigin, object.sourceBucket, object.sourceKey), {
     cache: 'no-store',
     headers: { 'Accept-Encoding': 'identity' },
+    signal: AbortSignal.timeout(SOURCE_TIMEOUT_MS),
   })
   if (response.status !== 200 || !response.body) {
     throw new Error(`source HTTP ${response.status}`)
@@ -277,7 +313,7 @@ function describeError(error) {
   if (error?.cmd === undefined) return error.message.split('\n')[0]
   const detail = `${error.stderr ?? ''}\n${error.stdout ?? ''}`
     .split('\n')
-    .map((line) => line.replace(/\u001b\[[0-9;]*m/g, '').trim())
+    .map((line) => stripAnsi(line).trim())
     .find((line) => /ERROR|✘/.test(line))
   return `wrangler ${error.cmd.split(' ').slice(3, 6).join(' ')} failed (code ${error.code ?? '-'}, signal ${error.signal ?? '-'}): ${detail ?? 'no error line'}`
 }
@@ -308,6 +344,15 @@ async function executeManifest(options) {
       throw new Error(`Bad destination key ${object.destinationKey}`)
     }
   }
+  const ageMs = Date.now() - Date.parse(manifest.generatedAt)
+  if (options.mode === 'verify' && !(ageMs <= MANIFEST_MAX_AGE_MS)) {
+    console.warn(
+      `WARNING: manifest is from ${manifest.generatedAt} (over 1h old); objects added or changed in Supabase since then are not checked. Run --refresh first for a go-live check.`
+    )
+  }
+
+  const { stdout: whoami } = await wrangler(['whoami'])
+  assertClickitAccount(whoami)
 
   await fs.mkdir(DEFAULTS.workDir, { recursive: true })
   const queue = [...manifest.objects]
@@ -354,7 +399,9 @@ async function main() {
   else await executeManifest(options)
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error)
-  process.exitCode = 1
-})
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error)
+    process.exitCode = 1
+  })
+}
