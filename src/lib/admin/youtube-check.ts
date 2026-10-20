@@ -1,5 +1,5 @@
-// Daily YouTube re-check (D-17, RESEARCH Pattern 11). One read of every stored
-// episode video id (archived included: stored data is stored data), one
+// Daily YouTube re-check (D-17, RESEARCH Pattern 11). One paged read of every
+// stored episode video id (archived included: stored data is stored data), one
 // getVideos call (the client chunks at 50 ids), then ONE database write through
 // public.record_youtube_checks. Only status, checked-at and length are sent;
 // text columns are never written (D-05). A YouTube failure writes nothing.
@@ -10,6 +10,7 @@ import { classifyVideo, type YouTubeStatus } from '../../server/youtube/status.t
 import { YouTubeApiError } from '../../server/youtube/client.ts'
 import type { YouTubeClientLike } from '../../server/youtube/client'
 import type { AdminDb } from './ports'
+import { readAllPages } from './read-all-pages.ts'
 
 export type RecheckReason =
   | 'quota'
@@ -58,12 +59,18 @@ export async function recheckVideosCore(
 ): Promise<RecheckResult> {
   let stored: { id: string; youtube_video_id: string | null }[]
   try {
-    const { data, error } = await db
-      .from('episodes')
-      .select('id, youtube_video_id')
-      .not('youtube_video_id', 'is', null)
+    // Pages of 1000 in id order: one plain select stops at the PostgREST cap.
+    const { data, error } = await readAllPages<{ id: string; youtube_video_id: string | null }>(
+      (from, to) =>
+        db
+          .from('episodes')
+          .select('id, youtube_video_id')
+          .not('youtube_video_id', 'is', null)
+          .order('id')
+          .range(from, to)
+    )
     if (error) return { ok: false, reason: 'read_failed', detail: error.message }
-    stored = (data ?? []) as typeof stored
+    stored = data
   } catch (e) {
     return { ok: false, reason: 'read_failed', detail: errText(e) }
   }

@@ -9,6 +9,7 @@ import { ShowsTable } from '@/components/admin/shows-table'
 import { AdminProfileCard } from '@/components/admin/admin-profile-card'
 import { YouTubeCheckPanel } from '@/components/admin/youtube-check-panel'
 import * as youtubeHealth from '@/lib/admin/youtube-health'
+import { readAllPages } from '@/lib/admin/read-all-pages'
 import type { Database } from '@/lib/database.types'
 import { stripStorageCacheBust } from '@/lib/supabase-media'
 
@@ -50,13 +51,18 @@ export default async function AdminPage() {
       .from('show_categories')
       .select('show_id, categories!inner(name_en, slug, color)'),
     // Admin client: the status columns are read for the YouTube check panel
-    // (admin-only page). Separate reads, joined in code below.
-    admin
-      .from('episodes')
-      .select(
-        'id, show_id, season_id, episode_number, archived, youtube_status, youtube_checked_at, player_error_at, player_error_code'
-      )
-      .eq('archived', false),
+    // (admin-only page). Separate reads, joined in code below. Paged in id
+    // order so the panel sees every episode past the PostgREST 1000-row cap.
+    readAllPages((from, to) =>
+      admin
+        .from('episodes')
+        .select(
+          'id, show_id, season_id, episode_number, archived, youtube_status, youtube_checked_at, player_error_at, player_error_code'
+        )
+        .eq('archived', false)
+        .order('id')
+        .range(from, to)
+    ),
     admin.from('seasons').select('id, season_number'),
   ])
 

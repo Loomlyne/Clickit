@@ -227,3 +227,17 @@ test('like matches SQL LIKE patterns (% any run, _ one character)', async () => 
   const none = await fake.client.from('rate_limits').select('key').like('key', 'contact:1x2.3.4')
   assert.deepEqual(none.data, [])
 })
+
+test('range returns rows from..to inclusive after order', async () => {
+  const fake = createFakeSupabase({
+    t: [{ id: 'd' }, { id: 'a' }, { id: 'c' }, { id: 'b' }, { id: 'e' }],
+  })
+  const first = await fake.client.from('t').select('id').order('id').range(0, 1)
+  assert.deepEqual(first.data.map((r: { id: string }) => r.id), ['a', 'b'])
+  const second = await fake.client.from('t').select('id').order('id').range(2, 3)
+  assert.deepEqual(second.data.map((r: { id: string }) => r.id), ['c', 'd'])
+  const tail = await fake.client.from('t').select('id').order('id').range(4, 5)
+  assert.deepEqual(tail.data.map((r: { id: string }) => r.id), ['e'])
+  const past = await fake.client.from('t').select('id').order('id').range(10, 19)
+  assert.deepEqual(past.data, [])
+})

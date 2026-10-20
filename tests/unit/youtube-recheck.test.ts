@@ -275,6 +275,30 @@ test('rpc throw: write_failed', async () => {
   assert.equal(!res.ok && res.reason, 'write_failed')
 })
 
+test('2,345 episodes: the read is paged in id order and every one is checked and written', async () => {
+  const eps = Array.from({ length: 2345 }, (_, i) => episode(i + 1))
+  const { fake, db } = setup(eps)
+  const videos = Object.fromEntries(eps.map((e) => [e.youtube_video_id as string, okVideo(e.youtube_video_id as string)]))
+  const yt = fakeYouTube(videos)
+  const res = await recheckVideosCore(db, yt.client, NOW)
+  assert.deepEqual(res, { ok: true, checked: 2345, notOk: 0, checkedAt: NOW.toISOString() })
+  assert.equal(fake.calls.filter((c) => c.table === 'episodes' && c.op === 'select').length, 3)
+  assert.equal(yt.calls[0]!.length, 2345)
+  const rpcs = rpcCalls(fake)
+  assert.equal(rpcs.length, 1)
+  assert.equal(new Set(rpcs[0]!.patch.p_rows.map((r: { id: string }) => r.id)).size, 2345)
+})
+
+test('a failed second page: read_failed, no YouTube call, no write', async () => {
+  const { fake, db } = setup(Array.from({ length: 1500 }, (_, i) => episode(i + 1)))
+  fake.failOn({ table: 'episodes', op: 'select', nth: 2 })
+  const yt = fakeYouTube({})
+  const res = await recheckVideosCore(db, yt.client, NOW)
+  assert.deepEqual(res, { ok: false, reason: 'read_failed', detail: 'forced failure' })
+  assert.equal(yt.calls.length, 0)
+  assert.equal(rpcCalls(fake).length, 0)
+})
+
 test('read error: read_failed, no YouTube call, no write', async () => {
   const { fake, db } = setup([episode(1)])
   fake.failOn({ table: 'episodes', op: 'select', nth: 1 })

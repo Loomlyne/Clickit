@@ -142,6 +142,7 @@ export function createFakeSupabase(initial: Tables = {}) {
     private wantCount = false
     private orderBy: { col: string; asc: boolean } | null = null
     private max: number | null = null
+    private window: { from: number; to: number } | null = null
     private mode: 'many' | 'single' | 'maybe' = 'many'
 
     private table: string
@@ -216,6 +217,11 @@ export function createFakeSupabase(initial: Tables = {}) {
       this.max = n
       return this
     }
+    /** PostgREST .range(from, to): rows from..to inclusive, after order. */
+    range(from: number, to: number) {
+      this.window = { from, to }
+      return this
+    }
     single() {
       this.mode = 'single'
       return this
@@ -245,6 +251,7 @@ export function createFakeSupabase(initial: Tables = {}) {
           return (x > y ? 1 : -1) * (asc ? 1 : -1)
         })
       }
+      if (this.window) out = out.slice(this.window.from, this.window.to + 1)
       if (this.max != null) out = out.slice(0, this.max)
       out = clone(out)
       if (this.mode === 'single') {
