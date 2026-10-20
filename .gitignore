@@ -73,3 +73,6 @@ _planning*
 .gstack/
 .env*
 CLAUDE.local.md
+
+# wrangler
+.wrangler/
