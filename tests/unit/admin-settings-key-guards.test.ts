@@ -38,7 +38,7 @@ test('no youtube_api_key anywhere in actions.ts (old plaintext write path remove
 test('saveYouTubeApiKey logs nothing and its revalidate never mentions the input', () => {
   const save = block('saveYouTubeApiKey')
   assert.equal(save.includes('console.'), false)
-  const param = save.match(/export async function saveYouTubeApiKey\((\w+)/)?.[1]
+  const param = save.match(/export async function saveYouTubeApiKey\(\s*(\w+)/)?.[1]
   assert.ok(param, 'saveYouTubeApiKey has no input parameter')
   const reval = save.slice(save.indexOf('revalidate:'))
   assert.ok(save.includes('revalidate:'), 'save does not revalidate')

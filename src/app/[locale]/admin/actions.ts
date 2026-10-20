@@ -65,6 +65,9 @@ import {
 import type { AdminDb } from '@/lib/admin/ports'
 import type { YouTubeErrorCode } from '@/lib/youtube-errors'
 import { getServerYouTubeClient } from '@/server/youtube-service'
+import { saveYouTubeApiKeyCore, type SaveKeyResult } from '@/lib/admin/youtube-key-save'
+import { testYouTubeKeyCore, type KeyTestResult } from '@/lib/admin/youtube-key-status'
+import { nextQuotaReset } from '@/lib/youtube-quota'
 import {
   planShowScheduleCore,
   applyShowScheduleCore,
@@ -1172,6 +1175,73 @@ export async function fetchYouTubeMeta(
 }
 
 // ---------------------------------------------------------------------------
+// YouTube API key in Admin › Settings (Phase 6, G6: editable, stored in Vault)
+// ---------------------------------------------------------------------------
+
+export type { SaveKeyCode } from '@/lib/admin/youtube-key-save'
+export type { KeyTestReason } from '@/lib/admin/youtube-key-status'
+
+/** Test key result for the settings block: the outcome, when, and the quota reset time. */
+export type KeyTestData = KeyTestResult & {
+  auditError?: string
+  at: string
+  resetAt: string | null
+}
+
+/**
+ * Save the YouTube key into Supabase Vault. The core checks the format before
+ * any database call, rate limits, and audits the last 4 characters only. The
+ * result carries hasKey and last4, never the key; the next request reads it.
+ */
+export async function saveYouTubeApiKey(
+  raw: string
+): Promise<SaveKeyResult | { success: false; error: string }> {
+  return runAdminAction(youtubeAdminEnv,
+    (ctx) =>
+      saveYouTubeApiKeyCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, now: new Date() },
+        raw
+      ),
+    {
+      fallbackError: 'The key was not saved.',
+      revalidate: () => revalidatePath('/[locale]/admin/settings', 'page'),
+    }
+  )
+}
+
+/**
+ * One 1-unit YouTube call with the stored key, recorded as an audit row. The
+ * key is read from Vault on this request, so a key saved a moment ago is used.
+ */
+export async function testYouTubeKey(): Promise<
+  { success: true; wrote: true; data: KeyTestData } | { success: false; error: string }
+> {
+  return runAdminAction(youtubeAdminEnv,
+    async (ctx) => {
+      const yt = await getServerYouTubeClient()
+      const r = await testYouTubeKeyCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        'missing' in yt ? null : yt.client
+      )
+      const now = new Date()
+      return {
+        success: true as const,
+        wrote: true as const,
+        data: {
+          ...r,
+          at: now.toISOString(),
+          resetAt:
+            r.ok === false && r.reason === 'quota' ? nextQuotaReset(now).toISOString() : null,
+        },
+      }
+    },
+    { fallbackError: 'Key test failed', revalidate: () => {} }
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Bulk episode scheduling
 // ---------------------------------------------------------------------------
 
@@ -1995,8 +2065,6 @@ const integrationsSchema = z.object({
       (v) => v === null || v === '' || /^[0-9]{6,20}$/.test(v),
       'Invalid Meta Pixel ID'
     ),
-  /** Omit to leave the stored key unchanged; null clears it. */
-  youtube_api_key: z.string().trim().max(100).nullable().optional(),
 })
 
 const featureFlagsSchema = z.object({
@@ -2368,9 +2436,6 @@ export async function updateIntegrations(
     const cleaned: Record<string, string | null> = {
       google_analytics_id: parsed.google_analytics_id?.trim() || null,
       meta_pixel_id: parsed.meta_pixel_id?.trim() || null,
-    }
-    if (parsed.youtube_api_key !== undefined) {
-      cleaned.youtube_api_key = parsed.youtube_api_key?.trim() || null
     }
     const admin = createAdminClient()
     const { error } = await admin
