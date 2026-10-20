@@ -262,9 +262,62 @@ test('apply: pg_dump_taken input exists and apply fails unless it is true', () =
   assert.match(t, /^\s+pg_dump_taken:\s*\n(?:\s+.*\n){0,6}?\s+type: boolean/m)
   assert.match(t, /required: true/)
   assert.match(t, /default: false/)
-  const b = jobBlock(t, 'apply')
-  assert.ok(b.includes('${{ inputs.pg_dump_taken }}'))
-  assert.match(b, /::error::Take a local pg_dump first/)
+  // WR-04: checked in BOTH jobs (dry-run first, so an unticked box fails before
+  // any approval request), through env, before the plan / apply command
+  for (const [id, command] of [
+    ['dry-run', 'supabase db push --dry-run'],
+    ['apply', 'supabase db push --db-url "$SUPABASE_DB_URL" --yes'],
+  ]) {
+    const b = jobBlock(t, id)
+    const step = b.indexOf('name: Backup confirmed')
+    assert.ok(step > 0, `${id} has a Backup confirmed step`)
+    assert.ok(b.indexOf(command) > step, `${id}: backup check comes before ${command}`)
+    const script = runBlockOf(b, /name: Backup confirmed/)
+    assert.ok(script.includes('if [ "$PG_DUMP_TAKEN" != "true" ]; then'), id)
+    assert.match(script, /::error::Take a local pg_dump first/)
+    assert.match(b.slice(step), /^\s+env:\s*\n\s+PG_DUMP_TAKEN: \$\{\{ inputs\.pg_dump_taken \}\}\s*$/m)
+  }
+})
+
+/** Every `run:` script in a workflow: inline values and literal/folded blocks. */
+function runScripts(text: string) {
+  const lines = text.split('\n')
+  const scripts: string[] = []
+  lines.forEach((line, i) => {
+    const m = line.match(/^(\s*)-?\s*run:\s*(.*)$/)
+    if (!m) return
+    if (!/^[|>][-+]?\s*$/.test(m[2])) {
+      scripts.push(m[2])
+      return
+    }
+    const body: string[] = []
+    let indent = -1
+    for (const next of lines.slice(i + 1)) {
+      const lead = (next.match(/^ */) ?? [''])[0].length
+      if (next.trim() === '') { body.push(''); continue }
+      if (indent === -1) indent = lead
+      if (lead < indent) break
+      body.push(next)
+    }
+    scripts.push(body.join('\n'))
+  })
+  return scripts
+}
+
+test('workflows (WR-04): no run: script interpolates ${{ inputs. }}; inputs reach shell via env only', () => {
+  for (const name of ['apply-live-migrations.yml', 'pr-gate.yml']) {
+    const t = read(name)
+    const scripts = runScripts(t)
+    assert.ok(scripts.length > 0, name)
+    for (const s of scripts) {
+      assert.ok(!s.includes('${{ inputs.'), `${name}: run script interpolates an input:\n${s}`)
+      assert.ok(!s.includes('${{ github.event.inputs.'), `${name}: run script interpolates an input:\n${s}`)
+    }
+    // every input reference is an env mapping line `NAME: ${{ inputs.x }}`
+    for (const line of t.split('\n').filter((l) => l.includes('${{ inputs.'))) {
+      assert.match(line, /^\s+[A-Z][A-Z0-9_]*: \$\{\{ inputs\.[a-z_]+ \}\}\s*$/, `${name}: ${line}`)
+    }
+  }
 })
 
 test('apply (CR-02): comments name the real protection, not the main-only step', () => {

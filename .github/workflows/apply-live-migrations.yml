@@ -8,7 +8,7 @@ name: Apply live migrations
 #      then applies exactly what the dry-run showed.
 #
 # Before dispatching, the controller takes a local pg_dump of live on the Mac (D-03) and
-# ticks the `pg_dump_taken` input; `apply` fails without it.
+# ticks the `pg_dump_taken` input; `dry-run` and `apply` both fail without it.
 #
 # Rules baked in:
 #   - The include-all flag is forbidden. A migration whose version sorts before one
@@ -67,6 +67,18 @@ jobs:
         run: |
           if [ "$GITHUB_REF" != "refs/heads/main" ]; then
             echo "::error::Live migrations run from main only (got $GITHUB_REF)"
+            exit 1
+          fi
+
+      # The input reaches the shell only through env, never as an expression inside the
+      # script (review WR-04). Checked in dry-run too, so an unticked box fails before
+      # Koss is asked to approve.
+      - name: Backup confirmed
+        env:
+          PG_DUMP_TAKEN: ${{ inputs.pg_dump_taken }}
+        run: |
+          if [ "$PG_DUMP_TAKEN" != "true" ]; then
+            echo "::error::Take a local pg_dump first (D-03) and re-run with pg_dump_taken"
             exit 1
           fi
 
@@ -144,9 +156,14 @@ jobs:
             exit 1
           fi
 
+      # The input reaches the shell only through env, never as an expression inside the
+      # script (review WR-04). Checked in dry-run too, so an unticked box fails before
+      # Koss is asked to approve.
       - name: Backup confirmed
+        env:
+          PG_DUMP_TAKEN: ${{ inputs.pg_dump_taken }}
         run: |
-          if [ "${{ inputs.pg_dump_taken }}" != "true" ]; then
+          if [ "$PG_DUMP_TAKEN" != "true" ]; then
             echo "::error::Take a local pg_dump first (D-03) and re-run with pg_dump_taken"
             exit 1
           fi
