@@ -128,7 +128,7 @@ Plans:
 - [x] 04-07-PLAN.md — W4: [Q1/Q2/Q6/Q8, Q7=C, Q9=yes; orchestrator] canvas spike + Foundations + Viewer boards
 - [x] 04-06-PLAN.md — W5: [Q1/Q2/Q4/Q5, Q7=C] DESIGN.md (+ two-scheme email tokens) + parity test; wording; 04-P6-ADDENDUM.md; gate (W4)
 - [x] 04-08-PLAN.md — W5: [orchestrator] canvas Admin boards + Email boards from Phase 5's signed picture (both schemes)
-- [ ] 04-09-PLAN.md — W6: [Q1/Q2] merge main; codemod 1/5 (UI primitives, chrome); gate (W5-W6)
+- [x] 04-09-PLAN.md — W6: [Q1/Q2] merge main; codemod 1/5 (UI primitives, chrome); gate (W5-W6)
 - [ ] 04-10-PLAN.md — W7: codemod 2/5 (show cards, home, browse, series)
 - [ ] 04-11-PLAN.md — W7: codemod 3/5 (watch, shorts, landing, support, coming-soon, lib gradients)
 - [ ] 04-12-PLAN.md — W8: codemod 4/5 (viewer routes, loading skeletons); gate (W7-W8)
