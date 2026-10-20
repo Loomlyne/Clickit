@@ -10,6 +10,7 @@ Branch `claude/perf-skeletons-6f6fc9`, base `origin/main` cfbc8fb, then merged w
   - Hero carousel: only slide 1 gets `priority`; the other slides load eager at normal priority (`cinematic-backdrop.tsx` `priority` prop, `hero-slide.tsx`, `hero-banner.tsx`).
 - `5233f43` feat(viewer): new `src/components/skeletons/viewer-skeletons.tsx` (Hub, Series, MyList, Watch skeletons), `.skeleton-bone` in `globals.css` (token gradient, shimmer, mirrored in RTL, static for reduce-motion). The `loading.tsx` files for watch hub / browse / viewer root, series, my-list and episode render these.
 - `05ae2b8` perf(viewer): Lenis removed (Koss's instruction via the controller). No `SmoothScroll` provider, no `data-lenis-prevent`, no `lenis` package. The navbar hide/show runs on a native passive rAF-throttled scroll listener (same thresholds and mount sync), and scroll persistence uses `window.scrollY`/`scrollTo`. Client JS −6.2 KB gz total. `git grep -i lenis -- src package.json package-lock.json` returns nothing.
+- `0c83559` + `8703cf3` fix(navbar), from the review of record: after a programmatic scroll the navbar no longer hides. Two things count as programmatic: (1) any jump of a full viewport or more in one frame, and (2) a scroll marked with `markProgrammaticScroll()`. The shorts overlay calls it before scrolling back on unlock, and scroll persistence calls it before restoring. A mark lasts 200 ms. The rules and the listener live in `src/lib/nav-scroll.ts`. Unit tests are in `tests/unit/nav-scroll.test.ts`: the listener is passive, updates once per frame, is removed on unmount, and does not hide on a programmatic jump.
 - `7184890` docs: `.planning/perf/` (BASELINE.md, signed picture + mockup).
 - No admin, next.config, open-next/wrangler, workers/, proxy, auth/Turnstile/BotID or upload file touched.
 
@@ -36,6 +37,11 @@ Lenis removal, re-run 2026-10-20 14:37:19–14:37:43 on 28ed36e (after merging o
   - episode shell
   - no horizontal overflow
   The 4 failures are the same local CSP artifact (supabase-js getUser "Failed to fetch", browser blocked from http://127.0.0.1:55321).
+
+Navbar fix, re-run 2026-10-20 15:29:49–15:31:52 on 8703cf3 (after merging origin/main a6d0667). Log: `/Users/koss/.clickit-checks/perf-gate-ct2.log`.
+- tsc exit 0.
+- gate:local exit 0: lint 0 errors, unit tests 465/465, build OK.
+- Click-through 70/74. New checks "navbar still shown after closing a short" and "after back restore" pass in en/ar × 1440/375. The 4 failures are the same local CSP artifact.
 
 ## NOT verified
 - Hero image priority fix: local data has no show artwork, so not measurable; check on live data after deploy.
