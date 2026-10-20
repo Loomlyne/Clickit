@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-20T10:37:22.734Z"
+last_updated: "2026-10-20T10:39:51.639Z"
 last_activity: 2026-10-20
 progress:
   total_phases: 9
@@ -59,6 +59,7 @@ Progress: [█████████░] 92%
 | Phase 01.1 P11 | 30min | 3 tasks | 3 files |
 | Phase 01.1 P12 | 40min | 3 tasks | 5 files |
 | Phase 02 P02 | 15min | 2 tasks | 3 files |
+| Phase 02 P04 | 20min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,7 @@ Recent decisions affecting current work:
 - [Phase 02-01]: Worker gzip bundle is 3079.28 KiB, 7 KiB over 3 MiB; confirm the real Free size limit at the plan 02-10 deploy
 - [Phase 02-01]: react-hooks/set-state-in-effect set to warn after the eslint-config-next 16.4.2 bump; refactor deferred (phase 02 deferred-items.md)
 - [Phase 02]: 02-02: R2 CORS builder refuses http, wildcard, path/query/hash and credentials; runbook Rule 5 lists the four owner-gated live-Supabase exceptions
+- [Phase 02]: 02-04: security helpers are pure with injected I/O; cron auth and rate limiter refuse on every uncertain path; Turnstile reasons are fixed codes that never echo secret or token
 
 ### Pending Todos
 
@@ -106,6 +108,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-20T10:37:22.726Z
-Stopped at: Completed 02-02-PLAN.md (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above still shows 01.1, controller owns it)
+Last session: 2026-10-20T10:39:51.632Z
+Stopped at: Completed 02-04-PLAN.md (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above still shows 01.1, controller owns it)
 Resume file: None
