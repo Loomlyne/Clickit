@@ -18,7 +18,7 @@ Branch `claude/design-b2-account-91fbe1` (base `main` merged in at `53e2598`). S
 - Added a "Watch Shows" button to the empty My List as well as Liked.
 
 ## Gates
-See PR body / final report for the `gate:local` result (lint, unit tests, build) with the exit line from `/Users/koss/.clickit-logs/b2/gate.log`.
+`npm run gate:local` under the shared lock, 2026-10-20 11:36 CET: lint 0 errors (15 warnings, none new from B2 except the pre-existing avatar `<img>`), unit tests 78 pass / 0 fail (3 new in `tests/unit/password-rules.test.ts`), `next build` compiled and exit 0. Log: `/Users/koss/.clickit-logs/b2/gate.log` (`exit=0`). Build needs placeholder Supabase env (`NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321`, dummy keys) — without it `legal/[slug]` fails with `supabaseUrl is required` (unchanged code, same as B3). Merge commit of `origin/main` at `53e2598`; main had not moved after.
 
 ## NOT verified
 - No local Supabase env: auth/profile pages were not run against a real session; no screenshots of the coded pages (only of the picture). Browser UAT happens after the PR preview/deploy.
