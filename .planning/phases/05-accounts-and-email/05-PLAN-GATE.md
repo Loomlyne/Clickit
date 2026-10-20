@@ -1,6 +1,6 @@
 # Phase 5 Accounts and Email: plan gate
 
-42 plans (05-00 to 05-41) in 15 waves (0 to 14). G1 to G19 carry Koss's signed discuss answers (2026-10-20 ~18:05 CET, relayed by the controller; `05-CONTEXT.md` status line), and the plans were revised to match them (revision 1). Rows G20 to G25 still need Koss's answer in the "Koss" column; nothing executes until every row has one (05-00 Task 1 stops otherwise). An answer other than the recommended one names the plans that change; those plans get a revision pass (`/gsd-plan-phase 5 --revision`) before execution.
+42 plans (05-00 to 05-41) in 15 waves (0 to 14). G1 to G19 carry Koss's signed discuss answers (2026-10-20 ~18:05 CET, relayed by the controller; `05-CONTEXT.md` status line), and the plans were revised to match them (revisions 1-3). Rows G20 to G25 still need Koss's answer in the "Koss" column; nothing executes until every row has one (05-00 Task 1 stops otherwise). An answer other than the recommended one names the plans that change; those plans get a revision pass (`/gsd-plan-phase 5 --revision`) before execution.
 
 How to answer the open rows: row number and letter, for example `G20 A, G23 A`. "All recommended" is fine.
 
@@ -41,16 +41,24 @@ Live fact applied (D-16, controller read 2026-10-20): live `app_config.admin_use
 | G24 | UI-SPEC open items needing your word, each with a picture per option (see "Pictures for G24" below): (3) second authenticator step skippable (A) or required (B); (5) "Lost your phone? Ask Koss to reset your authenticator." as plain text (A) or as a link (B); (7) name step says "Add a password later" as plain text (A) or as a link (B); (12) /auth h1 is the fixed sign-in heading (A) or keeps the admin "auth heading" setting (B; fields stay either way, retire in Phase 8). Item (4), the "Free with an account" chip, is gone with G4 = B. | A for each | (3) 05-25; (5) 05-06, 05-25; (7) 05-24; (12) 05-22 | |
 | G25 | Support auto-reply promises a reply "within 48 hours". | A (48 hours) | B (no time stated): 05-11 (SUPPORT_REPLY_HOURS removed from src/lib/email-constants.ts), 05-06 copy, 05-28 | |
 
-## Pictures for G24 (W9: every UI choice gets a picture per option before Koss answers)
+## Pictures for G24 (rendered 2026-10-20, real product tokens; no G24 answer from text alone)
 
-| Item | Option A | Option B | Existing picture | New picture needed |
-|------|----------|----------|------------------|--------------------|
-| (3) second authenticator step | skippable ("Add a second one" / "Skip for now") | required (no skip) | none: `mockups/05-q7.png` shows the two-step enrol only, no second-authenticator step | yes, both options |
-| (5) lost-phone line on /auth/mfa | plain text | link | `mockups/05-q7.png` shows it as a link (option B only) | yes, option A |
-| (7) name step "Add a password later" | plain text | link | `mockups/05-q3.png` shows it as a link (option B only) | yes, option A |
-| (12) /auth heading | fixed sign-in heading (`signInOrJoinTitle`) | admin-configured "auth heading" | none (05-q1.png shows the new layout without the admin heading question) | yes, both options |
+| Item | Picture (A and B side by side) |
+|------|--------------------------------|
+| (3) second authenticator step: A skippable, B required | `mockups/05-g24-3.png` |
+| (5) lost-phone line on /auth/mfa: A plain text, B link | `mockups/05-g24-5.png` |
+| (7) name step password note: A plain text, B link | `mockups/05-g24-7.png` |
+| (12) /auth heading: A fixed "Sign in or join", B admin setting (today "Sign up below") | `mockups/05-g24-12.png` |
 
-Task 0 (controller, before Koss answers G24): render the four new pictures (items 3, 5, 7, 12) with real product tokens, in `mockups/05-g24-*.png`, and show them to Koss next to `05-q3.png` and `05-q7.png`. No G24 answer is taken from text alone.
+Source: `mockups/05-g24.html` (same token sheet as `05-mockups.html`).
+
+## Plan verification record
+
+- Round 1 (gsd-plan-checker, Opus): 4 blockers, 13 warnings -> revision 1.
+- Round 2 (Opus, 7d5e48b): round-1 items all fixed; 3 blockers (email logo, colour roles vs Phase 4 tokens, M2/M3 order), 13 warnings -> revision 2 (05-41 added).
+- Round 3 (Opus, df228fa, last full round): round-2 items all fixed; 2 blockers (local seed after PR 2, same-day digest rerun), 5 warnings -> narrow fixes (aaf9b5c).
+- Scoped re-check of those fixes (Opus): all confirmed in plan text; 2 blockers (per-run unique e2e addresses; `&amp;` unescape covering the fallback-URL line) and 4 warnings (logo extend background, resolver defaults, seed print lines, Storage `apikey` header), fixed by the orchestrator directly with `verify.plan-structure` passing on 05-07, 05-10, 05-17, 05-32, 05-33, 05-35. Those last edits were not re-checked by a fresh checker run (GSD's 3 rounds are used); they are single-sentence edits in the named plans.
+- `frontmatter.validate` / `verify.plan-structure`: 42/42 plans valid; all 14 requirements covered; waves consistent.
 
 ## Facts (read by the controller, recorded)
 
@@ -66,6 +74,23 @@ Task 0 (controller, before Koss answers G24): render the four new pictures (item
 - Phase 4 boards signed in `04-GATE.md`: 05-12 (Viewer board; every screen plan after it builds on its components) and 05-27 (Admin board) stop with `NEEDS KOSS` until then.
 - Phase 3 cutover (www on the Worker, Resend domain verified, Supabase CAPTCHA on): needed only by the live plans 05-35 to 05-37.
 - Phase 6 state: shares `admin/actions.ts`, `database.types.ts`, the message files, the migration order and the local Supabase stack (05-13, 05-17, 05-38 ask the controller before changing the shared stack); base wins on merge.
+
+## Owner steps in order (one numbered step each when they come; all in the controller)
+
+Before execution: answer G20, G21, G23, G24, G25 here. Upstream: Phase 2 on main (G20 A), Phase 4 `email-tokens.ts` with the signed values and the Viewer/Admin boards signed.
+
+1. Local UAT (05-33): 20 numbered type/click steps on the local stack, Koss's pass.
+2. Phase 5 PR (05-34): review on the PR, then Koss's Ship (squash to main).
+3. 05-35 Task 1 (Supabase Auth): read the plan tier; Resend SMTP key; SMTP settings; OTP length/expiry; resend window; email provider settings; rate limits (G18); URL configuration; Pro-only leaked-password check if Pro; config readback from Koss's terminal. (Confirm email, Secure email change and the five templates are deferred to the pre-deploy sitting.)
+4. 05-35 Task 2: Cloudflare queues `clickit-email` + DLQ (controller), Worker secrets `RESEND_API_KEY`, `EMAIL_LINK_SECRET` (Koss's terminal, values never in chat), email logo placed on the media host (controller via R2, or one `NEEDS KOSS` command if the Worker serves Supabase Storage); readback 200 image/png.
+5. 05-35 Task 3: M1 applied on live through `apply-live-migrations.yml` on Koss's approval; readback (`admins` = 0, `newsletter_subscribers` = 0).
+6. In parallel with 3-5: 05-41 second PR (M2+M3) prepared, gated, reviewed (Grok verdict), left unmerged.
+7. 05-36 Task 1, one sitting: P1 Confirm email ON, P2 Secure email change ON, P3 paste the five templates and subjects, P4 config check all OK; then the deploy question (states the 10-15 min break window for old-site email links and the admin outage until enrolment); deploy on Koss's word; live smoke.
+8. 05-36 Task 2: first real emails to Koss's own address (code, confirm, reset, welcome, support), logo loads.
+9. 05-36 Task 3: Issam signs in by code (account created, real welcome email), Nejib the same; two owner SQL inserts into `admins`, read back (test account not an admin).
+10. 05-37 Task 1: migration-guard re-run against main; Ship PR 2; M2+M3 in one approval.
+11. 05-37 Task 2: Issam and Nejib enrol TOTP (second authenticator per G24 item 3); admin re-verify.
+12. 05-37 Task 3: digest on? A: separate one-line PR with its own Ship; B: stays off.
 
 ## Next steps
 
