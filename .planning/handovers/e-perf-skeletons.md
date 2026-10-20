@@ -38,7 +38,7 @@ Lenis removal, re-run 2026-10-20 14:37:19–14:37:43 on 28ed36e (after merging o
   - no horizontal overflow
   The 4 failures are the same local CSP artifact (supabase-js getUser "Failed to fetch", browser blocked from http://127.0.0.1:55321).
 
-Navbar fix, re-run 2026-10-20 15:29:49–15:31:52 on 8703cf3 (after merging origin/main a6d0667). Log: `/Users/koss/.clickit-checks/perf-gate-ct2.log`.
+Navbar fix, re-run 2026-10-20 15:29:49–15:31:52 on 8703cf3 (after merging origin/main a6d0667). Then merged origin/main 8794fc8 (Phase 1, no src changes) → 58ff431: tsc exit 0, gate:local (now lint + typecheck + 527/527 tests + migration guard + build) exit 0, 15:32:51–15:33:22. Log: `/Users/koss/.clickit-checks/perf-gate-ct2.log`.
 - tsc exit 0.
 - gate:local exit 0: lint 0 errors, unit tests 465/465, build OK.
 - Click-through 70/74. New checks "navbar still shown after closing a short" and "after back restore" pass in en/ar × 1440/375. The 4 failures are the same local CSP artifact.
