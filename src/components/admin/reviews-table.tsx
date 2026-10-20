@@ -17,7 +17,11 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
-import { AdminPanel, AdminTableShell } from '@/components/admin/admin-shell'
+import {
+  AdminPageHeader,
+  AdminPanel,
+  AdminTableShell,
+} from '@/components/admin/admin-shell'
 import { deleteReview } from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
 
@@ -60,7 +64,10 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
         r.shows?.title.toLowerCase().includes(q)
     )
   }, [reviews, search])
-  const filteredIds = useMemo(() => filtered.map((review) => review.id), [filtered])
+  const filteredIds = useMemo(
+    () => filtered.map((review) => review.id),
+    [filtered]
+  )
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds])
   const selectedCount = selectedIds.length
   const allFilteredSelected =
@@ -136,55 +143,48 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
 
   return (
     <>
-      {/* Header */}
-      <AdminPanel className="p-0">
-        <div className="flex flex-col gap-3 border-b border-white/8 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-4 md:px-6">
-          <div className="min-w-0">
-            <h2 className="text-foreground text-lg font-semibold tracking-tight sm:text-xl">
-              {tDash('reviews')}
-            </h2>
-            <p className="text-muted-foreground mt-0.5 text-sm">
-              {tDash('totalCountLabel', { count: reviews.length })}
-            </p>
-          </div>
+      <AdminPageHeader
+        title={tDash('reviews')}
+        description={tDash('totalCountLabel', { count: reviews.length })}
+      />
 
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-            <div className="relative w-full min-w-0 sm:w-[320px]">
-              <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-              <Input
-                placeholder={t('searchPlaceholder')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            {selectedCount > 0 && (
-              <Button
-                variant="destructive"
-                onClick={() => setBulkDeleteDialogOpen(true)}
-                className="w-full gap-2 sm:w-auto"
-              >
-                <Trash2 className="size-4" />
-                {t('bulkDeleteButton', { count: selectedCount })}
-              </Button>
-            )}
+      <AdminPanel className="overflow-hidden p-0">
+        <div className="flex flex-col gap-3 border-b border-[var(--line)] p-4 sm:flex-row sm:items-center">
+          <div className="relative w-full min-w-0 sm:max-w-sm sm:flex-1">
+            <Search className="absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-[var(--text-mute)]" />
+            <Input
+              placeholder={t('searchPlaceholder')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="ps-10"
+            />
           </div>
+          {selectedCount > 0 && (
+            <Button
+              variant="destructive"
+              onClick={() => setBulkDeleteDialogOpen(true)}
+              className="w-full gap-2 sm:ms-auto sm:w-auto"
+            >
+              <Trash2 className="size-4" />
+              {t('bulkDeleteButton', { count: selectedCount })}
+            </Button>
+          )}
         </div>
 
         {loadError && (
-          <div className="mx-5 mb-5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 md:mx-6">
+          <div className="border-brand-orange-safe/20 bg-brand-orange-safe/10 text-brand-orange-safe mx-5 mb-5 rounded-lg border px-4 py-3 text-sm md:mx-6">
             {t('loadErrorPrefix')} {loadError}
           </div>
         )}
 
         {filtered.length === 0 ? (
-          <div className="border-t border-white/8 px-5 py-16 text-center md:px-6">
+          <div className="border-t border-[var(--line)] px-5 py-16 text-center md:px-6">
             <p className="text-muted-foreground">
               {search ? t('emptySearch') : t('empty')}
             </p>
           </div>
         ) : (
-          <AdminTableShell className="rounded-none border-x-0 border-b-0">
+          <AdminTableShell className="rounded-none border-0">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -206,11 +206,13 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
                   <TableHead>{t('colUser')}</TableHead>
                   <TableHead>{t('colShow')}</TableHead>
                   <TableHead>{t('colRating')}</TableHead>
-                  <TableHead className="max-w-[300px]">
+                  <TableHead className="hidden max-w-[300px] md:table-cell">
                     {t('colReview')}
                   </TableHead>
-                  <TableHead>{t('colDate')}</TableHead>
-                  <TableHead className="w-16 text-right">
+                  <TableHead className="hidden sm:table-cell">
+                    {t('colDate')}
+                  </TableHead>
+                  <TableHead className="w-16 text-end">
                     {t('colActions')}
                   </TableHead>
                 </TableRow>
@@ -232,34 +234,39 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bg-3)] text-[10px] font-medium text-[var(--text-dim)]">
+                        <div className="flex size-8 items-center justify-center rounded-full bg-[var(--bg-3)] text-[12px] font-medium text-[var(--text-dim)]">
                           {(r.profiles?.display_name || 'A')
                             .slice(0, 2)
                             .toUpperCase()}
                         </div>
-                        <span className="text-sm">
-                          {r.profiles?.display_name || t('anonymous')}
-                        </span>
+                        <div className="min-w-0">
+                          <span>
+                            {r.profiles?.display_name || t('anonymous')}
+                          </span>
+                          <p className="line-clamp-2 text-[13px] text-[var(--text-mute)] md:hidden">
+                            {r.body}
+                          </p>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Link
                         href={`/series/${r.shows?.slug}`}
-                        className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-sm"
+                        className="flex items-center gap-1.5 text-[var(--text-dim)] hover:text-[var(--text)]"
                       >
                         {r.shows?.title || t('unknownShow')}
-                        <ExternalLink className="size-3" />
+                        <ExternalLink className="size-3.5" />
                       </Link>
                     </TableCell>
                     <TableCell>
                       <Stars count={r.stars} />
                     </TableCell>
-                    <TableCell className="max-w-[300px]">
-                      <p className="text-muted-foreground truncate text-sm">
+                    <TableCell className="hidden max-w-[300px] md:table-cell">
+                      <p className="truncate text-[var(--text-dim)]">
                         {r.body}
                       </p>
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
+                    <TableCell className="hidden text-[var(--text-dim)] sm:table-cell">
                       {new Date(r.created_at).toLocaleDateString(
                         { ar: 'ar-AE', en: 'en-AE' }[locale] ?? 'en-AE',
                         {
@@ -268,11 +275,11 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
                         }
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <Button
-                        variant="ghost"
+                        variant="destructive"
                         size="icon"
-                        className="size-8 text-red-400 hover:text-red-300"
+                        aria-label={t('deleteTitle')}
                         onClick={() => {
                           setDeletingReview(r)
                           setDeleteDialogOpen(true)

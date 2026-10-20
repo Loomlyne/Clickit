@@ -19,12 +19,16 @@ export function SettingsCard({
   className?: string
 }) {
   return (
-    <section className={cn(adminPanelClass, 'p-6 md:p-8', className)}>
-      <header className="mb-6 flex items-start justify-between gap-4">
+    <section className={cn(adminPanelClass, 'p-5 md:p-6', className)}>
+      <header className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
+          <h2 className="text-[16px] font-semibold text-[var(--text)]">
+            {title}
+          </h2>
           {description && (
-            <p className="text-muted-foreground mt-1 text-sm">{description}</p>
+            <p className="mt-0.5 text-[14px] text-[var(--text-dim)]">
+              {description}
+            </p>
           )}
         </div>
         {action}
@@ -48,12 +52,14 @@ export function SettingsField({
 }) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-xs font-medium tracking-[0.16em] text-white/60 uppercase">
+      <span className="text-[13px] font-medium text-[var(--text-dim)]">
         {label}
       </span>
       {children}
       {hint && (
-        <span className="text-muted-foreground block text-xs">{hint}</span>
+        <span className="block text-[12px] text-[var(--text-mute)]">
+          {hint}
+        </span>
       )}
     </label>
   )

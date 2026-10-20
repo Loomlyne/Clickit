@@ -76,7 +76,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
               maxLength={300}
               value={v.tagline}
               onChange={(e) => setV({ ...v, tagline: e.target.value })}
-              className="rounded-[12px]"
+              className="rounded-lg"
             />
           </SettingsField>
           <SettingsField
@@ -89,7 +89,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
               maxLength={300}
               value={v.taglineAr}
               onChange={(e) => setV({ ...v, taglineAr: e.target.value })}
-              className="rounded-[12px]"
+              className="rounded-lg"
               placeholder="من الإمارات إلى العالم…"
             />
           </SettingsField>
@@ -102,14 +102,14 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
               value={v.contactEmail}
               onChange={(e) => setV({ ...v, contactEmail: e.target.value })}
               placeholder="hello@clickitstory.com"
-              className="rounded-[12px]"
+              className="rounded-lg"
             />
           </SettingsField>
         </div>
 
         {/* Social links — dynamic rows */}
         <fieldset className="space-y-3">
-          <legend className="text-xs font-medium tracking-[0.16em] text-white/60 uppercase">
+          <legend className="text-[13px] font-medium text-[var(--text-dim)]">
             {t('socialLinksHeading')}
           </legend>
 
@@ -133,7 +133,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
                     value={row.platform}
                     onValueChange={(val) => updateRow(index, { platform: val })}
                   >
-                    <SelectTrigger className="w-[180px] shrink-0 rounded-[12px]">
+                    <SelectTrigger className="w-[180px] shrink-0 rounded-lg">
                       <SelectValue>
                         <span className="flex items-center gap-2">
                           <Icon className="size-4 shrink-0" />
@@ -162,7 +162,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
                     value={row.url}
                     onChange={(e) => updateRow(index, { url: e.target.value })}
                     placeholder="https://…"
-                    className="min-w-0 flex-1 rounded-[12px]"
+                    className="min-w-0 flex-1 rounded-lg"
                   />
 
                   {/* Remove row */}
@@ -170,7 +170,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="shrink-0 text-white/50 hover:text-red-300"
+                    className="hover:text-brand-red-safe shrink-0 text-[var(--text-mute)]"
                     onClick={() => removeRow(index)}
                     aria-label="Remove"
                   >
@@ -189,14 +189,14 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
               className="mt-1 rounded-full"
               onClick={addRow}
             >
-              <Plus className="mr-1.5 size-3.5" />
+              <Plus className="me-1.5 size-3.5" />
               Add social link
             </Button>
           )}
         </fieldset>
 
         <fieldset className="space-y-3">
-          <legend className="text-xs font-medium tracking-[0.16em] text-white/60 uppercase">
+          <legend className="text-[13px] font-medium text-[var(--text-dim)]">
             {t('legalPagesHeading')}
           </legend>
           <div className="grid gap-3 md:grid-cols-3">
@@ -281,22 +281,24 @@ function SocialIconUpload({
         <button
           type="button"
           onClick={onRemove}
-          className="group relative flex size-9 items-center justify-center overflow-hidden rounded-[8px] border border-white/10 bg-black/30"
+          className="group relative flex size-9 items-center justify-center rounded-[8px] border border-[var(--line)] bg-black/30 after:absolute after:-inset-1 after:content-['']"
           title="Remove icon"
         >
-          <Image
-            src={stripStorageCacheBust(currentUrl) ?? currentUrl}
-            alt="icon"
-            width={24}
-            height={24}
-            unoptimized
-            className="size-6 object-contain transition-opacity group-hover:opacity-20"
-          />
-          <Trash2 className="absolute size-3.5 text-red-300 opacity-0 transition-opacity group-hover:opacity-100" />
+          <span className="flex size-full items-center justify-center overflow-hidden rounded-[8px]">
+            <Image
+              src={stripStorageCacheBust(currentUrl) ?? currentUrl}
+              alt="icon"
+              width={24}
+              height={24}
+              unoptimized
+              className="size-6 object-contain transition-opacity group-hover:opacity-20"
+            />
+          </span>
+          <Trash2 className="text-brand-red-safe absolute size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
         </button>
       ) : (
         <label
-          className="flex size-9 cursor-pointer items-center justify-center rounded-[8px] border border-dashed border-white/20 bg-white/[0.02] text-white/40 transition-colors hover:border-white/30 hover:text-white/60"
+          className="relative flex size-9 cursor-pointer items-center justify-center rounded-[8px] border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] text-[var(--text-mute)] transition-colors after:absolute after:-inset-1 after:content-[''] hover:border-[var(--text-mute)] hover:text-[var(--text-dim)]"
           title="Upload icon"
         >
           {busy ? (
@@ -307,7 +309,7 @@ function SocialIconUpload({
           <input
             ref={inputRef}
             type="file"
-            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            accept="image/png,image/jpeg,image/webp"
             className="hidden"
             onChange={onFile}
           />

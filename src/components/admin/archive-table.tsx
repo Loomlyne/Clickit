@@ -30,6 +30,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { canDeletePermanently } from '@/lib/admin/guards'
 import { EmptyState } from '@/components/admin/empty-state'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { AdminPanel, AdminTableShell } from '@/components/admin/admin-shell'
@@ -92,6 +93,9 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
   const showIds = shows.map((show) => show.id)
   const selectedSet = new Set(selectedIds)
   const selectedCount = selectedIds.length
+  const deletableSelectedIds = selectedIds.filter((id) =>
+    canDeletePermanently(shows.find((s) => s.id === id))
+  )
   const allSelected =
     showIds.length > 0 && showIds.every((id) => selectedSet.has(id))
 
@@ -162,7 +166,9 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
       setConflictShow(null)
       setConflicts([])
       setShowConflict(null)
-      setSelectedIds((current) => current.filter((id) => id !== conflictShow.id))
+      setSelectedIds((current) =>
+        current.filter((id) => id !== conflictShow.id)
+      )
       toast.success(t('restoredToast'))
     } else if (
       result.showConflict ||
@@ -202,8 +208,8 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
   }
 
   async function handleBulkDeleteConfirm() {
-    if (selectedIds.length === 0) return
-    const ids = selectedIds
+    if (deletableSelectedIds.length === 0) return
+    const ids = deletableSelectedIds
     setBulkDeleting(true)
     for (const id of ids) {
       const result = await deleteShowPermanently(id)
@@ -293,14 +299,18 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                   ? t('restoring')
                   : t('bulkRestoreButton', { count: selectedCount })}
               </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setBulkDeleteDialogOpen(true)}
-              >
-                <Trash2 className="me-1.5 size-4" />
-                {t('bulkDeleteButton', { count: selectedCount })}
-              </Button>
+              {deletableSelectedIds.length > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setBulkDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="me-1.5 size-4" />
+                  {t('bulkDeleteButton', {
+                    count: deletableSelectedIds.length,
+                  })}
+                </Button>
+              )}
             </div>
           ) : (
             <span>{t('newestFirst')}</span>
@@ -342,7 +352,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
               {shows.map((show) => (
                 <TableRow
                   key={show.id}
-                  className="group transition-colors hover:bg-white/[0.02]"
+                  className="group transition-colors hover:bg-[var(--bg-2)]"
                   data-state={selectedSet.has(show.id) ? 'selected' : undefined}
                 >
                   <TableCell>
@@ -384,19 +394,21 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                         </TooltipTrigger>
                         <TooltipContent>{t('restoreTooltip')}</TooltipContent>
                       </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteClick(show)}
-                          >
-                            <Trash2 className="me-1 size-3.5" />
-                            {tCommon('delete')}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{t('deleteTooltip')}</TooltipContent>
-                      </Tooltip>
+                      {canDeletePermanently(show) && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteClick(show)}
+                            >
+                              <Trash2 className="me-1 size-3.5" />
+                              {tCommon('delete')}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t('deleteTooltip')}</TooltipContent>
+                        </Tooltip>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -422,7 +434,9 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
         open={bulkDeleteDialogOpen}
         onOpenChange={setBulkDeleteDialogOpen}
         title={t('bulkDeleteTitle')}
-        description={t('bulkDeleteDescription', { count: selectedCount })}
+        description={t('bulkDeleteDescription', {
+          count: deletableSelectedIds.length,
+        })}
         confirmLabel={t('bulkDeleteConfirm')}
         onConfirm={handleBulkDeleteConfirm}
         destructive
@@ -434,7 +448,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="size-5 text-amber-500" />
+              <AlertTriangle className="text-brand-orange-safe size-5" />
               {showConflict ? t('showConflictHeading') : t('conflictHeading')}
             </DialogTitle>
             <DialogDescription>
@@ -446,7 +460,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
 
           <div className="space-y-3 py-2">
             {showConflict && (
-              <div className="space-y-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+              <div className="border-brand-orange-safe/20 bg-brand-orange-safe/8 space-y-3 rounded-lg border p-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="restore-title">{t('titleLabel')}</Label>
                   <Input
@@ -460,7 +474,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                     }
                   />
                   {showConflict.titleConflictTitle && (
-                    <p className="text-xs text-amber-400">
+                    <p className="text-brand-orange-safe text-xs">
                       {t('titleConflictWithShow', {
                         title: showConflict.titleConflictTitle,
                       })}
@@ -480,7 +494,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                     }
                   />
                   {showConflict.slugConflictTitle && (
-                    <p className="text-xs text-amber-400">
+                    <p className="text-brand-orange-safe text-xs">
                       {t('slugConflictWithShow', {
                         title: showConflict.slugConflictTitle,
                       })}
@@ -492,7 +506,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
             {conflicts.map((c) => (
               <div
                 key={c.episodeId}
-                className="space-y-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3"
+                className="border-brand-orange-safe/20 bg-brand-orange-safe/8 space-y-2 rounded-lg border p-3"
               >
                 <div className="text-sm">
                   <span className="text-foreground font-medium">
@@ -503,7 +517,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                     {c.episodeTitle}
                   </span>
                 </div>
-                <div className="text-xs text-amber-400">
+                <div className="text-brand-orange-safe text-xs">
                   {t('conflictsWithEpisode', {
                     title: c.conflictingEpisodeTitle,
                   })}

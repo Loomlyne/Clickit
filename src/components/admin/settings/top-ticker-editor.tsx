@@ -46,7 +46,10 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
         text: r.text.trim(),
         tag2: (r.tag2 ?? '').trim(),
       }))
-      .filter((r) => r.tag.length > 0 || r.text.length > 0 || (r.tag2 ?? '').length > 0),
+      .filter(
+        (r) =>
+          r.tag.length > 0 || r.text.length > 0 || (r.tag2 ?? '').length > 0
+      ),
   }
   const dirty =
     JSON.stringify(normalizedDraft) !== JSON.stringify(normalizedInitial)
@@ -60,11 +63,25 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
         text: r.text.trim(),
         tag2: r.tag2?.trim() || undefined,
       }))
-      .filter((r) => r.tag.length > 0 || r.text.length > 0 || (r.tag2?.trim() ?? '').length > 0)
+      .filter(
+        (r) =>
+          r.tag.length > 0 ||
+          r.text.length > 0 ||
+          (r.tag2?.trim() ?? '').length > 0
+      )
     const result = await updateTopTicker({ enabled, items })
     setSaving(false)
     if (result.success) {
-      toast.success(t('newsTickerSaved'))
+      const data: unknown = result.data
+      const untranslated =
+        data && typeof data === 'object' && 'untranslated' in data
+          ? (data as { untranslated: unknown }).untranslated
+          : 0
+      if (typeof untranslated === 'number' && untranslated > 0) {
+        toast.warning(t('newsTickerArabicMissing', { count: untranslated }))
+      } else {
+        toast.success(t('newsTickerSaved'))
+      }
       if (items.length === 0) {
         setRows([emptyRow()])
       }
@@ -90,9 +107,9 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
       description={t('topTickerDescription')}
     >
       <form onSubmit={onSave} className="space-y-4">
-        <label className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-white/8 bg-white/[0.02] px-4 py-3">
+        <label className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-[var(--line)] bg-[var(--bg-2)] px-4 py-3">
           <div>
-            <p className="text-sm font-medium text-white">
+            <p className="text-sm font-medium text-[var(--text)]">
               {t('enableTicker')}
             </p>
             <p className="text-muted-foreground mt-0.5 text-xs">
@@ -104,8 +121,8 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
             role="switch"
             aria-checked={enabled}
             onClick={() => setEnabled((v) => !v)}
-            className={`relative mt-1 h-6 w-11 shrink-0 rounded-full transition-colors ${
-              enabled ? 'bg-white' : 'bg-white/15'
+            className={`relative mt-1 h-6 w-11 shrink-0 rounded-full transition-colors before:absolute before:inset-x-0 before:-inset-y-2.5 before:content-[''] ${
+              enabled ? 'bg-white' : 'bg-[var(--bg-3)]'
             }`}
           >
             <span
@@ -118,7 +135,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-medium tracking-[0.16em] text-white/60 uppercase">
+            <span className="text-[13px] font-medium text-[var(--text-dim)]">
               {t('tickerLinesHeading')}
             </span>
             <Button
@@ -137,7 +154,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
           {rows.map((row, index) => (
             <div
               key={index}
-              className="flex flex-col gap-3 rounded-lg border border-white/8 bg-white/[0.02] p-4"
+              className="flex flex-col gap-3 rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-4"
             >
               <div className="flex flex-col gap-3 md:flex-row md:items-end">
                 <div className="min-w-0 flex-1 md:max-w-[160px]">
@@ -153,7 +170,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
                           )
                         )
                       }
-                      className="rounded-[12px] font-[family-name:var(--font-lbc)] font-bold text-sm"
+                      className="rounded-lg font-[family-name:var(--font-lbc)] text-sm font-bold"
                     />
                   </SettingsField>
                 </div>
@@ -170,7 +187,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
                           )
                         )
                       }
-                      className="rounded-[12px] font-[family-name:var(--font-lbc)] font-bold"
+                      className="rounded-lg font-[family-name:var(--font-lbc)] font-bold"
                     />
                   </SettingsField>
                 </div>
@@ -187,7 +204,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
                           )
                         )
                       }
-                      className="rounded-[12px] font-[family-name:var(--font-lbc)] font-bold text-sm"
+                      className="rounded-lg font-[family-name:var(--font-lbc)] text-sm font-bold"
                     />
                   </SettingsField>
                 </div>
@@ -195,7 +212,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="shrink-0 text-white/50 hover:text-red-300"
+                  className="hover:text-brand-red-safe shrink-0 text-[var(--text-mute)]"
                   aria-label={t('removeLineAria')}
                   onClick={() => removeRow(index)}
                 >

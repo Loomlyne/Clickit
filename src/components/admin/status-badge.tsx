@@ -1,33 +1,36 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { Badge } from '@/components/ui/badge'
 
-const statusConfig: Record<string, { key: string; className: string }> = {
+// Status colour is purposeful and sparse: brand-safe tints plus a dot, 12px.
+const statusConfig: Record<
+  string,
+  { key: string; className: string; dot: string }
+> = {
   'now-streaming': {
     key: 'statusNowStreaming',
-    className:
-      'border-emerald-400/25 bg-emerald-500/14 text-emerald-200 hover:bg-emerald-500/14',
+    className: 'bg-brand-green-safe/12 text-brand-green-safe',
+    dot: 'bg-brand-green-safe',
   },
   'coming-soon': {
     key: 'statusComingSoon',
-    className:
-      'border-amber-400/25 bg-amber-500/14 text-amber-100 hover:bg-amber-500/14',
+    className: 'bg-brand-orange-safe/12 text-brand-orange-safe',
+    dot: 'bg-brand-orange-safe',
   },
   draft: {
     key: 'statusDraft',
-    className:
-      'border-white/8 bg-white/[0.03] text-muted-foreground hover:bg-white/[0.04]',
+    className: 'bg-[var(--bg-3)] text-[var(--text-dim)]',
+    dot: 'bg-[var(--text-mute)]',
   },
   published: {
     key: 'statusPublished',
-    className:
-      'border-sky-400/25 bg-sky-500/14 text-sky-100 hover:bg-sky-500/14',
+    className: 'bg-brand-blue-safe/12 text-brand-blue-safe',
+    dot: 'bg-brand-blue-safe',
   },
   archived: {
     key: 'statusArchived',
-    className:
-      'border-red-400/25 bg-red-500/14 text-red-100 hover:bg-red-500/14',
+    className: 'bg-brand-red-safe/12 text-brand-red-safe',
+    dot: 'bg-brand-red-safe',
   },
 }
 
@@ -36,11 +39,13 @@ export function StatusBadge({ status }: { status: string }) {
   const config = statusConfig[status] ?? statusConfig['draft']
   const label = t(config.key as never)
   return (
-    <Badge
-      className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${config.className}`}
+    <span
+      data-slot="badge"
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] leading-4 font-medium whitespace-nowrap ${config.className}`}
       aria-label={t('ariaLabel', { label })}
     >
+      <span className={`size-1.5 rounded-full ${config.dot}`} aria-hidden />
       {label}
-    </Badge>
+    </span>
   )
 }

@@ -120,9 +120,11 @@ export function ScheduleEpisodesButton({ showId }: { showId: string }) {
           {plan.length > 0 && (
             <>
               {missingVideo > 0 && (
-                <div className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2.5 text-xs text-amber-200">
+                <div className="border-brand-orange-safe/25 bg-brand-orange-safe/10 text-brand-orange-safe flex items-start gap-2 rounded-lg border px-3 py-2.5 text-xs">
                   <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-                  <span>{t('missingVideoWarning', { count: missingVideo })}</span>
+                  <span>
+                    {t('missingVideoWarning', { count: missingVideo })}
+                  </span>
                 </div>
               )}
 
@@ -130,7 +132,7 @@ export function ScheduleEpisodesButton({ showId }: { showId: string }) {
                 {plan.map((slot) => (
                   <li
                     key={slot.episodeId}
-                    className="flex items-center justify-between gap-3 rounded-lg bg-white/[0.03] px-3 py-2 text-sm"
+                    className="flex items-center justify-between gap-3 rounded-lg bg-[var(--bg-2)] px-3 py-2 text-sm"
                   >
                     <span className="flex min-w-0 items-center gap-2">
                       <span className="text-muted-foreground shrink-0 text-xs">
@@ -138,7 +140,7 @@ export function ScheduleEpisodesButton({ showId }: { showId: string }) {
                       </span>
                       <span className="truncate">{slot.title}</span>
                       {!slot.hasVideo && (
-                        <TriangleAlert className="size-3.5 shrink-0 text-amber-400" />
+                        <TriangleAlert className="text-brand-orange-safe size-3.5 shrink-0" />
                       )}
                     </span>
                     <span className="text-muted-foreground shrink-0 text-xs">
@@ -155,7 +157,7 @@ export function ScheduleEpisodesButton({ showId }: { showId: string }) {
               variant="ghost"
               onClick={cancelSchedule}
               disabled={saving || loading}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-[var(--text-dim)] hover:text-[var(--text)]"
             >
               {t('unscheduleButton')}
             </Button>

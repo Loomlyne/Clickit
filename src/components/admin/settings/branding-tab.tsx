@@ -58,8 +58,8 @@ export function BrandingTab({ config }: { config: AppConfig }) {
         description={t('faviconDescription')}
       >
         {/* Why a second favicon — explains the theme auto-switch behavior. */}
-        <div className="mb-6 flex gap-3 rounded-lg border border-white/8 bg-white/[0.03] p-4">
-          <Info className="mt-0.5 size-4 shrink-0 text-white/50" />
+        <div className="mb-6 flex gap-3 rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-4">
+          <Info className="mt-0.5 size-4 shrink-0 text-[var(--text-mute)]" />
           <p className="text-muted-foreground text-sm leading-relaxed">
             {t('faviconWhy')}
           </p>
@@ -67,11 +67,11 @@ export function BrandingTab({ config }: { config: AppConfig }) {
 
         <div className="grid gap-5 sm:grid-cols-2">
           {/* Light-mode variant — previews on a light surface. */}
-          <div className="rounded-lg border border-white/8 bg-white/[0.02] p-4">
+          <div className="rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-4">
             <div className="mb-3 flex items-center gap-2">
-              <Sun className="size-4 text-amber-300/80" />
+              <Sun className="text-brand-orange-safe size-4" />
               <div>
-                <p className="text-sm font-medium text-white">
+                <p className="text-sm font-medium text-[var(--text)]">
                   {t('faviconLightLabel')}
                 </p>
                 <p className="text-muted-foreground text-xs">
@@ -82,7 +82,7 @@ export function BrandingTab({ config }: { config: AppConfig }) {
             <ImageUploadField
               kind="favicon"
               currentUrl={config.faviconUrl}
-              accept="image/png,image/x-icon,image/svg+xml"
+              accept="image/png,image/x-icon"
               maxMb={1}
               previewClassName="size-20"
               previewBgClassName="bg-white"
@@ -91,11 +91,11 @@ export function BrandingTab({ config }: { config: AppConfig }) {
           </div>
 
           {/* Dark-mode variant — previews on a black surface. */}
-          <div className="rounded-lg border border-white/8 bg-white/[0.02] p-4">
+          <div className="rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-4">
             <div className="mb-3 flex items-center gap-2">
-              <Moon className="size-4 text-sky-300/80" />
+              <Moon className="text-brand-blue-safe size-4" />
               <div>
-                <p className="text-sm font-medium text-white">
+                <p className="text-sm font-medium text-[var(--text)]">
                   {t('faviconDarkLabel')}
                 </p>
                 <p className="text-muted-foreground text-xs">
@@ -106,7 +106,7 @@ export function BrandingTab({ config }: { config: AppConfig }) {
             <ImageUploadField
               kind="favicon-dark"
               currentUrl={config.faviconDarkUrl}
-              accept="image/png,image/x-icon,image/svg+xml"
+              accept="image/png,image/x-icon"
               maxMb={1}
               previewClassName="size-20"
               previewBgClassName="bg-black"

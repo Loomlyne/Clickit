@@ -103,7 +103,7 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
             placeholder={t('seoDescriptionPlaceholder')}
             maxLength={300}
             rows={3}
-            className="rounded-[12px] md:col-span-2"
+            className="rounded-lg md:col-span-2"
           />
         </SettingsField>
 
@@ -120,7 +120,7 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
             placeholder="عروض أصلية من الإمارات — تُبث الآن"
             maxLength={300}
             rows={3}
-            className="rounded-[12px] md:col-span-2"
+            className="rounded-lg md:col-span-2"
           />
         </SettingsField>
 

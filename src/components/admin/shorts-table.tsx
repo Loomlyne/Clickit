@@ -28,7 +28,11 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { ShortFormDrawer } from '@/components/admin/short-form-drawer'
-import { AdminPanel, AdminTableShell } from '@/components/admin/admin-shell'
+import {
+  AdminPageHeader,
+  AdminPanel,
+  AdminTableShell,
+} from '@/components/admin/admin-shell'
 import {
   deleteShort,
   reorderShort,
@@ -206,55 +210,48 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
 
   return (
     <TooltipProvider delayDuration={300}>
-      {/* Header */}
-      <AdminPanel className="p-0">
-        <div className="flex flex-col gap-3 border-b border-white/8 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-4 md:px-6">
-          <div className="min-w-0">
-            <h2 className="text-foreground text-lg font-semibold tracking-tight sm:text-xl">
-              {tDash('shorts')}
-            </h2>
-            <p className="text-muted-foreground mt-0.5 text-sm">
-              {tDash('totalCountLabel', { count: displayShorts.length })}
-            </p>
-          </div>
+      <AdminPageHeader
+        title={tDash('shorts')}
+        description={tDash('totalCountLabel', { count: displayShorts.length })}
+        action={
+          <Button
+            onClick={() => {
+              setEditingShort(null)
+              setDrawerOpen(true)
+            }}
+            className="gap-2"
+          >
+            <Plus className="size-4" />
+            {t('addShort')}
+          </Button>
+        }
+      />
 
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
-            <div className="relative w-full min-w-0 sm:w-[280px]">
-              <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-              <Input
-                placeholder={t('searchPlaceholder')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-
-            {selectedCount > 0 ? (
-              <Button
-                variant="destructive"
-                onClick={() => setBulkDeleteDialogOpen(true)}
-                className="w-full gap-2 sm:w-auto"
-              >
-                <Trash2 className="size-4" />
-                {t('bulkDeleteButton', { count: selectedCount })}
-              </Button>
-            ) : (
-              <Button
-                onClick={() => {
-                  setEditingShort(null)
-                  setDrawerOpen(true)
-                }}
-                className="w-full gap-2 sm:w-auto"
-              >
-                <Plus className="size-4" />
-                {t('addShort')}
-              </Button>
-            )}
+      <AdminPanel className="overflow-hidden p-0">
+        <div className="flex flex-col gap-3 border-b border-[var(--line)] p-4 sm:flex-row sm:items-center">
+          <div className="relative w-full min-w-0 sm:max-w-sm sm:flex-1">
+            <Search className="absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-[var(--text-mute)]" />
+            <Input
+              placeholder={t('searchPlaceholder')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="ps-10"
+            />
           </div>
+          {selectedCount > 0 && (
+            <Button
+              variant="destructive"
+              onClick={() => setBulkDeleteDialogOpen(true)}
+              className="w-full gap-2 sm:ms-auto sm:w-auto"
+            >
+              <Trash2 className="size-4" />
+              {t('bulkDeleteButton', { count: selectedCount })}
+            </Button>
+          )}
         </div>
 
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center border-t border-white/8 px-5 py-16 text-center md:px-6">
+          <div className="flex flex-col items-center justify-center border-t border-[var(--line)] px-5 py-16 text-center md:px-6">
             <p className="text-muted-foreground mb-4">
               {search ? t('emptySearch') : t('empty')}
             </p>
@@ -273,7 +270,7 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
             )}
           </div>
         ) : (
-          <AdminTableShell className="rounded-none border-x-0 border-b-0">
+          <AdminTableShell className="rounded-none border-0">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -292,14 +289,20 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                       aria-label={t('selectAllAria')}
                     />
                   </TableHead>
-                  <TableHead className="w-16">{t('colThumb')}</TableHead>
-                  <TableHead>{t('colTitle')}</TableHead>
-                  <TableHead>{t('colGenre')}</TableHead>
-                  <TableHead>{t('colExpires')}</TableHead>
-                  <TableHead className="w-20 text-center">
-                    {t('colFeatured')}
+                  <TableHead className="hidden w-16 sm:table-cell">
+                    {t('colThumb')}
                   </TableHead>
-                  <TableHead className="w-36 text-right">
+                  <TableHead>{t('colTitle')}</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    {t('colGenre')}
+                  </TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    {t('colExpires')}
+                  </TableHead>
+                  <TableHead className="w-16 text-center sm:w-20">
+                    <span className="max-sm:sr-only">{t('colFeatured')}</span>
+                  </TableHead>
+                  <TableHead className="w-28 text-end sm:w-36">
                     {t('colActions')}
                   </TableHead>
                 </TableRow>
@@ -308,7 +311,7 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                 {filtered.map((s, index) => (
                   <TableRow
                     key={s.id}
-                    className={isExpired(s) ? 'opacity-50' : ''}
+                    className={isExpired(s) ? 'opacity-60' : ''}
                     data-state={selectedSet.has(s.id) ? 'selected' : undefined}
                   >
                     <TableCell>
@@ -320,8 +323,8 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                         aria-label={t('selectShortAria', { title: s.title })}
                       />
                     </TableCell>
-                    <TableCell>
-                      <div className="relative h-10 w-7 overflow-hidden rounded bg-white/5">
+                    <TableCell className="hidden sm:table-cell">
+                      <div className="relative h-11 w-8 overflow-hidden rounded-[6px] bg-[var(--bg-3)]">
                         <Image
                           src={thumbnailSrc(s)}
                           alt={s.title}
@@ -331,8 +334,8 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                         />
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">
-                      <div className="flex max-w-[200px] items-start gap-2 md:max-w-[360px]">
+                    <TableCell className="font-medium whitespace-normal">
+                      <div className="flex max-w-[130px] items-start gap-2 sm:max-w-[200px] md:max-w-[360px]">
                         <span className="line-clamp-2 break-words">
                           {s.title}
                         </span>
@@ -346,14 +349,14 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                         </a>
                       </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="hidden text-[var(--text-dim)] md:table-cell">
                       {s.genre || '—'}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <span
                         className={
                           isExpired(s)
-                            ? 'text-red-400'
+                            ? 'text-brand-red-safe'
                             : 'text-muted-foreground'
                         }
                       >
@@ -364,9 +367,14 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className={`size-8 ${s.is_featured ? 'text-yellow-400 hover:text-yellow-300' : 'text-muted-foreground hover:text-yellow-400'}`}
+                        className={s.is_featured ? 'text-[var(--primary)]' : ''}
                         disabled={togglingId === s.id}
                         onClick={() => handleToggleFeatured(s)}
+                        aria-label={
+                          s.is_featured
+                            ? t('featuredRemoveAria', { title: s.title })
+                            : t('featuredMarkAria', { title: s.title })
+                        }
                         title={
                           s.is_featured
                             ? t('featuredRemove')
@@ -374,18 +382,18 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                         }
                       >
                         <Star
-                          className={`size-3.5 ${s.is_featured ? 'fill-yellow-400' : ''}`}
+                          className={`size-4 ${s.is_featured ? 'fill-[var(--primary)]' : ''}`}
                         />
                       </Button>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
+                    <TableCell className="text-end">
+                      <div className="flex items-center justify-end gap-2">
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
+                              className="max-md:hidden"
                               variant="ghost"
                               size="icon"
-                              className="size-8"
                               disabled={
                                 isReordering ||
                                 pendingOrderId === s.id ||
@@ -394,7 +402,7 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                               onClick={() => handleReorder(s.id, 'up')}
                               aria-label={t('moveUpAria', { title: s.title })}
                             >
-                              <ChevronUp className="size-3.5" />
+                              <ChevronUp className="size-4" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>{t('moveUp')}</TooltipContent>
@@ -402,9 +410,9 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
+                              className="max-md:hidden"
                               variant="ghost"
                               size="icon"
-                              className="size-8"
                               disabled={
                                 isReordering ||
                                 pendingOrderId === s.id ||
@@ -415,7 +423,7 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                                 title: s.title,
                               })}
                             >
-                              <ChevronDown className="size-3.5" />
+                              <ChevronDown className="size-4" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>{t('moveDown')}</TooltipContent>
@@ -423,24 +431,24 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="size-8"
+                          aria-label={t('editAria', { title: s.title })}
                           onClick={() => {
                             setEditingShort(s)
                             setDrawerOpen(true)
                           }}
                         >
-                          <Pencil className="size-3.5" />
+                          <Pencil className="size-4" />
                         </Button>
                         <Button
-                          variant="ghost"
+                          variant="destructive"
                           size="icon"
-                          className="size-8 text-red-400 hover:text-red-300"
+                          aria-label={t('deleteTitle')}
                           onClick={() => {
                             setDeletingShort(s)
                             setDeleteDialogOpen(true)
                           }}
                         >
-                          <Trash2 className="size-3.5" />
+                          <Trash2 className="size-4" />
                         </Button>
                       </div>
                     </TableCell>
