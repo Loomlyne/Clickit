@@ -28,6 +28,8 @@ export type WorkerEnv = {
   CRON_SECRET?: string
   TURNSTILE_SECRET_KEY?: string
   LOCAL_DEV?: string
+  /** Local preview only (.dev.vars); never a wrangler secret or var. */
+  LOCAL_UPLOAD_SHIM_SECRET?: string
 }
 
 export async function getWorkerEnv(): Promise<WorkerEnv> {
