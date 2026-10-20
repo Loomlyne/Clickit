@@ -172,3 +172,50 @@ test('source scan: removed code is gone', () => {
   assert.ok(!src.includes('translateBatchToArabic('))
   assert.ok(!src.includes('function isHeroVideoUploadPath'))
 })
+
+test('source scan: setHeroVideoUrl checks admin (runner) before it validates the URL', () => {
+  const b = bodyOf('setHeroVideoUrl')
+  const runner = b.indexOf('runAdminAction(')
+  assert.ok(runner >= 0)
+  assert.ok(b.indexOf('validateYouTubeUrl(') > runner, 'validation must run inside the runner')
+  assert.ok(b.indexOf('URL is required') > runner, 'empty check must run inside the runner')
+})
+
+test('source scan: preloader and show video saves prove size server-side through their cores', () => {
+  for (const [name, core] of [
+    ['savePreloaderVideoUpload', 'savePreloaderVideoCore('],
+    ['saveShowVideoUpload', 'saveShowVideoCore('],
+  ] as const) {
+    const b = bodyOf(name)
+    assert.ok(b.includes('runAdminAction('), `${name} lacks runAdminAction(`)
+    assert.ok(b.includes(core), `${name} lacks ${core}`)
+  }
+  assert.ok(bodyOf('createPreloaderVideoUpload').includes('PRELOADER_VIDEO_LIMIT'))
+  assert.ok(bodyOf('createShowVideoUpload').includes('SHOW_VIDEO_LIMIT'))
+})
+
+test('source scan: SITE_IMAGE_COLUMN lookups use own keys only', () => {
+  assert.ok(!src.includes('in SITE_IMAGE_COLUMN'))
+  assert.ok(src.includes('Object.prototype.hasOwnProperty.call(SITE_IMAGE_COLUMN, kind)'))
+  assert.ok(bodyOf('uploadSiteImage').includes('isSiteImageKind('))
+  assert.ok(bodyOf('removeSiteImage').includes('isSiteImageKind('))
+})
+
+test('source scan: legal page, FAQ, review and short deletes are audited through deleteRowAuditedCore', () => {
+  for (const [name, spec] of [
+    ['deleteLegalPage', 'ROW_DELETE.legalPage'],
+    ['deleteFaq', 'ROW_DELETE.faq'],
+    ['deleteReview', 'ROW_DELETE.review'],
+    ['deleteShort', 'ROW_DELETE.short'],
+  ] as const) {
+    const b = bodyOf(name)
+    assert.ok(b.includes('runAdminAction('), `${name} lacks runAdminAction(`)
+    assert.ok(b.includes(`deleteRowAuditedCore(`) && b.includes(spec), `${name} lacks its audited core`)
+    assert.ok(!b.includes('logAudit('), `${name} still uses the swallowing logAudit`)
+  }
+})
+
+test('accept attributes no longer offer AVIF', () => {
+  for (const f of ['src/components/admin/settings/branding-tab.tsx', 'src/components/admin/settings/footer-editor.tsx'])
+    assert.ok(!readFileSync(f, 'utf8').includes('image/avif'), `${f} still accepts AVIF`)
+})

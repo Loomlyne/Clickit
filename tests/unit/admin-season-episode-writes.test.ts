@@ -35,7 +35,7 @@ const ep = (eid: string, num: number, archived = false, season = SE1, show = S1)
   archived,
 })
 
-function world() {
+function world(archiveAll = false) {
   return createFakeSupabase({
     shows: [
       { id: S1, title: 'Show 1', season_count: 1, episode_count: 2 },
@@ -45,7 +45,7 @@ function world() {
       { id: SE1, show_id: S1, title: 'Season 1', title_ar: 'الموسم 1', season_number: 1, episode_count: 2 },
       { id: SE2, show_id: S2, title: 'Other', title_ar: 'آخر', season_number: 1, episode_count: 0 },
     ],
-    episodes: [ep(E1, 1), ep(E2, 2), ep(E3, 3, true)],
+    episodes: [ep(E1, 1, archiveAll), ep(E2, 2, archiveAll), ep(E3, 3, true)],
   })
 }
 
@@ -149,8 +149,20 @@ test('deleteSeasonCore: a mismatched showId is refused and nothing is deleted', 
   assert.equal(dbOps(f, 'seasons', 'delete').length, 0)
 })
 
-test('deleteSeasonCore: success writes pending before the delete, committed after, and recomputes counts', async () => {
+test('deleteSeasonCore: a season with an active episode is refused, no audit row, nothing deleted', async () => {
   const f = world()
+  const before = f.snapshot()
+  const res = await deleteSeasonCore(f.client, deps(f), SE1, S1)
+  assert.equal(res.success, false)
+  assert.equal(res.wrote, false)
+  assert.equal(res.error, 'Archive every episode in this season before deleting it.')
+  assert.deepEqual(f.snapshot(), before)
+  assert.equal(dbOps(f, 'seasons', 'delete').length, 0)
+  assert.equal(f.auditRows().length, 0)
+})
+
+test('deleteSeasonCore: success writes pending before the delete, committed after, and recomputes counts', async () => {
+  const f = world(true)
   const res = await deleteSeasonCore(f.client, deps(f), SE1, S1)
   assert.equal(res.success, true)
   assert.equal(res.wrote, true)
@@ -169,12 +181,12 @@ test('deleteSeasonCore: success writes pending before the delete, committed afte
   assert.ok(auditIdx >= 0 && auditIdx < delIdx)
   const s = row(f, 'shows', S1)!
   assert.equal(s.season_count, 0)
-  // The fake has no FK cascade; the two visible episodes remain, the archived one is not counted.
-  assert.equal(s.episode_count, 2)
+  // Every episode was archived first, so none is counted.
+  assert.equal(s.episode_count, 0)
 })
 
 test('deleteSeasonCore: failed pending audit row deletes nothing', async () => {
-  const f = world()
+  const f = world(true)
   f.failOn({ table: 'admin_audit_log', op: 'insert', nth: 1 })
   const res = await deleteSeasonCore(f.client, deps(f), SE1, S1)
   assert.equal(res.success, false)
@@ -184,7 +196,7 @@ test('deleteSeasonCore: failed pending audit row deletes nothing', async () => {
 })
 
 test('deleteSeasonCore: forced delete failure keeps the season and writes pending then failed', async () => {
-  const f = world()
+  const f = world(true)
   f.failOn({ table: 'seasons', op: 'delete', nth: 1 })
   const res = await deleteSeasonCore(f.client, deps(f), SE1, S1)
   assert.equal(res.success, false)
@@ -203,7 +215,7 @@ test('deleteSeasonCore: forced delete failure keeps the season and writes pendin
 })
 
 test('deleteSeasonCore: count failure after the delete is reported truthfully', async () => {
-  const f = world()
+  const f = world(true)
   f.failOn({ table: 'shows', op: 'update', nth: 1 })
   const res = await deleteSeasonCore(f.client, deps(f), SE1, S1)
   assert.equal(res.success, false)
