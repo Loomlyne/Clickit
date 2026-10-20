@@ -129,8 +129,8 @@ Plans:
 - [x] 04-06-PLAN.md — W5: [Q1/Q2/Q4/Q5, Q7=C] DESIGN.md (+ two-scheme email tokens) + parity test; wording; 04-P6-ADDENDUM.md; gate (W4)
 - [x] 04-08-PLAN.md — W5: [orchestrator] canvas Admin boards + Email boards from Phase 5's signed picture (both schemes)
 - [x] 04-09-PLAN.md — W6: [Q1/Q2] merge main; codemod 1/5 (UI primitives, chrome); gate (W5-W6)
-- [ ] 04-10-PLAN.md — W7: codemod 2/5 (show cards, home, browse, series)
-- [ ] 04-11-PLAN.md — W7: codemod 3/5 (watch, shorts, landing, support, coming-soon, lib gradients)
+- [x] 04-10-PLAN.md — W7: codemod 2/5 (show cards, home, browse, series)
+- [x] 04-11-PLAN.md — W7: codemod 3/5 (watch, shorts, landing, support, coming-soon, lib gradients)
 - [ ] 04-12-PLAN.md — W8: codemod 4/5 (viewer routes, loading skeletons); gate (W7-W8)
 - [ ] 04-13-PLAN.md — W9: [Q1/Q2/Q3] codemod 5/5 (admin + admin.css), rule to error, banned-literal tests, ledger; gate
 - [ ] 04-14-PLAN.md — W10: [orchestrator] reviewer pass on board legends, [OWNER] four signatures (D-08); final gate
