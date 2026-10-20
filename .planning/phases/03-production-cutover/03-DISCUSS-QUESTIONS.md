@@ -2,6 +2,8 @@
 
 Phase goal (ROADMAP): clickitstory.ae can send mail through Resend; www and the apex are served by the Worker; every media URL in the database points at R2; the old Vercel deployment can no longer write to live data; rollback stays possible until the proof window ends; then the Vercel project is deleted. Requirements DNS-01..04, MAIL-02, MEDIA-02, MEDIA-08, PLAT-11.
 
+**Answered 2026-10-20 ~17:55 CET: Koss signed all recommended (Q1–Q18 = A), relayed by the controller.**
+
 How to answer: reply with the question number and a letter, e.g. `1A 2A 3B …`. "All recommended" is fine. The recommended option is first in each question. Phase 3 changes no screen a viewer or admin sees, so there are no pictures.
 
 Already fixed, not asked again: the zone is on Cloudflare (registry lists only jen/brett, checked 2026-10-20 15:30 CET); `media.clickitstory.ae` is the `clickit-media` Worker; DNS, live-DB, secret and deploy steps are one numbered step each; the controller digs both Cloudflare nameservers for every record before any registrar step; the DB rewrite has a backup table and a read-back; Supabase Storage is emptied only in Phase 8 after your word; Phase 3 starts only after Phase 2 is on main and passed its workers.dev UAT.

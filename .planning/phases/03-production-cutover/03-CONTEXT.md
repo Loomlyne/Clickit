@@ -1,7 +1,7 @@
 # Phase 3: Production Cutover - Context
 
 **Gathered:** 2026-10-20 (work session `phase-03-production-cutover`, worktree `.claude/worktrees/phase-03-production-cutover-689a87`, branch `claude/phase-03-production-cutover-689a87`)
-**Status:** Ready for planning. Decisions D-01..D-19 are the RECOMMENDED answers to `03-DISCUSS-QUESTIONS.md` Q1..Q18 (D-07, D-11, D-18 are derived), **pending Koss's signature** (relayed by the controller). Plans are written against them; any other answer is applied as a plan revision before execution.
+**Status:** SIGNED. Koss answered all recommended, Q1–Q18 = A, as written in `03-DISCUSS-QUESTIONS.md` (relayed by the controller, 2026-10-20 ~17:55 CET). D-01..D-19 are locked (D-07, D-11, D-18 are derived from the signed answers). The watchdog automation and the Jev rollback advisor stay proposals, not planned, unless Koss says so.
 **Session:** planning only. The control session "Clickit controller" in `/Users/koss/Developer/Clickit` commits main, deploys, runs live steps and talks to Koss.
 
 <domain>
@@ -25,7 +25,7 @@ Entry condition: Phase 2 is on main, its workers.dev UAT passed, and the media c
 <decisions>
 ## Implementation Decisions
 
-All D-01..D-19 are recommended, PENDING KOSS (question number in brackets).
+All D-01..D-19 SIGNED by Koss 2026-10-20 ~17:55 CET (question number in brackets).
 
 ### Vercel and rollback
 - **D-01 [Q1] Vercel access:** ask the account owner (`clickitstory@gmail.com`) for one sign-in to (a) press "Disable Cron Jobs" before the flip and (b) delete the project after the proof window. Plans must work without it: the Vercel-access steps are optional branches, and the fallback rewording of ROADMAP criterion 2 and PLAT-11 is prepared in the gate file.
