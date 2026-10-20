@@ -21,7 +21,7 @@ Full wording and examples: `04-DISCUSS-QUESTIONS.md`. Pictures: `mockups/04-q1.p
 | 8 | How you sign the canvas | four signatures (Foundations, Viewer, Admin, Email) | one signature for all | no picture (process) | 04-07, 04-14 | |
 | 9 | LBC font licence | yes: the LBC licence allows uploading the two font files to a private Claude Design canvas | no: boards use a system-font stand-in and are reviewed against the live site for type | no picture (licence) | 04-07 | |
 
-Q7 note: answered as Phase 5 Q12 and relayed by the controller — emails follow the reader's colour scheme: light by default (black header, white body, yellow button) plus dark via `prefers-color-scheme: dark`. Phase 5 owns the templates and their picture; Phase 4 supplies email-safe hex tokens for both schemes (§6). Not asked again.
+Q7 note: answered as Phase 5 Q12 and relayed by the controller — emails follow the reader's colour scheme: light by default (black header, white body, yellow button) plus dark via `prefers-color-scheme: dark`. Phase 5 owns the templates and their picture; Phase 4 supplies email-safe hex tokens for both schemes (§6). Picture of the answer: `mockups/04-q7c.png` (light + dark). Not asked again.
 
 ## 2. Plan gate (sign after section 1; nothing executes before this answer)
 
