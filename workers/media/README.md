@@ -8,8 +8,10 @@ buckets `show-artwork`, `site-assets` and `avatars`.
   then the Supabase public original. With no binding (env `supabase-only`) it serves
   Supabase only. An R2 error also falls back to Supabase.
 - Range requests (206), conditional requests (304), `X-Media-Source: r2|supabase`.
-- `Cache-Control`: the R2 object's own value if set; otherwise one year immutable when
-  the URL carries `?v=`, one day plus a week stale-while-revalidate without it.
+- `Cache-Control` is decided from the URL only (stored R2 values are ignored): one year
+  immutable when the URL carries `?v=`, one day plus a week stale-while-revalidate without it.
+- Only the `v` query param is forwarded to Supabase. Edge cache of the Supabase fetch:
+  2xx one day, 404 one minute, other errors not cached. 412 for failed If-Match/If-Unmodified-Since.
 - `X-Content-Type-Options: nosniff` and `Content-Security-Policy: default-src 'none';
   style-src 'unsafe-inline'; sandbox` on every response (SVG cannot run script).
 - `/healthz` answers `ok`.

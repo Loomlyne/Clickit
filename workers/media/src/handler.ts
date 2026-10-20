@@ -110,8 +110,9 @@ export function guessContentType(key: string) {
   return CONTENT_TYPES[extension] ?? 'application/octet-stream'
 }
 
-export function cacheControlFor(url: URL, stored?: string | null) {
-  if (stored) return stored
+// Stored R2 cacheControl is ignored on purpose: the app has written invalid
+// values (a bare '31536000'), so the policy is decided here from the URL.
+export function cacheControlFor(url: URL) {
   return url.searchParams.has('v')
     ? VERSIONED_CACHE_CONTROL
     : UNVERSIONED_CACHE_CONTROL
@@ -151,7 +152,7 @@ function r2ContentRange(object: MediaObject) {
     offset = object.size - length
   } else {
     offset = range.offset ?? 0
-    length = range.length ?? object.size - offset
+    length = Math.min(range.length ?? object.size - offset, object.size - offset)
   }
   if (length <= 0) return null
   return { offset, length, header: `bytes ${offset}-${offset + length - 1}/${object.size}` }
@@ -177,10 +178,7 @@ async function fromR2(
     'Content-Type',
     object.httpMetadata?.contentType || guessContentType(objectKey)
   )
-  headers.set(
-    'Cache-Control',
-    cacheControlFor(url, object.httpMetadata?.cacheControl)
-  )
+  headers.set('Cache-Control', cacheControlFor(url))
   headers.set('ETag', object.httpEtag)
   headers.set('Last-Modified', object.uploaded.toUTCString())
   headers.set('Accept-Ranges', 'bytes')
@@ -192,7 +190,15 @@ async function fromR2(
   }
 
   // `onlyIf` failed: R2 returns metadata without a body.
-  if (!object.body) return new Response(null, { status: 304, headers })
+  if (!object.body) {
+    const failedWritePrecondition =
+      request.headers.has('if-match') ||
+      request.headers.has('if-unmodified-since')
+    return new Response(null, {
+      status: failedWritePrecondition ? 412 : 304,
+      headers,
+    })
+  }
 
   const range = request.headers.has('range') ? r2ContentRange(object) : null
   if (range) {
@@ -213,7 +219,10 @@ async function fromSupabase(
   fetchImpl: MediaFetch
 ): Promise<Response> {
   const origin = new URL(env.SUPABASE_URL)
-  const target = `${origin.origin}/storage/v1/object/public/${encodeURIComponent(path.bucket)}/${encodeKey(path.key)}${url.search}`
+  // Only the cache-busting `v` reaches the origin (and the edge cache key).
+  const version = url.searchParams.get('v')
+  const search = version === null ? '' : `?v=${encodeURIComponent(version)}`
+  const target = `${origin.origin}/storage/v1/object/public/${encodeURIComponent(path.bucket)}/${encodeKey(path.key)}${search}`
 
   const forward = new Headers()
   for (const name of ['range', 'if-none-match', 'if-modified-since']) {
@@ -227,7 +236,10 @@ async function fromSupabase(
       method: request.method,
       headers: forward,
       redirect: 'manual',
-      cf: { cacheEverything: true, cacheTtl: 86400 },
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { '200-299': 86400, '404': 60, '400-599': 0 },
+      },
     })
   } catch {
     return errorResponse(502)
@@ -242,7 +254,10 @@ async function fromSupabase(
   }
 
   const headers = securityHeaders(new Headers())
+  // The runtime decodes a compressed body, so its encoded length would be wrong.
+  const encoded = upstream.headers.has('content-encoding')
   for (const name of PASSTHROUGH_HEADERS) {
+    if (encoded && name === 'content-length') continue
     const value = upstream.headers.get(name)
     if (value) headers.set(name, value)
   }

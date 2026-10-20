@@ -200,7 +200,8 @@ test('R2 HEAD uses head() and returns no body', async () => {
   assert.equal(calls[0].method, 'head')
   assert.equal(response.body, null)
   assert.equal(response.headers.get('content-length'), '7')
-  assert.equal(response.headers.get('cache-control'), 'max-age=5')
+  // Stored R2 cacheControl is ignored (the app has written invalid values).
+  assert.equal(response.headers.get('cache-control'), UNVERSIONED_CACHE_CONTROL)
 })
 
 test('R2 precondition hit returns 304', async () => {
@@ -366,6 +367,186 @@ test('healthz answers ok', async () => {
   )
   assert.equal(response.status, 200)
   assert.equal(await response.text(), 'ok')
+})
+
+test('stored R2 cacheControl is ignored on GET too', async () => {
+  const { bucket } = bucketWith({
+    'avatars/u/2.png': r2Object(new Uint8Array(2), {
+      httpMetadata: { contentType: 'image/png', cacheControl: '31536000' },
+    }),
+  })
+  const response = await handleMediaRequest(
+    new Request(`${BASE}/avatars/u/2.png?v=9`),
+    { SUPABASE_URL, MEDIA_BUCKET: bucket },
+    failingFetch()
+  )
+  assert.equal(response.headers.get('cache-control'), VERSIONED_CACHE_CONTROL)
+})
+
+test('R2 failed If-Match returns 412, not 304', async () => {
+  const { bucket } = bucketWith({
+    'site-assets/a.png': r2Object(new Uint8Array(3), { body: null }),
+  })
+  const response = await handleMediaRequest(
+    new Request(`${BASE}/site-assets/a.png`, {
+      headers: { 'if-match': '"other"' },
+    }),
+    { SUPABASE_URL, MEDIA_BUCKET: bucket },
+    failingFetch()
+  )
+  assert.equal(response.status, 412)
+})
+
+test('R2 range length is capped at the object end', async () => {
+  const { bucket } = bucketWith({
+    'show-artwork/hero.mp4': r2Object(new Uint8Array(10), {
+      size: 100,
+      range: { offset: 95, length: 50 },
+    }),
+  })
+  const response = await handleMediaRequest(
+    new Request(`${BASE}/show-artwork/hero.mp4`, {
+      headers: { range: 'bytes=95-144' },
+    }),
+    { SUPABASE_URL, MEDIA_BUCKET: bucket },
+    failingFetch()
+  )
+  assert.equal(response.status, 206)
+  assert.equal(response.headers.get('content-range'), 'bytes 95-99/100')
+  assert.equal(response.headers.get('content-length'), '5')
+})
+
+test('only the v query param reaches Supabase; errors are not edge-cached', async () => {
+  const { calls, fetchImpl } = recordingFetch(
+    () => new Response('x', { status: 200, headers: { 'content-type': 'image/png' } })
+  )
+  await handleMediaRequest(
+    new Request(`${BASE}/site-assets/a.png?utm=1&v=7&x=2`),
+    { SUPABASE_URL },
+    fetchImpl
+  )
+  await handleMediaRequest(
+    new Request(`${BASE}/site-assets/b.png?utm=1`),
+    { SUPABASE_URL },
+    fetchImpl
+  )
+  assert.equal(
+    calls[0].input,
+    `${SUPABASE_URL}/storage/v1/object/public/site-assets/a.png?v=7`
+  )
+  assert.equal(
+    calls[1].input,
+    `${SUPABASE_URL}/storage/v1/object/public/site-assets/b.png`
+  )
+  const cf = (calls[0].init as { cf?: Record<string, unknown> }).cf
+  assert.deepEqual(cf?.cacheTtlByStatus, {
+    '200-299': 86400,
+    '404': 60,
+    '400-599': 0,
+  })
+  assert.equal(cf?.cacheTtl, undefined)
+})
+
+test('cookies and auth headers are not forwarded or passed back', async () => {
+  const { calls, fetchImpl } = recordingFetch(
+    () =>
+      new Response('x', {
+        status: 200,
+        headers: {
+          'content-type': 'image/png',
+          'set-cookie': 'sb=1',
+          'www-authenticate': 'Bearer',
+        },
+      })
+  )
+  const response = await handleMediaRequest(
+    new Request(`${BASE}/site-assets/a.png`, {
+      headers: { authorization: 'Bearer secret', cookie: 'a=b' },
+    }),
+    { SUPABASE_URL },
+    fetchImpl
+  )
+  const forwarded = new Headers(calls[0].init?.headers)
+  assert.equal(forwarded.get('authorization'), null)
+  assert.equal(forwarded.get('cookie'), null)
+  assert.equal(response.headers.get('set-cookie'), null)
+  assert.equal(response.headers.get('www-authenticate'), null)
+})
+
+test('upstream redirect becomes 502', async () => {
+  const response = await handleMediaRequest(
+    new Request(`${BASE}/site-assets/a.png`),
+    { SUPABASE_URL },
+    recordingFetch(
+      () =>
+        new Response(null, {
+          status: 302,
+          headers: { location: 'https://evil.example/x.png' },
+        })
+    ).fetchImpl
+  )
+  assert.equal(response.status, 502)
+  assert.equal(response.headers.get('location'), null)
+})
+
+test('upstream 416 passes through with a short cache', async () => {
+  const response = await handleMediaRequest(
+    new Request(`${BASE}/site-assets/a.png`, {
+      headers: { range: 'bytes=999999-' },
+    }),
+    { SUPABASE_URL },
+    recordingFetch(
+      () =>
+        new Response(null, {
+          status: 416,
+          headers: { 'content-range': 'bytes */10' },
+        })
+    ).fetchImpl
+  )
+  assert.equal(response.status, 416)
+  assert.equal(response.headers.get('content-range'), 'bytes */10')
+  assert.equal(response.headers.get('cache-control'), 'public, max-age=60')
+})
+
+test('content-length is dropped when upstream body was content-encoded', async () => {
+  const response = await handleMediaRequest(
+    new Request(`${BASE}/site-assets/logo.svg`),
+    { SUPABASE_URL },
+    recordingFetch(
+      () =>
+        new Response('<svg/>', {
+          status: 200,
+          headers: {
+            'content-type': 'image/svg+xml',
+            'content-encoding': 'gzip',
+            'content-length': '3',
+          },
+        })
+    ).fetchImpl
+  )
+  assert.equal(response.headers.get('content-length'), null)
+  assert.equal(response.headers.get('content-encoding'), null)
+})
+
+test('double-encoded dots stay a literal key; encoded backslash is rejected', async () => {
+  assert.deepEqual(parseMediaPath('/site-assets/%252e%252e/x.png'), {
+    bucket: 'site-assets',
+    key: '%2e%2e/x.png',
+  })
+  const { calls, fetchImpl } = recordingFetch(
+    () => new Response('x', { status: 200, headers: { 'content-type': 'image/png' } })
+  )
+  await handleMediaRequest(
+    new Request(`${BASE}/site-assets/%252e%252e/x.png`),
+    { SUPABASE_URL },
+    fetchImpl
+  )
+  assert.equal(
+    calls[0].input,
+    `${SUPABASE_URL}/storage/v1/object/public/site-assets/%252e%252e/x.png`
+  )
+  assert.equal(parseMediaPath('/site-assets/a%5Cb.png'), null)
+  assert.equal(parseMediaPath('/site-assets/%5C..%5Cx.png'), null)
 })
 
 test('media-health extracts direct and /_next/image-wrapped media URLs', async () => {

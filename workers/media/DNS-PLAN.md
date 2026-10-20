@@ -104,10 +104,18 @@ a. **R2 (optional for this fix)**: enable R2 in the ClickitStory dashboard and
    the Supabase originals until objects are copied (`npm run r2:media` dry run
    first, then `--execute` on Koss's word).
 
+   **Gate before any default-env (R2-first) deploy:** prove that the app's
+   `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_R2_BUCKET` (the values the admin
+   uploads mirror to) point at the ClickitStory account `e329b099…` and bucket
+   `clickit-media`. Otherwise an admin overwrite of a fixed key (avatars,
+   `settings/og.png`, the hero video) updates Supabase but not this bucket, and
+   the Worker would keep serving the old bytes (with a one-year immutable cache
+   on `?v=` URLs). Until that is proven, deploy only `--env supabase-only`.
+
 b. **Deploy the Worker to workers.dev**: done 2026-10-20, https://clickit-media.clickitstory.workers.dev
    (account subdomain `clickitstory`), `supabase-only`, 54/54 media URLs byte-identical. Redeploy commands:
    - without R2: `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deploy -c workers/media/wrangler.jsonc --env supabase-only`
-   - with R2 on and the bucket created: `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deploy -c workers/media/wrangler.jsonc --env=""`
+   - with R2 on, the bucket created and the gate in step a passed: `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deploy -c workers/media/wrangler.jsonc --env=""`
 
    Proof: `npm run media:health -- --media-origin https://clickit-media.clickitstory.workers.dev --verify-bytes --timeout 180`
    must print every URL ok with `bytes=match`.
@@ -116,9 +124,16 @@ c. **Add the zone**: Cloudflare dashboard (ClickitStory account) → Add a domai
    → `clickitstory.ae` → Free → keep only the two DNS-only records in section 4
    → note the two nameservers Cloudflare assigns.
 
+   **Hard gate before step d** (replace `<ns1>`/`<ns2>` with the assigned pair):
+   - `dig +short A clickitstory.ae @<ns1>.ns.cloudflare.com` → `216.198.79.1`
+   - `dig +short CNAME www.clickitstory.ae @<ns1>.ns.cloudflare.com` → `ba211fb55cf67415.vercel-dns-017.com.`
+   - the same two queries against `<ns2>` give the same answers.
+   If any answer is empty or different, stop and fix the zone records first.
+
 d. **Change nameservers at Tasjeel**: replace all four entries (`ns3.tasjeel.ae`,
    `ns4.tasjeel.ae`, `ignat.ns.cloudflare.com`, `nataly.ns.cloudflare.com`) with
-   the two from step c.
+   the two from step c. Then press **Check nameservers now** in the Cloudflare
+   dashboard right away.
 
 e. **Wait for Active**: `dig +norec NS clickitstory.ae @ns1.aedns.ae` shows only
    the new pair, and the dashboard shows the zone Active. Check
@@ -133,5 +148,8 @@ g. **Prove it**: `npm run media:health` (no flags) prints every media URL ok.
    Then schedule it (cron or Worker cron) as the standing check.
 
 Rollback for d: set the nameservers at Tasjeel back to `ns3.tasjeel.ae` and
-`ns4.tasjeel.ae`; the records there are unchanged. NS TTL at the registry is
-3600 s, so a rollback takes about an hour to settle.
+`ns4.tasjeel.ae`; the records there are unchanged. Plan for **up to about 24
+hours** to settle: the registry delegation TTL is 3600 s, but Tasjeel serves its
+own NS records with TTL 86400 s and Cloudflare's NS records are 86400 s too, so
+resolvers that cached either side can keep it for a day. This is why the hard
+gate before step d matters: the Cloudflare zone must already answer correctly.

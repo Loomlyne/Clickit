@@ -41,6 +41,14 @@ Final commit: see `git log -1` on the branch / the PR. PR: see PR link in the jo
 - Deployed from this branch, not from `main`. Rule note: the common rules reserve deploys for the controller; Koss gave the
   workers.dev deploy word directly in this work session.
 
+## Review fixes (reviewer agent, 2026-10-20, after e803134)
+
+Applied items 1-8 and 10: stored R2 cacheControl ignored; `cacheTtlByStatus` (2xx 1 d, 404 60 s, errors 0);
+R2-first deploy gate and NS hard gate + ~24 h rollback in DNS-PLAN; R2 range cap; only `v` forwarded; no Content-Length
+on encoded upstream; 412 for failed If-Match/If-Unmodified-Since; 9 new tests (26 media tests).
+Gate after the fixes: lint 0 errors, unit 101/101, build exit 0. **Not deployed yet**: controller redeploys with
+`HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deploy -c workers/media/wrangler.jsonc --env supabase-only`.
+
 ## Not verified
 
 - The real domain: needs DNS (owner steps 3-5).
