@@ -1,7 +1,7 @@
 # Phase 3: Production Cutover - Context
 
 **Gathered:** 2026-10-20 (work session `phase-03-production-cutover`, worktree `.claude/worktrees/phase-03-production-cutover-689a87`, branch `claude/phase-03-production-cutover-689a87`)
-**Status:** Ready for planning. Decisions D-01..D-15 are the RECOMMENDED answers to `03-DISCUSS-QUESTIONS.md` Q1..Q15, **pending Koss's signature** (relayed by the controller). Plans are written against them; any other answer is applied as a plan revision before execution.
+**Status:** Ready for planning. Decisions D-01..D-19 are the RECOMMENDED answers to `03-DISCUSS-QUESTIONS.md` Q1..Q18 (D-07, D-11, D-18 are derived), **pending Koss's signature** (relayed by the controller). Plans are written against them; any other answer is applied as a plan revision before execution.
 **Session:** planning only. The control session "Clickit controller" in `/Users/koss/Developer/Clickit` commits main, deploys, runs live steps and talks to Koss.
 
 <domain>
@@ -25,13 +25,16 @@ Entry condition: Phase 2 is on main, its workers.dev UAT passed, and the media c
 <decisions>
 ## Implementation Decisions
 
-All D-01..D-15 are recommended, PENDING KOSS (question number in brackets).
+All D-01..D-19 are recommended, PENDING KOSS (question number in brackets).
 
 ### Vercel and rollback
 - **D-01 [Q1] Vercel access:** ask the account owner (`clickitstory@gmail.com`) for one sign-in to (a) press "Disable Cron Jobs" before the flip and (b) delete the project after the proof window. Plans must work without it: the Vercel-access steps are optional branches, and the fallback rewording of ROADMAP criterion 2 and PLAT-11 is prepared in the gate file.
 - **D-02 [Q2] Cutting Vercel off the database:** at the end of the proof window. Mechanism: the Worker already runs on the new Supabase keys (`sb_publishable_…` in the build, `sb_secret_…` as the `SUPABASE_SERVICE_ROLE_KEY` secret); closing the window switches the legacy `anon` + `service_role` keys off in the Supabase dashboard (one setting, reversible per Supabase docs). The legacy JWT secret is NOT rotated (it would sign every viewer out). This satisfies DNS-03 "service-role key rotated after the flip" and the goal "the old Vercel deployment can no longer write".
-- **D-03 [Q3] Proof window:** 7 days, closed by Koss's word after green daily checks. Hard ceiling 60 days (Vercel's certificate for www stops renewing once www leaves Vercel).
+- **D-03 [Q3] Proof window:** 7 days, closed by Koss's word after green daily checks. Absolute latest close 2026-12-15 (Vercel's www certificate `notAfter` 2026-12-29 02:45 UTC cannot renew once www leaves Vercel; Supabase legacy keys deprecated end of 2026). Re-read both at flip time.
 - **D-04 [Q4] Rollback authority:** Koss pre-approves the rollback for the proof window only, on these triggers: www or apex down or 5xx for 10 minutes, sign-in broken, playback broken. The controller rolls back first (grey the www record) and reports at once. Anything else waits for his word.
+- **D-16 [Q16] DNS-edit authority:** before the flip Koss creates a Cloudflare API token scoped to Zone → DNS → Edit on `clickitstory.ae` only, stored in macOS Keychain; `scripts/cutover/rollback.mjs` reads it from Keychain at run time (never printed, never in a file) and only toggles `proxied` on the `www` record. Fallback (B): Koss toggles the record himself.
+- **D-17 [Q18] Route failure mode:** "fail open" on the www route during the proof window (dashboard setting; overflow goes to the Vercel target); back to the default at close.
+- **D-18 (derived) one Worker, two targets:** from the flip until Phase 3 closes, no workers.dev deploy of `clickit` (it would drop the production cron and build). The deploy guard refuses `--target workersdev` while a production stamp is the latest deploy, unless an explicit override names the reason.
 
 ### Domain
 - **D-05 [Q5] Apex:** keep the existing Cloudflare redirect rule apex → `https://www.clickitstory.ae/${1}` (301, query kept). Criterion 1 reads "apex redirects to www, which serves real HTML from the Worker".
@@ -39,9 +42,10 @@ All D-01..D-15 are recommended, PENDING KOSS (question number in brackets).
 - **D-07 (derived, Claude's discretion, recorded so plans follow one line) — flip mechanism:** Worker **route** `www.clickitstory.ae/*` (zone `clickitstory.ae`), not a custom domain. The route is deployed while the `www` CNAME (to Vercel) is grey, where it has no effect. The flip is editing the `www` record grey → orange (one atomic edit); the rollback is orange → grey. Reason: a custom domain needs the CNAME deleted first, and resolvers that ask in that gap negative-cache NXDOMAIN (Cloudflare SOA minimum 1800 s). Universal SSL already covers www (the apex is proxied and serves TLS today); the plan checks the edge certificate list before the flip. After the proof window the record may be replaced by a proxied `AAAA 100::` (no Vercel target left).
 
 ### Media
-- **D-08 [Q7] R2-first media:** first ops step of Phase 3, before the flip: re-sync (`npm run r2:copy -- --refresh`, `--execute --update-changed`, `--verify`), verify every object on `https://media.clickitstory.ae`, then deploy `clickit-media` with the env that has the `MEDIA_BUCKET` R2 binding (named `r2` in `workers/media/wrangler.jsonc` on main today; the executor reads the file on main at the time). Rollback: redeploy `--env supabase-only`.
+- **D-08 [Q7] R2-first media:** first ops step of Phase 3, before the flip: re-sync with the Phase 2 tool `npm run r2:media -- --refresh` (dry-run report reviewed), `--execute`, then verify (never `r2:copy --update-changed`, which would overwrite remuxed fast-start MP4s — RESEARCH Pitfall 1), verify every object on `https://media.clickitstory.ae`, then deploy `clickit-media` with the env that has the `MEDIA_BUCKET` R2 binding (named `r2` in `workers/media/wrangler.jsonc` on main today; the executor reads the file on main at the time). Rollback: redeploy `--env supabase-only`.
 - **D-09 [Q8] DB rewrite (MEDIA-08):** runs right after D-02 (old keys off), so the frozen Vercel cleanup cron can never see rewritten rows. Until then the Worker build renders Supabase URLs as `media.clickitstory.ae` through `toPublicR2MediaUrl`. Target: `https://media.clickitstory.ae/<bucket>/<key>` (query string such as `?v=` kept). Sources: `https://lajguozmtissnnfccmej.supabase.co/storage/v1/object/public/<bucket>/<key>` and `https://clickit-media.<SUB>.workers.dev/<bucket>/<key>` (Phase 2 uploads). Columns (01-LIVE-AUDIT §3, re-scanned DB-wide at run time): `app_config` hero_video_url, hero_video_mobile_url, og_image_url, favicon_url, favicon_dark_url, auth_image_url, preloader_video_url, `app_config.footer_content` jsonb (4 URLs), `shows` hero_url, hero_image_mobile_url, card_image_url, poster_url, logo_url, hero_video_url, hero_video_mobile_url, `show_cast.image_url`, `profiles.avatar_url`, `shorts.thumbnail_url`. One transaction; a backup table holds (table, column/json path, primary key, old value, new value, run id); read-back = DB-wide scan of every text/varchar/jsonb column finds zero old-host URLs; reverse script restores from the backup table.
 - **D-10 [Q9] picsum posters:** left as they are, listed in the rewrite report.
+- **D-19 [Q17] Audit history:** `admin_audit_log` is excluded from the rewrite and from "zero old-host URLs"; the report counts its old-host rows.
 - **D-11 (derived) backup table as a migration:** the backup table is created by a normal migration in `supabase/migrations/` that reaches main through the Phase 3 PR and is applied by `apply-live-migrations.yml` after Koss's approval (Phase 1 rule: no DDL outside that path). The data rewrite itself is a reviewed SQL file run once by the controller after Koss's word, preceded by a local `pg_dump` of the affected tables (Free plan, no restorable backup — 01-LIVE-AUDIT §5).
 
 ### Crons and sign-in protection
@@ -70,7 +74,7 @@ Script names and layout under `scripts/cutover/`, test structure, exact SQL shap
 ### Planning
 - `.planning/ROADMAP.md` — Phase 3 goal and criteria 0–5
 - `.planning/REQUIREMENTS.md` — DNS-01..04, MAIL-02, MEDIA-02, MEDIA-07, MEDIA-08, PLAT-04, PLAT-11
-- `.planning/phases/03-production-cutover/03-DISCUSS-QUESTIONS.md` — the 15 questions and the 5 facts behind D-01..D-15
+- `.planning/phases/03-production-cutover/03-DISCUSS-QUESTIONS.md` — the 15 questions and the 5 facts behind D-01..D-19
 - `.planning/phases/01-safe-ground/01-LIVE-AUDIT.md` — §3 media-URL columns, §5 no backups (pg_dump first), §6 registry NS
 - `.planning/phases/01-safe-ground/01-CONTROLLER-RUNBOOK.md` — how live migrations are applied (workflow + approval)
 - `.planning/research/ARCHITECTURE.md` — "Cutover Order and Rollback", Anti-Pattern 5 (Vercel crons)

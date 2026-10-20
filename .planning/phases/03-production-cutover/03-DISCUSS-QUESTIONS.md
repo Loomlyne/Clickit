@@ -31,7 +31,7 @@ Example: flip on day 0; the Worker already runs on the new keys; Vercel still ca
 - **B.** Right after the flip. Vercel is dead at once; there is no rollback to Vercel, only fixes on the Worker.
 
 ### Q3. Length of the proof window
-The rollback to Vercel stays possible until you close it. It cannot be longer than about 60 days (fact 4).
+The rollback to Vercel stays possible until you close it. Hard limit: Vercel's certificate for www expires **2026-12-29 02:45 UTC** (read 2026-10-20) and cannot renew once www leaves Vercel, and Supabase retires the old keys at the end of 2026. So the window closes by **2026-12-15** at the latest, whatever you pick.
 Example: flip on a Tuesday; the controller sends you a short daily health line; the next Tuesday it asks "close the proof window?".
 - **A (recommended).** 7 days, closed by your word after the controller's checks are green each day.
 - **B.** 14 days.
@@ -42,6 +42,12 @@ A rollback is one DNS switch: the `www` record goes back from orange (proxied, W
 Example: at 23:10 Dubai time www returns errors for 10 minutes; the controller runs the rollback and tells you after.
 - **A (recommended).** You approve the rollback now, for the proof window only, for these triggers: www or the apex down or erroring for 10 minutes, sign-in broken, or playback broken. The controller rolls back first and reports right after. Anything else waits for your word.
 - **B.** Every rollback is your own numbered step; the controller asks first, even at night.
+
+### Q16. Who can press the rollback switch
+The rollback switch is in the Cloudflare DNS page. The controller's wrangler login most likely cannot edit DNS.
+Example: at night the controller runs `scripts/cutover/rollback.mjs`, which reads a DNS-only token from your Mac's Keychain and sets the `www` record to grey.
+- **A (recommended).** Before the flip, one owner step: you create a Cloudflare API token limited to "Zone → DNS → Edit" on `clickitstory.ae` only and store it in Keychain (never in chat or a file). The controller uses it only for the rollback and the flip read-back.
+- **B.** No token. You press the switch yourself every time (Q4 then becomes "the controller calls you").
 
 ## B. Domain
 
@@ -75,6 +81,18 @@ Three live shows still have `picsum.photos` posters (seed placeholders, found in
 Example: "Show X" keeps a random stock photo as its poster.
 - **A (recommended).** Leave them; list them in the rewrite report; the admins replace them through the admin when they have real art.
 - **B.** Set them to empty in the same approved rewrite (the poster then falls back to the card image).
+
+### Q17. Old addresses in the admin history
+`admin_audit_log` keeps a record of past admin edits, and those records contain the old Supabase addresses.
+Example: an audit row from September says "hero_url changed from <old Supabase address> to <other old Supabase address>".
+- **A (recommended).** Leave history as it was; "zero old-host URLs" covers every live content column but not `admin_audit_log`. The report lists how many history rows still mention the old host.
+- **B.** Rewrite the history rows too.
+
+### Q18. What happens if the Worker hits the free daily limit (100k requests)
+On Workers Free, the site Worker and the media Worker share 100,000 requests a day. Over the limit a route either shows a Cloudflare error (default) or lets the request pass to the record's target, which during the proof window is still Vercel.
+Example: a show trends on Instagram, 120,000 requests arrive in a day; with "fail open", www keeps working from Vercel after request 100,000; media files keep failing either way.
+- **A (recommended).** "Fail open" on the www route during the proof window (a dashboard setting); after the window, back to the default and the controller brings you the Workers Paid price if traffic gets near the limit.
+- **B.** Keep the default (error page over the limit).
 
 ## D. Crons and sign-in protection
 

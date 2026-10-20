@@ -32,3 +32,11 @@
 
 ## Facts that shaped the questions
 Vercel crons call `*.vercel.app` (not www); cleanup-media keeps only Supabase-URL-referenced files; Supabase legacy keys switch off together; Vercel cert stops renewing after DNS leaves; custom domain needs the CNAME deleted first. Sources in 03-DISCUSS-QUESTIONS.md.
+
+## Added after research (2026-10-20, 03-RESEARCH.md)
+| Q | Area | Options | Taken (pending Koss) |
+|---|------|---------|----------------------|
+| 16 | DNS-edit authority | A scoped DNS token in Keychain / B Koss toggles | A |
+| 17 | Audit history | A exclude admin_audit_log / B rewrite it | A |
+| 18 | Route failure mode | A fail open in window / B default error | A |
+Also: D-03 ceiling became an absolute date (close by 2026-12-15; Vercel cert notAfter 2026-12-29); D-08 re-sync tool corrected to `r2:media`; D-18 derived (no workers.dev deploy after the flip).
