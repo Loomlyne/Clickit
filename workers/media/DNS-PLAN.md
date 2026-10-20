@@ -104,12 +104,13 @@ a. **R2 (optional for this fix)**: enable R2 in the ClickitStory dashboard and
    the Supabase originals until objects are copied (`npm run r2:media` dry run
    first, then `--execute` on Koss's word).
 
-b. **Deploy the Worker to workers.dev** (controller):
+b. **Deploy the Worker to workers.dev**: done 2026-10-20, https://clickit-media.clickitstory.workers.dev
+   (account subdomain `clickitstory`), `supabase-only`, 54/54 media URLs byte-identical. Redeploy commands:
    - without R2: `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deploy -c workers/media/wrangler.jsonc --env supabase-only`
    - with R2 on and the bucket created: `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deploy -c workers/media/wrangler.jsonc --env=""`
 
-   Proof: `npm run media:health -- --media-origin https://clickit-media.<subdomain>.workers.dev --verify-bytes --timeout 180`
-   must print 54/54 (or the current count) with `bytes=match`.
+   Proof: `npm run media:health -- --media-origin https://clickit-media.clickitstory.workers.dev --verify-bytes --timeout 180`
+   must print every URL ok with `bytes=match`.
 
 c. **Add the zone**: Cloudflare dashboard (ClickitStory account) → Add a domain
    → `clickitstory.ae` → Free → keep only the two DNS-only records in section 4

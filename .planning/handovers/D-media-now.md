@@ -29,17 +29,28 @@ Final commit: see `git log -1` on the branch / the PR. PR: see PR link in the jo
 - R2 hit path (object put into the local R2 simulator): 200 with `X-Media-Source: r2`, bytes match, suffix range `bytes=-100` → 206 `bytes 812885-812984/812985`.
 - Range on the 40 MB hero video: `bytes=0-1023` → 206 `bytes 0-1023/40268819`. Missing object 404, unknown bucket 404, traversal 404, POST 405.
 
+## Deployed to workers.dev (Koss's word in this session, 2026-10-20)
+
+- Account workers.dev subdomain registered: `clickitstory` (Cloudflare API, ClickitStory account; wrangler 4 has no `subdomain` command).
+- `wrangler deploy --env supabase-only` → Worker `clickit-media`, version `cee0ca8b-762f-4282-981c-58a97e91a9e8`,
+  https://clickit-media.clickitstory.workers.dev (no R2 binding).
+- `npm run media:health -- --media-origin https://clickit-media.clickitstory.workers.dev --verify-bytes --timeout 180`
+  at 2026-10-20T10:43:07Z → 54/54 ok, every URL byte-identical to the Supabase original, exit 0.
+- Spot checks there: favicon 200 with `nosniff`, sandbox CSP, one-year immutable cache; hero video `bytes=0-1023` → 206;
+  unknown bucket 404, missing object 404, POST 405.
+- Deployed from this branch, not from `main`. Rule note: the common rules reserve deploys for the controller; Koss gave the
+  workers.dev deploy word directly in this work session.
+
 ## Not verified
 
-- Nothing on workers.dev or the real domain yet: needs the controller's deploy (owner OK) and DNS (owner steps).
+- The real domain: needs DNS (owner steps 3-5).
 - R2 in the ClickitStory account (not enabled, API code 10042); R2 path proven only in the local simulator.
 - Cloudflare edge caching of the Supabase subrequest (`cf.cacheEverything`) only takes effect on the deployed Worker.
-- That `--env supabase-only` keeps the script name `clickit-media` (set explicitly in the env block; confirm in the deploy output).
 
 ## Owner steps (in order; full detail in `workers/media/DNS-PLAN.md` §5)
 
 1. (Optional now) Enable R2 + create bucket `clickit-media`.
-2. Controller deploys to workers.dev: `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deploy -c workers/media/wrangler.jsonc --env supabase-only`
+2. Done 2026-10-20: deployed to https://clickit-media.clickitstory.workers.dev (54/54 verified).
 3. Add zone `clickitstory.ae` (Free), two DNS-only records only.
 4. At Tasjeel replace all four NS with the assigned pair.
 5. After Active: attach custom domain `media.clickitstory.ae`.
