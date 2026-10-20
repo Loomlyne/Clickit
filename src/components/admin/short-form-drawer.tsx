@@ -229,7 +229,7 @@ export function ShortFormDrawer({
               </Button>
             </div>
             {errors.youtube_url && (
-              <p className="text-sm text-red-400">
+              <p className="text-brand-red-safe text-sm">
                 {errors.youtube_url.message}
               </p>
             )}
@@ -237,7 +237,7 @@ export function ShortFormDrawer({
 
           {/* Preview thumbnail */}
           {thumbnailUrl && (
-            <div className="flex items-start gap-4 rounded-lg border border-white/8 bg-white/[0.02] p-3">
+            <div className="flex items-start gap-4 rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-3">
               <img
                 src={thumbnailUrl}
                 alt={t('thumbnailAlt')}
@@ -272,7 +272,7 @@ export function ShortFormDrawer({
             </div>
           )}
           {!videoId && youtubeUrl && (
-            <p className="text-sm text-red-400">{t('extractError')}</p>
+            <p className="text-brand-red-safe text-sm">{t('extractError')}</p>
           )}
 
           {/* Title */}
@@ -280,7 +280,9 @@ export function ShortFormDrawer({
             <Label htmlFor="title">{t('titleLabel')}</Label>
             <Input id="title" {...register('title')} />
             {errors.title && (
-              <p className="text-sm text-red-400">{errors.title.message}</p>
+              <p className="text-brand-red-safe text-sm">
+                {errors.title.message}
+              </p>
             )}
           </div>
 

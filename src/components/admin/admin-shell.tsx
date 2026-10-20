@@ -4,11 +4,12 @@ import { ArrowLeft } from 'lucide-react'
 import { Link } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
 
+// UI System roles: card 12px, hairline border, --bg-1 surface. No inset glow.
 export const adminPanelClass =
-  'rounded-lg border border-white/8 bg-[var(--bg-2)] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]'
+  'rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)]'
 
 export const adminTableShellClass =
-  'overflow-hidden rounded-lg border border-white/8 bg-[var(--bg-2)] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]'
+  'overflow-hidden rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)]'
 
 export function AdminPanel({
   children,
@@ -18,7 +19,7 @@ export function AdminPanel({
   className?: string
 }) {
   return (
-    <section className={cn(adminPanelClass, 'p-5 md:p-6', className)}>
+    <section className={cn(adminPanelClass, 'p-5', className)}>
       {children}
     </section>
   )
@@ -35,44 +36,47 @@ export function AdminTableShell({
 }
 
 export function AdminPageHeader({
-  eyebrow,
   title,
   description,
   action,
+  crumb,
   className,
 }: {
-  eyebrow?: string
   title: string
   description?: string
   action?: ReactNode
+  crumb?: ReactNode
   className?: string
 }) {
   return (
-    <AdminPanel className={cn('p-6 md:p-8', className)}>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          {eyebrow && (
-            <p className="text-muted-foreground text-xs tracking-[0.24em] uppercase">
-              {eyebrow}
-            </p>
+    <div
+      className={cn(
+        'flex flex-col gap-3 md:flex-row md:items-end md:justify-between',
+        className
+      )}
+    >
+      <div className="min-w-0">
+        {crumb}
+        <h1
+          className={cn(
+            'text-[24px] leading-8 font-semibold tracking-tight text-[var(--text)]',
+            crumb && 'mt-1'
           )}
-          <h1
-            className={cn(
-              'text-foreground font-semibold tracking-tight',
-              eyebrow ? 'mt-3 text-3xl' : 'text-2xl'
-            )}
-          >
-            {title}
-          </h1>
-          {description && (
-            <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6 md:text-base">
-              {description}
-            </p>
-          )}
-        </div>
-        {action}
+        >
+          {title}
+        </h1>
+        {description && (
+          <p className="mt-1 max-w-2xl text-[14px] leading-6 text-[var(--text-dim)]">
+            {description}
+          </p>
+        )}
       </div>
-    </AdminPanel>
+      {action ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {action}
+        </div>
+      ) : null}
+    </div>
   )
 }
 
@@ -89,7 +93,7 @@ export function AdminBackLink({
     <Link
       href={href}
       className={cn(
-        'text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/[0.03] px-4 py-2 text-sm transition-colors hover:border-white/16 hover:bg-white/[0.05]',
+        '-ms-2 inline-flex min-h-11 items-center gap-1.5 rounded-full px-2 text-[13px] text-[var(--text-mute)] transition-colors hover:text-[var(--text)]',
         className
       )}
     >
@@ -99,23 +103,43 @@ export function AdminBackLink({
   )
 }
 
-export function AdminMetric({
-  label,
-  value,
+export function AdminMetricStrip({
+  items,
   className,
 }: {
-  label: string
-  value: ReactNode
+  items: { label: string; value: ReactNode; className?: string }[]
   className?: string
 }) {
   return (
-    <div className={cn(adminPanelClass, 'p-4', className)}>
-      <p className="text-muted-foreground text-xs tracking-[0.16em] uppercase">
-        {label}
-      </p>
-      <p className="text-foreground mt-3 text-3xl font-semibold tracking-tight">
-        {value}
-      </p>
+    <div
+      className={cn(
+        adminTableShellClass,
+        'grid grid-cols-2 divide-[var(--line)] md:grid-cols-4 md:divide-x',
+        className
+      )}
+    >
+      {items.map((item, i) => (
+        <div
+          key={item.label}
+          className={cn(
+            'px-5 py-4',
+            i > 1 && 'border-t border-[var(--line)] md:border-t-0',
+            i % 2 === 1 && 'border-s border-[var(--line)] md:border-s-0'
+          )}
+        >
+          <p className="text-[11px] font-semibold tracking-[0.12em] text-[var(--text-mute)] uppercase">
+            {item.label}
+          </p>
+          <p
+            className={cn(
+              'mt-1 text-[24px] leading-8 font-semibold tracking-tight text-[var(--text)]',
+              item.className
+            )}
+          >
+            {item.value}
+          </p>
+        </div>
+      ))}
     </div>
   )
 }

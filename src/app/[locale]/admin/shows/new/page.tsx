@@ -17,12 +17,13 @@ export default async function NewShowPage() {
   ])
 
   return (
-    <div className="space-y-6">
-      <AdminBackLink href="/admin">{tNew('backToShows')}</AdminBackLink>
-
+    <div className="space-y-5">
       <AdminPageHeader
         title={tDash('createShow')}
         description={tNew('description')}
+        crumb={
+          <AdminBackLink href="/admin">{tNew('backToShows')}</AdminBackLink>
+        }
       />
 
       <ShowForm categories={categories ?? []} />

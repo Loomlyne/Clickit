@@ -15,15 +15,15 @@ export function EmptyState({
   const t = useTranslations('admin.emptyState')
   return (
     <div
-      className={`${adminPanelClass} flex flex-col items-center justify-center px-6 py-16 text-center`}
+      className={`${adminPanelClass} flex flex-col items-center justify-center px-6 py-14 text-center`}
     >
-      <p className="text-muted-foreground text-xs tracking-[0.24em] uppercase">
+      <p className="text-[11px] font-semibold tracking-[0.12em] text-[var(--text-mute)] uppercase">
         {t('defaultLabel')}
       </p>
-      <h3 className="text-foreground mt-4 text-[22px] font-semibold tracking-tight">
+      <h3 className="text-foreground mt-3 text-[20px] font-semibold tracking-tight">
         {heading}
       </h3>
-      <p className="text-muted-foreground mt-3 max-w-md text-[15px] leading-7">
+      <p className="mt-2 max-w-md text-[14px] leading-6 text-[var(--text-dim)]">
         {body}
       </p>
       {action && <div className="mt-6">{action}</div>}

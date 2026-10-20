@@ -55,9 +55,8 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
   const [deleting, setDeleting] = useState(false)
 
   function openNew() {
-    const nextOrder = faqs.length > 0
-      ? Math.max(...faqs.map((f) => f.sort_order)) + 1
-      : 1
+    const nextOrder =
+      faqs.length > 0 ? Math.max(...faqs.map((f) => f.sort_order)) + 1 : 1
     setDraft(emptyDraft(nextOrder))
   }
 
@@ -121,15 +120,15 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
       >
         {sortedFaqs.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
-            <HelpCircle className="size-8 text-white/20" />
-            <p className="text-sm text-white/40">{t('faqEmpty')}</p>
+            <HelpCircle className="size-8 text-[var(--text-mute)]" />
+            <p className="text-sm text-[var(--text-mute)]">{t('faqEmpty')}</p>
             <Button
               size="sm"
               variant="outline"
               onClick={openNew}
               className="mt-1"
             >
-              <Plus className="mr-1.5 size-3.5" />
+              <Plus className="me-1.5 size-3.5" />
               {t('faqAddFirst')}
             </Button>
           </div>
@@ -137,30 +136,34 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-8 hidden sm:table-cell">#</TableHead>
+                <TableHead className="hidden w-8 sm:table-cell">#</TableHead>
                 <TableHead>{t('faqColQuestion')}</TableHead>
-                <TableHead className="hidden md:table-cell">{t('faqColAnswerPreview')}</TableHead>
-                <TableHead className="w-[88px] text-right">{t('faqColActions')}</TableHead>
+                <TableHead className="hidden md:table-cell">
+                  {t('faqColAnswerPreview')}
+                </TableHead>
+                <TableHead className="w-[88px] text-end">
+                  {t('faqColActions')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedFaqs.map((faq, i) => (
                 <TableRow key={faq.id}>
-                  <TableCell className="hidden text-xs text-white/30 sm:table-cell">
+                  <TableCell className="hidden text-xs text-[var(--text-mute)] sm:table-cell">
                     {i + 1}
                   </TableCell>
-                  <TableCell className="max-w-[260px] font-medium text-white">
+                  <TableCell className="max-w-[260px] font-medium text-[var(--text)]">
                     <span className="line-clamp-2">{faq.question}</span>
                   </TableCell>
-                  <TableCell className="hidden max-w-[320px] text-xs text-white/50 md:table-cell">
+                  <TableCell className="hidden max-w-[320px] text-xs text-[var(--text-mute)] md:table-cell">
                     <span className="line-clamp-2">{faq.answer}</span>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
+                  <TableCell className="text-end">
+                    <div className="flex items-center justify-end gap-2">
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="size-8 text-white/50 hover:text-white"
+                        className="size-8 text-[var(--text-mute)] hover:text-[var(--text)]"
                         onClick={() => openEdit(faq)}
                         aria-label={t('faqEditAria')}
                       >
@@ -169,7 +172,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="size-8 text-white/50 hover:text-red-300"
+                        className="hover:text-brand-red-safe size-8 text-[var(--text-mute)]"
                         onClick={() => setDeleteTarget(faq)}
                         aria-label={t('faqDeleteAria')}
                       >
@@ -188,10 +191,10 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
       <Dialog open={!!draft} onOpenChange={(open) => !open && setDraft(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{draft?.id ? t('faqDialogEditTitle') : t('faqDialogNewTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('faqDialogDescription')}
-            </DialogDescription>
+            <DialogTitle>
+              {draft?.id ? t('faqDialogEditTitle') : t('faqDialogNewTitle')}
+            </DialogTitle>
+            <DialogDescription>{t('faqDialogDescription')}</DialogDescription>
           </DialogHeader>
 
           {draft && (
@@ -206,7 +209,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
                       d ? { ...d, question: e.target.value } : d
                     )
                   }
-                  className="rounded-[12px]"
+                  className="rounded-lg"
                 />
               </SettingsField>
 
@@ -216,11 +219,9 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
                   rows={5}
                   placeholder={t('faqAnswerPlaceholder')}
                   onChange={(e) =>
-                    setDraft((d) =>
-                      d ? { ...d, answer: e.target.value } : d
-                    )
+                    setDraft((d) => (d ? { ...d, answer: e.target.value } : d))
                   }
-                  className="rounded-[12px] resize-y"
+                  className="resize-y rounded-lg"
                 />
               </SettingsField>
 
@@ -238,7 +239,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
                       d ? { ...d, question_ar: e.target.value } : d
                     )
                   }
-                  className="rounded-[12px]"
+                  className="rounded-lg"
                 />
               </SettingsField>
 
@@ -256,7 +257,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
                       d ? { ...d, answer_ar: e.target.value } : d
                     )
                   }
-                  className="rounded-[12px] resize-y"
+                  className="resize-y rounded-lg"
                 />
               </SettingsField>
 
@@ -278,7 +279,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
                         : d
                     )
                   }
-                  className="rounded-[12px] w-24"
+                  className="w-24 rounded-lg"
                 />
               </SettingsField>
             </div>
@@ -295,14 +296,10 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
             <Button
               onClick={onSave}
               disabled={
-                saving ||
-                !draft?.question.trim() ||
-                !draft?.answer.trim()
+                saving || !draft?.question.trim() || !draft?.answer.trim()
               }
             >
-              {saving ? (
-                <Loader2 className="mr-2 size-4 animate-spin" />
-              ) : null}
+              {saving ? <Loader2 className="me-2 size-4 animate-spin" /> : null}
               {draft?.id ? t('faqSaveChanges') : t('faqCreate')}
             </Button>
           </DialogFooter>

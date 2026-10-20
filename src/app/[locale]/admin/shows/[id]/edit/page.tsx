@@ -4,7 +4,7 @@ import { Eye, Palette } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { ShowForm } from '@/components/admin/show-form'
-import { AdminBackLink, AdminPanel } from '@/components/admin/admin-shell'
+import { AdminBackLink } from '@/components/admin/admin-shell'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { Button } from '@/components/ui/button'
 import { Link } from '@/i18n/navigation'
@@ -21,7 +21,7 @@ const brandAccentByColor: Record<string, string> = {
 }
 
 function getBrandAccent(show: Show) {
-  return brandAccentByColor[show.brand_color] ?? '#6073FF'
+  return brandAccentByColor[show.brand_color] ?? '#A1A1A1'
 }
 
 function EditMediaPreview({ show, accent }: { show: Show; accent: string }) {
@@ -30,14 +30,14 @@ function EditMediaPreview({ show, accent }: { show: Show; accent: string }) {
   const imageUrl = stripStorageCacheBust(sourceImageUrl) ?? sourceImageUrl
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-white/10 bg-[#0f0f0f]">
+    <div className="relative w-28 shrink-0 overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--bg-0)] md:w-36">
       <div className="relative aspect-[16/9]">
         {imageUrl ? (
           <Image
             src={imageUrl}
             alt={show.title}
             fill
-            sizes="(min-width: 1280px) 360px, 100vw"
+            sizes="144px"
             className="object-cover"
             priority
           />
@@ -46,7 +46,7 @@ function EditMediaPreview({ show, accent }: { show: Show; accent: string }) {
             className="flex h-full items-center justify-center"
             style={{ backgroundColor: `${accent}24` }}
           >
-            <Palette className="size-9 text-white/50" />
+            <Palette className="size-6 text-[var(--text-mute)]" />
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
@@ -98,41 +98,36 @@ export default async function EditShowPage({
         </AdminBackLink>
         <Button variant="outline" size="sm" asChild>
           <Link href={`/admin/shows/${id}`}>
-            <Eye className="me-1.5 size-4" />
+            <Eye className="size-4" />
             {tEdit('viewShow')}
           </Link>
         </Button>
       </div>
 
-      <AdminPanel className="relative overflow-hidden border-[#2e2e2e] bg-[#171717] p-0">
-        <div
-          aria-hidden
-          className="absolute inset-x-0 top-0 h-1"
-          style={{ backgroundColor: accent }}
-        />
-        <div
-          aria-hidden
-          className="absolute -end-20 -top-20 size-56 rounded-full blur-3xl"
-          style={{ backgroundColor: `${accent}2e` }}
-        />
-        <div className="relative grid gap-6 p-5 md:p-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 items-center gap-4">
+          <EditMediaPreview show={show} accent={accent} />
           <div className="min-w-0">
-            <h1 className="text-foreground mt-3 text-4xl leading-none font-medium tracking-tight md:text-5xl">
+            <div
+              aria-hidden
+              className="mb-1.5 h-1 w-10 rounded-full"
+              style={{ backgroundColor: accent }}
+            />
+            <h1 className="text-[24px] leading-8 font-semibold tracking-tight text-[var(--text)]">
               {tEdit('title')}
             </h1>
-            <p className="text-muted-foreground mt-3 max-w-2xl text-sm leading-6 md:text-base">
+            <p className="mt-0.5 max-w-2xl text-[14px] leading-6 text-[var(--text-dim)]">
               {tEdit('description', { title: show.title })}
             </p>
-            <div className="mt-5 flex flex-wrap items-center gap-2">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <StatusBadge status={show.status} />
-              <span className="text-muted-foreground rounded-full border border-white/8 bg-[#0f0f0f] px-3 py-1 text-xs">
+              <span className="rounded-full border border-[var(--line)] bg-[var(--bg-2)] px-2.5 py-0.5 text-[12px] text-[var(--text-dim)]">
                 {show.genre}
               </span>
             </div>
           </div>
-          <EditMediaPreview show={show} accent={accent} />
         </div>
-      </AdminPanel>
+      </div>
 
       <div>
         <ShowForm

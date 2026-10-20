@@ -229,7 +229,7 @@ export function AdvancedTab({
                   href="https://console.cloud.google.com/apis/credentials"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-white/60 hover:text-white"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-[var(--text-dim)] hover:text-[var(--text)]"
                 >
                   {t('getKey')}
                   <ExternalLink className="size-3" />
@@ -280,7 +280,7 @@ export function AdvancedTab({
         title={t('adminAccountTitle')}
         description={t('adminAccountDescription')}
       >
-        <div className="text-muted-foreground rounded-lg border border-white/8 bg-white/[0.02] px-4 py-3 font-mono text-xs">
+        <div className="text-muted-foreground rounded-lg border border-[var(--line)] bg-[var(--bg-2)] px-4 py-3 font-mono text-xs">
           {t('adminAccountCurrent')}
         </div>
       </SettingsCard>
@@ -305,7 +305,7 @@ function IntegrationRow({
 }) {
   return (
     <div
-      className={`rounded-lg border border-white/8 bg-white/[0.02] p-4 transition-opacity ${
+      className={`rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-4 transition-opacity ${
         enabled ? '' : 'opacity-60'
       }`}
     >
@@ -314,7 +314,7 @@ function IntegrationRow({
         <div className="min-w-0 flex-1 space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-white">{title}</p>
+              <p className="text-sm font-medium text-[var(--text)]">{title}</p>
               <p className="text-muted-foreground mt-0.5 text-xs">
                 {description}
               </p>
@@ -338,18 +338,18 @@ function FlagRow({
   onChange: (v: boolean) => void
 }) {
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-lg border border-white/8 bg-white/[0.02] px-4 py-3 transition-colors hover:border-white/16">
+    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-lg border border-[var(--line)] bg-[var(--bg-2)] px-4 py-3 transition-colors hover:border-[var(--line-2)]">
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 flex size-8 items-center justify-center rounded-full bg-white/[0.06] text-white/70">
+        <span className="mt-0.5 flex size-8 items-center justify-center rounded-full bg-[var(--bg-3)] text-[var(--text-dim)]">
           {meta.icon}
         </span>
         <div className="min-w-0">
-          <p className="text-sm font-medium text-white">{meta.title}</p>
+          <p className="text-sm font-medium text-[var(--text)]">{meta.title}</p>
           <p className="text-muted-foreground mt-0.5 text-xs">
             {meta.description}
           </p>
           {meta.warning && value && (
-            <p className="mt-1.5 flex items-center gap-1 text-xs text-orange-300">
+            <p className="text-brand-orange-safe mt-1.5 flex items-center gap-1 text-xs">
               <AlertTriangle className="size-3.5" />
               {meta.warning}
             </p>
@@ -374,8 +374,8 @@ function Toggle({
       role="switch"
       aria-checked={value}
       onClick={() => onChange(!value)}
-      className={`relative mt-1 h-6 w-11 shrink-0 rounded-full transition-colors ${
-        value ? 'bg-white' : 'bg-white/15'
+      className={`relative mt-1 h-6 w-11 shrink-0 rounded-full transition-colors before:absolute before:inset-x-0 before:-inset-y-2.5 before:content-[''] ${
+        value ? 'bg-white' : 'bg-[var(--bg-3)]'
       }`}
     >
       <span

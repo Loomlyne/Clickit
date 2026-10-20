@@ -127,7 +127,7 @@ export function ArchiveEpisodesTable({ episodes }: ArchiveEpisodesTableProps) {
               {episodes.map((episode) => (
                 <TableRow
                   key={episode.id}
-                  className="group transition-colors hover:bg-white/[0.02]"
+                  className="group transition-colors hover:bg-[var(--bg-2)]"
                 >
                   <TableCell>
                     <span className="text-muted-foreground me-2 text-xs">

@@ -324,14 +324,14 @@ export function EpisodeFormDrawer({
                       }
                       className={`rounded-lg border p-3 text-start transition-all ${
                         currentStatus === opt.value
-                          ? 'border-white/30 bg-white/10 ring-1 ring-white/20'
-                          : 'border-border hover:border-white/15 hover:bg-white/[0.03]'
+                          ? 'border-[var(--line-2)] bg-[var(--bg-3)] ring-1 ring-white/20'
+                          : 'border-border hover:border-[var(--line-2)] hover:bg-[var(--bg-2)]'
                       }`}
                     >
                       <span className="text-foreground text-sm font-medium">
                         {opt.label}
                       </span>
-                      <span className="text-muted-foreground mt-0.5 block text-[10px]">
+                      <span className="text-muted-foreground mt-0.5 block text-[11px]">
                         {opt.desc}
                       </span>
                     </button>
@@ -368,7 +368,7 @@ export function EpisodeFormDrawer({
                       {...form.register('duration', { valueAsNumber: true })}
                       className="pe-10"
                     />
-                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
+                    <span className="text-muted-foreground absolute end-3 top-1/2 -translate-y-1/2 text-xs">
                       {t('durationUnit')}
                     </span>
                   </div>
@@ -535,7 +535,7 @@ function YouTubeFetchButton({
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/80 transition-colors hover:border-white/25 hover:text-white disabled:opacity-50"
+      className="relative mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-xs font-medium text-[var(--text-dim)] transition-colors after:absolute after:inset-x-0 after:-inset-y-1 after:content-[''] hover:border-[var(--text-mute)] hover:text-[var(--text)] disabled:opacity-50 max-md:min-h-11"
     >
       {loading ? (
         <Loader2 className="size-3 animate-spin" />

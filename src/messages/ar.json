@@ -605,6 +605,9 @@
       "moveDown": "نقل لأسفل",
       "moveUpAria": "نقل {title} لأعلى",
       "moveDownAria": "نقل {title} لأسفل",
+      "featuredRemoveAria": "إزالة {title} من المميز",
+      "featuredMarkAria": "تعيين {title} كمميز",
+      "editAria": "تعديل {title}",
       "expiryNever": "بدون انتهاء",
       "expiryExpired": "منتهية"
     },

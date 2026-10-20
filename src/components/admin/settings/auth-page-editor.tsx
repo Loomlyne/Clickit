@@ -46,7 +46,8 @@ export function AuthPageEditor({ initial }: { initial: Values }) {
       auth_quote: values.auth_quote.trim() || null,
       auth_quote_ar: values.auth_quote_ar.trim() || null,
       auth_quote_attribution: values.auth_quote_attribution.trim() || null,
-      auth_quote_attribution_ar: values.auth_quote_attribution_ar.trim() || null,
+      auth_quote_attribution_ar:
+        values.auth_quote_attribution_ar.trim() || null,
       auth_allow_skip: values.auth_allow_skip,
     })
     setSaving(false)
@@ -60,7 +61,10 @@ export function AuthPageEditor({ initial }: { initial: Values }) {
       description={t('authCopyDescription')}
     >
       <form onSubmit={onSave} className="grid gap-4 md:grid-cols-2">
-        <SettingsField label={t('authHeadingLabel')} hint={t('authHeadingHint')}>
+        <SettingsField
+          label={t('authHeadingLabel')}
+          hint={t('authHeadingHint')}
+        >
           <Input
             value={values.auth_heading}
             onChange={(e) => set('auth_heading', e.target.value)}
@@ -104,7 +108,7 @@ export function AuthPageEditor({ initial }: { initial: Values }) {
             onChange={(e) => set('auth_quote', e.target.value)}
             rows={3}
             maxLength={400}
-            className="rounded-[12px]"
+            className="rounded-lg"
           />
         </SettingsField>
         <SettingsField label={t('authQuoteArLabel')}>
@@ -114,7 +118,7 @@ export function AuthPageEditor({ initial }: { initial: Values }) {
             onChange={(e) => set('auth_quote_ar', e.target.value)}
             rows={3}
             maxLength={400}
-            className="rounded-[12px]"
+            className="rounded-lg"
           />
         </SettingsField>
 
@@ -137,9 +141,9 @@ export function AuthPageEditor({ initial }: { initial: Values }) {
 
         {/* Skip sign-in toggle */}
         <div className="md:col-span-2">
-          <div className="flex items-center justify-between gap-4 rounded-lg border border-white/8 bg-white/[0.02] p-4">
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-4">
             <div>
-              <p className="text-sm font-medium text-white">
+              <p className="text-sm font-medium text-[var(--text)]">
                 {t('authAllowSkipLabel')}
               </p>
               <p className="text-muted-foreground text-xs">
@@ -151,8 +155,10 @@ export function AuthPageEditor({ initial }: { initial: Values }) {
               onClick={() => set('auth_allow_skip', !values.auth_allow_skip)}
               aria-pressed={values.auth_allow_skip}
               aria-label={t('authAllowSkipLabel')}
-              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none ${
-                values.auth_allow_skip ? 'bg-emerald-500' : 'bg-white/10'
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors before:absolute before:inset-x-0 before:-inset-y-2.5 before:content-[''] focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none ${
+                values.auth_allow_skip
+                  ? 'bg-brand-green-safe'
+                  : 'bg-[var(--bg-3)]'
               }`}
             >
               <span
@@ -166,7 +172,11 @@ export function AuthPageEditor({ initial }: { initial: Values }) {
 
         <div className="flex items-center justify-end md:col-span-2">
           <Button type="submit" disabled={!dirty || saving}>
-            {saving ? <Loader2 className="size-4 animate-spin" /> : t('saveButton')}
+            {saving ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              t('saveButton')
+            )}
           </Button>
         </div>
       </form>
