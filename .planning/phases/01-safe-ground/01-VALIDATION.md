@@ -34,14 +34,14 @@ created: 2026-10-20
 |------|------|------|-------------|-------------------|
 | 01-01-T1 scanner + classifier | 01 | 1 | SAFE-02 | `node --experimental-strip-types --test tests/unit/migration-guard.test.ts` |
 | 01-01-T2 git rules, CLI, scripts | 01 | 1 | SAFE-02, SAFE-03 | `npm run test:unit && npm run typecheck && node scripts/migration-guard.mjs --base origin/main --head HEAD` |
-| 01-02-T1 pr-gate.yml | 02 | 1 | SAFE-03 | `node --experimental-strip-types --test tests/unit/workflows.test.ts` + ruby YAML parse |
-| 01-02-T2 apply-live-migrations.yml | 02 | 1 | SAFE-02 | `npm run test:unit` + ruby YAML parse + old file absent |
+| 01-02-T1 pr-gate.yml | 02 | 2 | SAFE-03 | `node --experimental-strip-types --test tests/unit/workflows.test.ts` + ruby YAML parse |
+| 01-02-T2 apply-live-migrations.yml | 02 | 2 | SAFE-02 | `tests/unit/workflows.test.ts` + ruby YAML parse + old file absent |
 | 01-03-T1 neutralise + seed.sql + config | 03 | 2 | SAFE-01 | scanSql over the five files + seed/config greps |
 | 01-03-T2 scratch-DB proof [BLOCKING] | 03 | 2 | SAFE-01 | `/Users/koss/.clickit-checks/p1-scratch-proof.log` ends `exit=0`, `counts=1\|15\|21\|94\|6\|45\|58` |
 | 01-03-T3 allow-list SHAs + regression test | 03 | 2 | SAFE-01, SAFE-02 | `npm run test:unit && node scripts/migration-guard.mjs --base origin/main --head HEAD` |
 | 01-04-T1 controller runbook | 04 | 3 | SAFE-02, SAFE-03, SAFE-04 | grep checks on `01-CONTROLLER-RUNBOOK.md` |
 | 01-04-T2 merge main + gate:local | 04 | 3 | SAFE-03 | `/Users/koss/.clickit-checks/p1-gate.log` ends `exit=0` |
-| 01-04-T3 hand-over, push, PR | 04 | 3 | SAFE-04, SAFE-05 | PR URL in hand-over; remote branch = HEAD; PR open, unmerged |
+| 01-04-T3 hand-over, push, PR | 04 | 3 | SAFE-04, SAFE-05 | registry `dig +norec NS clickitstory.ae @ns1.aedns.ae` = jen+brett only; PR URL in hand-over; remote branch = HEAD; PR open, unmerged |
 
 Note (planning, 2026-10-20): the running local stack is labelled with the Phase 1.1 worktree, so D-11 is proved on a scratch database `p1_scratch_safe_ground` with psql (no `supabase db reset`); the CLI reset is runbook step 12.
 
@@ -57,7 +57,7 @@ Requirement coverage:
 | SAFE-03 | PR workflow shape (opened/synchronize/reopened, jobs `gate` + `migration-guard`, concurrency cancel, no secrets, SHA pins, timeouts) | unit (text) | `tests/unit/workflows.test.ts` |
 | SAFE-03 | Gate steps green on branch | local | `npm run gate:local` under the lock |
 | SAFE-04 | Evidence on file | doc | `test -f .planning/phases/01-safe-ground/01-LIVE-AUDIT.md` |
-| SAFE-05 | Evidence on file | doc | `grep -q 'SAFE-05' .planning/phases/01-safe-ground/01-LIVE-AUDIT.md` |
+| SAFE-05 | Registry delegates only jen/brett (read-only re-check at hand-over) | network (read-only) | `dig +norec NS clickitstory.ae @ns1.aedns.ae \| awk '$4=="NS"{print tolower($5)}' \| sort -u` = `brett.ns.cloudflare.com.` + `jen.ns.cloudflare.com.` |
 
 ## Wave 0 Requirements
 

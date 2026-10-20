@@ -41,7 +41,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [ ] 01-01-PLAN.md — W1: migration guard script (scanner, applied-file rule, blob-SHA allow-list) + fixture tests + typecheck/guard scripts
-- [ ] 01-02-PLAN.md — W1: PR gate workflow (gate + migration-guard) and hand-started dry-run → approved apply workflow + text tests
+- [ ] 01-02-PLAN.md — W2: PR gate workflow (gate + migration-guard) and hand-started dry-run → approved apply workflow + text tests
 - [ ] 01-03-PLAN.md — W2: neutralise DROP block and seed migrations, seed.sql + seeding on, scratch-DB proof, allow-list SHAs pinned
 - [ ] 01-04-PLAN.md — W3: controller runbook (environments, secrets, ruleset, backup, first dry-run), full gate, hand-over, PR
 
