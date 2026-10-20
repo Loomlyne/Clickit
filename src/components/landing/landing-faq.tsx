@@ -30,7 +30,7 @@ export async function LandingFaq() {
 
   return (
     <section
-      className="mx-auto max-w-[1400px] border-t border-[var(--line)] px-10 py-24"
+      className="mx-auto max-w-[1400px] border-t border-[var(--line)] px-4 py-24 sm:px-6 md:px-10"
       id="faq"
     >
       <h2 className="mb-12 font-[family-name:var(--font-display)] text-[clamp(36px,5vw,64px)] leading-none font-normal tracking-[-0.02em]">
