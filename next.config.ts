@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from '@next/bundle-analyzer'
-import { withBotId } from 'botid/next/config'
 import createNextIntlPlugin from 'next-intl/plugin'
 import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare'
+import { buildCsp } from './src/lib/csp'
 import { getPublicMediaOrigin } from './src/lib/supabase-media'
 
 // OpenNext dev hook: exposes Cloudflare bindings to `next dev` only.
@@ -19,40 +19,19 @@ const withBundleAnalyzer = bundleAnalyzer({
 // layout/page awaits getMessages() during prerender (Phase 13 [locale]/layout).
 const withNextIntl = createNextIntlPlugin()
 
-// Content-Security-Policy. Allowlists every origin the app actually loads:
-// GA (googletagmanager/google-analytics), Meta Pixel (facebook), YouTube embeds,
-// Vercel Analytics + Speed Insights + BotID, and Supabase (REST + realtime wss +
-// public storage images/video). 'unsafe-inline' is required for the inline GA/
-// Pixel snippets and Next's bootstrap (nonce-based hardening is a future step).
-// The locked-down directives (frame-ancestors/object-src/base-uri/form-action)
-// add real protection at zero breakage risk.
-// Dev-only relaxation: React + Turbopack rely on dynamic code execution in
-// development for fast refresh and callstack reconstruction. Production never
-// needs it, so this CSP token is added only outside production builds.
-const devScriptSrc = process.env.NODE_ENV === 'production' ? '' : " 'unsafe-" + "eval'"
-const publicMediaOrigin = getPublicMediaOrigin()
-
-const cspDirectives = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${devScriptSrc} https://www.googletagmanager.com https://connect.facebook.net https://www.youtube.com https://s.ytimg.com https://va.vercel-scripts.com https://vercel.live`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https:",
-  `media-src 'self' blob: https://*.supabase.co${publicMediaOrigin ? ` ${publicMediaOrigin}` : ''}`,
-  "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://stats.g.doubleclick.net https://va.vercel-scripts.com https://*.vercel-insights.com https://connect.facebook.net https://www.facebook.com https://www.youtube.com https://*.googlevideo.com https://youtubei.googleapis.com",
-  "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
-  "worker-src 'self' blob:",
-  "frame-ancestors 'self'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-]
-// upgrade-insecure-requests breaks localhost HTTP dev: Server Actions POST to
-// http://localhost:3000 get upgraded to https://… which has no TLS listener → hang.
-if (process.env.NODE_ENV === 'production') {
-  cspDirectives.push('upgrade-insecure-requests')
-}
-const CSP = cspDirectives.join('; ')
+// Content-Security-Policy: built by src/lib/csp.ts (pure, unit-tested). Hosts
+// come from env at build time: Supabase from NEXT_PUBLIC_SUPABASE_URL, the media
+// origin from getPublicMediaOrigin(). Only the local preview build sets
+// CSP_UPGRADE_INSECURE=false (build-target.mjs); that is also what lets the
+// loopback Supabase and media origins into the policy. workersdev and production
+// builds never carry them.
+const CSP = buildCsp({
+  nodeEnv: process.env.NODE_ENV,
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  mediaOrigin: getPublicMediaOrigin(),
+  upgradeInsecure: process.env.CSP_UPGRADE_INSECURE !== 'false' && process.env.NODE_ENV === 'production',
+  target: process.env.CSP_UPGRADE_INSECURE === 'false' ? 'preview' : 'production',
+})
 
 const nextConfig: NextConfig = {
   // React Compiler (stable in Next 16): auto-memoizes components to cut
@@ -70,7 +49,7 @@ const nextConfig: NextConfig = {
     },
   },
   // Long-lived cache for immutable brand assets. These files are versioned in
-  // git — when we change the logo we'd change the filename. Vercel was serving
+  // git — when we change the logo we'd change the filename. The old host served
   // them with `cache-control: max-age=0, must-revalidate` which forced every
   // page load to re-validate the SVG, wasting ~700ms of LCP on the landing
   // page (the logo is the LCP element). Now it's cached for a year, immutable.
@@ -108,8 +87,8 @@ const nextConfig: NextConfig = {
     ]
   },
   // Custom loader: media-origin URLs get ?w=<640|1280|1920> (R2 variants via
-  // the clickit-media Worker); every other src is used as-is. No Vercel image
-  // optimizer, so no formats / minimumCacheTTL / remotePatterns (those only
+  // the clickit-media Worker); every other src is used as-is. No image
+  // optimizer service, so no formats / minimumCacheTTL / remotePatterns (those only
   // configure the built-in loader).
   images: {
     loader: 'custom',
@@ -117,8 +96,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-// withBotId wires the BotID challenge into Vercel's edge so sign-in/sign-up
-// requests carry a verifiable bot-score header. Server Actions gate on
-// checkBotId() before touching Supabase (see the auth actions under
-// src/app/[locale]/(viewer)/auth/actions.ts).
-export default withBundleAnalyzer(withBotId(withNextIntl(nextConfig)));
+export default withBundleAnalyzer(withNextIntl(nextConfig));

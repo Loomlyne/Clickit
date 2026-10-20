@@ -3,11 +3,10 @@ import { notFound } from 'next/navigation'
 import { NextIntlClientProvider, hasLocale } from 'next-intl'
 import { getMessages, setRequestLocale } from 'next-intl/server'
 import Script from 'next/script'
-import { Analytics } from '@vercel/analytics/next'
-import { SpeedInsights } from '@vercel/speed-insights/next'
 import localFont from 'next/font/local'
 
 import '@/styles/globals.css'
+import { CfWebAnalytics } from '@/components/analytics/cf-web-analytics'
 import { Toaster } from 'sonner'
 import { MotionConfig } from 'motion/react'
 import { getAppConfig } from '@/lib/config'
@@ -157,8 +156,7 @@ export default async function LocaleLayout({
             },
           }}
         />
-        <Analytics />
-        <SpeedInsights />
+        <CfWebAnalytics token={process.env.NEXT_PUBLIC_CF_BEACON_TOKEN} />
 
         {googleAnalyticsId && (
           <>
