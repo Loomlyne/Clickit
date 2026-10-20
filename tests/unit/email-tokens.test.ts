@@ -20,7 +20,7 @@ test('light scheme values are pinned', () => {
     hint: '#555555',
     codeBox: '#F6F6F6',
     codeBorder: '#E5E5E5',
-    code: '#090909',
+    code: '#111111',
     rule: '#E5E5E5',
     footer: '#767676',
   })
@@ -39,6 +39,7 @@ test('dark scheme values are pinned', () => {
     codeBox: '#191919',
     codeBorder: '#2A2A2A',
     code: '#ffcc00',
+    rule: '#222222',
     footer: '#A1A1A1',
   })
 })
