@@ -116,3 +116,21 @@ Not answerable locally; all need the ClickitStory account and are handed to plan
 ## Bundle limit check (controller-side, 2026-10-20)
 
 Read https://developers.cloudflare.com/workers/platform/limits/ today: "Worker size (uncompressed) | 64 MiB | 64 MiB" (Free | Paid) and "There is no compressed size limit." The 3.08 MiB gzip figure is therefore not a blocker; 15.1 MiB raw is under 64 MiB on Free. The real deploy in plan 02-10 still confirms it.
+
+## Post-plan fixes
+
+### Unknown paths returned 500 (deferred items 1 and 20)
+
+Fix: `src/app/[locale]/[...rest]/page.tsx` (`notFound()`), `src/app/[locale]/not-found.tsx` (localized UI, moved unchanged), root `src/app/not-found.tsx` (own `<html lang="en">`, copy from `en.json` `notFound`). `proxy.ts` unchanged: the signed-out redirect is the auth gate (local DB-less preview has skip-sign-in off; live has it on, `/en/watch` 200).
+
+| Path | Before (next start / preview) | After (cf:preview, port 8811, signed out) | Live site |
+|---|---|---|---|
+| `/en/auth/sign-in` | 500 | 404 (localized "Page Not Found") | 404 |
+| `/ar/does-not-exist` | 500 | 307 to `/ar/auth?next=/does-not-exist` (gate, skip-sign-in off locally) | 404 (skip-sign-in on) |
+| `/en/admin/shows` | 500 | 307 to `/en/auth?next=/admin/shows` | 307 to `/en/auth?next=/admin/shows` |
+| `/does-not-exist` | 500 | 307 to `/en/does-not-exist` | 307 |
+| `/_next/static/x.js` | 500 | 404 | n/a |
+| `/en`, `/ar` | 200 | 200, 200 | 200 |
+| `/` | 307 | 307 to `/en` | 307 |
+
+Note: the 404 shell is Next's `<html id="__next_error__">` without a `lang` attribute (the root layout owns no `<html>`); the body is the localized not-found page. Not checked signed in or with skip-sign-in on locally.
