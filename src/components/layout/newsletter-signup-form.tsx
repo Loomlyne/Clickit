@@ -52,6 +52,8 @@ export function NewsletterSignupForm({
   })
 
   async function onSubmit(data: NewsletterSignupInput) {
+    setStatusMessage(null)
+    setStatusOk(false)
     const result = await subscribeToNewsletter(data)
 
     if (!result.ok) {
@@ -156,15 +158,19 @@ export function NewsletterSignupForm({
           {t('invalidEmail')}
         </p>
       )}
-      <p
-        role="status"
-        className="flex items-center gap-2 text-sm text-[var(--text-dim)] empty:hidden"
-      >
-        {statusMessage && statusOk && (
-          <CheckIcon aria-hidden className="size-4 shrink-0 text-[var(--primary)]" />
+      <div role="status">
+        {statusMessage && (
+          <p className="flex items-center gap-2 text-sm text-[var(--text-dim)]">
+            {statusOk && (
+              <CheckIcon
+                aria-hidden
+                className="size-4 shrink-0 text-[var(--primary)]"
+              />
+            )}
+            {statusMessage}
+          </p>
         )}
-        {statusMessage}
-      </p>
+      </div>
     </form>
   )
 }
