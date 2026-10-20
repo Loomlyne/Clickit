@@ -2,11 +2,11 @@
 phase: 04
 slug: design-system-truth
 status: approved
-revision: 4
+revision: 3
 shadcn_initialized: true
 preset: "shadcn new-york, baseColor neutral, cssVariables; every token overridden by UI System (ui.config.json → src/styles/globals.css, 2026-10-20)"
 created: 2026-10-20
-signed_source: "04-CONTEXT.md D-01..D-05, D-07, D-08 signed 2026-10-20; D-06 changed to C (UI System first, revision 4); D-09/D-10 open. Basis also + live tokens in src/styles/globals.css (a8f2487 and later) + Phase 6 06-UI-SPEC.md revision 2 (signed pictures q1, q8, q9, q11, q13, q15)"
+signed_source: "none yet. Basis: 04-CONTEXT.md D-01..D-08 (recommended answers, pending Koss) + live tokens in src/styles/globals.css (a8f2487 and later) + Phase 6 06-UI-SPEC.md revision 2 (signed pictures q1, q8, q9, q11, q13, q15)"
 ---
 
 # Phase 4 — UI Design Contract
@@ -31,13 +31,9 @@ signed_source: "04-CONTEXT.md D-01..D-05, D-07, D-08 signed 2026-10-20; D-06 cha
 | Minimum text | 11px in the app, 12px in emails. Nothing smaller in anything this phase specifies |
 | Contrast | 4.5:1 for every text/background pair (computed values under Color) |
 
-### Primitives used
+### Primitives used (all exist, none added)
 
 `ui/button`, `ui/input`, `ui/badge`, `ui/select`, `ui/checkbox` (canvas only), `admin/admin-shell` (`AdminPageHeader`, `AdminPanel`), Sonner `Toaster` (already mounted in `src/app/[locale]/layout.tsx`). The page adds no new `ui/*` file.
-
-### UI System parts (revision 4, D-06 = C, D-09)
-
-New general parts are built in Loomlyne/ui-system first (`04-UIS-TRACK.md`) and reach Clickit through plan 04-15 as the pinned packages `@ui-system/core` + `@ui-system/react` (release `v0.2.0`): CodeInput, SecretInput, CountdownBar, SelectableTable, ReorderList, Skeleton, TotpSetup, Inbox (Q10 A only), own font files. Clickit re-exports them from one file, `src/components/ui/uis.tsx`, so screens import from one place. They read `--uis-*` variables; Clickit maps the ones it lacks to existing tokens as exact values (status tones, soft fills), so the Clickit theme equals the signed Phase 5 / Phase 6 pictures (`mockups/04-q10.png`, right column). Existing Clickit components are not replaced in Phase 4. Status chips stay the existing Badge tones (UI System `Badge` tone success/warning/danger/neutral = Clickit `status-*`).
 
 ### Inherited primitive typography (documented, not changed)
 
@@ -236,7 +232,6 @@ All samples are the **real primitives** (no copies), inside `AdminPanel`s. Each 
 | Badge | All six variants (`default`, `secondary`, `destructive`, `outline`, `ghost`, `link`), label = variant name in uppercase by the primitive |
 | Select | Real `Select` + `SelectTrigger` (`w-full max-w-[16rem]`) + `SelectContent` + 3 `SelectItem`s (`selectItem1..3`). Opening it shows the D-03 popover (`#101010`) |
 | Toast | `Button variant="outline"` `toastButton` → `toast(toastMessage)` from `sonner`. Shows the D-03 toast surface. Not a database write |
-| From the UI System (04-15) | One `AdminPanel` with overline `uisOverline` and the release tag read from the installed package. Each part rendered live from `src/components/ui/uis.tsx`, static sample data, nothing submits: CodeInput (empty + filled + invalid), SecretInput (masked + revealed), CountdownBar (counting + cancelled), SelectableTable (3 rows, one greyed), ReorderList (3 rows), Skeleton (row), TotpSetup (step 1 with a placeholder QR block), Inbox (Q10 A only). Same layout rules as the rows above; RTL by flex order |
 
 Phone: every row wraps; Input and Select are `w-full`; buttons keep `min-h-11`. Arabic: nothing is hand-mirrored; flex order and logical utilities do it. The Select's check indicator (`absolute right-2` in `select-item`) is not logical today; **not changed in this phase** (open item 12).
 
@@ -355,14 +350,14 @@ Existing, unchanged: `--shadow-soft` = `0 24px 80px rgba(0, 0, 0, 0.38)`; `--sha
 
 ## 4. Claude Design canvas (D-06, D-08, DS-03)
 
-**Canvas:** new private Artifact, type Design, named "Clickit Story". Installs the published "UI System" design system **at the release that carries the Clickit additions** (`v0.2.0`, gate §7 step 5; link in the local note /Users/koss/.clickit-checks/p4-ui-system-links.txt) with `UIS.Root primary="#ffcc00" accent="#ffcc00" neutral="#737373" mode="dark" roundness=50 pill field=8 surface="glass"`. LBC through the release's own-font support, or canvas assets (`lbc-regular.woff2` 400, `lbc-bold.woff2` 700) if that fails in the spike. Boards are built from the UI System parts (`x-import`), not hand-drawn copies: V1 CodeInput + SecretInput, V3 CountdownBar, A1 SelectableTable + Skeleton, A2 ReorderList, A3 SecretInput, A4 Inbox (Q10 A), A5 TotpSetup + CodeInput. The brand-neutral UI System canvas gets only the new general parts in its default theme, added by the UI System track; no Clickit board goes there.
+**Canvas:** new Artifact, type Design, named "Clickit Story". Installs the published "UI System" design system (link in the local note /Users/koss/.clickit-checks/p4-ui-system-links.txt) with `UIS.Root primary="#ffcc00" accent="#ffcc00" neutral="#737373" mode="dark" roundness=50 pill field=8 surface="glass"`. LBC loaded from canvas assets (`lbc-regular.woff2` 400, `lbc-bold.woff2` 700). The existing brand-neutral UI System canvas is not edited.
 
 **Board conventions (every board):**
 - Dark only, page `#090909`. Colours, radii and shadows only from the tokens in this contract; no new colour appears on a board. Each board carries a small token legend (name and value) so the executor can map pixel to token.
 - Frames: desktop **1280×800**, phone **375×812**, email **600 wide** (plus a 375 phone render). Every viewer and admin board has an English frame and an Arabic RTL frame, desktop and phone, unless the board says otherwise.
 - Type only 11 / 14 / 20 / 24 at 400 or 700 (emails: system sans, below). Touch targets 44px. Focus ring shown on one control per board.
 - Copy on boards is placeholder where marked; no price, legal text, expiry, sender line or rate appears except as `{placeholder}`.
-- Boards marked **reproduced** copy the LATEST signed Phase 5 version (`05-mockups.html` #q1 sign-in, #q7 admin authenticator, #q12 emails) or Phase 6 version (`06-mockups.html` #q1, #q8, #q11, #q13, plus G1-B `06-g1-b`/`06-g1-b-states` which supersedes #q9, and G6 `06-g6-key-*` which supersedes #q15; check 06-UI-SPEC "Owner-visible deviations" first) and are redrawn from `06-UI-SPEC.md`; any difference from the signed picture is the one listed in Phase 6's "Differs from the signed picture".
+- Boards marked **reproduced** copy the LATEST signed Phase 6 version (`06-mockups.html` #q1, #q8, #q11, #q13, plus G1-B `06-g1-b`/`06-g1-b-states` which supersedes #q9, and G6 `06-g6-key-*` which supersedes #q15; check 06-UI-SPEC "Owner-visible deviations" first) and are redrawn from `06-UI-SPEC.md`; any difference from the signed picture is the one listed in Phase 6's "Differs from the signed picture".
 - Koss signs four groups separately in `04-GATE.md` with the date. Group → boards below.
 
 ### Group 1 — Foundations
@@ -375,7 +370,7 @@ Focal points (one per board): V1a the email field; V1b the six code boxes; V2 th
 | F1 | Colour and brand map | 1280, 375 | Surfaces `bg-0..4`, lines, text ×3 with contrast ratios, primary set, danger, six brand colours with safe tints (base never used for text), status tones, accent reserved-for list, "category colours are content" note | live tokens |
 | F2 | Type, English and Arabic | 1280, 375 | LBC 400 and 700 specimen; the 11/14/20/24 scale with line heights; wider legacy sizes labelled "viewer pages today"; EN and AR samples side by side; mixed-script `bdi` example; digit note (Phase 7 owns Arabic-Indic digits) | live + Phase 6 |
 | F3 | Radius and surfaces | 1280, 375 | Seven radius roles with utility names and px; elevation `panel/soft/popover/modal`; glass overlay; hairline `--line` | live tokens |
-| F4 | Components | 1280, 375 (EN and AR) | Button variants ×6, sizes, rest/hover/focus/disabled; default hover shown as white (live) and the landing CTA hover #D7AD16; Input rest/filled/invalid/disabled; Badge ×6; Select closed and open; Checkbox; Tabs/season pill; status chips (ok/bad/warn/neutral); toast; and the UI System parts (CodeInput, SecretInput, CountdownBar, SelectableTable, ReorderList, Skeleton, TotpSetup, Inbox if Q10 A) in Clickit theme, matching `mockups/04-q10.png` right column | live primitives + UI System `v0.2.0` |
+| F4 | Components | 1280, 375 (EN and AR) | Button variants ×6, sizes, rest/hover/focus/disabled; default hover shown as white (live) and the landing CTA hover #D7AD16; Input rest/filled/invalid/disabled; Badge ×6; Select closed and open; Checkbox; Tabs/season pill; status chips (ok/bad/warn/neutral); toast | live primitives |
 | F5 | Spacing, focus, motion | 1280 | 4/8/12/16/20/24/32/48/64 scale with the 12 and 20 exceptions; 44px target diagram; focus ring (2px `--primary`, 2px offset); motion 120–260ms `--ease`, reduced-motion behaviour | live + DESIGN.md |
 
 ### Group 2 — Viewer
@@ -394,8 +389,7 @@ Focal points (one per board): V1a the email field; V1b the six code boxes; V2 th
 | A1 | Playlist import preview | 1280 (sheet 640), 375, EN + AR | **Reproduced** from Phase 6 §1 (#q1): empty, reading (skeletons), loaded table with chips (Ready, Private, Removed, Not embeddable, Blocked in UAE, Not ready, Already on Clickit), nothing new, error banner, importing, success with "Schedule these N episodes". Sheet opens from the start side flipped for Arabic | signed (#q1) |
 | A2 | Episodes order and flags | 1280, 375 | **Reproduced** from Phase 6 §5 (#q13): up/down arrows, renumber 1 to N, "Can't play" badge, "Needs English title" mark | signed (#q13) |
 | A3 | YouTube key setting | 1280, 375 | **Reproduced** from Phase 6 §6 as signed at G6: editable key field states editing / missing / saved / test (`06-g6-key-*`) | signed (G6) |
-| A4 | Inbox | 1280, 375, EN + AR | Built from the UI System Inbox parts (Q10 A; with B drawn from Badge/Table/Input until Phase 7 adds them). Message list (unread dot is `--primary`, not red), message detail with the viewer's email and a **reply** composer (admin copy of a support auto-reply, per roadmap), empty inbox, loading, send failed (banner with next step), sent. Shell = admin sidebar (with the "Design system" entry) at 1280, `h-14` top bar at 375 | new, needs signature |
-| A5 | Admin authenticator (TOTP) | 375, 1280, EN + AR | **Reproduced** from Phase 5 #q7 (first visit: step bar, QR, manual key with copy, "Next: enter the code"; later visits: 6 code boxes + Verify + lost-phone line), built from TotpSetup + CodeInput; waits if Phase 5's #q7 is not signed | signed (Phase 5 #q7) |
+| A4 | Inbox | 1280, 375, EN + AR | Message list (unread dot is `--primary`, not red), message detail with the viewer's email and a **reply** composer (admin copy of a support auto-reply, per roadmap), empty inbox, loading, send failed (banner with next step), sent. Shell = admin sidebar (with the "Design system" entry) at 1280, `h-14` top bar at 375 | new, needs signature |
 
 ### Group 4 — Email
 
@@ -414,7 +408,7 @@ Contract in §5 (revision 3). One board per template, each reproduced from Phase
 
 ### Sign-off hand-off
 
-`04-GATE.md` lists the four groups with date and "signed / not signed". A later phase may code a screen once its group is signed: Phase 5 needs Foundations + Viewer (V1, V4) + Email; Phase 5 also needs Admin A5; Phase 6 needs Foundations + Admin (A1–A3) + Viewer (V3); Phase 7 needs Foundations + Viewer + Admin (A4).
+`04-GATE.md` lists the four groups with date and "signed / not signed". A later phase may code a screen once its group is signed: Phase 5 needs Foundations + Viewer (V1, V4) + Email; Phase 6 needs Foundations + Admin (A1–A3) + Viewer (V3); Phase 7 needs Foundations + Viewer + Admin (A4).
 
 ---
 
@@ -502,11 +496,6 @@ This page is read-only: it has no primary CTA, no destructive action, and no emp
 | `selectItem` | `Season {n, number}` | `الموسم {n, number}` |
 | `toastButton` | Show a sample toast | عرض إشعار تجريبي |
 | `toastMessage` | This is a sample toast. | هذا إشعار تجريبي. |
-| `uisOverline` | From the UI System · {version} | من نظام UI System · {version} |
-| `uisNote` | Shared parts built in the general UI System, shown with the Clickit theme. Samples only: nothing here is sent or saved. | أجزاء مشتركة مبنية في نظام UI System العام، معروضة بمظهر Clickit. أمثلة فقط: لا يُرسل أو يُحفظ أي شيء هنا. |
-| `uisSampleCodeLabel` | Code sent to sara@example.com | الرمز المرسل إلى sara@example.com |
-| `uisSampleKeyLabel` | API key | مفتاح API |
-| `uisSampleUpNext` | Up next: Episode 4 — Sample title | التالي: الحلقة ٤ — عنوان تجريبي |
 
 ### Emails (placeholder; see §5 table)
 
@@ -556,10 +545,9 @@ Choices CONTEXT.md did not settle, picked to keep the live look and Phase 6 comp
 10. **"Show a sample toast" button on a read-only page.** It writes nothing; it exists so snap 2 can be seen without causing a real toast elsewhere. Remove it if a button on a read-only page is unwanted.
 11. **Code input and email digits.** The 6 code boxes stay left-to-right inside Arabic pages (digits read left to right) and emails show Western digits; the app accepts Arabic-Indic digits when typed. Phase 7 (AR-01..03) still owns the digit system for the rest of the UI.
 12. **`select-item` check indicator uses `right-2`** (not logical) and is not changed here (invisible bug in Arabic: indicator on the wrong side). Phase 7 RTL pass owns it.
-13. **Email look answered (revision 3):** Q7 = C (Koss, 2026-10-20): light by default, dark via prefers-color-scheme; Phase 5 owns the picture; Phase 4 supplies `src/lib/email-tokens.ts`. Light footer pinned at #767676 (4.54:1 on white); Phase 5's picture shows #777777 (4.48:1), flagged for Phase 5.
+13. **Email look answered (revision 3):** Q7 = C (Koss, 2026-10-20): light by default, dark via prefers-color-scheme; Phase 5 owns the picture; Phase 4 supplies `src/lib/email-tokens.ts`. Light footer #767676 is 4.48:1 on white (flagged for Phase 5).
 14. **Email legal footer, expiry, sender line, Arabic text** are placeholders; nothing is invented. `Clickit Story <no-reply@clickitstory.ae>` is the roadmap's sender and is not drawn on boards.
-15. **Canvas boards that are new design** (no signed picture): F0–F5, V1, V4, A4, E0–E7. V2 redraws the live pages as shipped. V3, A1–A3 are Phase 6's signed pictures and A5 is Phase 5's (#q7), unchanged.
-17. **UI System first (revision 4, Koss's Q6 change).** The new parts are general UI System parts (own repo, own gate); their Clickit theme is the right column of `mockups/04-q10.png` and must equal the signed Phase 5 / 6 pictures. Phase 5's code boxes are 46×54 at 375 (wider than UI-SPEC V1's 44px minimum): the signed picture wins. Phase 6's own parts swap to them after both land (Q11 A) or Phase 6 waits (Q11 B).
+15. **Canvas boards that are new design** (no signed picture): F0–F5, V1, V4, A4, E0–E7. V2 redraws the live pages as shipped. V3, A1–A3 are Phase 6's signed pictures, unchanged.
 16. **Phase 6 spec is not edited.** It keeps `rounded-[12px]` etc.; the executor writes the named utilities (same pixels). If Phase 6 merges first, its bracket classes are converted in this phase's token clean-up.
 
 ---

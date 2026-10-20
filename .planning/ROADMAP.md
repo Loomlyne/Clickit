@@ -116,7 +116,7 @@ Plans:
   3. The Claude Design canvas shows foundations, viewer screens (including the OTP sign-in, the RTL treatment and an RMF-compliant player), admin screens (playlist import preview, inbox) and the email templates. Koss has signed it.
   4. A signed-out visitor or a non-admin viewer opening `/design-system` is refused.
 **Owner-gated**: [OWNER] sign the canvas (it blocks UI build in Phases 5-7); [OWNER] Ship.
-**Plans**: 15 plans (12 waves). Owner-visible and codemod plans open with a 04-GATE.md answer check (stop on any B; Q6 and Q7 must read C); 04-09 and 04-13 carry the codemod answer check and 04-10 to 04-12 inherit it through depends_on. Same-wave plans run one after another in this one branch. Every wave closes with a heavy-locked gate:local. External, not a wave: the UI System track (`04-UIS-TRACK.md`, gate §7) builds the missing patterns in Loomlyne/ui-system first (Q6 = C) in its own session, branch, PR and Ship; 04-15 adopts its release v0.2.0, 04-07/04-08 build the canvas from it.
+**Plans**: 14 plans (10 waves). Owner-visible and codemod plans open with a 04-GATE.md answer check (stop on any B; Q7 must read C); 04-09 and 04-13 carry the codemod answer check and 04-10 to 04-12 inherit it through depends_on. Same-wave plans run one after another in this one branch. Every wave closes with a heavy-locked gate:local.
 **UI hint**: yes
 
 Plans:
@@ -125,16 +125,15 @@ Plans:
 - [ ] 04-03-PLAN.md — W3: [Q4] one brand map (D-04); consumers; parity test; gate (W1-W3)
 - [ ] 04-04-PLAN.md — W4: [Q1/Q2/Q5] admin-only /admin/design-system page, sidebar link, EN+AR copy, access pins
 - [ ] 04-05-PLAN.md — W4: [Q1/Q3] D-03 snaps (select at /98, toaster, /portfolio CTA) + D-01 literals
-- [ ] 04-06-PLAN.md — W5: [Q1/Q2/Q4/Q5, Q7=C] DESIGN.md (+ two-scheme email tokens, "UI System first" rule) + parity test; wording; 04-P6-ADDENDUM.md (+ Q11 swap list); gate (W4)
+- [ ] 04-07-PLAN.md — W4: [Q1/Q2/Q6/Q8, Q7=C, Q9=yes; orchestrator] canvas spike + Foundations + Viewer boards
+- [ ] 04-06-PLAN.md — W5: [Q1/Q2/Q4/Q5, Q7=C] DESIGN.md (+ two-scheme email tokens) + parity test; wording; 04-P6-ADDENDUM.md; gate (W4)
+- [ ] 04-08-PLAN.md — W5: [orchestrator] canvas Admin boards + Email boards from Phase 5's signed picture (both schemes)
 - [ ] 04-09-PLAN.md — W6: [Q1/Q2] merge main; codemod 1/5 (UI primitives, chrome); gate (W5-W6)
 - [ ] 04-10-PLAN.md — W7: codemod 2/5 (show cards, home, browse, series)
 - [ ] 04-11-PLAN.md — W7: codemod 3/5 (watch, shorts, landing, support, coming-soon, lib gradients)
 - [ ] 04-12-PLAN.md — W8: codemod 4/5 (viewer routes, loading skeletons); gate (W7-W8)
-- [ ] 04-15-PLAN.md — W9: [Q6=C, Q10, UI System release §7 step 4; package check] adopt UI System v0.2.0 (pinned tarballs, --uis-* mapping, src/components/ui/uis.tsx), "From the UI System" block on the admin page, DESIGN.md section; gate (W9)
-- [ ] 04-07-PLAN.md — W10: [Q1/Q2/Q8=A, Q6=C, Q7=C, Q9=yes, Q10, §7 step 5; orchestrator] canvas spike on UI System v0.2.0 + Foundations + Viewer boards from the UI System parts
-- [ ] 04-13-PLAN.md — W10: [Q1/Q2/Q3] codemod 5/5 (admin + admin.css), rule to error (covers 04-15's code), banned-literal tests, ledger; gate (W10)
-- [ ] 04-08-PLAN.md — W11: [orchestrator] canvas Admin boards A1-A5 from the UI System parts + Email boards from Phase 5's signed picture (both schemes)
-- [ ] 04-14-PLAN.md — W12: [orchestrator] reviewer pass on board legends and UI System part use (23 boards), [OWNER] four signatures (D-08); final gate
+- [ ] 04-13-PLAN.md — W9: [Q1/Q2/Q3] codemod 5/5 (admin + admin.css), rule to error, banned-literal tests, ledger; gate
+- [ ] 04-14-PLAN.md — W10: [orchestrator] reviewer pass on board legends, [OWNER] four signatures (D-08); final gate
 
 ### Phase 5: Accounts and Email
 **Goal**: Only signed-in viewers get past the landing and legal pages. Viewers can join or sign in with a 6-digit email code or a password. Both admins work under their own TOTP-protected accounts, and every auth and app email arrives branded from `Clickit Story <no-reply@clickitstory.ae>`, once, in the viewer's language.
@@ -202,7 +201,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | 1.1. Admin Actions Hardening (INSERTED) | 13/13 | UAT passed, PR open | - |
 | 2. Worker and R2 Media on workers.dev | 0/TBD | Not started | - |
 | 3. Production Cutover | 0/TBD | Not started | - |
-| 4. Design System Truth | 0/15 | Planned | - |
+| 4. Design System Truth | 0/14 | Planned | - |
 | 5. Accounts and Email | 0/TBD | Not started | - |
 | 6. YouTube Import and Player | 0/TBD | Not started | - |
 | 7. Product Completeness, Search and Arabic | 0/TBD | Not started | - |

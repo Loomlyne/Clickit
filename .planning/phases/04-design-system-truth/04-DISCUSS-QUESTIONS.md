@@ -2,7 +2,7 @@
 
 Phase goal (ROADMAP): one signed design truth (LBC, #ffcc00, dark surfaces, 8px base radius) exists in the tokens, DESIGN.md and a Claude Design canvas before any new viewer, admin or email screen is coded. Requirements DS-01 to DS-04.
 
-How to answer: reply with the question number and a letter, e.g. `1A 2A 3A …`. "All recommended" is fine. Pictures: `mockups/04-q1.png` … `04-q7.png` (source `mockups/04-mockups.html`; Q10: `mockups/04-q10.png`, source `mockups/04-q10.html`, product tokens from `src/styles/globals.css`, LBC font).
+How to answer: reply with the question number and a letter, e.g. `1A 2A 3A …`. "All recommended" is fine. Pictures: `mockups/04-q1.png` … `04-q7.png` (source `mockups/04-mockups.html`, product tokens from `src/styles/globals.css`, LBC font).
 
 What I checked first (2026-10-20, read only):
 - The live CSS on www.clickitstory.ae and `src/styles/globals.css` on main carry the same tokens: background #090909, primary #ffcc00 with #090909 ink, LBC for English and Arabic, `--radius` 8px, pill buttons, cards 12px. They come from the UI System engine (`Loomlyne/ui-system`, `ui.config.json`: roundness 50, pill on, field 8). DESIGN.md on main already describes them; no indigo values are left in it.
@@ -20,45 +20,33 @@ Example: the watch page canvas, the admin canvas and the email page background a
 - **A (recommended).** #090909, as live today. The roadmap line is corrected to #090909. Two stray `#0a0a0a` uses in code snap to the token.
 - **B.** #0a0a0a. Every surface token moves one step; Phase 6's spec is updated to match.
 
-Answer: A (Koss, 2026-10-20, "all recommended")
-
-### Q2. Corner shapes — picture `mockups/04-q2.png`
+Answer: A (Koss, 2026-10-20, "all recommended")### Q2. Corner shapes — picture `mockups/04-q2.png`
 Example: the "Send code" button on the sign-in screen and the episode card under it.
 - **A (recommended).** Keep the live roles: buttons, chips and nav are full pills; fields 8px; cards 12px; thumbnails 11px; sheets and dialogs 16px. "8px base radius" means the field and base value.
 - **B.** 8px everywhere: buttons, chips, cards and sheets all become 8px. Every button on the live site changes, and Phase 6's signed pictures would need redoing.
 
-Answer: A (Koss, 2026-10-20, "all recommended")
-
-### Q3. Blue-era leftovers on the live site — picture `mockups/04-q3.png`
+Answer: A (Koss, 2026-10-20, "all recommended")### Q3. Blue-era leftovers on the live site — picture `mockups/04-q3.png`
 Example: open a season dropdown — its menu is blue-black #11151d; hover "Browse shows" on /portfolio — it turns indigo with an indigo glow.
 - **A (recommended).** Snap all three to the tokens: dropdown menus and toasts to #101010, the hover to the darker yellow #D7AD16 with a soft yellow glow. These are the only visible changes in this phase.
 - **B.** Leave them as they are and list them as allowed exceptions.
 
-Answer: A (Koss, 2026-10-20, "all recommended")
-
-### Q4. Category colours — picture `mockups/04-q4.png`
+Answer: A (Koss, 2026-10-20, "all recommended")### Q4. Category colours — picture `mockups/04-q4.png`
 The 15 live categories each have a colour the admins picked (for example Health & Wellness #00FFFB). It shows only as the small dot on each category pill. None is a brand colour.
 Example: Sports & Gaming keeps its bright green #00FF0D dot.
 - **A (recommended).** Category colours are content (like show artwork) and stay free; the colour picker stays. Everything else in the app takes its colours from one brand map (the 6 CIT colours plus their safe tints).
 - **B.** Only the 6 brand colours allowed; the 15 live categories are moved to the nearest one (a live write of 15 rows, your word first; several categories end up sharing a colour).
 
-Answer: A (Koss, 2026-10-20, "all recommended")
-
-### Q5. The in-app design-system page — picture `mockups/04-q5.png`
+Answer: A (Koss, 2026-10-20, "all recommended")### Q5. The in-app design-system page — picture `mockups/04-q5.png`
 Example: Issam opens Admin → Design system and sees the real colours, type, radii and buttons, drawn from the live CSS.
 - **A (recommended).** One read-only admin page at `/admin/design-system`, inside the admin area, so the admin guard refuses signed-out visitors and viewers (Phase 5's two-admin TOTP guard covers it automatically later). It is drawn from the live CSS variables, so it cannot drift.
 - **B.** No in-app page. The truth is DESIGN.md plus the Claude Design canvas; DS-01 and DS-04 are reworded.
 
-Answer: A (Koss, 2026-10-20, "all recommended")
-
-### Q6. Where the Claude Design boards live — picture `mockups/04-q6.png`
+Answer: A (Koss, 2026-10-20, "all recommended")### Q6. Where the Claude Design boards live — picture `mockups/04-q6.png`
 Example: Nejib's playlist import preview board sits next to the email-code sign-in board and the email templates.
 - **A (recommended).** A new "Clickit Story" Design canvas that installs the UI System design system with Clickit's values. Four groups: Foundations (colour + brand map, type EN + AR, radius + surfaces, components), Viewer (email-code sign-in, home + show, watch page that follows YouTube's rules, Arabic right-to-left), Admin (playlist import preview, inbox), Email (sign-in code, confirm / reset, welcome, new-episodes digest). Phase 6's signed import and player pictures are copied in unchanged.
 - **B.** Add the Clickit boards to the existing brand-neutral "UI System" canvas.
 
-Answer: C (Koss, 2026-10-20, via the controller; changes his earlier "all recommended" = A). His words: "The UI system is general, so if those are missing from the UI system, that will make the design system more powerful. Add them, with the design system colors and style, and then implement those into the program, to the Clickit here." Meaning: every pattern Clickit needs that the UI System lacks is first added to the general UI System (its own colours and style, own repo track, `04-UIS-TRACK.md`); Clickit then uses those parts with its theme; the "Clickit Story" canvas stays private (LBC) and is built from them; Phase 5 and Phase 6 signed pictures stay the target. The brand-neutral UI System canvas gets the new general parts only, never Clickit boards. What exactly is added: Q10.
-
-### Q7. Email look — picture `mockups/04-q7.png`
+Answer: A (Koss, 2026-10-20, "all recommended")### Q7. Email look — picture `mockups/04-q7.png`
 One template serves every email. Mail apps cannot load LBC, so the text falls back to the system font; the logo is an image. (The "10 minutes" in the picture is a placeholder: the code expiry is a Phase 5 setting you set.)
 Example: a viewer asks for a sign-in code and gets the email in the picture.
 - **A (recommended).** Dark, like the site: #090909 page, #101010 card, yellow button with dark ink.
@@ -71,29 +59,10 @@ Example: Phase 5 can start coding sign-in as soon as Foundations, Viewer and Ema
 - **A (recommended).** Four signatures, one per board group (Foundations, Viewer, Admin, Email), each written in `04-GATE.md` with the date. A phase may start coding a screen once its group is signed.
 - **B.** One signature for the whole canvas; nothing in Phases 5-7 starts until all boards are signed.
 
-Answer: A (Koss, 2026-10-20, "all recommended")
-
-### Q9. LBC font in Claude Design (no picture: licence question)
+Answer: A (Koss, 2026-10-20, "all recommended")### Q9. LBC font in Claude Design (no picture: licence question)
 The canvas boards look right only if they use LBC. That means uploading the two LBC font files (400 and 700) into the private "Clickit Story" canvas.
 Example: the email-code sign-in board renders its title in LBC, as on the site.
 - **A (recommended, if the licence allows it).** Yes, the LBC licence allows the upload; the boards use LBC.
 - **B.** No upload; the boards use a system font stand-in, and type is checked against the live site instead.
 
 Answer: A — yes (Koss, 2026-10-20, "all recommended")
-
-### Q10. What Clickit adds to the general UI System first — picture `mockups/04-q10.png`
-Follows from your Q6 change. Each part is drawn once and shown twice: in the UI System's own default look and in Clickit's theme (which must match the signed Phase 5 and Phase 6 pictures). Full list and targets: `04-UIS-TRACK.md`.
-Example: the 6-box sign-in code is built once in the UI System; Clickit's sign-in (Phase 5) and admin authenticator use it with yellow focus and LBC.
-- **A (recommended).** All nine: CodeInput, SecretInput (eye on the right), CountdownBar (up-next), SelectableTable (import preview), ReorderList, Skeleton, TotpSetup, Inbox, and own font files in the theme (so LBC is part of Clickit's theme).
-- **B.** Only what Phases 5 and 6 need now (all of A except Inbox). Inbox is added to the UI System when Phase 7 is planned.
-
-Answer: 
-
-### Q11. Phase 6 is already building its screens (no picture: this is a process choice)
-Phase 6's branch already has its status chip in code and will build the import sheet, the up-next bar and the key field next. The UI System parts from Q10 arrive after the UI System PR lands.
-Example: Phase 6 builds the up-next bar from its signed picture now; when the UI System release lands, the bar becomes the UI System CountdownBar with the same pixels.
-- **A (recommended).** Phase 6 keeps going with its signed pictures. When both have landed, one small follow-up swaps Phase 6's own parts for the UI System parts, pixel for pixel (checked against the signed pictures), like the radius renames in `04-P6-ADDENDUM.md`.
-- **B.** Phase 6 pauses its screen tasks until the UI System release lands, then builds them with the UI System parts directly (Phase 6 waits; no swap later).
-
-Answer: 
-
