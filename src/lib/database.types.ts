@@ -211,6 +211,9 @@ export type Database = {
           title: string
           title_ar: string | null
           updated_at: string
+          youtube_checked_at: string | null
+          youtube_duration_seconds: number | null
+          youtube_status: string | null
           youtube_video_id: string | null
         }
         Insert: {
@@ -229,6 +232,9 @@ export type Database = {
           title: string
           title_ar?: string | null
           updated_at?: string
+          youtube_checked_at?: string | null
+          youtube_duration_seconds?: number | null
+          youtube_status?: string | null
           youtube_video_id?: string | null
         }
         Update: {
@@ -247,6 +253,9 @@ export type Database = {
           title?: string
           title_ar?: string | null
           updated_at?: string
+          youtube_checked_at?: string | null
+          youtube_duration_seconds?: number | null
+          youtube_status?: string | null
           youtube_video_id?: string | null
         }
         Relationships: [
@@ -973,7 +982,26 @@ export type Database = {
       }
     }
     Functions: {
+      get_youtube_key: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
+      record_youtube_checks: { Args: { p_rows: Json }; Returns: number }
+      renumber_season: {
+        Args: { p_season_id: string }
+        Returns: {
+          episode_id: string
+          new_number: number
+          old_number: number
+        }[]
+      }
+      set_youtube_key: { Args: { p_key: string }; Returns: string }
+      youtube_key_meta: {
+        Args: never
+        Returns: {
+          has_key: boolean
+          last4: string
+          updated_at: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
