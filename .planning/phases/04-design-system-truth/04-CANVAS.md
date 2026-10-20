@@ -37,14 +37,14 @@ The repo is public, so this file names the canvas and holds no link. The link is
 | A2 | Episodes order and flags | 1280, 375 | reproduced #q13 | built |
 | A3 | YouTube key setting | 1280, 375 | reproduced G6 | built |
 | A4 | Inbox | 1280, 375, EN + AR | new | built |
-| E0 | Template shell | 600, 375, light + dark | Phase 5 05-q12-schemes | not built |
-| E1 | Sign-in code | 600, 375, light + dark | Phase 5 05-q12-schemes | not built |
-| E2 | Confirm signup | 600, 375, light + dark | Phase 5 05-q12-schemes | not built |
-| E3 | Reset password | 600, 375, light + dark | Phase 5 05-q12-schemes | not built |
-| E4 | Email change | 600, 375, light + dark | Phase 5 05-q12-schemes | not built |
-| E5 | Welcome | 600, 375, light + dark | Phase 5 05-q12-schemes | not built |
-| E6 | New-episodes digest | 600, 375, light + dark | Phase 5 05-q12-schemes | not built |
-| E7 | Support auto-reply | 600, 375, light + dark | Phase 5 05-q12-schemes | not built |
+| E0 | Template shell | 600, 375, light + dark | Phase 5 05-q12-schemes | built |
+| E1 | Sign-in code | 600, 375, light + dark | Phase 5 05-q12-schemes | built |
+| E2 | Confirm signup | 600, 375, light + dark | reproduced Phase 5 05-q12-schemes (expiry, footer as {placeholders}) | built |
+| E3 | Reset password | 600, 375, light + dark | Phase 5 05-q12-schemes | built |
+| E4 | Email change | 600, 375, light + dark | Phase 5 05-q12-schemes | built |
+| E5 | Welcome | 600, 375, light + dark | Phase 5 05-q12-schemes | built |
+| E6 | New-episodes digest | 600, 375, light + dark | Phase 5 05-q12-schemes | built |
+| E7 | Support auto-reply | 600, 375, light + dark | Phase 5 05-q12-schemes | built |
 
 Shared support file on the canvas: `clickit.css` (the `.cl` token layer and board styles). Every board carries a token legend.
 
