@@ -397,6 +397,46 @@ test('R2 failed If-Match returns 412, not 304', async () => {
   assert.equal(response.status, 412)
 })
 
+test('matching If-None-Match with a passing If-Match stays 304', async () => {
+  const { bucket } = bucketWith({
+    'site-assets/a.png': r2Object(new Uint8Array(3), { body: null }),
+  })
+  const response = await handleMediaRequest(
+    new Request(`${BASE}/site-assets/a.png`, {
+      headers: { 'if-match': '"abc"', 'if-none-match': '"abc"' },
+    }),
+    { SUPABASE_URL, MEDIA_BUCKET: bucket },
+    failingFetch()
+  )
+  assert.equal(response.status, 304)
+})
+
+test('If-Unmodified-Since before the upload returns 412; after it 304', async () => {
+  const { bucket } = bucketWith({
+    'site-assets/a.png': r2Object(new Uint8Array(3), { body: null }),
+  })
+  const before = await handleMediaRequest(
+    new Request(`${BASE}/site-assets/a.png`, {
+      headers: { 'if-unmodified-since': 'Tue, 01 Sep 2026 00:00:00 GMT' },
+    }),
+    { SUPABASE_URL, MEDIA_BUCKET: bucket },
+    failingFetch()
+  )
+  assert.equal(before.status, 412)
+
+  const after = await handleMediaRequest(
+    new Request(`${BASE}/site-assets/a.png`, {
+      headers: {
+        'if-unmodified-since': 'Thu, 01 Oct 2026 00:00:00 GMT',
+        'if-none-match': '"abc"',
+      },
+    }),
+    { SUPABASE_URL, MEDIA_BUCKET: bucket },
+    failingFetch()
+  )
+  assert.equal(after.status, 304)
+})
+
 test('R2 range length is capped at the object end', async () => {
   const { bucket } = bucketWith({
     'show-artwork/hero.mp4': r2Object(new Uint8Array(10), {
@@ -441,8 +481,11 @@ test('only the v query param reaches Supabase; errors are not edge-cached', asyn
   const cf = (calls[0].init as { cf?: Record<string, unknown> }).cf
   assert.deepEqual(cf?.cacheTtlByStatus, {
     '200-299': 86400,
+    '300-399': -1,
+    '400': 60,
+    '401-403': -1,
     '404': 60,
-    '400-599': 0,
+    '405-599': -1,
   })
   assert.equal(cf?.cacheTtl, undefined)
 })

@@ -158,6 +158,30 @@ function r2ContentRange(object: MediaObject) {
   return { offset, length, header: `bytes ${offset}-${offset + length - 1}/${object.size}` }
 }
 
+function stripWeak(tag: string) {
+  return tag.trim().replace(/^W\//, '')
+}
+
+/** True when If-Match / If-Unmodified-Since really fail for this object. */
+export function failsWritePrecondition(headers: Headers, object: MediaObject) {
+  const ifMatch = headers.get('if-match')
+  if (ifMatch !== null) {
+    const tags = ifMatch.split(',').map(stripWeak)
+    const current = stripWeak(object.httpEtag)
+    if (!tags.includes('*') && !tags.includes(current)) return true
+  }
+
+  const ifUnmodifiedSince = headers.get('if-unmodified-since')
+  if (ifUnmodifiedSince !== null) {
+    const since = Date.parse(ifUnmodifiedSince)
+    // Compare at HTTP-date (whole second) precision.
+    const uploaded = Math.floor(object.uploaded.getTime() / 1000) * 1000
+    if (!Number.isNaN(since) && uploaded > since) return true
+  }
+
+  return false
+}
+
 async function fromR2(
   bucket: MediaBucket,
   objectKey: string,
@@ -191,11 +215,8 @@ async function fromR2(
 
   // `onlyIf` failed: R2 returns metadata without a body.
   if (!object.body) {
-    const failedWritePrecondition =
-      request.headers.has('if-match') ||
-      request.headers.has('if-unmodified-since')
     return new Response(null, {
-      status: failedWritePrecondition ? 412 : 304,
+      status: failsWritePrecondition(request.headers, object) ? 412 : 304,
       headers,
     })
   }
@@ -238,7 +259,15 @@ async function fromSupabase(
       redirect: 'manual',
       cf: {
         cacheEverything: true,
-        cacheTtlByStatus: { '200-299': 86400, '404': 60, '400-599': 0 },
+        // Supabase answers a missing object with 400. -1 = never store.
+        cacheTtlByStatus: {
+          '200-299': 86400,
+          '300-399': -1,
+          '400': 60,
+          '401-403': -1,
+          '404': 60,
+          '405-599': -1,
+        },
       },
     })
   } catch {
