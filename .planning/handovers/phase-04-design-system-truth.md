@@ -20,8 +20,8 @@ The tokens, DESIGN.md, the admin page `/admin/design-system`, a codemod to token
 |------|--------|
 | `npm run gate:local` (lint at error, typecheck, test:unit, guard:migrations, build with placeholder public env), heavy lock, detached | final run after the signatures: see `/Users/koss/.clickit-checks/p04-w10-final-gate.log` (head of this PR); the pre-signature run at a986d9e was `exit=0` |
 | Wave gates | w4 `p04-w4-gate.log`, w5-w6 `p04-w5-w6-gate.log`, w7-w8 `p04-w7-w8-gate.log`, w9 `p04-w9-gate.log`: all `exit=0` |
-| Unit tests | 626 pass, 0 fail |
-| Guard `clickit/no-raw-design-values` | error level; 0 findings in `src/`; no waivers |
+| Unit tests | 678 pass, 0 fail (after the PR #28 review fixes) |
+| Guard `clickit/no-raw-design-values` | error level; 0 findings in `src/`; no waivers. Widened after the PR #28 review (34dddd9): side/modifier palette prefixes, hsl()/oklch(), named colours in brackets, exact neutral rgb (`_` form); hex only #RGB/#RRGGBB/#RRGGBBAA, fragment links and order numbers skipped; email-folder allowlist removed; a waiver must end in ` -- reason` |
 | Independent review of the boards | `reviewer` on Sonnet 5.5, 17 findings, all fixed (`04-CANVAS.md` "## Review") |
 
 ## Visible changes (everything else keeps its exact pixel value through tokens)
