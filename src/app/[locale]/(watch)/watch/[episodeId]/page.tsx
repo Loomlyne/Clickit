@@ -81,20 +81,21 @@ export default async function WatchPage({ params }: Props) {
   }
 
   const user = authResult.data.user ?? null
-  const progressRow = user ? await getEpisodeProgress(user.id, episodeId) : null
 
-  // Second wave, show.id is now available from data
+  // Second wave, show.id is now available from data. The resume point for
+  // this episode joins the same wave instead of running alone before it.
   const episodeIds = Object.values(data.episodesBySeason)
     .flat()
     .map((episode) => episode.id)
 
-  const [inWatchlist, isLiked, progressMap] = user
+  const [progressRow, inWatchlist, isLiked, progressMap] = user
     ? await Promise.all([
+        getEpisodeProgress(user.id, episodeId),
         getShowWatchlistState(user.id, data.show.id),
         getShowLikeState(user.id, data.show.id),
         getEpisodesProgress(user.id, episodeIds),
       ])
-    : [false, false, {}]
+    : [null, false, false, {}]
 
   const { episode, show, season, seasons, episodesBySeason, prev, next } = data
 

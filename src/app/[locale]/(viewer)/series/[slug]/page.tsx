@@ -68,6 +68,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SeriesDetailPage({ params }: Props) {
   const { slug } = await params
+  const supabase = await createClient()
+  // The auth check does not need the show, so it starts in the first wave
+  // instead of waiting behind the slug lookup.
+  const userPromise = supabase.auth.getUser()
+  // Started early and awaited later: mark as handled so a failure surfaces at
+  // the await (error boundary) instead of as an unhandled rejection.
+  userPromise.catch(() => {})
   const [dbShow, locale, isMobile] = await Promise.all([
     getShowBySlug(slug),
     getLocale(),
@@ -77,7 +84,6 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   const show = mapShow(dbShow, locale)
 
-  const supabase = await createClient()
   const [
     seasons,
     allEpisodes,
@@ -95,7 +101,7 @@ export default async function SeriesDetailPage({ params }: Props) {
       .select('*')
       .eq('show_id', dbShow.id)
       .order('sort_order'),
-    supabase.auth.getUser(),
+    userPromise,
     getShowsByGenre(dbShow.genre, dbShow.id, locale),
     getTranslations('show'),
   ])
@@ -131,6 +137,13 @@ export default async function SeriesDetailPage({ params }: Props) {
   const allEpisodeIds = Object.values(viewEpisodesBySeason)
     .flat()
     .map((e) => e.id)
+  // "More Like This" fallback (only when this show is alone in its genre) is
+  // public data, so it runs in the same wave as the user-specific reads.
+  const hasGenreMatches = moreLikeThis.length > 0
+  const relatedShowsPromise = hasGenreMatches
+    ? Promise.resolve(moreLikeThis)
+    : getOtherStreamingShows(dbShow.id, locale)
+  relatedShowsPromise.catch(() => {})
   const [inWatchlist, isLiked, episodesProgressMap, profileRow] = user
     ? await Promise.all([
         getShowWatchlistState(user.id, dbShow.id),
@@ -152,10 +165,7 @@ export default async function SeriesDetailPage({ params }: Props) {
   // "More Like This" rail: prefer same-genre shows; if this show is the only
   // one in its genre, fall back to other streaming shows so the rail still
   // appears (under a generic heading instead of "More {genre} shows").
-  const hasGenreMatches = moreLikeThis.length > 0
-  const relatedShows = hasGenreMatches
-    ? moreLikeThis
-    : await getOtherStreamingShows(dbShow.id, locale)
+  const relatedShows = await relatedShowsPromise
   const relatedHeading = hasGenreMatches
     ? t('moreLikeThisHeading', { genre: show.genre })
     : t('moreShowsHeading')

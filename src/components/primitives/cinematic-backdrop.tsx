@@ -32,6 +32,12 @@ interface CinematicBackdropProps {
    * Defaults true for non-carousel usages.
    */
   isActive?: boolean
+  /**
+   * Fetch the backdrop image at high priority (preloaded). Defaults true.
+   * Carousels pass true only for the first slide so the other slides do not
+   * compete with the LCP image; those still load eagerly, at normal priority.
+   */
+  priority?: boolean
 }
 
 function VideoLayer({
@@ -82,6 +88,7 @@ export function CinematicBackdrop({
   isMobile,
   reducedMotion,
   isActive = true,
+  priority = true,
 }: CinematicBackdropProps) {
   const bloomAlpha =
     intensity === 'low' ? '40' : intensity === 'high' ? '80' : '55'
@@ -136,7 +143,8 @@ export function CinematicBackdrop({
             fill
             className="object-cover opacity-80"
             sizes="100vw"
-            priority
+            priority={priority}
+            loading={priority ? undefined : 'eager'}
             aria-hidden
           />
         ) : null
@@ -158,7 +166,8 @@ export function CinematicBackdrop({
               fill
               className="hidden object-cover opacity-80 md:block"
               sizes="100vw"
-              priority
+              priority={priority}
+              loading={priority ? undefined : 'eager'}
               aria-hidden
             />
           ) : null}
@@ -187,7 +196,8 @@ export function CinematicBackdrop({
               fill
               className="block object-cover opacity-80 md:hidden"
               sizes="100vw"
-              priority
+              priority={priority}
+              loading={priority ? undefined : 'eager'}
               aria-hidden
             />
           ) : imageUrl ? (
@@ -197,7 +207,8 @@ export function CinematicBackdrop({
               fill
               className="block object-cover opacity-80 md:hidden"
               sizes="100vw"
-              priority
+              priority={priority}
+              loading={priority ? undefined : 'eager'}
               aria-hidden
             />
           ) : null}
