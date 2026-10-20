@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useLocale } from 'next-intl'
 
 import { loadYouTubeAPI } from '@/lib/youtube'
 import { buildPlayerVars } from '@/lib/watch/player-vars'
@@ -18,6 +18,9 @@ import { buildPlayerVars } from '@/lib/watch/player-vars'
 // given with its iframe, so it is given an inner node created by hand inside
 // the wrapper; the wrapper and its `hidden` attribute are never touched by
 // YouTube, and a hidden iframe really has offsetParent === null.
+//
+// The "Video player" region landmark is the watch shell's 16:9 box (UI-SPEC
+// 3.4); this component fills that box and adds no landmark of its own.
 // ---------------------------------------------------------------------------
 
 interface YouTubePlayerProps {
@@ -53,7 +56,6 @@ export function YouTubePlayer({
   onError,
   onAutoplayBlocked,
 }: YouTubePlayerProps) {
-  const t = useTranslations('player')
   const locale = useLocale()
   const wrapperRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<YT.Player | null>(null)
@@ -130,11 +132,7 @@ export function YouTubePlayer({
   }, [videoId])
 
   return (
-    <div
-      role="region"
-      aria-label={t('videoPlayerAria')}
-      className="relative aspect-video min-h-[200px] w-full bg-black"
-    >
+    <div className="relative size-full bg-black">
       <div ref={wrapperRef} hidden={hidden} className="absolute start-0 top-0 size-full" />
     </div>
   )
