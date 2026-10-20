@@ -4,6 +4,7 @@ import { finalizeImageUploadCore, type ImageUploadPorts } from '../../src/lib/ad
 import { adminImageDb } from '../../src/lib/admin/image-db.ts'
 import { liveKeysForUrl } from '../../src/server/r2-keys.ts'
 import { MEDIA_SAVE_CONFLICT, readMediaReferenceUrls, type ReferenceDb } from '../../src/server/media-references.ts'
+import { rowVersion, type RowVersion } from '../../src/lib/admin/row-version.ts'
 import { createFakeSupabase } from './helpers/fake-supabase.ts'
 
 const ORIGIN = 'https://media.test'
@@ -373,4 +374,72 @@ test('a concurrent save between read and write: conflict error, other value kept
   assert.equal(fake.tables.shows![0]!.poster_url, theirs)
   assert.deepEqual((p as unknown as { deleted: string[][] }).deleted, [[NEW_KEY]])
   assert.equal(fake.auditRows().length, 0)
+})
+
+// ---- Deferred item 23 residual (b): a site image on the settings page also checks the page's
+// updated_at, so the settings forms that share the app_config row keep one unbroken chain ----
+
+const STAMP = '2026-10-20T16:43:24.123456+00:00'
+const versionOf = (v: string): RowVersion => {
+  const r = rowVersion(v)
+  assert.ok(r.ok)
+  return r.value
+}
+const stampedTables = () => {
+  const t = tables()
+  ;(t.app_config[0] as Record<string, unknown>).updated_at = STAMP
+  return t
+}
+
+test('site image finalize with a stale page updated_at: conflict, row unchanged, only the fresh upload deleted', async () => {
+  const fake = createFakeSupabase(stampedTables(), { updatedAtTables: ['app_config'] })
+  const version = versionOf('2026-10-20T16:43:20.000001+00:00')
+  const p = ports(fake)
+  p.db = adminImageDb(fake.client as never, version)
+  const before = fake.snapshot()
+  const key = 'site-assets/settings/og-1760000000000-abcdef01.jpg'
+  const res = await finalizeImageUploadCore(p, {
+    kind: 'site-image',
+    slot: 'og',
+    key,
+    variantKeys: [],
+    userId: 'admin-1',
+    target: { type: 'app-config', column: 'og_image_url' },
+    live: { type: 'app-config', columns: ['og_image_url'] },
+  })
+  assert.equal(res.success, false)
+  assert.equal(res.error, MEDIA_SAVE_CONFLICT)
+  assert.deepEqual(fake.snapshot(), before)
+  assert.deepEqual((p as unknown as { deleted: string[][] }).deleted, [[key]])
+  assert.equal(version.next, null)
+})
+
+test('site image finalize with the fresh page updated_at writes and reports the new value', async () => {
+  const fake = createFakeSupabase(stampedTables(), { updatedAtTables: ['app_config'] })
+  const version = versionOf(STAMP)
+  const p = ports(fake)
+  p.db = adminImageDb(fake.client as never, version)
+  const res = await finalizeImageUploadCore(p, {
+    kind: 'site-image',
+    slot: 'og',
+    key: 'site-assets/settings/og-1760000000000-abcdef01.jpg',
+    variantKeys: [],
+    userId: 'admin-1',
+    target: { type: 'app-config', column: 'og_image_url' },
+    live: { type: 'app-config', columns: ['og_image_url'] },
+  })
+  assert.equal(res.success, true, res.error)
+  assert.equal(version.next, fake.tables.app_config![0]!.updated_at)
+  assert.notEqual(version.next, STAMP)
+})
+
+test('the version is only for the write: the audit-failure restore stays a CAS on the value we wrote', async () => {
+  const fake = createFakeSupabase(stampedTables(), { updatedAtTables: ['app_config'] })
+  const version = versionOf(STAMP)
+  const db = adminImageDb(fake.client as never, version)
+  const og = { type: 'app-config', column: 'og_image_url' } as const
+  assert.equal(await db.write(og, 'o', 'og-old'), null)
+  // updated_at moved on with our write; the restore must still put the old value back.
+  assert.equal(await db.restore(og, 'og-old', 'o'), null)
+  assert.equal(fake.tables.app_config![0]!.og_image_url, 'og-old')
 })

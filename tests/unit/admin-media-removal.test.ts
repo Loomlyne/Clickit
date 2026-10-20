@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { removeMediaCore, type MediaRemovalTarget } from '../../src/lib/admin/media-removal.ts'
 import { MEDIA_SAVE_CONFLICT } from '../../src/server/media-references.ts'
+import { rowVersion, type RowVersion } from '../../src/lib/admin/row-version.ts'
 import { createFakeSupabase } from './helpers/fake-supabase.ts'
 
 const ORIGIN = 'https://media.test'
@@ -240,4 +241,51 @@ test('source scan: the remove actions go through removeMediaCore; no unguarded R
   assert.ok(cron.includes('readReferences: () => readMediaReferenceUrls('), 'cron must build a reference guard')
   assert.match(cron, /stageR2Deletion\([^;]*?,\s*guard\s*\)/, 'cron R2 delete must pass the guard')
   assert.ok(cron.includes('findLiveReferences('), 'cron orphans are re-checked against every reference')
+})
+
+// ---- Deferred item 23 residual (b): removing a site image or the preloader from the settings
+// page also checks the page's updated_at (one chain for every form on that row) ----
+
+const STAMP = '2026-10-20T16:43:24.123456+00:00'
+const versionOf = (v: string): RowVersion => {
+  const r = rowVersion(v)
+  assert.ok(r.ok)
+  return r.value
+}
+
+test('clear with a stale page updated_at: conflict, column kept, nothing deleted', async () => {
+  for (const target of [OG_TARGET, PRELOADER_TARGET]) {
+    const w = world({ app: { updated_at: STAMP } })
+    const version = versionOf('2026-10-20T16:43:20.000001+00:00')
+    const before = w.fake.snapshot()
+    const r = await removeMediaCore({ ...w.ports, version }, target, '[t]')
+    assert.deepEqual(r, { success: false, error: MEDIA_SAVE_CONFLICT, wrote: false })
+    assert.deepEqual(w.fake.snapshot(), before)
+    assert.deepEqual(w.deleted, [])
+    assert.equal(version.next, null)
+  }
+})
+
+test('clear with the fresh page updated_at: cleared, the new updated_at is reported', async () => {
+  const fake = createFakeSupabase(
+    {
+      app_config: [{ id: 1, updated_at: STAMP, og_image_url: `${ORIGIN}/${OG}`, footer_content: { social: [] } }],
+      shows: [],
+      show_cast: [],
+      profiles: [],
+      shorts: [],
+    },
+    { updatedAtTables: ['app_config'] }
+  )
+  const deleted: string[][] = []
+  const version = versionOf(STAMP)
+  const r = await removeMediaCore(
+    { db: fake.client as never, media: { delete: async (k: string[]) => void deleted.push(k) }, mediaOrigin: ORIGIN, version },
+    OG_TARGET,
+    '[t]'
+  )
+  assert.equal(r.success, true, r.error)
+  assert.equal(fake.tables.app_config![0]!.og_image_url, null)
+  assert.equal(version.next, fake.tables.app_config![0]!.updated_at)
+  assert.notEqual(version.next, STAMP)
 })

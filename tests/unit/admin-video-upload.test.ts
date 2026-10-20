@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { removeHeroVideoCore, saveVideoCore, setHeroVideoUrlCore } from '../../src/lib/admin/hero-video.ts'
 import { MEDIA_SAVE_CONFLICT } from '../../src/server/media-references.ts'
+import { rowVersion, type RowVersion } from '../../src/lib/admin/row-version.ts'
 import {
   MB,
   NEW_KEY,
@@ -601,4 +602,58 @@ test('source scan: the old create*/save* video actions are gone (plan 02-19)', (
   ]) {
     assert.ok(!src.includes(`export async function ${name}(`), `${name} is back`)
   }
+})
+
+// ---- Deferred item 23 residual (b): hero and preloader writes from the settings page also
+// check the page's updated_at (one chain for every form on the app_config row) ----
+
+const STAMP = '2026-10-20T16:43:24.123456+00:00'
+const versionOf = (v: string): RowVersion => {
+  const r = rowVersion(v)
+  assert.ok(r.ok)
+  return r.value
+}
+
+test('hero and preloader writes with a stale page updated_at: conflict, nothing live changed or deleted', async () => {
+  const runs: Array<(w: ReturnType<typeof videoWorld>) => Promise<{ success: boolean; error?: string }>> = [
+    (w) => saveVideoCore(w.ports, w.deps, { key: NEW_KEY, target: 'hero-desktop' }),
+    (w) => saveVideoCore(w.ports, w.deps, { key: NEW_PRELOADER_KEY, target: 'preloader' }),
+    (w) => removeHeroVideoCore(w.ports, w.deps, { variant: 'desktop' }),
+    (w) =>
+      setHeroVideoUrlCore(w.ports, w.deps, { canonicalUrl: 'https://www.youtube.com/watch?v=abcdefghijk', variant: 'desktop' }),
+  ]
+  for (const run of runs) {
+    const w = videoWorld()
+    appConfig(w).updated_at = STAMP
+    const version = versionOf('2026-10-20T16:43:20.000001+00:00')
+    w.ports.appConfigVersion = version
+    const before = structuredClone(appConfig(w))
+    const r = await run(w)
+    assert.equal(r.success, false)
+    assert.equal(r.error, MEDIA_SAVE_CONFLICT)
+    assert.deepEqual(appConfig(w), before)
+    assert.equal(w.calls.commit, 0)
+    assert.ok(!w.calls.delete.flat().includes(OLD_KEY))
+    assert.equal(version.next, null)
+  }
+})
+
+test('hero write with the fresh page updated_at lands and reports the new value', async () => {
+  const w = videoWorld()
+  appConfig(w).updated_at = STAMP
+  const version = versionOf(STAMP)
+  w.ports.appConfigVersion = version
+  const r = await saveVideoCore(w.ports, w.deps, { key: NEW_KEY, target: 'hero-desktop' })
+  assert.equal(r.success, true, r.error)
+  assert.equal(appConfig(w).hero_video_url, `${ORIGIN}/${NEW_KEY}`)
+  assert.equal(typeof version.next, 'string')
+  assert.equal(version.next, appConfig(w).updated_at)
+})
+
+test('the page version never applies to a show video (it belongs to the shows row)', async () => {
+  const w = videoWorld({ showUrl: OLD_URL })
+  w.ports.appConfigVersion = versionOf('2026-10-20T16:43:20.000001+00:00')
+  const r = await saveVideoCore(w.ports, w.deps, { key: NEW_SHOW_KEY, target: 'show', showId: SHOW_ID, variant: 'desktop' })
+  assert.equal(r.success, true, r.error)
+  assert.equal(showRow(w).hero_video_url, `${ORIGIN}/${NEW_SHOW_KEY}`)
 })

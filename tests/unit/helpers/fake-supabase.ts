@@ -81,7 +81,16 @@ function violatesUnique(table: string, rows: Row[]): boolean {
   return false
 }
 
-export function createFakeSupabase(initial: Tables = {}) {
+export type FakeOptions = {
+  /**
+   * Tables whose BEFORE UPDATE trigger sets updated_at = now() (shows, app_config in the
+   * migrations). Every matched row gets a fresh value in the PostgREST JSON format, with
+   * microseconds and a +00:00 offset, e.g. 2026-10-20T16:43:24.123457+00:00.
+   */
+  updatedAtTables?: string[]
+}
+
+export function createFakeSupabase(initial: Tables = {}, options: FakeOptions = {}) {
   const tables: Tables = {}
   for (const [k, v] of Object.entries(initial)) tables[k] = clone(v)
   if (!tables.admin_audit_log) tables.admin_audit_log = []
@@ -91,6 +100,9 @@ export function createFakeSupabase(initial: Tables = {}) {
   const rpcs = new Map<string, RpcHandler>()
   let clock = Date.parse('2026-01-01T00:00:00.000Z')
   const tick = () => new Date((clock += 1)).toISOString()
+  let micros = 123456
+  const touched = new Set(options.updatedAtTables ?? [])
+  const nowStamp = () => `2026-10-20T16:43:24.${String((micros += 1) % 1000000).padStart(6, '0')}+00:00`
 
   const tableRows = (t: string) => (tables[t] ??= [])
 
@@ -295,7 +307,11 @@ export function createFakeSupabase(initial: Tables = {}) {
       }
 
       if (this.op === 'update') {
-        const next = rows.map((r) => (hit(r) ? { ...r, ...clone(this.patch) } : r))
+        const next = rows.map((r) =>
+          hit(r)
+            ? { ...r, ...clone(this.patch), ...(touched.has(this.table) ? { updated_at: nowStamp() } : {}) }
+            : r
+        )
         if (violatesUnique(this.table, next)) return this.uniqueError()
         const changed: Row[] = []
         rows.forEach((r, i) => {
