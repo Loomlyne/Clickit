@@ -40,6 +40,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# cloudflare / opennext
+.open-next
+.wrangler
+.dev.vars
+clickit-build-stamp.json
+
 # supabase
 .supabase/
 

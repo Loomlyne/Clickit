@@ -13,15 +13,22 @@
     "rewrite-slugs": "node scripts/rewrite-slugs.mjs",
     "fix-archived-show-duplicates": "node scripts/fix-archived-show-duplicates.mjs",
     "r2:media": "node scripts/migrate-supabase-media-to-r2.mjs",
-    "gate:local": "npm run lint && npm run test:unit && npm run build"
+    "gate:local": "npm run lint && npm run test:unit && npm run build && npm run cf:build",
+    "cf:guard:local": "HOME=/Users/koss/.clickit-cloudflare node scripts/cf/wrangler-guard.mjs --local",
+    "cf:build": "npm run cf:guard:local && HOME=/Users/koss/.clickit-cloudflare opennextjs-cloudflare build",
+    "cf:preview": "npm run cf:guard:local && HOME=/Users/koss/.clickit-cloudflare opennextjs-cloudflare preview",
+    "cf-typegen": "HOME=/Users/koss/.clickit-cloudflare wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1101.0",
     "@hookform/resolvers": "^5.2.2",
+    "@marsidev/react-turnstile": "1.6.2",
+    "@opennextjs/cloudflare": "1.20.12",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
+    "aws4fetch": "1.0.20",
     "botid": "^1.5.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -31,14 +38,14 @@
     "lenis": "^1.3.23",
     "lucide-react": "^1.7.0",
     "motion": "^12.38.0",
-    "next": "^16.2.9",
+    "next": "16.4.2",
     "next-intl": "^4.9.1",
     "radix-ui": "^1.4.3",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
     "react-hook-form": "^7.72.0",
     "server-only": "^0.0.1",
-    "sharp": "^0.35.3",
+    "sharp": "0.35.5",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "tw-animate-css": "^1.4.0",
@@ -49,7 +56,7 @@
     "postcss": "^8.5.10"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "^16.2.9",
+    "@next/bundle-analyzer": "16.4.2",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
@@ -58,13 +65,14 @@
     "@types/youtube": "^0.1.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "^16.2.9",
+    "eslint-config-next": "16.4.2",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "shadcn": "^4.1.1",
     "supabase": "^2.84.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "4.151.2"
   }
 }

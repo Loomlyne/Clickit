@@ -1,0 +1,41 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "clickit",
+  // ClickitStory account, pinned (D-04). Not a secret.
+  "account_id": "e329b099b6e4272fc0915a99832e47fe",
+  "main": "./custom-worker.ts",
+  "compatibility_date": "2026-10-19",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "observability": { "enabled": true },
+  "workers_dev": true,
+  "preview_urls": false,
+  "triggers": {
+    // Explicit empty array: only an empty array removes existing triggers;
+    // commenting the key out would leave them in place. Crons go on at the
+    // Phase 3 cutover.
+    "crons": []
+  },
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "clickit" }],
+  "r2_buckets": [
+    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "clickit-next-cache" },
+    { "binding": "MEDIA", "bucket_name": "clickit-media" }
+  ],
+  "d1_databases": [
+    {
+      "binding": "NEXT_TAG_CACHE_D1",
+      "database_name": "clickit-tag-cache",
+      // Local-only placeholder. The real id is written in plan 02-10 after
+      // RUNBOOK step 9; the deploy guard in plan 02-06 refuses the all-zero id.
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }],
+  "vars": {
+    "CLOUDFLARE_ACCOUNT_ID": "e329b099b6e4272fc0915a99832e47fe",
+    "CLOUDFLARE_R2_BUCKET": "clickit-media"
+  }
+}

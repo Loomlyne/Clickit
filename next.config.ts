@@ -2,7 +2,13 @@ import type { NextConfig } from "next";
 import bundleAnalyzer from '@next/bundle-analyzer'
 import { withBotId } from 'botid/next/config'
 import createNextIntlPlugin from 'next-intl/plugin'
+import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare'
 import { getPublicMediaOrigin } from './src/lib/supabase-media'
+
+// OpenNext dev hook: exposes Cloudflare bindings to `next dev` only.
+if (process.env.NODE_ENV === 'development') {
+  initOpenNextCloudflareForDev()
+}
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
