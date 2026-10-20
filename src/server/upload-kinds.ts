@@ -1,6 +1,6 @@
 // Upload kind table for direct-to-R2 uploads (MEDIA-01, MEDIA-06).
 // Pure: no '@/' or server-only imports (node --test loads this file).
-// Caps, allowlists and messages come from the code they replace:
+// Caps, allowlists and messages come from the code they replaced (all deleted in plan 02-19):
 //   artwork         src/app/[locale]/admin/actions.ts uploadArtwork (10 MB, logo 2 MB)
 //   site-image      uploadSiteImage + SITE_IMAGE_MIME_EXT (5 MB)
 //   social-icon     uploadSocialIcon + SOCIAL_ICON_MIME_EXT (2 MB)
