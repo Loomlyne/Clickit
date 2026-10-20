@@ -179,7 +179,8 @@ export function HeroMediaPicker({
   }
 
   const hasContent = !!(currentImageUrl || currentVideoUrl)
-  const contentType: Mode | null = currentVideoType ?? (currentImageUrl ? 'image' : null)
+  const contentType: Mode | null =
+    currentVideoType ?? (currentImageUrl ? 'image' : null)
   const isMobile = variant === 'mobile'
   const aspectBadge = isMobile ? '9:16' : '16:9'
   const sourceHint = mode === 'mp4' ? videoHint : imageHint
@@ -191,7 +192,8 @@ export function HeroMediaPicker({
   ]
 
   // Single hidden file input, retargeted by the active mode.
-  const fileAccept = mode === 'mp4' ? 'video/mp4' : 'image/webp,image/png,image/jpeg'
+  const fileAccept =
+    mode === 'mp4' ? 'video/mp4' : 'image/webp,image/png,image/jpeg'
   const fileHandler = mode === 'mp4' ? handleMp4Upload : handleImageUpload
 
   const mediaPreview =
@@ -231,11 +233,11 @@ export function HeroMediaPicker({
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-medium">{label}</span>
-          <span className="text-muted-foreground rounded-full border border-white/8 bg-white/[0.03] px-2 py-0.5 font-mono text-[10px]">
+          <span className="text-muted-foreground rounded-full border border-[var(--line)] bg-[var(--bg-2)] px-2 py-0.5 font-mono text-[11px]">
             {aspectBadge}
           </span>
         </div>
-        <div className="flex items-center gap-0.5 rounded-full border border-white/8 bg-white/[0.02] p-0.5">
+        <div className="flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[var(--bg-2)] p-0.5">
           {modes.map(({ id, label: ml, icon: Icon }) => (
             <button
               key={id}
@@ -259,8 +261,12 @@ export function HeroMediaPicker({
       <div
         className={cn(
           'group relative overflow-hidden rounded-xl border bg-black/40',
-          isMobile ? 'mx-auto aspect-[9/16] w-full max-w-[200px]' : 'aspect-video w-full',
-          hasContent ? 'border-white/10' : 'border-dashed border-white/12'
+          isMobile
+            ? 'mx-auto aspect-[9/16] w-full max-w-[200px]'
+            : 'aspect-video w-full',
+          hasContent
+            ? 'border-[var(--line)]'
+            : 'border-dashed border-[var(--line-2)]'
         )}
       >
         {/* Hidden input reused for both empty-state click and Replace */}
@@ -276,15 +282,17 @@ export function HeroMediaPicker({
 
         {uploading ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60">
-            <Loader2 className="size-6 animate-spin text-white/70" />
-            <p className="text-xs text-white/60">{t('uploadingVideo')}</p>
+            <Loader2 className="size-6 animate-spin text-[var(--text-dim)]" />
+            <p className="text-xs text-[var(--text-dim)]">
+              {t('uploadingVideo')}
+            </p>
           </div>
         ) : hasContent ? (
           <>
             {mediaPreview}
             {/* Source badge */}
             {contentType && (
-              <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium text-white/80 backdrop-blur-sm">
+              <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-medium text-[var(--text-dim)] backdrop-blur-sm">
                 {contentType === 'mp4'
                   ? 'MP4'
                   : contentType === 'youtube'
@@ -306,7 +314,7 @@ export function HeroMediaPicker({
               <button
                 type="button"
                 onClick={handleRemove}
-                className="flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/25"
+                className="flex items-center gap-1 rounded-full bg-[var(--bg-3)] px-3 py-1.5 text-xs font-medium text-[var(--text)] backdrop-blur-sm transition-colors hover:bg-white/25"
               >
                 <Trash2 className="size-3.5" />
                 {t('clearButton')}
@@ -316,13 +324,15 @@ export function HeroMediaPicker({
         ) : mode === 'youtube' ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-4 text-center">
             <LinkIcon className="text-muted-foreground size-6" />
-            <p className="text-muted-foreground text-xs">{t('youtubeUrlLabel')}</p>
+            <p className="text-muted-foreground text-xs">
+              {t('youtubeUrlLabel')}
+            </p>
           </div>
         ) : (
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-4 text-center transition-colors hover:bg-white/[0.03]"
+            className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-4 text-center transition-colors hover:bg-[var(--bg-2)]"
           >
             <Upload className="text-muted-foreground size-6" />
             <p className="text-muted-foreground text-sm">
@@ -341,7 +351,7 @@ export function HeroMediaPicker({
             placeholder="https://www.youtube.com/watch?v=..."
             value={youtubeInput}
             onChange={(e) => setYoutubeInput(e.target.value)}
-            className="placeholder:text-muted-foreground flex-1 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2.5 text-sm text-white focus:border-white/20 focus:outline-none"
+            className="placeholder:text-muted-foreground flex-1 rounded-lg border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2.5 text-sm text-[var(--text)] focus:border-[var(--line-2)] focus:outline-none"
           />
           <Button
             type="button"

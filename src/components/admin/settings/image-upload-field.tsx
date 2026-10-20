@@ -57,9 +57,7 @@ export function ImageUploadField({
         return
       }
       const publicUrl = result.data ?? null
-      setUrl(
-        publicUrl ? stripStorageCacheBust(publicUrl) ?? publicUrl : null
-      )
+      setUrl(publicUrl ? (stripStorageCacheBust(publicUrl) ?? publicUrl) : null)
       toast.success(t('uploaded'))
     } finally {
       setBusy(false)
@@ -84,7 +82,7 @@ export function ImageUploadField({
       {url && (
         <div className="flex items-start gap-4">
           <div
-            className={`relative overflow-hidden rounded-lg border border-white/8 ${previewBgClassName} ${previewClassName}`}
+            className={`relative overflow-hidden rounded-lg border border-[var(--line)] ${previewBgClassName} ${previewClassName}`}
           >
             {/* next/image with unoptimized for cache-busted dynamic URLs */}
             <Image
@@ -109,12 +107,12 @@ export function ImageUploadField({
       )}
 
       {busy ? (
-        <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] px-4 py-3 text-sm">
+        <div className="text-muted-foreground flex items-center gap-2 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] px-4 py-3 text-sm">
           <Loader2 className="size-4 animate-spin" />
           {t('working')}
         </div>
       ) : (
-        <label className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] px-4 py-3 text-sm transition-colors hover:border-white/20">
+        <label className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] px-4 py-3 text-sm transition-colors hover:border-[var(--line-2)]">
           <Upload className="size-4" />
           <span>{url ? t('replaceImage') : t('uploadImage')}</span>
           <input

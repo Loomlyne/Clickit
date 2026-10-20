@@ -180,7 +180,7 @@ export function EpisodesTable({
                 </TableCell>
                 <TableCell className="hidden pt-4 md:table-cell">
                   {episode.youtube_video_id ? (
-                    <span className="inline-block max-w-[90px] truncate rounded-full border border-white/8 bg-white/[0.03] px-2 py-1 font-mono text-xs">
+                    <span className="inline-block max-w-[90px] truncate rounded-full border border-[var(--line)] bg-[var(--bg-2)] px-2 py-1 font-mono text-xs">
                       {episode.youtube_video_id}
                     </span>
                   ) : (

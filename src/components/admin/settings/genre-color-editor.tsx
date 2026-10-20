@@ -98,9 +98,11 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
           return (
             <div
               key={genre}
-              className="flex items-center justify-between gap-3 rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2"
+              className="flex items-center justify-between gap-3 rounded-lg border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2"
             >
-              <span className="text-sm font-medium text-white">{genre}</span>
+              <span className="text-sm font-medium text-[var(--text)]">
+                {genre}
+              </span>
               <div className="flex items-center gap-1">
                 {PRESETS.map((p) => (
                   <button
@@ -108,7 +110,7 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
                     type="button"
                     title={p.label}
                     onClick={() => setColor(genre, p.value)}
-                    className={`size-6 rounded-full ring-2 ring-offset-2 ring-offset-black transition-all ${
+                    className={`relative size-8 rounded-full ring-2 ring-offset-2 ring-offset-black transition-all ${
                       active === p.value
                         ? 'ring-white'
                         : 'ring-transparent hover:ring-white/30'
@@ -120,10 +122,10 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
                   type="button"
                   title={t('clearOverride')}
                   onClick={() => setColor(genre, undefined)}
-                  className={`ms-1 rounded-full px-2 py-0.5 text-[10px] tracking-wider uppercase transition-colors ${
+                  className={`ms-1 rounded-full px-2 py-0.5 text-[11px] tracking-wider uppercase transition-colors ${
                     active
-                      ? 'bg-white/10 text-white hover:bg-white/20'
-                      : 'text-white/30'
+                      ? 'bg-[var(--bg-3)] text-[var(--text)] hover:bg-[var(--bg-3)]'
+                      : 'text-[var(--text-mute)]'
                   }`}
                 >
                   {t('defaultLabel')}

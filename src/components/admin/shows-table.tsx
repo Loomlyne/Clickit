@@ -31,7 +31,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import {
-  AdminMetric,
+  AdminMetricStrip,
   AdminPanel,
   AdminTableShell,
 } from '@/components/admin/admin-shell'
@@ -110,8 +110,7 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
       total: displayShows.length,
       streaming: displayShows.filter((s) => s.status === 'now-streaming')
         .length,
-      comingSoon: displayShows.filter((s) => s.status === 'coming-soon')
-        .length,
+      comingSoon: displayShows.filter((s) => s.status === 'coming-soon').length,
       draft: displayShows.filter((s) => s.status === 'draft').length,
     }),
     [displayShows]
@@ -235,103 +234,75 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {[
-          {
-            label: tShows('totalShows'),
-            value: stats.total,
-            color: 'text-foreground',
-          },
+      <AdminMetricStrip
+        items={[
+          { label: tShows('totalShows'), value: stats.total },
           {
             label: tShows('streaming'),
             value: stats.streaming,
-            color: 'text-emerald-200',
+            className: 'text-brand-green-safe',
           },
           {
             label: tShows('comingSoon'),
             value: stats.comingSoon,
-            color: 'text-amber-100',
+            className: 'text-brand-orange-safe',
           },
           {
             label: tShows('draft'),
             value: stats.draft,
-            color: 'text-muted-foreground',
+            className: 'text-[var(--text-dim)]',
           },
-        ].map((stat) => (
-          <AdminMetric
-            key={stat.label}
-            label={stat.label}
-            value={<span className={stat.color}>{stat.value}</span>}
-          />
-        ))}
-      </div>
+        ]}
+      />
 
-      <AdminPanel>
-        <div className="flex flex-col gap-4 border-b border-white/8 pb-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-muted-foreground text-xs tracking-[0.24em] uppercase">
-              {tShows('catalog')}
-            </p>
-            <h2 className="text-foreground mt-2 text-xl font-semibold tracking-tight">
-              {tShows('activeShows')}
-            </h2>
+      <AdminPanel className="overflow-hidden p-0">
+        <div className="flex flex-col gap-3 border-b border-[var(--line)] p-4 sm:flex-row sm:items-center">
+          <div className="relative min-w-[220px] flex-1 sm:max-w-sm">
+            <Search className="absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-[var(--text-mute)]" />
+            <Input
+              placeholder={tShows('searchPlaceholder')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="ps-10"
+            />
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:justify-end lg:gap-3">
-            <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="relative min-w-[240px] flex-1">
-                <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-                <Input
-                  placeholder={tShows('searchPlaceholder')}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="ps-9"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full min-w-[180px] shrink-0 rounded-lg border-white/8 bg-white/[0.03] sm:w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{tShows('allStatus')}</SelectItem>
-                  <SelectItem value="now-streaming">
-                    {tShows('streaming')}
-                  </SelectItem>
-                  <SelectItem value="coming-soon">
-                    {tShows('comingSoon')}
-                  </SelectItem>
-                  <SelectItem value="draft">{tShows('draft')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Link href="/admin/shows/new" className="shrink-0">
-              <Button className="w-full sm:w-auto">
-                <Plus className="me-1.5 size-4" />
-                {tDash('createShow')}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full shrink-0 sm:w-[190px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{tShows('allStatus')}</SelectItem>
+              <SelectItem value="now-streaming">
+                {tShows('streaming')}
+              </SelectItem>
+              <SelectItem value="coming-soon">
+                {tShows('comingSoon')}
+              </SelectItem>
+              <SelectItem value="draft">{tShows('draft')}</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex items-center justify-between gap-3 text-[13px] text-[var(--text-mute)] sm:ms-auto">
+            <span>
+              {tShows('resultCount', { count: filtered.length })}
+              {selectedCount === 0 ? ` · ${tShows('sortedByNewest')}` : ''}
+            </span>
+            {selectedCount > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setBulkArchiveDialogOpen(true)}
+              >
+                <Archive className="size-4" />
+                {tShows('bulkArchiveButton', { count: selectedCount })}
               </Button>
-            </Link>
+            )}
           </div>
         </div>
 
-        <div className="text-muted-foreground mt-5 flex items-center justify-between pb-3 text-sm">
-          <span>{tShows('resultCount', { count: filtered.length })}</span>
-          {selectedCount > 0 ? (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setBulkArchiveDialogOpen(true)}
-            >
-              <Archive className="me-1.5 size-4" />
-              {tShows('bulkArchiveButton', { count: selectedCount })}
-            </Button>
-          ) : (
-            <span>{tShows('sortedByNewest')}</span>
-          )}
-        </div>
-
-        <AdminTableShell>
+        <AdminTableShell className="rounded-none border-0">
           <Table>
             <TableHeader>
-              <TableRow className="bg-transparent">
+              <TableRow className="bg-transparent hover:bg-transparent">
                 <TableHead className="w-10">
                   <Checkbox
                     checked={
@@ -369,7 +340,7 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
               {filtered.map((show, index) => (
                 <TableRow
                   key={show.id}
-                  className="group transition-colors hover:bg-white/[0.02]"
+                  className="group transition-colors hover:bg-[var(--bg-2)]"
                   data-state={selectedSet.has(show.id) ? 'selected' : undefined}
                 >
                   <TableCell>
@@ -393,7 +364,7 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                     <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-xs md:hidden">
                       <span>{show.genre}</span>
                       {show.featured && (
-                        <span className="text-amber-200">
+                        <span className="text-[var(--primary)]">
                           {tShows('featured')}
                         </span>
                       )}
@@ -494,7 +465,7 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                             }
                           >
                             <Star
-                              className={`size-4 ${show.featured ? 'fill-amber-300 text-amber-300' : ''}`}
+                              className={`size-4 ${show.featured ? 'fill-[var(--primary)] text-[var(--primary)]' : ''}`}
                             />
                           </Button>
                         </TooltipTrigger>

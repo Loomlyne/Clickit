@@ -1,0 +1,161 @@
+/* ═══════════════════════════════════════════════════
+   Admin UI System pass (B4, signed 2026-10-20).
+   Scoped to pages that render .admin-root so the shared ui/* components
+   stay untouched for the viewer site. Unlayered on purpose: it wins over
+   the Tailwind utilities baked into those components.
+   Delete a block here when the matching shared component gets the same fix.
+   Rules: 44px targets (36px visible + 44px hit area on desktop), nothing
+   under 11px, 4.5:1 contrast, radius roles (field 8 / card 12 / pill).
+   ═══════════════════════════════════════════════════ */
+
+body:has(.admin-root) {
+  --admin-hit: 44px;
+}
+
+/* ── Buttons: dense sizes are 36px visible, 44px hit area; 44px on touch ── */
+body:has(.admin-root) [data-slot='button'] {
+  position: relative;
+}
+body:has(.admin-root) [data-slot='button'][data-size='xs'],
+body:has(.admin-root) [data-slot='button'][data-size='sm'] {
+  min-height: 36px;
+  padding-inline: 14px;
+  font-size: 13px;
+  gap: 6px;
+}
+body:has(.admin-root) [data-slot='button'][data-size='icon'],
+body:has(.admin-root) [data-slot='button'][data-size='icon-xs'],
+body:has(.admin-root) [data-slot='button'][data-size='icon-sm'] {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+}
+body:has(.admin-root) [data-slot='button'][data-size='xs']::after,
+body:has(.admin-root) [data-slot='button'][data-size='sm']::after,
+body:has(.admin-root) [data-slot='button'][data-size='icon']::after,
+body:has(.admin-root) [data-slot='button'][data-size='icon-xs']::after,
+body:has(.admin-root) [data-slot='button'][data-size='icon-sm']::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
+@media (max-width: 767px) {
+  body:has(.admin-root) [data-slot='button'][data-size='xs'],
+  body:has(.admin-root) [data-slot='button'][data-size='sm'] {
+    min-height: 44px;
+  }
+  body:has(.admin-root) [data-slot='button'][data-size='icon'],
+  body:has(.admin-root) [data-slot='button'][data-size='icon-xs'],
+  body:has(.admin-root) [data-slot='button'][data-size='icon-sm'] {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* ghost = quiet, no glass fill; destructive = tint, not a solid red block */
+body:has(.admin-root) [data-slot='button'][data-variant='ghost'] {
+  background: transparent;
+  border-color: transparent;
+  backdrop-filter: none;
+  color: var(--text-dim);
+}
+body:has(.admin-root)
+  [data-slot='button'][data-variant='ghost']:hover:not(:disabled) {
+  background: var(--bg-3);
+  color: var(--text);
+}
+body:has(.admin-root) [data-slot='button'][data-variant='destructive'] {
+  background: color-mix(in srgb, var(--destructive) 12%, transparent);
+  border-color: color-mix(in srgb, var(--destructive) 40%, transparent);
+  color: var(--color-brand-red-safe);
+}
+body:has(.admin-root)
+  [data-slot='button'][data-variant='destructive']:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--destructive) 20%, transparent);
+}
+body:has(.admin-root)
+  [data-slot='button'][data-variant='default']:hover:not(:disabled) {
+  background: var(--uis-primary-hover);
+}
+body:has(.admin-root)
+  [data-slot='button'][data-variant='outline']:hover:not(:disabled) {
+  background: var(--bg-2);
+}
+
+/* ── Checkbox: 20px visible, 6px radius, 44px hit area ── */
+body:has(.admin-root) [data-slot='checkbox'] {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border-color: var(--line-2);
+  background: var(--bg-2);
+  box-shadow: none;
+}
+body:has(.admin-root) [data-slot='checkbox']::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+}
+body:has(.admin-root) [data-slot='checkbox'][data-state='checked'],
+body:has(.admin-root) [data-slot='checkbox'][data-state='indeterminate'] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* ── Tables: 40px header, ~52px rows, 14px text ── */
+body:has(.admin-root) [data-slot='table-header'] {
+  background: color-mix(in srgb, var(--bg-0) 40%, transparent);
+}
+body:has(.admin-root) [data-slot='table-head'] {
+  height: 40px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--text-mute);
+}
+body:has(.admin-root) [data-slot='table-cell'] {
+  padding-block: 10px;
+  font-size: 14px;
+}
+body:has(.admin-root) [data-slot='table-row'] {
+  border-color: var(--line);
+}
+body:has(.admin-root) [data-slot='table-row']:hover {
+  background: var(--bg-2);
+}
+body:has(.admin-root) [data-slot='table-row'][data-state='selected'] {
+  background: color-mix(in srgb, var(--uis-primary-soft) 40%, transparent);
+}
+
+/* ── Fields: 8px radius, token fills ── */
+body:has(.admin-root) [data-slot='select-trigger'] {
+  border-radius: 8px;
+  border-color: var(--line);
+  background: var(--bg-2);
+  box-shadow: none;
+}
+body:has(.admin-root) [data-slot='select-content'] {
+  background: var(--popover);
+  border-color: var(--line-2);
+}
+body:has(.admin-root) [data-slot='textarea'] {
+  border-radius: 8px;
+}
+
+/* ── Tabs: active tab is the primary pill, 36px with a 44px hit area ── */
+body:has(.admin-root) [data-slot='tabs-trigger'] {
+  min-height: 36px;
+  font-size: 14px;
+}
+body:has(.admin-root) [data-slot='tabs-trigger']::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block: -4px;
+}
+body:has(.admin-root) [data-slot='tabs-trigger'][data-state='active'] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}

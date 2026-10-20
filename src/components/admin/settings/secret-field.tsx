@@ -50,7 +50,7 @@ export function SecretField({
             setReplacing(true)
             onChange('')
           }}
-          className="shrink-0 text-xs font-medium tracking-wider text-white/60 uppercase underline-offset-4 hover:text-white hover:underline disabled:pointer-events-none disabled:opacity-40"
+          className="shrink-0 text-xs font-medium tracking-wider text-[var(--text-dim)] uppercase underline-offset-4 hover:text-[var(--text)] hover:underline disabled:pointer-events-none disabled:opacity-40"
         >
           {t('replace')}
         </button>
@@ -74,7 +74,7 @@ export function SecretField({
         type="button"
         disabled={disabled}
         onClick={() => setReveal((r) => !r)}
-        className="shrink-0 text-white/60 hover:text-white disabled:pointer-events-none disabled:opacity-40"
+        className="shrink-0 text-[var(--text-dim)] hover:text-[var(--text)] disabled:pointer-events-none disabled:opacity-40"
         aria-label={reveal ? t('hideValue') : t('revealValue')}
       >
         {reveal ? <EyeOff className="size-4" /> : <Eye className="size-4" />}

@@ -3,7 +3,19 @@
 import { useEffect, useMemo, useRef } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
-import { Menu, User } from 'lucide-react'
+import {
+  Archive,
+  Clapperboard,
+  Inbox,
+  LayoutGrid,
+  Menu,
+  MessageSquare,
+  ScrollText,
+  Settings,
+  Tags,
+  User,
+  type LucideIcon,
+} from 'lucide-react'
 import { Link, usePathname, useRouter } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
 import {
@@ -15,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-type AdminNavItem = { label: string; href: string }
+type AdminNavItem = { label: string; href: string; icon: LucideIcon }
 
 type AdminNavGroup = { id: string; label: string; items: AdminNavItem[] }
 
@@ -40,26 +52,26 @@ export function AdminHeader() {
         id: 'content',
         label: t('navContent'),
         items: [
-          { label: t('shows'), href: '/admin' },
-          { label: t('categories'), href: '/admin/categories' },
-          { label: t('shorts'), href: '/admin/shorts' },
+          { label: t('shows'), href: '/admin', icon: LayoutGrid },
+          { label: t('categories'), href: '/admin/categories', icon: Tags },
+          { label: t('shorts'), href: '/admin/shorts', icon: Clapperboard },
         ],
       },
       {
         id: 'engagement',
         label: t('navEngagement'),
         items: [
-          { label: t('reviews'), href: '/admin/reviews' },
-          { label: t('inbox'), href: '/admin/inbox' },
+          { label: t('reviews'), href: '/admin/reviews', icon: MessageSquare },
+          { label: t('inbox'), href: '/admin/inbox', icon: Inbox },
         ],
       },
       {
         id: 'operations',
         label: t('navOperations'),
         items: [
-          { label: t('archive'), href: '/admin/archive' },
-          { label: t('settings'), href: '/admin/settings' },
-          { label: t('audit'), href: '/admin/audit' },
+          { label: t('archive'), href: '/admin/archive', icon: Archive },
+          { label: t('settings'), href: '/admin/settings', icon: Settings },
+          { label: t('audit'), href: '/admin/audit', icon: ScrollText },
         ],
       },
     ],
@@ -95,8 +107,9 @@ export function AdminHeader() {
     return () => clearTimeout(timeoutId)
   }, [pathname, allHrefs, router])
 
-  function renderNavLink(item: AdminNavItem, compact?: boolean) {
+  const sidebarLink = (item: AdminNavItem) => {
     const active = isItemActive(item, pathname)
+    const Icon = item.icon
     return (
       <Link
         key={item.href}
@@ -104,132 +117,146 @@ export function AdminHeader() {
         onMouseEnter={() => prefetchRoute(item.href)}
         onTouchStart={() => prefetchRoute(item.href)}
         prefetch
+        aria-current={active ? 'page' : undefined}
         className={cn(
-          'shrink-0 rounded-full font-medium transition-all',
-          compact
-            ? 'px-2.5 py-1.5 text-[11px] leading-tight sm:px-3 sm:py-2 sm:text-xs lg:px-3.5 lg:text-[13px]'
-            : 'px-3 py-2 text-sm',
+          'flex min-h-11 items-center gap-3 rounded-full px-3 text-[14px] font-medium transition-colors',
           active
-            ? 'bg-[var(--primary)] text-[var(--primary-foreground)] shadow-sm'
-            : 'text-muted-foreground hover:text-foreground hover:bg-white/[0.06]'
+            ? 'bg-[var(--uis-primary-soft)] text-[var(--primary)]'
+            : 'text-[var(--text-dim)] hover:bg-[var(--bg-2)] hover:text-[var(--text)]'
         )}
       >
+        <Icon className="size-4 shrink-0" aria-hidden />
         {item.label}
       </Link>
     )
   }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/8 bg-[rgba(10,10,10,0.88)] backdrop-blur-[18px] supports-[backdrop-filter]:bg-[rgba(10,10,10,0.72)]">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-0 px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-3.5 lg:px-8 lg:py-4">
-        <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
+    <>
+      {/* Desktop: fixed sidebar (ui.config.json nav.back = sidebar) */}
+      <aside className="fixed inset-y-0 start-0 z-40 hidden w-60 flex-col border-e border-[var(--line)] bg-[var(--sidebar)] lg:flex">
+        <div className="flex h-16 shrink-0 items-center px-5">
           <Link
             href="/watch"
             aria-label={tNav('watch')}
-            className="flex min-h-10 min-w-0 items-center sm:min-h-11"
+            className="flex min-h-11 items-center"
           >
             <Image
               src="/brand/cit-story.png"
               alt="Clickit"
               width={136}
               height={56}
-              className="h-6 w-auto sm:h-7"
+              className="h-7 w-auto"
               priority
             />
           </Link>
         </div>
-
-        {/* Tablet / desktop: grouped clusters, wrap + scroll fallback for narrow widths */}
         <nav
           aria-label={tAdmin('adminNavAria')}
-          className="hidden min-h-[44px] min-w-0 flex-1 md:flex md:items-center md:justify-center"
+          className="flex-1 space-y-5 overflow-y-auto px-3 py-2"
         >
-          <div className="flex max-w-full flex-wrap items-center justify-center gap-2 overflow-x-auto overscroll-x-contain py-0.5 [scrollbar-width:thin] lg:flex-nowrap lg:gap-3 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15">
-            {navGroups.map((group) => (
-              <div
-                key={group.id}
-                className="inline-flex min-w-0 flex-wrap items-center gap-0.5 rounded-full border border-white/8 bg-white/[0.03] p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
-              >
-                {group.items.map((item) => renderNavLink(item, true))}
+          {navGroups.map((group) => (
+            <div key={group.id}>
+              <p className="px-3 pb-1.5 text-[11px] font-semibold tracking-[0.12em] text-[var(--text-mute)] uppercase">
+                {group.label}
+              </p>
+              <ul className="space-y-0.5">
+                {group.items.map((item) => (
+                  <li key={item.href}>{sidebarLink(item)}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </nav>
+        <Link
+          href="/profile"
+          onMouseEnter={() => prefetchRoute('/profile')}
+          onTouchStart={() => prefetchRoute('/profile')}
+          prefetch
+          className="m-3 flex min-h-11 items-center gap-3 rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] px-3 py-2 text-[13px] font-medium text-[var(--text)] transition-colors hover:bg-[var(--bg-2)]"
+        >
+          <span className="flex size-8 items-center justify-center rounded-full bg-[var(--primary)] text-[var(--primary-foreground)]">
+            <User className="size-4" aria-hidden />
+          </span>
+          {tNav('profile')}
+        </Link>
+      </aside>
+
+      {/* Phone / tablet: top bar with the same groups in a menu */}
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[var(--line)] bg-[var(--bg-0)]/90 px-4 backdrop-blur lg:hidden">
+        <Link
+          href="/watch"
+          aria-label={tNav('watch')}
+          className="flex min-h-11 items-center"
+        >
+          <Image
+            src="/brand/cit-story.png"
+            alt="Clickit"
+            width={136}
+            height={56}
+            className="h-6 w-auto"
+            priority
+          />
+        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className="inline-flex size-11 items-center justify-center rounded-full border border-[var(--line)] text-[var(--text-dim)] transition-colors hover:bg-[var(--bg-2)]"
+            aria-label={t('navMenu')}
+          >
+            <Menu className="size-5" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            sideOffset={10}
+            className="max-h-[min(28rem,calc(100dvh-5rem))] w-[min(20rem,calc(100vw-1.5rem))] overflow-y-auto"
+          >
+            {navGroups.map((group, gi) => (
+              <div key={group.id}>
+                {gi > 0 ? <DropdownMenuSeparator /> : null}
+                <DropdownMenuLabel className="text-[11px] font-semibold tracking-[0.12em] text-[var(--text-mute)] uppercase">
+                  {group.label}
+                </DropdownMenuLabel>
+                {group.items.map((tab) => {
+                  const active = isItemActive(tab, pathname)
+                  return (
+                    <DropdownMenuItem
+                      key={tab.href}
+                      asChild
+                      className={cn(
+                        'min-h-11',
+                        active &&
+                          'bg-[var(--primary)] text-[var(--primary-foreground)] focus:bg-[var(--primary)] focus:text-[var(--primary-foreground)]'
+                      )}
+                    >
+                      <Link
+                        href={tab.href}
+                        onMouseEnter={() => prefetchRoute(tab.href)}
+                        onTouchStart={() => prefetchRoute(tab.href)}
+                        prefetch
+                      >
+                        {tab.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  )
+                })}
               </div>
             ))}
-          </div>
-        </nav>
-
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className="text-muted-foreground hover:text-foreground inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-white/8 bg-white/[0.03] transition-colors hover:bg-white/[0.06] md:hidden"
-              aria-label={t('navMenu')}
-            >
-              <Menu className="size-5" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              sideOffset={10}
-              className="max-h-[min(28rem,calc(100dvh-5rem))] w-[min(20rem,calc(100vw-1.5rem))] overflow-y-auto"
-            >
-              {navGroups.map((group, gi) => (
-                <div key={group.id}>
-                  {gi > 0 ? <DropdownMenuSeparator /> : null}
-                  <DropdownMenuLabel className="text-muted-foreground text-[10px] font-semibold tracking-[0.2em] uppercase">
-                    {group.label}
-                  </DropdownMenuLabel>
-                  {group.items.map((tab) => {
-                    const active = isItemActive(tab, pathname)
-                    return (
-                      <DropdownMenuItem
-                        key={tab.href}
-                        asChild
-                        className={cn(
-                          'min-h-10',
-                          active &&
-                            'bg-[var(--primary)] text-[var(--primary-foreground)] focus:bg-[var(--primary)] focus:text-[var(--primary-foreground)]'
-                        )}
-                      >
-                        <Link
-                          href={tab.href}
-                          onMouseEnter={() => prefetchRoute(tab.href)}
-                          onTouchStart={() => prefetchRoute(tab.href)}
-                          prefetch
-                        >
-                          {tab.label}
-                        </Link>
-                      </DropdownMenuItem>
-                    )
-                  })}
-                </div>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild className="min-h-10">
-                <Link
-                  href="/profile"
-                  onMouseEnter={() => prefetchRoute('/profile')}
-                  onTouchStart={() => prefetchRoute('/profile')}
-                  prefetch
-                  className="flex items-center gap-2"
-                >
-                  <User className="size-4 opacity-70" />
-                  {tNav('profile')}
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Link
-            href="/profile"
-            onMouseEnter={() => prefetchRoute('/profile')}
-            onTouchStart={() => prefetchRoute('/profile')}
-            prefetch
-            className="text-muted-foreground hover:text-foreground hidden min-h-10 items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 text-sm transition-colors hover:bg-white/[0.06] md:inline-flex lg:px-4"
-          >
-            <User className="size-4 shrink-0 opacity-70" aria-hidden />
-            <span className="max-w-[8rem] truncate lg:max-w-[10rem]">
-              {tNav('profile')}
-            </span>
-          </Link>
-        </div>
-      </div>
-    </header>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild className="min-h-11">
+              <Link
+                href="/profile"
+                onMouseEnter={() => prefetchRoute('/profile')}
+                onTouchStart={() => prefetchRoute('/profile')}
+                prefetch
+                className="flex items-center gap-2"
+              >
+                <User className="size-4 opacity-70" />
+                {tNav('profile')}
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </header>
+    </>
   )
 }

@@ -86,7 +86,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                     maxLength={60}
                     value={copy[stage].label}
                     onChange={(e) => patch(stage, { label: e.target.value })}
-                    className="rounded-[12px]"
+                    className="rounded-lg"
                   />
                 </SettingsField>
 
@@ -95,7 +95,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                     maxLength={120}
                     value={copy[stage].headline}
                     onChange={(e) => patch(stage, { headline: e.target.value })}
-                    className="rounded-[12px]"
+                    className="rounded-lg"
                   />
                 </SettingsField>
 
@@ -109,7 +109,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                     onChange={(e) =>
                       patch(stage, { headlineB: e.target.value })
                     }
-                    className="rounded-[12px]"
+                    className="rounded-lg"
                   />
                 </SettingsField>
 
@@ -119,7 +119,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                     maxLength={300}
                     value={copy[stage].body}
                     onChange={(e) => patch(stage, { body: e.target.value })}
-                    className="rounded-[12px]"
+                    className="rounded-lg"
                   />
                 </SettingsField>
 
@@ -130,7 +130,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                     onChange={(e) =>
                       patch(stage, { primaryLabel: e.target.value })
                     }
-                    className="rounded-[12px]"
+                    className="rounded-lg"
                   />
                 </SettingsField>
 
@@ -143,7 +143,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                     onChange={(e) =>
                       patch(stage, { primaryHref: e.target.value })
                     }
-                    className="rounded-[12px]"
+                    className="rounded-lg"
                   />
                 </SettingsField>
 
@@ -154,7 +154,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                     onChange={(e) =>
                       patch(stage, { secondaryLabel: e.target.value })
                     }
-                    className="rounded-[12px]"
+                    className="rounded-lg"
                   />
                 </SettingsField>
 
@@ -164,7 +164,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
                     onChange={(e) =>
                       patch(stage, { secondaryHref: e.target.value })
                     }
-                    className="rounded-[12px]"
+                    className="rounded-lg"
                   />
                 </SettingsField>
               </div>

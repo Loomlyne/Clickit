@@ -151,9 +151,14 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
       >
         {pages.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
-            <FileText className="size-8 text-white/20" />
-            <p className="text-sm text-white/40">{t('legalEmpty')}</p>
-            <Button size="sm" variant="outline" onClick={openNew} className="mt-1">
+            <FileText className="size-8 text-[var(--text-mute)]" />
+            <p className="text-sm text-[var(--text-mute)]">{t('legalEmpty')}</p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={openNew}
+              className="mt-1"
+            >
               <Plus className="mr-1.5 size-3.5" />
               {t('legalAddFirst')}
             </Button>
@@ -163,21 +168,27 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
             <TableHeader>
               <TableRow>
                 <TableHead>{t('legalColTitle')}</TableHead>
-                <TableHead className="hidden sm:table-cell">{t('legalColSlug')}</TableHead>
-                <TableHead className="hidden md:table-cell">{t('legalColUpdated')}</TableHead>
-                <TableHead className="w-[88px] text-right">{t('legalColActions')}</TableHead>
+                <TableHead className="hidden sm:table-cell">
+                  {t('legalColSlug')}
+                </TableHead>
+                <TableHead className="hidden md:table-cell">
+                  {t('legalColUpdated')}
+                </TableHead>
+                <TableHead className="w-[88px] text-right">
+                  {t('legalColActions')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pages.map((page) => (
                 <TableRow key={page.id}>
-                  <TableCell className="font-medium text-white">
+                  <TableCell className="font-medium text-[var(--text)]">
                     {page.title}
                   </TableCell>
-                  <TableCell className="hidden font-mono text-xs text-white/50 sm:table-cell">
+                  <TableCell className="hidden font-mono text-xs text-[var(--text-mute)] sm:table-cell">
                     {page.slug}
                   </TableCell>
-                  <TableCell className="hidden text-xs text-white/50 md:table-cell">
+                  <TableCell className="hidden text-xs text-[var(--text-mute)] md:table-cell">
                     {formatDate(page.updated_at)}
                   </TableCell>
                   <TableCell className="text-right">
@@ -185,7 +196,7 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="size-8 text-white/50 hover:text-white"
+                        className="size-8 text-[var(--text-mute)] hover:text-[var(--text)]"
                         onClick={() => openEdit(page)}
                         aria-label={tc('edit')}
                       >
@@ -194,7 +205,7 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="size-8 text-white/50 hover:text-red-300"
+                        className="hover:text-brand-red-safe size-8 text-[var(--text-mute)]"
                         onClick={() => setDeleteTarget(page)}
                         aria-label={tc('delete')}
                       >
@@ -213,21 +224,21 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
       <Sheet open={!!draft} onOpenChange={(open) => !open && setDraft(null)}>
         <SheetContent side="right" className="w-full sm:max-w-2xl">
           <SheetHeader className="px-6 pt-6">
-            <SheetTitle>{draft?.id ? t('legalSheetEditTitle') : t('legalSheetNewTitle')}</SheetTitle>
-            <SheetDescription>
-              {t('legalSheetDescription')}
-            </SheetDescription>
+            <SheetTitle>
+              {draft?.id ? t('legalSheetEditTitle') : t('legalSheetNewTitle')}
+            </SheetTitle>
+            <SheetDescription>{t('legalSheetDescription')}</SheetDescription>
           </SheetHeader>
 
           {draft && (
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+            <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
               <SettingsField label={t('legalTitleLabel')}>
                 <Input
                   value={draft.title}
                   maxLength={200}
                   placeholder={t('legalTitlePlaceholder')}
                   onChange={(e) => onTitleChange(e.target.value)}
-                  className="rounded-[12px]"
+                  className="rounded-lg"
                 />
               </SettingsField>
 
@@ -241,13 +252,18 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                   maxLength={200}
                   placeholder={t('legalTitleArPlaceholder')}
                   onChange={(e) =>
-                    setDraft((d) => (d ? { ...d, title_ar: e.target.value } : d))
+                    setDraft((d) =>
+                      d ? { ...d, title_ar: e.target.value } : d
+                    )
                   }
-                  className="rounded-[12px]"
+                  className="rounded-lg"
                 />
               </SettingsField>
 
-              <SettingsField label={t('legalSlugLabel')} hint={t('legalSlugHint')}>
+              <SettingsField
+                label={t('legalSlugLabel')}
+                hint={t('legalSlugHint')}
+              >
                 <Input
                   value={draft.slug}
                   maxLength={80}
@@ -258,11 +274,14 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                       d ? { ...d, slug: slugify(e.target.value) } : d
                     )
                   }}
-                  className="rounded-[12px] font-mono text-sm"
+                  className="rounded-lg font-mono text-sm"
                 />
               </SettingsField>
 
-              <SettingsField label={t('sortOrderLabel')} hint={t('legalSortHint')}>
+              <SettingsField
+                label={t('sortOrderLabel')}
+                hint={t('legalSortHint')}
+              >
                 <Input
                   type="number"
                   min={0}
@@ -274,7 +293,7 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                         : d
                     )
                   }
-                  className="rounded-[12px] w-24"
+                  className="w-24 rounded-lg"
                 />
               </SettingsField>
 
@@ -286,7 +305,7 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                   onChange={(e) =>
                     setDraft((d) => (d ? { ...d, content: e.target.value } : d))
                   }
-                  className="rounded-[12px] font-mono text-sm leading-relaxed resize-y"
+                  className="resize-y rounded-lg font-mono text-sm leading-relaxed"
                 />
               </SettingsField>
 
@@ -300,15 +319,17 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                   rows={20}
                   placeholder={t('legalContentArPlaceholder')}
                   onChange={(e) =>
-                    setDraft((d) => (d ? { ...d, content_ar: e.target.value } : d))
+                    setDraft((d) =>
+                      d ? { ...d, content_ar: e.target.value } : d
+                    )
                   }
-                  className="rounded-[12px] font-mono text-sm leading-relaxed resize-y"
+                  className="resize-y rounded-lg font-mono text-sm leading-relaxed"
                 />
               </SettingsField>
             </div>
           )}
 
-          <SheetFooter className="flex-row justify-end gap-2 border-t border-white/8 px-6 pb-6 pt-4">
+          <SheetFooter className="flex-row justify-end gap-2 border-t border-[var(--line)] px-6 pt-4 pb-6">
             <Button
               variant="outline"
               onClick={() => setDraft(null)}
@@ -316,10 +337,11 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
             >
               {tc('cancel')}
             </Button>
-            <Button onClick={onSave} disabled={saving || !draft?.title || !draft?.slug}>
-              {saving ? (
-                <Loader2 className="mr-2 size-4 animate-spin" />
-              ) : null}
+            <Button
+              onClick={onSave}
+              disabled={saving || !draft?.title || !draft?.slug}
+            >
+              {saving ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
               {draft?.id ? t('legalSaveChanges') : t('legalCreate')}
             </Button>
           </SheetFooter>
@@ -331,7 +353,9 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title={t('legalDeleteTitle')}
-        description={t('legalDeleteConfirm', { title: deleteTarget?.title ?? '' })}
+        description={t('legalDeleteConfirm', {
+          title: deleteTarget?.title ?? '',
+        })}
         confirmLabel={tc('delete')}
         onConfirm={onDelete}
         destructive

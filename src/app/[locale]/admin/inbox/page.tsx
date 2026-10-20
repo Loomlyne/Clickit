@@ -2,7 +2,11 @@ import { getTranslations } from 'next-intl/server'
 import { MailOpen } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/server'
-import { AdminPanel, AdminTableShell } from '@/components/admin/admin-shell'
+import {
+  AdminPageHeader,
+  AdminPanel,
+  AdminTableShell,
+} from '@/components/admin/admin-shell'
 import { InboxRecipientForm } from '@/components/admin/inbox-recipient-form'
 import { Button } from '@/components/ui/button'
 import {
@@ -43,7 +47,9 @@ export default async function AdminInboxPage() {
     ])
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
+      <AdminPageHeader title={tDash('inbox')} />
+
       <InboxRecipientForm
         initialEmail={config.footer.contactEmail}
         title={t('receiverTitle')}
@@ -56,22 +62,19 @@ export default async function AdminInboxPage() {
       />
 
       <AdminPanel className="p-0">
-        <div className="flex flex-col gap-1 border-b border-white/8 px-4 py-3 sm:px-5 sm:py-4 md:px-6">
-          <h2 className="text-foreground text-lg font-semibold tracking-tight sm:text-xl">
-            {tDash('inbox')}
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            {t('supportSubtitle')}
-          </p>
+        <div className="border-b border-[var(--line)] px-4 py-3">
+          <h2 className="text-[16px] font-semibold">{t('supportSubtitle')}</h2>
         </div>
-        <AdminTableShell className="rounded-none border-x-0 border-b-0">
+        <AdminTableShell className="rounded-none border-0">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>{t('colFrom')}</TableHead>
                 <TableHead>{t('colSubject')}</TableHead>
                 <TableHead>{t('colStatus')}</TableHead>
-                <TableHead>{t('colEmail')}</TableHead>
+                <TableHead className="hidden md:table-cell">
+                  {t('colEmail')}
+                </TableHead>
                 <TableHead className="text-right">{t('colActions')}</TableHead>
               </TableRow>
             </TableHeader>
@@ -84,14 +87,21 @@ export default async function AdminInboxPage() {
                   <TableCell className="text-muted-foreground">
                     {message.subject}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {message.status} / {message.notification_status}
+                  <TableCell>
+                    <span className="inline-flex items-center rounded-full bg-[var(--bg-3)] px-2.5 py-0.5 text-[12px] font-medium text-[var(--text-dim)]">
+                      {message.status}
+                    </span>
+                    <span
+                      className={`ms-2 text-[12px] ${message.notification_status === 'failed' ? 'text-brand-red-safe' : 'text-[var(--text-mute)]'}`}
+                    >
+                      {message.notification_status}
+                    </span>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="text-muted-foreground hidden md:table-cell">
                     {message.email}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button asChild variant="ghost" size="sm">
+                    <Button asChild variant="outline" size="sm">
                       <Link href={`/admin/inbox/${message.id}`}>
                         <MailOpen className="size-4" />
                         {t('openMessage')}
@@ -116,15 +126,12 @@ export default async function AdminInboxPage() {
       </AdminPanel>
 
       <AdminPanel className="p-0">
-        <div className="flex flex-col gap-1 border-b border-white/8 px-4 py-3 sm:px-5 sm:py-4 md:px-6">
-          <h2 className="text-foreground text-lg font-semibold tracking-tight sm:text-xl">
-            {tDash('inbox')}
-          </h2>
-          <p className="text-muted-foreground text-sm">
+        <div className="border-b border-[var(--line)] px-4 py-3">
+          <h2 className="text-[16px] font-semibold">
             {t('newsletterSubtitle')}
-          </p>
+          </h2>
         </div>
-        <AdminTableShell className="rounded-none border-x-0 border-b-0">
+        <AdminTableShell className="rounded-none border-0">
           <Table>
             <TableHeader>
               <TableRow>

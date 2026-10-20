@@ -148,7 +148,7 @@ export function SeasonFormDrawer({
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="rounded-full border border-white/20 bg-transparent px-5 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/5"
+              className="rounded-full border border-[var(--line-2)] bg-transparent px-5 py-2 text-sm font-medium text-[var(--text-dim)] transition-colors hover:bg-[var(--bg-2)]"
             >
               {t('discardChanges')}
             </button>

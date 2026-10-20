@@ -67,7 +67,7 @@ export function HeroVideoManager({
         <HeroVariantPanel
           variant="desktop"
           label={t('desktopHero')}
-          icon={<Monitor className="size-4 text-white/60" />}
+          icon={<Monitor className="size-4 text-[var(--text-dim)]" />}
           aspectClassName="aspect-video w-full"
           hint={t('desktopVideoHint')}
           current={desktopVideo}
@@ -76,7 +76,7 @@ export function HeroVideoManager({
         <HeroVariantPanel
           variant="mobile"
           label={t('mobileHero')}
-          icon={<Smartphone className="size-4 text-white/60" />}
+          icon={<Smartphone className="size-4 text-[var(--text-dim)]" />}
           aspectClassName="mx-auto aspect-[9/16] w-full max-w-[200px]"
           hint={t('mobileVideoHint')}
           current={mobileVideo}
@@ -85,19 +85,19 @@ export function HeroVideoManager({
       </div>
 
       {/* Shared audio toggle — applies to whichever variant is on screen */}
-      <div className="mt-5 rounded-lg border border-white/8 bg-white/[0.02] p-4">
+      <div className="mt-5 rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             {muted ? (
-              <VolumeX className="size-4 text-white/40" />
+              <VolumeX className="size-4 text-[var(--text-mute)]" />
             ) : (
-              <Volume2 className="size-4 text-emerald-400" />
+              <Volume2 className="text-brand-green-safe size-4" />
             )}
-            <span className="text-sm font-medium text-white">
+            <span className="text-sm font-medium text-[var(--text)]">
               {t('audioLabel')}
             </span>
             <span
-              className={`text-xs ${muted ? 'text-white/40' : 'text-emerald-400'}`}
+              className={`text-xs ${muted ? 'text-[var(--text-mute)]' : 'text-brand-green-safe'}`}
             >
               {muted ? t('audioMuted') : t('audioOn')}
             </span>
@@ -107,8 +107,8 @@ export function HeroVideoManager({
             onClick={handleToggleAudio}
             disabled={savingAudio}
             aria-label={muted ? t('audioOn') : t('audioMuted')}
-            className={`relative h-6 w-11 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none disabled:opacity-50 ${
-              muted ? 'bg-white/10' : 'bg-emerald-500'
+            className={`relative h-6 w-11 rounded-full transition-colors before:absolute before:inset-x-0 before:-inset-y-2.5 before:content-[''] focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none disabled:opacity-50 ${
+              muted ? 'bg-[var(--bg-3)]' : 'bg-brand-green-safe'
             }`}
           >
             <span
@@ -264,17 +264,17 @@ function HeroVariantPanel({
   const ytId = video?.type === 'youtube' ? extractYouTubeId(video.url) : null
 
   return (
-    <div className="rounded-lg border border-white/8 bg-white/[0.02] p-4">
+    <div className="rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-4">
       <div className="mb-3 flex items-center gap-2">
         {icon}
-        <span className="text-sm font-medium text-white">{label}</span>
+        <span className="text-sm font-medium text-[var(--text)]">{label}</span>
       </div>
 
       {/* Current video preview */}
       {video && (
         <div className="mb-4 space-y-2">
           <div
-            className={`relative overflow-hidden rounded-lg border border-white/8 bg-black ${aspectClassName}`}
+            className={`relative overflow-hidden rounded-lg border border-[var(--line)] bg-black ${aspectClassName}`}
           >
             {video.type === 'mp4' ? (
               <video
@@ -337,14 +337,14 @@ function HeroVariantPanel({
       {/* MP4 upload */}
       {mode === 'mp4' &&
         (busy ? (
-          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6">
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] p-6">
             <Loader2 className="text-muted-foreground size-5 animate-spin" />
             <p className="text-muted-foreground text-xs">
               {t('uploadingVideo')}
             </p>
           </div>
         ) : (
-          <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6 transition-colors hover:border-white/20">
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] p-6 transition-colors hover:border-[var(--line-2)]">
             <Upload className="text-muted-foreground size-5" />
             <p className="text-muted-foreground text-xs">
               {t('clickToUploadMp4')}
@@ -370,7 +370,7 @@ function HeroVariantPanel({
             placeholder="https://www.youtube.com/watch?v=..."
             value={youtubeInput}
             onChange={(e) => setYoutubeInput(e.target.value)}
-            className="placeholder:text-muted-foreground w-full rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-sm text-white focus:border-white/20 focus:outline-none"
+            className="placeholder:text-muted-foreground w-full rounded-lg border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2 text-sm text-[var(--text)] focus:border-[var(--line-2)] focus:outline-none"
           />
           <Button
             onClick={handleYoutubeSave}
@@ -378,7 +378,11 @@ function HeroVariantPanel({
             size="sm"
             className="self-start"
           >
-            {busy ? <Loader2 className="size-4 animate-spin" /> : t('saveButton')}
+            {busy ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              t('saveButton')
+            )}
           </Button>
         </div>
       )}

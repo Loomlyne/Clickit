@@ -1,4 +1,9 @@
+import { getTranslations } from 'next-intl/server'
+import { Plus } from 'lucide-react'
+import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { Button } from '@/components/ui/button'
+import { AdminPageHeader } from '@/components/admin/admin-shell'
 import { ShowsTable } from '@/components/admin/shows-table'
 import { AdminProfileCard } from '@/components/admin/admin-profile-card'
 import type { Database } from '@/lib/database.types'
@@ -14,6 +19,7 @@ type ShowCategoryRow = Pick<
 
 export default async function AdminPage() {
   const supabase = await createClient()
+  const tDash = await getTranslations('admin.dashboard')
 
   const [
     {
@@ -58,8 +64,7 @@ export default async function AdminPage() {
   }, {})
 
   return (
-    <div className="space-y-6">
-      {/* Profile card */}
+    <div className="space-y-5">
       <AdminProfileCard
         email={user?.email ?? ''}
         displayName={profile?.display_name ?? null}
@@ -67,6 +72,18 @@ export default async function AdminPage() {
           stripStorageCacheBust(profile?.avatar_url) ??
           profile?.avatar_url ??
           null
+        }
+      />
+
+      <AdminPageHeader
+        title={tDash('shows')}
+        action={
+          <Link href="/admin/shows/new">
+            <Button>
+              <Plus className="size-4" />
+              {tDash('createShow')}
+            </Button>
+          </Link>
         }
       />
 

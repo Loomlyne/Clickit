@@ -8,15 +8,15 @@ export default function AdminLoading() {
   return (
     <div className="space-y-8">
       <AdminPanel className="p-0">
-        <div className="h-[88px] animate-pulse rounded-lg bg-white/5 p-6 md:h-[92px]" />
+        <div className="h-[88px] animate-pulse rounded-lg bg-[var(--bg-2)] p-6 md:h-[92px]" />
       </AdminPanel>
-      <AdminTableShell className="overflow-hidden rounded-lg border-white/8">
+      <AdminTableShell className="overflow-hidden rounded-lg border-[var(--line)]">
         <div className="space-y-0">
-          <div className="h-12 animate-pulse border-b border-white/8 bg-white/5" />
+          <div className="h-12 animate-pulse border-b border-[var(--line)] bg-[var(--bg-2)]" />
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
-              className="h-14 animate-pulse border-b border-white/8 bg-white/[0.02]"
+              className="h-14 animate-pulse border-b border-[var(--line)] bg-[var(--bg-2)]"
             />
           ))}
         </div>

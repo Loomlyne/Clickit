@@ -91,9 +91,11 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <AdminPanel className="p-6">
-      <h3 className="mono mb-5 text-[var(--text-mute)]">{title}</h3>
-      <div className="space-y-5">{children}</div>
+    <AdminPanel>
+      <h2 className="mb-4 text-[16px] font-semibold text-[var(--text)]">
+        {title}
+      </h2>
+      <div className="space-y-4">{children}</div>
     </AdminPanel>
   )
 }
@@ -111,12 +113,12 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-sm">
+      <Label className="text-[13px] font-medium text-[var(--text-dim)]">
         {label}
-        {required && <span className="ms-0.5 text-red-400">*</span>}
+        {required && <span className="text-brand-red-safe ms-0.5">*</span>}
       </Label>
       {children}
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-brand-red-safe text-[12px]">{error}</p>}
     </div>
   )
 }
@@ -296,7 +298,7 @@ export function ShowForm({
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
       <Section title={t('basicInfoTab')}>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <Field
@@ -373,7 +375,7 @@ export function ShowForm({
               }
             >
               {categories.length === 0 ? (
-                <div className="text-muted-foreground rounded-lg border border-dashed border-white/12 px-4 py-3 text-sm">
+                <div className="text-muted-foreground rounded-lg border border-dashed border-[var(--line-2)] px-4 py-3 text-sm">
                   {t('categoriesEmpty')}
                 </div>
               ) : (
@@ -382,7 +384,7 @@ export function ShowForm({
                     <Button
                       type="button"
                       variant="outline"
-                      className="h-11 w-full justify-between rounded-lg border-white/10 bg-white/[0.04] px-4 text-start text-sm font-normal shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-white/[0.06] md:w-fit md:min-w-72"
+                      className="h-11 w-full justify-between rounded-lg border-[var(--line)] bg-[var(--bg-2)] px-4 text-start text-sm font-normal hover:bg-[var(--bg-3)] md:w-fit md:min-w-72"
                     >
                       <span className="min-w-0 flex-1 truncate">
                         {selectedCategoryName ?? t('selectPlaceholder')}
@@ -392,7 +394,7 @@ export function ShowForm({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="start"
-                    className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)] rounded-[12px] bg-[#11151d]/98 p-1 shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl"
+                    className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)] rounded-lg border border-[var(--line-2)] bg-[var(--popover)] p-1 shadow-[var(--shadow-soft)]"
                   >
                     <DropdownMenuRadioGroup
                       value={selectedCategoryId}
@@ -402,7 +404,7 @@ export function ShowForm({
                         <DropdownMenuRadioItem
                           key={category.id}
                           value={category.id}
-                          className="rounded-[12px] py-2 ps-3 pe-8"
+                          className="rounded-lg py-2 ps-3 pe-8"
                         >
                           {category.name_en}
                         </DropdownMenuRadioItem>
@@ -430,7 +432,7 @@ export function ShowForm({
             rows={4}
             {...form.register('description')}
             placeholder={t('descriptionPlaceholder')}
-            className="rounded-[12px]"
+            className="rounded-lg"
           />
         </Field>
         <Field label={t('descriptionArLabel')}>
@@ -506,7 +508,7 @@ export function ShowForm({
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-11 w-full justify-between rounded-lg border-white/10 bg-white/[0.04] px-4 text-start text-sm font-normal shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-white/[0.06]"
+                  className="h-11 w-full justify-between rounded-lg border-[var(--line)] bg-[var(--bg-2)] px-4 text-start text-sm font-normal hover:bg-[var(--bg-3)]"
                 >
                   <span className="min-w-0 flex-1 truncate">
                     {selectedBroadcastDaysLabel || t('selectDayPlaceholder')}
@@ -516,7 +518,7 @@ export function ShowForm({
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)] rounded-[12px] bg-[#11151d]/98 p-1 shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl"
+                className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)] rounded-lg border border-[var(--line-2)] bg-[var(--popover)] p-1 shadow-[var(--shadow-soft)]"
               >
                 {DAYS.map((d) => (
                   <DropdownMenuCheckboxItem
@@ -535,7 +537,7 @@ export function ShowForm({
                         { shouldDirty: true }
                       )
                     }
-                    className="rounded-[12px] py-2 ps-8 pe-3"
+                    className="rounded-lg py-2 ps-8 pe-3"
                   >
                     {t(`day${d}` as never)}
                   </DropdownMenuCheckboxItem>
@@ -549,7 +551,7 @@ export function ShowForm({
         </div>
       </Section>
 
-      <AdminPanel className="flex items-center justify-end gap-3 px-6 py-4">
+      <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-end gap-3 border-t border-[var(--line)] bg-[var(--bg-0)]/95 px-4 py-3 backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
         <Button
           type="button"
           variant="outline"
@@ -566,7 +568,7 @@ export function ShowForm({
               ? t('saveShow')
               : t('createShowCta')}
         </Button>
-      </AdminPanel>
+      </div>
     </form>
   )
 }

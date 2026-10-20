@@ -13,7 +13,11 @@ import {
   reorderCategories,
   updateCategory,
 } from '@/app/[locale]/admin/actions'
-import { AdminPanel, AdminTableShell } from '@/components/admin/admin-shell'
+import {
+  AdminPageHeader,
+  AdminPanel,
+  AdminTableShell,
+} from '@/components/admin/admin-shell'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -98,7 +102,7 @@ function ColorPicker({
       <Label>{t('colorLabel')}</Label>
 
       <div className="flex items-center gap-2">
-        <div className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-md border border-white/15">
+        <div className="relative size-11 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-[var(--line-2)]">
           <div
             className="size-full"
             style={{
@@ -133,7 +137,7 @@ function ColorPicker({
               onChange(null)
               setRawInput('')
             }}
-            className="text-muted-foreground hover:text-foreground text-xs transition-colors"
+            className="inline-flex min-h-11 items-center px-2 text-[13px] text-[var(--text-mute)] transition-colors hover:text-[var(--text)]"
           >
             {t('colorClear')}
           </button>
@@ -141,7 +145,7 @@ function ColorPicker({
 
         {previewColor && (
           <span
-            className="size-5 shrink-0 rounded-full border border-white/15"
+            className="size-5 shrink-0 rounded-full border border-[var(--line-2)]"
             style={{ background: previewColor }}
             aria-hidden
           />
@@ -171,11 +175,11 @@ function CategoryEditor({
   return (
     <form
       onSubmit={onSubmit}
-      className="rounded-lg border border-white/8 bg-white/[0.02] p-4 md:p-5"
+      className="rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-4 md:p-5"
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-muted-foreground text-xs tracking-[0.18em] uppercase">
+          <p className="text-[11px] font-semibold tracking-[0.12em] text-[var(--text-mute)] uppercase">
             {editing ? t('eyebrowEdit') : t('eyebrowNew')}
           </p>
           <h3 className="text-foreground mt-1 text-lg font-semibold tracking-tight">
@@ -248,7 +252,7 @@ function CategoryEditor({
 
       <div
         className={cn(
-          'mt-5 rounded-lg border border-white/8 bg-white/[0.02] p-4 transition-[border-left-color]',
+          'mt-5 rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-4 transition-[border-left-color]',
           draft.color && 'border-l-[3px]'
         )}
         style={draft.color ? { borderLeftColor: draft.color } : undefined}
@@ -468,256 +472,249 @@ export function CategoriesManager({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <AdminPanel className="p-0">
-      <div className="flex flex-col gap-3 border-b border-white/8 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-4 md:px-6">
-        <div className="min-w-0">
-          <h2 className="text-foreground text-lg font-semibold tracking-tight sm:text-xl">
-            {t('categories')}
-          </h2>
-          <p className="text-muted-foreground mt-0.5 text-sm">
-            {t('categoryCountLabel', { count: categories.length })}
-          </p>
-        </div>
-        {selectedCount > 0 ? (
-          <Button
-            type="button"
-            variant="destructive"
-            className="w-full shrink-0 sm:w-auto"
-            onClick={() => setBulkDeleteDialogOpen(true)}
-          >
-            <Trash2 className="size-4" />
-            {tCat('bulkDeleteButton', { count: selectedCount })}
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            className="w-full shrink-0 sm:w-auto"
-            onClick={startCreate}
-          >
-            <Plus className="size-4" />
-            {tCat('addCategory')}
-          </Button>
-        )}
-      </div>
+      <AdminPageHeader
+        title={t('categories')}
+        description={t('categoryCountLabel', { count: categories.length })}
+        action={
+          selectedCount > 0 ? (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => setBulkDeleteDialogOpen(true)}
+            >
+              <Trash2 className="size-4" />
+              {tCat('bulkDeleteButton', { count: selectedCount })}
+            </Button>
+          ) : (
+            <Button type="button" onClick={startCreate}>
+              <Plus className="size-4" />
+              {tCat('addCategory')}
+            </Button>
+          )
+        }
+      />
 
-      <AdminTableShell className="rounded-none border-x-0 border-b-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-10">
-                <Checkbox
-                  checked={
-                    allSelected
-                      ? true
-                      : selectedIds.length > 0
-                        ? 'indeterminate'
-                        : false
-                  }
-                  onCheckedChange={(checked) =>
-                    toggleAllSelection(checked === true)
-                  }
-                  aria-label={tCat('selectAllAria')}
-                />
-              </TableHead>
-              <TableHead>{tCat('colCategory')}</TableHead>
-              <TableHead className="hidden md:table-cell">
-                {tCat('colArabicName')}
-              </TableHead>
-              <TableHead className="hidden w-36 md:table-cell">
-                {tCat('colColor')}
-              </TableHead>
-              <TableHead className="w-32">{tCat('colAssigned')}</TableHead>
-              <TableHead className="w-52 text-right">
-                {tCat('colActions')}
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isCreateOpen && (
+      <AdminPanel className="overflow-hidden p-0">
+        <AdminTableShell className="rounded-none border-0">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="bg-white/[0.015] whitespace-normal"
-                >
-                  <CategoryEditor
-                    draft={draft}
-                    saving={saving}
-                    editing={false}
-                    onCancel={resetEditor}
-                    onSubmit={handleSubmit}
-                    onDraftChange={setDraft}
-                  />
-                </TableCell>
-              </TableRow>
-            )}
-
-            {categories.length === 0 && !isCreateOpen && (
-              <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="text-muted-foreground py-12 text-center"
-                >
-                  {tCat('empty')}
-                </TableCell>
-              </TableRow>
-            )}
-
-            {categories.map((category, index) => {
-              const isEditingRow =
-                editorState?.mode === 'edit' &&
-                editorState.categoryId === category.id
-
-              return (
-                <Fragment key={category.id}>
-                  <TableRow
-                    data-state={
-                      selectedSet.has(category.id) ? 'selected' : undefined
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={
+                      allSelected
+                        ? true
+                        : selectedIds.length > 0
+                          ? 'indeterminate'
+                          : false
                     }
+                    onCheckedChange={(checked) =>
+                      toggleAllSelection(checked === true)
+                    }
+                    aria-label={tCat('selectAllAria')}
+                  />
+                </TableHead>
+                <TableHead>{tCat('colCategory')}</TableHead>
+                <TableHead className="hidden md:table-cell">
+                  {tCat('colArabicName')}
+                </TableHead>
+                <TableHead className="hidden w-36 md:table-cell">
+                  {tCat('colColor')}
+                </TableHead>
+                <TableHead className="w-32">{tCat('colAssigned')}</TableHead>
+                <TableHead className="w-52 text-right">
+                  {tCat('colActions')}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isCreateOpen && (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="bg-[var(--bg-2)] whitespace-normal"
                   >
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedSet.has(category.id)}
-                        onCheckedChange={(checked) =>
-                          toggleCategorySelection(category.id, checked === true)
-                        }
-                        aria-label={tCat('selectCategoryAria', {
-                          name: category.name_en,
-                        })}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="min-w-[180px]">
-                        <div className="text-foreground font-medium">
-                          {category.name_en}
-                        </div>
-                        <div className="text-muted-foreground mt-1 text-xs">
-                          /{category.slug}
-                        </div>
-                        <div className="text-muted-foreground mt-1 text-xs md:hidden">
-                          {category.name_ar}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground hidden md:table-cell">
-                      {category.name_ar}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {category.color ? (
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="size-4 shrink-0 rounded-full border border-white/10"
-                            style={{ background: category.color }}
-                          />
-                          <span className="text-muted-foreground font-mono text-xs">
-                            {category.color}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground/40 text-xs">
-                          —
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {category.showCount}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex min-w-[168px] items-center justify-end gap-1">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-sm"
-                              disabled={
-                                isReordering ||
-                                pendingOrderId === category.id ||
-                                index === 0
-                              }
-                              onClick={() => handleReorder(category.id, 'up')}
-                              aria-label={tCat('moveUpAria', {
-                                name: category.name_en,
-                              })}
-                            >
-                              <ChevronUp className="size-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>{tCat('moveUp')}</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-sm"
-                              disabled={
-                                isReordering ||
-                                pendingOrderId === category.id ||
-                                index === categories.length - 1
-                              }
-                              onClick={() =>
-                                handleReorder(category.id, 'down')
-                              }
-                              aria-label={tCat('moveDownAria', {
-                                name: category.name_en,
-                              })}
-                            >
-                              <ChevronDown className="size-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>{tCat('moveDown')}</TooltipContent>
-                        </Tooltip>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => startEdit(category)}
-                          aria-label={tCat('editAria', {
-                            name: category.name_en,
-                          })}
-                        >
-                          <Pencil className="size-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          className="text-red-400 hover:text-red-300"
-                          disabled={deletingId === category.id}
-                          onClick={() => handleDelete(category.id)}
-                          aria-label={tCat('deleteAria', {
-                            name: category.name_en,
-                          })}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                    <CategoryEditor
+                      draft={draft}
+                      saving={saving}
+                      editing={false}
+                      onCancel={resetEditor}
+                      onSubmit={handleSubmit}
+                      onDraftChange={setDraft}
+                    />
+                  </TableCell>
+                </TableRow>
+              )}
 
-                  {isEditingRow && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="bg-white/[0.015] whitespace-normal"
-                      >
-                        <CategoryEditor
-                          draft={draft}
-                          saving={saving}
-                          editing
-                          onCancel={resetEditor}
-                          onSubmit={handleSubmit}
-                          onDraftChange={setDraft}
+              {categories.length === 0 && !isCreateOpen && (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="text-muted-foreground py-12 text-center"
+                  >
+                    {tCat('empty')}
+                  </TableCell>
+                </TableRow>
+              )}
+
+              {categories.map((category, index) => {
+                const isEditingRow =
+                  editorState?.mode === 'edit' &&
+                  editorState.categoryId === category.id
+
+                return (
+                  <Fragment key={category.id}>
+                    <TableRow
+                      data-state={
+                        selectedSet.has(category.id) ? 'selected' : undefined
+                      }
+                    >
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedSet.has(category.id)}
+                          onCheckedChange={(checked) =>
+                            toggleCategorySelection(
+                              category.id,
+                              checked === true
+                            )
+                          }
+                          aria-label={tCat('selectCategoryAria', {
+                            name: category.name_en,
+                          })}
                         />
                       </TableCell>
+                      <TableCell>
+                        <div className="min-w-[180px]">
+                          <div className="text-foreground font-medium">
+                            {category.name_en}
+                          </div>
+                          <div className="text-muted-foreground mt-1 text-xs">
+                            /{category.slug}
+                          </div>
+                          <div className="text-muted-foreground mt-1 text-xs md:hidden">
+                            {category.name_ar}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground hidden md:table-cell">
+                        {category.name_ar}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {category.color ? (
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="size-4 shrink-0 rounded-full border border-[var(--line)]"
+                              style={{ background: category.color }}
+                            />
+                            <span className="text-muted-foreground font-mono text-xs">
+                              {category.color}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground/40 text-xs">
+                            —
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {category.showCount}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex min-w-[168px] items-center justify-end gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                disabled={
+                                  isReordering ||
+                                  pendingOrderId === category.id ||
+                                  index === 0
+                                }
+                                onClick={() => handleReorder(category.id, 'up')}
+                                aria-label={tCat('moveUpAria', {
+                                  name: category.name_en,
+                                })}
+                              >
+                                <ChevronUp className="size-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{tCat('moveUp')}</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                disabled={
+                                  isReordering ||
+                                  pendingOrderId === category.id ||
+                                  index === categories.length - 1
+                                }
+                                onClick={() =>
+                                  handleReorder(category.id, 'down')
+                                }
+                                aria-label={tCat('moveDownAria', {
+                                  name: category.name_en,
+                                })}
+                              >
+                                <ChevronDown className="size-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{tCat('moveDown')}</TooltipContent>
+                          </Tooltip>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => startEdit(category)}
+                            aria-label={tCat('editAria', {
+                              name: category.name_en,
+                            })}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon-sm"
+                            disabled={deletingId === category.id}
+                            onClick={() => handleDelete(category.id)}
+                            aria-label={tCat('deleteAria', {
+                              name: category.name_en,
+                            })}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  )}
-                </Fragment>
-              )
-            })}
-          </TableBody>
-        </Table>
-      </AdminTableShell>
+
+                    {isEditingRow && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={6}
+                          className="bg-[var(--bg-2)] whitespace-normal"
+                        >
+                          <CategoryEditor
+                            draft={draft}
+                            saving={saving}
+                            editing
+                            onCancel={resetEditor}
+                            onSubmit={handleSubmit}
+                            onDraftChange={setDraft}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </AdminTableShell>
       </AdminPanel>
       <ConfirmDialog
         open={bulkDeleteDialogOpen}

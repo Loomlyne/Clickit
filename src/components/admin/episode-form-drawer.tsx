@@ -324,14 +324,14 @@ export function EpisodeFormDrawer({
                       }
                       className={`rounded-lg border p-3 text-start transition-all ${
                         currentStatus === opt.value
-                          ? 'border-white/30 bg-white/10 ring-1 ring-white/20'
-                          : 'border-border hover:border-white/15 hover:bg-white/[0.03]'
+                          ? 'border-[var(--line-2)] bg-[var(--bg-3)] ring-1 ring-white/20'
+                          : 'border-border hover:border-[var(--line-2)] hover:bg-[var(--bg-2)]'
                       }`}
                     >
                       <span className="text-foreground text-sm font-medium">
                         {opt.label}
                       </span>
-                      <span className="text-muted-foreground mt-0.5 block text-[10px]">
+                      <span className="text-muted-foreground mt-0.5 block text-[11px]">
                         {opt.desc}
                       </span>
                     </button>
@@ -535,7 +535,7 @@ function YouTubeFetchButton({
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/80 transition-colors hover:border-white/25 hover:text-white disabled:opacity-50"
+      className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[var(--line-2)] bg-[var(--bg-2)] px-3 py-1.5 text-xs font-medium text-[var(--text-dim)] transition-colors hover:border-[var(--line-2)]/25 hover:text-[var(--text)] disabled:opacity-50"
     >
       {loading ? (
         <Loader2 className="size-3 animate-spin" />

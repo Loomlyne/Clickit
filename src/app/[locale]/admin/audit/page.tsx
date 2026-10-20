@@ -61,14 +61,14 @@ function formatRelative(iso: string, isArabic: boolean): string {
 }
 
 const ACTION_STYLES: Record<string, string> = {
-  create: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
-  update: 'bg-sky-500/10 text-sky-300 border-sky-500/20',
-  archive: 'bg-amber-500/10 text-amber-300 border-amber-500/20',
-  restore: 'bg-purple-500/10 text-purple-300 border-purple-500/20',
-  delete: 'bg-rose-500/10 text-rose-300 border-rose-500/20',
-  config_update: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20',
-  upload: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20',
-  remove_media: 'bg-orange-500/10 text-orange-300 border-orange-500/20',
+  create: 'bg-brand-green-safe/12 text-brand-green-safe',
+  update: 'bg-brand-blue-safe/12 text-brand-blue-safe',
+  archive: 'bg-brand-orange-safe/12 text-brand-orange-safe',
+  restore: 'bg-brand-purple-safe/12 text-brand-purple-safe',
+  delete: 'bg-brand-red-safe/12 text-brand-red-safe',
+  config_update: 'bg-brand-blue-safe/12 text-brand-blue-safe',
+  upload: 'bg-brand-green-safe/12 text-brand-green-safe',
+  remove_media: 'bg-brand-orange-safe/12 text-brand-orange-safe',
 }
 
 export default async function AuditLogPage() {
@@ -90,11 +90,11 @@ export default async function AuditLogPage() {
   const typedRows = (rows ?? []) as AuditRow[]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <AdminPageHeader title={t('heading')} description={t('description')} />
 
       {error && (
-        <AdminPanel className="border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200">
+        <AdminPanel className="border-brand-red-safe/20 bg-brand-red-safe/10 text-brand-red-safe p-4 text-sm">
           {t('errorHeading')}: {error.message}
         </AdminPanel>
       )}
@@ -113,34 +113,39 @@ export default async function AuditLogPage() {
                 <TableHead>{t('whenColumn')}</TableHead>
                 <TableHead>{t('actionColumn')}</TableHead>
                 <TableHead>{t('entityColumn')}</TableHead>
-                <TableHead>{t('detailsColumn')}</TableHead>
+                <TableHead className="hidden md:table-cell">
+                  {t('detailsColumn')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {typedRows.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell className="text-white/64" title={row.created_at}>
+                  <TableCell
+                    className="text-[var(--text-dim)]"
+                    title={row.created_at}
+                  >
                     {formatRelative(row.created_at, isArabic)}
                   </TableCell>
                   <TableCell>
                     <span
-                      className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-[12px] font-medium ${
                         ACTION_STYLES[row.action_type] ??
-                        'border-white/8 bg-white/5 text-white/70'
+                        'bg-[var(--bg-3)] text-[var(--text-dim)]'
                       }`}
                     >
                       {row.action_type}
                     </span>
                   </TableCell>
-                  <TableCell className="text-white/80">
+                  <TableCell className="text-[var(--text-dim)]">
                     {row.entity_type}
                     {row.entity_id && (
-                      <span className="ms-2 font-mono text-[10px] text-white/40">
+                      <span className="ms-2 font-mono text-[12px] text-[var(--text-mute)]">
                         {row.entity_id.slice(0, 8)}...
                       </span>
                     )}
                   </TableCell>
-                  <TableCell className="max-w-xl font-mono text-[11px] text-white/56">
+                  <TableCell className="hidden max-w-xl font-mono text-[12px] text-[var(--text-dim)] md:table-cell">
                     <span
                       className="block truncate"
                       title={formatDiff(row.diff)}

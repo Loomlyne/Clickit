@@ -101,7 +101,7 @@ export function PreloaderVideoField({
 
   return (
     <div className="space-y-4">
-      <div className="relative mx-auto aspect-video w-full max-w-sm overflow-hidden rounded-lg border border-white/8 bg-black">
+      <div className="relative mx-auto aspect-video w-full max-w-sm overflow-hidden rounded-lg border border-[var(--line)] bg-black">
         <video
           key={previewSrc}
           src={previewSrc}
@@ -112,7 +112,7 @@ export function PreloaderVideoField({
           className="h-full w-full object-contain"
         />
         {!url ? (
-          <span className="absolute end-2 top-2 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/70">
+          <span className="absolute end-2 top-2 rounded-full bg-[var(--bg-3)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-dim)]">
             {t('preloaderVideoDefaultBadge')}
           </span>
         ) : null}
@@ -131,14 +131,18 @@ export function PreloaderVideoField({
       ) : null}
 
       {busy ? (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] p-6">
           <Loader2 className="text-muted-foreground size-5 animate-spin" />
-          <p className="text-muted-foreground text-xs">{tHero('uploadingVideo')}</p>
+          <p className="text-muted-foreground text-xs">
+            {tHero('uploadingVideo')}
+          </p>
         </div>
       ) : (
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6 transition-colors hover:border-white/20">
+        <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] p-6 transition-colors hover:border-[var(--line-2)]">
           <Upload className="text-muted-foreground size-5" />
-          <p className="text-muted-foreground text-xs">{tHero('clickToUploadMp4')}</p>
+          <p className="text-muted-foreground text-xs">
+            {tHero('clickToUploadMp4')}
+          </p>
           <p className="text-muted-foreground text-center text-[11px]">
             {t('preloaderVideoHint')}
           </p>
@@ -152,7 +156,7 @@ export function PreloaderVideoField({
         </label>
       )}
 
-      <div className="flex items-start gap-2 text-xs text-white/50">
+      <div className="flex items-start gap-2 text-xs text-[var(--text-mute)]">
         <Film className="mt-0.5 size-3.5 shrink-0" />
         <p>{t('preloaderVideoNote')}</p>
       </div>
