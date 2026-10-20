@@ -334,3 +334,58 @@ test('watch page: stored statuses for every viewer, widened progress map', () =>
   assert.match(c, /<JsonLd\b/, 'JSON-LD kept')
   assert.match(c, /export async function generateMetadata/, 'metadata kept')
 })
+
+// ---------------------------------------------------------------------------
+// Task 3: no Toaster on /watch/*, Referrer-Policy kept, remaining RMF guards
+// ---------------------------------------------------------------------------
+
+const LAYOUT_PATH = 'src/app/[locale]/layout.tsx'
+const TOASTER_PATH = 'src/components/route-scoped-toaster.tsx'
+const NEXT_CONFIG_PATH = 'next.config.ts'
+
+test('layout: renders RouteScopedToaster, never a bare Toaster', () => {
+  const c = code(read(LAYOUT_PATH))
+  assert.match(c, /<RouteScopedToaster\s*\/>/, 'route-scoped toaster mounted')
+  assert.match(c, /from '@\/components\/route-scoped-toaster'/, 'imported from its module')
+  assert.doesNotMatch(c, /<Toaster\b/, 'no direct Toaster in the layout')
+  assert.doesNotMatch(c, /from 'sonner'/, 'layout no longer imports sonner')
+})
+
+test('route-scoped-toaster: null on /watch/, the same dark Toaster elsewhere', () => {
+  const src = read(TOASTER_PATH)
+  assert.match(src, /^'use client'/, 'client component')
+  const c = code(src)
+  assert.match(c, /export function RouteScopedToaster\b/, 'named export')
+  assert.match(c, /import \{ usePathname \} from '@\/i18n\/navigation'/, 'locale-free pathname')
+  assert.match(c, /pathname\.startsWith\('\/watch\/'\)/, 'watch routes detected')
+  assert.match(c, /if \([^)]*startsWith\('\/watch\/'\)[^)]*\) return null/, 'nothing mounted there')
+  assert.match(c, /<Toaster\s+theme="dark"/, 'same dark Toaster')
+  assert.match(c, /toastOptions=\{\{/, 'toast options moved verbatim')
+  assert.match(c, /bg-\[#10131a\]/, 'toast surface unchanged')
+})
+
+test('next.config: Referrer-Policy stays strict-origin-when-cross-origin (error 153)', () => {
+  const c = code(read(NEXT_CONFIG_PATH))
+  assert.match(
+    c,
+    /\{\s*key: 'Referrer-Policy',\s*value: 'strict-origin-when-cross-origin'\s*\}/,
+    'referrer header kept'
+  )
+})
+
+test('player: hidden sits on the React-owned wrapper and the shell drives it', () => {
+  const player = code(read(PLAYER_PATH))
+  assert.match(player, /<div ref=\{wrapperRef\} hidden=\{hidden\}/, 'hidden on the wrapper')
+  assert.doesNotMatch(player, /role="region"/, 'the shell box is the only player region')
+  assert.match(code(read(SHELL_PATH)), /hidden=\{hidden\}/, 'shell passes the hidden flag')
+})
+
+test('watch components: no drawer, no overlay layer in the shell', () => {
+  for (const file of walk('src/components/watch', ['.tsx', '.ts'])) {
+    assert.doesNotMatch(code(readFileSync(file, 'utf8')), /from 'vaul'/, `${file}: no vaul`)
+  }
+  const shell = code(read(SHELL_PATH))
+  assert.doesNotMatch(shell, /\babsolute inset-0\b|\binset-0\b/, 'cards own their own box fill')
+  assert.doesNotMatch(shell, /\bsticky\b/, 'top bar never sticks over the stage')
+  assert.doesNotMatch(shell, /bg-gradient|from-black/, 'no gradient over the video')
+})
