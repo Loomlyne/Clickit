@@ -126,7 +126,8 @@ test('createEpisode and updateEpisode pass the server video check', () => {
 test('createShort and updateShort check the video on the server before writing', () => {
   for (const [name, write] of [
     ['createShort', ".insert({ ...parsed"],
-    ['updateShort', '.update(parsed)'],
+    // The write also carries the edited flags (review item 7).
+    ['updateShort', '.update({ ...parsed, ...edited })'],
   ] as const) {
     const text = block(name)
     const parse = text.indexOf('shortSchema.parse(data)')
