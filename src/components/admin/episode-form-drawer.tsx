@@ -535,7 +535,7 @@ function YouTubeFetchButton({
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[var(--line-2)] bg-[var(--bg-2)] px-3 py-1.5 text-xs font-medium text-[var(--text-dim)] transition-colors hover:border-[var(--line-2)]/25 hover:text-[var(--text)] disabled:opacity-50"
+      className="relative mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-xs font-medium text-[var(--text-dim)] transition-colors after:absolute after:inset-x-0 after:-inset-y-1 after:content-[''] hover:border-[var(--text-mute)] hover:text-[var(--text)] disabled:opacity-50 max-md:min-h-11"
     >
       {loading ? (
         <Loader2 className="size-3 animate-spin" />

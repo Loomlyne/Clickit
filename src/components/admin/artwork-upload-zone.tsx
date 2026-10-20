@@ -172,7 +172,7 @@ export function ArtworkUploadZone({
   return (
     <div className="space-y-2">
       <p className="text-sm font-medium">{label}</p>
-      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] p-6 transition-colors hover:border-[var(--line-2)]">
+      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] p-6 transition-colors hover:border-[var(--text-mute)]">
         <Upload className="text-muted-foreground size-6" />
         <p className="text-muted-foreground text-sm">{t('clickToUpload')}</p>
         <p className="text-muted-foreground text-xs">{aspectHint}</p>

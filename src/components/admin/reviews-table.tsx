@@ -239,9 +239,14 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
                             .slice(0, 2)
                             .toUpperCase()}
                         </div>
-                        <span>
-                          {r.profiles?.display_name || t('anonymous')}
-                        </span>
+                        <div className="min-w-0">
+                          <span>
+                            {r.profiles?.display_name || t('anonymous')}
+                          </span>
+                          <p className="line-clamp-2 text-[13px] text-[var(--text-mute)] md:hidden">
+                            {r.body}
+                          </p>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>

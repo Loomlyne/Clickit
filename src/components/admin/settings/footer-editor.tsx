@@ -298,7 +298,7 @@ function SocialIconUpload({
         </button>
       ) : (
         <label
-          className="relative flex size-9 cursor-pointer items-center justify-center rounded-[8px] border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] text-[var(--text-mute)] transition-colors after:absolute after:-inset-1 after:content-[''] hover:border-[var(--line-2)] hover:text-[var(--text-dim)]"
+          className="relative flex size-9 cursor-pointer items-center justify-center rounded-[8px] border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] text-[var(--text-mute)] transition-colors after:absolute after:-inset-1 after:content-[''] hover:border-[var(--text-mute)] hover:text-[var(--text-dim)]"
           title="Upload icon"
         >
           {busy ? (

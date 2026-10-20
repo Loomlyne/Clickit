@@ -183,7 +183,7 @@ export function AdminHeader() {
       </aside>
 
       {/* Phone / tablet: top bar with the same groups in a menu */}
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[var(--line)] bg-[var(--bg-0)]/90 px-4 backdrop-blur lg:hidden">
+      <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b border-[var(--line)] bg-[var(--bg-0)]/90 px-4 backdrop-blur lg:hidden">
         <Link
           href="/watch"
           aria-label={tNav('watch')}

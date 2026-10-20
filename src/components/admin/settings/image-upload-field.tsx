@@ -112,7 +112,7 @@ export function ImageUploadField({
           {t('working')}
         </div>
       ) : (
-        <label className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] px-4 py-3 text-sm transition-colors hover:border-[var(--line-2)]">
+        <label className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] px-4 py-3 text-sm transition-colors hover:border-[var(--text-mute)]">
           <Upload className="size-4" />
           <span>{url ? t('replaceImage') : t('uploadImage')}</span>
           <input

@@ -311,7 +311,7 @@ function HeroVariantPanel({
         <button
           type="button"
           onClick={() => setMode('mp4')}
-          className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+          className={`relative flex min-h-9 items-center gap-2 rounded-full px-3 text-xs font-medium transition-all after:absolute after:inset-x-0 after:-inset-y-1 after:content-[''] max-md:min-h-11 ${
             mode === 'mp4'
               ? 'bg-white text-black'
               : 'text-muted-foreground hover:text-foreground'
@@ -323,7 +323,7 @@ function HeroVariantPanel({
         <button
           type="button"
           onClick={() => setMode('youtube')}
-          className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+          className={`relative flex min-h-9 items-center gap-2 rounded-full px-3 text-xs font-medium transition-all after:absolute after:inset-x-0 after:-inset-y-1 after:content-[''] max-md:min-h-11 ${
             mode === 'youtube'
               ? 'bg-white text-black'
               : 'text-muted-foreground hover:text-foreground'
@@ -344,7 +344,7 @@ function HeroVariantPanel({
             </p>
           </div>
         ) : (
-          <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] p-6 transition-colors hover:border-[var(--line-2)]">
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] p-6 transition-colors hover:border-[var(--text-mute)]">
             <Upload className="text-muted-foreground size-5" />
             <p className="text-muted-foreground text-xs">
               {t('clickToUploadMp4')}

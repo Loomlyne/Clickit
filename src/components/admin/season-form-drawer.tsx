@@ -148,14 +148,14 @@ export function SeasonFormDrawer({
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="rounded-full border border-[var(--line-2)] bg-transparent px-5 py-2 text-sm font-medium text-[var(--text-dim)] transition-colors hover:bg-[var(--bg-2)]"
+              className="min-h-11 rounded-full border border-[var(--line-2)] bg-transparent px-5 text-sm font-medium text-[var(--text-dim)] transition-colors hover:bg-[var(--bg-2)]"
             >
               {t('discardChanges')}
             </button>
             <button
               type="submit"
               disabled={form.formState.isSubmitting}
-              className="rounded-full bg-white px-6 py-2 text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:opacity-50"
+              className="min-h-11 rounded-full bg-white px-6 text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:opacity-50"
             >
               {form.formState.isSubmitting
                 ? t('savingLabel')

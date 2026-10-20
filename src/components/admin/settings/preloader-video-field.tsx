@@ -138,7 +138,7 @@ export function PreloaderVideoField({
           </p>
         </div>
       ) : (
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] p-6 transition-colors hover:border-[var(--line-2)]">
+        <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] p-6 transition-colors hover:border-[var(--text-mute)]">
           <Upload className="text-muted-foreground size-5" />
           <p className="text-muted-foreground text-xs">
             {tHero('clickToUploadMp4')}

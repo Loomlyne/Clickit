@@ -127,8 +127,14 @@ body:has(.admin-root) [data-slot='table-head'] {
   letter-spacing: 0.12em;
   color: var(--text-mute);
 }
-body:has(.admin-root) [data-slot='table-cell'] {
+body:has(.admin-root)
+  [data-slot='table-cell']:not([class*='py-']):not([class*='pt-']):not(
+    [class*='pb-']
+  ) {
   padding-block: 10px;
+}
+body:has(.admin-root)
+  [data-slot='table-cell']:not([class*='text-xs']):not([class*='text-[']) {
   font-size: 14px;
 }
 body:has(.admin-root) [data-slot='table-row'] {

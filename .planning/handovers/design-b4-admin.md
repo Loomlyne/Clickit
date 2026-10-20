@@ -43,6 +43,11 @@ Hero URL inputs now have a real focus ring (the earlier claim was wrong until th
 Gate re-run: tsc 0, lint 0 errors/17 warnings, unit 377/377, build exit 0 (placeholder public env).
 Left alone: `src/lib/category-chip.ts` is now unused (delete in a cleanup); switch knobs keep `left-0.5` (pre-existing).
 
+## Third review round (local `reviewer`, Opus) - fixed
+
+Phone/tablet top bar is `fixed` again (sticky never engaged because `html, body` carry `overflow-x: hidden`; content gets `max-lg:pt-14`); the show-form Save bar is a plain row (its sticky never worked either). Table cells keep their own `py-*`/`text-xs` classes (admin.css guards), reviews table shows the review text under the user on phones, cast editor buttons and Branding mode toggles and drawer footer buttons have the 44px target, upload zones and the episode fetch button have a hover that shows. Gate re-run: tsc 0, lint 0 errors/17 warnings, unit 377/377, build exit 0.
+Open, not done: audit details and inbox email columns are still hidden on phones; expired shorts rows use `opacity-60` (contrast); 36px-visible controls stay 36px (44px tap area) on phones in a few raw buttons; two icon-only buttons without a name (`artwork-upload-zone.tsx:133`, `shorts-table.tsx:424`); switch knobs use physical `left-0.5`; audit badge colours repeat; `:has()` needs Firefox 121+.
+
 ## NOT verified
 
 - No render of the real admin app (no local Supabase, no admin session). `admin.css` selectors (`data-slot`, `data-size`, `data-state`) were checked by reading the shared components, not by looking at the running page. The picture used the same Tailwind classes but not `admin.css`.
