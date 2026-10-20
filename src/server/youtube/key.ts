@@ -1,5 +1,5 @@
 // YouTube Data API key cores (D-15, D-20). The key lives in Supabase Vault as
-// the one named secret `youtube_api_key` and leaves Postgres only through the
+// the one named Vault secret (see the migration) and leaves Postgres only through the
 // service-role RPCs from migration 20261020150526. Pure (unit-tested under
 // node --test): no path-alias imports, no env reads, no logging. The server
 // wrapper is src/server/youtube-key.ts.
