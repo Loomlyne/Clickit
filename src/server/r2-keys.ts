@@ -24,3 +24,27 @@ export function r2KeysForUrl(url: string | null | undefined, origin: string | nu
   const variants = VARIANT_WIDTHS.flatMap((w) => [`_v/${w}/webp/${key}`, `_v/${w}/avif/${key}`])
   return [key, ...variants]
 }
+
+const SUPABASE_PUBLIC_PREFIX = '/storage/v1/object/public/'
+
+/**
+ * Every R2 key a stored (live) url may stand for: r2KeysForUrl on our origin, plus
+ * for a Supabase Storage public url the same `<bucket>/<path>` key the copy script
+ * uses (plan 02-08), with its variants. Used only to REFUSE a re-sent key (Phase 01.1
+ * review), never to choose what to delete: deletion stays on r2KeysForUrl.
+ */
+export function liveKeysForUrl(url: string | null | undefined, origin: string | null): string[] {
+  const ours = r2KeysForUrl(url, origin)
+  if (ours.length > 0 || !url) return ours
+  let key: string
+  try {
+    const { pathname } = new URL(url)
+    if (!pathname.startsWith(SUPABASE_PUBLIC_PREFIX)) return []
+    key = decodeURIComponent(pathname.slice(SUPABASE_PUBLIC_PREFIX.length))
+  } catch {
+    return []
+  }
+  if (!KEY_RE.test(key) || key.includes('..') || key.includes('//')) return []
+  const variants = VARIANT_WIDTHS.flatMap((w) => [`_v/${w}/webp/${key}`, `_v/${w}/avif/${key}`])
+  return [key, ...variants]
+}

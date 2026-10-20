@@ -49,6 +49,7 @@ export type FinalizeResult =
 
 const SNIFF_BYTES = 64
 const MISMATCH_MESSAGE = 'File content does not match its declared type.'
+export const KEY_IS_LIVE_MESSAGE = 'This file is already live; upload a new file instead.'
 
 async function sniff(bucket: FinalizeBucket, key: string) {
   const body = await bucket.get(key, { range: { offset: 0, length: SNIFF_BYTES } })
@@ -77,10 +78,22 @@ export async function finalizeUploadedObject(input: {
   userId?: string | null
   key: string
   variantKeys: readonly string[]
+  /**
+   * R2 keys (originals and variants) that are live for this target right now. If the
+   * upload or any of its variants is one of them it is refused before any read, and
+   * nothing is deleted: a refusal below deletes what it refuses (Phase 01.1 review).
+   */
+  liveKeys?: readonly string[]
   bucket: FinalizeBucket
 }): Promise<FinalizeResult> {
   const { kind, key, bucket } = input
   if (!isUploadKind(kind)) return { ok: false, error: 'Invalid upload kind' }
+
+  if (input.liveKeys && input.liveKeys.length > 0) {
+    const live = new Set(input.liveKeys)
+    const touched = [key, ...input.variantKeys, ...VARIANT_WIDTHS.map((w) => variantKeyFor(key, w))]
+    if (touched.some((k) => live.has(k))) return { ok: false, error: KEY_IS_LIVE_MESSAGE }
+  }
   const def = UPLOAD_KINDS[kind]
   const slot = input.slot ? input.slot : undefined
 

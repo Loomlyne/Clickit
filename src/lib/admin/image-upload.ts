@@ -12,6 +12,23 @@ export type ImageTarget =
   | { type: 'cast'; castId: string; showId: string }
   | { type: 'profile'; userId: string }
 
+/**
+ * Every place a re-sent key could already be live (Phase 01.1 review, PR #23). Read
+ * before finalize; a key or variant key behind any of these urls is refused and nothing
+ * is deleted. Wider than the target on purpose: a commit-false finalize has no target.
+ */
+export type LiveScope =
+  /** The listed artwork columns of one show (a show that does not exist yet has none). */
+  | { type: 'show-artwork'; showId: string; columns: readonly string[] }
+  /** The listed app_config image columns. */
+  | { type: 'app-config'; columns: readonly string[] }
+  /** Every cast image of one show. */
+  | { type: 'show-cast'; showId: string }
+  /** Every icon url in app_config.footer_content.social. */
+  | { type: 'social-icons' }
+  /** One user's avatar. */
+  | { type: 'profile'; userId: string }
+
 export type FinalizeOutcome =
   | { ok: true; key: string; variants: string[]; droppedVariants?: unknown[]; cleanupFailed?: true }
   | { ok: false; error: string; cleanupFailed?: true }
@@ -25,8 +42,12 @@ export type ImageUploadPorts = {
     userId: string
     key: string
     variantKeys: string[]
+    /** Keys live in the scope right now: finalize must refuse them and delete nothing. */
+    liveKeys: readonly string[]
   }): Promise<FinalizeOutcome>
   db: {
+    /** Urls live in the scope right now; an error means the core refuses and deletes nothing. */
+    readLive(scope: LiveScope): Promise<{ urls: Array<string | null>; error: string | null }>
     readCurrent(target: ImageTarget): Promise<{ url: string | null; error: string | null }>
     /** Returns an error message, or null on success. Writes only the target. */
     write(target: ImageTarget, url: string): Promise<string | null>
@@ -39,6 +60,8 @@ export type ImageUploadPorts = {
   mediaOrigin: string | null
   /** R2 keys (original and derived variants) behind a stored URL; [] for Supabase Storage URLs, null and foreign URLs. */
   previousR2Keys(url: string | null): string[]
+  /** Every key a live url may stand for (our origin and the Supabase original's key). Only used to refuse. */
+  liveKeys(url: string | null): string[]
 }
 
 export type FinalizeImageInput = {
@@ -49,6 +72,8 @@ export type FinalizeImageInput = {
   variantKeys: string[]
   /** null: nothing in the database changes yet (cast member or social entry that does not exist); the url is returned. */
   target: ImageTarget | null
+  /** Where this key could already be live; must cover the target when there is one. */
+  live: LiveScope
   /** Admin id for admin kinds, the caller's own id for the avatar. */
   userId: string
 }
@@ -58,6 +83,7 @@ export type FinalizeImageResult = CoreResult<string> & {
 }
 
 export const MEDIA_HOST_NOT_READY = 'Media host is not ready'
+export const IMAGE_KEY_IS_LIVE = 'This file is already the live image; upload a new file instead.'
 const AUDIT_FAILED = 'Could not write the audit record; the image was not changed.'
 
 async function deleteQuietly(ports: ImageUploadPorts, keys: string[]): Promise<boolean> {
@@ -80,6 +106,17 @@ export async function finalizeImageUploadCore(
     return { success: false, error: MEDIA_HOST_NOT_READY, wrote: false }
   }
 
+  // Phase 01.1 (PR #23 review), as saveVideoCore: never touch the file that is already
+  // live. A re-sent live key would otherwise be deleted by a finalize refusal or by a
+  // failed write or audit below. Checked before finalize, which deletes what it refuses.
+  // Unlike video, a failed read refuses here: without it nothing proves the key is new.
+  const live = await ports.db.readLive(input.live)
+  if (live.error) return { success: false, error: live.error, wrote: false }
+  const liveKeys = [...new Set(live.urls.flatMap((url) => ports.liveKeys(url)))]
+  if ([input.key, ...input.variantKeys].some((k) => liveKeys.includes(k))) {
+    return { success: false, error: IMAGE_KEY_IS_LIVE, wrote: false }
+  }
+
   const fin = await ports.finalize({
     kind: input.kind,
     slot: input.slot ?? null,
@@ -87,6 +124,7 @@ export async function finalizeImageUploadCore(
     userId: input.userId,
     key: input.key,
     variantKeys: input.variantKeys,
+    liveKeys,
   })
   // Finalize already removed what it could prove to be ours; nothing was written.
   if (!fin.ok) {

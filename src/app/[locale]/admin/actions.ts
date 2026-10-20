@@ -57,7 +57,7 @@ import {
 import { mp4BytesHasAudioTrack } from '@/lib/mp4-audio'
 import { getPublicMediaOrigin } from '@/lib/supabase-media'
 import { getWorkerEnv } from '@/server/cloudflare'
-import { r2KeyFromUrl, r2KeysForUrl } from '@/server/r2-keys'
+import { liveKeysForUrl, r2KeyFromUrl, r2KeysForUrl } from '@/server/r2-keys'
 import { finalizeUploadedObject, type FinalizeBucket } from '@/server/upload-finalize'
 import {
   deleteMediaForUrl,
@@ -2225,6 +2225,10 @@ const ARTWORK_COLUMN = {
   logo: 'logo_url',
 } as const satisfies Record<(typeof ARTWORK_UPLOAD_SLOTS)[number], string>
 
+// Live scopes (Phase 01.1 review): a re-sent key live in ANY of these is refused before finalize.
+const ARTWORK_COLUMNS = Object.values(ARTWORK_COLUMN)
+const SITE_IMAGE_COLUMNS = Object.values(SITE_IMAGE_COLUMN)
+
 async function adminImagePorts(db: AdminDb, audit: AuditWriter): Promise<ImageUploadPorts> {
   const env = await getWorkerEnv()
   const bucket = env.MEDIA as unknown as FinalizeBucket
@@ -2238,6 +2242,7 @@ async function adminImagePorts(db: AdminDb, audit: AuditWriter): Promise<ImageUp
         userId: input.userId,
         key: input.key,
         variantKeys: input.variantKeys,
+        liveKeys: input.liveKeys,
         bucket,
       }),
     db: adminImageDb(db),
@@ -2245,6 +2250,7 @@ async function adminImagePorts(db: AdminDb, audit: AuditWriter): Promise<ImageUp
     audit,
     mediaOrigin,
     previousR2Keys: (url) => r2KeysForUrl(url, mediaOrigin),
+    liveKeys: (url) => liveKeysForUrl(url, mediaOrigin),
   }
 }
 
@@ -2277,6 +2283,7 @@ export async function finalizeArtworkUpload(
         variantKeys,
         userId: ctx.adminUserId,
         target: commit ? { type: 'show-artwork', showId, column: ARTWORK_COLUMN[slot] } : null,
+        live: { type: 'show-artwork', showId, columns: ARTWORK_COLUMNS },
       })
     },
     { fallbackError: 'Upload failed', revalidate: (r) => (r?.wrote ? bumpCatalogCache() : undefined) }
@@ -2305,6 +2312,7 @@ export async function finalizeSiteImageUpload(
         variantKeys,
         userId: ctx.adminUserId,
         target: { type: 'app-config', column: SITE_IMAGE_COLUMN[kind] },
+        live: { type: 'app-config', columns: SITE_IMAGE_COLUMNS },
       })
     },
     { fallbackError: 'Upload failed', revalidate: (r) => (r?.wrote ? bumpSiteConfigCache() : undefined) }
@@ -2331,6 +2339,7 @@ export async function finalizeSocialIconUpload(
         variantKeys,
         userId: ctx.adminUserId,
         target: null,
+        live: { type: 'social-icons' },
       })
     },
     { fallbackError: 'Upload failed', revalidate: () => undefined }
@@ -2362,6 +2371,7 @@ export async function finalizeCastImageUpload(
         variantKeys,
         userId: ctx.adminUserId,
         target: castId ? { type: 'cast', castId, showId } : null,
+        live: { type: 'show-cast', showId },
       })
     },
     {

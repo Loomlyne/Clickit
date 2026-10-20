@@ -6,7 +6,7 @@ import { finalizeImageUploadCore, type ImageUploadPorts } from '@/lib/admin/imag
 import { getPublicMediaOrigin } from '@/lib/supabase-media'
 import { requireSignedInUser } from '@/server/auth-guards'
 import { getWorkerEnv } from '@/server/cloudflare'
-import { r2KeysForUrl } from '@/server/r2-keys'
+import { liveKeysForUrl, r2KeysForUrl } from '@/server/r2-keys'
 import { finalizeUploadedObject, type FinalizeBucket } from '@/server/upload-finalize'
 import { createClient } from '@/lib/supabase/server'
 
@@ -69,9 +69,20 @@ export async function finalizeAvatarUpload(
           userId: i.userId,
           key: i.key,
           variantKeys: i.variantKeys,
+          liveKeys: i.liveKeys,
           bucket,
         }),
       db: {
+        // The only place this user's avatar is live (Phase 01.1 review guard).
+        readLive: async () => {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('avatar_url')
+            .eq('id', userId)
+            .single()
+          if (error || !data) return { urls: [], error: error?.message ?? 'Could not load profile' }
+          return { urls: [data.avatar_url ?? null], error: null }
+        },
         readCurrent: async () => {
           const { data, error } = await supabase
             .from('profiles')
@@ -88,6 +99,7 @@ export async function finalizeAvatarUpload(
       audit: null,
       mediaOrigin,
       previousR2Keys: (url) => r2KeysForUrl(url, mediaOrigin),
+      liveKeys: (url) => liveKeysForUrl(url, mediaOrigin),
     }
 
     const result = await finalizeImageUploadCore(ports, {
@@ -98,6 +110,7 @@ export async function finalizeAvatarUpload(
       variantKeys: parsed.data.variantKeys,
       userId,
       target: { type: 'profile', userId },
+      live: { type: 'profile', userId },
     })
     if (result.success || result.wrote) {
       revalidatePath('/profile')
