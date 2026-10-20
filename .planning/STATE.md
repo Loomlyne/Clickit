@@ -24,9 +24,9 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 
 ## Current Position
 
-Phase: 01.1 (admin-actions-hardening-inserted) — EXECUTING (13/13 plans done, UAT pending)
+Phase: 01.1 (admin-actions-hardening-inserted) — UAT PASSED, awaiting PR review and Ship
 Plan: 13 of 13
-Status: UAT pending — merged origin/main cfbc8fb (#17 tokens, #18 info, #20 viewer, #21 account) for landing
+Status: UAT passed (Koss, 2026-10-20; step 14 upload-audit gap to backlog) — merged origin/main cfbc8fb for landing
 Last activity: 2026-10-20 - Completed quick task 261020-ej8 on main: Apply UI System ui.config.json tokens to Clickit
 
 Progress: [█████████░] 92%
@@ -98,7 +98,11 @@ None yet.
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| *(none)* | | | |
+| admin audit | uploadSiteImage / uploadSocialIcon write no audit row (favicon, OG, social icon uploads); found in 1.1 UAT step 14, not one of the 21 findings | open | 2026-10-20 (1.1 UAT) |
+| i18n | `admin.seasonForm.addSeason` missing in en.json (raw key on Add Season button) | open | 2026-10-20 (1.1 UAT) |
+| i18n | `siteTitleHint` "Shown in <title> ..." fails ICU parsing (INVALID_MESSAGE on Settings) | open | 2026-10-20 (1.1 UAT) |
+| routing | /en/admin/shows (no index route) returns 500 "No intl context found" instead of 404 | open | 2026-10-20 (1.1 UAT) |
+| local dev | CSP connect-src allows only https://*.supabase.co, so browser uploads to a local Supabase (127.0.0.1:55321) fail | open | 2026-10-20 (1.1 UAT) |
 
 ## Session Continuity
 

@@ -2,7 +2,8 @@
 
 - Branch: `claude/goofy-mclaren-ec2cf1` (cut from `phase-01.1-admin-actions-hardening-inserted` f793b31, merged `origin/main` cfbc8fb as b01da68).
 - Final commit: see `git log -1` on the branch (this file's commit).
-- PR: not opened yet. Opens after Koss's UAT pass (controller relays it).
+- PR: opened after Koss's UAT pass (2026-10-20); link in the PR list for branch claude/goofy-mclaren-ec2cf1.
+- UAT: run by Claude with Playwright on the local stack at Koss's instruction; 13/14 PASS, step 14 partial (favicon/OG uploads write no audit row; pre-existing, not a 1.1 finding). Koss: "Pass, gap to backlog". Per-step table: 01.1-13-SUMMARY.md.
 
 ## Gates (2026-10-20)
 
@@ -45,6 +46,6 @@ Fixtures are in `~/clickit-uat-01.1/`.
 
 Pass word: "approved" / "done" / "correct" / "working". A failure: the step numbers and what was seen.
 
-## After UAT
+## After UAT (done)
 
-Stop dev server (PID 66552 wrapper, 66575 node) and poller (66553) by PID; stop the local stack only if no other session needs it (controller decides); delete this worktree's `.env.local` (marker `~/clickit-uat-01.1/.created-env-local-goofy`); then open the PR "Phase 1.1: admin actions hardening" based on `main`. No merge.
+Dev server stopped by PID; poller exited; this worktree's `.env.local` removed. Still for the controller: stop the local `_Clickit` stack when no session needs it (`supabase stop` from a Clickit checkout, local), remove `~/clickit-uat-01.1/` (fixtures, local test account file, run scripts) and the phase-01.1 worktree's own `.env.local`; run the read-only live `reorder_episode` check before Ship.
