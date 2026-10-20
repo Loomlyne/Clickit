@@ -384,6 +384,53 @@ test('show (commit true and commit false): the live key is refused and never tou
   }
 })
 
+// ---- shared references: a replaced key the other variant still uses is kept ----
+
+test('hero: a new desktop video keeps the old key while the mobile slot still uses it', async () => {
+  for (const mobile of [OLD_URL, `${OLD_URL}?v=4`]) {
+    const w = videoWorld({ heroMobileUrl: mobile })
+    const r = await saveVideoCore(w.ports, w.deps, { key: NEW_KEY, target: 'hero-desktop' })
+    assert.equal(r.success, true)
+    assert.equal(appConfig(w).hero_video_url, `${ORIGIN}/${NEW_KEY}`)
+    assert.equal(appConfig(w).hero_video_mobile_url, mobile)
+    assert.deepEqual(w.calls.stage, [])
+    assert.deepEqual(w.calls.delete, [])
+  }
+})
+
+test('hero: a new mobile video keeps the old key while desktop still uses it', async () => {
+  const w = videoWorld({ heroMobileUrl: OLD_URL })
+  const r = await saveVideoCore(w.ports, w.deps, { key: NEW_MOBILE_KEY, target: 'hero-mobile' })
+  assert.equal(r.success, true)
+  assert.equal(appConfig(w).hero_video_url, OLD_URL)
+  assert.deepEqual(w.calls.stage, [])
+})
+
+test('show: a new desktop video keeps the old key while the show mobile slot still uses it', async () => {
+  const w = videoWorld({ showUrl: OLD_URL, showMobileUrl: OLD_URL })
+  const r = await saveVideoCore(w.ports, w.deps, {
+    key: NEW_SHOW_KEY,
+    target: 'show',
+    showId: SHOW_ID,
+    variant: 'desktop',
+  })
+  assert.equal(r.success, true)
+  assert.equal(showRow(w).hero_video_mobile_url, OLD_URL)
+  assert.deepEqual(w.calls.stage, [])
+})
+
+test('show: a different key in the other slot does not stop the replaced key going', async () => {
+  const w = videoWorld({ showUrl: OLD_URL, showMobileUrl: `${ORIGIN}/site-assets/shows/${SHOW_ID}/hero-mobile-1.mp4` })
+  const r = await saveVideoCore(w.ports, w.deps, {
+    key: NEW_SHOW_KEY,
+    target: 'show',
+    showId: SHOW_ID,
+    variant: 'desktop',
+  })
+  assert.equal(r.success, true)
+  assert.deepEqual(w.calls.stage, [[OLD_KEY]])
+})
+
 // ---- source scan of the three finalize actions (plan 02-16, task 2) ----
 const src = readFileSync('src/app/[locale]/admin/actions.ts', 'utf8')
 function bodyOf(name: string): string {

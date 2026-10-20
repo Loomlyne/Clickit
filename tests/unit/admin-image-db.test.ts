@@ -230,3 +230,43 @@ test('a re-sent live cast image (commit false, no member) is refused against the
   assert.deepEqual((p as unknown as { deleted: string[][] }).deleted, [])
   assert.equal(writeCalls(fake).length, 0)
 })
+
+test('a poster replaced while the card still shows the same file: the old key is kept', async () => {
+  const t = tables()
+  t.shows[0]!.card_image_url = `${ORIGIN}/${OLD_KEY}?v=3`
+  const fake = createFakeSupabase(t)
+  const p = ports(fake)
+  const res = await finalizeImageUploadCore(p, {
+    kind: 'artwork',
+    slot: 'poster',
+    showId: SHOW,
+    key: NEW_KEY,
+    variantKeys: [],
+    userId: 'admin-1',
+    target: { type: 'show-artwork', showId: SHOW, column: 'poster_url' },
+    live: { type: 'show-artwork', showId: SHOW, columns: ['poster_url', 'card_image_url', 'hero_url'] },
+  })
+  assert.equal(res.success, true)
+  assert.equal(fake.tables.shows![0]!.poster_url, `${ORIGIN}/${NEW_KEY}`)
+  assert.deepEqual((p as unknown as { deleted: string[][] }).deleted, [])
+})
+
+test('a cast image replaced while another member of the show uses it: kept', async () => {
+  const t = tables()
+  const shared = `${ORIGIN}/show-artwork/shows/${SHOW}/cast/1750000000000-12345678.png`
+  t.show_cast[0]!.image_url = shared
+  const fake = createFakeSupabase(t)
+  const p = ports(fake)
+  const res = await finalizeImageUploadCore(p, {
+    kind: 'cast-image',
+    slot: null,
+    showId: SHOW,
+    key: `show-artwork/shows/${SHOW}/cast/1760000000000-abcdef01.png`,
+    variantKeys: [],
+    userId: 'admin-1',
+    target: { type: 'cast', castId: CAST, showId: SHOW },
+    live: { type: 'show-cast', showId: SHOW },
+  })
+  assert.equal(res.success, true)
+  assert.deepEqual((p as unknown as { deleted: string[][] }).deleted, [])
+})

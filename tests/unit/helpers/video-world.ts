@@ -49,8 +49,10 @@ export type WorldOpts = {
   mediaOrigin?: string | null
   finalizeError?: string
   heroUrl?: string | null
+  heroMobileUrl?: string | null
   preloaderUrl?: string | null
   showUrl?: string | null
+  showMobileUrl?: string | null
 }
 
 export function videoWorld(opts: WorldOpts = {}) {
@@ -60,8 +62,8 @@ export function videoWorld(opts: WorldOpts = {}) {
         id: 1,
         hero_video_url: opts.heroUrl === undefined ? OLD_URL : opts.heroUrl,
         hero_video_type: (opts.heroUrl === undefined ? OLD_URL : opts.heroUrl) ? 'mp4' : null,
-        hero_video_mobile_url: null,
-        hero_video_mobile_type: null,
+        hero_video_mobile_url: opts.heroMobileUrl ?? null,
+        hero_video_mobile_type: opts.heroMobileUrl ? 'mp4' : null,
         hero_video_muted: true,
         preloader_video_url: opts.preloaderUrl === undefined ? null : opts.preloaderUrl,
       },
@@ -72,8 +74,8 @@ export function videoWorld(opts: WorldOpts = {}) {
         title: 'A show',
         hero_video_url: opts.showUrl === undefined ? null : opts.showUrl,
         hero_video_type: opts.showUrl ? 'mp4' : null,
-        hero_video_mobile_url: null,
-        hero_video_mobile_type: null,
+        hero_video_mobile_url: opts.showMobileUrl ?? null,
+        hero_video_mobile_type: opts.showMobileUrl ? 'mp4' : null,
       },
     ],
   })

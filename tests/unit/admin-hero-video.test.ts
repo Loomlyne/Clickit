@@ -220,3 +220,33 @@ test('saveHeroVideoCore commit false after audit gives mediaCleanupFailed', asyn
   assert.equal(r.success, true)
   assert.equal(r.mediaCleanupFailed, true)
 })
+
+// ---- shared references: a replaced key the other hero variant still uses is kept ----
+
+test('setHeroVideoUrlCore keeps the old mp4 while the mobile slot still uses it', async () => {
+  const s = setup({ heroMobileUrl: OLD_URL })
+  const r = await setHeroVideoUrlCore(s.ports, s.deps, { canonicalUrl: YT, variant: 'desktop' })
+  assert.equal(r.success, true)
+  assert.equal(cfg(s).hero_video_url, YT)
+  assert.deepEqual(s.calls.stage, [])
+  assert.deepEqual(s.calls.delete, [])
+})
+
+test('removeHeroVideoCore keeps the old mp4 while the other variant still uses it', async () => {
+  const s = setup({ heroMobileUrl: OLD_URL })
+  const r = await removeHeroVideoCore(s.ports, s.deps, { variant: 'mobile' })
+  assert.equal(r.success, true)
+  assert.equal(cfg(s).hero_video_mobile_url, null)
+  assert.equal(cfg(s).hero_video_url, OLD_URL)
+  assert.deepEqual(s.calls.stage, [])
+})
+
+test('a failed read of the other variant keeps the old key (nothing is deleted on doubt)', async () => {
+  const s = setup()
+  // Read 1 is the target slot, read 2 the other variant.
+  s.fake.failOn({ table: 'app_config', op: 'select', nth: 2 })
+  const r = await removeHeroVideoCore(s.ports, s.deps, { variant: 'desktop' })
+  assert.equal(r.success, true)
+  assert.equal(cfg(s).hero_video_url, null)
+  assert.deepEqual(s.calls.stage, [])
+})

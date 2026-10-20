@@ -393,6 +393,44 @@ test('audit rows carry the previous key so a restore can be traced', async () =>
   assert.equal(a.diff.previous_url, OLD_R2_URL)
 })
 
+// ---- shared references: a replaced key another live value still uses is kept ----
+
+test('the replaced key is kept while another column of the scope still uses it', async () => {
+  for (const other of [OLD_R2_URL, `${OLD_R2_URL}?v=2`]) {
+    const w = setup({ live: [other] })
+    const res = await finalizeImageUploadCore(w.ports, input())
+    assert.equal(res.success, true)
+    assert.equal(res.mediaCleanupFailed, undefined)
+    assert.equal(w.current(), `${ORIGIN}/${NEW_KEY}`)
+    assert.deepEqual(w.deletes, [])
+    assert.ok(!w.log.includes('delete'))
+  }
+})
+
+test('the target\'s own value counts once: with no other reference the replaced key is deleted', async () => {
+  const w = setup({ live: [null, `${ORIGIN}/show-artwork/shows/${SHOW}/card-1750000000000-99999999.webp`] })
+  const res = await finalizeImageUploadCore(w.ports, input())
+  assert.equal(res.success, true)
+  assert.deepEqual(w.deletes, [[OLD_KEY, `_v/640/webp/${OLD_KEY}`]])
+})
+
+test('avatar: the scope is the user\'s own value, so the replaced avatar is deleted', async () => {
+  const oldAvatar = `avatars/${USER}/avatar-1750000000000-12345678.webp`
+  const w = setup({ previous: `${ORIGIN}/${oldAvatar}`, noAudit: true })
+  const res = await finalizeImageUploadCore(w.ports, {
+    kind: 'avatar',
+    slot: null,
+    showId: null,
+    key: `avatars/${USER}/avatar-1760000000000-abcdef01.webp`,
+    variantKeys: [],
+    target: { type: 'profile', userId: USER },
+    live: PROFILE_LIVE,
+    userId: USER,
+  })
+  assert.equal(res.success, true)
+  assert.deepEqual(w.deletes, [[oldAvatar, `_v/640/webp/${oldAvatar}`]])
+})
+
 test('image-upload.ts stays a pure core: no next/, server-only or @/ imports', () => {
   const src = readFileSync('src/lib/admin/image-upload.ts', 'utf8')
   assert.ok(!/from\s+['"](next\/|server-only|@\/)/.test(src))
