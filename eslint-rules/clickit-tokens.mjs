@@ -1,8 +1,8 @@
 // Local ESLint plugin: Phase 4 design-token guard (DS-02).
 // Flags raw hex, non-neutral rgb(), bracket radius, bracket shadow and raw
 // Tailwind palette classes in string literals and template strings.
-// Waive only for data-driven values with a reason:
-//   eslint-disable-next-line clickit/no-raw-design-values -- <reason>
+// Waive only for data-driven values, with a disable-next-line comment that
+// ends in " -- <reason>" (the report message shows the exact form).
 
 // Class start; variants like hover: or data-[x]: end in ':'
 const V = String.raw`(?:^|[\s"'\`:!])(?:[a-z0-9-]+:)*`
