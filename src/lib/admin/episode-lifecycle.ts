@@ -251,7 +251,7 @@ export async function deleteEpisodePermanentlyCore(
   return { success: true, wrote: true, data }
 }
 
-type RpcError = { message: string; refusal: boolean }
+type RpcError = { message: string; refusal: boolean; missing?: boolean }
 type RpcRow = { show_id: string; season_id: string; episode_id: string; episode_number: number }
 type RpcClient = {
   rpc: (
@@ -279,6 +279,7 @@ function mapRpcError(err: { code?: string; message?: string }): RpcError {
       message:
         'Episode reordering needs database migration 20260724115941 (function public.reorder_episode is missing).',
       refusal: false,
+      missing: true,
     }
   return { message: message || 'Reorder failed.', refusal: false }
 }
@@ -326,6 +327,7 @@ export async function reorderEpisodeCore(
   const from = current.episode_number
   let to: number | null = null
   let swapRefusal = false
+  let swapMissing = false
 
   const result = await runWithCompensation([
     {
@@ -334,6 +336,7 @@ export async function reorderEpisodeCore(
         const res = await callReorderEpisodeRpc(db, current.id, dir)
         if (res.error) {
           swapRefusal = res.error.refusal
+          swapMissing = res.error.missing === true
           return { error: res.error.message }
         }
         to = res.row?.episode_number ?? null
@@ -398,5 +401,7 @@ export async function reorderEpisodeCore(
   }
   if (failedAudit.error)
     error += ` (the failure audit row also failed: ${failedAudit.error})`
-  return { success: false, error, wrote: true, data }
+  // A missing database function changed no episode data (only the failure row).
+  const wroteData = !(result.failedStep === 'swap' && swapMissing)
+  return { success: false, error, wrote: wroteData, data }
 }
