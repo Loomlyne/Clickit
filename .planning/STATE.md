@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-20T18:30:00.000Z"
+last_updated: "2026-10-20T19:30:00.000Z"
 last_activity: 2026-10-20
 progress:
   total_phases: 9
@@ -68,6 +68,7 @@ Progress: [█████████░] 92%
 | Phase 02 P14 | 70min | 2 tasks | 23 files |
 | Phase 02 P15 | 55min | 2 tasks | 11 files |
 | Phase 02 P16 | 90min | 2 tasks | 9 files |
+| Phase 02 P17 | 215min | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,7 @@ Recent decisions affecting current work:
 - [Phase 02]: 02-14: CSP is a pure tested builder (src/lib/csp.ts); loopback Supabase/media origins only for the preview target (CSP_UPGRADE_INSECURE=false); exact R2 S3 host in connect-src; Cloudflare Web Analytics beacon renders only with NEXT_PUBLIC_CF_BEACON_TOKEN (owner step); vercel.json, .vercelignore, check-cron.sh, botid and @vercel/* removed, VERCEL=1 cleanup fallback dropped, no-vercel guard test; storage-range-proxy Vercel header kept until Phase 3
 - [Phase 02]: 02-15: image finalize core order is finalize, write one target, strict audit, then delete previous R2 object, with compensation on write and audit failure (tested); only R2 keys on our media origin are ever deleted, Supabase originals never; social icon and cast-without-member write no db row (form state until Save); artwork finalize has optional commit (default true) so 02-17 can keep the drawer's Cancel behaviour; avatar owner comes from the session
 - [Phase 02]: 02-16: video finalize reads only the first 4 MiB (min of object size) and checks fast-start and, for hero only, the audio track with the pure box walker (no ffprobe on Workers); non-fast-start, oversize (50MB, preloader 20MB) and no-audio files are refused and deleted; 01.1 order kept (write, strict audit, then delete previous R2 object; Supabase originals never deleted); show finalize has commit (default true) so 02-18 can keep write-on-Save
+- [Phase 02]: 02-17: every image upload goes browser -> requestMediaUpload -> XHR PUT with the signed Content-Type -> finalize*Upload; WebP copies (640/1280/1920, narrower than the source) are made in the browser only when canvas toBlob really returns image/webp, otherwise the original goes alone with the signed Safari note; progress zone and toasts as signed (option M); artwork and hero image finalize with commit:false so the drawer still writes on Save; hero-media-picker's image path switched too (02-18 only does its video path); admin actions return 500 on the Worker until 02-19 removes the sharp import (deferred item 10)
 - [Phase 02]: 02-04: security helpers are pure with injected I/O; cron auth and rate limiter refuse on every uncertain path; Turnstile reasons are fixed codes that never echo secret or token
 
 ### Pending Todos
@@ -126,5 +128,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-10-20T10:45:11.285Z
-Stopped at: Completed 02-16-PLAN.md (after 02-15) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above still shows 01.1, controller owns it)
+Stopped at: Completed 02-17-PLAN.md (after 02-16) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above still shows 01.1, controller owns it)
 Resume file: None
