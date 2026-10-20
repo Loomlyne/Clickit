@@ -30,6 +30,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { canDeletePermanently } from '@/lib/admin/guards'
 import { EmptyState } from '@/components/admin/empty-state'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { AdminPanel, AdminTableShell } from '@/components/admin/admin-shell'
@@ -92,6 +93,9 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
   const showIds = shows.map((show) => show.id)
   const selectedSet = new Set(selectedIds)
   const selectedCount = selectedIds.length
+  const deletableSelectedIds = selectedIds.filter((id) =>
+    canDeletePermanently(shows.find((s) => s.id === id))
+  )
   const allSelected =
     showIds.length > 0 && showIds.every((id) => selectedSet.has(id))
 
@@ -162,7 +166,9 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
       setConflictShow(null)
       setConflicts([])
       setShowConflict(null)
-      setSelectedIds((current) => current.filter((id) => id !== conflictShow.id))
+      setSelectedIds((current) =>
+        current.filter((id) => id !== conflictShow.id)
+      )
       toast.success(t('restoredToast'))
     } else if (
       result.showConflict ||
@@ -202,8 +208,8 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
   }
 
   async function handleBulkDeleteConfirm() {
-    if (selectedIds.length === 0) return
-    const ids = selectedIds
+    if (deletableSelectedIds.length === 0) return
+    const ids = deletableSelectedIds
     setBulkDeleting(true)
     for (const id of ids) {
       const result = await deleteShowPermanently(id)
@@ -293,14 +299,18 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                   ? t('restoring')
                   : t('bulkRestoreButton', { count: selectedCount })}
               </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setBulkDeleteDialogOpen(true)}
-              >
-                <Trash2 className="me-1.5 size-4" />
-                {t('bulkDeleteButton', { count: selectedCount })}
-              </Button>
+              {deletableSelectedIds.length > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setBulkDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="me-1.5 size-4" />
+                  {t('bulkDeleteButton', {
+                    count: deletableSelectedIds.length,
+                  })}
+                </Button>
+              )}
             </div>
           ) : (
             <span>{t('newestFirst')}</span>
@@ -384,19 +394,21 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                         </TooltipTrigger>
                         <TooltipContent>{t('restoreTooltip')}</TooltipContent>
                       </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteClick(show)}
-                          >
-                            <Trash2 className="me-1 size-3.5" />
-                            {tCommon('delete')}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{t('deleteTooltip')}</TooltipContent>
-                      </Tooltip>
+                      {canDeletePermanently(show) && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteClick(show)}
+                            >
+                              <Trash2 className="me-1 size-3.5" />
+                              {tCommon('delete')}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t('deleteTooltip')}</TooltipContent>
+                        </Tooltip>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -422,7 +434,9 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
         open={bulkDeleteDialogOpen}
         onOpenChange={setBulkDeleteDialogOpen}
         title={t('bulkDeleteTitle')}
-        description={t('bulkDeleteDescription', { count: selectedCount })}
+        description={t('bulkDeleteDescription', {
+          count: deletableSelectedIds.length,
+        })}
         confirmLabel={t('bulkDeleteConfirm')}
         onConfirm={handleBulkDeleteConfirm}
         destructive

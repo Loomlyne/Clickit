@@ -24,7 +24,7 @@ export default async function ArchivePage() {
     supabase
       .from('episodes')
       .select(
-        'id, title, episode_number, updated_at, show_id, shows!inner(title, archived), seasons(season_number)'
+        'id, title, episode_number, updated_at, archived, show_id, shows!inner(title, archived), seasons(season_number)'
       )
       .eq('archived', true)
       .eq('shows.archived', false)
@@ -48,6 +48,7 @@ export default async function ArchivePage() {
         showTitle: show?.title ?? '—',
         showId: row.show_id,
         updatedAt: row.updated_at,
+        archived: row.archived === true,
       }
     }
   )
