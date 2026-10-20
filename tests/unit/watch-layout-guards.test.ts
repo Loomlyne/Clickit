@@ -230,3 +230,107 @@ test('episode-tray.tsx is gone and nothing imports it', () => {
   assert.equal(existsSync(TRAY_PATH), false, 'tray file removed')
   assert.deepEqual(srcFilesMentioning('episode-tray'), [], 'no import of the tray')
 })
+
+// ---------------------------------------------------------------------------
+// Task 2: ENDED (bar shipped, card alternative), errors, blocked preflight
+// ---------------------------------------------------------------------------
+
+const OVERLAY_PATH = 'src/components/watch/autoplay-overlay.tsx'
+const PAGE_PATH = 'src/app/[locale]/(watch)/watch/[episodeId]/page.tsx'
+
+/** The text of a balanced `( ... )` call that opens at `open` (index of `(`). */
+function parenBlock(src: string, open: number): string {
+  let depth = 0
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === '(') depth++
+    else if (src[i] === ')') {
+      depth--
+      if (depth === 0) return src.slice(open, i + 1)
+    }
+  }
+  assert.fail('unbalanced parentheses')
+}
+
+test('watch-shell: ENDED mode drives hide, stop and the control bar', () => {
+  const c = code(read(SHELL_PATH))
+  assert.match(c, /ENDED_MODE/, 'reads the shipped mode constant')
+  assert.match(c, /endedReducer\(ENDED_MODE/, 'state machine runs in the shipped mode')
+  assert.match(c, /playerHidden\(ENDED_MODE/, 'hidden flag from the mode')
+  assert.match(c, /endedEffects\(ENDED_MODE/, 'stop decision from the mode')
+  assert.match(c, /barView\(/, 'control bar face from the state')
+  assert.match(c, /variant="stage"/, 'card mode renders the stage card')
+  assert.match(c, /variant="bar"/, 'bar mode renders the strip')
+  assert.match(c, /hidden=\{/, 'player hidden through its wrapper prop')
+  assert.match(c, /useElementVisible\(boxRef\)/, 'countdown gated on the box being in view')
+  assert.match(c, /type: 'ended'/, 'ended recorded in the positions map')
+  assert.match(c, /type: 'cancel'/, 'Cancel / Esc dispatch')
+  assert.match(c, /onAutoplayBlocked=\{/, 'blocked autoplay handled')
+})
+
+test('watch-shell: stopVideo only behind endedEffects(...).stop, never on ENDED itself', () => {
+  const c = code(read(SHELL_PATH))
+  const stops = [...c.matchAll(/stopVideo\(/g)]
+  assert.ok(stops.length >= 1, 'stopVideo is called somewhere')
+  assert.match(c, /if \(effects\.stop\) stopPlayer\(\)/, 'stop gated on endedEffects')
+  for (const m of stops) {
+    const before = c.slice(Math.max(0, (m.index ?? 0) - 300), m.index)
+    assert.match(before, /function stopPlayer\(\)/, 'stopVideo lives only in stopPlayer')
+  }
+  const ended = c.indexOf('state === 0')
+  assert.notEqual(ended, -1, 'ENDED branch present')
+  const branch = braceBlock(c, ended)
+  assert.doesNotMatch(branch, /stopVideo\(|stopPlayer\(/, 'no unconditional stop on ENDED')
+})
+
+test('watch-shell: loads only from an effect keyed on the hidden flag', () => {
+  const c = code(read(SHELL_PATH))
+  assert.doesNotMatch(c, /cueVideoById\(/, 'never cue (no preloading)')
+  const loads = [...c.matchAll(/loadVideoById\(/g)]
+  assert.ok(loads.length >= 1, 'loadVideoById is called')
+  for (const m of loads) {
+    const at = m.index ?? 0
+    const effect = c.lastIndexOf('useEffect(', at)
+    assert.notEqual(effect, -1, 'loadVideoById inside an effect')
+    const block = parenBlock(c, effect + 'useEffect'.length)
+    assert.ok(at < effect + 'useEffect'.length + block.length, 'the call sits inside that effect')
+    const deps = block.slice(block.lastIndexOf('['))
+    assert.match(deps, /\bhidden\b/, 'effect re-runs when the player is un-hidden')
+    assert.match(block, /if \([^)]*hidden[^)]*\) return/, 'effect returns while hidden')
+  }
+})
+
+test('watch-shell: branded errors with stored status, one report per load, 153 apart', () => {
+  const c = code(read(SHELL_PATH))
+  assert.match(c, /errorCardFor\(\{/, 'error card spec from the rules')
+  assert.match(c, /storedStatus/, 'stored status passed in')
+  assert.match(c, /youtubeStatuses\[/, 'stored status read from the server map')
+  assert.match(c, /reportPlayerError\(/, 'episode reported')
+  assert.match(c, /from '@\/app\/actions\/player-errors'/, 'report through the server action')
+  assert.match(c, /new Set<string>\(\)/, 'per-page-load report set')
+  assert.match(c, /\.reportable/, 'only reportable codes are sent')
+  assert.match(c, /console\.error\('\[watch\] YouTube error 153 \(referrer\)'\)/, '153 logged')
+  assert.match(c, /<PlayerErrorCard\b/, 'error card rendered')
+  assert.match(c, /'blocked_ae'/, 'UAE preflight')
+  assert.match(
+    c,
+    /console\.assert\(\s*playerIframeHidden\(boxRef\.current\),\s*'\[watch\] iframe visible under a card'\s*\)/,
+    'development check that the iframe is out of layout under a card'
+  )
+  assert.match(c, /process\.env\.NODE_ENV/, 'the check is development only')
+})
+
+test('autoplay-overlay.tsx is gone and nothing imports it', () => {
+  assert.equal(existsSync(OVERLAY_PATH), false, 'overlay file removed')
+  assert.deepEqual(srcFilesMentioning('autoplay-overlay'), [], 'no import of the overlay')
+})
+
+test('watch page: stored statuses for every viewer, widened progress map', () => {
+  const c = code(read(PAGE_PATH))
+  assert.match(c, /getEpisodeYouTubeStatuses\(episodeIds\)/, 'status read for the season ids')
+  assert.match(c, /youtubeStatuses=\{/, 'statuses passed to the shell')
+  assert.match(c, /progressMap=\{/, 'progress map passed to the shell')
+  assert.doesNotMatch(c, /initialProgressSeconds/, 'start comes from the progress map')
+  assert.match(c, /isEpisodeLive\(/, 'scheduling gate kept')
+  assert.match(c, /<JsonLd\b/, 'JSON-LD kept')
+  assert.match(c, /export async function generateMetadata/, 'metadata kept')
+})
