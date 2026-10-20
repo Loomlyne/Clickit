@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
@@ -452,14 +452,43 @@ test('destructive SQL in an added migration fails with its line; waiver passes',
   )
 })
 
-test('an out-of-order version is a warning, not a violation', async () => {
+test('an out-of-order version is a violation', async () => {
   await withRepo(
     (repo) => put(repo, '20260101000001_late.sql', 'create table late (id int);\n'),
     ({ repo, base, head }) => {
       const result = runGuard({ cwd: repo, base, head })
-      assert.deepEqual(result.violations, [])
-      assert.equal(result.warnings.length, 1)
-      assert.match(result.warnings[0].reason, /sorts before applied migrations/)
+      assert.equal(result.violations.length, 1)
+      assert.equal(result.violations[0].path, `${DIR}/20260101000001_late.sql`)
+      assert.match(result.violations[0].reason, /sorts before the highest migration on the base branch/)
+      assert.deepEqual(result.warnings, [])
+    },
+  )
+})
+
+test('a symlinked migration is a violation (added or replacing a file)', async () => {
+  await withRepo(
+    async (repo) => {
+      await writeFile(join(repo, 'evil.sql'), 'drop table a;\n')
+      await symlink('../../evil.sql', join(repo, DIR, '20260201000000_link.sql'))
+    },
+    ({ repo, base, head }) => {
+      const result = runGuard({ cwd: repo, base, head })
+      assert.ok(
+        result.violations.some(
+          (v) => v.path === `${DIR}/20260201000000_link.sql` && /symlink/.test(v.reason),
+        ),
+      )
+    },
+  )
+  await withRepo(
+    async (repo) => {
+      await rm(join(repo, DIR, '20260102000000_b.sql'))
+      await symlink('20260101000000_a.sql', join(repo, DIR, '20260102000000_b.sql'))
+    },
+    ({ repo, base, head }) => {
+      const result = runGuard({ cwd: repo, base, head })
+      assert.ok(result.violations.length >= 1)
+      assert.ok(result.violations.every((v) => v.path === `${DIR}/20260102000000_b.sql`))
     },
   )
 })

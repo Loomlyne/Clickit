@@ -333,6 +333,11 @@ function blobSha(cwd, rev, path) {
   return runGit(cwd, ['rev-parse', `${rev}:${path}`]).trim()
 }
 
+function modeOn(cwd, rev, path) {
+  const out = runGit(cwd, ['ls-tree', rev, '--', path]).trim()
+  return out ? out.split(/\s+/)[0] : null
+}
+
 function describeStatus(status) {
   if (status === 'M') return 'modified'
   if (status === 'D') return 'deleted'
@@ -343,7 +348,7 @@ function describeStatus(status) {
 /**
  * Check the migrations changed between base and head (committed changes only).
  * Rules in order: name (A), applied-file immutability (everything but A),
- * destructive SQL (A and M .sql), ordering warning (A).
+ * no symlinks (anything but D), destructive SQL (A and M .sql), ordering (A).
  */
 export function runGuard({
   cwd,
@@ -379,6 +384,14 @@ export function runGuard({
     // A copy creates a new file; treat it like an addition.
     const added = change.status === 'A' || change.status.startsWith('C')
     const name = posix.basename(change.path)
+
+    if (change.status !== 'D' && modeOn(cwd, head, change.path) === '120000') {
+      violations.push({
+        path: change.path,
+        reason: 'migration is a symlink: the guard scans the link text, not the SQL it points to; commit a regular file',
+      })
+      continue
+    }
 
     if (added && !NAME_RE.test(name)) {
       violations.push({
@@ -432,10 +445,9 @@ export function runGuard({
     if (added) {
       const version = VERSION_RE.exec(name)?.[1]
       if (version && highestBase && version <= highestBase) {
-        warnings.push({
+        violations.push({
           path: change.path,
-          reason:
-            'version sorts before applied migrations; the apply workflow will refuse it',
+          reason: `version ${version} sorts before the highest migration on the base branch (${highestBase}); give it a newer timestamp (db push without --include-all refuses it)`,
         })
       }
     }
