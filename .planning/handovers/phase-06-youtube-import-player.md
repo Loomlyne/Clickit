@@ -2,7 +2,7 @@
 
 - Branch: `phase-06-youtube-import-player` (worktree `.claude/worktrees/phase-06-youtube-import-player-661c18`), based on origin/main c0da1d8, merged up to date.
 - Final commit: see the PR head (this file is committed last; the gate ran on 0d40b0e; only this hand-over file changed after it).
-- PR: PR_URL
+- PR: https://github.com/Loomlyne/Clickit/pull/27
 - Plans: 06-00 … 06-19 executed, each with a SUMMARY in `.planning/phases/06-youtube-import-and-player/`. 06-20 (this hand-over + UAT) is in progress; 06-21 … 06-24 are controller/owner steps.
 
 ## Gates
