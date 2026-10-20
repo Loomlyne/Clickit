@@ -33,6 +33,7 @@ PR: pending
 - Scratch-database proof of the full 58-migration chain plus seed (log `/Users/koss/.clickit-checks/p1-scratch-proof.log`, `exit=0`): `counts=1|15|21|94|6|45|58`, seed refusal on a non-empty database (`seed.sql refuses to run: public.shows is not empty`), shared database fingerprint unchanged (`58|17|94` before and after), scratch database removed.
 - Guard against `origin/main`: exit 0, 0 violations.
 - Workflow YAML parses (`ruby -ryaml`); 17 workflow text tests pass.
+- After the code-review fixes (CR-01, CR-02, WR-02, WR-03, WR-04; 2026-10-20T13:40Z, head 7bd062e): guard, workflow and neutralisation tests 61 pass, 0 fail; `npx tsc --noEmit` clean; `npm run lint` 0 errors, 17 pre-existing warnings (none in touched files); guard against `origin/main` exit 0, `5 files checked, 0 violations`; both workflows parse with `ruby -ryaml`; allow-list `to` blobs still match (no migration changed). Full `gate:local` and `next build` not re-run after the fixes.
 
 ## NOT verified
 
@@ -43,6 +44,8 @@ PR: pending
 - Environments `live-db` and `live-db-plan` (branch policy `main`), their secrets, deletion of the repo-level `SUPABASE_DB_URL`, the ruleset (runbook steps 3, 4, 4b, 5, 6).
 - Non-admin push block semantics of the ruleset (A2).
 - First live dry-run (runbook step 8).
+- WR-03 reviewer check on GitHub: that `actions: read` lets the job token read `GET /repos/.../environments/live-db` (with any other result the step fails closed, so at worst `apply` refuses until the permission is fixed). Tested locally with a fake `curl` only.
+- WR-02 scope step on the GitHub runner (tested locally with bash 3.2 in temp repos).
 - Supabase plan tier and backup status (runbook step 11).
 - Guard can be edited by the PR it checks (Pitfall 9): CI runs the base branch copy, so this residual applies only to the Phase 1 PR itself and to PRs that edit `pr-gate.yml`.
 - The orchestrator's uncommitted STATE.md edit was discarded to allow the merge (see below); the orchestrator must redo it.
@@ -62,6 +65,20 @@ PR: pending
 The Phase 1 squash merge itself waits for the controller runbook's pre-merge block (review CR-02), in this order: create `live-db` (reviewer `Loomlyne`) and `live-db-plan`, both with deployment-branch policy `main` only (step 3); Koss puts the DB URL in both environment secrets (step 4); Koss DELETES the repo-wide `SUPABASE_DB_URL` (step 4b); the controller reads all of it back, including that the repo-level secret is gone (step 5). Why: `workflow_dispatch` runs the workflow from the ref the dispatcher picks, so while a repo-level `SUPABASE_DB_URL` exists a writer can dispatch an edited branch copy (no `environment:`, no "Main only" step) and write to live without approval. The "Main only" steps are diagnostics; the real protection is environment-only secrets plus the `main` branch policy plus the required reviewer.
 
 After the merge, no other PR merges to `main` until the ruleset (step 6) is created and read back. No `Apply live migrations` dispatch before step 5 passes: GitHub auto-creates a missing environment with no reviewers when a workflow references it.
+
+## Known limits (accepted, from review)
+
+From `.planning/phases/01-safe-ground/01-REVIEW.md`; not changed in this phase, on the controller's instruction.
+
+- WR-01: a PR can edit `pr-gate.yml` itself (the workflow runs from the merge commit), so the base-copy guard only stops edits to `migration-guard.mjs`; the PR-copy fallback also reopens after any PR that renames or deletes the guard, not only for the Phase 1 PR.
+- WR-05: one `-- safe-drop:` waiver covers every destructive statement on its line (`drop table a; drop table users;` on one waived line passes).
+- WR-06: damaging SQL outside drop/truncate/delete (`update` with no `where`, `disable row level security`, `rename`, `revoke`, redefining `is_admin()`) passes the guard, and the dry-run summary shows migration names, not their SQL, to the approver.
+- WR-07: `live-db-plan` holds the same full-privilege connection string as `live-db` (the dry-run command is read-only, the secret is not), reachable without approval by a job running main's code.
+- IN-01: `seed.sql` refuses only when `public.shows` is non-empty, so a remote `supabase db reset --linked` (which wipes first) would still seed fake data into live.
+- IN-02: `tests/unit/*.test.ts` are never type-checked (`tsconfig.json` excludes them; strip-types does not check).
+- IN-03: the dry-run step tees all CLI output to the public log and run summary; a connection error can print the pooler host and role (not the password).
+- IN-04: an added migration in a subfolder of `supabase/migrations/` passes the name check, but the CLI never applies it.
+- IN-05: `migration-guard` judges the merge commit from the last PR event; if `main` moves, a PR can merge on a stale verdict (the controller's clean-clone re-check before Ship covers it).
 
 ## Approval gate is procedural
 
