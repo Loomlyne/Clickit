@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-20T00:33:39.138Z"
+last_updated: "2026-10-20T00:37:37.562Z"
 last_activity: 2026-10-20
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 13
-  completed_plans: 9
+  completed_plans: 10
   percent: 0
 ---
 
@@ -25,11 +25,11 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 01.1 (admin-actions-hardening-inserted) — EXECUTING
-Plan: 10 of 13
+Plan: 11 of 13
 Status: Ready to execute
 Last activity: 2026-10-20
 
-Progress: [███████░░░] 69%
+Progress: [████████░░] 77%
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Progress: [███████░░░] 69%
 | Phase 01.1 P07 | 25min | 2 tasks | 2 files |
 | Phase 01.1 P08 | 20m | 2 tasks | 3 files |
 | Phase 01.1 P09 | 20min | 2 tasks | 2 files |
+| Phase 01.1 P10 | 25min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,7 @@ Recent decisions affecting current work:
 - [Phase 01.1]: [01.1-05] Archive records previous_slug and archived_episode_ids in the audit log; restore uses newest committed record with legacy fallback
 - [Phase ?]: 01.1-08: episode reorder uses atomic public.reorder_episode RPC; swap reversed via opposite direction if audit fails
 - [Phase 01.1]: Unschedule trusts only the newest committed bulk_schedule record, validated by bulkScheduleRecordSchema; unreadable record is refused, no fallback
+- [Phase 01.1]: runAdminAction revalidates in finally on success/wrote/throw; revalidate errors logged only
 
 ### Pending Todos
 
@@ -89,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-20T00:33:39.132Z
-Stopped at: Completed 01.1-09-PLAN.md
+Last session: 2026-10-20T00:37:37.556Z
+Stopped at: Completed 01.1-10-PLAN.md
 Resume file: None
