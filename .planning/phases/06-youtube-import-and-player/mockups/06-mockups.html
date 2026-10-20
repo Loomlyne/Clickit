@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 6 — YouTube import and player options</title>
+<style>
+/* Product tokens: copied from src/styles/globals.css (:root), UI System values from ui.config.json */
+@font-face{font-family:LBC;src:url(../../../../src/fonts/lbc-regular.woff2) format("woff2");font-weight:400}
+@font-face{font-family:LBC;src:url(../../../../src/fonts/lbc-bold.woff2) format("woff2");font-weight:700}
+:root{
+  --bg-0:#090909;--bg-1:#101010;--bg-2:#191919;--bg-3:#2A2A2A;--bg-4:#424242;
+  --line:rgba(255,255,255,.08);--line-2:rgba(255,255,255,.14);
+  --text:#F4F4F4;--text-dim:#CCCCCC;--text-mute:#A1A1A1;
+  --primary:#ffcc00;--primary-fg:#090909;--destructive:#ff3b30;
+  --uis-primary-soft:#312915;
+  --r-field:8px;--r-card:12px;--r-media:11px;--r-panel:16px;
+  --safe-green:#77d586;--safe-red:#ff8b82;--safe-orange:#ffb46e;--safe-purple:#c592ff;
+  --brand-purple:#9F54A0;--brand-green:#50A258;--brand-blue:#2C3569;
+}
+/* sheet chrome (not product) */
+*{box-sizing:border-box}
+html{background:#0c0c0c;color:#e8e8e8;font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+body{margin:0;padding:24px 32px 60px;width:1400px}
+section{padding:18px 0 28px;border-top:1px solid #262626}
+h2{font-size:20px;margin:0 0 4px}
+.sub{color:#9a9a9a;margin:0 0 14px;max-width:1200px}
+.cap{font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin:0 0 8px;color:#9a9a9a}
+.cap b{color:#ffcc00}.cap .bad{color:#ff8b82}
+.row{display:flex;gap:24px;align-items:flex-start}
+.col{display:flex;flex-direction:column}
+
+/* frame = product surface */
+.frame{position:relative;overflow:hidden;background:var(--bg-0);color:var(--text);font-family:LBC,system-ui,sans-serif;font-size:15px;line-height:1.45;border:1px solid #2c2c2c;border-radius:6px;flex:none}
+.d{width:1280px}.m{width:375px}.half{width:660px}
+.lbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-mute)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;font-size:14px;font-weight:700;border:1px solid transparent;white-space:nowrap}
+.pri{background:var(--primary);color:var(--primary-fg)}
+.out{border-color:var(--line-2);color:var(--text)}
+.ghost{color:var(--text-dim)}
+.ib{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:999px;color:var(--text-dim);border:1px solid var(--line);background:rgba(255,255,255,.04);flex:none}
+.field{min-height:44px;border-radius:var(--r-field);background:var(--bg-2);border:1px solid var(--line-2);padding:0 14px;display:flex;align-items:center;color:var(--text);font-size:14px}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em;border:1px solid}
+.ok{color:var(--safe-green);border-color:rgba(119,213,134,.35);background:rgba(119,213,134,.08)}
+.no{color:var(--safe-red);border-color:rgba(255,139,130,.35);background:rgba(255,139,130,.08)}
+.warn{color:var(--safe-orange);border-color:rgba(255,180,110,.35);background:rgba(255,180,110,.08)}
+.dup{color:var(--text-mute);border-color:var(--line-2);background:transparent}
+.thumb{border-radius:var(--r-media);flex:none;position:relative;overflow:hidden}
+.t1{background:linear-gradient(135deg,#9F54A0,#2C3569)}.t2{background:linear-gradient(135deg,#50A258,#2C3569)}
+.t3{background:linear-gradient(135deg,#EA8C2E,#9F54A0)}.t4{background:linear-gradient(135deg,#DB3F34,#2C3569)}
+.thumb .dur{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.75);color:#fff;font-size:11px;padding:1px 6px;border-radius:999px}
+.cb{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--line-2);flex:none;display:flex;align-items:center;justify-content:center}
+.cb.on{background:var(--primary);border-color:var(--primary);color:var(--primary-fg);font-size:13px;font-weight:700}
+.cb.off{opacity:.35}
+.cbwrap{width:44px;height:44px;display:flex;align-items:center;justify-content:center;flex:none}
+svg{flex:none}
+
+/* admin shell */
+.adm{display:flex;height:820px}
+.side{width:232px;background:var(--bg-0);border-right:1px solid var(--line);padding:22px 14px;display:flex;flex-direction:column;gap:4px}
+.side .logo{font-weight:700;font-size:18px;padding:0 10px 18px}
+.side .logo span{color:var(--primary)}
+.side a{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:999px;color:var(--text-dim);font-size:14px}
+.side a.on{background:var(--bg-2);color:var(--text)}
+.main{flex:1;padding:28px 36px;position:relative}
+.dim:after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.62)}
+.sheet{position:absolute;top:0;right:0;bottom:0;width:640px;background:var(--bg-1);border-left:1px solid var(--line-2);box-shadow:0 10px 32px rgba(0,0,0,.4);display:flex;flex-direction:column;z-index:5}
+.sheet .hd{padding:22px 24px 16px;border-bottom:1px solid var(--line)}
+.sheet .bd{padding:16px 24px;flex:1;overflow:hidden;display:flex;flex-direction:column;gap:14px}
+.sheet .ft{padding:14px 24px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;background:var(--bg-1)}
+.tbl{border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden}
+.tr{display:flex;align-items:center;gap:10px;padding:6px 12px 6px 4px;border-top:1px solid var(--line);min-height:62px}
+.tr:first-child{border-top:0}
+.tr.th{min-height:40px;background:var(--bg-2)}
+.tr .n{width:28px;color:var(--text-mute);font-size:13px;text-align:right}
+.tr .ti{flex:1;min-width:0}
+.tr .ti div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.tr .ti small{color:var(--text-mute);font-size:12px}
+.tr.skip .ti div,.tr.skip .n{color:var(--text-mute)}
+.tr .du{width:56px;text-align:right;color:var(--text-dim);font-size:13px}
+.tr .st{width:150px;display:flex;justify-content:flex-end}
+
+/* watch */
+.watch{height:720px;position:relative;background:#000}
+.topbar{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--bg-0);border-bottom:1px solid var(--line)}
+.topbar .back{display:flex;align-items:center;gap:8px;color:var(--text-dim);font-size:14px;min-height:44px}
+.topbar .mid{text-align:center}.topbar .mid div{font-size:14px}.topbar .mid small{font-size:12px;color:var(--text-mute)}
+.acts{display:flex;gap:4px}
+.yt{position:relative;background:#141414;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.yt .scene{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 40%,#6b4a7a 0,#2b2140 35%,#0d0d12 75%)}
+.yt .ytbar{position:absolute;left:0;right:0;bottom:0;height:46px;background:linear-gradient(transparent,rgba(0,0,0,.7));display:flex;align-items:flex-end;padding:0 12px 8px;gap:10px;font:12px system-ui;color:#fff}
+.yt .ytbar .prog{position:absolute;left:12px;right:12px;bottom:38px;height:3px;background:rgba(255,255,255,.3)}
+.yt .ytbar .prog i{display:block;height:100%;width:38%;background:#f00}
+.yt .ytlogo{position:absolute;right:14px;bottom:10px;font:700 12px system-ui;color:#fff;opacity:.9}
+.yt .tag{position:absolute;left:12px;top:10px;font:11px system-ui;color:rgba(255,255,255,.55)}
+.ctl{display:flex;align-items:center;gap:12px;padding:10px 20px;background:var(--bg-1);border-bottom:1px solid var(--line)}
+.ctl .t{flex:1;min-width:0}.ctl .t div{font-size:15px}.ctl .t small{font-size:12px;color:var(--text-mute)}
+.tray{background:var(--bg-1);padding:14px 20px;display:flex;gap:14px;overflow:hidden}
+.ep{width:220px;flex:none}
+.ep .thumb{height:124px}
+.ep .bar{height:3px;background:rgba(255,255,255,.18);border-radius:2px;margin-top:6px}.ep .bar i{display:block;height:100%;background:var(--primary);border-radius:2px}
+.ep div{font-size:13px;margin-top:6px}.ep small{font-size:11px;color:var(--text-mute)}
+.ep.cur .thumb{outline:2px solid var(--primary);outline-offset:2px}
+.viol{position:absolute;border:2px dashed #ff3b30;border-radius:6px;pointer-events:none;z-index:40}
+.viol b{position:absolute;top:-22px;left:0;background:#ff3b30;color:#fff;font:700 11px system-ui;padding:2px 6px;border-radius:3px;white-space:nowrap}
+.list{width:380px;background:var(--bg-1);border-left:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:10px}
+.li{display:flex;gap:12px;align-items:center;padding:6px;border-radius:var(--r-card)}
+.li.cur{background:var(--bg-2)}
+.li .thumb{width:128px;height:72px}
+.li div{font-size:13px}.li small{font-size:11px;color:var(--text-mute)}
+.seg{display:flex;gap:6px}.seg span{min-height:36px;padding:0 14px;border-radius:999px;display:inline-flex;align-items:center;font-size:13px;color:var(--text-dim);border:1px solid var(--line)}
+.seg span.on{background:var(--text);color:var(--bg-0);border-color:var(--text)}
+
+/* up next / error card replacing the player */
+.card-replace{position:absolute;inset:0;background:radial-gradient(ellipse at 20% 30%,rgba(159,84,160,.35),transparent 55%),var(--bg-0);display:flex;align-items:center;padding:0 64px;gap:40px}
+.ring{width:64px;height:64px;border-radius:999px;border:3px solid var(--line-2);border-top-color:var(--primary);border-right-color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700}
+</style>
+</head>
+<body>
+<h1 style="font-size:24px;margin:0 0 4px">Phase 6 — YouTube import and player: options to pick</h1>
+<p class="sub">Each block answers one question in <code>06-DISCUSS-QUESTIONS.md</code>. Colours, radii, 44px targets and the LBC font are the product tokens from <code>src/styles/globals.css</code> and <code>ui.config.json</code>. Thumbnails are colour blocks (no network). Sample titles are placeholders.</p>
+
+<!-- ============================================================ Q1 -->
+<section id="q1">
+<h2>Q1 — Playlist import: where and how the preview looks</h2>
+<p class="sub">A: a side sheet opened from the show's admin page (button "Import season from YouTube"). B: a separate full page with a card grid.</p>
+<div class="cap"><b>A · recommended</b> — side sheet on the show page, table with one row per video</div>
+<div class="frame d"><div class="adm">
+  <div class="side"><div class="logo">clickit <span>story</span></div><a>Dashboard</a><a class="on">Shows</a><a>Shorts</a><a>Categories</a><a>Inbox</a><a>Audit</a><a>Settings</a></div>
+  <div class="main dim">
+    <div class="lbl">Shows / Sample Show</div>
+    <div style="font-size:30px;font-weight:700;margin:6px 0 18px">Sample Show</div>
+    <div style="display:flex;gap:10px;margin-bottom:20px"><span class="btn out">Season 1</span><span class="btn out">Season 2</span><span class="btn pri">Import season from YouTube</span></div>
+    <div class="tbl" style="width:560px"><div class="tr th"><span class="lbl" style="padding-left:16px">Episodes</span></div><div class="tr"><span class="n">1</span><div class="ti"><div>Episode one</div></div></div><div class="tr"><span class="n">2</span><div class="ti"><div>Episode two</div></div></div></div>
+  </div>
+  <div class="sheet">
+    <div class="hd"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:20px;font-weight:700">Import a season from YouTube</div><span class="ib">✕</span></div>
+      <div style="color:var(--text-mute);font-size:13px;margin-top:4px">Nothing is saved until you press Import. Episodes land as drafts.</div></div>
+    <div class="bd">
+      <div><div class="lbl" style="margin-bottom:6px">Playlist link</div><div class="field">https://www.youtube.com/playlist?list=PLxxxxxxxxxxxxxxxx</div></div>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1"><div class="lbl" style="margin-bottom:6px">Put into</div><div class="field" style="justify-content:space-between">New season · Season 3 <span style="color:var(--text-mute)">▾</span></div></div>
+        <div style="flex:1"><div class="lbl" style="margin-bottom:6px">Season title (from playlist)</div><div class="field">Sample Show — Season 3</div></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--text-dim)"><span class="chip ok">21 ready</span><span class="chip no">2 can't play</span><span class="chip dup">1 already on Clickit</span><span style="margin-left:auto;color:var(--text-mute)">24 videos · 2 pages read</span></div>
+      <div class="tbl">
+        <div class="tr th"><div class="cbwrap"><div class="cb on">✓</div></div><span class="n">#</span><span class="ti lbl">Title</span><span class="du lbl">Time</span><span class="st lbl">Status</span></div>
+        <div class="tr"><div class="cbwrap"><div class="cb on">✓</div></div><span class="n">1</span><div class="thumb t1" style="width:96px;height:54px"></div><div class="ti"><div>Episode 1 — Sample title</div><small>Unlisted</small></div><span class="du">24:10</span><span class="st"><span class="chip ok">Ready</span></span></div>
+        <div class="tr"><div class="cbwrap"><div class="cb on">✓</div></div><span class="n">2</span><div class="thumb t2" style="width:96px;height:54px"></div><div class="ti"><div dir="rtl" style="text-align:left">الحلقة ٢ — عنوان تجريبي</div><small>Public · Arabic title</small></div><span class="du">22:48</span><span class="st"><span class="chip ok">Ready</span></span></div>
+        <div class="tr skip"><div class="cbwrap"><div class="cb off"></div></div><span class="n">3</span><div class="thumb t3" style="width:96px;height:54px;opacity:.4"></div><div class="ti"><div>Private video</div><small>Set it to Unlisted or Public, then import again</small></div><span class="du">—</span><span class="st"><span class="chip no">Private</span></span></div>
+        <div class="tr skip"><div class="cbwrap"><div class="cb off"></div></div><span class="n">4</span><div class="thumb t4" style="width:96px;height:54px;opacity:.4"></div><div class="ti"><div>Episode 4 — Sample title</div><small>Music claim: blocked in the UAE</small></div><span class="du">25:02</span><span class="st"><span class="chip no">Blocked in UAE</span></span></div>
+        <div class="tr skip"><div class="cbwrap"><div class="cb off"></div></div><span class="n">5</span><div class="thumb t1" style="width:96px;height:54px;opacity:.4"></div><div class="ti"><div>Episode 5 — Sample title</div><small>Season 2 · E5</small></div><span class="du">23:15</span><span class="st"><span class="chip dup">Already on Clickit</span></span></div>
+        <div class="tr"><div class="cbwrap"><div class="cb on">✓</div></div><span class="n">6</span><div class="thumb t2" style="width:96px;height:54px"></div><div class="ti"><div>Episode 6 — Sample title</div><small>Public</small></div><span class="du">21:37</span><span class="st"><span class="chip ok">Ready</span></span></div>
+      </div>
+    </div>
+    <div class="ft"><span class="btn ghost">Cancel</span><span class="btn pri">Import 21 episodes as drafts</span></div>
+  </div>
+</div></div>
+
+<div class="cap" style="margin-top:22px">B — separate page "Import from YouTube" with a card grid</div>
+<div class="frame d"><div class="adm" style="height:560px">
+  <div class="side"><div class="logo">clickit <span>story</span></div><a>Dashboard</a><a>Shows</a><a class="on">Import</a><a>Shorts</a><a>Settings</a></div>
+  <div class="main">
+    <div style="font-size:30px;font-weight:700;margin-bottom:14px">Import from YouTube</div>
+    <div style="display:flex;gap:12px;margin-bottom:18px"><div class="field" style="flex:2">https://www.youtube.com/playlist?list=PLxxxxxxxxxxxxxxxx</div><div class="field" style="flex:1;justify-content:space-between">Sample Show <span>▾</span></div><div class="field" style="flex:1;justify-content:space-between">New season 3 <span>▾</span></div></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+      <div><div class="thumb t1" style="height:130px"><span class="dur">24:10</span><div class="cb on" style="position:absolute;left:8px;top:8px">✓</div></div><div style="font-size:13px;margin-top:6px">1 · Episode 1 — Sample title</div><span class="chip ok" style="margin-top:4px">Ready</span></div>
+      <div><div class="thumb t2" style="height:130px"><span class="dur">22:48</span><div class="cb on" style="position:absolute;left:8px;top:8px">✓</div></div><div style="font-size:13px;margin-top:6px">2 · الحلقة ٢ — عنوان تجريبي</div><span class="chip ok" style="margin-top:4px">Ready</span></div>
+      <div style="opacity:.5"><div class="thumb t3" style="height:130px"></div><div style="font-size:13px;margin-top:6px">3 · Private video</div><span class="chip no" style="margin-top:4px">Private</span></div>
+      <div style="opacity:.5"><div class="thumb t4" style="height:130px"><span class="dur">25:02</span></div><div style="font-size:13px;margin-top:6px">4 · Episode 4 — Sample title</div><span class="chip no" style="margin-top:4px">Blocked in UAE</span></div>
+    </div>
+    <div style="position:absolute;right:36px;bottom:24px"><span class="btn pri">Import 21 episodes as drafts</span></div>
+  </div>
+</div></div>
+</section>
+
+<!-- ============================================================ Q8 -->
+<section id="q8">
+<h2>Q8 — Watch page layout (YouTube rule: nothing may sit on top of the playing video)</h2>
+<p class="sub">Today the top bar, the prev/next arrows, the raised episode tray and the 8-second "next episode" card all sit on top of the video (red boxes). A moves every control off the video: bar above, controls below. B puts the episode list beside the video on desktop.</p>
+<div class="cap"><span class="bad">Today — breaks the rule</span></div>
+<div class="frame d"><div class="watch">
+  <div class="yt" style="position:absolute;inset:0 0 134px 0"><div class="scene"></div><span class="tag">YouTube player</span><div class="ytbar"><div class="prog"><i></i></div>▶ &nbsp; 9:12 / 24:10</div><span class="ytlogo">YouTube</span></div>
+  <div class="topbar" style="position:absolute;top:0;left:0;right:0;background:rgba(9,9,9,.9);z-index:3"><span class="back">← Sample Show</span><div class="mid"><div>Episode 3 — Sample title</div><small>S1 · E3</small></div><div class="acts"><span class="ib">♡</span><span class="ib">⤴</span></div></div>
+  <span class="ib" style="position:absolute;left:12px;top:300px;z-index:3;background:rgba(0,0,0,.4)">‹</span><span class="ib" style="position:absolute;right:12px;top:300px;z-index:3;background:rgba(0,0,0,.4)">›</span>
+  <div class="tray" style="position:absolute;left:0;right:0;bottom:0;height:134px;border-radius:16px 16px 0 0"><span class="lbl">Season 1 · hover raises the tray to 50% of the screen</span></div>
+  <div class="viol" style="left:4px;top:4px;width:1270px;height:68px"><b>covers the video</b></div>
+  <div class="viol" style="left:6px;top:290px;width:56px;height:64px"><b>arrow on video</b></div>
+  <div class="viol" style="right:6px;top:290px;width:56px;height:64px"><b>arrow on video</b></div>
+  <div class="viol" style="left:4px;top:360px;width:1270px;height:224px"><b>tray raised on hover + "next episode" card cover the video</b></div>
+</div></div>
+
+<div class="row" style="margin-top:22px">
+<div class="col"><div class="cap"><b>A · recommended</b> — stacked: bar above, video, controls below, episodes under (desktop)</div>
+<div class="frame d"><div class="watch" style="height:800px;background:var(--bg-0);display:flex;flex-direction:column">
+  <div class="topbar"><span class="back">← Sample Show</span><div class="mid"><div>Episode 3 — Sample title</div><small>Season 1 · Episode 3</small></div><div class="acts"><span class="ib">＋</span><span class="ib">♡</span><span class="ib">⤴</span></div></div>
+  <div style="flex:none;height:436px;background:#000;display:flex;justify-content:center"><div class="yt" style="width:776px;height:436px"><div class="scene"></div><span class="tag">YouTube player — nothing on top</span><div class="ytbar"><div class="prog"><i></i></div>▶ &nbsp; 9:12 / 24:10</div><span class="ytlogo">YouTube</span></div></div>
+  <div class="ctl"><span class="btn out">‹ Previous</span><div class="t" style="text-align:center"><div>Episode 3 — Sample title</div><small>Resumed at 9:12 · <u>Start from the beginning</u></small></div><span class="btn out">Next episode ›</span></div>
+  <div class="tray" style="flex:1">
+    <div class="ep"><div class="thumb t1"></div><div class="bar"><i style="width:100%"></i></div><div>1 · Episode one</div><small>Watched</small></div>
+    <div class="ep"><div class="thumb t2"></div><div class="bar"><i style="width:60%"></i></div><div>2 · Episode two</div><small>14 min left</small></div>
+    <div class="ep cur"><div class="thumb t3"></div><div class="bar"><i style="width:38%"></i></div><div>3 · Episode three</div><small>Now playing</small></div>
+    <div class="ep"><div class="thumb t4"></div><div class="bar"></div><div>4 · Episode four</div><small>24 min</small></div>
+    <div class="ep"><div class="thumb t1"></div><div class="bar"></div><div>5 · Episode five</div><small>23 min</small></div>
+  </div>
+</div></div></div>
+</div>
+
+<div class="row" style="margin-top:22px">
+<div class="col"><div class="cap"><b>A</b> on a phone (375px)</div>
+<div class="frame m"><div style="height:720px;display:flex;flex-direction:column">
+  <div class="topbar" style="padding:0 8px"><span class="ib" style="border:0;background:none">←</span><div class="mid"><div style="font-size:13px">Episode 3 — Sample title</div><small>S1 · E3</small></div><span class="ib" style="border:0;background:none">⤴</span></div>
+  <div class="yt" style="height:211px"><div class="scene"></div><span class="tag">YouTube player</span><div class="ytbar"><div class="prog"><i></i></div>▶ 9:12</div><span class="ytlogo">YouTube</span></div>
+  <div class="ctl" style="padding:8px 12px"><span class="ib">‹</span><div class="t" style="text-align:center"><small>Resumed at 9:12 · <u>Start over</u></small></div><span class="ib">›</span></div>
+  <div style="padding:12px 16px;background:var(--bg-1);flex:1;display:flex;flex-direction:column;gap:8px">
+    <div class="seg"><span class="on">Season 1</span><span>Season 2</span></div>
+    <div class="li"><div class="thumb t1" style="width:112px;height:63px"></div><div><div>1 · Episode one</div><small>Watched</small></div></div>
+    <div class="li"><div class="thumb t2" style="width:112px;height:63px"></div><div><div>2 · Episode two</div><small>14 min left</small></div></div>
+    <div class="li cur"><div class="thumb t3" style="width:112px;height:63px"></div><div><div>3 · Episode three</div><small>Now playing</small></div></div>
+    <div class="li"><div class="thumb t4" style="width:112px;height:63px"></div><div><div>4 · Episode four</div><small>24 min</small></div></div>
+  </div>
+</div></div></div>
+
+<div class="col"><div class="cap">B — video left, episode list right (desktop); phone same as A</div>
+<div class="frame" style="width:880px"><div style="height:600px;display:flex;flex-direction:column">
+  <div class="topbar"><span class="back">← Sample Show</span><div class="mid"><div>Episode 3 — Sample title</div><small>Season 1 · Episode 3</small></div><div class="acts"><span class="ib">♡</span><span class="ib">⤴</span></div></div>
+  <div style="display:flex;flex:1">
+    <div style="flex:1;display:flex;flex-direction:column">
+      <div class="yt" style="height:281px"><div class="scene"></div><span class="tag">YouTube player</span><div class="ytbar"><div class="prog"><i></i></div>▶ 9:12 / 24:10</div><span class="ytlogo">YouTube</span></div>
+      <div class="ctl"><span class="ib">‹</span><div class="t"><div>Episode 3 — Sample title</div><small>Resumed at 9:12 · <u>Start over</u></small></div><span class="ib">›</span></div>
+      <div style="padding:14px 20px;color:var(--text-dim);font-size:13px">Episode description…</div>
+    </div>
+    <div class="list" style="width:330px">
+      <div class="seg"><span class="on">Season 1</span><span>Season 2</span></div>
+      <div class="li"><div class="thumb t1" style="width:112px;height:63px"></div><div><div>1 · Episode one</div><small>Watched</small></div></div>
+      <div class="li"><div class="thumb t2" style="width:112px;height:63px"></div><div><div>2 · Episode two</div><small>14 min left</small></div></div>
+      <div class="li cur"><div class="thumb t3" style="width:112px;height:63px"></div><div><div>3 · Episode three</div><small>Now playing</small></div></div>
+      <div class="li"><div class="thumb t4" style="width:112px;height:63px"></div><div><div>4 · Episode four</div><small>24 min</small></div></div>
+    </div>
+  </div>
+</div></div></div>
+</div>
+</section>
+
+<!-- ============================================================ Q9 -->
+<section id="q9">
+<h2>Q9 — "Next episode" when an episode ends</h2>
+<p class="sub">A: when the video ends, the player is swapped for a Clickit card with an 8-second countdown (the video is gone, so nothing covers it). B: the ended video stays, and the countdown sits in the bar under it. C (no picture): no countdown, only the "Next episode" button.</p>
+<div class="row">
+<div class="col"><div class="cap"><b>A · recommended</b> — card replaces the ended player</div>
+<div class="frame half"><div style="display:flex;flex-direction:column">
+  <div class="topbar" style="height:56px"><span class="back">← Sample Show</span><span class="ib">⤴</span></div>
+  <div style="position:relative;height:371px"><div class="card-replace" style="padding:0 40px;gap:28px">
+    <div style="flex:1"><div class="lbl" style="margin-bottom:8px">Up next · Season 1 · Episode 4</div><div style="font-size:24px;font-weight:700;margin-bottom:6px">Episode 4 — Sample title</div><div style="color:var(--text-dim);font-size:13px;margin-bottom:18px">24 min</div><div style="display:flex;gap:10px"><span class="btn pri">▶ Play now</span><span class="btn out">Cancel</span></div></div>
+    <div style="position:relative"><div class="thumb t4" style="width:220px;height:124px"></div><div class="ring" style="position:absolute;right:-14px;top:-14px;background:var(--bg-0)">8</div></div>
+  </div></div>
+  <div class="ctl"><span class="ib">‹</span><div class="t" style="text-align:center"><div>Episode 3 — Sample title</div><small>Finished</small></div><span class="ib">›</span></div>
+</div></div></div>
+<div class="col"><div class="cap">B — ended video stays; countdown in the bar below</div>
+<div class="frame half"><div style="display:flex;flex-direction:column">
+  <div class="topbar" style="height:56px"><span class="back">← Sample Show</span><span class="ib">⤴</span></div>
+  <div class="yt" style="height:371px"><div class="scene" style="filter:grayscale(.6) brightness(.6)"></div><span class="tag">YouTube end screen (YouTube controls what shows here)</span><span class="ytlogo">YouTube</span></div>
+  <div class="ctl" style="background:var(--uis-primary-soft)"><div class="ring" style="width:44px;height:44px;font-size:15px">8</div><div class="t"><div>Up next: Episode 4 — Sample title</div><small>Season 1 · Episode 4</small></div><span class="btn pri">Play now</span><span class="btn out">Cancel</span></div>
+</div></div></div>
+</div>
+</section>
+
+<!-- ============================================================ Q11 -->
+<section id="q11">
+<h2>Q11 — When a video can't play (removed, private, blocked in the UAE)</h2>
+<p class="sub">A: a branded Clickit card replaces the player, with a way forward. B: today's grey box with one line of small text.</p>
+<div class="row">
+<div class="col"><div class="cap"><b>A · recommended</b> — branded card with next steps</div>
+<div class="frame half"><div style="position:relative;height:371px"><div class="card-replace" style="flex-direction:column;align-items:flex-start;justify-content:center;gap:0">
+  <div style="width:44px;height:44px;border-radius:999px;border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:20px;margin-bottom:16px">!</div>
+  <div style="font-size:24px;font-weight:700;margin-bottom:6px">This episode can't play right now</div>
+  <div style="color:var(--text-dim);font-size:14px;max-width:440px;margin-bottom:20px">The video was removed or isn't available in your region. We've told the Clickit team.</div>
+  <div style="display:flex;gap:10px"><span class="btn pri">▶ Play next episode</span><span class="btn out">Back to Sample Show</span></div>
+</div></div></div></div>
+<div class="col"><div class="cap"><span class="bad">B — today</span></div>
+<div class="frame half"><div style="height:371px;background:var(--bg-2);display:flex;align-items:center;justify-content:center"><p style="color:var(--text-dim);font-size:14px">This video is unavailable. Please try again later.</p></div></div></div>
+</div>
+</section>
+
+<!-- ============================================================ Q13 -->
+<section id="q13">
+<h2>Q13 — Reordering episodes in the admin</h2>
+<p class="sub">A: keep today's up/down arrows (one move at a time), made safe. B: drag rows into place, then press Save order once.</p>
+<div class="row">
+<div class="col"><div class="cap"><b>A · recommended</b> — up/down arrows, saved on each click</div>
+<div class="frame half" style="padding:20px"><div class="tbl">
+  <div class="tr th"><span class="n">#</span><span class="ti lbl">Episode</span><span class="lbl" style="width:100px;text-align:right">Order</span></div>
+  <div class="tr"><span class="n">1</span><div class="thumb t1" style="width:80px;height:45px"></div><div class="ti"><div>Episode one</div><small>Published</small></div><span class="ib" style="opacity:.35">↑</span><span class="ib">↓</span></div>
+  <div class="tr"><span class="n">2</span><div class="thumb t2" style="width:80px;height:45px"></div><div class="ti"><div>Episode two</div><small>Draft</small></div><span class="ib">↑</span><span class="ib">↓</span></div>
+  <div class="tr"><span class="n">3</span><div class="thumb t3" style="width:80px;height:45px"></div><div class="ti"><div>Episode three</div><small>Draft</small></div><span class="ib">↑</span><span class="ib">↓</span></div>
+  <div class="tr"><span class="n">4</span><div class="thumb t4" style="width:80px;height:45px"></div><div class="ti"><div>Episode four</div><small>Draft</small></div><span class="ib">↑</span><span class="ib" style="opacity:.35">↓</span></div>
+</div></div></div>
+<div class="col"><div class="cap">B — drag to reorder, then Save order</div>
+<div class="frame half" style="padding:20px"><div class="tbl">
+  <div class="tr th"><span class="n">#</span><span class="ti lbl">Episode</span></div>
+  <div class="tr"><span class="ib" style="border:0;background:none">⋮⋮</span><span class="n">1</span><div class="thumb t1" style="width:80px;height:45px"></div><div class="ti"><div>Episode one</div><small>Published</small></div></div>
+  <div class="tr" style="background:var(--bg-2);box-shadow:0 10px 32px rgba(0,0,0,.5);transform:translateX(10px)"><span class="ib" style="border:0;background:none;color:var(--primary)">⋮⋮</span><span class="n">3</span><div class="thumb t3" style="width:80px;height:45px"></div><div class="ti"><div>Episode three (moving)</div><small>Draft</small></div></div>
+  <div class="tr"><span class="ib" style="border:0;background:none">⋮⋮</span><span class="n">2</span><div class="thumb t2" style="width:80px;height:45px"></div><div class="ti"><div>Episode two</div><small>Draft</small></div></div>
+  <div class="tr"><span class="ib" style="border:0;background:none">⋮⋮</span><span class="n">4</span><div class="thumb t4" style="width:80px;height:45px"></div><div class="ti"><div>Episode four</div><small>Draft</small></div></div>
+</div>
+<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px"><span class="btn ghost">Discard</span><span class="btn pri">Save order</span></div></div></div>
+</div>
+</section>
+
+<!-- ============================================================ Q15 -->
+<section id="q15">
+<h2>Q15 — The YouTube key field in Admin › Settings</h2>
+<p class="sub">The key moves to a Cloudflare Worker secret. A: the field becomes a read-only status with a "Test key" button. B: remove the row entirely.</p>
+<div class="row">
+<div class="col"><div class="cap"><span class="bad">Today</span> — key typed and stored in the database</div>
+<div class="frame half" style="padding:20px"><div class="lbl" style="margin-bottom:8px">YouTube Data API key</div><div class="field" style="justify-content:space-between">••••••••••••••••••••••••••••••••••• <span style="color:var(--text-mute)">👁</span></div><div style="display:flex;justify-content:flex-end;margin-top:12px"><span class="btn pri">Save</span></div></div></div>
+<div class="col"><div class="cap"><b>A · recommended</b> — read-only status + Test key</div>
+<div class="frame half" style="padding:20px"><div class="lbl" style="margin-bottom:8px">YouTube Data API</div>
+<div style="display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:var(--r-card);padding:12px 14px"><span class="chip ok">Key set</span><div style="flex:1;font-size:13px;color:var(--text-dim)">Stored in Cloudflare as a secret. Change it there, not here.<br><span style="color:var(--text-mute)">Last test: 20 Oct, 11:02 · key works</span></div><span class="btn out">Test key</span></div></div></div>
+</div>
+</section>
+</body>
+</html>
