@@ -17,18 +17,63 @@ import {
   seasonSchema,
   seasonUpdateSchema,
 } from './schemas.ts'
+import { verifyMessage, type DuplicateParams, type VerifyOutcome } from './youtube-verify.ts'
+import { parseVideoIdStrict } from '../../server/youtube/urls.ts'
+import type { YouTubeErrorCode } from '../youtube-errors'
 import type { AdminDb, ArabicFill, AuditWriter, CoreResult } from './ports'
 
-type Deps = { audit: AuditWriter; adminUserId: string; fillArabic: ArabicFill }
+type Deps = {
+  audit: AuditWriter
+  adminUserId: string
+  fillArabic: ArabicFill
+  /**
+   * Server check of a new or changed video link (YT-03). Optional in the core;
+   * the action wrapper always supplies it (06-13). Fail closed: key missing or
+   * quota blocks saving a new or changed link; other edits are unaffected.
+   */
+  verifyVideo?: (raw: string, opts: { excludeEpisodeId?: string }) => Promise<VerifyOutcome>
+}
 type Obj = Record<string, unknown>
 type StepResult = { error: string | null }
 type SeasonData = { showId?: string; season?: unknown }
-type EpisodeData = { showId?: string; episode?: unknown }
+type YouTubeError = { code: YouTubeErrorCode; params?: DuplicateParams }
+type EpisodeData = { showId?: string; episode?: unknown; youtubeError?: YouTubeError }
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
 const dupNumber = (n: unknown) =>
   `Episode number ${n} already exists in this season. Choose a different number.`
+
+const DUP_VIDEO = 'This video is already on Clickit.'
+
+/** A 23505 raised by the catalog-wide video index (06-01), not the number one. */
+const isDupVideo = (e: { code?: string; message: string }) =>
+  e.code === '23505' && e.message.includes('episodes_youtube_video_id_key')
+
+/**
+ * Runs deps.verifyVideo. Returns the normalized id, or a refusal result to
+ * return as-is. A throw (database read failed) is a plain error, never ok.
+ */
+async function checkVideo(
+  deps: Deps,
+  raw: string,
+  opts: { excludeEpisodeId?: string },
+  showId: string
+): Promise<{ videoId: string } | { refusal: CoreResult<EpisodeData> }> {
+  let outcome: VerifyOutcome
+  try {
+    outcome = await (deps.verifyVideo as NonNullable<Deps['verifyVideo']>)(raw, opts)
+  } catch (e) {
+    return { refusal: { success: false, error: errText(e), wrote: false, data: { showId } } }
+  }
+  if (outcome.ok) return { videoId: outcome.meta.videoId }
+  const youtubeError: YouTubeError = outcome.params
+    ? { code: outcome.code, params: outcome.params }
+    : { code: outcome.code }
+  return {
+    refusal: { success: false, error: verifyMessage(outcome), wrote: false, data: { showId, youtubeError } },
+  }
+}
 
 function blank(v: unknown): boolean {
   return v === undefined || v === null || (typeof v === 'string' && v.trim() === '')
@@ -376,6 +421,12 @@ export async function createEpisodeCore(
     return { success: false, error: 'Season does not belong to this show.', wrote: false }
   }
 
+  if (deps.verifyVideo && !blank(parsed.youtube_video_id)) {
+    const v = await checkVideo(deps, parsed.youtube_video_id as string, {}, showId)
+    if ('refusal' in v) return v.refusal
+    parsed.youtube_video_id = v.videoId
+  }
+
   const t = await fill(deps, parsed.title, parsed.title_ar)
   if (t.error) return { success: false, error: t.error, wrote: false }
   const d = await fill(deps, parsed.description, parsed.description_ar)
@@ -416,12 +467,15 @@ export async function createEpisodeCore(
     return recomputeShowCounts(db, showId)
   }
   let created: Obj | null = null
+  let dupVideo = false
   steps.push(
     {
       name: 'insert-episode',
       run: async () => {
         const res = await db.from('episodes').insert({ ...parsed, archived: false } as never).select().single()
         if (res.error) {
+          dupVideo = isDupVideo(res.error)
+          if (dupVideo) return { error: DUP_VIDEO }
           return {
             error: res.error.code === '23505' ? dupNumber(parsed.episode_number) : res.error.message,
           }
@@ -453,7 +507,8 @@ export async function createEpisodeCore(
       title: parsed.title,
       episode_number: parsed.episode_number,
     })
-    return { success: false, error: failMessage(result), wrote: result.wrote, data: { showId } }
+    const data: EpisodeData = dupVideo ? { showId, youtubeError: { code: 'video_duplicate' } } : { showId }
+    return { success: false, error: failMessage(result), wrote: result.wrote, data }
   }
   return { success: true, wrote: true, data: { episode: created, showId } }
 }
@@ -485,6 +540,19 @@ export async function updateEpisodeCore(
     return { success: false, error: 'Episode cannot be moved to a different season.', wrote: false, data: { showId } }
   }
   const patch: Obj = { ...rest }
+
+  // Verify only a present and changed video link (same id in another form is not a change).
+  if (deps.verifyVideo && typeof patch.youtube_video_id === 'string' && !blank(patch.youtube_video_id)) {
+    const raw = patch.youtube_video_id
+    const same = parseVideoIdStrict(raw)
+    if (same.ok && same.id === row.youtube_video_id) {
+      patch.youtube_video_id = same.id
+    } else {
+      const v = await checkVideo(deps, raw, { excludeEpisodeId: episodeId }, showId)
+      if ('refusal' in v) return v.refusal
+      patch.youtube_video_id = v.videoId
+    }
+  }
 
   if ('title_ar' in patch && blank(patch.title_ar)) {
     const title = (patch.title as string | undefined) ?? (row.title as string)
@@ -531,12 +599,15 @@ export async function updateEpisodeCore(
   const before = pick(row, keys)
 
   let updated: unknown = null
+  let dupVideo = false
   steps.push(
     {
       name: 'update-episode',
       run: async () => {
         const res = await db.from('episodes').update(patch as never).eq('id', episodeId).select().single()
         if (res.error) {
+          dupVideo = isDupVideo(res.error)
+          if (dupVideo) return { error: DUP_VIDEO }
           return {
             error:
               res.error.code === '23505'
@@ -557,7 +628,8 @@ export async function updateEpisodeCore(
   const result = await runWithCompensation(steps)
   if (!result.ok) {
     await recordFailure(deps, 'update', 'episode', episodeId, result, { before, after: patch })
-    return { success: false, error: failMessage(result), wrote: result.wrote, data: { showId } }
+    const data: EpisodeData = dupVideo ? { showId, youtubeError: { code: 'video_duplicate' } } : { showId }
+    return { success: false, error: failMessage(result), wrote: result.wrote, data }
   }
   return { success: true, wrote: true, data: { episode: updated, showId } }
 }

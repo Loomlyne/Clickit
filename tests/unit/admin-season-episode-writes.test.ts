@@ -514,7 +514,7 @@ test('createEpisodeCore: without a verifyVideo dep the old path is unchanged', a
 test('updateEpisodeCore: verify runs only when the video id is present and changed', async () => {
   const f = world()
   f.tables.episodes!.find((e) => e.id === E1)!.youtube_video_id = 'storedVid01'
-  const v = verifier((raw) => okMeta(raw.length === 11 ? raw : 'storedVid01'))
+  const v = verifier((raw) => okMeta(raw.slice(-11)))
   const d = { ...deps(f), verifyVideo: v.verifyVideo }
 
   await updateEpisodeCore(f.client, d, E1, { title: 'Only title' })
