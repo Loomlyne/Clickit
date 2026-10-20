@@ -123,6 +123,29 @@ test('createEpisode and updateEpisode pass the server video check', () => {
   assert.ok(block('updateEpisode').includes('serverVideoVerifier(ctx.db, id)'))
 })
 
+test('createShort and updateShort check the video on the server before writing', () => {
+  for (const [name, write] of [
+    ['createShort', ".insert({ ...parsed"],
+    ['updateShort', '.update(parsed)'],
+  ] as const) {
+    const text = block(name)
+    const parse = text.indexOf('shortSchema.parse(data)')
+    const check = text.indexOf('checkShortVideoCore(')
+    const at = text.indexOf(write)
+    assert.ok(parse !== -1 && check !== -1 && at !== -1, `${name} shape changed`)
+    assert.ok(parse < check && check < at, `${name} writes before the video check`)
+    assert.ok(text.includes('if (!video.ok) return shortVideoRefusal(video)'), `${name} ignores a refusal`)
+    assert.ok(text.includes('parsed.youtube_video_id = video.videoId'), `${name} does not store the bare id`)
+    assert.ok(text.includes('serverYouTubeClientOrNull'), `${name} does not use the stored key`)
+  }
+  // The edit passes the stored id so an unchanged video is not re-checked.
+  assert.match(block('updateShort'), /checkShortVideoCore\(\s*admin,\s*serverYouTubeClientOrNull,\s*parsed\.youtube_video_id,\s*current\.youtube_video_id\s*\)/)
+  const refusal = src.slice(src.indexOf('function shortVideoRefusal('), src.indexOf('export async function createShort('))
+  assert.ok(refusal.includes('data: { youtubeError: { code: check.code } }'))
+  const getter = src.slice(src.indexOf('async function serverYouTubeClientOrNull('), src.indexOf('function shortVideoRefusal('))
+  assert.ok(getter.includes("'missing' in yt ? null : yt.client"))
+})
+
 test('the verifier builds its client from getServerYouTubeClient', () => {
   const region = seamRegion()
   assert.ok(region.includes('getServerYouTubeClient()'))

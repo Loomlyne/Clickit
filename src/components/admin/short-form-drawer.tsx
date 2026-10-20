@@ -22,7 +22,10 @@ import {
   fetchYouTubeMeta,
   updateShort,
 } from '@/app/[locale]/admin/actions'
-import { YOUTUBE_ERROR_MESSAGE_KEYS } from '@/lib/youtube-errors'
+import {
+  YOUTUBE_ERROR_MESSAGE_KEYS,
+  type YouTubeErrorCode,
+} from '@/lib/youtube-errors'
 import { formatQuotaReset, nextQuotaReset } from '@/lib/youtube-quota'
 import { extractYouTubeId } from '@/lib/youtube'
 import type { Database } from '@/lib/database.types'
@@ -141,6 +144,17 @@ export function ShortFormDrawer({
     }
   }, [open, editingShort, reset])
 
+  // A YouTube refusal in the admin's language (quota messages carry {time}).
+  function youtubeErrorText(code: YouTubeErrorCode): string {
+    const tYt = tYtErrors as unknown as (
+      key: string,
+      values?: Record<string, string>
+    ) => string
+    return tYt(YOUTUBE_ERROR_MESSAGE_KEYS[code], {
+      time: formatQuotaReset(nextQuotaReset(new Date()), locale),
+    })
+  }
+
   // Fetch YouTube metadata when URL is pasted
   const fetchMeta = async () => {
     const url = watch('youtube_url')
@@ -154,15 +168,7 @@ export function ShortFormDrawer({
         const code = res.data?.code
         if (code && code in YOUTUBE_ERROR_MESSAGE_KEYS) {
           // Words come from the code and i18n keys, never raw server text.
-          const tYt = tYtErrors as unknown as (
-            key: string,
-            values?: Record<string, string>
-          ) => string
-          toast.error(
-            tYt(YOUTUBE_ERROR_MESSAGE_KEYS[code], {
-              time: formatQuotaReset(nextQuotaReset(new Date()), locale),
-            })
-          )
+          toast.error(youtubeErrorText(code))
         } else {
           toast.error(t('toastMetaFailed'))
         }
@@ -206,7 +212,14 @@ export function ShortFormDrawer({
       toast.success(isEditing ? t('toastUpdated') : t('toastSaved'))
       onOpenChange(false)
     } else {
-      toast.error(result.error || t('toastSaveFailed'))
+      // The server refused the video: words from the code and i18n keys only.
+      const code = (result.data as { youtubeError?: { code?: unknown } } | undefined)
+        ?.youtubeError?.code
+      if (typeof code === 'string' && code in YOUTUBE_ERROR_MESSAGE_KEYS) {
+        toast.error(youtubeErrorText(code as YouTubeErrorCode))
+      } else {
+        toast.error(result.error || t('toastSaveFailed'))
+      }
     }
   }
 

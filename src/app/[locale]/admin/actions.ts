@@ -66,6 +66,7 @@ import type { AdminDb } from '@/lib/admin/ports'
 import type { YouTubeErrorCode } from '@/lib/youtube-errors'
 import { getServerYouTubeClient } from '@/server/youtube-service'
 import { withinYouTubeActionLimit } from '@/server/youtube/rate-limit'
+import { checkShortVideoCore, type ShortVideoCheck } from '@/lib/admin/short-video'
 import { saveYouTubeApiKeyCore, type SaveKeyResult } from '@/lib/admin/youtube-key-save'
 import { testYouTubeKeyCore, type KeyTestResult } from '@/lib/admin/youtube-key-status'
 import { nextQuotaReset } from '@/lib/youtube-quota'
@@ -2830,6 +2831,17 @@ const shortSchema = z.object({
   expires_at: z.string().optional().nullable(),
 })
 
+/** The stored YouTube client, or null when no key is saved (key_missing). */
+async function serverYouTubeClientOrNull() {
+  const yt = await getServerYouTubeClient()
+  return 'missing' in yt ? null : yt.client
+}
+
+/** A refused short link, in the episode save's shape (data.youtubeError.code). */
+function shortVideoRefusal(check: Extract<ShortVideoCheck, { ok: false }>): ActionResult {
+  return { success: false, error: check.error, data: { youtubeError: { code: check.code } } }
+}
+
 export async function createShort(
   data: z.input<typeof shortSchema>
 ): Promise<ActionResult> {
@@ -2837,6 +2849,11 @@ export async function createShort(
     const user = await assertAdmin()
     const parsed = shortSchema.parse(data)
     const admin = createAdminClient()
+
+    // Server video check before any write (same rules as an episode save).
+    const video = await checkShortVideoCore(admin, serverYouTubeClientOrNull, parsed.youtube_video_id)
+    if (!video.ok) return shortVideoRefusal(video)
+    parsed.youtube_video_id = video.videoId
 
     const { data: lastShort } = await admin
       .from('shorts')
@@ -2886,6 +2903,24 @@ export async function updateShort(
     id = idParsed.value
     const parsed = shortSchema.parse(data)
     const admin = createAdminClient()
+
+    const { data: current, error: readError } = await admin
+      .from('shorts')
+      .select('youtube_video_id')
+      .eq('id', id)
+      .maybeSingle()
+    if (readError) return { success: false, error: readError.message }
+    if (!current) return { success: false, error: 'Short not found.' }
+
+    // Server video check before the write; the stored video is not re-checked.
+    const video = await checkShortVideoCore(
+      admin,
+      serverYouTubeClientOrNull,
+      parsed.youtube_video_id,
+      current.youtube_video_id
+    )
+    if (!video.ok) return shortVideoRefusal(video)
+    parsed.youtube_video_id = video.videoId
 
     const { data: short, error } = await admin
       .from('shorts')

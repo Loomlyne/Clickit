@@ -96,6 +96,12 @@ test('the GET /api/youtube-meta route file is gone', () => {
   )
 })
 
+test('shorts form: a save refused by the server video check is translated from its code', () => {
+  assert.match(shortForm, /\?\.youtubeError\?\.code/)
+  assert.ok(shortForm.includes('toast.error(youtubeErrorText(code as YouTubeErrorCode))'))
+  assert.ok(shortForm.includes('YOUTUBE_ERROR_MESSAGE_KEYS[code]'))
+})
+
 test('shorts form: fetches through fetchYouTubeMeta with forShort true', () => {
   assert.match(shortForm, /fetchYouTubeMeta\(url, \{ forShort: true \}\)/)
   assert.equal(count(shortForm, /fetch\(/g), 0)
