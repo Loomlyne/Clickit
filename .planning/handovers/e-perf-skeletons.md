@@ -50,4 +50,4 @@ Run 2026-10-20 14:20:37–14:21:02 on d26c5a5 (after the merge):
 9. Open an episode, then a show page, normal network → everything loads as before (resume point, like, My List state correct).
 
 ## PR
-PR_PLACEHOLDER
+https://github.com/Loomlyne/Clickit/pull/25 (branch `claude/perf-skeletons-6f6fc9`). No merge, no deploy from this session.
