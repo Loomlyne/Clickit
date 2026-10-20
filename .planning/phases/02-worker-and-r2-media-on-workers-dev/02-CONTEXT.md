@@ -2,6 +2,7 @@
 
 **Gathered:** 2026-10-19 (decisions D-01 to D-04 signed by Koss), 2026-10-20 (D-05)
 **Status:** Ready for planning
+**Plan gate:** signed by Koss 2026-10-20 (control session: "Sign Phase 2 now"; this work session's question form, 10:16 CET: "Sign, start 02-05 now"). See 02-PLAN-GATE.md.
 **Session:** work session `phase-02-workers-r2` (worktree `.claude/worktrees/phase-02-workers-r2-0db863`). Planning only. The control session in `/Users/koss/Developer/Clickit` commits to main, deploys, and talks to Koss.
 
 <domain>
