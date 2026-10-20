@@ -134,3 +134,19 @@ Fix: `src/app/[locale]/[...rest]/page.tsx` (`notFound()`), `src/app/[locale]/not
 | `/` | 307 | 307 to `/en` | 307 |
 
 Note: the 404 shell is Next's `<html id="__next_error__">` without a `lang` attribute (the root layout owns no `<html>`); the body is the localized not-found page. Not checked signed in or with skip-sign-in on locally.
+
+## Remote spike
+
+Plan 02-10 Task 1 (RUNBOOK Steps 1-10), run by the control session on 2026-10-20 and relayed to job C (no secret appears here):
+- Account: `wrangler whoami` shows only ClickitStory `e329b099b6e4272fc0915a99832e47fe`; `CLOUDFLARE_API_TOKEN` unset. (Warning only: OAuth token lacks k2 scopes, unused.)
+- workers.dev subdomain: `clickitstory` → app Worker will be `https://clickit.clickitstory.workers.dev`, media Worker `https://clickit-media.clickitstory.workers.dev`.
+- R2: `clickit-media` already existed (holds job D's verified 86-object copy; nothing deleted); `clickit-next-cache` created.
+- CORS read-back on `clickit-media`: allowed origins `https://clickit.clickitstory.workers.dev`, `https://www.clickitstory.ae`; methods PUT; headers Content-Type; expose ETag; max age 3600 (the 02-02 key names were accepted).
+- D1 `clickit-tag-cache` created (region EEUR), `database_id` `7319d21d-eda3-4fed-aefd-6cbcc545f515`, written into `wrangler.jsonc` (commit 251ebc5).
+- Steps 11 (env file) and 20 (Turnstile widget): pending Koss.
+
+Task 2 (job C):
+- `npm run gate:local` under the heavy lock: exit=0, 1003/1003 unit tests (`/Users/koss/clickit-phase02-logs/02-10-gate.log`).
+- `HOME=/Users/koss/.clickit-cloudflare node scripts/cf/wrangler-guard.mjs --remote`: `wrangler-guard ok remote`.
+- `node scripts/cf/deploy.mjs --target workersdev --dry-run` against the preview stamp from gate:local refused only for build-env reasons that belong to the preview target: stamp target preview; loopback URL, local Supabase URL and LOCAL_DEV in the preview build env; no `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. No refusal for account, D1 id, crons, clean tree or pushed HEAD. The workersdev build (`cf:deploy:workersdev`) reads `/Users/koss/.clickit-cloudflare/clickit.workersdev.env` instead, so these clear once Step 11/20 are done.
+- Commit for the control session to deploy at RUNBOOK Step 12: the phase-branch HEAD that carries this section (see `git log -1` on `origin/claude/phase-02-execute-19d86a`), with `npm run cf:deploy:workersdev -- --media-flag off`, after Koss's "deploy workers.dev".
