@@ -1,7 +1,7 @@
 # Hand-over: Phase 6, YouTube Import and Player
 
 - Branch: `phase-06-youtube-import-player` (worktree `.claude/worktrees/phase-06-youtube-import-player-661c18`), based on origin/main c0da1d8, merged up to date.
-- Final commit: see the PR head (this file is committed last; the gate ran on 773f035 (after the review fixes); only this hand-over file changed after it).
+- Final commit: see the PR head (this file is committed last; the gate ran on 8ed6dfc (after the review fixes and refresh-unless-edited); only this hand-over file changed after it).
 - PR: https://github.com/Loomlyne/Clickit/pull/27
 - Plans: 06-00 … 06-19 executed, each with a SUMMARY in `.planning/phases/06-youtube-import-and-player/`. 06-20 (this hand-over + UAT) is in progress; 06-21 … 06-24 are controller/owner steps.
 
@@ -9,8 +9,8 @@
 
 | Gate | Result |
 |---|---|
-| `npm run gate:local` (lint, typecheck, test:unit, guard:migrations, build), placeholder public env, under the heavy lock, detached | **exit=0** on 773f035 (2026-10-20 23:44:34 CET): lint 0 errors (warnings pre-existing), tsc clean, 1080/1080 unit tests, migration-guard 1 file 0 violations, `next build` compiled, 55/55 static pages. Earlier run on 0d40b0e (pre-review) also exit=0 with 1022/1022; log `/Users/koss/.clickit-checks/phase06-gate.log` |
-| Unit tests | 1080 pass, 0 fail |
+| `npm run gate:local` (lint, typecheck, test:unit, guard:migrations, build), placeholder public env, under the heavy lock, detached | **exit=0** on 8ed6dfc (2026-10-21 00:03:32–00:03:59 CET): lint 0 errors (warnings pre-existing), tsc clean, 1107/1107 unit tests, migration-guard 1 file 0 violations, `next build` compiled, 55/55 static pages. Earlier run on 0d40b0e (pre-review) also exit=0 with 1022/1022; log `/Users/koss/.clickit-checks/phase06-gate.log` |
+| Unit tests | 1107 pass, 0 fail |
 | Local migration apply | `supabase db reset --local` on the shared Clickit stack: exit 0, latest version 20261020150526 (2026-10-20 17:51 CET) |
 | Local Vault round trip (fake key only) | service_role set/get/meta → `AAAA`, `true|AAAA`; anon and authenticated → permission denied on `public.get_youtube_key`, `private.get_youtube_key`, `vault.decrypted_secrets` |
 | e2e `tests/e2e/watch-page.spec.ts` | rewritten for the stacked layout; NOT run (no stack + dev server lane yet). Neither CI nor gate:local runs e2e |
