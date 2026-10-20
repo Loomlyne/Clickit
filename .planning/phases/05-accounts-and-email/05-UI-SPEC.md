@@ -348,7 +348,7 @@ React Email source in `src/emails/**`; auth templates exported to `supabase/temp
 
 ### 7.1 Shell and colours
 
-Structure and type are the Phase 4 section 5 contract, adopted unchanged: table-based, inline styles, `role="presentation"`, 600px max (`width:100%;max-width:600px`), 16px side padding on phones, card padding 32px, `lang` and `dir` on `<html>` and on the content table (`dir="rtl"` for Arabic), hidden preheader (<= 90 characters), logo as a hosted PNG on `media.clickitstory.ae` (`width="136"`, `alt="Clickit Story"`, `style="display:block;border:0"`, alt text coloured so it reads with images off; **a white-on-transparent PNG at 272px wide is a new asset** Phase 4's canvas supplies), exactly one primary action per email, a plain-text URL fallback line under every button, no tracking pixels or tracked links, no web fonts, no `rgba()`, no CSS class required for layout.
+Structure and type are the Phase 4 section 5 contract, adopted unchanged: table-based, inline styles, `role="presentation"`, 600px max (`width:100%;max-width:600px`), 16px side padding on phones, card padding 32px, `lang` and `dir` on `<html>` and on the content table (`dir="rtl"` for Arabic), hidden preheader (<= 90 characters), logo as a hosted PNG on `media.clickitstory.ae` (`width="136"`, `alt="Clickit Story"`, `style="display:block;border:0"`, alt text coloured so it reads with images off; **`public/brand/email-logo-white.png`, 272px wide on its own solid #090909 plate, built by Phase 5 plan 05-07 Task 4** and placed on the media host by a controller step), exactly one primary action per email, a plain-text URL fallback line under every button, no tracking pixels or tracked links, no web fonts, no `rgba()`, no CSS class required for layout.
 
 | Role | Size | Weight | Line height | Use |
 |------|------|--------|-------------|-----|
@@ -359,7 +359,7 @@ Structure and type are the Phase 4 section 5 contract, adopted unchanged: table-
 
 Font stack `-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif` (Arabic adds `Tahoma` before `Arial`). Bulletproof button: `<td bgcolor="#ffcc00" style="border-radius:999px"><a style="display:inline-block;padding:12px 32px;font-size:16px;font-weight:700;line-height:24px;color:#090909;text-decoration:none;border-radius:999px">` (48px high; Outlook shows square corners, accepted). Digits in emails are always Western.
 
-**Scheme-adaptive: Phase 5 Q12 = C, signed 2026-10-20 (D-27; also Phase 4 Q7 = C).** Colour values are owned by Phase 4: import them from `src/lib/email-tokens.ts` (literal hex, both schemes; Phase 4 plan 04-01, mirrored in DESIGN.md). Phase 5 never redefines a hex in template code. The table below names the roles and the values Phase 4 pins; if `email-tokens.ts` differs, it wins. Colour reference: Phase 4 `mockups/04-q7c.png`; signed look: `mockups/05-q12-schemes.png`.
+**Scheme-adaptive: Phase 5 Q12 = C, signed 2026-10-20 (D-27; also Phase 4 Q7 = C).** Colour values are owned by Phase 4: import them from `src/lib/email-tokens.ts` (literal hex, both schemes; Phase 4 plan 04-01, mirrored in DESIGN.md). Phase 5 never redefines a hex in template code. The table below names the roles and the values Phase 4 pins; they must match the signed picture exactly; a missing or different value stops 05-07 with `NEEDS CONTROLLER` until Phase 4 fixes `email-tokens.ts`. Colour reference: Phase 4 `mockups/04-q7c.png`; signed look: `mockups/05-q12-schemes.png`.
 
 | Role | Light (default) | Dark (`@media (prefers-color-scheme: dark)`) |
 |------|-----------------|----------------------------------------------|
@@ -598,7 +598,7 @@ No third-party block is declared, so the registry vetting gate did not run.
 
 Everything in this file is provisional until Koss signs 05-CONTEXT.md. Open items, in order of how much code they change:
 
-1. **Email colour.** RESOLVED 2026-10-20: Q12 = C (scheme-adaptive, section 7.1); Phase 4 owns the hex values. Q12 picture (`mockups/05-q12-schemes.png`) signed 2026-10-20 ~19:00 CET. Remaining: Phase 4 supplies the logo PNG on its own #090909 plate.
+1. **Email colour.** RESOLVED 2026-10-20: Q12 = C (scheme-adaptive, section 7.1); Phase 4 owns the hex values. Q12 picture (`mockups/05-q12-schemes.png`) signed 2026-10-20 ~19:00 CET. Remaining: Phase 5 builds the logo PNG on its own #090909 plate (05-07 Task 4); the controller places it on the media host.
 2. **Phase 4 canvas not signed.** Boards V1 (sign-in), V4 (Arabic) and E0-E7 (emails) win over this file once signed; this file then gets a revision, not a rewrite. Phase 4's V1 button wording "Continue with email" is replaced here by the picture's "Send code".
 3. **Second authenticator: skippable or required (D-20).** Recommended skippable (an admin with one device would otherwise be locked out of setup). The Admins list shows only "set up / not set up", not how many.
 4. **"Free with an account" chip (picture q4).** It is a claim about price. Kept because the picture drew it; wording and Arabic ("مجاناً مع حساب") need Koss's word (no invented pricing or legal copy).
