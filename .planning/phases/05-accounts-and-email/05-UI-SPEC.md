@@ -13,7 +13,7 @@ signed_source: "none yet. Basis: 05-CONTEXT.md D-01..D-41 (PROVISIONAL, recommen
 
 > Visual and interaction contract for: the unified code-first sign-in, the new-viewer name step, the show-aware sign-in header, the `/auth/confirm` interstitial, reset-password, the admin authenticator pages (`/auth/mfa`), the Profile additions (password, email change pending, notifications), the read-only Admins list, the audit log's admin names, the unsubscribe and newsletter-confirm public pages, the newsletter pending state, the support confirmation, and every email (auth and app). Values come from the option A pictures, CONTEXT.md, the live tokens in `src/styles/globals.css`, and the Phase 4 and Phase 6 contracts. Anything this contract chose that the pictures or CONTEXT did not settle is listed under "Provisional / needs Koss" and "Owner-visible deviations" at the end.
 
-**Precedence.** (1) Koss's signed answers (none yet: every D-xx tagged Qn is the recommended option). (2) The signed Phase 4 canvas, boards V1, V4 and E0-E7, once signed: it wins over this file for look (D-27 says so). (3) This file. The Phase 4 contract (`04-UI-SPEC.md`, checker-approved, also unsigned) is followed wherever it is specific: scale 11/14/20/24, six code boxes `h-11` with 8px gaps in `dir="ltr"`, email structure and type. Where the two unsigned recommendations disagree (email colour: Phase 5 Q12 A black header and white body, versus Phase 4 D-07 fully dark), this file specifies Phase 5 Q12 A only (section 7.1); one owner answer settles both questions (open item 1).
+**Precedence.** (1) Koss's signed answers (2026-10-20 ~18:05 CET, `05-CONTEXT.md` status line; Q4 = B, Q12 = C, Q19 = B, the rest A). (2) The signed Phase 4 canvas, boards V1, V4 and E0-E7, once signed: it wins over this file for look (D-27 says so); email colour values come from Phase 4's `src/lib/email-tokens.ts`. (3) This file. The Phase 4 contract (`04-UI-SPEC.md`) is followed wherever it is specific: scale 11/14/20/24, six code boxes `h-11` with 8px gaps in `dir="ltr"`, email structure and type. Email colour is settled: scheme-adaptive (section 7.1).
 
 ---
 
@@ -362,27 +362,27 @@ Structure and type are the Phase 4 section 5 contract, adopted unchanged: table-
 
 Font stack `-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif` (Arabic adds `Tahoma` before `Arial`). Bulletproof button: `<td bgcolor="#ffcc00" style="border-radius:999px"><a style="display:inline-block;padding:12px 32px;font-size:16px;font-weight:700;line-height:24px;color:#090909;text-decoration:none;border-radius:999px">` (48px high; Outlook shows square corners, accepted). Digits in emails are always Western.
 
-**One colour scheme: Phase 5 Q12 A (D-27), black header band and white body.** Phase 4 D-07 (`04-UI-SPEC.md` section 5) specifies fully dark emails (#090909 page, #101010 card) and disagrees; both are unsigned recommendations, so one owner answer settles both questions (open item 1). If Koss picks the dark look, only the values in this table change; no structure does.
+**Scheme-adaptive: Phase 5 Q12 = C, signed 2026-10-20 (D-27; also Phase 4 Q7 = C).** Colour values are owned by Phase 4: import them from `src/lib/email-tokens.ts` (literal hex, both schemes; Phase 4 plan 04-01, mirrored in DESIGN.md). Phase 5 never redefines a hex in template code. The table below names the roles and the values Phase 4 pins; if `email-tokens.ts` differs, it wins. Colour reference: Phase 4 `mockups/04-q7c.png`; signed look: `mockups/05-q12-schemes.png`.
 
-| Token | Value |
-|-------|-------|
-| Meta | `color-scheme: light`, `supported-color-schemes: light` |
-| Page | #F4F4F4 |
-| Header | black band #090909 across the card top, logo inside, padding 24px |
-| Card | #FFFFFF, no border, radius 12px |
-| Heading / code text | #111111 |
-| Body | #333333 |
-| Hints, fallback URL | #555555 |
-| Code box and quoted-message box | #F6F6F6, `1px solid #E5E5E5`, radius 8px; the quote also has a 3px #ffcc00 start rule |
-| Links in body | #111111 underlined |
-| Footer (below the card) | 12px #666666 on #F4F4F4 (5.2:1) |
-| Button | #ffcc00 background, #090909 ink |
+| Role | Light (default) | Dark (`@media (prefers-color-scheme: dark)`) |
+|------|-----------------|----------------------------------------------|
+| Meta | `<meta name="color-scheme" content="light dark">`, `<meta name="supported-color-schemes" content="light dark">`, `:root{color-scheme:light dark}` | same |
+| Page | #F4F4F4 | #090909 |
+| Header | black band #090909 with logo plate, padding 24px | #101010 card top, 1px #222 rule under it |
+| Card | #FFFFFF, radius 12px | #101010, `1px solid #222`, radius 12px |
+| Heading / code text | #111111 | #F4F4F4 heading; code digits #ffcc00 |
+| Body | #333333 | #CCCCCC |
+| Hints, fallback URL | #555555 | #A1A1A1 |
+| Code box / quoted box | #F6F6F6, `1px solid #E5E5E5`, radius 8px (quote: 3px #ffcc00 start rule) | #191919, `1px solid #2A2A2A` |
+| Links in body | #111111 underlined | #F4F4F4 underlined |
+| Footer (inside the card, under a 1px #E5E5E5 rule) | 12px #767676 or darker on #FFFFFF (Phase 4 pin; #777777 is 4.48:1 and fails AA) | 12px #A1A1A1, rule #222 |
+| Button | #ffcc00 background, #090909 ink | same |
 
-The Q12 picture's footer grey (#777 on white, 4.48:1) fails 4.5:1; this contract uses #555 inside the card and #666 on the page.
+Dark rules live in one `<style>` block in `<head>` with `!important` overrides on classes (`.cs-page`, `.cs-card`, `.cs-text`, …); inline styles carry the light values so clients that strip `<style>` show the light look. Gmail (web and apps) ignores the media query and may auto-invert: the logo is a PNG with its own solid #090909 plate (stays a dark band with a readable wordmark under inversion), the button is a solid `bgcolor` table cell with inline colours, no text inside transparent images. The Q12 picture shows light, dark and the Gmail-dark result; Koss signs it before 05-07, 05-10, 05-11 execute.
 
-Footer content (all emails): line 1 "Clickit Story - Spacelight Studios FZ LLC, Abu Dhabi"; line 2 "Help: clickitstory.ae/support" (link). **Digest and newsletter confirm only** add `{postalLine}` (Q19: default B, "Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates"; Koss supplies the exact line otherwise). Digest adds the unsubscribe link and the Profile link. Welcome, auth and support emails have no unsubscribe link (transactional).
+Footer content (all emails): line 1 "Clickit Story - Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates"; line 2 "Help: clickitstory.ae/support" (link). **Digest and newsletter confirm only** add `{postalLine}` (Q19 = B signed: exactly "Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates", no street). Digest adds the unsubscribe link and the Profile link. Welcome, auth and support emails have no unsubscribe link (transactional).
 
-Dark-mode: the email forces light (clients that invert anyway keep the black header band and explicit colours); an owner render check (EN + AR, Gmail web, Gmail iOS, Outlook, Apple Mail, light and dark, images off) is an owner step (research Pitfall 11).
+Dark mode: handled by the scheme table above. An owner render check (EN + AR, Gmail web, Gmail iOS/Android, Outlook, Apple Mail, light and dark, images off) is an owner step (research Pitfall 11).
 
 ### 7.2 Plain-text part (every email)
 
@@ -603,7 +603,7 @@ No third-party block is declared, so the registry vetting gate did not run.
 
 Everything in this file is provisional until Koss signs 05-CONTEXT.md. Open items, in order of how much code they change:
 
-1. **Email colour.** Two unsigned recommendations disagree: Phase 5 Q12 A (black header band, white body; D-27, the only scheme specified here) and Phase 4 Q7 A / D-07 (fully dark: #090909 page, #101010 card; its `04-UI-SPEC.md` section 5). One owner answer settles both questions. Also affects the logo asset (white PNG on `media.clickitstory.ae`, new file) and `color-scheme`.
+1. **Email colour.** RESOLVED 2026-10-20: Q12 = C (scheme-adaptive, section 7.1); Phase 4 owns the hex values. Remaining: Koss signs the Q12 picture (`mockups/05-q12-schemes.png`) and Phase 4 supplies the logo PNG on its own #090909 plate.
 2. **Phase 4 canvas not signed.** Boards V1 (sign-in), V4 (Arabic) and E0-E7 (emails) win over this file once signed; this file then gets a revision, not a rewrite. Phase 4's V1 button wording "Continue with email" is replaced here by the picture's "Send code".
 3. **Second authenticator: skippable or required (D-20).** Recommended skippable (an admin with one device would otherwise be locked out of setup). The Admins list shows only "set up / not set up", not how many.
 4. **"Free with an account" chip (picture q4).** It is a claim about price. Kept because the picture drew it; wording and Arabic ("مجاناً مع حساب") need Koss's word (no invented pricing or legal copy).
