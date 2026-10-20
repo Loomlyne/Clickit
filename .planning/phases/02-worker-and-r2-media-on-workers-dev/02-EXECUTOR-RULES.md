@@ -33,3 +33,8 @@ Every gsd-executor for a Phase 2 plan reads this first. These come from the Clic
 
 ## Report back
 Commits, test totals, lint result, deviations, owner/controller items, whether the heavy lock is free.
+
+## Cross-plan notes (added as plans finish)
+- 02-07: cron expressions live in `CRON_EXPRESSIONS_FOR_PHASE_3` (`src/server/scheduled.ts`); `wrangler.jsonc` keeps `crons: []`. `supabaseCleanupEnabled({})` is false (fail closed). Local runs need a gitignored `.dev.vars` copied from `.env.preview.local`.
+- 02-08: copy/verify reports are tied to the manifest's sha256; never rewrite the manifest between copy, verify and deploy.
+- 02-09: `next.config.ts` uses `loader: 'custom'` (`./image-loader.ts`); widths pinned to the Worker's `VARIANT_WIDTHS`. Loopback media origin (`NEXT_PUBLIC_MEDIA_ALLOW_LOOPBACK=1`, `http://127.0.0.1:…`) is local-preview only. **02-14 must add the loopback media origin to CSP `img-src`/`media-src` only for preview builds**, never for workersdev/production targets.
