@@ -22,7 +22,7 @@ export function categoryChipStyle(hex: string): CSSProperties {
   const rgb = hexToRgb(hex)
   if (!rgb) return {}
   const lum = relativeLuminance(hex)
-  const text = lum > 0.55 ? 'rgba(10,10,10,0.92)' : 'rgba(255,255,255,0.95)'
+  const text = lum > 0.55 ? 'rgb(var(--ink-legacy-rgb) / 0.92)' : 'rgba(255,255,255,0.95)'
   return {
     backgroundColor: `rgba(${rgb.r},${rgb.g},${rgb.b},0.35)`,
     borderColor: `rgba(${rgb.r},${rgb.g},${rgb.b},0.55)`,
