@@ -144,6 +144,19 @@ Example: Omar tries the password `Password123`, which is in public breach lists.
 
 Changes if not A: B drops the app check from plan 05-03 and adds an owner step.
 
+### Q18. Supabase auth limits (owner step numbers)
+Supabase limits auth calls per IP address, and every sign-in now reaches Supabase from the Cloudflare Worker, so the limit can act as a cap for the whole site. With custom SMTP, Supabase also caps auth emails at 30 per hour.
+Example: a launch post brings 200 people in one hour, each asking for a code.
+- **A (recommended).** Auth emails 200 per hour; code requests and sign-ins 150 per 5 minutes; code checks 150 per 5 minutes. Clickit's own per-visitor limits and Turnstile stay in front.
+- **B.** Keep Supabase's defaults (30 emails per hour; 30 per 5 minutes). The 31st person in an hour gets "try again later".
+
+Changes if not A: only the numbers in the owner runbook.
+
+### Q19. Postal address in the footer of the digest and newsletter emails
+Bulk-mail rules (Gmail, Yahoo) expect a physical address in emails people can unsubscribe from. Not invented here.
+- **A (recommended).** You give the exact line (for example the Spacelight Studios FZ LLC registered address).
+- **B.** "Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates" only, no street.
+
 ---
 
 ## Facts the controller reads (read-only), not decisions
