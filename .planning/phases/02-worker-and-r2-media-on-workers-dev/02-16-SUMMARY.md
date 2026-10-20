@@ -96,7 +96,7 @@ Adapted assertions (same meaning): audit diff `path` and `previous_path` now hol
 
 | Check | Result |
 |-------|--------|
-| `node --test` mp4-boxes, admin-hero-video, admin-video-upload, admin-actions-media-wrappers | 12 + 18 + 29 + 7 pass |
+| `node --test` mp4-boxes, admin-hero-video, admin-video-upload, admin-actions-media-wrappers | 12 + 17 + 29 + 7 pass |
 | `npm run gate:local` under the heavy lock (lint, test:unit, build, cf:build), final tree | exit=0; 808 unit tests, 0 fail; lint 0 errors, 26 warnings (the deferred set-state-in-effect warnings and test unused-vars, none new) |
 | `tsc --noEmit` | clean |
 | hero-video.ts has no `download(` call and no import of next/, server-only or `@/` | yes (grep) |
