@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getLocale, getTranslations } from 'next-intl/server'
+import { getTranslations } from 'next-intl/server'
 
 import { redirect } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
