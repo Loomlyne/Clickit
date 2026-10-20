@@ -142,11 +142,11 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SAFE-01 | Phase 1 | Pending |
-| SAFE-02 | Phase 1 | Pending |
-| SAFE-03 | Phase 1 | Pending |
-| SAFE-04 | Phase 1 | Pending |
-| SAFE-05 | Phase 1 | Pending |
+| SAFE-01 | Phase 1 | Code done on phase-01-safe-ground (lands at Ship) |
+| SAFE-02 | Phase 1 | Code done; binding after runbook steps 3-5 (before merge) |
+| SAFE-03 | Phase 1 | Code done; binding after runbook step 6 (ruleset) |
+| SAFE-04 | Phase 1 | Done 2026-10-20 (plan tier: owner dashboard check) |
+| SAFE-05 | Phase 1 | Closed 2026-10-20 by NS move (01-LIVE-AUDIT §6) |
 | ADMIN-01 | Phase 1.1 | Complete |
 | ADMIN-02 | Phase 1.1 | Complete |
 | ADMIN-03 | Phase 1.1 | Complete |

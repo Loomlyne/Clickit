@@ -7,23 +7,22 @@
 -- ============================================================
 
 -- ============================================================
--- CLEANUP: Drop pre-existing objects from prior migrations
--- Tables dropped with CASCADE will also drop their triggers/policies
--- NOTE: app_config is intentionally NOT dropped here — it holds
--- admin settings (hero video, branding, etc.) that must survive
--- re-applies. All other tables are safe to recreate from data
--- that is managed via the admin panel.
+-- CLEANUP: neutralised in Phase 1 (SAFE-01, 2026-10-20)
+-- This version is already applied on live, and this file must never again
+-- drop tables on a populated database. Fresh databases are unaffected:
+-- every statement below was IF EXISTS. The statements are kept as
+-- comments for the record.
 -- ============================================================
-drop trigger if exists on_auth_user_created on auth.users;
-drop table if exists public.watchlist cascade;
-drop table if exists public.watch_progress cascade;
-drop table if exists public.profiles cascade;
-drop table if exists public.episodes cascade;
-drop table if exists public.seasons cascade;
-drop table if exists public.shows cascade;
-drop function if exists public.handle_new_user();
-drop function if exists public.update_updated_at();
-drop function if exists public.is_admin();
+-- drop trigger if exists on_auth_user_created on auth.users;
+-- drop table if exists public.watchlist cascade;
+-- drop table if exists public.watch_progress cascade;
+-- drop table if exists public.profiles cascade;
+-- drop table if exists public.episodes cascade;
+-- drop table if exists public.seasons cascade;
+-- drop table if exists public.shows cascade;
+-- drop function if exists public.handle_new_user();
+-- drop function if exists public.update_updated_at();
+-- drop function if exists public.is_admin();
 
 -- ============================================================
 -- APP_CONFIG TABLE (single-row config, per D-09)
