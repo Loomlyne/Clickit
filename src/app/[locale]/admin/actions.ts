@@ -48,6 +48,8 @@ import { generateSlug } from '@/lib/slug'
 import { fillArabic, translateBatchToArabicStrict } from '@/lib/translate'
 import { fillTickerArabic, type TickerItem } from '@/lib/admin/ticker'
 import {
+  PRELOADER_VIDEO_LIMIT,
+  SHOW_VIDEO_LIMIT,
   SITE_IMAGE_MIME_EXT,
   SOCIAL_ICON_MIME_EXT,
   checkHeroVideoSize,
@@ -60,6 +62,14 @@ import {
   setHeroVideoUrlCore,
   type HeroVideoPorts,
 } from '@/lib/admin/hero-video'
+import {
+  FAQ_DELETE,
+  LEGAL_PAGE_DELETE,
+  REVIEW_DELETE,
+  SHORT_DELETE,
+  deleteRowAuditedCore,
+} from '@/lib/admin/legacy-deletes'
+import { savePreloaderVideoCore, saveShowVideoUploadCore } from '@/lib/admin/video-uploads'
 import { mp4BytesHasAudioTrack } from '@/lib/mp4-audio'
 import {
   assertPublicMediaWriteReady,
@@ -1382,10 +1392,6 @@ function createPreloaderVideoPath() {
   return `preloader/video-${Date.now()}.mp4`
 }
 
-function isPreloaderVideoUploadPath(path: string) {
-  return /^preloader\/video-\d+\.mp4$/.test(path)
-}
-
 export async function createPreloaderVideoUpload(file: {
   name: string
   size: number
@@ -1400,8 +1406,9 @@ export async function createPreloaderVideoUpload(file: {
       return { success: false, error: 'File must be an MP4 video' }
     }
 
-    if (file.size > 20 * 1024 * 1024) {
-      return { success: false, error: 'Video must be under 20MB' }
+    // Client-reported size only; the server proof is savePreloaderVideoCore (storage info()).
+    if (file.size > PRELOADER_VIDEO_LIMIT.maxBytes) {
+      return { success: false, error: PRELOADER_VIDEO_LIMIT.tooLarge }
     }
 
     const path = createPreloaderVideoPath()
@@ -1424,89 +1431,25 @@ export async function createPreloaderVideoUpload(file: {
 export async function savePreloaderVideoUpload(
   path: string
 ): Promise<ActionResult<string>> {
-  try {
-    await assertAdmin()
-    const admin = createAdminClient()
-
-    if (!isPreloaderVideoUploadPath(path)) {
-      return { success: false, error: 'Invalid upload path' }
-    }
-
-    const { data: previousConfig, error: previousConfigError } = await admin
-      .from('app_config')
-      .select('preloader_video_url')
-      .eq('id', 1)
-      .single()
-    if (previousConfigError || !previousConfig) {
-      return {
-        success: false,
-        error: previousConfigError?.message ?? 'Could not load site config',
-      }
-    }
-
-    const previousUrl = (
-      previousConfig as unknown as { preloader_video_url: string | null }
-    ).preloader_video_url
-
-    const { data: uploadedFile, error: downloadError } = await admin.storage
-      .from('site-assets')
-      .download(path)
-    if (downloadError || !uploadedFile) {
-      return {
-        success: false,
-        error: downloadError?.message ?? 'Could not verify uploaded video',
-      }
-    }
-
-    await mirrorUploadedPublicMedia(admin, {
-      bucket: 'site-assets',
-      key: path,
-      body: uploadedFile,
-      contentType: 'video/mp4',
-      cacheControl: '31536000',
-    })
-
-    const { data: urlData } = admin.storage
-      .from('site-assets')
-      .getPublicUrl(path)
-
-    const publicUrl = `${urlData.publicUrl}?v=${Date.now()}`
-
-    const { error } = await admin
-      .from('app_config')
-      .update({ preloader_video_url: publicUrl } as never)
-      .eq('id', 1)
-
-    if (error) {
-      await cleanupMirroredPublicMedia(
-        admin,
-        'site-assets',
-        [path],
-        '[savePreloaderVideoUpload]'
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const r = await savePreloaderVideoCore(
+        heroPorts(ctx.db),
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        { path }
       )
-      return { success: false, error: error.message }
+      if (r.mediaCleanupFailed) console.error('[savePreloaderVideoUpload] media cleanup failed')
+      return r
+    },
+    {
+      fallbackError: 'Upload failed',
+      revalidate: () => {
+        updateTag('site-config')
+        revalidatePath('/', 'layout')
+      },
     }
-
-    const previousPath = getPublicStoragePath(previousUrl, 'site-assets')
-    if (previousPath && previousPath !== path) {
-      await cleanupMirroredPublicMedia(
-        admin,
-        'site-assets',
-        [previousPath],
-        '[savePreloaderVideoUpload]'
-      )
-    }
-
-    updateTag('site-config')
-    revalidatePath('/', 'layout')
-    return { success: true, data: publicUrl }
-  } catch (err) {
-    console.error('[savePreloaderVideoUpload] failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
-    }
-  }
+  )
 }
 
 export async function removePreloaderVideo(): Promise<ActionResult> {
@@ -1597,8 +1540,9 @@ export async function createShowVideoUpload(file: {
       return { success: false, error: 'File must be an MP4 video' }
     }
 
-    if (size > 50 * 1024 * 1024) {
-      return { success: false, error: 'Video must be under 50MB' }
+    // Client-reported size only; the server proof is saveShowVideoUploadCore (storage info()).
+    if (size > SHOW_VIDEO_LIMIT.maxBytes) {
+      return { success: false, error: SHOW_VIDEO_LIMIT.tooLarge }
     }
 
     const path = `shows/${showIdParsed.value}/hero-${variant}-${Date.now()}.mp4`
@@ -1621,43 +1565,17 @@ export async function createShowVideoUpload(file: {
 export async function saveShowVideoUpload(
   path: string
 ): Promise<ActionResult<string>> {
-  try {
-    await assertAdmin()
-
-    if (!/^shows\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/hero-(desktop|mobile)-\d+\.mp4$/i.test(path)) {
-      return { success: false, error: 'Invalid upload path' }
-    }
-
-    const admin = createAdminClient()
-    const { data: uploadedFile, error: downloadError } = await admin.storage
-      .from('site-assets')
-      .download(path)
-    if (downloadError || !uploadedFile) {
-      return {
-        success: false,
-        error: downloadError?.message ?? 'Could not verify uploaded video',
-      }
-    }
-
-    await mirrorUploadedPublicMedia(admin, {
-      bucket: 'site-assets',
-      key: path,
-      body: uploadedFile,
-      contentType: 'video/mp4',
-      cacheControl: '31536000',
-    })
-
-    const { data: urlData } = admin.storage
-      .from('site-assets')
-      .getPublicUrl(path)
-    return { success: true, data: urlData.publicUrl }
-  } catch (err) {
-    console.error('[saveShowVideoUpload] failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
-    }
-  }
+  // No database write here (the URL is saved with the show form), so nothing to revalidate.
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      saveShowVideoUploadCore(
+        heroPorts(ctx.db),
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        { path }
+      ),
+    { fallbackError: 'Upload failed', revalidate: () => {} }
+  )
 }
 
 // Note: an earlier deleteShowVideoFile() server action was removed here. Same
@@ -2332,8 +2250,12 @@ const SITE_IMAGE_COLUMN = {
 type SiteImageKind = keyof typeof SITE_IMAGE_COLUMN
 
 // Own keys only: `in` would accept inherited names such as 'toString' or '__proto__'.
+// (Object.hasOwn semantics; the tsconfig lib is ES2021, which does not type Object.hasOwn.)
 function isSiteImageKind(kind: unknown): kind is SiteImageKind {
-  return typeof kind === 'string' && Object.hasOwn(SITE_IMAGE_COLUMN, kind)
+  return (
+    typeof kind === 'string' &&
+    Object.prototype.hasOwnProperty.call(SITE_IMAGE_COLUMN, kind)
+  )
 }
 
 // Upload OG image or favicon to site-assets bucket.
@@ -2767,34 +2689,23 @@ export async function reorderShort(
 }
 
 export async function deleteShort(id: string): Promise<ActionResult> {
-  try {
-    const user = await assertAdmin()
-    const idParsed = parseId(id, 'short')
-    if (!idParsed.ok) return { success: false, error: idParsed.error }
-    id = idParsed.value
-    const admin = createAdminClient()
-
-    const { error } = await admin.from('shorts').delete().eq('id', id)
-
-    if (error) return { success: false, error: error.message }
-
-    await logAudit({
-      adminUserId: user.id,
-      action: 'delete',
-      entity: 'short',
-      entityId: id,
-    })
-
-    revalidatePath('/admin/shorts')
-    updateTag('shorts')
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/shorts] delete failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to delete short',
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      deleteRowAuditedCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        SHORT_DELETE,
+        id
+      ),
+    {
+      fallbackError: 'Failed to delete short',
+      revalidate: () => {
+        revalidatePath('/admin/shorts')
+        updateTag('shorts')
+      },
     }
-  }
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -2802,33 +2713,22 @@ export async function deleteShort(id: string): Promise<ActionResult> {
 // ---------------------------------------------------------------------------
 
 export async function deleteReview(id: string): Promise<ActionResult> {
-  try {
-    const user = await assertAdmin()
-    const idParsed = parseId(id, 'review')
-    if (!idParsed.ok) return { success: false, error: idParsed.error }
-    id = idParsed.value
-    const admin = createAdminClient()
-
-    const { error } = await admin.from('reviews').delete().eq('id', id)
-
-    if (error) return { success: false, error: error.message }
-
-    await logAudit({
-      adminUserId: user.id,
-      action: 'delete',
-      entity: 'review',
-      entityId: id,
-    })
-
-    revalidatePath('/admin/reviews')
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/reviews] delete failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to delete review',
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      deleteRowAuditedCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        REVIEW_DELETE,
+        id
+      ),
+    {
+      fallbackError: 'Failed to delete review',
+      revalidate: () => {
+        revalidatePath('/admin/reviews')
+      },
     }
-  }
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -3110,27 +3010,21 @@ export async function upsertLegalPage(
 }
 
 export async function deleteLegalPage(id: string): Promise<ActionResult> {
-  try {
-    await assertAdmin()
-    const idParsed = parseId(id, 'legal page')
-    if (!idParsed.ok) return { success: false, error: idParsed.error }
-    id = idParsed.value
-    const supabase = await createClient()
-    const { error } = await supabase
-      .from('legal_pages')
-      .delete()
-      .eq('id', id)
-    if (error) return { success: false, error: error.message }
-    bumpLegalCache()
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/legal] delete failed', err)
-    return {
-      success: false,
-      error:
-        err instanceof Error ? err.message : 'Failed to delete legal page',
+  // The delete keeps the signed-in admin's RLS client, as before; the audit rows use the strict writer.
+  return runAdminAction(
+    adminEnv,
+    async (ctx) =>
+      deleteRowAuditedCore(
+        await createClient(),
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        LEGAL_PAGE_DELETE,
+        id
+      ),
+    {
+      fallbackError: 'Failed to delete legal page',
+      revalidate: () => bumpLegalCache(),
     }
-  }
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -3208,21 +3102,19 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
 }
 
 export async function deleteFaq(id: string): Promise<ActionResult> {
-  try {
-    await assertAdmin()
-    const idParsed = parseId(id, 'FAQ')
-    if (!idParsed.ok) return { success: false, error: idParsed.error }
-    id = idParsed.value
-    const supabase = await createClient()
-    const { error } = await supabase.from('faqs').delete().eq('id', id)
-    if (error) return { success: false, error: error.message }
-    bumpFaqCache()
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/faq] delete failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to delete FAQ',
+  // The delete keeps the signed-in admin's RLS client, as before; the audit rows use the strict writer.
+  return runAdminAction(
+    adminEnv,
+    async (ctx) =>
+      deleteRowAuditedCore(
+        await createClient(),
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        FAQ_DELETE,
+        id
+      ),
+    {
+      fallbackError: 'Failed to delete FAQ',
+      revalidate: () => bumpFaqCache(),
     }
-  }
+  )
 }

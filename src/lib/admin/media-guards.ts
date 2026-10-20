@@ -1,5 +1,16 @@
 export const HERO_VIDEO_MAX_BYTES = 50 * 1024 * 1024
 export const HERO_VIDEO_TOO_LARGE = 'Video must be under 50MB'
+export const PRELOADER_VIDEO_MAX_BYTES = 20 * 1024 * 1024
+export const PRELOADER_VIDEO_TOO_LARGE = 'Video must be under 20MB'
+
+export type VideoSizeLimit = { maxBytes: number; tooLarge: string }
+export const HERO_VIDEO_LIMIT: VideoSizeLimit = { maxBytes: HERO_VIDEO_MAX_BYTES, tooLarge: HERO_VIDEO_TOO_LARGE }
+/** Per-show hero videos share the site hero limit. */
+export const SHOW_VIDEO_LIMIT: VideoSizeLimit = HERO_VIDEO_LIMIT
+export const PRELOADER_VIDEO_LIMIT: VideoSizeLimit = {
+  maxBytes: PRELOADER_VIDEO_MAX_BYTES,
+  tooLarge: PRELOADER_VIDEO_TOO_LARGE,
+}
 
 export const SVG_REJECTED_MESSAGE =
   'SVG uploads are not accepted. Upload a raster image (PNG, JPEG or WebP; ICO for the favicon).'
@@ -78,7 +89,8 @@ export type VideoStoragePort = {
 
 export async function verifyUploadedVideoSize(
   storage: VideoStoragePort,
-  path: string
+  path: string,
+  limit: VideoSizeLimit = HERO_VIDEO_LIMIT
 ): Promise<{ ok: true; size: number } | { ok: false; error: string }> {
   const { data, error } = await storage.info(path)
   if (error) return { ok: false, error: `Could not verify uploaded video size: ${error.message}` }
@@ -86,15 +98,15 @@ export async function verifyUploadedVideoSize(
   if (typeof size !== 'number' || !Number.isFinite(size)) {
     return { ok: false, error: 'Could not verify uploaded video size' }
   }
-  if (size > HERO_VIDEO_MAX_BYTES) {
+  if (size > limit.maxBytes) {
     const { error: rmErr } = await storage.remove([path])
     if (rmErr) {
       return {
         ok: false,
-        error: `${HERO_VIDEO_TOO_LARGE}; the oversize file could not be removed: ${rmErr.message}`,
+        error: `${limit.tooLarge}; the oversize file could not be removed: ${rmErr.message}`,
       }
     }
-    return { ok: false, error: HERO_VIDEO_TOO_LARGE }
+    return { ok: false, error: limit.tooLarge }
   }
   return { ok: true, size }
 }

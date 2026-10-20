@@ -172,3 +172,29 @@ test('source scan: removed code is gone', () => {
   assert.ok(!src.includes('translateBatchToArabic('))
   assert.ok(!src.includes('function isHeroVideoUploadPath'))
 })
+
+test('source scan: setHeroVideoUrl checks admin (runner) before it validates the URL', () => {
+  const b = bodyOf('setHeroVideoUrl')
+  const runner = b.indexOf('runAdminAction(')
+  const validate = b.indexOf('validateYouTubeUrl(')
+  assert.ok(runner >= 0 && validate > runner, 'URL validation must run inside runAdminAction')
+  assert.ok(!b.slice(0, runner).includes("'URL is required'"))
+})
+
+test('source scan: SITE_IMAGE_COLUMN lookups check own keys only', () => {
+  assert.ok(!/\bin SITE_IMAGE_COLUMN\b/.test(src), '`in` accepts inherited keys')
+  assert.ok(src.includes('Object.prototype.hasOwnProperty.call(SITE_IMAGE_COLUMN, kind)'))
+  assert.ok(bodyOf('uploadSiteImage').includes('isSiteImageKind(kind)'))
+  assert.ok(bodyOf('removeSiteImage').includes('isSiteImageKind(kind)'))
+})
+
+test('source scan: no AVIF left in the admin upload paths', () => {
+  for (const file of [
+    'src/lib/admin/media-guards.ts',
+    'src/components/admin/settings/branding-tab.tsx',
+    'src/components/admin/settings/footer-editor.tsx',
+  ]) {
+    assert.ok(!/avif/i.test(readFileSync(file, 'utf8')), `${file} still mentions AVIF`)
+  }
+  assert.ok(!src.includes("'image/avif'"))
+})
