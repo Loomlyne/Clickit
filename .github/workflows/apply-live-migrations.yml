@@ -1,0 +1,131 @@
+name: Apply live migrations
+
+# Hand-started only, and only from main. Nothing applies migrations on a push any more.
+#
+#   1. Job `dry-run` (environment `live-db-plan`) prints what WOULD apply to the live
+#      database and writes nothing. The list goes to the run summary.
+#   2. Job `apply` (environment `live-db`) pauses for Koss's approval in the Actions UI,
+#      then applies exactly what the dry-run showed.
+#
+# Before dispatching, the controller takes a local pg_dump of live on the Mac (D-03) and
+# ticks the `pg_dump_taken` input; `apply` fails without it.
+#
+# Rules baked in:
+#   - The include-all flag is forbidden. A migration whose version sorts before one
+#     already applied must fail and come back to a human, not slip in (RESEARCH Pitfall 4).
+#   - Seeds never run here.
+#   - No debug flag: it could print connection details into the log.
+#   - The database URL is a secret named SUPABASE_DB_URL (Session-pooler connection
+#     string), passed only through env and never echoed.
+#
+# Environments: `live-db` MUST exist with Koss as required reviewer before the first
+# dispatch (the plan 04 runbook orders this and reads it back); GitHub auto-creates a
+# missing environment WITHOUT reviewers, which would let `apply` run unapproved.
+# `live-db-plan` holds the read-only dry-run secret; if it is not created, GitHub
+# auto-creates it with no rules on first use and the job reads the repo-level
+# SUPABASE_DB_URL, and the main-only step still limits it to main.
+#
+# Security posture:
+#   - Least-privilege GITHUB_TOKEN (read-only; these jobs never write to the repo).
+#   - Third-party actions pinned to a full commit SHA; version in the trailing comment.
+#   - Supabase CLI pinned to an exact version.
+#   - Job timeouts cap a hung or abused run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pg_dump_taken:
+        description: 'Local pg_dump of live taken on the Mac before this run (D-03)'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-migrations
+  cancel-in-progress: false
+
+jobs:
+  dry-run:
+    name: dry-run
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: live-db-plan
+    outputs:
+      pending: ${{ steps.plan.outputs.pending }}
+    steps:
+      - name: Main only
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Live migrations run from main only (got $GITHUB_REF)"
+            exit 1
+          fi
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.119.0
+
+      - name: Plan (dry run, writes nothing)
+        id: plan
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PG_DUMP_TAKEN: ${{ inputs.pg_dump_taken }}
+        run: |
+          set -o pipefail
+          supabase db push --dry-run --db-url "$SUPABASE_DB_URL" 2>&1 | tee dry-run.txt
+          {
+            echo "### Pending live migrations (dry run, nothing applied)"
+            echo
+            echo '```'
+            cat dry-run.txt
+            echo '```'
+            echo
+            echo "pg_dump_taken: $PG_DUMP_TAKEN"
+          } >> "$GITHUB_STEP_SUMMARY"
+          # Unknown output counts as pending and still needs approval (fails safe).
+          if grep -q "Remote database is up to date" dry-run.txt; then
+            echo "pending=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "pending=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  apply:
+    name: apply
+    needs: dry-run
+    if: needs.dry-run.outputs.pending == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: live-db
+    steps:
+      - name: Main only
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Live migrations run from main only (got $GITHUB_REF)"
+            exit 1
+          fi
+
+      - name: Backup confirmed
+        run: |
+          if [ "${{ inputs.pg_dump_taken }}" != "true" ]; then
+            echo "::error::Take a local pg_dump first (D-03) and re-run with pg_dump_taken"
+            exit 1
+          fi
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.119.0
+
+      - name: Apply
+        run: supabase db push --db-url "$SUPABASE_DB_URL" --yes
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
