@@ -61,6 +61,12 @@ A throwaway page (not committed) rendered the real `AdminHeader`, `ShowsTable`, 
 Merge commit `c4c39f6`, no rebase. Only conflict: `.planning/STATE.md` (took main's). Auto-merged without conflict: `settings/branding-tab.tsx` and `settings/footer-editor.tsx` (1.1's PNG/JPEG/WEBP-only accept, no AVIF, kept; my class changes on top). After the merge `git diff origin/main` shows no change in `actions.ts`, `src/lib/**` (video-uploads.ts, row-deletes.ts, media-guards.ts, compensation.ts ...) or `src/messages/**`: server guards, archive-first delete, audit flows and copy strings are exactly main's.
 Gate: tsc 0, lint 0 errors/17 warnings, unit 451/451, build exit 0 (placeholder public env).
 
+## Controller review fixes (PR #22 reopened on main)
+
+- Shorts Edit button and featured star have `aria-label` (new `admin.shorts.editAria`, `featuredMarkAria`, `featuredRemoveAria` in en + ar).
+- Phone tables: below `md` the Up/Down reorder buttons are hidden (Edit, destructive action, star stay); status badge moves under the show name below `sm`; categories "Assigned" moves into the name cell below `sm`; shorts "Featured" header is sr-only on phone; cells wrap; table cells get 12px side padding below `sm`; the 4px tap-area bleed is off below `sm` (buttons are 44px there). Measured in a browser at 375 (en and ar), 640 and 900: no horizontal overflow in shows, shorts, categories; no overlapping tap areas; no control under 44px on phone; no unnamed icon buttons. Before/after screenshots: `.planning/design/b4-phone/` (before overflowed to 569/544/578px inside a 341px panel).
+- Gate: tsc 0, lint 0 errors/17 warnings, unit 451/451, build exit 0.
+
 ## NOT verified
 
 - No render of the real admin app with real data and a signed-in session (the check above used mock props on the real components; the other admin pages - settings, categories, episode drawer, inbox - were not rendered) (no local Supabase). `admin.css` selectors (`data-slot`, `data-size`, `data-state`) were checked by reading the shared components, not by looking at the running page. The picture used the same Tailwind classes but not `admin.css`.
@@ -71,6 +77,7 @@ Gate: tsc 0, lint 0 errors/17 warnings, unit 451/451, build exit 0 (placeholder 
 
 ## Follow-ups for the controller
 
+- Deferred (not in this PR): dialog/sheet close buttons are 32px (shared ui); cast clear-image button still sits at the avatar corner; cast delete has no confirm and low contrast; audit badge colours repeat; Up/Down reorder is not reachable below 768px.
 - `admin.css` blocks are removable once the shared button, checkbox, table, select and badge get the same fix (audit lists them).
 
 ## UAT (Koss, signed-in admin, local or preview with real data)
