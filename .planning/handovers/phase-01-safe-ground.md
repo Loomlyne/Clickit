@@ -4,7 +4,7 @@
 Branch `claude/phase-01-safe-ground-dc6bbe` -> remote `phase-01-safe-ground`. Base: `origin/main` d517ddc merged in (merge commit cca94fb; base won the STATE.md conflict). Work session; nothing deployed, no live DB access, no repo setting changed, no GitHub workflow run.
 Final commit: the PR head is authoritative (`git log -1` on the branch after this file's commit).
 
-PR: pending
+PR: https://github.com/Loomlyne/Clickit/pull/26
 
 ## What is in the branch
 
