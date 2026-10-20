@@ -2,7 +2,7 @@
 
 **Gathered:** 2026-10-20
 **Status:** Ready for planning
-**Signed:** Koss, 2026-10-20 ("signed continue" on `06-DISCUSS-QUESTIONS.md`): every question answered with its recommended option (A). Pictures: `mockups/06-q*.png`.
+**Signed:** Koss, 2026-10-20 ("signed continue" on `06-DISCUSS-QUESTIONS.md`): every question answered with its recommended option (A). Pictures: `mockups/06-q*.png`. Plan gate (via controller, 2026-10-20): G2, G4 as recommended; G5 and G6 changed (D-22, D-15/D-20).
 
 <domain>
 ## Phase Boundary
@@ -38,9 +38,12 @@ Built against main as it will be after Phases 2–5: Cloudflare Workers via Open
 - **D-19 (Q19):** Reorder and renumber run as one all-or-nothing database function (`reorder_episodes` / `renumber_season` or equivalent), shipped in the same reviewed Phase 6 migration. This is a deliberate exception to Phase 1.1 D-05 (app-level compensation), for these two operations only.
 
 ### YouTube key and checks (YT-04)
-- **D-15 (Q15):** Admin › Settings YouTube key field becomes read-only status: "Key set / Key missing", "Stored in Cloudflare", "Test key" button (one `videos.list` call, 1 unit), last test time and result. The input and the `youtube_api_key` write path are removed. Picture: `mockups/06-q15.png` option A.
-- **D-16 (Q16):** New key is created in the Clickit Google account (owner of the YouTube channel), Google Cloud project "clickit-story", restricted by API to YouTube Data API v3 only. Old key deleted. Both are Koss's numbered owner steps; the key never appears in chat or a file.
-- **D-17 (Q17):** Daily Cloudflare Cron Trigger re-checks every stored episode video (batched `videos.list`, ≤50 ids per call, about 6 units/day for ~300 episodes), refreshes stored YouTube status and length (meets the 30-day Developer Policies refresh), and marks broken episodes with a red "Can't play" badge in admin plus a dashboard count. Viewer player-error reports (D-11) feed the same flag. Nothing is unpublished automatically.
+- **D-15 (Q15, CHANGED by Koss at plan gate G6, 2026-10-20):** Admin › Settings has an editable YouTube key field. Admins paste or change the key at any time; it works on the next request with no redeploy. The field is masked with a right-side show/hide eye; after saving it shows only `••••` + the last 4 characters (never the full key again). "Test key" sits next to the field (one `videos.list` call, 1 unit) with last test time and result. States: Key missing (empty), editing (masked, eye), saved (`••••abcd`), Test ok / Test failed. Pictures: `mockups/06-g6-key-*.png`. Supersedes the read-only status from Q15 and the Worker-secret storage.
+- **D-20 (G6):** Key storage is server-side only, in Supabase Vault (`vault.create_secret` / `vault.update_secret`, one named secret `youtube_api_key`). It is read only through a `SECURITY DEFINER` function (fixed `search_path`) that only `service_role` can execute; it is written through a second `SECURITY DEFINER` function, also `service_role`-only, called by an admin-only server action that checks the admin role on the server (`requireAdmin`). No client role (`anon`, `authenticated`) can read it, through PostgREST or any view. The read function returns the plaintext only to server code; the UI only ever receives `hasKey` + `last4`. The key is cached at most per request (no module-level cache), so a change applies on the next request. Both functions go into migration 1. The old `app_config.youtube_api_key` column is still nulled and dropped by migration 2 (G4). No Worker secret for this key.
+- **D-16 (Q16, amended G6):** New key is created in the Clickit Google account (owner of the YouTube channel), Google Cloud project "clickit-story", restricted by API to YouTube Data API v3 only. Koss pastes it into Admin › Settings on live and presses Test key; the old key is then deleted in Google Cloud. The key never appears in chat, a repo file, logs or an audit row (audit records only "key changed" + last 4).
+- **D-17 (Q17):** Daily Cloudflare Cron Trigger re-checks every stored episode video (batched `videos.list`, ≤50 ids per call, about 6 units/day for ~300 episodes), refreshes stored YouTube status and length (meets the 30-day Developer Policies refresh), and marks broken episodes with a red "Can't play" badge in admin plus a dashboard count. Viewer player-error reports (D-11) feed the same flag. Nothing is unpublished automatically. **Signed G2:** the check refreshes status, length and checked-at only; never titles or descriptions.
+- **D-21 (G4):** Two migrations: migration 1 (new columns, unique index on `youtube_video_id`, renumber function, Vault key functions) before deploy; migration 2 (drop `app_config.youtube_api_key`) in its own PR after Test key passes on live.
+- **D-22 (G5, CHANGED by Koss 2026-10-20):** If the controller's pre-migration read finds one YouTube video id on more than one episode, the newest row (latest `updated_at`) keeps the id and the older row(s) get `youtube_video_id = null` automatically. Koss gave his word for this live clear in advance. The controller first writes every affected row (id, show, season/episode, video id, updated_at) to the run log, then clears, then reads back that no duplicate remains. This is a controller step, never an executor step.
 
 ### Jev
 - **D-18 (Q18):** No Jev call in Phase 6. Idea kept in Deferred.
@@ -92,7 +95,7 @@ Built against main as it will be after Phases 2–5: Cloudflare Workers via Open
 
 ### Reusable Assets
 - `src/lib/youtube.ts`: `validateYouTubeUrl` (host allow-list + ID), `extractYouTubeId`, `loadYouTubeAPI`. Add playlist-URL parsing (`list=`) here or in `src/server/youtube/`.
-- `src/app/api/youtube-meta/route.ts`: `parseIsoDuration`, thumbnail fallback; to be replaced by a server module reading the Worker secret and `requireAdmin`.
+- `src/app/api/youtube-meta/route.ts`: `parseIsoDuration`, thumbnail fallback; to be replaced by a server module reading the key through the Vault read function (D-20) and `requireAdmin`.
 - `src/hooks/use-progress-tracker.ts`: upserts `watch_progress (user_id, episode_id)` every 10 s, on pause, hide and unmount; 95% = completed.
 - `src/components/watch/youtube-player.tsx`: single `YT.Player`, error state, playerVars (no `hl`/`cc_lang_pref`/`cc_load_policy` yet).
 - `src/components/admin/episode-form-drawer.tsx` (`YouTubeFetchButton`) and `youtube-url-input.tsx`: single-link add flow.

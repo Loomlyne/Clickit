@@ -4,6 +4,13 @@ Plans: `06-00-PLAN.md` … `06-24-PLAN.md` (25 plans, 11 waves). Checked by gsd-
 
 Reply: `G1 yes … G8 yes`, or "all yes". Recommended answer first in each.
 
+## Status (2026-10-20, via controller)
+
+- G2 signed (recommended). G4 signed (two migrations).
+- G5 CHANGED: duplicates are cleared automatically, keeping the newest row; the controller logs every affected row first and reads back after (D-22).
+- G6 CHANGED: no Worker secret. The key is pasted and changed in Admin › Settings, stored in Supabase Vault, read only by the service role, works on the next request (D-15, D-20). Pictures: `mockups/06-g6-key-missing.png`, `06-g6-key-editing.png`, `06-g6-key-saved.png`, `06-g6-key-test.png`.
+- Open: G1, G3, G7 (pictures ready), G8 met (Phase 1 on main).
+
 ## Decisions to sign
 
 **G1. End of episode (D-09).** Pictures: `mockups/06-g1-a.png` (A, card, desktop + phone), `mockups/06-g1-b.png` (B, bar fallback, desktop + phone). YouTube's Developer Policies guide lists "blocking Related Video links after the video completes" as a don't. The signed card hides the ended player, so YouTube's end screen never shows.
@@ -20,11 +27,9 @@ Reply: `G1 yes … G8 yes`, or "all yes". Recommended answer first in each.
 **G4. Two live migrations.** First: new columns, the no-duplicate index and the renumber function. It goes on live before deploy. Second: drop the old key column, in its own PR, only after "Test key" passes on live. That means two approvals instead of one.
 - **Yes (recommended).**
 
-**G5. Duplicate video IDs on live.** Before the first migration, the controller checks read-only whether one YouTube video sits on two episodes. If it does, the migration stops and you choose which row to clear (a live write, your word).
-- **Yes (recommended).**
+**G5. Duplicate video IDs on live — CHANGED by Koss (see Status).** Newest row keeps the id; older rows are cleared automatically after logging.
 
-**G6. Key timing.** The Worker secret is set after deploy, because setting a secret publishes a new live version of the deployed code. Between deploy and the secret, Settings shows "Key missing" and admins cannot import or add a video link. Playback is not affected.
-- **Yes (recommended).**
+**G6. Key storage — CHANGED by Koss (see Status).** Superseded: the key lives in Supabase Vault and is set in Settings; no Worker secret, no deploy window.
 
 **G7. UI choices beyond the signed pictures.** Pictures for the 15 new screens: `mockups/06-g7-01.png` … `06-g7-15.png` (same order as UI-SPEC "New UI with no picture"). These are the 26 items in `06-UI-SPEC.md` § "Owner-visible deviations": 11 that differ from a picture, 15 that are new UI with no picture. The main ones:
 - the watch page has no auto-hiding bars, no tooltips and no pop-up toasts;
@@ -44,11 +49,11 @@ Reply: `G1 yes … G8 yes`, or "all yes". Recommended answer first in each.
 ## Your owner steps, in order (each one numbered step at its time)
 
 1. Create the API-restricted key in the Clickit Google account (project "clickit-story").
-2. UAT on the local stack (06-20): run the local admin script yourself; the test login prints only in your terminal.
+2. UAT on the local stack (06-20): run the local admin script yourself (the test login prints only in your terminal); paste the key in local Settings and press Test key.
 3. Ship the Phase 6 PR.
 4. Approve the first migration on live after the duplicate check and dry-run.
 5. Approve deploy.
-6. Set the Worker secret in your terminal; press "Test key" on live.
+6. Paste the key in Admin › Settings on live; press "Test key".
 7. Say go for one real daily check (or let the 01:30 UTC run fire).
 8. Ship the second PR (drop the old key column); approve its live apply.
 9. Delete the old key in Google Cloud.

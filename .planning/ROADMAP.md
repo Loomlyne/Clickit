@@ -139,11 +139,11 @@ Plans:
 **Requirements**: YT-01, YT-02, YT-03, YT-04, YT-05, YT-06, YT-07
 **Success Criteria** (what must be TRUE):
   1. An admin pastes a playlist link and sees every video with its title, thumbnail, duration and status before importing. Private, deleted, non-embeddable and UAE-blocked videos are flagged and excluded. Imported episodes land as drafts. Importing the same playlist again adds nothing.
-  2. An admin adds a single episode from a YouTube link, and an invalid or fake ID is refused by the server. The YouTube API key exists only as a Worker secret, and the old database copy is gone.
+  2. An admin adds a single episode from a YouTube link, and an invalid or fake ID is refused by the server. The YouTube API key is stored only in Supabase Vault (service-role read), an admin can paste or change it in Settings and it works on the next request, and the old plaintext column is gone.
   3. A viewer watches part of episode A, switches to B, then back to A, and each resumes at its own saved position.
   4. Nothing is drawn over the playing video (the autoplay-next card sits off the player). Player chrome and captions follow the site language. A removed or blocked video shows a branded error state.
   5. Reordering episodes never leaves a gap or a duplicate, and a failed reorder shows an error.
-**Owner-gated**: [OWNER] create the restricted YouTube API key and set it as a Worker secret; [OWNER] rotate the old key; [OWNER] approve the migration that removes the DB key column copy; [OWNER] Ship.
+**Owner-gated**: [OWNER] create the restricted YouTube API key and paste it in Admin › Settings on live, then Test key; [OWNER] rotate the old key; [OWNER] approve the migration that removes the DB key column copy; [OWNER] Ship.
 **Plans**: 25 plans (11 waves, W0-W10)
 
 Plans:

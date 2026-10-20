@@ -11,7 +11,7 @@ signed_source: "06-CONTEXT.md D-01..D-19 + mockups/06-mockups.html option A (#q1
 
 # Phase 6 — UI Design Contract
 
-> Visual and interaction contract for YouTube import, the stacked watch page, the up-next and error cards, safe episode order and the read-only key status. Every value comes from the signed option A pictures, CONTEXT.md, or the live tokens in `src/styles/globals.css`. Where the picture was silent or this contract differs from it, the item is listed in "Owner-visible deviations" at the end. Nothing here reopens a signed decision.
+> Visual and interaction contract for YouTube import, the stacked watch page, the up-next and error cards, safe episode order and the editable YouTube key field (Vault, G6) status. Every value comes from the signed option A pictures, CONTEXT.md, or the live tokens in `src/styles/globals.css`. Where the picture was silent or this contract differs from it, the item is listed in "Owner-visible deviations" at the end. Nothing here reopens a signed decision.
 
 ---
 
@@ -594,28 +594,38 @@ New `AdminPanel` "YouTube check" between the profile card and the shows table on
 
 ---
 
-## 6. Settings: read-only key status (D-15)
+## 6. Settings: editable YouTube key (D-15, D-20; changed by Koss at plan gate G6)
 
-Signed picture: `#q15` option A.
+Pictures: `mockups/06-g6-key-missing.png`, `06-g6-key-editing.png`, `06-g6-key-saved.png`, `06-g6-key-test.png`. Supersedes the read-only row signed in `#q15`.
 
-Replaces the YouTube `IntegrationRow` in `settings/advanced-tab.tsx`. No toggle, no input, no "Get a key" link, no `youtube_api_key` in `updateIntegrations`. The block sits where the row was but is not part of the integrations `<form>` (its button is `type="button"`).
+Replaces the YouTube `IntegrationRow` in `settings/advanced-tab.tsx`. It is its own small form (not part of the integrations `<form>`), saved by an admin-only server action. The UI never receives the key: only `hasKey: boolean` and `last4: string | null`.
 
-Layout (as signed, nothing added):
+Layout:
 - Overline 11px uppercase `mb-2`: `youtubeKeyTitle`.
-- Row `flex flex-col gap-3 rounded-[12px] border border-[var(--line)] bg-[var(--bg-2)] px-4 py-3 sm:flex-row sm:items-center`:
-  - Status chip (start).
-  - Text `flex-1 min-w-0 text-sm text-[var(--text-dim)]`: line 1 per state; line 2 `text-[var(--text-mute)]`.
-  - `<Button variant="outline" className="text-sm font-bold">` (44px) `testKey` (end; `w-full` under 640px).
+- Card `rounded-[12px] border border-[var(--line)] bg-[var(--bg-2)] px-4 py-3 flex flex-col gap-3`:
+  - Row 1 `flex items-center gap-3`: status chip (start) + text `flex-1 min-w-0 text-sm text-[var(--text-dim)]` (`keyHelp`).
+  - Row 2 `flex flex-col gap-2 sm:flex-row sm:items-center`:
+    - Field: reuse `secret-field.tsx`, updated. `<Input type="password" autoComplete="off" spellCheck={false} className="h-11 rounded-[8px] pe-12 font-mono text-sm">` with the show/hide eye **inside the field on the end side** (`absolute end-0 top-0 size-11`, `Eye` / `EyeOff` `size-4`, `aria-label` `revealValue` / `hideValue`, `aria-pressed`). Label `<Label>` (11px uppercase override) `keyLabel`, placeholder `keyPlaceholder`.
+    - Saved state: the field shows `keySavedMasked` (`•••• {last4}`) read-only, `font-mono`, with `<Button variant="outline" className="px-6 text-sm font-bold">` `changeKey` (44px). Change clears the field and focuses it; Esc or `cancelChange` returns to the saved state.
+    - Buttons (end, `w-full` under 640px): primary `saveKey` (disabled while empty or unchanged) and outline `testKey`.
+  - Row 3 `aria-live="polite"` `text-sm`: last test line (`lastTestOk` / `lastTestFailed` + `testReason.*`) or `notTested`.
 
-| State | Chip | Line 1 | Line 2 | Button |
-|-------|------|--------|--------|--------|
-| Key set, never tested | ok `keySet` | `storedInCloudflare` | `notTested` | enabled |
-| Key set, last test passed | ok `keySet` | `storedInCloudflare` | `lastTestOk` | enabled |
-| Test running | chip unchanged | unchanged | `flex items-center gap-2`: `Loader2 size-4 animate-spin motion-reduce:animate-none` + `testing` | disabled, `Loader2 size-4` + `testingButton` |
-| Test failed | bad `testFailed` | `storedInCloudflare` | `lastTestFailed` with `{reason}` = one of `testReason.*` | enabled |
-| Key missing | bad `keyMissing` | `missingBody` | none | disabled |
+| State | Chip | Field | Buttons | Row 3 |
+|-------|------|-------|---------|-------|
+| Key missing | bad `keyMissing` | empty, masked, eye | Save (disabled until typed), Test (disabled) | `missingBody` |
+| Editing | unchanged | masked dots; eye toggles plain text | Save enabled, Test disabled until saved | unchanged |
+| Saving | unchanged | read-only | Save shows `Loader2 size-4` + `savingKey`, both disabled | unchanged |
+| Saved | ok `keySet` | `•••• abcd` read-only + Change | Test enabled | `keySavedJust` (once), then the last-test line |
+| Test running | unchanged | unchanged | Test shows `Loader2` + `testingButton`, disabled | `testing` |
+| Test ok | ok `keySet` | unchanged | enabled | `lastTestOk` (`text-[var(--safe-green)]` icon `Check size-4` + text in `--text-dim`) |
+| Test failed | bad `testFailed` | unchanged | enabled | `lastTestFailed` with reason |
+| Save failed | unchanged | keeps the typed value (still masked) | enabled | `saveFailed` with reason |
 
-Line 2 is an `aria-live="polite"` region so the result is announced. The result and time are saved so the next visit shows the last result.
+Rules:
+- The plaintext key is never sent back to the browser after save, never rendered in the DOM except while the admin is typing it, never logged, never put in a toast or audit row (audit: `youtube_key_changed` + last 4 only).
+- Saving runs a cheap format check first (`^AIza[0-9A-Za-z_-]{35}$`, refused with `formatInvalid`) and does not call YouTube; Test key is separate (1 unit).
+- Saving a new key resets the last-test line to `notTested`.
+- 44px targets everywhere; the eye's focus ring stays inside the field.
 
 ---
 
@@ -705,8 +715,8 @@ Every string below is new or replaced. Keys are relative to the namespace in the
 | playlistPrivate | This playlist is private or doesn't exist. Set it to Unlisted or Public on YouTube, then try again. | قائمة التشغيل هذه خاصة أو غير موجودة. اجعلها «غير مُدرجة» أو «عامة» على يوتيوب ثم أعد المحاولة. |
 | emptyPlaylist | This playlist has no videos. Add videos on YouTube, then paste the link again. | لا تحتوي قائمة التشغيل هذه على أي فيديو. أضف فيديوهات على يوتيوب ثم الصق الرابط مجدداً. |
 | quota | YouTube's daily limit for Clickit is used up. Try again tomorrow. | استُنفد الحد اليومي المخصص لكليك إت على يوتيوب. أعد المحاولة غداً. |
-| keyMissing | The YouTube key isn't set, so YouTube can't be checked. Ask the site owner to set it in Cloudflare. | مفتاح يوتيوب غير مُعدّ، لذا يتعذّر التحقق من يوتيوب. اطلب من مالك الموقع ضبطه في Cloudflare. |
-| keyRejected | YouTube rejected the key. Ask the site owner to check it in Google Cloud. | رفض يوتيوب المفتاح. اطلب من مالك الموقع التحقق منه في Google Cloud. |
+| keyMissing | The YouTube key isn't set, so YouTube can't be checked. Save a key in Settings › Advanced. | مفتاح يوتيوب غير مُعدّ، لذا يتعذّر التحقق من يوتيوب. احفظ مفتاحاً في الإعدادات › متقدّم. |
+| keyRejected | YouTube rejected the key. Check it in Settings › Advanced. | رفض يوتيوب المفتاح. تحقّق منه في الإعدادات › متقدّم. |
 | network | YouTube didn't answer. Try again in a minute. | لم يستجب يوتيوب. أعد المحاولة بعد دقيقة. |
 | importFailed | Import failed and no episodes were added. {reason} Press Import to try again. | فشل الاستيراد ولم تُضف أي حلقة. {reason} اضغط «استيراد» لإعادة المحاولة. |
 | retry | Try again | أعد المحاولة |
@@ -726,7 +736,7 @@ Every string below is new or replaced. Keys are relative to the namespace in the
 |-----|----|----|
 | needsEnglishTitleHint | The English site shows this text until you write an English title. | يعرض الموقع الإنجليزي هذا النص حتى تكتب عنواناً إنجليزياً. |
 | notSavedToast | Episode not saved. Check the YouTube link. | لم تُحفظ الحلقة. تحقّق من رابط يوتيوب. |
-| toastNoYoutubeKeyDescription (replace) | Ask the site owner to set it in Cloudflare. | اطلب من مالك الموقع ضبطه في Cloudflare. |
+| toastNoYoutubeKeyDescription (replace) | Save a key in Settings › Advanced. | احفظ مفتاحاً في الإعدادات › متقدّم. |
 
 ### `admin.episodesTable` (additions)
 
@@ -761,7 +771,7 @@ Every string below is new or replaced. Keys are relative to the namespace in the
 | notCheckedBody | The daily check hasn't run yet. | لم يُجرَ الفحص اليومي بعد. |
 | checkOverdue | Check overdue | الفحص متأخر |
 
-### `admin.settings` (YouTube block; removes `getKey`, `apiKeyLabel`, `apiKeyPlaceholder`, `apiKeyHint`, `youtubeApiDescription`)
+### `admin.settings` (YouTube block; removes `getKey`, `apiKeyLabel`, `apiKeyPlaceholder`, `apiKeyHint`, `youtubeApiDescription`, `storedInCloudflare`)
 
 | Key | EN | AR |
 |-----|----|----|
@@ -769,18 +779,29 @@ Every string below is new or replaced. Keys are relative to the namespace in the
 | keySet | Key set | المفتاح مُعدّ |
 | keyMissing | Key missing | المفتاح مفقود |
 | testFailed | Test failed | فشل الاختبار |
-| storedInCloudflare | Stored in Cloudflare as a secret. Change it there, not here. | مخزّن في Cloudflare كقيمة سرّية. غيّره هناك، لا هنا. |
-| missingBody | Import and the daily video check are off. Ask the site owner to set the key in Cloudflare. | الاستيراد والفحص اليومي للفيديوهات متوقفان. اطلب من مالك الموقع ضبط المفتاح في Cloudflare. |
+| keyHelp | Paste the key from Google Cloud. It's stored encrypted and only the server can read it. Changes work right away. | الصق المفتاح من Google Cloud. يُخزَّن مشفّراً ولا يقرؤه إلا الخادم. تسري التغييرات فوراً. |
+| keyLabel | API key | مفتاح API |
+| keyPlaceholder | Paste the key (starts with AIza) | الصق المفتاح (يبدأ بـ AIza) |
+| keySavedMasked | •••• {last4} | •••• {last4} |
+| changeKey | Change key | تغيير المفتاح |
+| cancelChange | Keep current key | الإبقاء على المفتاح الحالي |
+| saveKey | Save key | حفظ المفتاح |
+| savingKey | Saving… | جارٍ الحفظ… |
+| keySavedJust | Key saved. Press Test key to check it. | حُفظ المفتاح. اضغط «اختبار المفتاح» للتحقق منه. |
+| saveFailed | The key wasn't saved. {reason} Try again. | لم يُحفظ المفتاح. {reason} أعد المحاولة. |
+| formatInvalid | This doesn't look like a YouTube API key. Copy it again from Google Cloud (it starts with AIza). | لا يبدو هذا مفتاح YouTube API. انسخه مجدداً من Google Cloud (يبدأ بـ AIza). |
+| missingBody | Import and the daily video check are off until a key is saved. | الاستيراد والفحص اليومي للفيديوهات متوقفان حتى يُحفظ مفتاح. |
 | notTested | Not tested yet | لم يُختبر بعد |
 | lastTestOk | Last test: {date} · key works | آخر اختبار: {date} · المفتاح يعمل |
 | lastTestFailed | Last test: {date} · failed. {reason} | آخر اختبار: {date} · فشل. {reason} |
 | testKey | Test key | اختبار المفتاح |
 | testingButton | Testing… | جارٍ الاختبار… |
 | testing | Asking YouTube… | جارٍ سؤال يوتيوب… |
-| testReason.rejected | YouTube rejected the key. Ask the site owner to check it in Google Cloud. | رفض يوتيوب المفتاح. اطلب من مالك الموقع التحقق منه في Google Cloud. |
-| testReason.apiNotAllowed | The key isn't allowed to use YouTube Data API v3. Ask the site owner to fix its restriction in Google Cloud. | المفتاح غير مسموح له باستخدام YouTube Data API v3. اطلب من مالك الموقع تصحيح قيوده في Google Cloud. |
-| testReason.quota | Today's YouTube limit is used up. Test again tomorrow. | استُنفد حد يوتيوب لهذا اليوم. اختبر مجدداً غداً. |
+| testReason.rejected | YouTube rejected the key. Check it in Google Cloud, then save it again. | رفض يوتيوب المفتاح. تحقّق منه في Google Cloud ثم احفظه مجدداً. |
+| testReason.apiNotAllowed | The key isn't allowed to use YouTube Data API v3. Fix its restriction in Google Cloud. | المفتاح غير مسموح له باستخدام YouTube Data API v3. صحّح قيوده في Google Cloud. |
+| testReason.quota | Today's YouTube limit is used up. It resets at {time} UAE time. | استُنفد حد يوتيوب لهذا اليوم. يُعاد ضبطه الساعة {time} بتوقيت الإمارات. |
 | testReason.network | YouTube didn't answer. Test again in a minute. | لم يستجب يوتيوب. اختبر مجدداً بعد دقيقة. |
+| revealValue / hideValue | (existing keys, reused) | |
 
 ### `player` (additions)
 
@@ -901,7 +922,7 @@ Hover/focus transitions 180–260ms with `var(--ease)` (DESIGN.md).
 12. Single-link add: plain refusal messages under the link field and a "Needs English title" hint under the title.
 13. Admin table: 1.2s yellow-tint flash on the moved row; "Renumber 1 to N" button (only when numbers have gaps), gap hint, and confirm dialog listing each change; "Can't play" badge with reason and check date; "Needs English title" chip.
 14. Dashboard "YouTube check" panel: count, up to five broken episodes, last check time, "Check overdue" after 36 hours.
-15. Key status states "Test running", "Test failed" (with reason and next step) and "Key missing".
+15. **Editable key field (G6, changed by Koss):** masked input with the eye inside on the end side, Save key, saved state `•••• abcd` with Change key, Test key next to it; states Key missing, editing, saving, saved, test running, test ok, test failed, save failed (pictures `06-g6-key-*.png`).
 
 ---
 
