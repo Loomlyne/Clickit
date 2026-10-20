@@ -27,9 +27,9 @@
     {
       "binding": "NEXT_TAG_CACHE_D1",
       "database_name": "clickit-tag-cache",
-      // Local-only placeholder. The real id is written in plan 02-10 after
-      // RUNBOOK step 9; the deploy guard in plan 02-06 refuses the all-zero id.
-      "database_id": "00000000-0000-0000-0000-000000000000"
+      // Created 2026-10-20 by the control session (RUNBOOK step 10, region EEUR).
+      // Not a secret. The deploy guard (plan 02-06) refuses the all-zero id.
+      "database_id": "7319d21d-eda3-4fed-aefd-6cbcc545f515"
     }
   ],
   "durable_objects": {
