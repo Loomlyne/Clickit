@@ -146,7 +146,7 @@ test('source scan: image finalizers run through the runner and the strict audit 
   assert.ok(src.includes('audit: logAuditStrict'), 'image ports must audit with logAuditStrict')
   const ticker = bodyOf('updateTopTicker')
   assert.ok(ticker.includes('fillTickerArabic('))
-  assert.ok(ticker.includes('translateBatchToArabicStrict'))
+  assert.ok(ticker.includes('arabic.fillBatch'))
 })
 
 test('source scan: no admin media action takes a Supabase original or the old FormData path', () => {
