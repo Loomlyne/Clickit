@@ -5,7 +5,11 @@ import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Check, Loader2, Mail, KeyRound, User } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { mapAuthError } from '@/lib/auth-errors'
+import { PasswordField } from '@/components/auth/password-field'
+import { PASSWORD_MIN } from '@/components/auth/password-rules'
 import { createClient } from '@/lib/supabase/client'
 import { updateProfile } from '@/app/[locale]/(viewer)/profile/actions'
 
@@ -25,10 +29,10 @@ export function AccountSettings({ displayName, email }: AccountSettingsProps) {
   const tCommon = useTranslations('common')
 
   return (
-    <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6">
-      <h3 className="font-display mb-1 text-lg font-semibold tracking-[-0.02em] text-white">
+    <div className="rounded-xl border border-[var(--line)] bg-[var(--bg-1)] p-5 sm:p-6">
+      <h2 className="font-display mb-1 text-lg font-semibold tracking-[-0.02em] text-[var(--text)]">
         {t('accountHeading')}
-      </h3>
+      </h2>
       <p className="mb-6 text-sm text-[var(--text-mute)]">
         {t('accountDescription')}
       </p>
@@ -47,21 +51,29 @@ export function AccountSettings({ displayName, email }: AccountSettingsProps) {
 function FieldRow({
   icon: Icon,
   label,
+  htmlFor,
   children,
 }: {
   icon: React.ComponentType<{ className?: string }>
   label: string
+  /** id of the input this row names; omit for rows that show a value. */
+  htmlFor?: string
   children: React.ReactNode
 }) {
+  const labelClass = 'text-sm leading-normal font-medium text-[var(--text-dim)]'
   return (
-    <div className="flex flex-col gap-3 py-5 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:gap-6">
-      <div className="flex items-center gap-2 sm:w-40 sm:shrink-0 sm:pt-2">
-        <Icon className="size-4 text-[var(--text-mute)]" />
-        <span className="text-sm font-medium text-[var(--text-dim)]">
-          {label}
-        </span>
+    <div className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:gap-6">
+      <div className="flex items-center gap-2 sm:min-h-11 sm:w-40 sm:shrink-0">
+        <Icon className="size-4 text-[var(--text-mute)]" aria-hidden />
+        {htmlFor ? (
+          <Label htmlFor={htmlFor} className={labelClass}>
+            {label}
+          </Label>
+        ) : (
+          <span className={labelClass}>{label}</span>
+        )}
       </div>
-      <div className="flex-1">{children}</div>
+      <div className="min-w-0 flex-1">{children}</div>
     </div>
   )
 }
@@ -108,27 +120,30 @@ function DisplayNameRow({
   }
 
   return (
-    <FieldRow icon={User} label={t('displayNameLabel')}>
+    <FieldRow icon={User} label={t('displayNameLabel')} htmlFor="display-name">
       <div className="flex items-center gap-3">
         <Input
           id="display-name"
           value={name}
           onChange={(e) => handleChange(e.target.value)}
           placeholder={t('nameInputPlaceholder')}
+          autoComplete="name"
           className="max-w-sm"
         />
-        {status === 'saving' && (
-          <span className="flex items-center gap-1.5 text-xs text-[var(--text-mute)]">
-            <Loader2 className="size-3 animate-spin" />
-            {t('savingLabel')}
-          </span>
-        )}
-        {status === 'saved' && (
-          <span className="flex items-center gap-1.5 text-xs text-emerald-400/80">
-            <Check className="size-3" />
-            {t('savedLabel')}
-          </span>
-        )}
+        <span role="status" className="shrink-0">
+          {status === 'saving' && (
+            <span className="flex items-center gap-1.5 text-[13px] text-[var(--text-mute)]">
+              <Loader2 className="size-3.5 animate-spin" aria-hidden />
+              {t('savingLabel')}
+            </span>
+          )}
+          {status === 'saved' && (
+            <span className="flex items-center gap-1.5 text-[13px] text-[var(--color-brand-green-safe)]">
+              <Check className="size-3.5" aria-hidden />
+              {t('savedLabel')}
+            </span>
+          )}
+        </span>
       </div>
     </FieldRow>
   )
@@ -140,72 +155,96 @@ function EmailRow({ email, t, tCommon }: { email: string; t: T; tCommon: T }) {
   const [editing, setEditing] = useState(false)
   const [value, setValue] = useState('')
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  function close() {
+    setEditing(false)
+    setValue('')
+    setError(null)
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     const next = value.trim()
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(next)) {
+      setError(t('emailInvalid'))
       toast.error(t('emailInvalid'))
       return
     }
     if (next === email) {
-      setEditing(false)
+      close()
       return
     }
+    setError(null)
     setSaving(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.updateUser({ email: next })
+    const { error: updateError } = await supabase.auth.updateUser({
+      email: next,
+    })
     setSaving(false)
-    if (error) {
-      toast.error(error.message || tCommon('error'))
+    if (updateError) {
+      const message = updateError.message
+        ? mapAuthError(updateError.message)
+        : tCommon('error')
+      setError(message)
+      toast.error(message)
       return
     }
     toast.success(t('emailChangeSent'))
-    setEditing(false)
-    setValue('')
+    close()
   }
 
   return (
-    <FieldRow icon={Mail} label={t('emailLabel')}>
+    <FieldRow
+      icon={Mail}
+      label={t('emailLabel')}
+      htmlFor={editing ? 'email-new' : undefined}
+    >
       {editing ? (
-        <form onSubmit={submit} className="flex flex-col gap-3 sm:flex-row">
-          <Input
-            type="email"
-            autoFocus
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder={email}
-            className="max-w-sm"
-          />
+        <form onSubmit={submit} noValidate className="flex flex-col gap-3">
+          <div className="max-w-sm">
+            <Input
+              id="email-new"
+              type="email"
+              autoFocus
+              autoComplete="email"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder={email}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'email-new-error' : undefined}
+            />
+            {error && (
+              <p
+                id="email-new-error"
+                role="alert"
+                className="mt-1 text-[13px] text-[var(--color-brand-red-safe)]"
+              >
+                {error}
+              </p>
+            )}
+          </div>
           <div className="flex gap-2">
-            <Button type="submit" size="sm" disabled={saving}>
+            <Button type="submit" disabled={saving}>
               {saving ? (
-                <Loader2 className="size-4 animate-spin" />
+                <Loader2 className="animate-spin" aria-hidden />
               ) : (
                 tCommon('save')
               )}
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setEditing(false)
-                setValue('')
-              }}
-            >
+            <Button type="button" variant="ghost" onClick={close}>
               {tCommon('cancel')}
             </Button>
           </div>
         </form>
       ) : (
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-sm text-white">{email}</span>
+        <div className="flex min-h-11 items-center justify-between gap-3">
+          <span className="min-w-0 text-sm break-all text-[var(--text)]">
+            {email}
+          </span>
           <Button
             type="button"
-            size="sm"
             variant="outline"
-            className="rounded-full"
             onClick={() => setEditing(true)}
           >
             {t('changeAction')}
@@ -223,20 +262,28 @@ function PasswordRow({ t, tCommon }: { t: T; tCommon: T }) {
   const [pw, setPw] = useState('')
   const [confirm, setConfirm] = useState('')
   const [saving, setSaving] = useState(false)
+  const [pwError, setPwError] = useState<string | null>(null)
+  const [confirmError, setConfirmError] = useState<string | null>(null)
 
   function reset() {
     setEditing(false)
     setPw('')
     setConfirm('')
+    setPwError(null)
+    setConfirmError(null)
   }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (pw.length < 8) {
+    setPwError(null)
+    setConfirmError(null)
+    if (pw.length < PASSWORD_MIN) {
+      setPwError(t('passwordTooShort'))
       toast.error(t('passwordTooShort'))
       return
     }
     if (pw !== confirm) {
+      setConfirmError(t('passwordMismatch'))
       toast.error(t('passwordMismatch'))
       return
     }
@@ -245,7 +292,11 @@ function PasswordRow({ t, tCommon }: { t: T; tCommon: T }) {
     const { error } = await supabase.auth.updateUser({ password: pw })
     setSaving(false)
     if (error) {
-      toast.error(error.message || tCommon('error'))
+      const message = error.message
+        ? mapAuthError(error.message)
+        : tCommon('error')
+      setPwError(message)
+      toast.error(message)
       return
     }
     toast.success(t('passwordChanged'))
@@ -255,47 +306,51 @@ function PasswordRow({ t, tCommon }: { t: T; tCommon: T }) {
   return (
     <FieldRow icon={KeyRound} label={t('passwordLabel')}>
       {editing ? (
-        <form onSubmit={submit} className="flex flex-col gap-3">
-          <Input
-            type="password"
-            autoFocus
-            value={pw}
-            onChange={(e) => setPw(e.target.value)}
-            placeholder={t('newPasswordPlaceholder')}
-            autoComplete="new-password"
-            className="max-w-sm"
-          />
-          <Input
-            type="password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            placeholder={t('confirmPasswordPlaceholder')}
-            autoComplete="new-password"
-            className="max-w-sm"
-          />
+        <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+          <div className="flex max-w-sm flex-col gap-4">
+            <PasswordField
+              id="password-new"
+              label={t('newPasswordPlaceholder')}
+              autoFocus
+              autoComplete="new-password"
+              value={pw}
+              onChange={(e) => setPw(e.target.value)}
+              strengthOf={pw}
+              error={pwError ?? undefined}
+            />
+            <PasswordField
+              id="password-confirm"
+              label={t('confirmPasswordPlaceholder')}
+              autoComplete="new-password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              error={confirmError ?? undefined}
+            />
+          </div>
           <div className="flex gap-2">
-            <Button type="submit" size="sm" disabled={saving}>
+            <Button type="submit" disabled={saving}>
               {saving ? (
-                <Loader2 className="size-4 animate-spin" />
+                <Loader2 className="animate-spin" aria-hidden />
               ) : (
                 tCommon('save')
               )}
             </Button>
-            <Button type="button" size="sm" variant="ghost" onClick={reset}>
+            <Button type="button" variant="ghost" onClick={reset}>
               {tCommon('cancel')}
             </Button>
           </div>
         </form>
       ) : (
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-sm tracking-[0.3em] text-[var(--text-mute)]">
+        <div className="flex min-h-11 items-center justify-between gap-3">
+          <span
+            aria-hidden
+            className="text-sm tracking-[0.3em] text-[var(--text-mute)]"
+          >
             ••••••••
           </span>
           <Button
             type="button"
-            size="sm"
             variant="outline"
-            className="rounded-full"
             onClick={() => setEditing(true)}
           >
             {t('changeAction')}

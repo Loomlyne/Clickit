@@ -38,7 +38,7 @@ export function ContinueWatchingCard({ item }: ContinueWatchingCardProps) {
         <h3 className="font-display m-0 mb-0.5 text-[18px] leading-[1.1]">
           {item.episodeTitle}
         </h3>
-        <div className="mono text-[10.5px]">
+        <div className="mono">
           {item.showTitle} · S{item.seasonNumber} E{item.episodeNumber}
         </div>
         <div className="mt-2.5 flex gap-1.5">

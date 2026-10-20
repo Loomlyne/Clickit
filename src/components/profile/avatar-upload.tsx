@@ -61,32 +61,34 @@ export function AvatarUpload({
       type="button"
       onClick={() => inputRef.current?.click()}
       disabled={uploading}
-      className="group relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--line-2)] transition-all hover:border-[var(--text-mute)]"
-      style={{
-        background: preview
-          ? undefined
-          : 'linear-gradient(135deg, rgba(96,115,255,0.85), rgba(46,57,121,0.92))',
-      }}
+      aria-label={t('changeAvatar')}
+      className="group relative size-20 shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-0)]"
     >
-      {preview ? (
-        <img
-          src={preview}
-          alt={t('avatarPicAlt')}
-          className="size-full object-cover"
-        />
-      ) : (
-        <span className="text-3xl font-semibold text-white">
-          {fallbackInitial}
-        </span>
-      )}
-
-      <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-        {uploading ? (
-          <div className="size-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+      <span className="flex size-full items-center justify-center overflow-hidden rounded-full border border-[var(--line-2)] bg-[var(--uis-primary-soft)] transition-colors group-hover:border-[var(--text-mute)]">
+        {preview ? (
+          <img
+            src={preview}
+            alt={t('avatarPicAlt')}
+            className="size-full object-cover"
+          />
         ) : (
-          <Camera className="size-5 text-white" />
+          <span className="text-3xl font-semibold text-[var(--primary)]">
+            {fallbackInitial}
+          </span>
         )}
-      </div>
+      </span>
+
+      {/* Permanent camera badge: touch screens have no hover. */}
+      <span
+        aria-hidden
+        className="absolute -end-1 -bottom-1 flex size-8 items-center justify-center rounded-full border-2 border-[var(--bg-0)] bg-[var(--bg-3)] text-[var(--text)]"
+      >
+        {uploading ? (
+          <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+        ) : (
+          <Camera className="size-4" />
+        )}
+      </span>
 
       <input
         ref={inputRef}

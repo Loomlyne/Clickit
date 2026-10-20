@@ -5,9 +5,10 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ═══════════════════════════════════════════════════
-   Editorial Design System — v2.0
-   Aesthetic: minimal monochrome premium, cinematic
-   Accent: electric yellow (#ffcc00)
+   UI System tokens — generated from ui.config.json via UI System
+   (github.com/Loomlyne/ui-system), engine values, 2026-10-20.
+   Mode: dark. Primary: #ffcc00 with #090909 ink.
+   Fonts: local LBC (not from the engine preset).
    ═══════════════════════════════════════════════════ */
 
 :root {
@@ -17,20 +18,20 @@
   --nav-h: calc(env(safe-area-inset-top) + 0.75rem + 44px + 0.75rem + 1px);
 
   /* Base palette — monochrome warm-black */
-  --bg-0: #0a0a0a;
-  --bg-1: #121212;
-  --bg-2: #1a1a1a;
-  --bg-3: #242424;
-  --bg-4: #2e2e2e;
+  --bg-0: #090909;
+  --bg-1: #101010;
+  --bg-2: #191919;
+  --bg-3: #2A2A2A;
+  --bg-4: #424242;
   --line: rgba(255, 255, 255, 0.08);
   --line-2: rgba(255, 255, 255, 0.14);
-  --text: #f5f5f4;
-  --text-dim: #a8a8a6;
-  --text-mute: #6e6e6b;
+  --text: #F4F4F4;
+  --text-dim: #CCCCCC;
+  --text-mute: #A1A1A1;
   --accent: #ffcc00;
-  --accent-fg: #0a0a0a;
+  --accent-fg: #090909;
   --accent-yellow: #ffcc00;
-  --accent-yellow-fg: #0a0a0a;
+  --accent-yellow-fg: #090909;
 
   /* Type stacks — LBC everywhere
      Titles + Body + UI (EN + AR): LBC
@@ -53,20 +54,20 @@
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* shadcn/ui compatibility tokens */
-  --background: #0a0a0a;
-  --foreground: #f5f5f4;
-  --card: #121212;
-  --card-foreground: #f5f5f4;
-  --popover: #121212;
-  --popover-foreground: #f5f5f4;
+  --background: #090909;
+  --foreground: #F4F4F4;
+  --card: #101010;
+  --card-foreground: #F4F4F4;
+  --popover: #101010;
+  --popover-foreground: #F4F4F4;
   --primary: #ffcc00;
-  --primary-foreground: #0a0a0a;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #f5f5f4;
-  --muted: #1a1a1a;
-  --muted-foreground: #a8a8a6;
+  --primary-foreground: #090909;
+  --secondary: #191919;
+  --secondary-foreground: #F4F4F4;
+  --muted: #191919;
+  --muted-foreground: #CCCCCC;
   --accent: #ffcc00;
-  --accent-foreground: #0a0a0a;
+  --accent-foreground: #090909;
   --destructive: #ff3b30;
   --destructive-foreground: #fff;
   --border: rgba(255, 255, 255, 0.08);
@@ -78,49 +79,74 @@
   --chart-3: #7c9e6d;
   --chart-4: #5b8aa4;
   --chart-5: #c8a04a;
-  --sidebar: #0a0a0a;
-  --sidebar-foreground: #f5f5f4;
+  --sidebar: #090909;
+  --sidebar-foreground: #F4F4F4;
   --sidebar-primary: #ffcc00;
-  --sidebar-primary-foreground: #0a0a0a;
-  --sidebar-accent: #1a1a1a;
-  --sidebar-accent-foreground: #f5f5f4;
+  --sidebar-primary-foreground: #090909;
+  --sidebar-accent: #191919;
+  --sidebar-accent-foreground: #F4F4F4;
   --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: rgba(255, 204, 0, 0.5);
 
   /* Gradients & Shadows */
   --gradient-cinema: linear-gradient(
     180deg,
-    rgba(10, 10, 10, 0) 0%,
-    rgba(10, 10, 10, 0.72) 58%,
-    rgba(10, 10, 10, 0.96) 100%
+    rgba(9, 9, 9, 0) 0%,
+    rgba(9, 9, 9, 0.72) 58%,
+    rgba(9, 9, 9, 0.96) 100%
   );
   --gradient-left-vignette: linear-gradient(
     90deg,
-    rgba(10, 10, 10, 0.92) 0%,
-    rgba(10, 10, 10, 0.54) 40%,
-    rgba(10, 10, 10, 0) 100%
+    rgba(9, 9, 9, 0.92) 0%,
+    rgba(9, 9, 9, 0.54) 40%,
+    rgba(9, 9, 9, 0) 100%
   );
   --bloom-opacity: 0.22;
   --shadow-soft: 0 24px 80px rgba(0, 0, 0, 0.38);
   --shadow-panel:
     0 10px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  /* UI System aliases (--uis-*) for future UI System components */
+  --uis-bg: var(--bg-0);
+  --uis-surface: var(--bg-1);
+  --uis-surface-2: var(--bg-2);
+  --uis-surface-3: var(--bg-3);
+  --uis-line: #2A2A2A;
+  --uis-line-strong: #424242;
+  --uis-ink: var(--text);
+  --uis-ink-2: var(--text-dim);
+  --uis-ink-3: var(--text-mute);
+  --uis-primary: var(--primary);
+  --uis-primary-hover: #D7AD16;
+  --uis-primary-ink: var(--primary-foreground);
+  --uis-primary-soft: #312915;
+  --uis-accent: var(--accent-yellow);
+  --uis-danger: var(--destructive);
+  --uis-r-chip: 999px;
+  --uis-r-control: 999px;
+  --uis-r-field: 8px;
+  --uis-r-card: 12px;
+  --uis-r-panel: 16px;
+  --uis-r-media: 11px;
+  --uis-r-shell: 999px;
+  --uis-control-md: 44px;
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #f5f5f4;
-  --card: #121212;
-  --card-foreground: #f5f5f4;
-  --popover: #121212;
-  --popover-foreground: #f5f5f4;
+  --background: #090909;
+  --foreground: #F4F4F4;
+  --card: #101010;
+  --card-foreground: #F4F4F4;
+  --popover: #101010;
+  --popover-foreground: #F4F4F4;
   --primary: #ffcc00;
-  --primary-foreground: #0a0a0a;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #f5f5f4;
-  --muted: #1a1a1a;
-  --muted-foreground: #a8a8a6;
+  --primary-foreground: #090909;
+  --secondary: #191919;
+  --secondary-foreground: #F4F4F4;
+  --muted: #191919;
+  --muted-foreground: #CCCCCC;
   --accent: #ffcc00;
-  --accent-foreground: #0a0a0a;
+  --accent-foreground: #090909;
   --destructive: #ff3b30;
   --destructive-foreground: #fff;
   --border: rgba(255, 255, 255, 0.08);
@@ -132,12 +158,12 @@
   --chart-3: #7c9e6d;
   --chart-4: #5b8aa4;
   --chart-5: #c8a04a;
-  --sidebar: #0a0a0a;
-  --sidebar-foreground: #f5f5f4;
+  --sidebar: #090909;
+  --sidebar-foreground: #F4F4F4;
   --sidebar-primary: #ffcc00;
-  --sidebar-primary-foreground: #0a0a0a;
-  --sidebar-accent: #1a1a1a;
-  --sidebar-accent-foreground: #f5f5f4;
+  --sidebar-primary-foreground: #090909;
+  --sidebar-accent: #191919;
+  --sidebar-accent-foreground: #F4F4F4;
   --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: rgba(255, 204, 0, 0.5);
 }
@@ -209,14 +235,14 @@
   --color-brand-orange-safe: #ffb46e;
   --color-brand-yellow-safe: #f8d86f;
 
-  --color-surface-1: #121212;
-  --color-surface-2: #1a1a1a;
-  --color-surface-3: #242424;
-  --color-surface-4: #2e2e2e;
+  --color-surface-1: #101010;
+  --color-surface-2: #191919;
+  --color-surface-3: #2A2A2A;
+  --color-surface-4: #424242;
 
-  --color-text-primary: #f5f5f4;
-  --color-text-secondary: #a8a8a6;
-  --color-text-muted: #6e6e6b;
+  --color-text-primary: #F4F4F4;
+  --color-text-secondary: #CCCCCC;
+  --color-text-muted: #A1A1A1;
 }
 
 /* Arabic locale: LBC body, same as English. */
@@ -359,7 +385,7 @@ html::-webkit-scrollbar-thumb:hover {
 
   .label {
     font-family: var(--font-app);
-    font-size: 10.5px;
+    font-size: 11px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--text-mute);
@@ -564,10 +590,6 @@ html[lang='ar'] [class*='tracking-['] {
     --poster-w: 140px;
     --landscape-w: 260px;
     --rail-gap: 10px;
-  }
-
-  .mono {
-    font-size: 10px;
   }
 
   /* Rails */

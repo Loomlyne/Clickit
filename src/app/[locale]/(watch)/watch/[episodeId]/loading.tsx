@@ -2,10 +2,10 @@ export default function WatchEpisodeLoading() {
   return (
     <div className="flex h-dvh flex-col bg-black">
       {/* Video player area */}
-      <div className="w-full flex-1 animate-pulse bg-white/[0.04]" />
+      <div className="w-full flex-1 animate-pulse bg-[var(--bg-2)]" />
 
       {/* Episode tray — pinned at 134px (matches WATCH_TRAY_SNAP_POINTS[0]) */}
-      <div className="h-[134px] w-full shrink-0 border-t border-white/[0.06] bg-[#0a0a0a] px-4 py-3">
+      <div className="h-[134px] w-full shrink-0 border-t border-[var(--line)] bg-[var(--bg-0)] px-4 py-3">
         <div className="flex items-center gap-3">
           {/* Show art thumbnail */}
           <div className="h-[88px] w-[60px] shrink-0 animate-pulse rounded-lg bg-white/[0.06]" />

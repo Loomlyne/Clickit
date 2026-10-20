@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Loomlyne/ui-system/main/packages/core/schema.json",
+  "name": "Clickit Story",
+  "brand": { "wordmark": "clickit story" },
+  "color": {
+    "primary": "#ffcc00",
+    "accent": "#ffcc00",
+    "neutral": "#737373",
+    "danger": "#ff3b30",
+    "mode": "dark"
+  },
+  "radius": { "roundness": 50, "pill": true, "overrides": { "field": 8 } },
+  "type": { "preset": "modern", "buttonCase": "normal" },
+  "density": "comfortable",
+  "surface": { "float": "glass", "shadow": "medium", "border": "hairline" },
+  "nav": { "front": "bar", "back": "sidebar" }
+}

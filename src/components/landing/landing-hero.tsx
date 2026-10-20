@@ -52,15 +52,14 @@ export async function LandingHero() {
   // Fallback reel only applies to the desktop/horizontal hero — a portrait phone
   // gets no letterboxed landscape fallback.
   const ytId =
-    adminYtId ?? (heroVideoType === 'mp4' || useVertical ? null : FALLBACK_YT_ID)
+    adminYtId ??
+    (heroVideoType === 'mp4' || useVertical ? null : FALLBACK_YT_ID)
 
   return (
     <section className="relative -mt-[calc(var(--nav-h)_+_4rem)] min-h-dvh overflow-hidden">
       <HeroBackgroundMedia
         mp4Url={
-          heroVideoType === 'mp4'
-            ? resolveSupabaseVideoUrl(heroVideoUrl)
-            : null
+          heroVideoType === 'mp4' ? resolveSupabaseVideoUrl(heroVideoUrl) : null
         }
         ytId={ytId}
         muted={heroVideoMuted}
@@ -87,24 +86,31 @@ export async function LandingHero() {
             priority
             className="mb-3 h-auto w-48 sm:w-56 md:w-64"
           />
-          <p className="mb-5 text-[17px] leading-snug text-[var(--text-dim)]">
+          <p className="mb-5 text-[14px] leading-snug text-[var(--text-dim)] md:text-[16px]">
             {(isAr ? config.heroDescriptionAr : config.heroDescription) ??
               t('heroDescription')}
           </p>
-          <div className="pointer-events-auto mb-6 md:mb-8">
+          <div className="pointer-events-auto mb-6 flex flex-wrap gap-2 md:mb-8">
             <Link
               href={ctaHref}
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-5 py-3 text-[14px] font-medium uppercase tracking-[0.06em] whitespace-nowrap text-[var(--primary-foreground)] transition-all hover:bg-white sm:px-6 sm:py-3.5 sm:text-[15px]"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--primary)] px-5 text-[14px] font-medium whitespace-nowrap text-[var(--primary-foreground)] transition-all hover:bg-white"
             >
               <svg
                 width="16"
                 height="16"
                 viewBox="0 0 24 24"
                 fill="currentColor"
+                aria-hidden="true"
               >
                 <polygon points="6 3 20 12 6 21 6 3" />
               </svg>
               {t('heroCta')}
+            </Link>
+            <Link
+              href="/watch"
+              className="inline-flex min-h-11 items-center rounded-full border border-[var(--uis-line-strong)] bg-transparent px-5 text-[14px] font-medium whitespace-nowrap text-[var(--text)] transition-colors hover:bg-[var(--bg-2)]"
+            >
+              {t('heroSecondaryCta')}
             </Link>
           </div>
         </div>
