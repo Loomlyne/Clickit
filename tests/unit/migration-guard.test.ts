@@ -1,10 +1,71 @@
 import assert from 'node:assert/strict'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { test } from 'node:test'
+import { fileURLToPath } from 'node:url'
 
 import {
   classifyChanges,
+  runGuard,
   scanSql,
 } from '../../scripts/migration-guard.mjs'
+
+const SCRIPT = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  'scripts',
+  'migration-guard.mjs',
+)
+const DIR = 'supabase/migrations'
+const GIT_ENV = {
+  ...process.env,
+  GIT_AUTHOR_NAME: 'Guard Test',
+  GIT_AUTHOR_EMAIL: 'guard@example.test',
+  GIT_COMMITTER_NAME: 'Guard Test',
+  GIT_COMMITTER_EMAIL: 'guard@example.test',
+}
+
+function git(cwd: string, ...args: string[]) {
+  return execFileSync('git', args, {
+    cwd,
+    env: GIT_ENV,
+    encoding: 'utf8',
+  }).trim()
+}
+
+async function put(repo: string, name: string, content: string) {
+  const file = join(repo, DIR, name)
+  await mkdir(dirname(file), { recursive: true })
+  await writeFile(file, content)
+}
+
+async function commitAll(repo: string, message: string) {
+  git(repo, 'add', '-A')
+  git(repo, 'commit', '-q', '-m', message)
+  return git(repo, 'rev-parse', 'HEAD')
+}
+
+/** Temp repo: base commit with two applied migrations, then `change` -> head. */
+async function withRepo(
+  change: (repo: string) => Promise<void> | void,
+  check: (ctx: { repo: string; base: string; head: string }) => Promise<void> | void,
+) {
+  const repo = await mkdtemp(join(tmpdir(), 'mguard-'))
+  try {
+    git(repo, 'init', '-q', '-b', 'main')
+    await put(repo, '20260101000000_a.sql', 'create table a (id int);\n')
+    await put(repo, '20260102000000_b.sql', 'create table b (id int);\n')
+    const base = await commitAll(repo, 'base')
+    await change(repo)
+    const head = await commitAll(repo, 'head')
+    await check({ repo, base, head })
+  } finally {
+    await rm(repo, { recursive: true, force: true })
+  }
+}
 
 function kinds(sql: string) {
   return scanSql(sql).findings.map((f) => f.kind)
@@ -152,4 +213,182 @@ test('classifyChanges parses name-status -z output', () => {
     { status: 'D', path: 'z.sql' },
   ])
   assert.deepEqual(classifyChanges(''), [])
+})
+
+test('fixture 12: a clean new migration passes (CLI exit 0)', async () => {
+  await withRepo(
+    (repo) => put(repo, '20260103000000_c.sql', 'create table c (id int);\n'),
+    ({ repo, base, head }) => {
+      const result = runGuard({ cwd: repo, base, head })
+      assert.deepEqual(result.violations, [])
+      assert.deepEqual(result.warnings, [])
+      const cli = spawnSync(
+        process.execPath,
+        [SCRIPT, '--base', base, '--head', head],
+        { cwd: repo, encoding: 'utf8' },
+      )
+      assert.equal(cli.status, 0, cli.stdout + cli.stderr)
+      assert.match(cli.stdout, /migration-guard: 1 files checked, 0 violations, 0 warnings/)
+    },
+  )
+})
+
+test('fixture 13: editing an applied migration fails (CLI exit 1)', async () => {
+  await withRepo(
+    (repo) => put(repo, '20260101000000_a.sql', 'create table a (id int, x int);\n'),
+    ({ repo, base, head }) => {
+      const { violations } = runGuard({ cwd: repo, base, head })
+      assert.equal(violations.length, 1)
+      assert.equal(violations[0].path, `${DIR}/20260101000000_a.sql`)
+      assert.match(violations[0].reason, /applied migration modified/)
+      const cli = spawnSync(
+        process.execPath,
+        [SCRIPT, '--base', base, '--head', head],
+        { cwd: repo, encoding: 'utf8' },
+      )
+      assert.equal(cli.status, 1)
+      assert.match(cli.stdout, /supabase\/migrations\/20260101000000_a\.sql: applied migration modified/)
+    },
+  )
+})
+
+test('fixture 14: renaming or deleting an applied migration fails', async () => {
+  await withRepo(
+    (repo) => {
+      git(repo, 'mv', `${DIR}/20260102000000_b.sql`, `${DIR}/20260104000000_b.sql`)
+    },
+    ({ repo, base, head }) => {
+      const { violations } = runGuard({ cwd: repo, base, head })
+      assert.ok(violations.length >= 1)
+      assert.ok(violations.some((v) => /renamed/.test(v.reason)))
+    },
+  )
+  await withRepo(
+    (repo) => {
+      git(repo, 'rm', '-q', `${DIR}/20260101000000_a.sql`)
+    },
+    ({ repo, base, head }) => {
+      const { violations } = runGuard({ cwd: repo, base, head })
+      assert.equal(violations.length, 1)
+      assert.match(violations[0].reason, /deleted/)
+    },
+  )
+})
+
+test('fixture 15: allow-list matches only exact from/to blobs', async () => {
+  const path = `${DIR}/20260101000000_a.sql`
+  await withRepo(
+    (repo) => put(repo, '20260101000000_a.sql', '-- neutralised\nselect 1;\n'),
+    ({ repo, base, head }) => {
+      const from = git(repo, 'rev-parse', `${base}:${path}`)
+      const to = git(repo, 'rev-parse', `${head}:${path}`)
+      assert.deepEqual(
+        runGuard({ cwd: repo, base, head, allowList: { [path]: { from, to } } }).violations,
+        [],
+      )
+      // to = null never matches
+      assert.equal(
+        runGuard({ cwd: repo, base, head, allowList: { [path]: { from, to: null } } })
+          .violations.length,
+        1,
+      )
+      // different content than the allow-listed `to`
+      assert.equal(
+        runGuard({
+          cwd: repo,
+          base,
+          head,
+          allowList: { [path]: { from, to: '0'.repeat(40) } },
+        }).violations.length,
+        1,
+      )
+      // wrong `from`
+      assert.equal(
+        runGuard({ cwd: repo, base, head, allowList: { [path]: { from: '1'.repeat(40), to } } })
+          .violations.length,
+        1,
+      )
+    },
+  )
+  // second edit on top of the first: base blob now equals `to`
+  const repo = await mkdtemp(join(tmpdir(), 'mguard-'))
+  try {
+    git(repo, 'init', '-q', '-b', 'main')
+    await put(repo, '20260101000000_a.sql', 'create table a (id int);\n')
+    const c0 = await commitAll(repo, 'applied')
+    await put(repo, '20260101000000_a.sql', '-- neutralised\nselect 1;\n')
+    const c1 = await commitAll(repo, 'neutralise')
+    await put(repo, '20260101000000_a.sql', '-- neutralised\nselect 2;\n')
+    const c2 = await commitAll(repo, 'second edit')
+    const from = git(repo, 'rev-parse', `${c0}:${path}`)
+    const to = git(repo, 'rev-parse', `${c1}:${path}`)
+    const allowList = { [path]: { from, to } }
+    assert.deepEqual(runGuard({ cwd: repo, base: c0, head: c1, allowList }).violations, [])
+    assert.equal(runGuard({ cwd: repo, base: c1, head: c2, allowList }).violations.length, 1)
+  } finally {
+    await rm(repo, { recursive: true, force: true })
+  }
+})
+
+test('fixture 16: bad file names fail', async () => {
+  for (const [name, body] of [
+    ['foo.sql', 'select 1;\n'],
+    ['202601050000_x.sql', 'select 1;\n'],
+    ['notes.txt', 'hello\n'],
+  ]) {
+    await withRepo(
+      (repo) => put(repo, name, body),
+      ({ repo, base, head }) => {
+        const { violations } = runGuard({ cwd: repo, base, head })
+        assert.equal(violations.length, 1, name)
+        assert.match(violations[0].reason, /bad migration file name/)
+      },
+    )
+  }
+})
+
+test('destructive SQL in an added migration fails with its line; waiver passes', async () => {
+  await withRepo(
+    (repo) => put(repo, '20260106000000_d.sql', 'drop table x;\n'),
+    ({ repo, base, head }) => {
+      const { violations } = runGuard({ cwd: repo, base, head })
+      assert.equal(violations.length, 1)
+      assert.equal(violations[0].line, 1)
+      assert.equal(violations[0].path, `${DIR}/20260106000000_d.sql`)
+      assert.match(violations[0].reason, /^drop without `-- safe-drop: <reason>`/)
+    },
+  )
+  await withRepo(
+    (repo) =>
+      put(repo, '20260106000000_d.sql', 'drop table x; -- safe-drop: replaced by view\n'),
+    ({ repo, base, head }) => {
+      assert.deepEqual(runGuard({ cwd: repo, base, head }).violations, [])
+    },
+  )
+})
+
+test('an out-of-order version is a warning, not a violation', async () => {
+  await withRepo(
+    (repo) => put(repo, '20260101000001_late.sql', 'create table late (id int);\n'),
+    ({ repo, base, head }) => {
+      const result = runGuard({ cwd: repo, base, head })
+      assert.deepEqual(result.violations, [])
+      assert.equal(result.warnings.length, 1)
+      assert.match(result.warnings[0].reason, /sorts before applied migrations/)
+    },
+  )
+})
+
+test('CLI exits 2 on a git error', async () => {
+  await withRepo(
+    (repo) => put(repo, '20260103000000_c.sql', 'select 1;\n'),
+    ({ repo }) => {
+      const cli = spawnSync(
+        process.execPath,
+        [SCRIPT, '--base', 'no-such-rev', '--head', 'HEAD'],
+        { cwd: repo, encoding: 'utf8' },
+      )
+      assert.equal(cli.status, 2)
+    },
+  )
 })
