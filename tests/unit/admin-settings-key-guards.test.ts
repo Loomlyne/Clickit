@@ -53,3 +53,105 @@ test('next.config adds no serverActions.allowedOrigins (same-origin check stays 
     assert.equal(text.includes('allowedOrigins'), false, `${f} widens allowedOrigins`)
   }
 })
+
+// ---------------------------------------------------------------------------
+// Task 3: the editable key field (UI-SPEC §6, G6 pictures)
+// ---------------------------------------------------------------------------
+
+const secretField = readFileSync('src/components/admin/settings/secret-field.tsx', 'utf8')
+const advanced = readFileSync('src/components/admin/settings/advanced-tab.tsx', 'utf8')
+const page = readFileSync('src/app/[locale]/admin/settings/page.tsx', 'utf8')
+
+test('SecretField: masked input with the eye inside the field at the end', () => {
+  for (const needle of [
+    "type={reveal ? 'text' : 'password'}",
+    'autoComplete="off"',
+    'spellCheck={false}',
+    'pe-12',
+    'absolute end-0 top-0 size-11',
+    'aria-pressed',
+    "t('revealValue')",
+    "t('hideValue')",
+  ]) {
+    assert.ok(secretField.includes(needle), `secret-field.tsx lacks ${needle}`)
+  }
+  assert.ok(/<Eye\b/.test(secretField) && /<EyeOff\b/.test(secretField), 'Eye / EyeOff icons missing')
+})
+
+test('SecretField uses logical properties only (no left/right classes)', () => {
+  assert.equal(/\b(left|right)-[0-9]|text-left|text-right/.test(secretField), false)
+  assert.equal(/(?<![\w-])(left|right)-[\w[]/.test(secretField), false)
+})
+
+test('SecretField saved state shows only the masked last 4 and a Change key button', () => {
+  assert.match(secretField, /t\('keySavedMasked', \{ last4: [\w.]+ \}\)/)
+  assert.ok(secretField.includes("t('changeKey')"), 'no changeKey button')
+  assert.ok(secretField.includes("t('cancelChange')"), 'no cancelChange')
+  assert.match(secretField, /className="[^"]*\bpx-6\b[^"]*"[^>]*>\s*\{t\('changeKey'\)\}/)
+  assert.ok(secretField.includes("'Escape'"), 'Esc does not return to the saved state')
+  assert.equal(/hasSavedValue|'replace'/.test(secretField), false, 'old Replace model still present')
+})
+
+test('advanced tab: the key block is its own form and calls both key actions', () => {
+  assert.ok(advanced.includes('saveYouTubeApiKey('), 'no saveYouTubeApiKey call')
+  assert.ok(advanced.includes('testYouTubeKey('), 'no testYouTubeKey call')
+  const forms = advanced.match(/<form\b/g) ?? []
+  assert.equal(forms.length, 2, 'expected the integrations form and the key form')
+  const start = advanced.indexOf('<form onSubmit={onSaveIntegrations}')
+  assert.ok(start !== -1, 'integrations form not found')
+  const integrations = advanced.slice(start, advanced.indexOf('</form>', start))
+  for (const banned of ['SecretField', 'YouTubeKeyBlock', 'saveYouTubeApiKey', 'youtubeKey']) {
+    assert.equal(integrations.includes(banned), false, `integrations form contains ${banned}`)
+  }
+  assert.match(advanced, /<form\s+onSubmit=\{onSaveKey\}/)
+})
+
+test('advanced tab: state copy from UI-SPEC §6', () => {
+  for (const key of [
+    'youtubeKeyTitle',
+    'keyHelp',
+    'keySet',
+    'keyMissing',
+    'testFailed',
+    'formatInvalid',
+    'keySavedJust',
+    'keySaveFailed',
+    'notTested',
+    'lastTestOk',
+    'lastTestFailed',
+    'missingBody',
+    'saveKey',
+    'savingKey',
+    'testKey',
+    'testingButton',
+    'testing',
+  ]) {
+    assert.ok(advanced.includes(`'${key}'`), `advanced-tab.tsx lacks ${key}`)
+  }
+  assert.ok(advanced.includes('formatQuotaReset('), 'quota reason lacks formatQuotaReset')
+  assert.ok(advanced.includes('YouTubeStatusChip'), 'no status chip')
+})
+
+test('advanced tab: old YouTube row, link and Cloudflare copy are gone', () => {
+  for (const banned of ['ExternalLink', 'youtube_api_key', 'storedInCloudflare', 'getKey', 'apiKeyHint', 'youtubeApiDescription']) {
+    assert.equal(advanced.includes(banned), false, `advanced-tab.tsx still has ${banned}`)
+  }
+})
+
+test('advanced tab: row 3 is aria-live and the green icon carries TODO(phase-4)', () => {
+  assert.ok(advanced.includes('aria-live="polite"'), 'row 3 is not aria-live')
+  const lines = advanced.split('\n')
+  const at = lines.findIndex((l) => l.includes('text-brand-green-safe'))
+  assert.ok(at !== -1, 'no text-brand-green-safe icon')
+  const near = lines.slice(Math.max(0, at - 3), at + 1).join('\n')
+  assert.match(near, /\/\/ TODO\(phase-4\)|\{\/\* TODO\(phase-4\)/)
+})
+
+test('settings page reads hasKey + last4 + last test only, never the key', () => {
+  assert.ok(page.includes('readYouTubeKeyMeta()'), 'page does not call readYouTubeKeyMeta()')
+  assert.ok(page.includes('readLastKeyTestCore('), 'page does not read the last test')
+  assert.match(page, /hasKey: \w+\.hasKey,\s*last4: \w+\.last4,\s*lastTest\b/)
+  for (const banned of ['getYouTubeApiKey', 'get_youtube_key', 'readYouTubeApiKey', 'getServerYouTubeClient', 'updatedAt']) {
+    assert.equal(page.includes(banned), false, `settings page has ${banned}`)
+  }
+})
