@@ -106,3 +106,11 @@ Already done before planning (do not redo): SAFE-04 live audit (`01-LIVE-AUDIT.m
 
 *Phase: 01-safe-ground*
 *Context gathered: 2026-10-20*
+
+## Plan-gate amendments (Koss, question form via controller, 2026-10-20 14:1x CET)
+
+- **D-07 amended:** no workflow-level `paths-ignore`; checks always run and a `scope` step skips heavy steps on docs-only PRs.
+- **D-11 amended:** local proof on a throwaway database `p1_scratch_safe_ground` on the shared local Postgres (stack owned by the Phase 1.1 worktree is not reset); the controller runs the real `supabase db reset` after Ship.
+- Second environment `live-db-plan` holds the DB secret for the dry-run; repo-wide `SUPABASE_DB_URL` deleted by the controller after the first good dry-run.
+- `live-db` approver: `Loomlyne`. Ruleset: required checks only, admin bypass. Supabase CLI pin 2.119.0.
+- Plan signed: execute.

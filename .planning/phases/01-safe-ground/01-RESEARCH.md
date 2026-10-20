@@ -599,15 +599,15 @@ docker exec supabase_db_Clickit psql -U postgres -At -c "select (select count(*)
 
 ## Open Questions
 
-1. **Second environment (`live-db-plan`) versus D-02's single `live-db`** (pending Koss at plan gate — default in plans)
+1. **Second environment (`live-db-plan`) versus D-02's single `live-db`** (RESOLVED — Koss chose the default, 2026-10-20)
    - What we know: the dry-run needs the DB URL; an environment secret is only readable by jobs that reference that environment; a reviewer on `live-db` would prompt twice if both jobs used it; a repo-level secret is readable from any branch workflow by anyone with push access (`clickitstory` is a collaborator).
    - Unclear: Koss's appetite for one more environment.
    - Recommendation: create both (commands above). Fallback if Koss refuses: dry-run job uses the existing repo secret and no environment; document the exposure.
-2. **Reviewer account for `live-db`.** Recommendation: `Loomlyne` (id 223640340); confirm (A1). (pending Koss at plan gate — default in plans)
-3. **`Break Fast Daily` `'Mon-Fri'`.** Recommendation: expand to the five weekday names to match the column comment; this only affects local seed data. (pending Koss at plan gate — default in plans)
-4. **Ruleset extras** (`non_fast_forward`, `deletion`) and a `pull_request` rule: recommendation is literal D-08 plus the two optional extras only on Koss's signature. (pending Koss at plan gate — default in plans)
-5. **Waiver strictness for `drop policy|trigger|view ... if exists`.** Recommendation: strict (waiver with reason). If Koss finds it noisy, a later one-line change to the `drop` regex can exempt `if exists` forms; not done now because it weakens SAFE-02 wording. (pending Koss at plan gate — default in plans)
-6. **CLI pin bump 2.102.0 to 2.119.0** is a change to the tool that touches live data; first proof is the read-only dry-run after merge. (pending Koss at plan gate — default in plans)
+2. **Reviewer account for `live-db`.** Recommendation: `Loomlyne` (id 223640340); confirm (A1). (RESOLVED — Koss chose the default, 2026-10-20)
+3. **`Break Fast Daily` `'Mon-Fri'`.** Recommendation: expand to the five weekday names to match the column comment; this only affects local seed data. (RESOLVED — Koss chose the default, 2026-10-20)
+4. **Ruleset extras** (`non_fast_forward`, `deletion`) and a `pull_request` rule: recommendation is literal D-08 plus the two optional extras only on Koss's signature. (RESOLVED — Koss chose the default, 2026-10-20)
+5. **Waiver strictness for `drop policy|trigger|view ... if exists`.** Recommendation: strict (waiver with reason). If Koss finds it noisy, a later one-line change to the `drop` regex can exempt `if exists` forms; not done now because it weakens SAFE-02 wording. (RESOLVED — Koss chose the default, 2026-10-20)
+6. **CLI pin bump 2.102.0 to 2.119.0** is a change to the tool that touches live data; first proof is the read-only dry-run after merge. (RESOLVED — Koss chose the default, 2026-10-20)
 
 ## Environment Availability
 
