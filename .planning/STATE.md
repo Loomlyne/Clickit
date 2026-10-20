@@ -87,6 +87,13 @@ None yet.
 - Stray Cloudflare NS pair (ignat/nataly) must be resolved before any NS change (Phase 1).
 - Live migration state and `private.is_admin()` presence unverified — read-only audit in Phase 1 before any schema ship.
 
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 261020-ej8 | Apply UI System ui.config.json tokens to Clickit | 2026-10-20 | 93e3a68 | [261020-ej8-apply-ui-system-ui-config-json-tokens-to](./quick/261020-ej8-apply-ui-system-ui-config-json-tokens-to/) |
+
 ## Deferred Items
 
 | Category | Item | Status | Deferred At |
