@@ -6,7 +6,7 @@ Reply: `G1 yes … G8 yes`, or "all yes". Recommended answer first in each.
 
 ## Decisions to sign
 
-**G1. End of episode (D-09).** YouTube's Developer Policies guide lists "blocking Related Video links after the video completes" as a don't. The signed card hides the ended player, so YouTube's end screen never shows.
+**G1. End of episode (D-09).** Pictures: `mockups/06-g1-a.png` (A, card, desktop + phone), `mockups/06-g1-b.png` (B, bar fallback, desktop + phone). YouTube's Developer Policies guide lists "blocking Related Video links after the video completes" as a don't. The signed card hides the ended player, so YouTube's end screen never shows.
 - **Yes (recommended):** ship the signed card. A fallback is built: one constant (`ENDED_MODE = 'bar'`) keeps the video and YouTube's end screen visible, with the countdown in the bar under it.
 - No: ship the fallback from day one.
 
@@ -26,7 +26,7 @@ Reply: `G1 yes … G8 yes`, or "all yes". Recommended answer first in each.
 **G6. Key timing.** The Worker secret is set after deploy, because setting a secret publishes a new live version of the deployed code. Between deploy and the secret, Settings shows "Key missing" and admins cannot import or add a video link. Playback is not affected.
 - **Yes (recommended).**
 
-**G7. UI choices beyond the signed pictures.** These are the 26 items in `06-UI-SPEC.md` § "Owner-visible deviations": 11 that differ from a picture, 15 that are new UI with no picture. The main ones:
+**G7. UI choices beyond the signed pictures.** Pictures for the 15 new screens: `mockups/06-g7-01.png` … `06-g7-15.png` (same order as UI-SPEC "New UI with no picture"). These are the 26 items in `06-UI-SPEC.md` § "Owner-visible deviations": 11 that differ from a picture, 15 that are new UI with no picture. The main ones:
 - the watch page has no auto-hiding bars, no tooltips and no pop-up toasts;
 - on phones, Watchlist and Like move to the season row;
 - the "Up next" card stays after Cancel, with "Play now" and "Watch again";
@@ -38,7 +38,7 @@ Reply: `G1 yes … G8 yes`, or "all yes". Recommended answer first in each.
 - **Yes (recommended):** accept as written.
 - No: name the items to picture first.
 
-**G8. Start condition.** Execution starts only after Phases 1.1–5 are on main. 06-00 stops with NEEDS KOSS while any workflow still applies migrations on push to main. Today's `supabase-migrations.yml` does, so Phase 1's gated apply must land first.
+**G8. Start condition.** Execution starts only after Phases 1.1–5 are on main. 06-00 stops with NEEDS KOSS while any workflow still applies migrations on push to main. Phase 1 landed on main (a8f2487); 06-00 re-runs the check when execution starts.
 - **Yes (recommended).**
 
 ## Your owner steps, in order (each one numbered step at its time)
