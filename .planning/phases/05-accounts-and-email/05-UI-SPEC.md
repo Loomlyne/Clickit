@@ -622,7 +622,7 @@ Everything in this file is provisional until Koss signs 05-CONTEXT.md. Open item
 2. **q1 shows email and code boxes together with a "THEN" divider** to explain the flow; the real screen is stepwise (state 1 then state 2). Added: a Verify code button (picture auto-submits only), the resend link, a spam-folder hint. The picture's "Paste or type ٠-٩ / 0-9" note is not user copy.
 3. **q4:** the subline "Enter your email..." is kept under the show h1 (picture dropped it). Chip and poster as drawn.
 4. **q7:** QR 150px -> 160px in a 192px white frame; manual key gets a Copy button; "Lost your phone" is text, not a link; a Sign out link, a second-authenticator step and a done step are added (the picture shows two steps only).
-5. **Fields:** the pictures fill fields `--bg-1` with a `--line-2` border; the real `Input` primitive is `--bg-2` with `--line`. Primitive kept (Phase 4 owns it).
+5. **Fields:** the pictures fill fields `--bg-1` with a `--line-2` border; the real `Input` primitive is `--bg-2` with `--line`. Primitive kept (Phase 4 owns it). SIGNED by Koss at Phase 4 signing (2026-10-20): fields follow the live Input (`--bg-2`, `--line`, 14px; 16px on phones), and the Arabic password eye stays on the physical right (05-12 Task 3).
 6. **q12 email:** body 14px -> 16px, heading 22px -> 24px, code 34px -> 32px, footer 11px -> 12px, width 420 -> 600, footer grey #777 -> #555/#666 (contrast), logo is a hosted PNG not styled text. All from Phase 4 section 5 (its open item 13).
 7. **Support auto-reply never quotes the visitor's message** (Phase 4 E7 said quoted): D-39 / F17 backscatter protection wins.
 8. **Support confirmation is an on-page panel, not a toast**, because the toast vanished with the form reset and now has to say an email was sent.
