@@ -17,7 +17,8 @@
     "cf:guard:local": "HOME=/Users/koss/.clickit-cloudflare node scripts/cf/wrangler-guard.mjs --local",
     "cf:build": "npm run cf:guard:local && HOME=/Users/koss/.clickit-cloudflare opennextjs-cloudflare build",
     "cf:preview": "npm run cf:guard:local && HOME=/Users/koss/.clickit-cloudflare opennextjs-cloudflare preview",
-    "cf-typegen": "HOME=/Users/koss/.clickit-cloudflare wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "cf-typegen": "HOME=/Users/koss/.clickit-cloudflare wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "media:health": "node scripts/media-health.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1101.0",
