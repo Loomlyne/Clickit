@@ -202,6 +202,10 @@ test('createEpisodeCore (single link): an admin-changed title sets title_edited;
   assert.equal(created.description_edited, false)
   assert.equal(created.title_ar_edited, false)
   assert.equal(created.description_ar_edited, false)
+  // Flags came from the verified video's text, so the daily check skips the
+  // baseline for this row (PR #27 re-review, note 1).
+  assert.equal(typeof created.youtube_text_baseline_at, 'string')
+  assert.ok(Number.isFinite(Date.parse(created.youtube_text_baseline_at as string)))
 })
 
 test('createEpisodeCore: Arabic YouTube title routed like the import; an English title typed over the mirror is edited', async () => {
@@ -245,6 +249,8 @@ test('createEpisodeCore: no verified video -> every non-empty text field is edit
   assert.equal(created.description_edited, true)
   assert.equal(created.title_ar_edited, false)
   assert.equal(created.description_ar_edited, false)
+  // No verified video: the baseline waits for the first ok daily check.
+  assert.equal(created.youtube_text_baseline_at ?? null, null)
 })
 
 // ---------------------------------------------------------------------------

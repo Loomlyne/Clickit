@@ -24,6 +24,8 @@ export type ImportRow = {
   status: 'draft'
   youtube_status: 'ok'
   youtube_checked_at: string
+  /** Same time as youtube_checked_at: the row holds YouTube's own text, so the daily check skips the baseline. */
+  youtube_text_baseline_at: string
 }
 
 export type ImportPlan = { rows: ImportRow[]; needsEnglishCount: number }
@@ -79,6 +81,7 @@ export function buildImportPlan(input: {
       status: 'draft',
       youtube_status: 'ok',
       youtube_checked_at: checkedAt,
+      youtube_text_baseline_at: checkedAt,
     })
   }
 

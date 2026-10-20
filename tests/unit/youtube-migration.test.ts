@@ -93,7 +93,7 @@ test('five nullable check columns with their constraints, no backfill', () => {
 
 test('edited flags (review item 7): boolean not null default false, only for admin-editable fields', () => {
   const adds = code.match(/add column if not exists/g) ?? []
-  assert.equal(adds.length, 12)
+  assert.equal(adds.length, 13)
   const flags = [...code.matchAll(/add column if not exists (\w+_edited) boolean not null default false/g)].map((m) => m[1])
   assert.deepEqual(flags, [
     'title_edited',
@@ -112,6 +112,15 @@ test('edited flags (review item 7): boolean not null default false, only for adm
   assert.match(shortsAlter, /add column if not exists title_edited boolean not null default false/)
   assert.match(shortsAlter, /add column if not exists channel_name_edited boolean not null default false/)
   assert.match(shortsAlter, /add column if not exists youtube_checked_at timestamptz/)
+  // Episodes' text baseline marker (PR #27 re-review, note 1): nullable, no
+  // default, in the flags' alter statement.
+  const flagsAlterStart = code.lastIndexOf(
+    'alter table public.episodes',
+    code.indexOf('add column if not exists title_edited')
+  )
+  const flagsAlter = code.slice(flagsAlterStart, code.indexOf(';', flagsAlterStart))
+  assert.match(flagsAlter, /add column if not exists youtube_text_baseline_at timestamptz$/)
+  assert.equal((code.match(/add column if not exists youtube_text_baseline_at/g) ?? []).length, 1)
   // Flags are never granted to viewer roles and never added to episodes_view.
   assert.doesNotMatch(code, /episodes_view/)
 })
@@ -220,13 +229,16 @@ test('record_youtube_checks: bounded batch, status and length rules kept', () =>
   assertServiceRoleOnly('public.record_youtube_checks(jsonb)')
 })
 
-/** The text rule for one field: kept when edited or on the first check, never emptied. */
-function assertRefreshUnlessEdited(fn: string, alias: string, f: string): void {
+/**
+ * The text rule for one field: kept when edited or before the baseline, never
+ * emptied. The baseline flag needs non-empty YouTube text that differs.
+ */
+function assertRefreshUnlessEdited(fn: string, alias: string, f: string, marker: string): void {
   const a = escape(alias)
   assert.match(
     fn,
     new RegExp(
-      `\\b${f} = case\\s+when ${a}\\.${f}_edited or ${a}\\.youtube_checked_at is null then ${a}\\.${f}\\s+` +
+      `\\b${f} = case\\s+when ${a}\\.${f}_edited or ${a}\\.${marker} is null then ${a}\\.${f}\\s+` +
         `else coalesce\\(nullif\\(btrim\\(r\\.${f}\\), ''\\), ${a}\\.${f}\\)\\s+end`
     ),
     `${f} refresh rule`
@@ -234,7 +246,8 @@ function assertRefreshUnlessEdited(fn: string, alias: string, f: string): void {
   assert.match(
     fn,
     new RegExp(
-      `\\b${f}_edited = ${a}\\.${f}_edited or \\(\\s*${a}\\.youtube_checked_at is null\\s+` +
+      `\\b${f}_edited = ${a}\\.${f}_edited or \\(\\s*${a}\\.${marker} is null\\s+` +
+        `and nullif\\(btrim\\(r\\.${f}\\), ''\\) is not null\\s+` +
         `and nullif\\(btrim\\(${a}\\.${f}\\), ''\\) is distinct from nullif\\(btrim\\(r\\.${f}\\), ''\\)\\s*\\)`
     ),
     `${f} baseline flag`
@@ -245,7 +258,17 @@ function assertRefreshUnlessEdited(fn: string, alias: string, f: string): void {
 
 test('record_youtube_checks: refresh unless edited, for each of the four text fields', () => {
   const fn = fnBlock('public.record_youtube_checks')
-  for (const f of ['title', 'title_ar', 'description', 'description_ar']) assertRefreshUnlessEdited(fn, 'e', f)
+  for (const f of ['title', 'title_ar', 'description', 'description_ar']) {
+    assertRefreshUnlessEdited(fn, 'e', f, 'youtube_text_baseline_at')
+  }
+  // The text rules never key on the check time: a run that finds no video
+  // still sets youtube_checked_at, so it cannot mark the baseline.
+  assert.doesNotMatch(fn, /e\.youtube_checked_at is null/)
+  // The baseline is set once, only by a run where YouTube returned the video.
+  assert.match(
+    fn,
+    /youtube_text_baseline_at = case\s+when r\.status = 'ok' then coalesce\(e\.youtube_text_baseline_at, now\(\)\)\s+else e\.youtube_text_baseline_at\s+end/
+  )
   // Exactly these columns are written: never status, archived or publish_at
   // (nothing is unpublished).
   const set = fn.slice(fn.indexOf('update public.episodes e'), fn.indexOf('from jsonb_to_recordset'))
@@ -265,6 +288,7 @@ test('record_youtube_checks: refresh unless edited, for each of the four text fi
     'youtube_checked_at',
     'youtube_duration_seconds',
     'youtube_status',
+    'youtube_text_baseline_at',
   ])
 })
 
@@ -284,7 +308,7 @@ test('record_short_checks: same security model, bounded batch, refresh unless ed
     /from jsonb_to_recordset\(p_rows\)\s+as r\(id uuid, title text, channel_name text, thumbnail_url text\)\s+where s\.id = r\.id;/
   )
   assert.match(fn, /youtube_checked_at = now\(\)/)
-  for (const f of ['title', 'channel_name']) assertRefreshUnlessEdited(fn, 's', f)
+  for (const f of ['title', 'channel_name']) assertRefreshUnlessEdited(fn, 's', f, 'youtube_checked_at')
   assert.match(
     fn,
     /thumbnail_url = case\s+when r\.thumbnail_url like 'https:\/\/%' then r\.thumbnail_url\s+else s\.thumbnail_url\s+end/

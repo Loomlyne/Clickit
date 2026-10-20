@@ -5,6 +5,8 @@
    - p_rows must be a JSON array (22023), at most 5000 entries (22023);
    - youtube_status = status (column check: one of the six statuses, 23514);
    - youtube_checked_at = now();
+   - youtube_text_baseline_at = now() when status is 'ok' and it is still
+     null, else kept (a missing, private or removed video waits);
    - youtube_duration_seconds = coalesce(nullif(duration_seconds, 0), stored);
    - duration (minutes) follows the new seconds only when the new seconds are
      > 0, stored seconds are not null and the stored duration still equals
@@ -12,10 +14,11 @@
    - player_error_code / player_error_at are cleared only when status is 'ok';
    - text (refresh unless edited, PR #27 review item 7), per field of title,
      title_ar, description, description_ar: kept when <f>_edited is true;
-     on the first check (stored youtube_checked_at null) kept, and the flag
-     turns true when the stored text differs from the row's (both trimmed,
-     empty = none); otherwise the row's trimmed text, and empty or missing
-     text keeps the stored value. Flags are never set false;
+     with no baseline yet (stored youtube_text_baseline_at null) kept, and
+     the flag turns true only when the row's trimmed text is non-empty and
+     differs from the stored trimmed text (empty = none; empty or missing
+     YouTube text never sets a flag); otherwise the row's trimmed text, and
+     empty or missing text keeps the stored value. Flags are never set false;
    - ids with no matching episode are ignored;
    - returns the number of updated rows. All rows apply together.
    The real SQL runs only on the controller's local Supabase stack.
@@ -35,8 +38,9 @@ export const trimmedOrNull = (v: unknown): string | null =>
 
 /**
  * The SQL text rule for one field, applied to `target` from the pre-update
- * row `old` (SET reads the old row): kept when edited or on the first check,
- * else the new trimmed text unless it is empty.
+ * row `old` (SET reads the old row): kept when edited or on the baseline run,
+ * else the new trimmed text unless it is empty. On the baseline run the flag
+ * turns true only for non-empty new text that differs from the stored text.
  */
 export function applyRefreshUnlessEdited(
   target: Row,
@@ -49,7 +53,7 @@ export function applyRefreshUnlessEdited(
   const edited = old[flag] === true
   const next = trimmedOrNull(incoming[field])
   if (!edited && !firstCheck && next !== null) target[field] = next
-  target[flag] = edited || (firstCheck && trimmedOrNull(old[field]) !== next)
+  target[flag] = edited || (firstCheck && next !== null && trimmedOrNull(old[field]) !== next)
 }
 
 // Postgres round() on numeric rounds half away from zero; inputs here are >= 0.
@@ -90,11 +94,13 @@ export function emulateRecordYouTubeChecks(
         : e.duration
 
     const old = { ...e }
-    const firstCheck = old.youtube_checked_at == null
+    const firstCheck = old.youtube_text_baseline_at == null
     for (const f of TEXT_FIELDS) applyRefreshUnlessEdited(e, old, r, f, firstCheck)
 
     e.youtube_status = r.status
     e.youtube_checked_at = nowIso
+    e.youtube_text_baseline_at =
+      r.status === 'ok' ? (old.youtube_text_baseline_at ?? nowIso) : (old.youtube_text_baseline_at ?? null)
     e.youtube_duration_seconds = secs !== null && secs !== 0 ? secs : stored
     e.duration = nextDuration
     if (r.status === 'ok') {

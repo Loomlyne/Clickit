@@ -427,6 +427,8 @@ test('commit new season: season max+1, one episodes insert of drafts, counts, on
   assert.equal(eps[0]!.duration, 12)
   assert.equal(eps[0]!.youtube_duration_seconds, 720)
   assert.equal(eps[0]!.youtube_checked_at, NOW.toISOString())
+  // Imported rows start past the daily check's text baseline (PR #27 re-review, note 1).
+  for (const e of eps) assert.equal(e.youtube_text_baseline_at, NOW.toISOString())
   assert.equal(eps[2]!.title_ar, 'الحلقة الأولى')
 
   const show = f.snapshot().shows!.find((s) => s.id === S1)!

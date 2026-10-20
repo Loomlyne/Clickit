@@ -42,6 +42,7 @@ function episode(n: number, over: Row = {}): Row {
     youtube_video_id: vid(n),
     youtube_status: null,
     youtube_checked_at: null,
+    youtube_text_baseline_at: null,
     youtube_duration_seconds: null,
     player_error_code: null,
     player_error_at: null,
@@ -332,7 +333,8 @@ const CHECKED = '2026-10-19T01:30:00.000Z'
 const TEXT = ['title', 'title_ar', 'description', 'description_ar'] as const
 
 /** An episode the check has seen before (no baseline step). */
-const seen = (n: number, over: Row = {}) => episode(n, { youtube_checked_at: CHECKED, ...over })
+const seen = (n: number, over: Row = {}) =>
+  episode(n, { youtube_checked_at: CHECKED, youtube_text_baseline_at: CHECKED, ...over })
 
 function short(n: number, over: Row = {}): Row {
   return {
@@ -502,9 +504,16 @@ test('first check (never checked): no text is written; fields that differ from Y
   await recheckVideosCore(db, fakeYouTube(videos).client, NOW)
   const one = epById(fake, uuid(1))
   for (const f of TEXT) assert.equal(one[`${f}_edited`], false, `${f} matches YouTube`)
+  assert.ok(one.youtube_text_baseline_at, 'baseline done')
   const two = epById(fake, uuid(2))
   assert.equal(two.title, 'Episode 2')
-  for (const f of TEXT) assert.equal(two[`${f}_edited`], true, `${f} differs from YouTube`)
+  assert.equal(two.title_edited, true, 'title differs from YouTube')
+  assert.equal(two.description_edited, true, 'description differs from YouTube')
+  // English YouTube text has no Arabic part: empty YouTube text sets no flag.
+  assert.equal(two.title_ar_edited, false)
+  assert.equal(two.description_ar_edited, false)
+  assert.equal(two.title_ar, 'حلقة 2')
+  assert.equal(two.description_ar, 'عن الحلقة 2')
 
   // Second run: the matching row now follows YouTube, the typed one is kept.
   videos[vid(1)] = okVideo(vid(1), { snippet: { title: 'Renamed on YouTube', description: 'YouTube text' } })
@@ -512,6 +521,109 @@ test('first check (never checked): no text is written; fields that differ from Y
   await recheckVideosCore(db, fakeYouTube(videos).client, NOW)
   assert.equal(epById(fake, uuid(1)).title, 'Renamed on YouTube')
   assert.equal(epById(fake, uuid(2)).title, 'Episode 2')
+})
+
+// PR #27 re-review, note 1: the baseline never sticks a flag on missing or
+// empty YouTube text, and it waits until YouTube returns the video.
+
+test('baseline: a video missing at the first check sets no flag and leaves the baseline pending', async () => {
+  const { fake, db } = setup([episode(1)])
+  const res = await recheckVideosCore(db, fakeYouTube({}).client, NOW)
+  assert.equal(res.ok, true)
+  const e = epById(fake, uuid(1))
+  assert.equal(e.youtube_status, 'removed')
+  assert.ok(e.youtube_checked_at, 'checked-at set')
+  assert.equal(e.youtube_text_baseline_at, null, 'baseline still pending')
+  for (const f of TEXT) assert.equal(e[`${f}_edited`], false, `${f} flag not set`)
+  assert.equal(e.title, 'Episode 1')
+
+  // Later run: YouTube returns the video, so the baseline runs then.
+  await recheckVideosCore(
+    db,
+    fakeYouTube({
+      [vid(1)]: okVideo(vid(1), {
+        snippet: { title: 'Episode 1', description: 'Different on YouTube', liveBroadcastContent: 'none' },
+      }),
+    }).client,
+    NOW
+  )
+  const later = epById(fake, uuid(1))
+  assert.equal(later.youtube_status, 'ok')
+  assert.ok(later.youtube_text_baseline_at, 'baseline done')
+  assert.equal(later.title_edited, false, 'same title as YouTube')
+  assert.equal(later.description_edited, true, 'stored description differs')
+  assert.equal(later.description, 'About episode 1', 'baseline run writes no text')
+  assert.equal(later.title_ar_edited, false)
+  assert.equal(later.description_ar_edited, false)
+
+  // Third run: unedited fields follow YouTube, the flagged one is kept.
+  await recheckVideosCore(
+    db,
+    fakeYouTube({
+      [vid(1)]: okVideo(vid(1), {
+        snippet: { title: 'Renamed', description: 'Newer on YouTube', liveBroadcastContent: 'none' },
+      }),
+    }).client,
+    NOW
+  )
+  assert.equal(epById(fake, uuid(1)).title, 'Renamed')
+  assert.equal(epById(fake, uuid(1)).description, 'About episode 1')
+})
+
+test('baseline: a private video at the first check keeps the baseline pending', async () => {
+  const { fake, db } = setup([episode(1)])
+  await recheckVideosCore(
+    db,
+    fakeYouTube({
+      [vid(1)]: okVideo(vid(1), {
+        status: { privacyStatus: 'private', uploadStatus: 'processed', embeddable: true },
+      }),
+    }).client,
+    NOW
+  )
+  const e = epById(fake, uuid(1))
+  assert.equal(e.youtube_status, 'private')
+  assert.ok(e.youtube_checked_at)
+  assert.equal(e.youtube_text_baseline_at, null)
+  for (const f of TEXT) assert.equal(e[f], episode(1)[f], `${f} unchanged`)
+})
+
+test('baseline: an empty YouTube description sets no flag; non-empty different text does', async () => {
+  const { fake, db } = setup([episode(1)])
+  await recheckVideosCore(
+    db,
+    fakeYouTube({
+      [vid(1)]: okVideo(vid(1), { snippet: { title: 'Other title', description: '  ', liveBroadcastContent: 'none' } }),
+    }).client,
+    NOW
+  )
+  const e = epById(fake, uuid(1))
+  assert.ok(e.youtube_text_baseline_at)
+  assert.equal(e.description_edited, false, 'empty YouTube description: no flag')
+  assert.equal(e.description, 'About episode 1', 'and the stored text is kept')
+  assert.equal(e.title_edited, true, 'non-empty different title: flag')
+  assert.equal(e.title, 'Episode 1')
+})
+
+test('baseline: the emulator rule matches the SQL for every stored/YouTube pair', async () => {
+  const { applyRefreshUnlessEdited } = await import('./helpers/record-youtube-checks-emulator.ts')
+  const cases: Array<[unknown, unknown, boolean]> = [
+    ['Stored', 'YouTube', true],
+    ['Stored', '  Stored ', false],
+    ['Stored', '', false],
+    ['Stored', null, false],
+    ['Stored', '   ', false],
+    [null, 'YouTube', true],
+    ['', 'YouTube', true],
+    [null, null, false],
+    ['', '  ', false],
+  ]
+  for (const [stored, yt, flag] of cases) {
+    const target: Row = { title: stored, title_edited: false }
+    applyRefreshUnlessEdited(target, { ...target }, { title: yt }, 'title', true)
+    assert.equal(target.title_edited, flag, `${String(stored)} / ${String(yt)}`)
+    assert.equal(target.title, stored, 'baseline writes no text')
+  }
 })
 
 test('shorts: unedited title and channel refreshed, edited ones kept, thumbnail always refreshed (https only)', async () => {
@@ -560,6 +672,19 @@ test('shorts first check: no title or channel written; a differing title is mark
   assert.equal(after.title, 'Short 1')
   assert.equal(after.title_edited, true)
   assert.equal(after.channel_name_edited, false)
+  assert.ok(after.youtube_checked_at)
+})
+
+test('shorts first check: an empty YouTube channel name sets no flag', async () => {
+  const s = short(1, { youtube_checked_at: null, title: 'New short title' })
+  const { fake, db } = setup([], [s])
+  const video = shortVideo(s.youtube_video_id)
+  ;(video.snippet as Record<string, unknown>).channelTitle = '  '
+  await recheckVideosCore(db, fakeYouTube({ [s.youtube_video_id]: video }).client, NOW)
+  const after = shortById(fake, s.id)
+  assert.equal(after.channel_name, 'Old channel')
+  assert.equal(after.channel_name_edited, false)
+  assert.equal(after.title_edited, false)
   assert.ok(after.youtube_checked_at)
 })
 

@@ -434,11 +434,16 @@ export async function createEpisodeCore(
   }
 
   let youtube: TextValues<EpisodeTextField> | null = null
+  // Flags below are computed against the verified video's text, so the row
+  // starts past the daily check's text baseline (PR #27 re-review, note 1).
+  // No verified video: the baseline stays pending for the first ok check.
+  let baseline: { youtube_text_baseline_at: string } | null = null
   if (deps.verifyVideo && !blank(parsed.youtube_video_id)) {
     const v = await checkVideo(deps, parsed.youtube_video_id as string, {}, showId)
     if ('refusal' in v) return v.refusal
     parsed.youtube_video_id = v.videoId
     youtube = v.youtube
+    baseline = { youtube_text_baseline_at: new Date().toISOString() }
   }
 
   const t = await fill(deps, parsed.title, parsed.title_ar)
@@ -492,7 +497,7 @@ export async function createEpisodeCore(
       run: async () => {
         const res = await db
           .from('episodes')
-          .insert({ ...parsed, ...edited, archived: false } as never)
+          .insert({ ...parsed, ...edited, ...baseline, archived: false } as never)
           .select()
           .single()
         if (res.error) {

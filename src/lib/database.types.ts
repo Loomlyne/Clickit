@@ -220,6 +220,7 @@ export type Database = {
           youtube_checked_at: string | null
           youtube_duration_seconds: number | null
           youtube_status: string | null
+          youtube_text_baseline_at: string | null
           youtube_video_id: string | null
         }
         Insert: {
@@ -247,6 +248,7 @@ export type Database = {
           youtube_checked_at?: string | null
           youtube_duration_seconds?: number | null
           youtube_status?: string | null
+          youtube_text_baseline_at?: string | null
           youtube_video_id?: string | null
         }
         Update: {
@@ -274,6 +276,7 @@ export type Database = {
           youtube_checked_at?: string | null
           youtube_duration_seconds?: number | null
           youtube_status?: string | null
+          youtube_text_baseline_at?: string | null
           youtube_video_id?: string | null
         }
         Relationships: [

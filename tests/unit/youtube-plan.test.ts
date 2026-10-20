@@ -204,6 +204,8 @@ test('duration in minutes and seconds; every row is a draft with youtube_status 
     assert.equal(r.status, 'draft')
     assert.equal(r.youtube_status, 'ok')
     assert.equal(r.youtube_checked_at, NOW.toISOString())
+    // YouTube's own text: the daily check skips the baseline (PR #27 re-review, note 1).
+    assert.equal(r.youtube_text_baseline_at, NOW.toISOString())
   }
 })
 

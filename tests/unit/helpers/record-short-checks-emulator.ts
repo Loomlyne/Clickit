@@ -5,7 +5,8 @@
    - p_rows must be a JSON array (22023), at most 5000 entries (22023);
    - youtube_checked_at = now();
    - title and channel_name: refresh unless edited, with the first-check
-     baseline (stored youtube_checked_at null), exactly as for episodes
+     baseline (stored youtube_checked_at null; every short sent was found on
+     YouTube) and the same non-empty flag rule as for episodes
      (applyRefreshUnlessEdited in record-youtube-checks-emulator.ts);
    - thumbnail_url: the row's value when it starts with https://, else kept;
    - ids with no matching short are ignored;

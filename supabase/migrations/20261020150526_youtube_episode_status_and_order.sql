@@ -17,9 +17,14 @@
 --   boolean not null default false: a constant default, so no table rewrite,
 --   and existing rows read false.
 -- * Existing rows are protected by a baseline, not by a backfill: the first
---   check of a row (youtube_checked_at is null) writes no text. It marks a
---   field edited when the stored text differs from YouTube's, so text an
---   admin typed before the flags existed is never replaced.
+--   check that finds the video on YouTube (episodes.youtube_text_baseline_at
+--   is null, status ok) writes no text. It marks a field edited when YouTube
+--   has non-empty text for it that differs from the stored text, so text an
+--   admin typed before the flags existed is never replaced. Empty or missing
+--   YouTube text (a private or removed video, an empty description) never
+--   sets a flag, and the baseline waits until YouTube returns the video
+--   (PR #27 re-review, note 1). youtube_text_baseline_at is nullable with no
+--   backfill; import and the single-link episode create set it on insert.
 -- * The new episode columns are NOT added to the anon/authenticated column
 --   grant list or to episodes_view (20260724115941). Viewer roles cannot read
 --   them. shorts has no column grant list: viewers can read its two flags and
@@ -49,13 +54,16 @@ alter table public.episodes
 -- The daily check skips a field whose flag is true. shorts.thumbnail_url has
 -- no flag: the shorts form has no thumbnail field (it is filled from YouTube
 -- only), so the check always refreshes it. shorts.youtube_checked_at marks
--- the baseline (see record_short_checks).
+-- the baseline (see record_short_checks). episodes.youtube_text_baseline_at
+-- marks it for episodes (see record_youtube_checks); it is separate from
+-- youtube_checked_at, which every check run sets, found or not.
 
 alter table public.episodes
   add column if not exists title_edited boolean not null default false,
   add column if not exists title_ar_edited boolean not null default false,
   add column if not exists description_edited boolean not null default false,
-  add column if not exists description_ar_edited boolean not null default false;
+  add column if not exists description_ar_edited boolean not null default false,
+  add column if not exists youtube_text_baseline_at timestamptz;
 
 alter table public.shorts
   add column if not exists title_edited boolean not null default false,
@@ -221,10 +229,13 @@ $$;
 --
 -- Text (refresh unless edited, review item 7). Per field:
 -- * <f>_edited is true: the stored text is kept.
--- * First check of the row (youtube_checked_at is null): the stored text is
---   kept; the flag turns true when the stored text differs from YouTube's
---   (both trimmed, empty counts as none). This is the baseline for rows
---   saved before the flags existed.
+-- * No baseline yet (youtube_text_baseline_at is null): the stored text is
+--   kept; the flag turns true only when YouTube's trimmed text is non-empty
+--   and differs from the stored trimmed text (empty counts as none). Empty
+--   or missing YouTube text never sets a flag. This is the baseline for rows
+--   saved before the flags existed. youtube_text_baseline_at is set on the
+--   first run whose status is ok, so a video missing, private or removed at
+--   that run keeps its baseline pending until YouTube returns it.
 -- * Otherwise: YouTube's text, trimmed. Empty or missing YouTube text (a
 --   video missing from the response, an empty description, the field the
 --   other script went to) keeps the stored text, so the check never empties
@@ -257,6 +268,10 @@ begin
   set
     youtube_status = r.status,
     youtube_checked_at = now(),
+    youtube_text_baseline_at = case
+      when r.status = 'ok' then coalesce(e.youtube_text_baseline_at, now())
+      else e.youtube_text_baseline_at
+    end,
     youtube_duration_seconds = coalesce(
       nullif(r.duration_seconds, 0),
       e.youtube_duration_seconds
@@ -271,35 +286,39 @@ begin
     player_error_code = case when r.status = 'ok' then null else e.player_error_code end,
     player_error_at = case when r.status = 'ok' then null else e.player_error_at end,
     title = case
-      when e.title_edited or e.youtube_checked_at is null then e.title
+      when e.title_edited or e.youtube_text_baseline_at is null then e.title
       else coalesce(nullif(btrim(r.title), ''), e.title)
     end,
     title_edited = e.title_edited or (
-      e.youtube_checked_at is null
+      e.youtube_text_baseline_at is null
+      and nullif(btrim(r.title), '') is not null
       and nullif(btrim(e.title), '') is distinct from nullif(btrim(r.title), '')
     ),
     title_ar = case
-      when e.title_ar_edited or e.youtube_checked_at is null then e.title_ar
+      when e.title_ar_edited or e.youtube_text_baseline_at is null then e.title_ar
       else coalesce(nullif(btrim(r.title_ar), ''), e.title_ar)
     end,
     title_ar_edited = e.title_ar_edited or (
-      e.youtube_checked_at is null
+      e.youtube_text_baseline_at is null
+      and nullif(btrim(r.title_ar), '') is not null
       and nullif(btrim(e.title_ar), '') is distinct from nullif(btrim(r.title_ar), '')
     ),
     description = case
-      when e.description_edited or e.youtube_checked_at is null then e.description
+      when e.description_edited or e.youtube_text_baseline_at is null then e.description
       else coalesce(nullif(btrim(r.description), ''), e.description)
     end,
     description_edited = e.description_edited or (
-      e.youtube_checked_at is null
+      e.youtube_text_baseline_at is null
+      and nullif(btrim(r.description), '') is not null
       and nullif(btrim(e.description), '') is distinct from nullif(btrim(r.description), '')
     ),
     description_ar = case
-      when e.description_ar_edited or e.youtube_checked_at is null then e.description_ar
+      when e.description_ar_edited or e.youtube_text_baseline_at is null then e.description_ar
       else coalesce(nullif(btrim(r.description_ar), ''), e.description_ar)
     end,
     description_ar_edited = e.description_ar_edited or (
-      e.youtube_checked_at is null
+      e.youtube_text_baseline_at is null
+      and nullif(btrim(r.description_ar), '') is not null
       and nullif(btrim(e.description_ar), '') is distinct from nullif(btrim(r.description_ar), '')
     )
   from jsonb_to_recordset(p_rows)
@@ -323,7 +342,9 @@ $$;
 -- One write per daily re-check run for shorts (review item 7). Shorts have no
 -- YouTube status column; the run sends only shorts whose video YouTube
 -- returned. Same text rules as record_youtube_checks for title and
--- channel_name, with shorts.youtube_checked_at as the baseline marker.
+-- channel_name (a flag only for non-empty YouTube text that differs), with
+-- shorts.youtube_checked_at as the baseline marker: every short sent here was
+-- found on YouTube, so its first check is always a real baseline.
 -- thumbnail_url has no flag (no form field) and is always refreshed, but only
 -- to an https URL; anything else keeps the stored one.
 
@@ -357,6 +378,7 @@ begin
     end,
     title_edited = s.title_edited or (
       s.youtube_checked_at is null
+      and nullif(btrim(r.title), '') is not null
       and nullif(btrim(s.title), '') is distinct from nullif(btrim(r.title), '')
     ),
     channel_name = case
@@ -365,6 +387,7 @@ begin
     end,
     channel_name_edited = s.channel_name_edited or (
       s.youtube_checked_at is null
+      and nullif(btrim(r.channel_name), '') is not null
       and nullif(btrim(s.channel_name), '') is distinct from nullif(btrim(r.channel_name), '')
     ),
     thumbnail_url = case
