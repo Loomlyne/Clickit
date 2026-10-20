@@ -56,6 +56,11 @@ A throwaway page (not committed) rendered the real `AdminHeader`, `ShowsTable`, 
 - Confirmed: checkbox focus ring (yellow, 3px) with a real Tab key; header 40px at 11px; cell text 14px; the phone top bar stays at the top after scrolling; no horizontal page overflow at 375; sidebar mirrors to the right in `/ar` and tables mirror.
 - Gate after this: tsc 0, lint 0 errors/17 warnings, unit 377/377, build exit 0.
 
+## After Phase 1.1 landed (main d517ddc)
+
+Merge commit `c4c39f6`, no rebase. Only conflict: `.planning/STATE.md` (took main's). Auto-merged without conflict: `settings/branding-tab.tsx` and `settings/footer-editor.tsx` (1.1's PNG/JPEG/WEBP-only accept, no AVIF, kept; my class changes on top). After the merge `git diff origin/main` shows no change in `actions.ts`, `src/lib/**` (video-uploads.ts, row-deletes.ts, media-guards.ts, compensation.ts ...) or `src/messages/**`: server guards, archive-first delete, audit flows and copy strings are exactly main's.
+Gate: tsc 0, lint 0 errors/17 warnings, unit 451/451, build exit 0 (placeholder public env).
+
 ## NOT verified
 
 - No render of the real admin app with real data and a signed-in session (the check above used mock props on the real components; the other admin pages - settings, categories, episode drawer, inbox - were not rendered) (no local Supabase). `admin.css` selectors (`data-slot`, `data-size`, `data-state`) were checked by reading the shared components, not by looking at the running page. The picture used the same Tailwind classes but not `admin.css`.
