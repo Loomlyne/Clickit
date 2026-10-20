@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { cronAuthOk } from '@/server/cron-auth'
 import { revalidatePath, updateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -22,10 +23,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
  */
 export async function GET(req: Request) {
   // --- Auth guard ----------------------------------------------------------
-  const authHeader = req.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET?.trim()
-  const expected = `Bearer ${cronSecret}`
-  if (!cronSecret || authHeader !== expected) {
+  // Constant-time compare (PLAT-07); an empty or missing secret refuses.
+  if (!(await cronAuthOk(req.headers.get('authorization'), process.env.CRON_SECRET))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

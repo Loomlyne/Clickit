@@ -13,7 +13,9 @@
   "triggers": {
     // Explicit empty array: only an empty array removes existing triggers;
     // commenting the key out would leave them in place. Crons go on at the
-    // Phase 3 cutover.
+    // Phase 3 cutover (P3-8, after P3-6). The two schedules are
+    // CRON_EXPRESSIONS_FOR_PHASE_3 in src/server/scheduled.ts: "0 1 * * *"
+    // (publish-scheduled) and "0 4 * * 1" (cleanup-media), both UTC.
     "crons": []
   },
   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "clickit" }],
@@ -36,6 +38,9 @@
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }],
   "vars": {
     "CLOUDFLARE_ACCOUNT_ID": "e329b099b6e4272fc0915a99832e47fe",
-    "CLOUDFLARE_R2_BUCKET": "clickit-media"
+    "CLOUDFLARE_R2_BUCKET": "clickit-media",
+    // Declares the Worker runtime. cleanup-media refuses to delete Supabase
+    // originals here unless CLEANUP_SUPABASE_ORIGINALS=on (never set in Phase 2).
+    "CLICKIT_RUNTIME": "workers"
   }
 }

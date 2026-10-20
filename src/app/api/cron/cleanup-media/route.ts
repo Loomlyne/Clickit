@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
+import { cronAuthOk } from '@/server/cron-auth'
 import { prepareMirroredPublicMediaDeletion } from '@/lib/r2-media'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { supabaseCleanupEnabled } from '@/server/scheduled'
 
 /**
  * Scheduled sweep: deletes hero media files in Supabase Storage that no show
@@ -57,10 +59,8 @@ function extractStoragePath(
 
 export async function GET(req: Request) {
   // --- Auth guard ----------------------------------------------------------
-  const authHeader = req.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET?.trim()
-  const expected = `Bearer ${cronSecret}`
-  if (!cronSecret || authHeader !== expected) {
+  // Constant-time compare (PLAT-07); an empty or missing secret refuses.
+  if (!(await cronAuthOk(req.headers.get('authorization'), process.env.CRON_SECRET))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -211,6 +211,19 @@ async function runCleanup() {
     /^hero-(desktop|mobile)-\d+\.mp4$/,
     videoOrphans
   )
+
+  // On the Worker, Supabase Storage originals are never deleted in this phase
+  // (T-02-26): report what would go and stop before any storage call that
+  // writes. Switched on only by CLEANUP_SUPABASE_ORIGINALS=on.
+  if (!supabaseCleanupEnabled(process.env)) {
+    const candidates = artworkOrphans.length + videoOrphans.length
+    console.log('[cron/cleanup-media] skipped supabase-originals', {
+      candidates,
+      artworkOrphans: artworkOrphans.length,
+      videoOrphans: videoOrphans.length,
+    })
+    return NextResponse.json({ ok: true, skipped: 'supabase-originals', candidates })
+  }
 
   // --- Step 3: delete orphans ---------------------------------------------
   let artworkDeleted = 0
