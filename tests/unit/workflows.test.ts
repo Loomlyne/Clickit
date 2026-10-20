@@ -119,3 +119,86 @@ test('pr-gate: migration-guard runs the BASE copy of the guard, never the PR cop
   assert.ok(t.includes('node "$RUNNER_TEMP/guard.mjs" --base HEAD^1 --head HEAD'))
   assert.doesNotMatch(t, /node scripts\/migration-guard\.mjs/)
 })
+
+// ------------------------------------------------------ apply-live-migrations.yml
+
+const apply = () => read('apply-live-migrations.yml')
+
+test('apply: old auto-apply file is gone and the new file is named', () => {
+  assert.equal(existsSync(new URL('supabase-migrations.yml', dir)), false)
+  assert.match(apply(), /^name: Apply live migrations\s*$/m)
+})
+
+test('apply: only trigger is workflow_dispatch', () => {
+  const t = apply()
+  assert.match(t, /^on:\s*\n\s+workflow_dispatch:/m)
+  assert.doesNotMatch(t, /^\s*push:/m)
+  assert.doesNotMatch(t, /^\s*pull_request/m)
+  assert.doesNotMatch(t, /^\s*schedule:/m)
+})
+
+test('apply: forbidden flags never appear, not even in comments', () => {
+  const t = apply()
+  for (const flag of ['--include-all', '--include-seed', '--debug']) {
+    assert.ok(!t.includes(flag), `${flag} must not appear`)
+  }
+})
+
+test('apply: dry-run then apply, chained by needs and the pending output', () => {
+  const t = apply()
+  assert.deepEqual(jobIds(t).sort(), ['apply', 'dry-run'])
+  const a = jobBlock(t, 'apply')
+  assert.match(a, /^\s+needs: dry-run\s*$/m)
+  assert.match(a, /^\s+if: needs\.dry-run\.outputs\.pending == 'true'\s*$/m)
+  assert.match(jobBlock(t, 'dry-run'), /outputs:\s*\n\s+pending: \$\{\{ steps\.plan\.outputs\.pending \}\}/)
+})
+
+test('apply: dry-run uses live-db-plan, apply uses live-db', () => {
+  const t = apply()
+  assert.match(jobBlock(t, 'dry-run'), /^\s+environment: live-db-plan\s*$/m)
+  assert.match(jobBlock(t, 'apply'), /^\s+environment: live-db\s*$/m)
+  assert.equal((t.match(/environment: live-db$/gm) ?? []).length, 1)
+  assert.equal((t.match(/environment: live-db-plan/g) ?? []).length, 1)
+})
+
+test('apply: exact dry-run and apply commands', () => {
+  const t = apply()
+  assert.ok(t.includes('supabase db push --dry-run --db-url "$SUPABASE_DB_URL"'))
+  assert.match(t, /^\s+run: supabase db push --db-url "\$SUPABASE_DB_URL" --yes\s*$/m)
+  assert.match(t, /Remote database is up to date/)
+  assert.match(t, /set -o pipefail/)
+})
+
+test('apply: both jobs refuse to run off main', () => {
+  const t = apply()
+  for (const id of ['dry-run', 'apply']) {
+    const b = jobBlock(t, id)
+    assert.match(b, /\$GITHUB_REF/, `${id} checks GITHUB_REF`)
+    assert.ok(b.includes('refs/heads/main'), `${id} names refs/heads/main`)
+    assert.match(b, /exit 1/)
+  }
+})
+
+test('apply: pg_dump_taken input exists and apply fails unless it is true', () => {
+  const t = apply()
+  assert.match(t, /^\s+pg_dump_taken:\s*\n(?:\s+.*\n){0,6}?\s+type: boolean/m)
+  assert.match(t, /required: true/)
+  assert.match(t, /default: false/)
+  const b = jobBlock(t, 'apply')
+  assert.ok(b.includes('${{ inputs.pg_dump_taken }}'))
+  assert.match(b, /::error::Take a local pg_dump first/)
+})
+
+test('apply: pinned CLI version, pinned actions, least privilege, safe concurrency, timeouts', () => {
+  const t = apply()
+  assert.match(t, /version: 2\.119\.0/)
+  assert.doesNotMatch(t, /2\.102\.0/)
+  assertAllPinned(t)
+  assert.match(t, /^permissions:\s*\n\s+contents: read\s*$/m)
+  assert.match(t, /^concurrency:[\s\S]*?group: live-migrations[\s\S]*?cancel-in-progress: false/m)
+  for (const id of ['dry-run', 'apply']) {
+    const b = jobBlock(t, id)
+    assert.match(b, /timeout-minutes: \d+/)
+    assert.match(b, /persist-credentials: false/)
+  }
+})
