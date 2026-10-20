@@ -35,7 +35,8 @@ const ep = (eid: string, num: number, extra: Row = {}): Row => ({
   status: 'draft',
   publish_at: null,
   archived: false,
-  youtube_video_id: 'abc',
+  // Unique per row: episodes.youtube_video_id is unique catalog-wide (06-01).
+  youtube_video_id: `yt-${eid}`,
   ...extra,
 })
 

@@ -29,10 +29,12 @@ type RpcHandler = (
 ) => { data: any; error: any } | Promise<{ data: any; error: any }>
 
 // Unique constraints emulated (migrations): shows.slug, episodes
-// (season_id, episode_number) including archived, show_categories.show_id.
+// (season_id, episode_number) including archived, episodes.youtube_video_id
+// catalog-wide (06-01 partial index: null and '' skipped),
+// show_categories.show_id.
 const UNIQUE: Record<string, string[][]> = {
   shows: [['slug']],
-  episodes: [['season_id', 'episode_number']],
+  episodes: [['season_id', 'episode_number'], ['youtube_video_id']],
   show_categories: [['show_id']],
 }
 
@@ -69,18 +71,19 @@ function matches(row: Row, f: Filter): boolean {
   }
 }
 
-function violatesUnique(table: string, rows: Row[]): boolean {
+/** The violated column set, or null. Null and empty-string values never collide. */
+function violatesUnique(table: string, rows: Row[]): string[] | null {
   for (const cols of UNIQUE[table] ?? []) {
     const seen = new Set<string>()
     for (const r of rows) {
       const vals = cols.map((c) => r[c])
-      if (vals.some((x) => x == null)) continue
+      if (vals.some((x) => x == null || x === '')) continue
       const key = JSON.stringify(vals)
-      if (seen.has(key)) return true
+      if (seen.has(key)) return cols
       seen.add(key)
     }
   }
-  return false
+  return null
 }
 
 export function createFakeSupabase(initial: Tables = {}) {
@@ -284,8 +287,8 @@ export function createFakeSupabase(initial: Tables = {}) {
           created_at: tick(),
           ...clone(r),
         }))
-        if (violatesUnique(this.table, [...rows, ...fresh]))
-          return this.uniqueError()
+        const clash = violatesUnique(this.table, [...rows, ...fresh])
+        if (clash) return this.uniqueError(clash)
         rows.push(...fresh)
         return this.returning
           ? this.shape(fresh)
@@ -294,7 +297,8 @@ export function createFakeSupabase(initial: Tables = {}) {
 
       if (this.op === 'update') {
         const next = rows.map((r) => (hit(r) ? { ...r, ...clone(this.patch) } : r))
-        if (violatesUnique(this.table, next)) return this.uniqueError()
+        const clash = violatesUnique(this.table, next)
+        if (clash) return this.uniqueError(clash)
         const changed: Row[] = []
         rows.forEach((r, i) => {
           if (hit(r)) {
@@ -315,12 +319,14 @@ export function createFakeSupabase(initial: Tables = {}) {
         : { data: null, error: null, count: null }
     }
 
-    private uniqueError() {
+    // Postgres-style message naming the constraint (<table>_<cols>_key).
+    private uniqueError(cols: string[]) {
+      const name = `${this.table}_${cols.join('_')}_key`
       return {
         data: null,
         error: {
           code: '23505',
-          message: `duplicate key value violates unique constraint on ${this.table}`,
+          message: `duplicate key value violates unique constraint "${name}" on ${this.table}`,
         },
         count: null,
       }
