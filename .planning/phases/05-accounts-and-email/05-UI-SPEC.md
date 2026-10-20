@@ -231,10 +231,7 @@ Frame: split page (5.1). Form is one client component `AuthSignInForm` replacing
 
 **State 5 `forgot`** (from `forgotPassword`). Back link-button `backToSignIn` (ArrowLeft, `rtl:scale-x-[-1]`) -> subline `resetDescription` -> Email -> Turnstile -> primary `sendResetLink`. Success: `AuthAlert` success `resetEmailSent` + `resetEmailDescription` (15 minutes, any device).
 
-**Show-aware header (D-03, picture q4 A).** When `getSafeAuthNextPath(next)` matches `/series/<slug>` or a watch/episode path, the page resolves the **show** (public catalog read, no episode data, no YouTube ID) and:
-- Phones (< `lg`): above the h1, a poster card `h-48 rounded-card border border-[var(--line)]` with the show artwork (`heroImageUrl ?? posterUrl`, `object-cover`, `alt=""` because the title is in the h1) over a `--gradient-cinema` scrim, `mb-6`; below it the chip `showChip` (`rounded-full bg-[var(--primary)] px-2 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--primary-foreground)]`), then the h1 `signInToWatch` ("Sign in to watch <bdi>{show}</bdi>") **replacing** `signInOrJoinTitle`. The subline `signInOrJoinSub` stays (the picture omitted it; without it the first-time visitor is not told a code will be emailed).
-- Desktop (>= `lg`): the hero pane backdrop is that show's artwork with the standard scrim; the quote is hidden; the chip sits bottom-start of the pane; the h1 is in the form column only (no duplicate title).
-- `generateMetadata` on `/auth` returns that show's title, description and poster as Open Graph and Twitter image; with no valid show it returns the normal sign-in metadata. A show that is unknown, unpublished or unreachable falls back to the plain sign-in page (no error).
+**No show-aware header (D-03, Q4 = B signed).** `/auth` looks the same for every `next`: no show poster, no show title, no chip, no per-show Open Graph. `getSafeAuthNextPath(next)` is still validated and used after sign-in, so the viewer lands on the show or episode she came from.
 
 **"Skip sign-in" is removed (D-02):** the link under the form, the admin setting and its Settings control are gone; no element on this screen offers to continue without an account.
 
@@ -380,7 +377,7 @@ Font stack `-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif` (Ar
 
 Dark rules live in one `<style>` block in `<head>` with `!important` overrides on classes (`.cs-page`, `.cs-card`, `.cs-text`, …); inline styles carry the light values so clients that strip `<style>` show the light look. Gmail (web and apps) ignores the media query and may auto-invert: the logo is a PNG with its own solid #090909 plate (stays a dark band with a readable wordmark under inversion), the button is a solid `bgcolor` table cell with inline colours, no text inside transparent images. The Q12 picture (light, dark, Gmail-dark) was signed by Koss 2026-10-20 ~19:00 CET; it is the reference look for 05-07, 05-10, 05-11.
 
-Footer content (all emails): line 1 "Clickit Story - Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates"; line 2 "Help: clickitstory.ae/support" (link). **Digest and newsletter confirm only** add `{postalLine}` (Q19 = B signed: exactly "Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates", no street). Digest adds the unsubscribe link and the Profile link. Welcome, auth and support emails have no unsubscribe link (transactional).
+Footer content (all emails): line 1 "Clickit Story · Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates"; line 2 "Help: clickitstory.ae/support" (link). **Digest and newsletter confirm only** add `{postalLine}` (Q19 = B signed: exactly "Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates", no street). Digest adds the unsubscribe link and the Profile link. Welcome, auth and support emails have no unsubscribe link (transactional).
 
 Dark mode: handled by the scheme table above. An owner render check (EN + AR, Gmail web, Gmail iOS/Android, Outlook, Apple Mail, light and dark, images off) is an owner step (research Pitfall 11).
 
@@ -456,8 +453,6 @@ Arabic is a **draft for Koss's review**. Numbers are ICU placeholders (`{length,
 | `codeExpired` | This code has expired. Send a new one. | انتهت صلاحية هذا الرمز. أرسل رمزاً جديداً. |
 | `codeSendFailed` | We couldn't send the code. Try again in a moment. | تعذّر إرسال الرمز. حاول مرة أخرى بعد قليل. |
 | `tooManyTries` | Too many tries. Wait a few minutes and try again. | محاولات كثيرة. انتظر بضع دقائق ثم حاول مجدداً. |
-| `signInToWatch` | Sign in to watch <bdi>{show}</bdi> | سجّل الدخول لمشاهدة <bdi>{show}</bdi> |
-| `showChip` | Free with an account | مجاناً مع حساب |
 | `signupCheckEmailTitle` | Check your email | تحقق من بريدك الإلكتروني |
 | `signupCheckEmailBody` | We sent a link to <bdi>{email}</bdi>. Open it to finish creating your account. It works for {minutes, number} minutes. | أرسلنا رابطاً إلى <bdi>{email}</bdi>. افتحه لإكمال إنشاء حسابك. يعمل لمدة {minutes, number} دقيقة. |
 | `resendConfirmation` | Resend the link | أعد إرسال الرابط |

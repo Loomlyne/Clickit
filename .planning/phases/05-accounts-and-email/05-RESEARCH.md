@@ -568,16 +568,16 @@ Not a rename/migration phase. The one source-of-truth switch (`app_config.admin_
 | A11 | Suggested live `email_sent` rate-limit number (about 100/hour) | Owner steps | Number must be agreed with Koss; do not apply unasked |
 | A12 | Dashboard offers no factor-removal control | F4 | If it does, the owner step simplifies; the script still works |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **MFA page URL (F10).** Recommendation `/{locale}/auth/mfa` instead of `/admin/mfa`. Needs Koss's OK (contract item 3). Alternative: move admin into a route group after Phase 6 lands.
-2. **Existing Arabic users' first code email (F3).** Accept English-first, or approve the silent service-role locale pre-update RPC?
-3. **Support inbox badge.** `support_messages.notification_status` currently means "admin notification email state". After D-31 the source is the outbox; either mirror the admin-copy result into it or relabel in the inbox. Pick one in planning.
-4. **Postal address in commercial email footers** (digest, newsletter confirm). CONTEXT footer names Spacelight Studios FZ LLC, Abu Dhabi only; do not invent an address; ask Koss.
-5. **Supabase auth email rate-limit number and the IP-limit raises (F7).** Koss's decision.
-6. **Whether `live_at` (F5) is acceptable as an extra column.** Required for correctness of MAIL-04 without guessing from `updated_at`.
-7. **Phase 4 canvas email look.** CONTEXT D-27 defers to it; its output was not available to this research.
-8. **Workers Paid.** If Phase 2's CPU report fails on Free, auth server actions and the consumer are affected; it stays Koss's priced decision.
+1. **MFA page URL (F10).** Recommendation `/{locale}/auth/mfa` instead of `/admin/mfa`. Needs Koss's OK (contract item 3). Alternative: move admin into a route group after Phase 6 lands. RESOLVED: `/{locale}/auth/mfa`, plan gate G21 (contract change for Phase 6), built in 05-25.
+2. **Existing Arabic users' first code email (F3).** Accept English-first, or approve the silent service-role locale pre-update RPC? RESOLVED: D-15, English-first accepted for an existing Arabic user's first code email; no pre-update RPC.
+3. **Support inbox badge.** `support_messages.notification_status` currently means "admin notification email state". After D-31 the source is the outbox; either mirror the admin-copy result into it or relabel in the inbox. Pick one in planning. RESOLVED: mirror; 05-13 `finish_outbox` writes the support_admin result into `support_messages.notification_status`.
+4. **Postal address in commercial email footers** (digest, newsletter confirm). CONTEXT footer names Spacelight Studios FZ LLC, Abu Dhabi only; do not invent an address; ask Koss. RESOLVED: G19 (Koss signed Q19 = B): `POSTAL_LINE` = "Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates" (05-07).
+5. **Supabase auth email rate-limit number and the IP-limit raises (F7).** Koss's decision. RESOLVED: G18 numbers, set as owner steps in 05-35 and checked by 05-17's auth-config-check.
+6. **Whether `live_at` (F5) is acceptable as an extra column.** Required for correctness of MAIL-04 without guessing from `updated_at`. RESOLVED: D-34, `episodes.live_at` added in M1a (05-09) and used by `build_digest` (05-13).
+7. **Phase 4 canvas email look.** CONTEXT D-27 defers to it; its output was not available to this research. RESOLVED: G22 (Koss signed Q12 = C, D-27): scheme-adaptive emails, colours imported from Phase 4's `src/lib/email-tokens.ts`, layout and copy from Phase 5 (05-07).
+8. **Workers Paid.** If Phase 2's CPU report fails on Free, auth server actions and the consumer are affected; it stays Koss's priced decision. RESOLVED: 05-19 stop rule (bundle over the Free limit stops with `NEEDS KOSS`, a priced decision) plus the 05-07 per-batch render CPU spike (A4 risk recorded; over 10 ms per batch stops with `NEEDS KOSS`).
 
 ## Environment Availability
 
