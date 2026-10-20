@@ -125,3 +125,24 @@ test('visibility hook: IntersectionObserver at the 50% rule plus tab visibility'
   assert.match(src, /isVisibleEnough\(/)
   assert.match(src, /threshold:\s*\[0, 0\.5, 1\]/)
 })
+
+test('error card: token, layering and logical-property rules', () => {
+  assertTokenRules('player-error-card', read(ERROR_PATH))
+})
+
+test('error card: alert role, container query, reported line only for reported errors', () => {
+  const src = read(ERROR_PATH)
+  assert.equal(src.split('role="alert"').length - 1, 1)
+  assert.match(src, /@container/)
+  assert.match(src, /@min-\[560px\]/)
+  const c = code(src)
+  const at = c.indexOf("t('errorReported')")
+  assert.notEqual(at, -1, 'errorReported is rendered')
+  const guard = c.slice(Math.max(0, at - 160), at)
+  assert.match(guard, /showReportedLine/)
+  assert.match(guard, /!spec\.site/)
+})
+
+test('error card: every default-size Button is 44px tall with px-6', () => {
+  assertButtonRules('player-error-card', read(ERROR_PATH))
+})
