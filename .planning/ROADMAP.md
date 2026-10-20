@@ -104,7 +104,7 @@ Plans:
 - [x] 02-16-PLAN.md — W6: Video finalize on R2 (hero, preloader, show) with fast-start and audio checks
 - [x] 02-17-PLAN.md — W6: Browser image uploads direct to R2 with WebP variants and the signed UI
 - [x] 02-18-PLAN.md — W7: Browser video uploads direct to R2 with the signed UI
-- [ ] 02-19-PLAN.md — W8: Old upload actions, sharp, S3 SDK and r2-media removed from request paths; bodySizeLimit 2mb
+- [x] 02-19-PLAN.md — W8: Old upload actions, sharp, S3 SDK and r2-media removed from request paths; bodySizeLimit 2mb
 - [ ] 02-20-PLAN.md — W9: [OWNER+CONTROL] Code-complete deploy, media Worker deploy, copy, verify, flag-on workers.dev build
 - [ ] 02-21-PLAN.md — W10: [OWNER] Per-route CPU on Workers Free, 02-CPU-REPORT.md, stop rule with priced question
 - [ ] 02-22-PLAN.md — W11: Gate and coverage, [OWNER] UAT (local preview write paths; workers.dev reads, sign-in, one approved draft write), teardown
@@ -201,7 +201,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 |-------|----------------|--------|-----------|
 | 1. Safe Ground | 0/TBD | Not started | - |
 | 1.1. Admin Actions Hardening (INSERTED) | 12/13 | In Progress|  |
-| 2. Worker and R2 Media on workers.dev | 17/22 | In Progress|  |
+| 2. Worker and R2 Media on workers.dev | 18/22 | In Progress|  |
 | 3. Production Cutover | 0/TBD | Not started | - |
 | 4. Design System Truth | 0/TBD | Not started | - |
 | 5. Accounts and Email | 0/TBD | Not started | - |

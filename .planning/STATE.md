@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-20T20:00:00.000Z"
+last_updated: "2026-10-20T20:45:00.000Z"
 last_activity: 2026-10-20
 progress:
   total_phases: 9
@@ -70,6 +70,7 @@ Progress: [█████████░] 92%
 | Phase 02 P16 | 90min | 2 tasks | 9 files |
 | Phase 02 P17 | 215min | 2 tasks | 13 files |
 | Phase 02 P18 | 150min | 2 tasks | 8 files |
+| Phase 02 P19 | 55min | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -101,6 +102,7 @@ Recent decisions affecting current work:
 - [Phase 02]: 02-16: video finalize reads only the first 4 MiB (min of object size) and checks fast-start and, for hero only, the audio track with the pure box walker (no ffprobe on Workers); non-fast-start, oversize (50MB, preloader 20MB) and no-audio files are refused and deleted; 01.1 order kept (write, strict audit, then delete previous R2 object; Supabase originals never deleted); show finalize has commit (default true) so 02-18 can keep write-on-Save
 - [Phase 02]: 02-17: every image upload goes browser -> requestMediaUpload -> XHR PUT with the signed Content-Type -> finalize*Upload; WebP copies (640/1280/1920, narrower than the source) are made in the browser only when canvas toBlob really returns image/webp, otherwise the original goes alone with the signed Safari note; progress zone and toasts as signed (option M); artwork and hero image finalize with commit:false so the drawer still writes on Save; hero-media-picker's image path switched too (02-18 only does its video path); admin actions return 500 on the Worker until 02-19 removes the sharp import (deferred item 10)
 - [Phase 02]: 02-18: every video upload (hero desktop/mobile, preloader, show drawer) goes browser -> requestMediaUpload -> XHR PUT (video/mp4, signed Content-Type) -> finalize*VideoUpload through uploadVideoDirect; the show drawer uses commit:false (upload then Save); signed texts verbatim (Upload an MP4 video., the not-fast-start sentence, Checking fast-start…, helper line MP4, fast-start, under 50MB); the signed not-fast-start sentence replaces the server's text on the client; stale 8 MB 'Supabase egress' warning left for Koss's wording (deferred item 13)
+- [Phase 02]: 02-19: no file under src/ imports sharp or @aws-sdk/* (guard test worker-request-paths in gate:local); old FormData and signed-upload actions and src/lib/r2-media* deleted; admin media deletion is R2-only (src/server/r2-delete.ts), no admin action or cron removes a Supabase original unless CLEANUP_SUPABASE_ORIGINALS=on; bodySizeLimit 2mb; sharp and S3 SDK are devDependencies; Worker preview serves all admin pages and a saved admin action with no stub; bundle 14,286 KiB raw / 2,936 KiB gzip
 - [Phase 02]: 02-04: security helpers are pure with injected I/O; cron auth and rate limiter refuse on every uncertain path; Turnstile reasons are fixed codes that never echo secret or token
 
 ### Pending Todos
@@ -130,5 +132,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-10-20T10:45:11.285Z
-Stopped at: Completed 02-18-PLAN.md (after 02-17) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above still shows 01.1, controller owns it)
+Stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above still shows 01.1, controller owns it)
 Resume file: None
