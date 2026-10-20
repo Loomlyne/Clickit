@@ -110,3 +110,48 @@ test('the paging loop is bounded by IMPORT_MAX_ITEMS and never retries by itself
   assert.match(c, /IMPORT_MAX_ITEMS/)
   assert.equal(/setInterval\(/.test(c), false)
 })
+
+const SCHEDULER = 'src/components/admin/schedule-episodes-button.tsx'
+const SHOW_PAGE = 'src/app/[locale]/admin/shows/[id]/page.tsx'
+
+test('the scheduler can be controlled and limited to chosen episodes', () => {
+  const c = code(read(SCHEDULER))
+  assert.ok((c.match(/episodeIds/g) ?? []).length >= 3, 'episodeIds at least 3 times')
+  assert.ok(c.includes('onOpenChange'), 'onOpenChange prop')
+  assert.ok(c.includes('hideTrigger'), 'hideTrigger prop')
+  assert.ok(c.includes('previewShowSchedule(showId, episodeIds)'), 'preview passes the selection')
+  assert.ok(c.includes('applyShowSchedule(showId, episodeIds)'), 'apply passes the selection')
+})
+
+test('the scheduler warning also covers English-title and can-not-play slots', () => {
+  const c = code(read(SCHEDULER))
+  assert.ok(c.includes('needsEnglishTitle'), 'needsEnglishTitle')
+  assert.ok(c.includes('youtubeStatus'), 'youtubeStatus')
+  assert.ok(c.includes('admin.youtubeStatus'), 'admin.youtubeStatus strings')
+  assert.ok(c.includes('cantPlayBadge'), 'cantPlayBadge string')
+})
+
+test('an unfiltered scheduler cannot unschedule from a filtered dialog', () => {
+  const c = code(read(SCHEDULER))
+  assert.match(c, /unscheduleShowEpisodes\(showId\)/)
+  assert.match(c, /episodeIds\s*\?\s*null|!episodeIds|episodeIds === undefined/)
+})
+
+test('the show page renders the import sheet first in the header action group', () => {
+  const c = code(read(SHOW_PAGE))
+  assert.equal((c.match(/ImportPlaylistSheet/g) ?? []).length >= 2, true, 'import + use')
+  const sheet = c.indexOf('<ImportPlaylistSheet')
+  const schedule = c.indexOf('<ScheduleEpisodesButton')
+  assert.ok(sheet >= 0 && schedule >= 0 && sheet < schedule, 'sheet before the scheduler')
+  assert.match(c, /maxEpisodeNumberBySeason\[[^\]]+\] \?\? 0/)
+})
+
+test('the sheet opens the scheduler for the imported episodes only', () => {
+  const c = code(read(SHEET))
+  const at = c.indexOf('<ScheduleEpisodesButton')
+  assert.ok(at >= 0, 'ScheduleEpisodesButton rendered')
+  const tag = c.slice(at, c.indexOf('/>', at))
+  for (const prop of ['open=', 'onOpenChange=', 'episodeIds=', 'hideTrigger']) {
+    assert.ok(tag.includes(prop), `scheduler tag has ${prop}`)
+  }
+})
