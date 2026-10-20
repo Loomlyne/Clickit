@@ -79,14 +79,6 @@ function isAuthRequiredDespiteSkip(
   return false
 }
 
-/** Vercel BotID challenge/proxy paths — must stay locale-free (see withBotId). */
-const BOTID_PREFIX = '/149e9513-01fa-4fb0-aad4-566afd725d1b'
-
-function isBotIdPath(pathname: string): boolean {
-  const { pathWithoutLocale } = stripLocale(pathname)
-  return pathWithoutLocale.startsWith(BOTID_PREFIX)
-}
-
 const handleI18nRouting = createMiddleware(routing)
 
 /**
@@ -140,17 +132,6 @@ export async function proxy(request: NextRequest) {
   if (pathname === '/auth/callback') {
     const { response } = await updateSession(request)
     return response
-  }
-
-  // BotID loads c.js relative to the current URL, so on /en/auth the browser
-  // requests /en/149e9513-…/c.js. withBotId rewrites only match the root path;
-  // without this strip+rewrite, next-intl treats the script as a page → 500
-  // ("No intl context found") and auth Server Actions never get a challenge token.
-  if (isBotIdPath(pathname)) {
-    const { pathWithoutLocale } = stripLocale(pathname)
-    const url = request.nextUrl.clone()
-    url.pathname = pathWithoutLocale
-    return NextResponse.rewrite(url)
   }
 
   // Step 1: Run next-intl routing. This may return a 3xx redirect when the
