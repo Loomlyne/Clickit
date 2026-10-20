@@ -120,7 +120,6 @@ export function ShortsOverlay({
   const shell = (
     <div
       className="fixed inset-0 z-[600] flex items-center justify-center"
-      data-lenis-prevent
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >

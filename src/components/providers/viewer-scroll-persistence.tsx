@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import { usePathname } from '@/i18n/navigation'
-import { useLenis } from 'lenis/react'
-import type Lenis from 'lenis'
 
 const STORAGE_PREFIX = 'cit:viewer-scroll:'
 
@@ -26,11 +24,12 @@ function episodeIdFromWatchPath(pathname: string): string | undefined {
   return m?.[2]
 }
 
-function clampScrollY(y: number, lenis: Lenis | undefined): number {
+function clampScrollY(y: number): number {
   if (!Number.isFinite(y) || y < 0) return 0
-  const max =
-    lenis?.limit ??
-    Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+  const max = Math.max(
+    0,
+    document.documentElement.scrollHeight - window.innerHeight
+  )
   return Math.min(y, max)
 }
 
@@ -46,13 +45,10 @@ function readPayload(raw: string): Payload | null {
 
 export function ViewerScrollPersistence() {
   const pathname = usePathname()
-  const lenis = useLenis()
-  const lenisRef = useRef(lenis)
   const pathnameRef = useRef(pathname)
-  // Keep "latest value" refs in sync after each render (declared first so they
-  // are current before the effects below run).
+  // Keep the "latest value" ref in sync after each render (declared first so it
+  // is current before the effects below run).
   useEffect(() => {
-    lenisRef.current = lenis
     pathnameRef.current = pathname
   })
 
@@ -68,15 +64,9 @@ export function ViewerScrollPersistence() {
       return
     }
 
-    const y = clampScrollY(payload.y, lenisRef.current)
-
     const applyScroll = () => {
-      const l = lenisRef.current
-      if (l) {
-        l.scrollTo(y, { immediate: true })
-      } else {
-        window.scrollTo(0, y)
-      }
+      // Clamp at apply time, after two frames, so the restored page has height.
+      window.scrollTo(0, clampScrollY(payload.y))
 
       if (payload.episodeId) {
         requestAnimationFrame(() => {
@@ -134,8 +124,7 @@ export function ViewerScrollPersistence() {
       const fromPath = pathnameRef.current
       const episodeId = episodeIdFromWatchPath(url.pathname)
 
-      const l = lenisRef.current
-      const y = l ? l.scroll : window.scrollY
+      const y = window.scrollY
 
       const payload: Payload = {
         y,

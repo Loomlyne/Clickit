@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { Link, usePathname } from '@/i18n/navigation'
-import { useLenis } from 'lenis/react'
 import { cn } from '@/lib/utils'
 import { AuthSection } from './auth-section'
 import { MobileNav } from './mobile-nav'
@@ -39,31 +38,42 @@ export function Navbar({
     !isMinimal &&
     (pathname === '/portfolio' || pathname === '' || pathname.startsWith('/auth'))
 
-  // Direction-aware show/hide via Lenis. Hide on scroll down, show on scroll up.
-  // Landing pages keep the nav pinned — hiding it reveals body bg behind the hero.
-  useLenis(({ scroll }) => {
-    const y = scroll
-    const delta = y - lastScrollY.current
-    setScrolled(y > 24)
-    if (isLanding) {
-      setHidden(false)
-    } else if (y < 80) {
-      setHidden(false)
-    } else if (delta > 4) {
-      setHidden(true)
-    } else if (delta < -4) {
-      setHidden(false)
-    }
-    lastScrollY.current = y
-  })
-
-  // Sync once on mount (Lenis only fires on real scroll events)
+  // Direction-aware show/hide on native scroll. Hide on scroll down, show on
+  // scroll up. Landing pages keep the nav pinned — hiding it reveals body bg
+  // behind the hero. One passive listener, at most one update per frame.
   useEffect(() => {
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const y = window.scrollY
+      const delta = y - lastScrollY.current
+      setScrolled(y > 24)
+      if (isLanding) {
+        setHidden(false)
+      } else if (y < 80) {
+        setHidden(false)
+      } else if (delta > 4) {
+        setHidden(true)
+      } else if (delta < -4) {
+        setHidden(false)
+      }
+      lastScrollY.current = y
+    }
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update)
+    }
+    // Sync once on mount (restored or mid-page loads fire no scroll event);
+    // only the position, so a mid-page reload does not start hidden.
     // Browser-only read after hydration (SSR must render unscrolled), so it cannot be derived in render.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setScrolled(window.scrollY > 24)
     lastScrollY.current = window.scrollY
-  }, [])
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (frame) cancelAnimationFrame(frame)
+    }
+  }, [isLanding])
 
   const navLinkClass = (active: boolean) =>
     cn(

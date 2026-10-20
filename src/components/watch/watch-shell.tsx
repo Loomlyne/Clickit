@@ -221,7 +221,6 @@ export function WatchShell({
   return (
     <div
       className="fixed inset-0 h-dvh min-h-svh overflow-hidden bg-black"
-      data-lenis-prevent
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       onPointerMove={resetTimer}
       onPointerDown={resetTimer}
