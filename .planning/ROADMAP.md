@@ -94,7 +94,7 @@ Plans:
 - [x] 02-06-PLAN.md — W3: Build targets, stamp and deploy guard, cf:* scripts, .env.example
 - [x] 02-07-PLAN.md — W3: Worker port: scheduled() to cron routes, bindings accessor, _headers, site-url without Vercel fallbacks, check scripts
 - [x] 02-08-PLAN.md — W3: Copy script: dry-run report, sharp WebP/AVIF variants, faststart remux, idempotency, checksum reports, verify-every-object script
-- [ ] 02-09-PLAN.md — W3: Custom next/image loader and media-origin rules, next.config images
+- [x] 02-09-PLAN.md — W3: Custom next/image loader and media-origin rules, next.config images
 - [ ] 02-10-PLAN.md — W4: Remote spike: [OWNER] account resources, [CONTROL] first workers.dev deploy, secrets and dashboards, early CPU sample
 - [ ] 02-11-PLAN.md — W3: Turnstile server side, fail-closed limiter, captchaToken on auth actions, BotID removed from server and proxy
 - [ ] 02-12-PLAN.md — W4: Upload infrastructure: kinds, magic bytes, aws4fetch presign, finalize with delete-on-failure
@@ -201,7 +201,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 |-------|----------------|--------|-----------|
 | 1. Safe Ground | 0/TBD | Not started | - |
 | 1.1. Admin Actions Hardening (INSERTED) | 12/13 | In Progress|  |
-| 2. Worker and R2 Media on workers.dev | 8/22 | In Progress|  |
+| 2. Worker and R2 Media on workers.dev | 9/22 | In Progress|  |
 | 3. Production Cutover | 0/TBD | Not started | - |
 | 4. Design System Truth | 0/TBD | Not started | - |
 | 5. Accounts and Email | 0/TBD | Not started | - |

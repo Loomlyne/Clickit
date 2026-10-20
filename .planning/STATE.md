@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-20T12:40:00.000Z"
+last_updated: "2026-10-20T12:55:00.000Z"
 last_activity: 2026-10-20
 progress:
   total_phases: 9
@@ -61,6 +61,7 @@ Progress: [█████████░] 92%
 | Phase 02 P02 | 15min | 2 tasks | 3 files |
 | Phase 02 P04 | 20min | 2 tasks | 9 files |
 | Phase 02 P08 | 80min | 3 tasks | 9 files |
+| Phase 02 P09 | 15min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,7 @@ Recent decisions affecting current work:
 - [Phase 02-01]: react-hooks/set-state-in-effect set to warn after the eslint-config-next 16.4.2 bump; refactor deferred (phase 02 deferred-items.md)
 - [Phase 02]: 02-02: R2 CORS builder refuses http, wildcard, path/query/hash and credentials; runbook Rule 5 lists the four owner-gated live-Supabase exceptions
 - [Phase 02]: 02-08: the copy no longer rewrites the manifest (checksum report holds per-object state), so manifestSha256 stays stable for the deploy guard; write path guarded to the ClickitStory account and bucket clickit-media; sharp reads Buffers because libvips caches by file name
+- [Phase 02]: 02-09: loader widths pinned to the Worker's VARIANT_WIDTHS by a drift test; remotePatterns dropped with the custom loader; loopback media origin (127.0.0.1 + ALLOW_LOOPBACK=1) never rewrites Supabase URLs; CSP img-src for loopback preview is left to 02-14
 - [Phase 02]: 02-04: security helpers are pure with injected I/O; cron auth and rate limiter refuse on every uncertain path; Turnstile reasons are fixed codes that never echo secret or token
 
 ### Pending Todos
