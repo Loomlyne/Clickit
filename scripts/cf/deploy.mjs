@@ -6,8 +6,9 @@
 //   npm run cf:deploy:workersdev -- --media-flag off
 //   npm run cf:deploy:workersdev -- --media-flag verified --media-origin <https origin> \
 //        --verify-report <path> [--manifest <path>]
-//   npm run cf:deploy:media                       # explicit --env "" (top level)
-//   npm run cf:deploy:media -- --env supabase-only
+//   npm run cf:deploy:media -- --env supabase-only   # Supabase originals (production today)
+//   npm run cf:deploy:media -- --env r2              # R2 first: only after DNS-PLAN.md §5d passes
+//   (clickit-media serves media.clickitstory.ae in every env, so either one changes production media)
 //   add --dry-run to run the guard only (no build, no deploy)
 //
 // Prints reasons and never any env value.
@@ -142,9 +143,9 @@ function deployWorkersdev(argv) {
 function deployMedia(argv) {
   const dryRun = argv.includes('--dry-run')
   if (!argv.includes('--env')) {
-    return refuse(['--env is required: pass --env "" (top level) or --env supabase-only'])
+    return refuse(['--env is required: pass --env supabase-only or --env r2'])
   }
-  const mediaEnv = readOption(argv, '--env') ?? ''
+  const mediaEnv = readOption(argv, '--env')
   const early = parentChecks()
   if (early.length > 0) return refuse(early)
 

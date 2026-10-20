@@ -7,7 +7,9 @@ import { checkWhoamiOutput, checkEnv, CLICKIT_ACCOUNT_ID } from './wrangler-guar
 
 export const MEDIA_BINDING = 'MEDIA_BUCKET'
 export const MEDIA_BUCKET_NAME = 'clickit-media'
-export const MEDIA_ENVS = ['', 'supabase-only']
+// The R2 binding lives only in env `r2` (main, job D, 2026-10-20): the top level and
+// `supabase-only` serve Supabase originals, so a bare deploy can never flip to R2-first.
+export const MEDIA_ENVS = ['supabase-only', 'r2']
 
 const ALL_ZERO_ID = /^[0-]+$/
 const MEDIA_HOST = /^clickit-media\.[a-z0-9-]+\.workers\.dev$/
@@ -243,7 +245,7 @@ function bindingReasons(level, label, reasons, { expectR2 }) {
       reasons.push(`${label}: expected exactly one R2 binding ${MEDIA_BINDING} -> ${MEDIA_BUCKET_NAME}`)
     }
   } else if (r2.length > 0) {
-    reasons.push(`${label}: the supabase-only env must have no R2 binding`)
+    reasons.push(`${label}: must have no R2 binding (only env r2 is R2-first)`)
   }
   for (const key of BINDING_KEYS) {
     const value = level?.[key]
@@ -273,16 +275,16 @@ function varsReasons(vars, label, reasons) {
 }
 
 /**
- * Media Worker (workers/media/wrangler.jsonc). Deploys either the top-level
- * config (env '') with the MEDIA_BUCKET R2 binding, or the supabase-only env
- * with no R2 binding. Both need the SUPABASE_URL var. The env is always passed
- * explicitly so wrangler never guesses.
+ * Media Worker (workers/media/wrangler.jsonc). Deploys env `supabase-only` (no R2
+ * binding, Supabase originals) or env `r2` (exactly one MEDIA_BUCKET binding, R2
+ * first). The top level must carry no R2 binding. Every env needs the
+ * SUPABASE_URL var. The env is always passed explicitly so wrangler never guesses.
  * @param {{
  *   whoami: string,
  *   processEnv: Record<string, string | undefined>,
  *   gitStatus: string,
  *   wranglerConfig: any,
- *   env: '' | 'supabase-only' | undefined,
+ *   env: 'supabase-only' | 'r2' | undefined,
  * }} input
  * @returns {{ ok: boolean, reasons: string[] }}
  */
@@ -293,7 +295,7 @@ export function checkMediaDeploy(input) {
 
   const config = input.wranglerConfig
   if (!MEDIA_ENVS.includes(input.env)) {
-    reasons.push('media deploy env must be passed explicitly: "" (top level) or "supabase-only"')
+    reasons.push('media deploy env must be passed explicitly: "supabase-only" or "r2"')
   }
   if (!config || typeof config !== 'object') {
     reasons.push('workers/media/wrangler.jsonc could not be read')
@@ -302,23 +304,24 @@ export function checkMediaDeploy(input) {
   if (config.account_id !== CLICKIT_ACCOUNT_ID) reasons.push('media wrangler account_id is not the ClickitStory account')
   if (config.name !== 'clickit-media') reasons.push('media wrangler name is not clickit-media')
 
-  if (input.env === 'supabase-only') {
-    const envConfig = config.env?.['supabase-only']
+  // The top level must never be R2-first, whichever env is deployed.
+  bindingReasons(config, 'top level', reasons, { expectR2: false })
+  varsReasons(config.vars, 'top level', reasons)
+  // triggers are inheritable, so the top level counts for every env as well.
+  if (!emptyCrons(config.triggers)) reasons.push('media wrangler triggers.crons must be an explicit empty array')
+
+  if (MEDIA_ENVS.includes(input.env)) {
+    const envName = input.env
+    const envConfig = config.env?.[envName]
     if (!envConfig) {
-      reasons.push('supabase-only env is not defined in workers/media/wrangler.jsonc')
+      reasons.push(`${envName} env is not defined in workers/media/wrangler.jsonc`)
     } else {
-      bindingReasons(envConfig, 'supabase-only', reasons, { expectR2: false })
-      varsReasons(envConfig.vars, 'supabase-only', reasons)
+      bindingReasons(envConfig, envName, reasons, { expectR2: envName === 'r2' })
+      varsReasons(envConfig.vars, envName, reasons)
       if (envConfig.triggers !== undefined && !emptyCrons(envConfig.triggers)) {
-        reasons.push('supabase-only: triggers.crons must be an empty array')
+        reasons.push(`${envName}: triggers.crons must be an empty array`)
       }
     }
-    // triggers are inheritable, so the top level counts for this env as well.
-    if (!emptyCrons(config.triggers)) reasons.push('media wrangler triggers.crons must be an explicit empty array')
-  } else {
-    bindingReasons(config, 'top level', reasons, { expectR2: true })
-    varsReasons(config.vars, 'top level', reasons)
-    if (!emptyCrons(config.triggers)) reasons.push('media wrangler triggers.crons must be an explicit empty array')
   }
   return { ok: reasons.length === 0, reasons }
 }

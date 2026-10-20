@@ -23,7 +23,7 @@
     "cf:build:workersdev": "npm run cf:guard:local && HOME=/Users/koss/.clickit-cloudflare node scripts/cf/build-target.mjs --target workersdev --media-flag off",
     "cf:preview": "npm run cf:guard:local && npm run cf:build:preview && HOME=/Users/koss/.clickit-cloudflare opennextjs-cloudflare preview",
     "cf:deploy:workersdev": "HOME=/Users/koss/.clickit-cloudflare node scripts/cf/deploy.mjs --target workersdev",
-    "cf:deploy:media": "HOME=/Users/koss/.clickit-cloudflare node scripts/cf/deploy.mjs --target media --env \"\"",
+    "cf:deploy:media": "HOME=/Users/koss/.clickit-cloudflare node scripts/cf/deploy.mjs --target media",
     "cf-typegen": "HOME=/Users/koss/.clickit-cloudflare wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "media:health": "node scripts/media-health.mjs"
   },

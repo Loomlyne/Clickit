@@ -190,7 +190,8 @@ Then wait.
 
 **Step 28 [CONTROL] - deploy the media Worker**
 Trigger: Koss writes "deploy media worker".
-Command: `npm run cf:deploy:media`
+Command: `npm run cf:deploy:media -- --env r2`
+**Stop first (merge of main, 2026-10-20):** job D attached `media.clickitstory.ae` to `clickit-media` in every env, and the R2 binding exists only in env `r2`. So `--env r2` turns the **production** media host R2-first, not only workers.dev. Run it only after the R2 mirror gate in `workers/media/DNS-PLAN.md` §5d passes and Koss says so; until then the controller decides (options: deploy `--env supabase-only`, or a separate workers.dev-only Worker name for the Step 29 check). The guard refuses a missing env, an R2 binding outside env `r2`, and `--env ""`.
 Expected: guard ok, then the URL `https://clickit-media.<SUB>.workers.dev`. `curl -sI https://clickit-media.<SUB>.workers.dev/` returns 404 (no listing).
 Then wait.
 

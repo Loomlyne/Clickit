@@ -1,5 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import {
   checkDeploy,
   checkMediaDeploy,
@@ -475,26 +476,36 @@ test('checkDeploy collects every reason, not only the first', () => {
 
 // ------------------------------------------------------------ checkMediaDeploy
 
+// Same shape as workers/media/wrangler.jsonc on main since job D (2026-10-20): no R2
+// binding at the top level or in supabase-only; env r2 is the only R2-first config.
+const SUPA = { SUPABASE_URL: 'https://lajguozmtissnnfccmej.supabase.co' }
 const mediaConfig = {
   name: 'clickit-media',
   account_id: CLICKIT,
   triggers: { crons: [] },
-  vars: { SUPABASE_URL: 'https://lajguozmtissnnfccmej.supabase.co' },
-  r2_buckets: [{ binding: 'MEDIA_BUCKET', bucket_name: 'clickit-media' }],
+  vars: { ...SUPA },
+  routes: [{ pattern: 'media.clickitstory.ae', custom_domain: true }],
   env: {
-    'supabase-only': {
+    'supabase-only': { name: 'clickit-media', vars: { ...SUPA } } as Record<string, unknown>,
+    r2: {
       name: 'clickit-media',
-      vars: { SUPABASE_URL: 'https://lajguozmtissnnfccmej.supabase.co' },
-      r2_buckets: [],
-    },
+      vars: { ...SUPA },
+      r2_buckets: [{ binding: 'MEDIA_BUCKET', bucket_name: 'clickit-media' }],
+    } as Record<string, unknown>,
   },
 }
 
 function mediaInput(over: Record<string, unknown> = {}) {
-  return { whoami: whoamiOk, processEnv: {}, gitStatus: '', wranglerConfig: mediaConfig, env: '', ...over }
+  return { whoami: whoamiOk, processEnv: {}, gitStatus: '', wranglerConfig: mediaConfig, env: 'r2', ...over }
 }
 
-test('checkMediaDeploy passes for the top-level env with MEDIA_BUCKET and SUPABASE_URL', () => {
+function withR2Env(r2: Record<string, unknown>) {
+  const config = structuredClone(mediaConfig)
+  config.env.r2 = { ...config.env.r2, ...r2 }
+  return config
+}
+
+test('checkMediaDeploy passes for env r2 with exactly one MEDIA_BUCKET binding', () => {
   const res = checkMediaDeploy(mediaInput())
   assert.deepEqual(res.reasons, [])
   assert.equal(res.ok, true)
@@ -508,12 +519,26 @@ test('checkMediaDeploy passes for the supabase-only env with no R2 binding', () 
 
 test('checkMediaDeploy refuses supabase-only when an R2 binding is present', () => {
   const config = structuredClone(mediaConfig)
-  config.env['supabase-only'].r2_buckets = [{ binding: 'MEDIA_BUCKET', bucket_name: 'clickit-media' }] as never
+  config.env['supabase-only'].r2_buckets = [{ binding: 'MEDIA_BUCKET', bucket_name: 'clickit-media' }]
   assert.equal(checkMediaDeploy(mediaInput({ wranglerConfig: config, env: 'supabase-only' })).ok, false)
 })
 
-test('checkMediaDeploy refuses an unknown or missing env argument', () => {
+test('checkMediaDeploy refuses an R2 binding at the top level for every env', () => {
+  const config = { ...mediaConfig, r2_buckets: [{ binding: 'MEDIA_BUCKET', bucket_name: 'clickit-media' }] }
+  assert.match(reasonsOf(checkMediaDeploy(mediaInput({ wranglerConfig: config }))), /top level/)
+  assert.equal(checkMediaDeploy(mediaInput({ wranglerConfig: config, env: 'supabase-only' })).ok, false)
+})
+
+test('checkMediaDeploy refuses env r2 without its binding or when the env is missing', () => {
+  assert.match(reasonsOf(checkMediaDeploy(mediaInput({ wranglerConfig: withR2Env({ r2_buckets: [] }) }))), /MEDIA_BUCKET/)
+  const noEnv = structuredClone(mediaConfig) as unknown as { env: Record<string, unknown> }
+  delete noEnv.env.r2
+  assert.match(reasonsOf(checkMediaDeploy(mediaInput({ wranglerConfig: noEnv }))), /r2 env is not defined/)
+})
+
+test('checkMediaDeploy refuses an unknown, empty (top level) or missing env argument', () => {
   assert.equal(checkMediaDeploy(mediaInput({ env: 'staging' })).ok, false)
+  assert.equal(checkMediaDeploy(mediaInput({ env: '' })).ok, false)
   assert.equal(checkMediaDeploy(mediaInput({ env: undefined })).ok, false)
 })
 
@@ -529,39 +554,38 @@ test('checkMediaDeploy refuses an account_id mismatch', () => {
 })
 
 test('checkMediaDeploy refuses the old MEDIA binding name and a wrong bucket', () => {
-  const renamed = { ...mediaConfig, r2_buckets: [{ binding: 'MEDIA', bucket_name: 'clickit-media' }] }
+  const renamed = withR2Env({ r2_buckets: [{ binding: 'MEDIA', bucket_name: 'clickit-media' }] })
   assert.match(reasonsOf(checkMediaDeploy(mediaInput({ wranglerConfig: renamed }))), /MEDIA_BUCKET/)
-  const wrongBucket = { ...mediaConfig, r2_buckets: [{ binding: 'MEDIA_BUCKET', bucket_name: 'clickit-next-cache' }] }
+  const wrongBucket = withR2Env({ r2_buckets: [{ binding: 'MEDIA_BUCKET', bucket_name: 'clickit-next-cache' }] })
   assert.equal(checkMediaDeploy(mediaInput({ wranglerConfig: wrongBucket })).ok, false)
 })
 
 test('checkMediaDeploy refuses a second R2 binding and other binding kinds', () => {
-  const two = {
-    ...mediaConfig,
+  const two = withR2Env({
     r2_buckets: [
       { binding: 'MEDIA_BUCKET', bucket_name: 'clickit-media' },
       { binding: 'OTHER', bucket_name: 'clickit-next-cache' },
     ],
-  }
+  })
   assert.equal(checkMediaDeploy(mediaInput({ wranglerConfig: two })).ok, false)
   assert.equal(checkMediaDeploy(mediaInput({ wranglerConfig: { ...mediaConfig, kv_namespaces: [{ binding: 'K', id: 'x' }] } })).ok, false)
   assert.equal(checkMediaDeploy(mediaInput({ wranglerConfig: { ...mediaConfig, d1_databases: [{ binding: 'D' }] } })).ok, false)
-  assert.equal(checkMediaDeploy(mediaInput({ wranglerConfig: { ...mediaConfig, services: [{ binding: 'S', service: 'x' }] } })).ok, false)
+  assert.equal(checkMediaDeploy(mediaInput({ wranglerConfig: withR2Env({ services: [{ binding: 'S', service: 'x' }] }) })).ok, false)
 })
 
 test('checkMediaDeploy refuses a missing SUPABASE_URL var', () => {
-  const res = checkMediaDeploy(mediaInput({ wranglerConfig: { ...mediaConfig, vars: {} } }))
+  const res = checkMediaDeploy(mediaInput({ wranglerConfig: withR2Env({ vars: {} }) }))
   assert.equal(res.ok, false)
   assert.match(reasonsOf(res), /SUPABASE_URL/)
 })
 
 test('checkMediaDeploy refuses a non-https SUPABASE_URL and unexpected vars', () => {
   assert.equal(
-    checkMediaDeploy(mediaInput({ wranglerConfig: { ...mediaConfig, vars: { SUPABASE_URL: 'http://127.0.0.1:55321' } } })).ok,
+    checkMediaDeploy(mediaInput({ wranglerConfig: withR2Env({ vars: { SUPABASE_URL: 'http://127.0.0.1:55321' } }) })).ok,
     false,
   )
   assert.equal(
-    checkMediaDeploy(mediaInput({ wranglerConfig: { ...mediaConfig, vars: { ...mediaConfig.vars, LOCAL_DEV: '1' } } })).ok,
+    checkMediaDeploy(mediaInput({ wranglerConfig: { ...mediaConfig, vars: { ...SUPA, LOCAL_DEV: '1' } } })).ok,
     false,
   )
 })
@@ -571,9 +595,18 @@ test('checkMediaDeploy refuses non-empty cron triggers at top level or in the en
     reasonsOf(checkMediaDeploy(mediaInput({ wranglerConfig: { ...mediaConfig, triggers: { crons: ['* * * * *'] } } }))),
     /crons/,
   )
-  const envCron = structuredClone(mediaConfig) as unknown as { env: Record<string, Record<string, unknown>> }
+  assert.equal(checkMediaDeploy(mediaInput({ wranglerConfig: withR2Env({ triggers: { crons: ['* * * * *'] } }) })).ok, false)
+  const envCron = structuredClone(mediaConfig)
   envCron.env['supabase-only'].triggers = { crons: ['* * * * *'] }
   assert.equal(checkMediaDeploy(mediaInput({ wranglerConfig: envCron, env: 'supabase-only' })).ok, false)
+})
+
+test('checkMediaDeploy passes the real workers/media/wrangler.jsonc for both envs', () => {
+  const real = parseJsonc(readFileSync('workers/media/wrangler.jsonc', 'utf8'))
+  for (const env of ['supabase-only', 'r2']) {
+    const res = checkMediaDeploy(mediaInput({ wranglerConfig: real, env }))
+    assert.deepEqual(res.reasons, [], env)
+  }
 })
 
 test('checkMediaDeploy refuses a dirty tree', () => {
