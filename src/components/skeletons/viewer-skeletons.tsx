@@ -20,7 +20,12 @@ export function Bone({
   )
 }
 
-/** Announces the loading state once; the bones themselves are aria-hidden. */
+/**
+ * The bones sit in an aria-busy container (each bone is aria-hidden). The
+ * "Loading" text is a sibling status region, outside the busy subtree so it is
+ * not held back. It mounts with its text, so the announcement is best effort:
+ * most screen readers read a new status region, some only on focus.
+ */
 function SkeletonScreen({
   className,
   children,
@@ -30,10 +35,14 @@ function SkeletonScreen({
 }) {
   const t = useTranslations('common')
   return (
-    <div role="status" aria-live="polite" className={className}>
-      <span className="sr-only">{t('loading')}</span>
-      {children}
-    </div>
+    <>
+      <span role="status" aria-live="polite" className="sr-only">
+        {t('loading')}
+      </span>
+      <div aria-busy="true" className={className}>
+        {children}
+      </div>
+    </>
   )
 }
 

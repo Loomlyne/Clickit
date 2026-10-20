@@ -35,7 +35,7 @@ interface CinematicBackdropProps {
   /**
    * Fetch the backdrop image at high priority (preloaded). Defaults true.
    * Carousels pass true only for the first slide so the other slides do not
-   * compete with the LCP image; those still load eagerly, at normal priority.
+   * compete with the LCP image; those load lazily, at normal priority.
    */
   priority?: boolean
 }
@@ -144,7 +144,7 @@ export function CinematicBackdrop({
             className="object-cover opacity-80"
             sizes="100vw"
             priority={priority}
-            loading={priority ? undefined : 'eager'}
+            loading={priority ? undefined : 'lazy'}
             aria-hidden
           />
         ) : null
@@ -167,7 +167,7 @@ export function CinematicBackdrop({
               className="hidden object-cover opacity-80 md:block"
               sizes="100vw"
               priority={priority}
-              loading={priority ? undefined : 'eager'}
+              loading={priority ? undefined : 'lazy'}
               aria-hidden
             />
           ) : null}
@@ -197,7 +197,7 @@ export function CinematicBackdrop({
               className="block object-cover opacity-80 md:hidden"
               sizes="100vw"
               priority={priority}
-              loading={priority ? undefined : 'eager'}
+              loading={priority ? undefined : 'lazy'}
               aria-hidden
             />
           ) : imageUrl ? (
@@ -208,7 +208,7 @@ export function CinematicBackdrop({
               className="block object-cover opacity-80 md:hidden"
               sizes="100vw"
               priority={priority}
-              loading={priority ? undefined : 'eager'}
+              loading={priority ? undefined : 'lazy'}
               aria-hidden
             />
           ) : null}
