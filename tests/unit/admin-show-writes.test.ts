@@ -71,7 +71,8 @@ const upd = (over: Record<string, unknown> = {}) => ({
 })
 const snapShowsAndCats = (f: ReturnType<typeof world>) => ({
   shows: f.snapshot().shows,
-  show_categories: f.snapshot().show_categories,
+  // The fake stamps an id on re-inserted rows; the real table has none.
+  show_categories: (f.snapshot().show_categories ?? []).map((r) => [r.show_id, r.category_id]),
 })
 const dbOps = (f: ReturnType<typeof world>, table: string, op: string) =>
   f.calls.filter((c) => c.table === table && c.op === op)
