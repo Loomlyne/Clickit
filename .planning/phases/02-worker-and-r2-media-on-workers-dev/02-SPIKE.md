@@ -112,3 +112,7 @@ Not answerable locally; all need the ClickitStory account and are handed to plan
 5. The account's workers.dev subdomain (the real URL).
 6. Real gzip size limit on Free versus the 3079.28 KiB bundle (see "Bundle and startup").
 7. Real D1 database id into `wrangler.jsonc` (now all zeros, local only) after RUNBOOK step 9; R2 is still not enabled on the account.
+
+## Bundle limit check (controller-side, 2026-10-20)
+
+Read https://developers.cloudflare.com/workers/platform/limits/ today: "Worker size (uncompressed) | 64 MiB | 64 MiB" (Free | Paid) and "There is no compressed size limit." The 3.08 MiB gzip figure is therefore not a blocker; 15.1 MiB raw is under 64 MiB on Free. The real deploy in plan 02-10 still confirms it.
