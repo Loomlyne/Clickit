@@ -106,12 +106,12 @@ export async function LandingHero() {
               </svg>
               {t('heroCta')}
             </Link>
-            <a
-              href="#shows"
+            <Link
+              href="/watch"
               className="inline-flex min-h-11 items-center rounded-full border border-[var(--uis-line-strong)] bg-transparent px-5 text-[14px] font-medium whitespace-nowrap text-[var(--text)] transition-colors hover:bg-[var(--bg-2)]"
             >
               {t('heroSecondaryCta')}
-            </a>
+            </Link>
           </div>
         </div>
       </div>
