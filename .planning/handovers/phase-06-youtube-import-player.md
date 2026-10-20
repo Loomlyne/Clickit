@@ -46,11 +46,38 @@ Also recorded as "Phase 6 hand-off" lines in the ROADMAP sections of Phases 2, 4
 |---|---|---|---|
 | 1 | Rate-limit seam stands in for `decideRateLimit` | Phase 2 | `src/server/youtube/rate-limit.ts:17` |
 | 2 | Cron route's inline Bearer check stands in for `cronAuthOk` | Phase 2 | `src/app/api/cron/youtube-recheck/route.ts:29` |
-| 3 | Register the `30 1 * * *` trigger for `/api/cron/youtube-recheck` | Phase 2 | `src/app/api/cron/youtube-recheck/route.ts:1` |
+| 3 | Register the `30 1 * * *` trigger for `/api/cron/youtube-recheck` (whichever of Phase 2 / Phase 6 lands second; controller wires it at merge) | Phase 2 | `src/app/api/cron/youtube-recheck/route.ts:1` |
 | 4 | `requireAdminForYouTube()` stands in for `requireAdmin()` (admins table + TOTP at `/{locale}/auth/mfa`; accepts both admins, so Nejib can import) | Phase 5 | `src/app/[locale]/admin/actions.ts:223` |
 | 5 | UAT admin script → replaced by `npm run seed:local-admin` (Phase 5; also applies M2 locally; TOTP code first after Phase 5 lands) | Phase 5 | outside the repo: `/Users/koss/.clickit-checks/phase06-uat-admin.cjs` (deleted after UAT) |
 | 6 | Status chip `brand-*-safe` tone classes | Phase 4 | `src/components/admin/youtube-status-chip.tsx:20` |
 | 7 | Advanced tab `text-brand-green-safe` → `var(--safe-green)` | Phase 4 | `src/components/admin/settings/advanced-tab.tsx:278` |
+
+## Review fixes (PR #27 review of record, fallback reviewer, REQUEST CHANGES, 2026-10-20)
+
+| # | Finding | Fix | Commit |
+|---|---|---|---|
+| 1 | Re-check auth not constant-time; no trigger | `src/server/youtube/bearer.ts`: SHA-256 both sides + `timingSafeEqual`; 401 on missing secret/header. **Route only:** the Worker cron trigger is NOT in this PR (see below) | 0c38984 |
+| 2 | Import/verify actions unlimited | `withinRateLimitCore` per admin, fail open: `yt-preview` 60, `yt-meta` 60, `yt-import` 10, `yt-key-test` 10 per 10 min; after the admin check, before any key read; code `rate_limited` (EN/AR) | 1cafb58 |
+| 3 | Shorts not verified on the server | `createShort` / `updateShort` run `parseVideoIdStrict` + `verifyVideoCore` (`checkDuplicate: false`), store the bare id, `key_missing` when no key; unchanged id not re-checked (`src/lib/admin/short-video.ts`) | 8586294 |
+| 4 | One viewer can raise the admin fault | **Chosen: threshold.** Each report is still recorded per user (1/hour, fail closed) in `rate_limits`; the flag is written only when 3 distinct users reported the episode within 24 h (`PLAYER_REPORT_THRESHOLD = 3`). No migration. The daily check clears the flag when the video is fine. Label "Reported by viewers" | bf77d7c |
+| 5 | Migration comment wrong; raw 23505 on import race | Comment corrected (import relies on `episodes_season_id_episode_number_key`, no advisory lock); that collision maps to `season_changed` "Season changed while you were importing. Try again." (EN/AR), after a complete rollback | 7d772eb |
+| 6 | Episodes reads stop at 1000 rows | `src/lib/admin/read-all-pages.ts` (`.order('id').range()` pages of 1000) in `recheckVideosCore` and the dashboard health read | 9a2b00f |
+| 7 | API-data retention (titles/descriptions/thumbnails > 30 days) | Not changed: owner decision, the controller asks Koss | — |
+
+### Cron trigger: wire at merge (controller)
+
+The Worker cron trigger for `/api/cron/youtube-recheck` (`30 1 * * *`) is added by whichever of Phase 2 (`claude/phase-02-execute-19d86a`, which turns the Vercel crons into Worker cron triggers) and Phase 6 lands second. Phase 6 does not edit Phase 2 files. When both are on main: add `'30 1 * * *' -> /api/cron/youtube-recheck` to `CRON_ROUTES` (`src/server/cron-schedule.ts`) and to `wrangler.jsonc` `triggers.crons`, and swap the inline check for `cronAuthOk` (TODO(phase-2) markers in the route).
+
+### Local database checks (shared stack, under the heavy lock, 2026-10-20 23:43 CET)
+
+- `supabase db reset --local`: exit 0, latest migration 20261020150526.
+- `has_function_privilege(..., 'execute')` on `public.renumber_season`, `public.record_youtube_checks`, `public.get_youtube_key`, `public.set_youtube_key`, `public.youtube_key_meta`, `private.get_youtube_key`, `private.set_youtube_key`, `private.youtube_key_meta`: **false** for `anon` and `authenticated` on all 8; true for `service_role`.
+- Renumber, in a rolled-back transaction: live −2, 1, 3, 7 and archived 2, 9 → `1:Ep −2 | 2:Ep 1 | 3:Ep 3 | 4:Ep 7 | 5:Ep 2 (archived) | 6:Ep 9 (archived)`; returned map `-2->1, 1->2, 7->4, 2->5, 9->6` (unchanged row 3 not returned); a second call raises `Already numbered 1 to N`; `authenticated` → permission denied.
+
+### Known limits after the fixes
+
+- `record_youtube_checks` refuses more than 5000 rows per call; with paging the daily check would fail above 5000 episodes (catalog ≈ 300). Batch the write if the catalog ever nears that.
+- Shorts save and episode save call YouTube without a rate limit (admin-only, one call per save); the dashboard seasons read is not paged.
 
 ## NOT verified
 
