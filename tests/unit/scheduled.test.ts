@@ -69,11 +69,11 @@ test('supabaseCleanupEnabled is false when no runtime is declared (fail closed)'
   assert.equal(supabaseCleanupEnabled({ CLICKIT_RUNTIME: '' }), false)
 })
 
-test('supabaseCleanupEnabled keeps today behaviour (true) on Vercel or an explicit node runtime', () => {
-  assert.equal(supabaseCleanupEnabled({ VERCEL: '1' }), true)
+test('supabaseCleanupEnabled keeps today behaviour (true) on an explicit node runtime only', () => {
+  assert.equal(supabaseCleanupEnabled({ VERCEL: '1' }), false)
   assert.equal(supabaseCleanupEnabled({ CLICKIT_RUNTIME: 'node' }), true)
 })
 
-test('supabaseCleanupEnabled never lets VERCEL=1 override the workers runtime', () => {
+test('supabaseCleanupEnabled ignores VERCEL=1 on the workers runtime', () => {
   assert.equal(supabaseCleanupEnabled({ CLICKIT_RUNTIME: 'workers', VERCEL: '1' }), false)
 })

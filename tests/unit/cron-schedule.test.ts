@@ -22,7 +22,7 @@ test('cronPathFor does not resolve inherited object keys', () => {
   assert.equal(cronPathFor('toString'), null)
 })
 
-test('CRON_ROUTES is frozen and has exactly the two vercel.json crons', () => {
+test('CRON_ROUTES is frozen and has exactly the two publish/cleanup crons', () => {
   assert.equal(Object.isFrozen(CRON_ROUTES), true)
   assert.deepEqual(Object.keys(CRON_ROUTES).sort(), ['0 1 * * *', '0 4 * * 1'])
 })

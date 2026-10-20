@@ -32,16 +32,16 @@ export function buildCronRequest(
   })
 }
 
-// Reads CLICKIT_RUNTIME, CLEANUP_SUPABASE_ORIGINALS and VERCEL.
+// Reads CLICKIT_RUNTIME and CLEANUP_SUPABASE_ORIGINALS.
 export type CleanupEnv = Readonly<Record<string, string | undefined>>
 
 /**
  * May cleanup-media delete Supabase Storage originals? On the Worker only with
- * CLEANUP_SUPABASE_ORIGINALS=on (not set in Phase 2). Vercel and an explicit
- * node runtime keep today's behaviour. No declared runtime refuses (fail
+ * CLEANUP_SUPABASE_ORIGINALS=on (not set in Phase 2). An explicit node runtime
+ * (CLICKIT_RUNTIME=node) keeps today's behaviour. No declared runtime refuses (fail
  * closed, so a dropped CLICKIT_RUNTIME var can never switch deletion on).
  */
 export function supabaseCleanupEnabled(env: CleanupEnv): boolean {
   if (env.CLICKIT_RUNTIME === 'workers') return env.CLEANUP_SUPABASE_ORIGINALS === 'on'
-  return env.VERCEL === '1' || env.CLICKIT_RUNTIME === 'node'
+  return env.CLICKIT_RUNTIME === 'node'
 }

@@ -1,6 +1,6 @@
 // Cron string -> internal route map (PLAT-04). Pure. The strings are the same
-// UTC schedules that vercel.json carries today and that wrangler.jsonc gets at
-// the Phase 3 cutover; keep the three in step.
+// UTC schedules that wrangler.jsonc gets at the Phase 3 cutover (the retired
+// vercel.json carried the same two); keep CRON_EXPRESSIONS_FOR_PHASE_3 in step.
 
 export const CRON_ROUTES: Readonly<Record<string, string>> = Object.freeze({
   '0 1 * * *': '/api/cron/publish-scheduled',

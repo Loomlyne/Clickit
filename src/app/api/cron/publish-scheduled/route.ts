@@ -14,10 +14,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
  * (see lib/scheduling.isEpisodeLive), so an episode is watchable at the exact
  * scheduled minute regardless of when this cron runs. This sweep persists the
  * status change so search, admin views, and the Now Streaming / Coming Soon rail
- * placement stay correct. Daily is sufficient (Vercel Hobby plan limit).
+ * placement stay correct. Daily is sufficient.
  *
- * Schedule: see vercel.json. Auth: Vercel sends `Authorization: Bearer
- * ${CRON_SECRET}` automatically.
+ * Schedule: daily 01:00 UTC (src/server/cron-schedule.ts). Auth: the Worker
+ * scheduled handler sends `Authorization: Bearer ${CRON_SECRET}`.
  *   Local dev: curl -H "Authorization: Bearer $CRON_SECRET" \
  *     localhost:3000/api/cron/publish-scheduled
  */

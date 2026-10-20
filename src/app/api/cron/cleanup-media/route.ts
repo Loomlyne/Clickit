@@ -13,7 +13,7 @@ import { supabaseCleanupEnabled } from '@/server/scheduled'
  * back via Cancel without destroying the live asset. The tradeoff is that each
  * Save leaves the old file as an orphan. This cron picks up the orphans.
  *
- * Schedule: weekly (see vercel.json). Wall-clock cost is O(shows + storage
+ * Schedule: weekly, Monday 04:00 UTC (src/server/cron-schedule.ts). Wall-clock cost is O(shows + storage
  * objects); at current scale (~15 shows, ~100 files) it finishes in seconds.
  *
  * Safety rules:
@@ -21,11 +21,11 @@ import { supabaseCleanupEnabled } from '@/server/scheduled'
  *     in-progress drawer edit that hasn't been saved yet).
  *   - Only operates on specific prefixes (shows/{uuid}/hero* etc.) so stray
  *     files in other folders are never touched.
- *   - Requires the Vercel CRON_SECRET header so the endpoint can't be called
+ *   - Requires the CRON_SECRET bearer header so the endpoint can't be called
  *     by anyone who guesses the URL.
  *
  * Invocation:
- *   Vercel cron sends `Authorization: Bearer ${CRON_SECRET}` automatically.
+ *   The Worker scheduled handler sends `Authorization: Bearer ${CRON_SECRET}`.
  *   Local dev: curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/cleanup-media
  */
 
