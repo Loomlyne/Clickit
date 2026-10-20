@@ -453,6 +453,40 @@ html[lang='ar'] [class*='tracking-['] {
   }
 }
 
+/* Loading skeleton bones (components/skeletons). Surface tokens only: a
+   --bg-2 bone with a soft --bg-3 sweep that follows reading direction, and a
+   still --bg-2 bone when the OS asks for less motion. */
+.skeleton-bone {
+  background: linear-gradient(
+    90deg,
+    var(--bg-2) 0%,
+    var(--bg-3) 50%,
+    var(--bg-2) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+[dir='rtl'] .skeleton-bone {
+  animation-direction: reverse;
+}
+
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-bone {
+    animation: none;
+    background: var(--bg-2);
+  }
+}
+
 /* Watch page: hide shared navbar + footer, the component renders its own header */
 .watch-page-wrap ~ footer {
   display: none;

@@ -77,9 +77,6 @@ export function DragScroll({
       ref={trackRef}
       // touch-auto: let the browser resolve gesture axis — horizontal swipe scrolls the
       // rail (native overflow-x), vertical swipe scrolls the page. Never block vertical.
-      // No data-lenis-prevent: Lenis only smooths the wheel (touch stays native by
-      // default), so a prevent zone here would desync Lenis on desktop and cause the
-      // page to stutter/jump. Vertical wheel is handled uniformly by Lenis instead.
       className={cn(
         'cursor-grab active:cursor-grabbing data-[dragging=true]:select-none',
         'touch-auto overscroll-x-contain',

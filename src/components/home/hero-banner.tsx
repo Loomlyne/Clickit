@@ -86,6 +86,7 @@ export function HeroBanner({ shows, isMobile }: HeroBannerProps) {
               firstEpisodeId={firstEpisodeId}
               hasWatched={hasWatched}
               isActive={i === activeIndex}
+              priority={i === 0}
               isMobile={isMobile}
               reducedMotion={shouldReduceMotion}
               onContentHoverChange={setIsPaused}
