@@ -10,7 +10,9 @@
 // 24 hours is the flag raised, with one update of two fixed columns on that
 // episode (PR #27 review, finding 4: one account alone cannot raise a fault).
 // The daily re-check (record_youtube_checks) clears the flag when YouTube says
-// the video is ok.
+// the video is ok and stamps youtube_checked_at; only reports made after the
+// episode's last check count, so after a clear it takes PLAYER_REPORT_THRESHOLD
+// new viewers to raise the flag again (PR #27 re-review, note 2).
 
 import type { AdminDb } from '../lib/admin/ports'
 import { REPORTABLE_PLAYER_ERRORS } from '../lib/watch/player-errors.ts'
@@ -61,7 +63,7 @@ export async function reportPlayerErrorCore(input: {
 
   const { data: episode, error: readError } = await db
     .from('episodes')
-    .select('id, status')
+    .select('id, status, youtube_checked_at')
     .eq('id', episodeId)
     .maybeSingle()
   if (readError || !episode || episode.status !== 'published') {
@@ -77,11 +79,11 @@ export async function reportPlayerErrorCore(input: {
   })
   if (!allowed) return { ok: false, reason: 'limited' }
 
-  // Different viewers in the last 24 hours, this report included. The episode
-  // id is a checked uuid, so the LIKE prefix has no wildcard in it. Each viewer
-  // adds at most one row an hour, so the default 1000-row page holds well over
-  // PLAYER_REPORT_THRESHOLD viewers.
-  const since = new Date(now.getTime() - PLAYER_REPORT_COUNT_WINDOW_MS).toISOString()
+  // Different viewers in the last 24 hours and since the episode's last check,
+  // this report included. The episode id is a checked uuid, so the LIKE prefix
+  // has no wildcard in it. Each viewer adds at most one row an hour, so the
+  // default 1000-row page holds well over PLAYER_REPORT_THRESHOLD viewers.
+  const since = new Date(reportCountSince(now, episode.youtube_checked_at)).toISOString()
   let reporters: number
   try {
     const { data: rows, error: countError } = await db
@@ -103,4 +105,15 @@ export async function reportPlayerErrorCore(input: {
   if (error) return { ok: false, reason: 'failed' }
 
   return { ok: true }
+}
+
+/**
+ * Start of the different-viewer count: the later of (now - 24 h) and the
+ * episode's last check. A missing or unreadable check time leaves just the
+ * 24-hour window.
+ */
+export function reportCountSince(now: Date, checkedAt: unknown): number {
+  const windowStart = now.getTime() - PLAYER_REPORT_COUNT_WINDOW_MS
+  const checked = typeof checkedAt === 'string' ? Date.parse(checkedAt) : NaN
+  return Number.isFinite(checked) ? Math.max(windowStart, checked) : windowStart
 }

@@ -7,6 +7,7 @@ import {
   PLAYER_REPORT_COUNT_WINDOW_MS,
   PLAYER_REPORT_THRESHOLD,
   PLAYER_REPORT_WINDOW_MS,
+  reportCountSince,
   reportPlayerErrorCore,
 } from '../../src/server/player-error-report.ts'
 import { createFakeSupabase } from './helpers/fake-supabase.ts'
@@ -237,6 +238,93 @@ test('the viewer count reads distinct keys by episode prefix inside 24 hours', a
     { kind: 'like', col: 'key', value: `player-error:${EP}:%` },
     { kind: 'gte', col: 'created_at', value: '2025-12-31T00:00:30.000Z' },
   ])
+})
+
+// PR #27 re-review, note 2: the daily check clears the flag and stamps
+// youtube_checked_at; only reports after that check count.
+const CHECKED_AT = '2025-12-31T18:00:00.000Z'
+const report = (id: string, user: string, at: string) => ({
+  id,
+  key: `player-error:${EP}:${user}`,
+  created_at: at,
+})
+const checkedWorld = (rateLimits: Array<Record<string, unknown>>) =>
+  createFakeSupabase({
+    episodes: [
+      {
+        id: EP,
+        status: 'published',
+        player_error_code: null,
+        player_error_at: null,
+        youtube_checked_at: CHECKED_AT,
+      },
+    ],
+    rate_limits: rateLimits,
+  })
+
+test('after a check: two reports before it plus one after do not raise the flag', async () => {
+  const fake = checkedWorld([
+    report('before-1', V2, '2025-12-31T12:00:00.000Z'),
+    report('before-2', V3, '2025-12-31T17:59:59.999Z'),
+  ])
+  // This user's report is the only one after the check.
+  assert.deepEqual(await call(fake), { ok: true })
+  assert.equal(episodeWrites(fake).length, 0)
+  const ep = fake.tables.episodes.find((e) => e.id === EP)
+  assert.equal(ep?.player_error_code, null)
+  assert.equal(ep?.player_error_at, null)
+})
+
+test('after a check: three different viewers after it raise the flag', async () => {
+  const fake = checkedWorld([
+    report('before-1', V2, '2025-12-31T12:00:00.000Z'),
+    report('after-1', V2, '2025-12-31T19:00:00.000Z'),
+    report('after-2', V3, '2025-12-31T20:00:00.000Z'),
+  ])
+  assert.deepEqual(await call(fake), { ok: true })
+  assert.equal(episodeWrites(fake).length, 1)
+  assert.equal(fake.tables.episodes.find((e) => e.id === EP)?.player_error_code, 150)
+})
+
+test('the count starts at the later of the last check and 24 hours ago', async () => {
+  const fake = checkedWorld([])
+  await call(fake)
+  const selects = fake.calls.filter((c) => c.table === 'rate_limits' && c.op === 'select')
+  assert.deepEqual(selects[1].filters[1], { kind: 'gte', col: 'created_at', value: CHECKED_AT })
+
+  const dayStart = NOW.getTime() - PLAYER_REPORT_COUNT_WINDOW_MS
+  assert.equal(reportCountSince(NOW, CHECKED_AT), Date.parse(CHECKED_AT))
+  // A check older than 24 hours, no check, or junk: just the 24-hour window.
+  assert.equal(reportCountSince(NOW, '2025-12-20T00:00:00.000Z'), dayStart)
+  assert.equal(reportCountSince(NOW, null), dayStart)
+  assert.equal(reportCountSince(NOW, undefined), dayStart)
+  assert.equal(reportCountSince(NOW, 'not a date'), dayStart)
+})
+
+test('no check yet: reports from the whole 24 hours count, as before', async () => {
+  const fake = createFakeSupabase({
+    episodes: [
+      {
+        id: EP,
+        status: 'published',
+        player_error_code: null,
+        player_error_at: null,
+        youtube_checked_at: null,
+      },
+    ],
+    rate_limits: [
+      report('early-1', V2, '2025-12-31T01:00:00.000Z'),
+      report('early-2', V3, '2025-12-31T02:00:00.000Z'),
+    ],
+  })
+  assert.deepEqual(await call(fake), { ok: true })
+  assert.equal(episodeWrites(fake).length, 1)
+  const selects = fake.calls.filter((c) => c.table === 'rate_limits' && c.op === 'select')
+  assert.deepEqual(selects[1].filters[1], {
+    kind: 'gte',
+    col: 'created_at',
+    value: '2025-12-31T00:00:30.000Z',
+  })
 })
 
 test('a viewer-count read error: refused as failed, the episode is not touched', async () => {
