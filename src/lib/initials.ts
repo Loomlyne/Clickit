@@ -12,7 +12,7 @@ export function viewerInitials(
   const parts = name.split(/[\s._-]+/).filter(Boolean)
   const letters =
     parts.length > 1
-      ? parts[0][0] + parts[1][0]
+      ? Array.from(parts[0])[0] + Array.from(parts[1])[0]
       : Array.from(name).slice(0, 2).join('')
   return letters.toUpperCase()
 }
