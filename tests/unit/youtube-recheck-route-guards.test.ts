@@ -38,14 +38,16 @@ test('route exports GET', () => {
   assert.match(route, /export async function GET\(req: Request\)/)
 })
 
-test('auth block has the publish-scheduled shape and runs before any other work', () => {
+test('auth block is the constant-time check and runs before any other work', () => {
   const block = [
     "const authHeader = req.headers.get('authorization')",
-    'const cronSecret = process.env.CRON_SECRET?.trim()',
-    'const expected = `Bearer ${cronSecret}`',
-    'if (!cronSecret || authHeader !== expected) {',
+    'if (!bearerMatches(authHeader, process.env.CRON_SECRET)) {',
     "return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })",
   ]
+  assert.ok(route.includes("import { bearerMatches } from '@/server/youtube/bearer'"))
+  // No plain string compare of the header is left.
+  assert.doesNotMatch(route, /authHeader\s*[!=]==/)
+  assert.doesNotMatch(route, /[!=]==\s*authHeader/)
   let at = route.indexOf('export async function GET')
   for (const line of block) {
     const i = route.indexOf(line, at)

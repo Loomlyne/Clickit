@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 
 import { recheckVideosCore, type RecheckReason } from '@/lib/admin/youtube-check'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { bearerMatches } from '@/server/youtube/bearer'
 import { getServerYouTubeClient } from '@/server/youtube-service'
 
 /**
@@ -27,10 +28,9 @@ const YOUTUBE_REASONS = new Set<RecheckReason>(['quota', 'key_rejected', 'api_no
 export async function GET(req: Request) {
   // --- Auth guard ----------------------------------------------------------
   // TODO(phase-2): swap the inline Bearer check for cronAuthOk(header, secret) from src/server/cron-auth.ts (constant time)
+  // SHA-256 of both sides, compared with timingSafeEqual (src/server/youtube/bearer.ts).
   const authHeader = req.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET?.trim()
-  const expected = `Bearer ${cronSecret}`
-  if (!cronSecret || authHeader !== expected) {
+  if (!bearerMatches(authHeader, process.env.CRON_SECRET)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
