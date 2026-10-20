@@ -34,6 +34,7 @@ export type ShowRestoreConflict = {
 }
 
 export type RestoreResult = ActionResult & {
+  wrote?: boolean
   conflicts?: EpisodeConflict[]
   showConflict?: ShowRestoreConflict
 }
