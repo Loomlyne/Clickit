@@ -9,34 +9,37 @@ import { contrastRatio } from '../../src/lib/design-truth.ts'
 
 const css = readFileSync(new URL('../../src/styles/globals.css', import.meta.url), 'utf8')
 
+// Every colour role from Koss's signed 05-q12-schemes picture (D-27 = Q12 C).
 test('light scheme values are pinned', () => {
   assert.deepEqual(EMAIL_TOKENS.light, {
+    page: '#F4F4F4',
+    card: '#FFFFFF',
     header: '#090909',
-    headerText: '#F4F4F4',
-    body: '#ffffff',
     heading: '#111111',
-    text: '#333333',
-    codeBg: '#f6f6f6',
-    codeBorder: '#e5e5e5',
-    codeText: '#090909',
-    footerText: '#767676',
-    divider: '#eeeeee',
+    body: '#333333',
+    hint: '#555555',
+    codeBox: '#F6F6F6',
+    codeBorder: '#E5E5E5',
+    code: '#090909',
+    rule: '#E5E5E5',
+    footer: '#767676',
   })
 })
 
 test('dark scheme values are pinned', () => {
   assert.deepEqual(EMAIL_TOKENS.dark, {
     page: '#090909',
-    body: '#090909',
-    header: '#090909',
+    card: '#101010',
+    cardBorder: '#222222',
+    header: '#101010',
+    headerRule: '#222222',
     heading: '#F4F4F4',
-    text: '#CCCCCC',
-    headerDivider: '#1d1d1d',
-    codeBg: '#191919',
+    body: '#CCCCCC',
+    hint: '#A1A1A1',
+    codeBox: '#191919',
     codeBorder: '#2A2A2A',
-    codeText: '#ffcc00',
-    footerText: '#A1A1A1',
-    divider: '#1d1d1d',
+    code: '#ffcc00',
+    footer: '#A1A1A1',
   })
 })
 
@@ -61,8 +64,17 @@ test('button colours equal --primary / --primary-foreground in globals.css', () 
   assert.equal(EMAIL_TOKENS.button.ink.toLowerCase(), ink?.toLowerCase())
 })
 
-// Light footerText is #767676 (4.54:1 on #ffffff), not Phase 5's pictured #777777 (4.48:1,
-// under AA). Same look; Phase 5 confirms when it signs its picture.
-test('light footer text meets AA (4.5:1) on the light body', () => {
-  assert.ok(contrastRatio(EMAIL_TOKENS.light.footerText, EMAIL_TOKENS.light.body) >= 4.5)
+// Light footer is #767676 (4.54:1 on the white card), as signed in 05-q12-schemes.
+test('light footer text meets AA (4.5:1) on the light card', () => {
+  assert.ok(contrastRatio(EMAIL_TOKENS.light.footer, EMAIL_TOKENS.light.card) >= 4.5)
+})
+
+test('body, hint and footer text meet AA on their card in both schemes', () => {
+  for (const s of [EMAIL_TOKENS.light, EMAIL_TOKENS.dark]) {
+    for (const role of ['heading', 'body', 'hint', 'footer'] as const) {
+      assert.ok(contrastRatio(s[role], s.card) >= 4.5, role)
+    }
+  }
+  assert.ok(contrastRatio(EMAIL_TOKENS.dark.code, EMAIL_TOKENS.dark.codeBox) >= 4.5)
+  assert.ok(contrastRatio(EMAIL_TOKENS.light.code, EMAIL_TOKENS.light.codeBox) >= 4.5)
 })
