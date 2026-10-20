@@ -34,7 +34,7 @@ export function PortraitShowCard({
       )}
 
       <Link href={`/series/${show.slug}`} className="block">
-        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-[12px] bg-[var(--bg-2)] transition-transform duration-[250ms] ease-[var(--ease)] group-hover:-translate-y-1">
+        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-card bg-[var(--bg-2)] transition-transform duration-[250ms] ease-[var(--ease)] group-hover:-translate-y-1">
           {show.posterUrl || show.heroImageUrl ? (
             <Image
               src={(show.posterUrl ?? show.heroImageUrl) as string}
