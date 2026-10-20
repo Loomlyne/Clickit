@@ -1,0 +1,115 @@
+name: PR gate
+
+# Gates every pull request to main (SAFE-03) and runs the migration guard (SAFE-02).
+# Two checks, named exactly `gate` and `migration-guard`; both always report a result.
+#
+# Why there is no workflow-level path filter: a required check that a path filter
+# skips stays Pending forever and blocks docs-only PRs. So the workflow always runs
+# and the `scope` step inside `gate` classifies the change set instead; docs-only
+# PRs skip the heavy steps and the job still ends green.
+#
+# Safety posture (the repo is public):
+#   - Uses the plain `pull_request` event, never the target-event variant that runs
+#     with base-repo privileges against untrusted PR code.
+#   - No secrets are referenced anywhere in this file; the token is read-only.
+#   - Third-party actions are pinned to a full commit SHA (version in the comment).
+#   - Linux only, one run per PR head (concurrency cancels the older run), timeouts on both jobs.
+#
+# `migration-guard` judges the PR with the BASE branch's copy of the guard
+# (git show HEAD^1:...), so a PR cannot weaken the check that judges it. The PR's own
+# copy is used only when the base has no guard at all, which is true only for the
+# Phase 1 PR itself (a warning says so).
+#
+# `gate` calls the steps directly rather than the local gate script: the local script
+# gains Mac-only steps in Phase 2.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  migration-guard:
+    name: migration-guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+
+      - name: Select guard copy
+        # On pull_request the checkout is the merge commit, so HEAD^1 is the base tip.
+        run: |
+          if git cat-file -e HEAD^1:scripts/migration-guard.mjs 2>/dev/null; then
+            git show HEAD^1:scripts/migration-guard.mjs > "$RUNNER_TEMP/guard.mjs"
+            echo "Using the base branch guard"
+          else
+            cp scripts/migration-guard.mjs "$RUNNER_TEMP/guard.mjs"
+            echo "::warning::Base branch has no migration guard; using the PR copy (Phase 1 PR only)"
+          fi
+
+      - name: Run guard
+        run: node "$RUNNER_TEMP/guard.mjs" --base HEAD^1 --head HEAD
+
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Classify change set
+        id: scope
+        run: |
+          if git diff --name-only HEAD^1 HEAD | grep -qvE '(\.md$|^docs/|^\.planning/)'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+            echo "Docs-only change: heavy steps skipped."
+          fi
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.scope.outputs.code == 'true'
+        with:
+          node-version: '24'
+
+      - name: Install
+        if: steps.scope.outputs.code == 'true'
+        run: npm ci
+
+      - name: Lint
+        if: steps.scope.outputs.code == 'true'
+        run: npm run lint
+
+      - name: Typecheck
+        if: steps.scope.outputs.code == 'true'
+        run: npm run typecheck
+
+      - name: Unit tests
+        if: steps.scope.outputs.code == 'true'
+        run: npm run test:unit
+
+      - name: Build
+        if: steps.scope.outputs.code == 'true'
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          NEXT_PUBLIC_SITE_URL: https://www.clickitstory.ae
+          NEXT_TELEMETRY_DISABLED: '1'
