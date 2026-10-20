@@ -12,12 +12,25 @@ export const PUBLIC_MEDIA_BUCKETS: ReadonlySet<string> = new Set([
   'avatars',
 ])
 
+/** Plan 02-03 name for the same allowlist (never contains a private bucket). */
+export const MEDIA_BUCKETS: ReadonlySet<string> = PUBLIC_MEDIA_BUCKETS
+
+/**
+ * Pre-optimised variant widths. Variants live in the same R2 bucket at
+ * `_v/<width>/<avif|webp>/<bucket>/<key>` (contract shared with the copy
+ * script and browser uploads). They are only ever read from R2.
+ */
+export const VARIANT_WIDTHS: readonly number[] = [640, 1280, 1920]
+const VARIANT_FORMATS = [
+  { format: 'avif', mime: 'image/avif' },
+  { format: 'webp', mime: 'image/webp' },
+] as const
+
 // Images are rendered as images; SVG opened directly cannot run script.
 export const MEDIA_CSP = "default-src 'none'; style-src 'unsafe-inline'; sandbox"
 
 export const VERSIONED_CACHE_CONTROL = 'public, max-age=31536000, immutable'
-export const UNVERSIONED_CACHE_CONTROL =
-  'public, max-age=86400, stale-while-revalidate=604800'
+export const UNVERSIONED_CACHE_CONTROL = 'public, max-age=3600'
 const ERROR_CACHE_CONTROL = 'public, max-age=60'
 
 const PASSTHROUGH_HEADERS = [
@@ -110,11 +123,63 @@ export function guessContentType(key: string) {
   return CONTENT_TYPES[extension] ?? 'application/octet-stream'
 }
 
-export function cacheControlFor(url: URL, stored?: string | null) {
-  if (stored) return stored
-  return url.searchParams.has('v')
-    ? VERSIONED_CACHE_CONTROL
-    : UNVERSIONED_CACHE_CONTROL
+/**
+ * `?v=` (admin cache-bust) or a served variant is immutable; otherwise a
+ * stored Cache-Control wins, else one hour.
+ */
+export function cacheControlFor(
+  url: URL,
+  variantServed = false,
+  stored?: string | null
+) {
+  if (variantServed || url.searchParams.has('v')) return VERSIONED_CACHE_CONTROL
+  return stored || UNVERSIONED_CACHE_CONTROL
+}
+
+/** The requested variant width when `?w=` is an allowed width, else null. */
+export function variantWidth(url: URL): number | null {
+  const raw = url.searchParams.get('w')
+  if (!raw || !/^\d+$/.test(raw)) return null
+  const width = Number(raw)
+  return VARIANT_WIDTHS.includes(width) ? width : null
+}
+
+function acceptsType(accept: string, mime: string) {
+  for (const part of accept.split(',')) {
+    const [type, ...params] = part.trim().toLowerCase().split(';')
+    if (type.trim() !== mime) continue
+    const q = params
+      .map((param) => param.trim())
+      .find((param) => param.startsWith('q='))
+    if (q && !(Number(q.slice(2)) > 0)) continue
+    return true
+  }
+  return false
+}
+
+/**
+ * Ordered R2 keys to try for `<bucket>/<key>`: AVIF variant, WebP variant,
+ * then the original (always the last candidate).
+ */
+export function variantCandidates(
+  objectKey: string,
+  width: number,
+  accept: string
+): string[] {
+  const candidates: string[] = []
+  if (VARIANT_WIDTHS.includes(width)) {
+    for (const { format, mime } of VARIANT_FORMATS) {
+      if (acceptsType(accept, mime)) {
+        candidates.push(`_v/${width}/${format}/${objectKey}`)
+      }
+    }
+  }
+  candidates.push(objectKey)
+  return candidates
+}
+
+function isSvg(contentType: string | null | undefined) {
+  return !!contentType && contentType.toLowerCase().startsWith('image/svg+xml')
 }
 
 function securityHeaders(headers: Headers) {
@@ -161,7 +226,8 @@ async function fromR2(
   bucket: MediaBucket,
   objectKey: string,
   request: Request,
-  url: URL
+  url: URL,
+  variant = false
 ): Promise<Response | null> {
   const isHead = request.method === 'HEAD'
   const object = isHead
@@ -173,13 +239,13 @@ async function fromR2(
   if (!object) return null
 
   const headers = securityHeaders(new Headers())
-  headers.set(
-    'Content-Type',
+  const contentType =
     object.httpMetadata?.contentType || guessContentType(objectKey)
-  )
+  headers.set('Content-Type', contentType)
+  if (isSvg(contentType)) headers.set('Content-Disposition', 'inline')
   headers.set(
     'Cache-Control',
-    cacheControlFor(url, object.httpMetadata?.cacheControl)
+    cacheControlFor(url, variant, object.httpMetadata?.cacheControl)
   )
   headers.set('ETag', object.httpEtag)
   headers.set('Last-Modified', object.uploaded.toUTCString())
@@ -191,8 +257,17 @@ async function fromR2(
     return new Response(null, { status: 200, headers })
   }
 
-  // `onlyIf` failed: R2 returns metadata without a body.
-  if (!object.body) return new Response(null, { status: 304, headers })
+  // `onlyIf` failed: R2 returns metadata without a body. 304 for the
+  // cache validators, 412 when If-Match / If-Unmodified-Since failed.
+  if (!object.body) {
+    const h = request.headers
+    const notModified =
+      h.has('if-none-match') ||
+      (h.has('if-modified-since') &&
+        !h.has('if-match') &&
+        !h.has('if-unmodified-since'))
+    return new Response(null, { status: notModified ? 304 : 412, headers })
+  }
 
   const range = request.headers.has('range') ? r2ContentRange(object) : null
   if (range) {
@@ -250,6 +325,9 @@ async function fromSupabase(
   if (!upstreamType || upstreamType.startsWith('application/octet-stream')) {
     headers.set('Content-Type', guessContentType(path.key))
   }
+  if (isSvg(headers.get('Content-Type'))) {
+    headers.set('Content-Disposition', 'inline')
+  }
   headers.set('Accept-Ranges', 'bytes')
   headers.set(
     'Cache-Control',
@@ -260,6 +338,44 @@ async function fromSupabase(
   const body =
     request.method === 'HEAD' || upstream.status === 304 ? null : upstream.body
   return new Response(body, { status: upstream.status, headers })
+}
+
+async function serve(
+  request: Request,
+  env: MediaEnv,
+  fetchImpl: MediaFetch,
+  url: URL,
+  path: MediaPath,
+  width: number | null
+): Promise<Response> {
+  if (env.MEDIA_BUCKET) {
+    const objectKey = `${path.bucket}/${path.key}`
+    const candidates =
+      width === null
+        ? [objectKey]
+        : variantCandidates(
+            objectKey,
+            width,
+            request.headers.get('accept') ?? ''
+          )
+    try {
+      for (const candidate of candidates) {
+        const hit = await fromR2(
+          env.MEDIA_BUCKET,
+          candidate,
+          request,
+          url,
+          candidate !== objectKey
+        )
+        if (hit) return hit
+      }
+    } catch {
+      // R2 unavailable: fall through to the Supabase original.
+    }
+  }
+
+  // Variants exist only in R2; the permanent fallback is the original.
+  return fromSupabase(env, path, request, url, fetchImpl)
 }
 
 export async function handleMediaRequest(
@@ -286,19 +402,9 @@ export async function handleMediaRequest(
   const path = parseMediaPath(url.pathname)
   if (!path) return errorResponse(404)
 
-  if (env.MEDIA_BUCKET) {
-    try {
-      const hit = await fromR2(
-        env.MEDIA_BUCKET,
-        `${path.bucket}/${path.key}`,
-        request,
-        url
-      )
-      if (hit) return hit
-    } catch {
-      // R2 unavailable: fall through to the Supabase original.
-    }
-  }
-
-  return fromSupabase(env, path, request, url, fetchImpl)
+  const width = variantWidth(url)
+  const response = await serve(request, env, fetchImpl, url, path, width)
+  // Every answer to an allowed ?w= depends on Accept (variant or original).
+  if (width !== null) response.headers.append('Vary', 'Accept')
+  return response
 }
