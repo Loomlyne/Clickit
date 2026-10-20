@@ -15,7 +15,10 @@ export function PageEyebrow({
   className?: string
 }) {
   return (
-    <p className={cn('mono mb-4 text-[var(--text-mute)]', className)}>
+    <p className={cn(
+        'mb-4 font-[family-name:var(--font-app)] text-[11px] tracking-[0.08em] uppercase text-[var(--text-mute)]',
+        className
+      )}>
       {children}
     </p>
   )

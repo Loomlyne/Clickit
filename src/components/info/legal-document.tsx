@@ -47,7 +47,7 @@ export const legalLinkClass =
 
 export function LegalUpdated({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mono mt-2 border-t border-[var(--line)] pt-6 text-[11px] text-[var(--text-mute)]">
+    <p className="mt-2 border-t border-[var(--line)] pt-6 font-[family-name:var(--font-app)] text-[11px] tracking-[0.08em] uppercase text-[var(--text-mute)]">
       {children}
     </p>
   )

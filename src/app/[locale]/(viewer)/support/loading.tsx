@@ -41,8 +41,8 @@ export default function SupportLoading() {
 
       {/* FAQ section */}
       <section className="mt-12 sm:mt-16">
-        <div className="mx-auto mb-6 h-9 max-w-[860px] animate-pulse rounded-lg bg-white/[0.08] sm:w-80" />
         <div className="mx-auto max-w-[860px] space-y-3">
+          <div className="mb-3 h-9 w-full animate-pulse rounded-lg bg-white/[0.08] sm:w-80" />
           {Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}

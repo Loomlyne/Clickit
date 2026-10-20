@@ -25,7 +25,7 @@ export async function ComingSoonSplash() {
           className="h-auto w-[min(72vw,420px)] object-contain drop-shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
         />
 
-        <p className="mono mt-10 text-[11px] tracking-[0.28em] text-[var(--text-mute)] uppercase">
+        <p className="mt-10 font-[family-name:var(--font-app)] text-[11px] tracking-[0.28em] text-[var(--text-mute)] uppercase">
           {t('gateEyebrow')}
         </p>
 

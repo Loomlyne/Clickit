@@ -208,14 +208,13 @@ export function ContactForm() {
         </p>
       )}
 
-      {submitState === 'saved_email_failed' && (
-        <p
-          role="status"
-          className="border-brand-orange-safe/35 bg-brand-orange-safe/10 rounded-xl border px-3.5 py-3 text-sm leading-snug text-[var(--text)]"
-        >
-          {t('savedEmailFailedInline')}
-        </p>
-      )}
+      <div role="status">
+        {submitState === 'saved_email_failed' && (
+          <p className="border-brand-orange-safe/35 bg-brand-orange-safe/10 rounded-[12px] border px-3.5 py-3 text-sm leading-snug text-[var(--text)]">
+            {t('savedEmailFailedInline')}
+          </p>
+        )}
+      </div>
 
       <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting ? t('submitButton') + '…' : t('submitButton')}

@@ -6,7 +6,7 @@ Branch `claude/design-b3-info-75ed00`, base `ui-system-home` (PR #17). Signed pi
 - New `src/components/info/` (`PageEyebrow`, `PageTitle`, `LegalDocument`, `LegalSection`, `LegalUpdated`): one title recipe, one legal shell, no nested `<main>`, underlined legal links. Legal wording untouched (same i18n keys / DB content).
 - About: flat hero card, CTA is the real `Button`.
 - Support: FAQ reuses the landing `FaqAccordion`; brand strip via `bg-brand-*`; contact form fields all 8px, 44px consent row, errors linked with `aria-invalid`/`aria-describedby`, autocomplete, warning box uses card radius + brand-orange-safe.
-- Updates / `newsletter-signup-form.tsx`: `Input` + `Button`, accessible name (new key `newsletter.emailLabel`, en + ar), `role="status"` result, `role="alert"` error. Footer (compact) variant: same look, now has an accessible name.
+- Updates / `newsletter-signup-form.tsx`: `Input` + `Button`, accessible name (new key `newsletter.emailLabel`, en + ar), `role="status"` result, `role="alert"` error. The compact variant is unused by any page today; it only gained an accessible name.
 - Coming soon: indigo glow replaced by yellow tint, `--text`, `--nav-h`.
 - Skeletons: about, privacy (+terms re-export), support, updates, coming-soon redrawn to match pages; `portfolio-skeletons.tsx` shared by `portfolio/page.tsx` and `portfolio/loading.tsx` (offset now `--nav-h`).
 - Deleted `(viewer)/design-system/*` (6 files) and its `src/proxy.ts` entry.
