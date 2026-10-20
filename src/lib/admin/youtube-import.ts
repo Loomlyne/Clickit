@@ -80,6 +80,16 @@ export const IMPORT_CHANGED_MESSAGE =
   'Some videos changed on YouTube since the preview. Paste the link again.'
 export const IMPORT_DUPLICATE_MESSAGE =
   'One or more of these videos is already on Clickit. Paste the link again.'
+export const IMPORT_SEASON_CHANGED_MESSAGE =
+  'Season changed while you were importing. Try again.'
+
+/**
+ * The unique (season_id, episode_number) constraint (create_schema, Postgres's
+ * default name). Imports take no advisory lock, so a renumber or reorder that
+ * lands between the max-number read and the insert collides here.
+ */
+const SEASON_NUMBER_CONSTRAINT = 'episodes_season_id_episode_number_key'
+const VIDEO_ID_CONSTRAINT = 'episodes_youtube_video_id_key'
 
 const PAGE_SIZE = 50
 const LAST_PAGE = IMPORT_MAX_ITEMS / PAGE_SIZE - 1
@@ -399,6 +409,8 @@ export async function commitImportCore(
 
   let seasonId: string | null = existingSeasonId
   let episodeIds: string[] = []
+  // Set when the insert lost a race with a renumber or reorder of the season.
+  let seasonChanged = false
   const recount = async (): Promise<StepResult> => {
     if (seasonId) {
       const s = await recomputeSeasonEpisodeCount(db, seasonId)
@@ -453,8 +465,15 @@ export async function commitImportCore(
         // ONE statement: a unique violation fails every row (T-06-26).
         const res = await db.from('episodes').insert(rows).select('id')
         if (res.error) {
-          const dupVideo = res.error.code === '23505' && res.error.message.includes('episodes_youtube_video_id_key')
-          return { error: dupVideo ? IMPORT_DUPLICATE_MESSAGE : res.error.message }
+          const unique = res.error.code === '23505'
+          if (unique && res.error.message.includes(VIDEO_ID_CONSTRAINT)) {
+            return { error: IMPORT_DUPLICATE_MESSAGE }
+          }
+          if (unique && res.error.message.includes(SEASON_NUMBER_CONSTRAINT)) {
+            seasonChanged = true
+            return { error: IMPORT_SEASON_CHANGED_MESSAGE }
+          }
+          return { error: res.error.message }
         }
         const ids = ((res.data ?? []) as Array<{ id: string }>).map((r) => r.id)
         episodeIds = ids
@@ -504,7 +523,15 @@ export async function commitImportCore(
       entityId: seasonId,
       diff: compensationAuditDiff(result, context()),
     })
-    return { success: false, wrote: result.wrote, error: failMessage(result) }
+    // The retry message only when everything was undone; otherwise the
+    // "could not undo" detail must reach the admin.
+    const retry = seasonChanged && result.leftInPlace.length === 0
+    return {
+      success: false,
+      wrote: result.wrote,
+      error: failMessage(result),
+      ...(retry ? { code: 'season_changed' as const } : {}),
+    }
   }
   return {
     success: true,

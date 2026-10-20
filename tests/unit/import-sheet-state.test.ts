@@ -206,6 +206,7 @@ test('the module imports nothing from @/, next/* or server-only', () => {
 test('importFailureSpec: quota needs the reset time, rate_limited has its own message, others use importFailed', () => {
   assert.deepEqual(importFailureSpec('quota'), { messageKey: 'quota', needsTime: true })
   assert.deepEqual(importFailureSpec('rate_limited'), { messageKey: 'rateLimited', needsTime: false })
+  assert.deepEqual(importFailureSpec('season_changed'), { messageKey: 'seasonChanged', needsTime: false })
   assert.equal(importFailureSpec(null), null)
   assert.equal(importFailureSpec('video_duplicate'), null)
   assert.equal(importFailureSpec('network'), null)

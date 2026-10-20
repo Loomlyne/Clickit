@@ -73,8 +73,12 @@ create unique index if not exists episodes_youtube_video_id_key
 -- * Phase B assigns 1..count. Every value still held by an unassigned row is
 --   above the row count after Phase A, and row_number() values are distinct.
 --
--- The advisory lock uses the same key as public.reorder_episode, so reorder,
--- renumber and import commits serialise per season.
+-- The advisory lock uses the same key as public.reorder_episode, so reorder
+-- and renumber serialise per season. Imports do not take this lock: an import
+-- relies on the unique (season_id, episode_number) constraint
+-- (episodes_season_id_episode_number_key), and commitImportCore maps a
+-- collision with a concurrent renumber or reorder to a "season changed, try
+-- again" message after rolling back what it wrote.
 
 create or replace function public.renumber_season(p_season_id uuid)
 returns table (

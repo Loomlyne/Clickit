@@ -113,6 +113,7 @@ const MESSAGES: Record<YouTubeErrorCode, string> = {
   quota: "YouTube's daily limit for Clickit is used up.",
   network: "YouTube didn't answer. Try again in a minute.",
   rate_limited: 'Too many requests. Wait a few minutes and try again.',
+  season_changed: 'Season changed while you were importing. Try again.',
 }
 
 export function verifyMessage(outcome: { ok: false; code: YouTubeErrorCode; params?: DuplicateParams }): string {

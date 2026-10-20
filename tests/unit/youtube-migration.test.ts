@@ -139,6 +139,29 @@ test('renumber_season: invoker, fixed search_path, shared advisory lock', () => 
   assertServiceRoleOnly('public.renumber_season(uuid)')
 })
 
+test('the comment does not claim imports take the advisory lock; it names the constraint they rely on', () => {
+  assert.doesNotMatch(sql, /renumber and import commits serialise/)
+  assert.match(sql, /-- and renumber serialise per season\. Imports do not take this lock/)
+  assert.match(sql, /episodes_season_id_episode_number_key/)
+})
+
+test('episodes_season_id_episode_number_key is the default name of the create_schema unique and is never renamed', () => {
+  const schema = readFileSync(DIR + '20260401000000_create_schema.sql', 'utf8')
+  const table = schema.slice(
+    schema.indexOf('create table if not exists public.episodes'),
+    schema.indexOf(');', schema.indexOf('create table if not exists public.episodes'))
+  )
+  // An unnamed table constraint: Postgres names it <table>_<cols>_key.
+  assert.match(table, /\n  unique \(season_id, episode_number\)/)
+  for (const f of files) {
+    const text = stripComments(readFileSync(DIR + f, 'utf8'))
+    assert.doesNotMatch(text, /rename constraint episodes_season_id_episode_number_key/i, f)
+    assert.doesNotMatch(text, /drop constraint (if exists )?episodes_season_id_episode_number_key/i, f)
+  }
+  const importCore = readFileSync('src/lib/admin/youtube-import.ts', 'utf8')
+  assert.match(importCore, /const SEASON_NUMBER_CONSTRAINT = 'episodes_season_id_episode_number_key'/)
+})
+
 test('record_youtube_checks: bounded batch, never touches titles or descriptions', () => {
   const fn = fnBlock('public.record_youtube_checks')
   assert.match(fn, /returns integer/)

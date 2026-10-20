@@ -135,6 +135,7 @@ export function importFailureSpec(
     case 'quota':
       return { messageKey: YOUTUBE_ERROR_MESSAGE_KEYS.quota, needsTime: true }
     case 'rate_limited':
+    case 'season_changed':
       return { messageKey: YOUTUBE_ERROR_MESSAGE_KEYS[code], needsTime: false }
     default:
       return null

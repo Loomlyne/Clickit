@@ -22,6 +22,7 @@ export type YouTubeErrorCode =
   | 'quota'
   | 'network'
   | 'rate_limited'
+  | 'season_changed'
 
 /** Every member of YouTubeErrorCode, in the same order as the type. */
 export const YOUTUBE_ERROR_CODES = [
@@ -43,6 +44,7 @@ export const YOUTUBE_ERROR_CODES = [
   'quota',
   'network',
   'rate_limited',
+  'season_changed',
 ] as const satisfies readonly YouTubeErrorCode[]
 
 /** Code -> key under `admin.youtubeErrors` (UI-SPEC message table). */
@@ -68,6 +70,8 @@ export const YOUTUBE_ERROR_MESSAGE_KEYS: Record<YouTubeErrorCode, string> = {
   network: 'network',
   // Too many admin YouTube calls in a short time (per-admin limit).
   rate_limited: 'rateLimited',
+  // An import collided with a renumber or reorder of the same season.
+  season_changed: 'seasonChanged',
 }
 
 /** The error shown for a video that cannot play; null when it can. */

@@ -644,6 +644,116 @@ test('commit: a youtube_video_id unique violation during insert fails the whole 
   assert.deepEqual(after, before)
 })
 
+/** A client where a renumber of SE1 lands between the max-number read and the insert. */
+function renumberRace(f: ReturnType<typeof world>, number: number) {
+  return {
+    ...f.client,
+    from(table: string) {
+      const b = f.client.from(table)
+      if (table === 'episodes') {
+        const insert = b.insert.bind(b)
+        b.insert = (rows: Row[]) => {
+          f.tables.episodes!.push(ep(id('e', 98), number, { archived: true }))
+          return insert(rows)
+        }
+      }
+      return b
+    },
+  }
+}
+
+test('commit: a season-number collision with a concurrent renumber returns season_changed, nothing kept', async () => {
+  const f = world()
+  const before = noAudit(f)
+  const res = await commitImportCore(
+    renumberRace(f, 5),
+    deps(f, fakeYouTube().client),
+    commitInput({ videoIds: [OK1, OK2, OK3], target: { kind: 'existing', seasonId: SE1 } })
+  )
+  assert.equal(res.success, false)
+  assert.equal(res.code, 'season_changed')
+  assert.equal(res.error, 'Season changed while you were importing. Try again.')
+  const after = noAudit(f)
+  after.episodes = after.episodes!.filter((e) => e.id !== id('e', 98))
+  assert.deepEqual(after, before)
+  const audits = f.auditRows()
+  assert.equal(audits.length, 1)
+  assert.equal(audits[0]!.diff.outcome, 'failed')
+  assert.equal(audits[0]!.diff.failed_step, 'insert-episodes')
+})
+
+test('commit: a new-season import that hits the collision rolls the season back and returns season_changed', async () => {
+  const f = world()
+  const before = noAudit(f)
+  // The new season gets its id on insert; the race row is added to whatever season the insert targets.
+  const racing = {
+    ...f.client,
+    from(table: string) {
+      const b = f.client.from(table)
+      if (table === 'episodes') {
+        const insert = b.insert.bind(b)
+        b.insert = (rows: Row[]) => {
+          f.tables.episodes!.push(ep(id('e', 97), 1, { season_id: rows[0]!.season_id, archived: true }))
+          return insert(rows)
+        }
+      }
+      return b
+    },
+  }
+  const res = await commitImportCore(racing, deps(f, fakeYouTube().client), commitInput())
+  assert.equal(res.success, false)
+  assert.equal(res.code, 'season_changed')
+  const after = noAudit(f)
+  after.episodes = after.episodes!.filter((e) => e.id !== id('e', 97))
+  assert.deepEqual(after, before)
+  assert.deepEqual(f.auditRows()[0]!.diff.undone, ['insert-season'])
+})
+
+test('commit: season_changed is not returned when the rollback left something in place', async () => {
+  const f = world()
+  f.failOn({ table: 'seasons', op: 'delete', nth: 1 })
+  const racing = {
+    ...f.client,
+    from(table: string) {
+      const b = f.client.from(table)
+      if (table === 'episodes') {
+        const insert = b.insert.bind(b)
+        b.insert = (rows: Row[]) => {
+          f.tables.episodes!.push(ep(id('e', 96), 1, { season_id: rows[0]!.season_id, archived: true }))
+          return insert(rows)
+        }
+      }
+      return b
+    },
+  }
+  const res = await commitImportCore(racing, deps(f, fakeYouTube().client), commitInput())
+  assert.equal(res.success, false)
+  assert.equal(res.code, undefined)
+  assert.match(res.error!, /could not undo: insert-season/)
+})
+
+test('commit: a duplicate-video violation stays distinct from season_changed', async () => {
+  const f = world()
+  const racing = {
+    ...f.client,
+    from(table: string) {
+      const b = f.client.from(table)
+      if (table === 'episodes') {
+        const insert = b.insert.bind(b)
+        b.insert = (rows: Row[]) => {
+          f.tables.episodes!.push(ep(id('e', 95), 60, { show_id: S2, season_id: SE2, youtube_video_id: OK1, archived: true }))
+          return insert(rows)
+        }
+      }
+      return b
+    },
+  }
+  const res = await commitImportCore(racing, deps(f, fakeYouTube().client), commitInput())
+  assert.equal(res.success, false)
+  assert.equal(res.code, undefined)
+  assert.equal(res.error, 'One or more of these videos is already on Clickit. Paste the link again.')
+})
+
 test('fake: youtube_video_id is unique catalog-wide; null and empty string never collide', async () => {
   const f = world()
   const dup = await f.client

@@ -89,6 +89,7 @@ const NEW_KEYS: string[] = [
   'admin.youtubeErrors.videoNotReady',
   'admin.youtubeErrors.videoDuplicate',
   'admin.youtubeErrors.rateLimited',
+  'admin.youtubeErrors.seasonChanged',
   'admin.episodeForm.needsEnglishTitleHint',
   'admin.episodeForm.notSavedToast',
   'admin.episodesTable.moved',
@@ -345,6 +346,11 @@ test('every YOUTUBE_ERROR_MESSAGE_KEYS value exists under admin.youtubeErrors in
 test('the viewer-report label says viewers, not one viewer', () => {
   assert.equal(get(en, 'admin.episodesTable.cantPlayViewerReport'), 'Reported by viewers')
   assert.equal(get(ar, 'admin.episodesTable.cantPlayViewerReport'), 'أبلغ عنها مشاهدون')
+})
+
+test('season-changed copy is the agreed wording in en and ar', () => {
+  assert.equal(get(en, 'admin.youtubeErrors.seasonChanged'), 'Season changed while you were importing. Try again.')
+  assert.equal(get(ar, 'admin.youtubeErrors.seasonChanged'), 'تغيّر الموسم أثناء الاستيراد. حاول مرة أخرى.')
 })
 
 test('rate limit copy is the agreed wording in en and ar', () => {
