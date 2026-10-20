@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 4 — Design System Truth options</title>
+<style>
+/* Product tokens: copied from src/styles/globals.css (:root) on main a8f2487, which match the live CSS on www.clickitstory.ae (read 2026-10-20). */
+@font-face{font-family:LBC;src:url(../../../../src/fonts/lbc-regular.woff2) format("woff2");font-weight:400}
+@font-face{font-family:LBC;src:url(../../../../src/fonts/lbc-bold.woff2) format("woff2");font-weight:700}
+:root{
+  --bg-0:#090909;--bg-1:#101010;--bg-2:#191919;--bg-3:#2A2A2A;--bg-4:#424242;
+  --line:rgba(255,255,255,.08);--line-2:rgba(255,255,255,.14);
+  --text:#F4F4F4;--text-dim:#CCCCCC;--text-mute:#A1A1A1;
+  --primary:#ffcc00;--primary-fg:#090909;--primary-hover:#D7AD16;--primary-soft:#312915;--destructive:#ff3b30;
+  --r-chip:999px;--r-control:999px;--r-field:8px;--r-card:12px;--r-media:11px;--r-panel:16px;
+  --b-blue:#2C3569;--b-purple:#9F54A0;--b-green:#50A258;--b-red:#DB3F34;--b-orange:#EA8C2E;--b-sand:#F8C623;
+}
+*{box-sizing:border-box}
+html{background:#0c0c0c;color:#e8e8e8;font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+body{margin:0;padding:24px 32px 40px;width:1400px}
+section{padding:18px 0 28px;border-top:1px solid #262626}
+h2{font-size:20px;margin:0 0 4px}
+.sub{color:#9a9a9a;margin:0 0 14px;max-width:1240px}
+.cap{font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin:0 0 8px;color:#9a9a9a}
+.cap b{color:#ffcc00}
+.row{display:flex;gap:24px;align-items:flex-start}
+.col{display:flex;flex-direction:column}
+.note{font-size:12px;color:#9a9a9a;margin-top:8px;max-width:660px}
+
+.frame{position:relative;overflow:hidden;background:var(--bg-0);color:var(--text);font-family:LBC,system-ui,sans-serif;font-size:15px;line-height:1.45;border:1px solid #2c2c2c;border-radius:6px;flex:none}
+.half{width:660px}
+.lbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-mute)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 22px;font-size:14px;font-weight:700;border:1px solid transparent;white-space:nowrap;border-radius:var(--r-control)}
+.pri{background:var(--primary);color:var(--primary-fg)}
+.out{border-color:var(--line-2);color:var(--text);background:rgba(255,255,255,.04)}
+.field{min-height:44px;border-radius:var(--r-field);background:var(--bg-2);border:1px solid var(--line-2);padding:0 14px;display:flex;align-items:center;color:var(--text-mute);font-size:14px}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:var(--r-chip);font-size:13px;color:var(--text-dim);border:1px solid var(--bg-4)}
+.dot{width:8px;height:8px;border-radius:999px;flex:none}
+.card{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-card);padding:16px}
+.media{border-radius:var(--r-media);background:linear-gradient(135deg,var(--b-purple),var(--b-blue));}
+.hex{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--text-mute)}
+h3{font-size:24px;font-weight:700;margin:0;line-height:1.2}
+.pad{padding:24px}
+
+/* radius B override */
+.flat{--r-chip:8px;--r-control:8px;--r-field:8px;--r-card:8px;--r-media:8px;--r-panel:8px}
+/* canvas B */
+.canvasB{--bg-0:#0a0a0a}
+</style>
+</head>
+<body>
+
+<!-- Q1 -->
+<section id="q1">
+<h2>Q1 · Page background: #090909 or #0a0a0a</h2>
+<p class="sub">The live site and main use #090909 today. The roadmap text says #0a0a0a. The two differ by one step out of 255 and look the same; this picks which number is written as the truth.</p>
+<div class="row">
+ <div class="col"><p class="cap"><b>A (recommended)</b> · #090909 — live today, Phase 6 spec uses it</p>
+  <div class="frame half pad" style="height:360px">
+   <div class="lbl">Clickit Original · Season 2</div>
+   <h3 style="margin-top:8px">Sample Show</h3>
+   <p style="color:var(--text-dim);font-size:14px;max-width:420px;margin:8px 0 18px">A one-line show description in LBC, 14px, on the page background.</p>
+   <div style="display:flex;gap:12px"><span class="btn pri">Play episode 1</span><span class="btn out">My List</span></div>
+   <div style="display:flex;gap:12px;margin-top:28px"><div class="media" style="width:190px;height:107px"></div><div class="media" style="width:190px;height:107px;background:linear-gradient(135deg,var(--b-green),var(--b-blue))"></div><div class="media" style="width:190px;height:107px;background:linear-gradient(135deg,var(--b-orange),var(--b-red))"></div></div>
+   <div class="hex" style="position:absolute;right:16px;bottom:12px">background #090909</div>
+  </div></div>
+ <div class="col"><p class="cap">B · #0a0a0a — roadmap text; main and live change by one step</p>
+  <div class="frame half pad canvasB" style="height:360px;background:#0a0a0a">
+   <div class="lbl">Clickit Original · Season 2</div>
+   <h3 style="margin-top:8px">Sample Show</h3>
+   <p style="color:var(--text-dim);font-size:14px;max-width:420px;margin:8px 0 18px">A one-line show description in LBC, 14px, on the page background.</p>
+   <div style="display:flex;gap:12px"><span class="btn pri" style="color:#0a0a0a">Play episode 1</span><span class="btn out">My List</span></div>
+   <div style="display:flex;gap:12px;margin-top:28px"><div class="media" style="width:190px;height:107px"></div><div class="media" style="width:190px;height:107px;background:linear-gradient(135deg,var(--b-green),var(--b-blue))"></div><div class="media" style="width:190px;height:107px;background:linear-gradient(135deg,var(--b-orange),var(--b-red))"></div></div>
+   <div class="hex" style="position:absolute;right:16px;bottom:12px">background #0a0a0a</div>
+  </div></div>
+</div>
+</section>
+
+<!-- Q2 -->
+<section id="q2">
+<h2>Q2 · Corner shapes: keep the live roles, or 8px everywhere</h2>
+<p class="sub">Live today: buttons, chips and nav are full pills; fields 8px; cards 12px; thumbnails 11px; sheets and dialogs 16px (UI System roundness 50, pill on). "8px base radius" in the roadmap is the field and base value.</p>
+<div class="row">
+ <div class="col"><p class="cap"><b>A (recommended)</b> · live roles — pill controls, 8 / 12 / 11 / 16</p>
+  <div class="frame half pad" style="height:460px">
+   <div class="lbl">Sign in</div>
+   <div class="field" style="margin-top:10px">you@example.com</div>
+   <div style="display:flex;gap:12px;margin-top:14px"><span class="btn pri">Send code</span><span class="btn out">Use password</span></div>
+   <div style="display:flex;gap:8px;margin-top:20px"><span class="chip"><span class="dot" style="background:#B71C1C"></span>Talk Shows</span><span class="chip"><span class="dot" style="background:#E18709"></span>Entertainment</span><span class="chip"><span class="dot" style="background:#8E24AA"></span>Music</span></div>
+   <div style="display:flex;gap:16px;margin-top:20px">
+    <div class="card" style="width:290px"><div class="media" style="height:110px"></div><div style="font-weight:700;margin-top:10px">Episode 3</div><div style="font-size:13px;color:var(--text-mute)">24 min · card 12px · image 11px</div></div>
+    <div style="width:290px;background:var(--bg-1);border:1px solid var(--line-2);border-radius:var(--r-panel);padding:18px"><div style="font-weight:700">Dialog</div><div style="font-size:13px;color:var(--text-mute);margin:6px 0 14px">panel 16px</div><span class="btn pri" style="min-height:40px">Confirm</span></div>
+   </div>
+  </div></div>
+ <div class="col"><p class="cap">B · 8px everywhere — buttons, chips, cards, sheets</p>
+  <div class="frame half pad flat" style="height:460px">
+   <div class="lbl">Sign in</div>
+   <div class="field" style="margin-top:10px">you@example.com</div>
+   <div style="display:flex;gap:12px;margin-top:14px"><span class="btn pri">Send code</span><span class="btn out">Use password</span></div>
+   <div style="display:flex;gap:8px;margin-top:20px"><span class="chip"><span class="dot" style="background:#B71C1C"></span>Talk Shows</span><span class="chip"><span class="dot" style="background:#E18709"></span>Entertainment</span><span class="chip"><span class="dot" style="background:#8E24AA"></span>Music</span></div>
+   <div style="display:flex;gap:16px;margin-top:20px">
+    <div class="card" style="width:290px"><div class="media" style="height:110px"></div><div style="font-weight:700;margin-top:10px">Episode 3</div><div style="font-size:13px;color:var(--text-mute)">24 min · card 8px · image 8px</div></div>
+    <div style="width:290px;background:var(--bg-1);border:1px solid var(--line-2);border-radius:var(--r-panel);padding:18px"><div style="font-weight:700">Dialog</div><div style="font-size:13px;color:var(--text-mute);margin:6px 0 14px">panel 8px</div><span class="btn pri" style="min-height:40px">Confirm</span></div>
+   </div>
+  </div>
+  <p class="note">B changes every button and card on the live site and conflicts with the signed Phase 6 pictures (pill buttons, 12px cards).</p></div>
+</div>
+</section>
+
+<!-- Q3 -->
+<section id="q3">
+<h2>Q3 · Off-brand leftovers still on the live site</h2>
+<p class="sub">Three places still carry the old blue era: dropdown menus (#11151d), toast messages (#10131a), and the "Browse shows" button on /portfolio, which turns indigo (#7082ff) with an indigo glow on hover.</p>
+<div class="row">
+ <div class="col"><p class="cap">Before · live today</p>
+  <div class="frame half pad" style="height:330px">
+   <div style="display:flex;gap:24px">
+    <div><div class="lbl" style="margin-bottom:8px">Dropdown</div>
+     <div style="width:220px;background:#11151d;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:6px;box-shadow:0 24px 80px rgba(0,0,0,.42)"><div style="padding:10px 12px;border-radius:8px;background:rgba(255,255,255,.06)">Season 1</div><div style="padding:10px 12px">Season 2</div><div style="padding:10px 12px">Season 3</div></div><div class="hex" style="margin-top:6px">#11151d</div></div>
+    <div><div class="lbl" style="margin-bottom:8px">Toast</div>
+     <div style="width:300px;background:#10131a;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 16px;font-size:14px">Added to My List</div><div class="hex" style="margin-top:6px">#10131a</div>
+     <div class="lbl" style="margin:22px 0 8px">Button on hover</div>
+     <span class="btn" style="background:#7082ff;color:#090909;box-shadow:0 16px 40px rgba(96,115,255,.28)">Browse shows</span><div class="hex" style="margin-top:6px">#7082ff + indigo glow</div></div>
+   </div>
+  </div></div>
+ <div class="col"><p class="cap"><b>A (recommended)</b> · snap them to the tokens</p>
+  <div class="frame half pad" style="height:330px">
+   <div style="display:flex;gap:24px">
+    <div><div class="lbl" style="margin-bottom:8px">Dropdown</div>
+     <div style="width:220px;background:var(--bg-1);border:1px solid var(--line-2);border-radius:12px;padding:6px;box-shadow:0 24px 80px rgba(0,0,0,.42)"><div style="padding:10px 12px;border-radius:8px;background:var(--bg-2)">Season 1</div><div style="padding:10px 12px">Season 2</div><div style="padding:10px 12px">Season 3</div></div><div class="hex" style="margin-top:6px">--bg-1 #101010</div></div>
+    <div><div class="lbl" style="margin-bottom:8px">Toast</div>
+     <div style="width:300px;background:var(--bg-1);border:1px solid var(--line-2);border-radius:12px;padding:14px 16px;font-size:14px">Added to My List</div><div class="hex" style="margin-top:6px">--bg-1 #101010</div>
+     <div class="lbl" style="margin:22px 0 8px">Button on hover</div>
+     <span class="btn" style="background:var(--primary-hover);color:var(--primary-fg);box-shadow:0 16px 40px rgba(255,204,0,.18)">Browse shows</span><div class="hex" style="margin-top:6px">--uis-primary-hover #D7AD16</div></div>
+   </div>
+  </div>
+  <p class="note">B would keep all three as they are and list them as allowed exceptions.</p></div>
+</div>
+</section>
+
+<!-- Q4 -->
+<section id="q4">
+<h2>Q4 · Category colours</h2>
+<p class="sub">The 15 live categories each have their own colour, picked by the admins (for example Health &amp; Wellness #00FFFB, Sports &amp; Gaming #00FF0D). It shows only as the small dot on the category pill. None of them is a brand colour.</p>
+<div class="row">
+ <div class="col"><p class="cap"><b>A (recommended)</b> · categories keep their own colour (content, like show artwork); the app chrome uses one brand map</p>
+  <div class="frame half pad" style="height:250px"><div style="display:flex;flex-wrap:wrap;gap:8px">
+   <span class="chip"><span class="dot" style="background:#B71C1C"></span>Talk Shows</span><span class="chip"><span class="dot" style="background:#E18709"></span>Entertainment</span><span class="chip"><span class="dot" style="background:#D8DCE4"></span>Podcasts</span><span class="chip"><span class="dot" style="background:#206A23"></span>Business &amp; Finance</span><span class="chip"><span class="dot" style="background:#00FFFB"></span>Health &amp; Wellness</span><span class="chip"><span class="dot" style="background:#D81B60"></span>Family &amp; Society</span><span class="chip"><span class="dot" style="background:#8E24AA"></span>Music</span><span class="chip"><span class="dot" style="background:#3949AB"></span>Culture &amp; Arts</span><span class="chip"><span class="dot" style="background:#00FF0D"></span>Sports &amp; Gaming</span><span class="chip"><span class="dot" style="background:#FDD835"></span>Kids</span>
+  </div><p style="font-size:13px;color:var(--text-mute);margin-top:16px">Nothing changes on the live site. No database write.</p></div></div>
+ <div class="col"><p class="cap">B · only the 6 brand colours; existing categories moved to the nearest one</p>
+  <div class="frame half pad" style="height:250px"><div style="display:flex;flex-wrap:wrap;gap:8px">
+   <span class="chip"><span class="dot" style="background:var(--b-red)"></span>Talk Shows</span><span class="chip"><span class="dot" style="background:var(--b-orange)"></span>Entertainment</span><span class="chip"><span class="dot" style="background:var(--b-sand)"></span>Podcasts</span><span class="chip"><span class="dot" style="background:var(--b-green)"></span>Business &amp; Finance</span><span class="chip"><span class="dot" style="background:var(--b-green)"></span>Health &amp; Wellness</span><span class="chip"><span class="dot" style="background:var(--b-red)"></span>Family &amp; Society</span><span class="chip"><span class="dot" style="background:var(--b-purple)"></span>Music</span><span class="chip"><span class="dot" style="background:var(--b-blue)"></span>Culture &amp; Arts</span><span class="chip"><span class="dot" style="background:var(--b-green)"></span>Sports &amp; Gaming</span><span class="chip"><span class="dot" style="background:var(--b-sand)"></span>Kids</span>
+  </div><p style="font-size:13px;color:var(--text-mute);margin-top:16px">Needs a live update of 15 category rows (your word first). Several categories end up with the same colour.</p></div></div>
+</div>
+</section>
+
+<!-- Q5 -->
+<section id="q5">
+<h2>Q5 · The in-app design-system page</h2>
+<p class="sub">You removed the public /design-system demo pages in #18. The roadmap still asks for an admin-only page that shows the live tokens.</p>
+<div class="row">
+ <div class="col"><p class="cap"><b>A (recommended)</b> · one admin page, /admin/design-system, drawn from the live CSS (it can never drift)</p>
+  <div class="frame half" style="height:420px;display:flex">
+   <div style="width:170px;border-right:1px solid var(--line);padding:18px 10px;display:flex;flex-direction:column;gap:4px;font-size:13px">
+    <div style="font-weight:700;font-size:16px;padding:0 8px 14px">clickit <span style="color:var(--primary)">story</span></div>
+    <div style="padding:10px 12px;color:var(--text-dim)">Dashboard</div><div style="padding:10px 12px;color:var(--text-dim)">Shows</div><div style="padding:10px 12px;color:var(--text-dim)">Inbox</div><div style="padding:10px 12px;color:var(--text-dim)">Settings</div><div style="padding:10px 12px;border-radius:999px;background:var(--bg-2);color:var(--text)">Design system</div>
+   </div>
+   <div style="flex:1;padding:22px">
+    <div class="lbl">Admin · read only</div><h3 style="font-size:20px;margin:4px 0 14px">Design system</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+     <div style="width:66px"><div style="height:44px;border-radius:8px;background:#090909;border:1px solid var(--line-2)"></div><div class="hex" style="font-size:10px;margin-top:4px">bg-0</div></div>
+     <div style="width:66px"><div style="height:44px;border-radius:8px;background:#101010;border:1px solid var(--line-2)"></div><div class="hex" style="font-size:10px;margin-top:4px">bg-1</div></div>
+     <div style="width:66px"><div style="height:44px;border-radius:8px;background:#191919"></div><div class="hex" style="font-size:10px;margin-top:4px">bg-2</div></div>
+     <div style="width:66px"><div style="height:44px;border-radius:8px;background:#2A2A2A"></div><div class="hex" style="font-size:10px;margin-top:4px">bg-3</div></div>
+     <div style="width:66px"><div style="height:44px;border-radius:8px;background:#ffcc00"></div><div class="hex" style="font-size:10px;margin-top:4px">primary</div></div>
+     <div style="width:66px"><div style="height:44px;border-radius:8px;background:#ff3b30"></div><div class="hex" style="font-size:10px;margin-top:4px">danger</div></div>
+    </div>
+    <div class="lbl" style="margin:18px 0 6px">Type · LBC 400 / 700</div>
+    <div style="font-size:24px;font-weight:700">Display 24</div><div style="font-size:20px;font-weight:700">Heading 20</div><div style="font-size:14px">Body 14 — نص عربي بخط LBC</div><div style="font-size:11px;color:var(--text-mute)">LABEL 11</div>
+    <div class="lbl" style="margin:18px 0 8px">Radius · Buttons</div>
+    <div style="display:flex;gap:10px;align-items:center"><span class="btn pri">Primary</span><span class="btn out">Outline</span><div class="field" style="width:150px">Field 8px</div></div>
+   </div>
+  </div>
+  <p class="note">Signed-out visitors and non-admin viewers are sent away by the admin area guard (today: back to /watch).</p></div>
+ <div class="col"><p class="cap">B · no in-app page; the truth lives only in DESIGN.md and the Claude Design canvas</p>
+  <div class="frame half" style="height:420px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px">
+   <div style="font-size:64px;font-weight:700;color:var(--bg-4)">404</div><div style="color:var(--text-dim)">This page could not be found.</div><span class="btn out" style="margin-top:8px">Back to Clickit</span>
+  </div>
+  <p class="note">B changes the roadmap wording for DS-01 and DS-04. Drift between the code and the canvas is caught only by tests.</p></div>
+</div>
+</section>
+
+<!-- Q6 -->
+<section id="q6">
+<h2>Q6 · Where the Claude Design boards live</h2>
+<p class="sub">The canvas must show foundations, viewer screens (email-code sign-in, Arabic right-to-left, the player that follows YouTube's rules), admin screens (playlist import preview, inbox) and the email templates.</p>
+<div class="row">
+ <div class="col"><p class="cap"><b>A (recommended)</b> · a new "Clickit Story" canvas that installs the UI System design system with Clickit's values</p>
+  <div class="frame half pad" style="height:360px;font-size:12px">
+   <div style="display:flex;gap:12px">
+    <div style="flex:1"><div class="lbl" style="margin-bottom:8px">Foundations</div>
+     <div class="card" style="padding:8px;margin-bottom:8px">Colour + brand map</div><div class="card" style="padding:8px;margin-bottom:8px">Type · LBC EN + AR</div><div class="card" style="padding:8px;margin-bottom:8px">Radius + surfaces</div><div class="card" style="padding:8px">Components</div></div>
+    <div style="flex:1"><div class="lbl" style="margin-bottom:8px">Viewer</div>
+     <div class="card" style="padding:8px;margin-bottom:8px">Email-code sign-in</div><div class="card" style="padding:8px;margin-bottom:8px">Home + show</div><div class="card" style="padding:8px;margin-bottom:8px">Watch (YouTube rules)</div><div class="card" style="padding:8px">Arabic RTL</div></div>
+    <div style="flex:1"><div class="lbl" style="margin-bottom:8px">Admin</div>
+     <div class="card" style="padding:8px;margin-bottom:8px">Playlist import preview</div><div class="card" style="padding:8px">Inbox</div></div>
+    <div style="flex:1"><div class="lbl" style="margin-bottom:8px">Email</div>
+     <div class="card" style="padding:8px;margin-bottom:8px">Sign-in code</div><div class="card" style="padding:8px;margin-bottom:8px">Confirm / reset</div><div class="card" style="padding:8px;margin-bottom:8px">Welcome</div><div class="card" style="padding:8px">New episodes digest</div></div>
+   </div>
+   <p style="color:var(--text-mute);margin-top:14px">Phase 6's signed import and player pictures are copied in as they are, not redesigned.</p>
+  </div></div>
+ <div class="col"><p class="cap">B · add the Clickit boards to the existing "UI System" canvas (20 brand-neutral boards)</p>
+  <div class="frame half pad" style="height:360px;font-size:12px">
+   <div class="lbl" style="margin-bottom:8px">UI System canvas</div>
+   <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+    <div class="card" style="padding:6px;color:var(--text-mute)">Overview</div><div class="card" style="padding:6px;color:var(--text-mute)">Color</div><div class="card" style="padding:6px;color:var(--text-mute)">Radius</div><div class="card" style="padding:6px;color:var(--text-mute)">Type</div><div class="card" style="padding:6px;color:var(--text-mute)">Logo</div>
+    <div class="card" style="padding:6px;color:var(--text-mute)">Components</div><div class="card" style="padding:6px;color:var(--text-mute)">Front nav ×6</div><div class="card" style="padding:6px;color:var(--text-mute)">Back nav ×6</div><div class="card" style="padding:6px;color:var(--text-mute)">Example 1</div><div class="card" style="padding:6px;color:var(--text-mute)">Example 2</div>
+   </div>
+   <div class="lbl" style="margin:14px 0 8px">+ Clickit boards appended</div>
+   <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+    <div class="card" style="padding:6px;border-color:var(--primary)">Clickit colour</div><div class="card" style="padding:6px;border-color:var(--primary)">Sign-in</div><div class="card" style="padding:6px;border-color:var(--primary)">Watch</div><div class="card" style="padding:6px;border-color:var(--primary)">Import</div><div class="card" style="padding:6px;border-color:var(--primary)">Emails</div>
+   </div>
+   <p style="color:var(--text-mute);margin-top:14px">Mixes the brand-neutral system with one client; other clients would see Clickit boards.</p>
+  </div></div>
+</div>
+</section>
+
+<!-- Q7 -->
+<section id="q7">
+<h2>Q7 · Email look</h2>
+<p class="sub">Every email (sign-in code, confirm, reset, welcome, support reply, digest) uses one template. Mail apps cannot load LBC, so the text falls back to the system sans; the logo is an image.</p>
+<div class="row">
+ <div class="col"><p class="cap"><b>A (recommended)</b> · dark, like the site — #090909 page, #101010 card, yellow button</p>
+  <div class="frame half" style="height:520px;background:#090909;display:flex;justify-content:center;padding:28px 0;font-family:system-ui,-apple-system,'Segoe UI',sans-serif">
+   <div style="width:480px">
+    <div style="font-family:LBC;font-weight:700;font-size:20px;padding:0 4px 18px">clickit <span style="color:var(--primary)">story</span></div>
+    <div style="background:#101010;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:28px">
+     <div style="font-size:22px;font-weight:700;color:#F4F4F4">Your sign-in code</div>
+     <p style="color:#CCCCCC;font-size:15px;margin:10px 0 18px">Enter this code on Clickit Story. It works for 10 minutes.</p>
+     <div style="font-size:34px;font-weight:700;letter-spacing:.3em;color:#F4F4F4;background:#191919;border-radius:8px;padding:14px 0;text-align:center">482917</div>
+     <div style="margin-top:20px"><span class="btn pri" style="font-family:inherit">Open Clickit Story</span></div>
+     <p style="color:#A1A1A1;font-size:12px;margin:22px 0 0">If you did not ask for this code, you can ignore this email.</p>
+    </div>
+    <p style="color:#A1A1A1;font-size:11px;text-align:center;margin-top:16px">Spacelight Studios FZ LLC · Abu Dhabi · Unsubscribe</p>
+   </div>
+  </div></div>
+ <div class="col"><p class="cap">B · light body, dark header — white card, black header bar, yellow button</p>
+  <div class="frame half" style="height:520px;background:#f2f2f2;display:flex;justify-content:center;padding:28px 0;font-family:system-ui,-apple-system,'Segoe UI',sans-serif">
+   <div style="width:480px">
+    <div style="background:#090909;border-radius:12px 12px 0 0;padding:16px 24px;font-family:LBC;font-weight:700;font-size:20px;color:#F4F4F4">clickit <span style="color:var(--primary)">story</span></div>
+    <div style="background:#ffffff;border-radius:0 0 12px 12px;padding:28px">
+     <div style="font-size:22px;font-weight:700;color:#111">Your sign-in code</div>
+     <p style="color:#444;font-size:15px;margin:10px 0 18px">Enter this code on Clickit Story. It works for 10 minutes.</p>
+     <div style="font-size:34px;font-weight:700;letter-spacing:.3em;color:#111;background:#f2f2f2;border-radius:8px;padding:14px 0;text-align:center">482917</div>
+     <div style="margin-top:20px"><span class="btn pri" style="font-family:inherit">Open Clickit Story</span></div>
+     <p style="color:#666;font-size:12px;margin:22px 0 0">If you did not ask for this code, you can ignore this email.</p>
+    </div>
+    <p style="color:#666;font-size:11px;text-align:center;margin-top:16px">Spacelight Studios FZ LLC · Abu Dhabi · Unsubscribe</p>
+   </div>
+  </div>
+  <p class="note">B reads best in Outlook and in light-mode mail apps; some dark-mode apps recolour it.</p></div>
+</div>
+</section>
+
+</body>
+</html>
