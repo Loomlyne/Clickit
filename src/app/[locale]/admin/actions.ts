@@ -220,7 +220,7 @@ const adminEnv: AdminActionEnv = {
   logError: (label, err) => console.error(label, err),
 }
 
-// TODO(phase-5): swap this for requireAdmin() (admins table + TOTP); every YouTube action uses only this function
+// TODO(phase-5): swap this for requireAdmin() (admins table + TOTP at /{locale}/auth/mfa; accepts both admins, so Nejib can import); every YouTube action uses only this function
 const requireAdminForYouTube = (): Promise<{ id: string }> => assertAdmin()
 
 const youtubeAdminEnv: AdminActionEnv = { ...adminEnv, assertAdmin: requireAdminForYouTube }

@@ -47,8 +47,8 @@ Also recorded as "Phase 6 hand-off" lines in the ROADMAP sections of Phases 2, 4
 | 1 | Rate-limit seam stands in for `decideRateLimit` | Phase 2 | `src/server/youtube/rate-limit.ts:17` |
 | 2 | Cron route's inline Bearer check stands in for `cronAuthOk` | Phase 2 | `src/app/api/cron/youtube-recheck/route.ts:29` |
 | 3 | Register the `30 1 * * *` trigger for `/api/cron/youtube-recheck` | Phase 2 | `src/app/api/cron/youtube-recheck/route.ts:1` |
-| 4 | `requireAdminForYouTube()` stands in for `requireAdmin()` (admins table + TOTP) | Phase 5 | `src/app/[locale]/admin/actions.ts:223` |
-| 5 | UAT admin script: admins row + TOTP | Phase 5 | outside the repo: `/Users/koss/.clickit-checks/phase06-uat-admin.cjs` (deleted after UAT) |
+| 4 | `requireAdminForYouTube()` stands in for `requireAdmin()` (admins table + TOTP at `/{locale}/auth/mfa`; accepts both admins, so Nejib can import) | Phase 5 | `src/app/[locale]/admin/actions.ts:223` |
+| 5 | UAT admin script → replaced by `npm run seed:local-admin` (Phase 5; also applies M2 locally; TOTP code first after Phase 5 lands) | Phase 5 | outside the repo: `/Users/koss/.clickit-checks/phase06-uat-admin.cjs` (deleted after UAT) |
 | 6 | Status chip `brand-*-safe` tone classes | Phase 4 | `src/components/admin/youtube-status-chip.tsx:20` |
 | 7 | Advanced tab `text-brand-green-safe` → `var(--safe-green)` | Phase 4 | `src/components/admin/settings/advanced-tab.tsx:278` |
 
@@ -68,7 +68,7 @@ Also recorded as "Phase 6 hand-off" lines in the ROADMAP sections of Phases 2, 4
 - `src/hooks/use-idle-timer.ts` and `getEpisodeProgress` (`src/lib/queries.ts`) have no callers; stale comment in `src/app/[locale]/(watch)/layout.tsx`; `vaul` dependency unused.
 - Full `database.types.ts` regeneration on main (see Database).
 - 06-23 removes the `SCAN_EXCLUDE` entry in `tests/unit/youtube-key-removed.test.ts`.
-- Optional automations proposed by executors (Koss's word only): weekly "Can't play" email to the two admins via the Phase 5 queue; daily unattended Test key with an alert.
+- Optional automations proposed by executors (Koss's word only): weekly "Can't play" email to the two admins via the Phase 5 queue (`enqueueEmail`, `src/server/email/outbox.ts`); daily unattended Test key with an alert.
 
 ## Owner order (each one numbered step at its time)
 
@@ -88,6 +88,7 @@ Setup, in Koss's terminal. The YouTube key goes only into the Settings field in 
 
 - S0. `node /Users/koss/.clickit-checks/phase06-uat-admin.cjs`. It prints the local test email and password once; keep them in your terminal scrollback only.
 - S1. `cd /Users/koss/Developer/Clickit/.claude/worktrees/phase-06-youtube-import-player-661c18 && set -a && source /Users/koss/.clickit-checks/phase06-uat.env && set +a && read -s CRON_SECRET && export CRON_SECRET && npm run dev`. At the silent prompt type any local CRON_SECRET value and press Enter. Open http://localhost:3000/en/auth and sign in as `uat-admin@clickit.local` with the password from S0 (no TOTP until Phase 5).
+- If Phase 5 is on main and merged into this branch before UAT: skip S0 and run `npm run seed:local-admin` instead (it also applies M2 locally); after sign-in, enter the TOTP code at `/en/auth/mfa` before the admin pages open.
 
 Steps on http://localhost:3000:
 

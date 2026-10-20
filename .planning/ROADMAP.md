@@ -135,8 +135,8 @@ Plans:
   4. A new viewer gets exactly one welcome email. A support message produces an auto-reply to the sender and an admin copy they can reply to. A newsletter sign-up is active only after the confirmation link is clicked.
   5. A viewer with a show on My List gets one Dubai-evening digest when new episodes publish, can turn it off in the profile, and can unsubscribe with one click from the email. A retried or failed send never duplicates and is retried from the queue.
 **Owner-gated**: [OWNER] set Supabase custom SMTP to Resend, the email templates (Confirm signup and Magic Link included), the OTP expiry and the auth email rate limit; [OWNER] turn on leaked-password protection; [OWNER] insert Nejib's admin row and enrol both TOTP devices; [OWNER] approve each live migration; [OWNER] approve the first emails to real users; [OWNER] Ship.
-**Phase 6 hand-off**: `src/app/[locale]/admin/actions.ts` — swap `requireAdminForYouTube` for `requireAdmin()` (admins table + TOTP) so the second admin can import; every YouTube action goes through that one function.
-**Phase 6 hand-off**: `/Users/koss/.clickit-checks/phase06-uat-admin.cjs` (outside the repo) — the local UAT admin also gains its `admins` row and TOTP enrolment.
+**Phase 6 hand-off**: `src/app/[locale]/admin/actions.ts` — swap `requireAdminForYouTube` for `requireAdmin()` (admins table + TOTP at `/{locale}/auth/mfa`; it accepts both admins, so Nejib can import); every YouTube action goes through that one function.
+**Phase 6 hand-off**: `/Users/koss/.clickit-checks/phase06-uat-admin.cjs` (outside the repo) — replaced by `npm run seed:local-admin` (Phase 5), which also applies M2 locally; after Phase 5 lands, local admin pages ask for the TOTP code first.
 **Plans**: TBD
 **UI hint**: yes
 
