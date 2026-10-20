@@ -6,8 +6,8 @@ import { isEpisodeLive } from '@/lib/scheduling'
 import { WatchShell } from '@/components/watch/watch-shell'
 import {
   getEpisodeById,
-  getEpisodeProgress,
   getEpisodesProgress,
+  getEpisodeYouTubeStatuses,
   mapShow,
   mapEpisode,
   mapSeason,
@@ -82,22 +82,22 @@ export default async function WatchPage({ params }: Props) {
 
   const user = authResult.data.user ?? null
 
-  // Second wave, show.id is now available from data. The resume point for
-  // this episode joins the same wave instead of running alone before it.
+  // Second wave, show.id is now available from data. Saved positions (with
+  // seconds, for resume on every switch) and the stored non-ok YouTube
+  // statuses (UAE preflight and precise error reasons) join the same wave.
+  // Statuses are read for signed-in and signed-out viewers alike.
   const episodeIds = Object.values(data.episodesBySeason)
     .flat()
     .map((episode) => episode.id)
 
-  const [progressRow, inWatchlist, isLiked, progressMap] = user
-    ? await Promise.all([
-        getEpisodeProgress(user.id, episodeId),
-        getShowWatchlistState(user.id, data.show.id),
-        getShowLikeState(user.id, data.show.id),
-        getEpisodesProgress(user.id, episodeIds),
-      ])
-    : [null, false, false, {}]
+  const [youtubeStatuses, inWatchlist, isLiked, progressMap] = await Promise.all([
+    getEpisodeYouTubeStatuses(episodeIds),
+    user ? getShowWatchlistState(user.id, data.show.id) : false,
+    user ? getShowLikeState(user.id, data.show.id) : false,
+    user ? getEpisodesProgress(user.id, episodeIds) : {},
+  ])
 
-  const { episode, show, season, seasons, episodesBySeason, prev, next } = data
+  const { episode, show, season, seasons, episodesBySeason } = data
 
   const viewEpisode = mapEpisode(episode, locale)
   const viewShow = mapShow(show, locale)
@@ -109,12 +109,6 @@ export default async function WatchPage({ params }: Props) {
   for (const [sid, eps] of Object.entries(episodesBySeason)) {
     viewEpisodesBySeason[sid] = eps.map((e) => mapEpisode(e, locale))
   }
-
-  const viewPrev = prev ? mapEpisode(prev, locale) : null
-  const viewNext = next ? mapEpisode(next, locale) : null
-
-  const initialProgressSeconds =
-    progressRow && !progressRow.completed ? progressRow.progressSeconds : 0
 
   // schema.org VideoObject for rich results. YouTube thumb + embed when the
   // episode has a video; localized name/description.
@@ -144,13 +138,11 @@ export default async function WatchPage({ params }: Props) {
         season={viewSeason}
         seasons={viewSeasons}
         episodesBySeason={viewEpisodesBySeason}
-        prevEpisode={viewPrev}
-        nextEpisode={viewNext}
-        initialProgressSeconds={initialProgressSeconds}
         userId={user?.id ?? null}
         initialSaved={inWatchlist}
         initialLiked={isLiked}
         progressMap={progressMap}
+        youtubeStatuses={youtubeStatuses}
       />
     </>
   )
