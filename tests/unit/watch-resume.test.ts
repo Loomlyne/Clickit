@@ -44,7 +44,7 @@ test('shouldSaveProgress mirrors the four tracker guards', () => {
   assert.equal(shouldSaveProgress({ ...base, duration: 0 }), false)
   // post-seek zero must not overwrite a real position
   assert.equal(shouldSaveProgress({ ...base, currentTime: 1, lastSaved: 300 }), false)
-  assert.equal(shouldSaveProgress({ ...base, currentTime: 1, lastSaved: 2 }), true)
+  assert.equal(shouldSaveProgress({ ...base, currentTime: 1, lastSaved: 2, force: true }), true)
   // 10 second delta
   assert.equal(shouldSaveProgress({ ...base, currentTime: 105, lastSaved: 100 }), false)
   assert.equal(shouldSaveProgress({ ...base, currentTime: 110, lastSaved: 100 }), true)
