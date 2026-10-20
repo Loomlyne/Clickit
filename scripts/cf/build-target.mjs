@@ -35,6 +35,21 @@ const KNOWN_PUBLIC = [
   'NEXT_PUBLIC_CF_BEACON_TOKEN',
 ]
 const LOOPBACK = /127\.0\.0\.1|localhost|0\.0\.0\.0|::1/i
+// Cloudflare's published Turnstile test site keys (always pass, always block,
+// forced interaction; visible and invisible). Fine for local preview and tests
+// only: a deploy stamp carrying one is refused by the deploy guard.
+const TURNSTILE_TEST_SITE_KEY = /^[0-9]x0{20}[A-Z]{2}$/
+
+/**
+ * Classify the site key without storing it: 'missing', 'test' or 'real'.
+ * @param {string | undefined} value
+ * @returns {'missing' | 'test' | 'real'}
+ */
+export function classifyTurnstileSiteKey(value) {
+  const key = String(value ?? '').trim()
+  if (key === '') return 'missing'
+  return TURNSTILE_TEST_SITE_KEY.test(key) ? 'test' : 'real'
+}
 
 /**
  * KEY=VALUE parser. Handles comments, blank lines, `export ` and quotes.
@@ -165,6 +180,8 @@ export function makeStamp({ target, gitSha, createdAt, env }) {
     hasLoopback: values.some((v) => LOOPBACK.test(v)),
     hasLocalSupabase: values.some((v) => v.includes(':55321')),
     localDev: Boolean(env.LOCAL_DEV),
+    // Classification only, never the key itself (PLAT-05, T-02-61).
+    turnstileSiteKey: classifyTurnstileSiteKey(env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
   }
 }
 

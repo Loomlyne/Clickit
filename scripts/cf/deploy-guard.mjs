@@ -191,6 +191,11 @@ export function checkDeploy(input) {
     if (stamp.hasLoopback) reasons.push('stamp shows a loopback URL (127.0.0.1, localhost, 0.0.0.0 or ::1) in a NEXT_PUBLIC value')
     if (stamp.hasLocalSupabase) reasons.push('stamp shows the local Supabase URL (port 55321) in a NEXT_PUBLIC value')
     if (stamp.localDev) reasons.push('stamp shows LOCAL_DEV was set in the build')
+    if (stamp.turnstileSiteKey === 'test') {
+      reasons.push('stamp carries a Cloudflare Turnstile TEST site key: set the real NEXT_PUBLIC_TURNSTILE_SITE_KEY and rebuild')
+    } else if (stamp.turnstileSiteKey !== 'real') {
+      reasons.push('stamp has no NEXT_PUBLIC_TURNSTILE_SITE_KEY: the forms would have no Turnstile widget; set it and rebuild')
+    }
     if (!stamp.gitSha || stamp.gitSha !== input.headSha) {
       reasons.push('stamp commit differs from HEAD: rebuild at the current commit')
     }

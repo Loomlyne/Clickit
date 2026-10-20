@@ -6,7 +6,7 @@ import {
   checkVerifyReport,
   parseJsonc,
 } from '../../scripts/cf/deploy-guard.mjs'
-import { buildEnvFor, makeStamp, parseEnvFile } from '../../scripts/cf/build-target.mjs'
+import { buildEnvFor, classifyTurnstileSiteKey, makeStamp, parseEnvFile } from '../../scripts/cf/build-target.mjs'
 
 const CLICKIT = 'e329b099b6e4272fc0915a99832e47fe'
 const OTHER = '0123456789abcdef0123456789abcdef'
@@ -21,7 +21,7 @@ const fileEnv = {
   NEXT_PUBLIC_SITE_URL: 'https://clickit.clickit-sub.workers.dev',
   NEXT_PUBLIC_SUPABASE_URL: 'https://lajguozmtissnnfccmej.supabase.co',
   NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon-fixture-value',
-  NEXT_PUBLIC_TURNSTILE_SITE_KEY: '',
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: '0x4AAAAAAAfixture-not-a-real-key',
   NEXT_PUBLIC_CF_BEACON_TOKEN: '',
 }
 
@@ -367,6 +367,53 @@ test('checkDeploy refuses loopback, local Supabase and LOCAL_DEV stamps', () => 
   assert.match(reasonsOf(checkDeploy(deployInput({ stamp: workersdevStamp({ hasLoopback: true }) }))), /loopback/)
   assert.match(reasonsOf(checkDeploy(deployInput({ stamp: workersdevStamp({ hasLocalSupabase: true }) }))), /local Supabase/)
   assert.match(reasonsOf(checkDeploy(deployInput({ stamp: workersdevStamp({ localDev: true }) }))), /LOCAL_DEV/)
+})
+
+test('classifyTurnstileSiteKey tells missing, Cloudflare test keys and real keys apart', () => {
+  assert.equal(classifyTurnstileSiteKey(''), 'missing')
+  assert.equal(classifyTurnstileSiteKey('   '), 'missing')
+  assert.equal(classifyTurnstileSiteKey(undefined), 'missing')
+  for (const key of [
+    '1x00000000000000000000AA',
+    '2x00000000000000000000AB',
+    '3x00000000000000000000FF',
+    '1x00000000000000000000BB',
+    '2x00000000000000000000BB',
+  ]) {
+    assert.equal(classifyTurnstileSiteKey(key), 'test', key)
+  }
+  assert.equal(classifyTurnstileSiteKey('0x4AAAAAAAfixture-not-a-real-key'), 'real')
+})
+
+test('makeStamp records the site key class and never the key', () => {
+  const env = buildEnvFor('workersdev', fileEnv, { mediaFlag: 'off' }, {})
+  const stamp = makeStamp({ target: 'workersdev', gitSha: SHA, createdAt: 'now', env })
+  assert.equal(stamp.turnstileSiteKey, 'real')
+  assert.equal(JSON.stringify(stamp).includes('fixture-not-a-real-key'), false)
+  const test = makeStamp({
+    target: 'preview',
+    gitSha: SHA,
+    createdAt: 'now',
+    env: { NEXT_PUBLIC_TURNSTILE_SITE_KEY: '1x00000000000000000000AA' },
+  })
+  assert.equal(test.turnstileSiteKey, 'test')
+})
+
+test('checkDeploy accepts a workersdev stamp with a real site key', () => {
+  assert.equal(checkDeploy(deployInput()).ok, true)
+})
+
+test('checkDeploy refuses a Cloudflare test site key and a missing site key', () => {
+  const testKey = checkDeploy(deployInput({ stamp: workersdevStamp({ turnstileSiteKey: 'test' }) }))
+  assert.equal(testKey.ok, false)
+  assert.match(reasonsOf(testKey), /TEST site key/)
+  const missing = checkDeploy(deployInput({ stamp: workersdevStamp({ turnstileSiteKey: 'missing' }) }))
+  assert.equal(missing.ok, false)
+  assert.match(reasonsOf(missing), /no NEXT_PUBLIC_TURNSTILE_SITE_KEY/)
+  // An older stamp without the field is refused too (fail closed).
+  const old = workersdevStamp()
+  delete (old as Record<string, unknown>).turnstileSiteKey
+  assert.equal(checkDeploy(deployInput({ stamp: old })).ok, false)
 })
 
 test('checkDeploy refuses a stamp from another commit', () => {
