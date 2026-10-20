@@ -13,13 +13,13 @@
   },
   // Target state: R2 first. Needs R2 enabled and bucket clickit-media created.
   "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "clickit-media" }],
-  // Custom domain is attached only after the clickitstory.ae zone is active
-  // in this account (owner step). Uncomment then:
-  // "routes": [{ "pattern": "media.clickitstory.ae", "custom_domain": true }],
+  // clickitstory.ae zone is Active in this account since 2026-10-20.
+  "routes": [{ "pattern": "media.clickitstory.ae", "custom_domain": true }],
   "env": {
     // Same Worker name, no R2 binding: serves Supabase originals while R2 is off.
     "supabase-only": {
       "name": "clickit-media",
+      "routes": [{ "pattern": "media.clickitstory.ae", "custom_domain": true }],
       "vars": {
         "SUPABASE_URL": "https://lajguozmtissnnfccmej.supabase.co"
       },
