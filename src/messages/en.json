@@ -102,9 +102,8 @@
     "resetButton": "Reset password",
     "resetSuccess": "Password updated successfully!",
     "accountCreated": "Account created! Welcome to Clickit Story.",
-    "termsAccept": "I agree to the Terms of Service and Privacy Policy",
+    "termsAccept": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
     "showPassword": "Show password",
-    "hidePassword": "Hide password",
     "callbackError": "Could not verify your identity",
     "googleSSOComingSoon": "Google SSO coming soon",
     "appleSSOComingSoon": "Apple SSO coming soon",
@@ -120,8 +119,7 @@
     "strengthWeak": "weak",
     "strengthGood": "good",
     "strengthStrong": "strong",
-    "strengthLabel": "Strength · {level}",
-    "passwordStrengthAria": "Password strength"
+    "strengthLabel": "Strength · {level}"
   },
   "home": {
     "heroHeadline": "Every Story Clicks.",

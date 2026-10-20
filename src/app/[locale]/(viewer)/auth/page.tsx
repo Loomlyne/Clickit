@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getLocale, getTranslations } from 'next-intl/server'
+import { getTranslations } from 'next-intl/server'
 
 import { redirect } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
@@ -75,8 +75,9 @@ export default async function AuthPage({
     >
       <BotIdInit />
 
-      {/* LEFT — editorial hero */}
-      <div className="relative hidden w-1/2 overflow-hidden lg:block">
+      {/* LEFT — editorial hero. The scrim keeps the quote at 4.5:1+ on any
+          admin-uploaded image. */}
+      <div className="relative hidden w-1/2 overflow-hidden bg-[var(--bg-1)] lg:block">
         {backdrop && (
           <div
             className="absolute inset-0 bg-cover bg-center"
@@ -86,21 +87,26 @@ export default async function AuthPage({
             }}
           />
         )}
-        <div className="relative flex h-full w-full flex-col justify-between p-12">
-          {/* Middle: quote */}
-          <div className="flex h-full max-w-md flex-col items-start justify-end">
-            <h2 className="mb-4 font-[family-name:var(--font-display)] text-[32px] leading-[1.15] font-normal tracking-[-0.01em] text-white">
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-[linear-gradient(0deg,color-mix(in_srgb,var(--bg-0)_94%,transparent)_0%,color-mix(in_srgb,var(--bg-0)_62%,transparent)_42%,color-mix(in_srgb,var(--bg-0)_8%,transparent)_100%)]"
+        />
+        <div className="relative flex h-full w-full flex-col justify-end p-12">
+          <div className="flex max-w-md flex-col items-start">
+            <h2 className="mb-4 font-[family-name:var(--font-display)] text-[32px] leading-[1.15] font-normal tracking-[-0.01em] text-[var(--text)]">
               &ldquo;{quote}&rdquo;
             </h2>
-            <div className="mono text-[11px] text-white/40">— {quoteAttribution}</div>
+            <div className="text-xs tracking-[0.08em] text-[var(--text-dim)] uppercase">
+              — {quoteAttribution}
+            </div>
           </div>
         </div>
       </div>
 
       {/* RIGHT — form */}
-      <div className="flex w-full items-center justify-center bg-[var(--bg-0)] px-5 py-8 sm:px-6 md:py-12 lg:w-1/2 lg:py-16">
+      <div className="flex w-full items-center justify-center bg-[var(--bg-0)] px-4 py-8 sm:px-6 md:py-12 lg:w-1/2 lg:py-16">
         <div className="w-full max-w-[420px]">
-          <h1 className="mb-2 font-[family-name:var(--font-display)] text-[32px] font-normal tracking-[-0.01em] md:text-[36px]">
+          <h1 className="mb-2 font-[family-name:var(--font-display)] text-[32px] leading-[1.2] font-semibold tracking-[-0.01em] md:text-[36px]">
             {heading}
           </h1>
           <p className="mb-6 text-[15px] text-[var(--text-dim)] md:mb-8">

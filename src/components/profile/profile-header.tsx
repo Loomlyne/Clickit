@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { Shield, LogOut } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { AvatarUpload } from './avatar-upload'
 
@@ -43,35 +44,38 @@ export function ProfileHeader({
     <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-6">
       <AvatarUpload currentUrl={avatarUrl} fallbackInitial={initial} />
 
-      <div className="flex flex-col items-center gap-1 sm:flex-1 sm:items-start">
-        <p className="font-mono text-[11px] tracking-[0.26em] text-[var(--text-mute)] uppercase">
+      <div className="flex min-w-0 flex-col items-center gap-1 text-center sm:flex-1 sm:items-start sm:text-start">
+        <p className="text-xs tracking-[0.2em] text-[var(--text-mute)] uppercase">
           {tProfile('accountEyebrow')}
         </p>
-        <h1 className="font-display text-3xl font-semibold tracking-[-0.04em] text-white">
+        <h1 className="font-display text-[32px] leading-[1.2] font-semibold tracking-[-0.02em] text-[var(--text)]">
           {displayName || tProfile('yourAccount')}
         </h1>
-        <p className="text-sm text-[var(--text-dim)]">{email}</p>
+        <p className="max-w-full truncate text-sm text-[var(--text-dim)]">
+          {email}
+        </p>
       </div>
 
       {/* Action buttons */}
       <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-end">
         {isAdmin && (
-          <a
-            href={`/${locale}/admin`}
-            className="flex items-center gap-2 rounded-full border border-[var(--line-2)] bg-[var(--bg-2)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--bg-3)]"
-          >
-            <Shield className="size-4" />
-            {tNav('admin')}
-          </a>
+          <Button asChild variant="outline">
+            <a href={`/${locale}/admin`}>
+              <Shield aria-hidden />
+              {tNav('admin')}
+            </a>
+          </Button>
         )}
-        <button
+        <Button
+          type="button"
+          variant="outline"
           onClick={handleSignOut}
           disabled={signingOut}
-          className="flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-5 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20 disabled:opacity-50"
+          className="border-destructive/40 text-[var(--color-brand-red-safe)] hover:bg-destructive/10"
         >
-          <LogOut className="size-4" />
+          <LogOut aria-hidden />
           {signingOut ? tProfile('signingOut') : tCommon('signOut')}
-        </button>
+        </Button>
       </div>
     </div>
   )
