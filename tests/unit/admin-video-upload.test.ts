@@ -40,6 +40,13 @@ test('hero-desktop: range read of 4 MiB only, writes url + type, previous R2 key
   })
 })
 
+test('a small video asks for its own size, never more than the object holds', async () => {
+  const w = videoWorld({ headSize: 3000 })
+  const r = await saveVideoCore(w.ports, w.deps, { key: NEW_KEY, target: 'hero-desktop' })
+  assert.equal(r.success, true)
+  assert.deepEqual(w.calls.readHead, [[NEW_KEY, 3000]])
+})
+
 test('hero-mobile writes the mobile columns and leaves desktop alone', async () => {
   const w = videoWorld()
   const r = await saveVideoCore(w.ports, w.deps, { key: NEW_MOBILE_KEY, target: 'hero-mobile' })

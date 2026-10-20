@@ -335,7 +335,7 @@ export async function saveVideoCore(
   if (size > maxBytes) return refuseAndRemove(tooLarge)
 
   // Only the first 4 MiB are read: enough for ftyp, moov and the start of mdat (T-02-73).
-  const bytes = await ports.readHead(key, VIDEO_HEAD_BYTES)
+  const bytes = await ports.readHead(key, Math.min(size, VIDEO_HEAD_BYTES))
   if (!bytes) return refuseAndRemove('Could not verify uploaded video')
   if (isFaststart(bytes) !== true) return refuseAndRemove(VIDEO_NOT_FASTSTART)
   if (needsAudio && !ports.hasAudioTrack(moovBytes(bytes) ?? new Uint8Array(0))) {
