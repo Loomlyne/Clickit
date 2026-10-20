@@ -68,9 +68,9 @@ test('exactly one expand migration exists and it sorts last', () => {
   assert.match(FILE, /^\d{14}_youtube_episode_status_and_order\.sql$/)
 })
 
-test('five nullable columns with their check constraints, no backfill', () => {
-  const adds = code.match(/add column if not exists/g) ?? []
-  assert.equal(adds.length, 5)
+test('five nullable check columns with their constraints, no backfill', () => {
+  const episodeAdds = code.slice(code.indexOf('alter table public.episodes'), code.indexOf(';', code.indexOf('alter table public.episodes')))
+  assert.equal((episodeAdds.match(/add column if not exists/g) ?? []).length, 5)
   assert.match(
     code,
     /add column if not exists youtube_status text\s+check \(youtube_status in \('ok', ?'private', ?'removed', ?'not_embeddable', ?'blocked_ae', ?'not_ready'\)\)/
@@ -85,12 +85,36 @@ test('five nullable columns with their check constraints, no backfill', () => {
     /add column if not exists player_error_code integer\s+check \(player_error_code in \(2, ?5, ?100, ?101, ?150\)\)/
   )
   assert.match(code, /add column if not exists player_error_at timestamptz/)
-  assert.doesNotMatch(code, /not null default|needs_english/i)
+  assert.doesNotMatch(code, /needs_english/i)
   // No statement-level update of existing rows outside function bodies.
   const outside = code.replace(/\$\$[\s\S]*?\$\$/g, '')
   assert.doesNotMatch(outside, /\bupdate\s+public\./i)
 })
 
+test('edited flags (review item 7): boolean not null default false, only for admin-editable fields', () => {
+  const adds = code.match(/add column if not exists/g) ?? []
+  assert.equal(adds.length, 12)
+  const flags = [...code.matchAll(/add column if not exists (\w+_edited) boolean not null default false/g)].map((m) => m[1])
+  assert.deepEqual(flags, [
+    'title_edited',
+    'title_ar_edited',
+    'description_edited',
+    'description_ar_edited',
+    'title_edited',
+    'channel_name_edited',
+  ])
+  // Every "not null default" in the file is one of these six flags.
+  assert.equal((code.match(/not null default/g) ?? []).length, 6)
+  assert.doesNotMatch(code, /not null default true/)
+  // The shorts form has no thumbnail field: no flag, always refreshed.
+  assert.doesNotMatch(code, /thumbnail_edited/)
+  const shortsAlter = code.slice(code.indexOf('alter table public.shorts'), code.indexOf(';', code.indexOf('alter table public.shorts')))
+  assert.match(shortsAlter, /add column if not exists title_edited boolean not null default false/)
+  assert.match(shortsAlter, /add column if not exists channel_name_edited boolean not null default false/)
+  assert.match(shortsAlter, /add column if not exists youtube_checked_at timestamptz/)
+  // Flags are never granted to viewer roles and never added to episodes_view.
+  assert.doesNotMatch(code, /episodes_view/)
+})
 test('duplicate guard raises before the catalog-wide unique index', () => {
   const guard = code.indexOf('having count(*) > 1')
   const index = code.indexOf(
@@ -162,7 +186,7 @@ test('episodes_season_id_episode_number_key is the default name of the create_sc
   assert.match(importCore, /const SEASON_NUMBER_CONSTRAINT = 'episodes_season_id_episode_number_key'/)
 })
 
-test('record_youtube_checks: bounded batch, never touches titles or descriptions', () => {
+test('record_youtube_checks: bounded batch, status and length rules kept', () => {
   const fn = fnBlock('public.record_youtube_checks')
   assert.match(fn, /returns integer/)
   assert.match(fn, /security invoker/)
@@ -173,7 +197,7 @@ test('record_youtube_checks: bounded batch, never touches titles or descriptions
   assert.equal((fn.match(/errcode = '22023'/g) ?? []).length, 2)
   assert.match(
     fn,
-    /from jsonb_to_recordset\(p_rows\)\s+as r\(id uuid, status text, duration_seconds integer\)/
+    /from jsonb_to_recordset\(p_rows\)\s+as r\(\s*id uuid,\s*status text,\s*duration_seconds integer,\s*title text,\s*title_ar text,\s*description text,\s*description_ar text\s*\)/
   )
   assert.match(fn, /youtube_status = r\.status/)
   assert.match(fn, /youtube_checked_at = now\(\)/)
@@ -193,8 +217,91 @@ test('record_youtube_checks: bounded batch, never touches titles or descriptions
   assert.match(fn, /player_error_code = case when r\.status = 'ok' then null/)
   assert.match(fn, /player_error_at = case when r\.status = 'ok' then null/)
   assert.match(fn, /get diagnostics v_count = row_count/)
-  assert.doesNotMatch(fn, /\b(title|title_ar|description|description_ar)\b/)
   assertServiceRoleOnly('public.record_youtube_checks(jsonb)')
+})
+
+/** The text rule for one field: kept when edited or on the first check, never emptied. */
+function assertRefreshUnlessEdited(fn: string, alias: string, f: string): void {
+  const a = escape(alias)
+  assert.match(
+    fn,
+    new RegExp(
+      `\\b${f} = case\\s+when ${a}\\.${f}_edited or ${a}\\.youtube_checked_at is null then ${a}\\.${f}\\s+` +
+        `else coalesce\\(nullif\\(btrim\\(r\\.${f}\\), ''\\), ${a}\\.${f}\\)\\s+end`
+    ),
+    `${f} refresh rule`
+  )
+  assert.match(
+    fn,
+    new RegExp(
+      `\\b${f}_edited = ${a}\\.${f}_edited or \\(\\s*${a}\\.youtube_checked_at is null\\s+` +
+        `and nullif\\(btrim\\(${a}\\.${f}\\), ''\\) is distinct from nullif\\(btrim\\(r\\.${f}\\), ''\\)\\s*\\)`
+    ),
+    `${f} baseline flag`
+  )
+  // Once edited stays edited: the flag is never assigned false.
+  assert.doesNotMatch(fn, new RegExp(`\\b${f}_edited = false`))
+}
+
+test('record_youtube_checks: refresh unless edited, for each of the four text fields', () => {
+  const fn = fnBlock('public.record_youtube_checks')
+  for (const f of ['title', 'title_ar', 'description', 'description_ar']) assertRefreshUnlessEdited(fn, 'e', f)
+  // Exactly these columns are written: never status, archived or publish_at
+  // (nothing is unpublished).
+  const set = fn.slice(fn.indexOf('update public.episodes e'), fn.indexOf('from jsonb_to_recordset'))
+  const assigned = [...set.matchAll(/^\s{4}(\w+) =/gm)].map((m) => m[1]).sort()
+  assert.deepEqual(assigned, [
+    'description',
+    'description_ar',
+    'description_ar_edited',
+    'description_edited',
+    'duration',
+    'player_error_at',
+    'player_error_code',
+    'title',
+    'title_ar',
+    'title_ar_edited',
+    'title_edited',
+    'youtube_checked_at',
+    'youtube_duration_seconds',
+    'youtube_status',
+  ])
+})
+
+test('record_short_checks: same security model, bounded batch, refresh unless edited, https thumbnail', () => {
+  const fn = fnBlock('public.record_short_checks')
+  assert.match(fn, /\(p_rows jsonb\)\s+returns integer/)
+  assert.match(fn, /language plpgsql/)
+  assert.match(fn, /security invoker/)
+  assert.doesNotMatch(fn, /security definer/)
+  assert.match(fn, /set search_path = ''/)
+  assert.match(fn, /jsonb_typeof\(p_rows\) <> 'array'/)
+  assert.match(fn, /jsonb_array_length\(p_rows\) > 5000/)
+  assert.equal((fn.match(/errcode = '22023'/g) ?? []).length, 2)
+  assert.match(fn, /update public\.shorts s/)
+  assert.match(
+    fn,
+    /from jsonb_to_recordset\(p_rows\)\s+as r\(id uuid, title text, channel_name text, thumbnail_url text\)\s+where s\.id = r\.id;/
+  )
+  assert.match(fn, /youtube_checked_at = now\(\)/)
+  for (const f of ['title', 'channel_name']) assertRefreshUnlessEdited(fn, 's', f)
+  assert.match(
+    fn,
+    /thumbnail_url = case\s+when r\.thumbnail_url like 'https:\/\/%' then r\.thumbnail_url\s+else s\.thumbnail_url\s+end/
+  )
+  // Only the four columns are written.
+  const set = fn.slice(fn.indexOf('update public.shorts s'), fn.indexOf('from jsonb_to_recordset'))
+  const assigned = [...set.matchAll(/^\s{4}(\w+) =/gm)].map((m) => m[1]).sort()
+  assert.deepEqual(assigned, [
+    'channel_name',
+    'channel_name_edited',
+    'thumbnail_url',
+    'title',
+    'title_edited',
+    'youtube_checked_at',
+  ])
+  assert.match(fn, /get diagnostics v_count = row_count/)
+  assertServiceRoleOnly('public.record_short_checks(jsonb)')
 })
 
 test('no destructive token anywhere in the file, comments included', () => {

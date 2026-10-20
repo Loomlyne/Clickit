@@ -1,14 +1,29 @@
 -- Phase 6, migration 1 of 2 (expand, D-21). Additive only.
 --
--- Adds the YouTube check columns on episodes, a catalog-wide unique index on
--- youtube_video_id, public.renumber_season, public.record_youtube_checks and
--- the Supabase Vault functions for the YouTube Data API key (D-20).
+-- Adds the YouTube check columns on episodes, the "edited on Clickit" flags on
+-- episodes and shorts, a catalog-wide unique index on youtube_video_id,
+-- public.renumber_season, public.record_youtube_checks,
+-- public.record_short_checks and the Supabase Vault functions for the YouTube
+-- Data API key (D-20).
+--
+-- Daily check text rule (CHANGED by Koss 2026-10-20, PR #27 review item 7:
+-- "refresh unless edited"): the check also refreshes the YouTube-sourced
+-- text, but never a field an admin changed on Clickit (its *_edited flag).
+-- It still never unpublishes anything.
 --
 -- Safety:
--- * Existing rows and existing columns are not changed. New columns are
---   nullable with no backfill.
--- * The new columns are NOT added to the anon/authenticated column grant list
---   or to episodes_view (20260724115941). Viewer roles cannot read them.
+-- * Existing rows and existing columns are not changed by this file. The
+--   check columns are nullable with no backfill. The *_edited flags are
+--   boolean not null default false: a constant default, so no table rewrite,
+--   and existing rows read false.
+-- * Existing rows are protected by a baseline, not by a backfill: the first
+--   check of a row (youtube_checked_at is null) writes no text. It marks a
+--   field edited when the stored text differs from YouTube's, so text an
+--   admin typed before the flags existed is never replaced.
+-- * The new episode columns are NOT added to the anon/authenticated column
+--   grant list or to episodes_view (20260724115941). Viewer roles cannot read
+--   them. shorts has no column grant list: viewers can read its two flags and
+--   its check time, which hold no private data.
 -- * Every new function is revoked from public, anon and authenticated and
 --   executable by service_role only. Supabase grants execute on new functions
 --   to anon and authenticated by default, so the revokes are required.
@@ -28,6 +43,24 @@ alter table public.episodes
   add column if not exists player_error_code integer
     check (player_error_code in (2, 5, 100, 101, 150)),
   add column if not exists player_error_at timestamptz;
+
+-- (1b) "Edited on Clickit" flags (review item 7) --------------------------
+-- Set by the admin saves when a field is changed on Clickit; never cleared.
+-- The daily check skips a field whose flag is true. shorts.thumbnail_url has
+-- no flag: the shorts form has no thumbnail field (it is filled from YouTube
+-- only), so the check always refreshes it. shorts.youtube_checked_at marks
+-- the baseline (see record_short_checks).
+
+alter table public.episodes
+  add column if not exists title_edited boolean not null default false,
+  add column if not exists title_ar_edited boolean not null default false,
+  add column if not exists description_edited boolean not null default false,
+  add column if not exists description_ar_edited boolean not null default false;
+
+alter table public.shorts
+  add column if not exists title_edited boolean not null default false,
+  add column if not exists channel_name_edited boolean not null default false,
+  add column if not exists youtube_checked_at timestamptz;
 
 -- (2) Duplicate guard ------------------------------------------------------
 -- Last line of defence: the controller clears duplicate ids on live first
@@ -180,10 +213,24 @@ $$;
 
 -- (5) record_youtube_checks ------------------------------------------------
 -- One write per daily re-check run (D-17): status, check time and duration in
--- seconds for a batch of episodes. episodes.duration (minutes) follows only
--- while it still equals the value derived from the previous stored seconds,
--- so an admin override is kept. A zero duration (not_ready) never replaces a
--- good one. Text columns are never written (D-05).
+-- seconds for a batch of episodes, plus the YouTube text routed by script the
+-- same way the import routes it (D-04). episodes.duration (minutes) follows
+-- only while it still equals the value derived from the previous stored
+-- seconds, so an admin override is kept. A zero duration (not_ready) never
+-- replaces a good one.
+--
+-- Text (refresh unless edited, review item 7). Per field:
+-- * <f>_edited is true: the stored text is kept.
+-- * First check of the row (youtube_checked_at is null): the stored text is
+--   kept; the flag turns true when the stored text differs from YouTube's
+--   (both trimmed, empty counts as none). This is the baseline for rows
+--   saved before the flags existed.
+-- * Otherwise: YouTube's text, trimmed. Empty or missing YouTube text (a
+--   video missing from the response, an empty description, the field the
+--   other script went to) keeps the stored text, so the check never empties
+--   a field and never nulls the required English title.
+-- The flags are read inside this UPDATE, from the row version it writes, so
+-- an admin save that lands between the run's read and this write is kept.
 
 create or replace function public.record_youtube_checks(p_rows jsonb)
 returns integer
@@ -222,9 +269,49 @@ begin
       else e.duration
     end,
     player_error_code = case when r.status = 'ok' then null else e.player_error_code end,
-    player_error_at = case when r.status = 'ok' then null else e.player_error_at end
+    player_error_at = case when r.status = 'ok' then null else e.player_error_at end,
+    title = case
+      when e.title_edited or e.youtube_checked_at is null then e.title
+      else coalesce(nullif(btrim(r.title), ''), e.title)
+    end,
+    title_edited = e.title_edited or (
+      e.youtube_checked_at is null
+      and nullif(btrim(e.title), '') is distinct from nullif(btrim(r.title), '')
+    ),
+    title_ar = case
+      when e.title_ar_edited or e.youtube_checked_at is null then e.title_ar
+      else coalesce(nullif(btrim(r.title_ar), ''), e.title_ar)
+    end,
+    title_ar_edited = e.title_ar_edited or (
+      e.youtube_checked_at is null
+      and nullif(btrim(e.title_ar), '') is distinct from nullif(btrim(r.title_ar), '')
+    ),
+    description = case
+      when e.description_edited or e.youtube_checked_at is null then e.description
+      else coalesce(nullif(btrim(r.description), ''), e.description)
+    end,
+    description_edited = e.description_edited or (
+      e.youtube_checked_at is null
+      and nullif(btrim(e.description), '') is distinct from nullif(btrim(r.description), '')
+    ),
+    description_ar = case
+      when e.description_ar_edited or e.youtube_checked_at is null then e.description_ar
+      else coalesce(nullif(btrim(r.description_ar), ''), e.description_ar)
+    end,
+    description_ar_edited = e.description_ar_edited or (
+      e.youtube_checked_at is null
+      and nullif(btrim(e.description_ar), '') is distinct from nullif(btrim(r.description_ar), '')
+    )
   from jsonb_to_recordset(p_rows)
-    as r(id uuid, status text, duration_seconds integer)
+    as r(
+      id uuid,
+      status text,
+      duration_seconds integer,
+      title text,
+      title_ar text,
+      description text,
+      description_ar text
+    )
   where e.id = r.id;
 
   get diagnostics v_count = row_count;
@@ -232,7 +319,68 @@ begin
 end;
 $$;
 
--- (6) Grants for the episode functions -------------------------------------
+-- (5b) record_short_checks -------------------------------------------------
+-- One write per daily re-check run for shorts (review item 7). Shorts have no
+-- YouTube status column; the run sends only shorts whose video YouTube
+-- returned. Same text rules as record_youtube_checks for title and
+-- channel_name, with shorts.youtube_checked_at as the baseline marker.
+-- thumbnail_url has no flag (no form field) and is always refreshed, but only
+-- to an https URL; anything else keeps the stored one.
+
+create or replace function public.record_short_checks(p_rows jsonb)
+returns integer
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_count integer;
+begin
+  if p_rows is null or jsonb_typeof(p_rows) <> 'array' then
+    raise exception using
+      errcode = '22023',
+      message = 'Short checks must be a JSON array';
+  end if;
+
+  if jsonb_array_length(p_rows) > 5000 then
+    raise exception using
+      errcode = '22023',
+      message = 'Too many short checks in one call';
+  end if;
+
+  update public.shorts s
+  set
+    youtube_checked_at = now(),
+    title = case
+      when s.title_edited or s.youtube_checked_at is null then s.title
+      else coalesce(nullif(btrim(r.title), ''), s.title)
+    end,
+    title_edited = s.title_edited or (
+      s.youtube_checked_at is null
+      and nullif(btrim(s.title), '') is distinct from nullif(btrim(r.title), '')
+    ),
+    channel_name = case
+      when s.channel_name_edited or s.youtube_checked_at is null then s.channel_name
+      else coalesce(nullif(btrim(r.channel_name), ''), s.channel_name)
+    end,
+    channel_name_edited = s.channel_name_edited or (
+      s.youtube_checked_at is null
+      and nullif(btrim(s.channel_name), '') is distinct from nullif(btrim(r.channel_name), '')
+    ),
+    thumbnail_url = case
+      when r.thumbnail_url like 'https://%' then r.thumbnail_url
+      else s.thumbnail_url
+    end
+  from jsonb_to_recordset(p_rows)
+    as r(id uuid, title text, channel_name text, thumbnail_url text)
+  where s.id = r.id;
+
+  get diagnostics v_count = row_count;
+  return v_count;
+end;
+$$;
+
+-- (6) Grants for the episode and short functions ---------------------------
 
 revoke all on function public.renumber_season(uuid)
   from public, anon, authenticated;
@@ -241,6 +389,10 @@ grant execute on function public.renumber_season(uuid) to service_role;
 revoke all on function public.record_youtube_checks(jsonb)
   from public, anon, authenticated;
 grant execute on function public.record_youtube_checks(jsonb) to service_role;
+
+revoke all on function public.record_short_checks(jsonb)
+  from public, anon, authenticated;
+grant execute on function public.record_short_checks(jsonb) to service_role;
 
 -- (7) YouTube API key in Supabase Vault (D-20) -----------------------------
 -- One named secret, youtube_api_key. private is not exposed by PostgREST, so
