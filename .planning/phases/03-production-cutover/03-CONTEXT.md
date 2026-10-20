@@ -1,7 +1,7 @@
 # Phase 3: Production Cutover - Context
 
 **Gathered:** 2026-10-20 (work session `phase-03-production-cutover`, worktree `.claude/worktrees/phase-03-production-cutover-689a87`, branch `claude/phase-03-production-cutover-689a87`)
-**Status:** SIGNED. Koss answered all recommended, Q1–Q18 = A, as written in `03-DISCUSS-QUESTIONS.md` (relayed by the controller, 2026-10-20 ~17:55 CET). D-01..D-19 are locked (D-07, D-11, D-18 are derived from the signed answers). The watchdog automation and the Jev rollback advisor stay proposals, not planned, unless Koss says so.
+**Status:** SIGNED. Koss answered all recommended, Q1–Q18 = A, as written in `03-DISCUSS-QUESTIONS.md` (relayed by the controller, 2026-10-20 ~17:55 CET). D-01..D-19 are locked (D-07, D-11, D-18 are derived from the signed answers). The watchdog automation and the Jev rollback advisor stay proposals, not planned, unless Koss says so. Plan gate G1–G7 signed by Koss 2026-10-20 ~18:15 CET (03-PLAN-GATE.md): G2/G3/G5 wordings for ROADMAP criterion 1, DNS-02, MEDIA-02 and the www owner line are approved for 03-13 to apply; G7 applied by the controller.
 **Session:** planning only. The control session "Clickit controller" in `/Users/koss/Developer/Clickit` commits main, deploys, runs live steps and talks to Koss.
 
 <domain>

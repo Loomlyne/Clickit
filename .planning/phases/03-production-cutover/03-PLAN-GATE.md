@@ -1,5 +1,7 @@
 # Phase 3 — plan gate for Koss
 
+**SIGNED:** Koss, G1–G7 all yes, 2026-10-20 ~18:15 CET (relayed by the Clickit controller). G7 applied by the controller in CLAUDE.local.md (re-sync = `r2:media --refresh`, then `--execute`; `r2:copy` superseded for re-sync). Execution of 03-01…03-06 waits for Phase 2 on main (G1).
+
 Plans: `03-01-PLAN.md` … `03-13-PLAN.md` (13 plans, run one at a time, waves 1–13). 03-01 … 03-06 are code and the runbook, written by a work session and landed through one PR. 03-07 … 03-13 are the live steps the controller and you run after Ship, in the order of `03-RUNBOOK.md` Steps 1–56 (written by 03-06). Checked by gsd-plan-checker (Opus): round 1 found 3 blockers and 9 warnings, round 2 one blocker, round 3 one blocker (ops logs inside the repo would make the deploy guard refuse); a targeted 4th check after that fix: **VERIFICATION PASSED**. Its last non-blocking warning (push the planning notes before Step 25) is applied in 03-10. One warning kept by choice: 03-04 touches 12 files (runs alone, serial waves).
 
 Discuss is signed: Q1–Q18 = A (2026-10-20 ~17:55 CET), recorded in `03-CONTEXT.md` D-01..D-19. The proof-window watchdog and the Jev rollback advisor stay proposals and are not in the plans.
