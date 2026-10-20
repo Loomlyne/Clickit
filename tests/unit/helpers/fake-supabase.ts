@@ -17,6 +17,7 @@ type Filter =
   | { kind: 'in'; col: string; value: any[] }
   | { kind: 'is'; col: string; value: any }
   | { kind: 'notnull'; col: string }
+  | { kind: 'like'; col: string; value: string }
 export type FakeCall = {
   table: string
   op: Op | 'rpc'
@@ -68,7 +69,20 @@ function matches(row: Row, f: Filter): boolean {
       return f.value === null ? v == null : v === f.value
     case 'notnull':
       return v != null
+    case 'like':
+      return typeof v === 'string' && likeToRegExp(f.value).test(v)
   }
+}
+
+/** SQL LIKE (case-sensitive): % is any run, _ is one character. */
+function likeToRegExp(pattern: string): RegExp {
+  let re = ''
+  for (const ch of pattern) {
+    if (ch === '%') re += '.*'
+    else if (ch === '_') re += '.'
+    else re += ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  }
+  return new RegExp(`^${re}$`, 's')
 }
 
 /** The violated column set, or null. Null and empty-string values never collide. */
@@ -174,6 +188,10 @@ export function createFakeSupabase(initial: Tables = {}) {
     }
     lt(col: string, value: any) {
       this.filters.push({ kind: 'lt', col, value })
+      return this
+    }
+    like(col: string, value: string) {
+      this.filters.push({ kind: 'like', col, value })
       return this
     }
     in(col: string, value: any[]) {

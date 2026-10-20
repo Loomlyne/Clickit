@@ -1508,7 +1508,7 @@
       "renumberFailed": "Renumber failed, so nothing changed. {reason} Refresh the page and try again.",
       "cantPlayBadge": "Can't play",
       "cantPlayReason": "{reason} · checked {date}",
-      "cantPlayViewerReport": "Reported by a viewer"
+      "cantPlayViewerReport": "Reported by viewers"
     },
     "seasonTabs": {
       "empty": "Create a season to start adding episodes.",

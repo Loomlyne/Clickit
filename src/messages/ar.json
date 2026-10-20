@@ -1508,7 +1508,7 @@
       "renumberFailed": "فشلت إعادة الترقيم، فلم يتغير شيء. {reason} حدّث الصفحة وأعد المحاولة.",
       "cantPlayBadge": "يتعذّر تشغيلها",
       "cantPlayReason": "{reason} · فُحصت في {date}",
-      "cantPlayViewerReport": "أبلغ عنها مشاهد"
+      "cantPlayViewerReport": "أبلغ عنها مشاهدون"
     },
     "seasonTabs": {
       "empty": "أنشئ موسماً لإضافة الحلقات.",

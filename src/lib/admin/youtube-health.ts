@@ -56,8 +56,10 @@ const ms = (iso: string | null | undefined): number | null => {
 }
 
 /**
- * The stored status when it is not ok; otherwise "viewer_report" when a viewer
+ * The stored status when it is not ok; otherwise "viewer_report" when viewers
  * reported a player error after the last check (or before any check); else null.
+ * player_error_at is only set once several viewers reported the episode
+ * (PLAYER_REPORT_THRESHOLD in src/server/player-error-report.ts).
  */
 export function cantPlayReason(row: CantPlayInput): CantPlayReason | null {
   const status = row.youtube_status

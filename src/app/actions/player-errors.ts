@@ -5,10 +5,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 /**
- * A signed-in viewer's player hit an error on this episode (D-17). Records the
- * code on the episode at most once per user per episode per hour, for
- * allow-listed codes only. Advisory: it raises the admin flag and nothing else,
- * and never calls YouTube. Returns `{ success }` only.
+ * A signed-in viewer's player hit an error on this episode (D-17). Records one
+ * report per user per episode per hour, for allow-listed codes only, and raises
+ * the admin flag only once PLAYER_REPORT_THRESHOLD different viewers reported
+ * the episode in 24 hours. Advisory: it unpublishes nothing and never calls
+ * YouTube. Returns `{ success }` only.
  */
 export async function reportPlayerError(
   episodeId: string,

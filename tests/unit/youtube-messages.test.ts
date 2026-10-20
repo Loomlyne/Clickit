@@ -342,6 +342,11 @@ test('every YOUTUBE_ERROR_MESSAGE_KEYS value exists under admin.youtubeErrors in
   }
 })
 
+test('the viewer-report label says viewers, not one viewer', () => {
+  assert.equal(get(en, 'admin.episodesTable.cantPlayViewerReport'), 'Reported by viewers')
+  assert.equal(get(ar, 'admin.episodesTable.cantPlayViewerReport'), 'أبلغ عنها مشاهدون')
+})
+
 test('rate limit copy is the agreed wording in en and ar', () => {
   assert.equal(get(en, 'admin.youtubeErrors.rateLimited'), 'Too many requests. Wait a few minutes and try again.')
   assert.equal(get(ar, 'admin.youtubeErrors.rateLimited'), 'طلبات كثيرة جدًا. انتظر بضع دقائق ثم حاول مرة أخرى.')

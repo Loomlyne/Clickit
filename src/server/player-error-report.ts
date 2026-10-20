@@ -5,13 +5,26 @@
 //
 // Guards, in order: signed-in, uuid episode id, allow-listed code, published
 // episode, one report per user per episode per hour on the shared rate_limits
-// ledger (fail closed), then one update of two fixed columns on that episode.
+// ledger (fail closed). The ledger row is the report. Only when at least
+// PLAYER_REPORT_THRESHOLD different viewers reported this episode in the last
+// 24 hours is the flag raised, with one update of two fixed columns on that
+// episode (PR #27 review, finding 4: one account alone cannot raise a fault).
+// The daily re-check (record_youtube_checks) clears the flag when YouTube says
+// the video is ok.
 
 import type { AdminDb } from '../lib/admin/ports'
 import { REPORTABLE_PLAYER_ERRORS } from '../lib/watch/player-errors.ts'
 import * as rateLimit from './youtube/rate-limit.ts'
 
 export const PLAYER_REPORT_WINDOW_MS = 60 * 60 * 1000
+
+/** Different viewers who must report an episode before the admin flag is raised. */
+export const PLAYER_REPORT_THRESHOLD = 3
+
+/** How far back the different-viewer count looks. */
+export const PLAYER_REPORT_COUNT_WINDOW_MS = 24 * 60 * 60 * 1000
+
+const keyPrefix = (episodeId: string) => 'player-error:' + episodeId + ':'
 
 export type PlayerErrorReportResult =
   | { ok: true }
@@ -56,13 +69,32 @@ export async function reportPlayerErrorCore(input: {
   }
 
   const allowed = await rateLimit.withinRateLimitCore(db, {
-    key: 'player-error:' + episodeId + ':' + userId,
+    key: keyPrefix(episodeId) + userId,
     max: 1,
     windowSec: PLAYER_REPORT_WINDOW_MS / 1000,
     now,
     failOpen: false,
   })
   if (!allowed) return { ok: false, reason: 'limited' }
+
+  // Different viewers in the last 24 hours, this report included. The episode
+  // id is a checked uuid, so the LIKE prefix has no wildcard in it. Each viewer
+  // adds at most one row an hour, so the default 1000-row page holds well over
+  // PLAYER_REPORT_THRESHOLD viewers.
+  const since = new Date(now.getTime() - PLAYER_REPORT_COUNT_WINDOW_MS).toISOString()
+  let reporters: number
+  try {
+    const { data: rows, error: countError } = await db
+      .from('rate_limits')
+      .select('key')
+      .like('key', keyPrefix(episodeId) + '%')
+      .gte('created_at', since)
+    if (countError || !Array.isArray(rows)) return { ok: false, reason: 'failed' }
+    reporters = new Set(rows.map((r) => r.key)).size
+  } catch {
+    return { ok: false, reason: 'failed' }
+  }
+  if (reporters < PLAYER_REPORT_THRESHOLD) return { ok: true }
 
   const { error } = await db
     .from('episodes')

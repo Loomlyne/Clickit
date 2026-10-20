@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
 import {
+  PLAYER_REPORT_COUNT_WINDOW_MS,
+  PLAYER_REPORT_THRESHOLD,
   PLAYER_REPORT_WINDOW_MS,
   reportPlayerErrorCore,
 } from '../../src/server/player-error-report.ts'
@@ -15,7 +17,21 @@ const OTHER = '33333333-3333-4333-8333-333333333333'
 // The fake stamps inserts from 2026-01-01T00:00:00.001Z upward.
 const NOW = new Date('2026-01-01T00:00:30.000Z')
 
-function world(extra: Array<Record<string, unknown>> = []) {
+const V2 = '77777777-7777-4777-8777-777777777777'
+const V3 = '88888888-8888-4888-8888-888888888888'
+
+/** Earlier reports by other viewers on EP, inside the 24-hour count window. */
+const priorReports = (...users: string[]) =>
+  users.map((u, i) => ({
+    id: `prior-${i}`,
+    key: `player-error:${EP}:${u}`,
+    created_at: '2025-12-31T12:00:00.000Z',
+  }))
+
+function world(
+  extra: Array<Record<string, unknown>> = [],
+  rateLimits: Array<Record<string, unknown>> = []
+) {
   return createFakeSupabase({
     episodes: [
       { id: EP, status: 'published', player_error_code: null, player_error_at: null },
@@ -23,9 +39,12 @@ function world(extra: Array<Record<string, unknown>> = []) {
       { id: '44444444-4444-4444-8444-444444444444', status: 'draft', player_error_code: null, player_error_at: null },
       ...extra,
     ],
-    rate_limits: [],
+    rate_limits: rateLimits,
   })
 }
+
+/** Two other viewers already reported EP: this user's report is the third. */
+const thirdViewerWorld = () => world([], priorReports(V2, V3))
 
 const call = (fake: ReturnType<typeof world>, over: Record<string, unknown> = {}) =>
   reportPlayerErrorCore({
@@ -42,6 +61,11 @@ const episodeWrites = (fake: ReturnType<typeof world>) =>
 
 test('the window is one hour', () => {
   assert.equal(PLAYER_REPORT_WINDOW_MS, 3_600_000)
+})
+
+test('the flag needs three different viewers inside 24 hours', () => {
+  assert.equal(PLAYER_REPORT_THRESHOLD, 3)
+  assert.equal(PLAYER_REPORT_COUNT_WINDOW_MS, 86_400_000)
 })
 
 test('no user: refused as unauthenticated, nothing read or written', async () => {
@@ -73,7 +97,7 @@ test('code 153 (site problem), 7, 0 and junk are refused without a write', async
 
 test('every allow-listed code is accepted', async () => {
   for (const code of [2, 5, 100, 101, 150]) {
-    const fake = world()
+    const fake = thirdViewerWorld()
     const res = await call(fake, { codeRaw: code })
     assert.deepEqual(res, { ok: true })
     assert.equal(fake.tables.episodes.find((e) => e.id === EP)?.player_error_code, code)
@@ -96,8 +120,8 @@ test('an unpublished episode is refused without a write', async () => {
   assert.equal(fake.tables.rate_limits.length, 0)
 })
 
-test('first report writes the two columns on that episode only', async () => {
-  const fake = world()
+test('the third different viewer raises the flag: two columns on that episode only', async () => {
+  const fake = thirdViewerWorld()
   const res = await call(fake)
   assert.deepEqual(res, { ok: true })
   const writes = episodeWrites(fake)
@@ -113,11 +137,11 @@ test('first report writes the two columns on that episode only', async () => {
   assert.equal(other?.player_error_code, null)
   assert.equal(other?.player_error_at, null)
   // The ledger key names the episode and the user.
-  assert.equal(fake.tables.rate_limits[0].key, `player-error:${EP}:${USER}`)
+  assert.equal(fake.tables.rate_limits.at(-1)?.key, `player-error:${EP}:${USER}`)
 })
 
 test('a second report inside the window is limited and writes nothing', async () => {
-  const fake = world()
+  const fake = thirdViewerWorld()
   assert.deepEqual(await call(fake), { ok: true })
   const res = await call(fake, { codeRaw: 100 })
   assert.deepEqual(res, { ok: false, reason: 'limited' })
@@ -136,7 +160,7 @@ test('the limit is per user and per episode', async () => {
 })
 
 test('after the window the same viewer can report again', async () => {
-  const fake = world()
+  const fake = thirdViewerWorld()
   assert.deepEqual(await call(fake), { ok: true })
   const later = new Date(NOW.getTime() + PLAYER_REPORT_WINDOW_MS + 60_000)
   assert.deepEqual(await call(fake, { now: later, codeRaw: 5 }), { ok: true })
@@ -160,10 +184,70 @@ test('a rate-limit write error fails closed: refused, no write', async () => {
 })
 
 test('a failed episode update is reported as failed', async () => {
-  const fake = world()
+  const fake = thirdViewerWorld()
   fake.failOn({ table: 'episodes', op: 'update', nth: 1 })
   const res = await call(fake)
   assert.deepEqual(res, { ok: false, reason: 'failed' })
+})
+
+test('one viewer alone records the report but never raises the flag', async () => {
+  const fake = world()
+  assert.deepEqual(await call(fake), { ok: true })
+  assert.equal(episodeWrites(fake).length, 0)
+  assert.equal(fake.tables.rate_limits.length, 1)
+  assert.equal(fake.tables.rate_limits[0].key, `player-error:${EP}:${USER}`)
+  // The same account reporting every hour for a day is still one viewer.
+  for (let h = 1; h <= 24; h++) {
+    const at = new Date(NOW.getTime() + h * (PLAYER_REPORT_WINDOW_MS + 1000))
+    assert.deepEqual(await call(fake, { now: at }), { ok: true })
+  }
+  assert.equal(episodeWrites(fake).length, 0)
+  const ep = fake.tables.episodes.find((e) => e.id === EP)
+  assert.equal(ep?.player_error_code, null)
+  assert.equal(ep?.player_error_at, null)
+})
+
+test('two viewers: no flag; the third different viewer raises it', async () => {
+  const fake = world()
+  assert.deepEqual(await call(fake, { userId: V2 }), { ok: true })
+  assert.deepEqual(await call(fake, { userId: V3 }), { ok: true })
+  assert.equal(episodeWrites(fake).length, 0)
+  assert.deepEqual(await call(fake, { codeRaw: 101 }), { ok: true })
+  assert.equal(episodeWrites(fake).length, 1)
+  assert.equal(fake.tables.episodes.find((e) => e.id === EP)?.player_error_code, 101)
+})
+
+test('reports older than 24 hours and reports on other episodes do not count', async () => {
+  const fake = world([], [
+    { id: 'old-1', key: `player-error:${EP}:${V2}`, created_at: '2025-12-30T23:59:00.000Z' },
+    { id: 'old-2', key: `player-error:${EP}:${V3}`, created_at: '2025-12-31T00:00:29.999Z' },
+    { id: 'other-ep', key: `player-error:${OTHER}:${V2}`, created_at: '2025-12-31T12:00:00.000Z' },
+    { id: 'other-ep-2', key: `player-error:${OTHER}:${V3}`, created_at: '2025-12-31T12:00:00.000Z' },
+  ])
+  assert.deepEqual(await call(fake), { ok: true })
+  assert.equal(episodeWrites(fake).length, 0)
+})
+
+test('the viewer count reads distinct keys by episode prefix inside 24 hours', async () => {
+  const fake = thirdViewerWorld()
+  await call(fake)
+  const selects = fake.calls.filter((c) => c.table === 'rate_limits' && c.op === 'select')
+  assert.equal(selects.length, 2)
+  assert.deepEqual(selects[1].filters, [
+    { kind: 'like', col: 'key', value: `player-error:${EP}:%` },
+    { kind: 'gte', col: 'created_at', value: '2025-12-31T00:00:30.000Z' },
+  ])
+})
+
+test('a viewer-count read error: refused as failed, the episode is not touched', async () => {
+  const fake = thirdViewerWorld()
+  fake.failOn({ table: 'rate_limits', op: 'select', nth: 2 })
+  assert.deepEqual(await call(fake), { ok: false, reason: 'failed' })
+  assert.equal(episodeWrites(fake).length, 0)
+  const thrown = thirdViewerWorld()
+  thrown.throwOn({ table: 'rate_limits', op: 'select', nth: 2 })
+  assert.deepEqual(await call(thrown), { ok: false, reason: 'failed' })
+  assert.equal(episodeWrites(thrown).length, 0)
 })
 
 test('the core has no YouTube dependency and uses the shared rate-limit seam', () => {

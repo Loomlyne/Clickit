@@ -208,3 +208,22 @@ test('calls records ordered ops', async () => {
   assert.deepEqual(ops, ['update', 'delete'])
   assert.equal(f.calls[0].table, 'shows')
 })
+
+test('like matches SQL LIKE patterns (% any run, _ one character)', async () => {
+  const fake = createFakeSupabase({
+    rate_limits: [
+      { id: '1', key: 'player-error:ep-1:u-1' },
+      { id: '2', key: 'player-error:ep-1:u-2' },
+      { id: '3', key: 'player-error:ep-10:u-1' },
+      { id: '4', key: 'contact:1.2.3.4' },
+    ],
+  })
+  const prefix = await fake.client.from('rate_limits').select('key').like('key', 'player-error:ep-1:%')
+  assert.deepEqual(prefix.data.map((r: { id: string }) => r.id), ['1', '2'])
+  const one = await fake.client.from('rate_limits').select('key').like('key', 'player-error:ep-1:u-_')
+  assert.deepEqual(one.data.map((r: { id: string }) => r.id), ['1', '2'])
+  const dots = await fake.client.from('rate_limits').select('key').like('key', 'contact:1.2.3.4')
+  assert.deepEqual(dots.data.map((r: { id: string }) => r.id), ['4'])
+  const none = await fake.client.from('rate_limits').select('key').like('key', 'contact:1x2.3.4')
+  assert.deepEqual(none.data, [])
+})

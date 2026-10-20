@@ -772,7 +772,7 @@ Every string below is new or replaced. Keys are relative to the namespace in the
 | renumberFailed | Renumber failed, so nothing changed. {reason} Refresh the page and try again. | فشلت إعادة الترقيم، فلم يتغير شيء. {reason} حدّث الصفحة وأعد المحاولة. |
 | cantPlayBadge | Can't play | يتعذّر تشغيلها |
 | cantPlayReason | {reason} · checked {date} | {reason} · فُحصت في {date} |
-| cantPlayViewerReport | Reported by a viewer | أبلغ عنها مشاهد |
+| cantPlayViewerReport | Reported by viewers | أبلغ عنها مشاهدون |
 
 ### `admin.dashboard` (additions)
 
