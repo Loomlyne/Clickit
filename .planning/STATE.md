@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-20T00:27:13.712Z"
+last_updated: "2026-10-20T00:30:42.439Z"
 last_activity: 2026-10-20
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 13
-  completed_plans: 7
+  completed_plans: 8
   percent: 0
 ---
 
@@ -25,11 +25,11 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 01.1 (admin-actions-hardening-inserted) — EXECUTING
-Plan: 8 of 13
+Plan: 9 of 13
 Status: Ready to execute
 Last activity: 2026-10-20
 
-Progress: [█████░░░░░] 54%
+Progress: [██████░░░░] 62%
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Progress: [█████░░░░░] 54%
 *Updated after each plan completion*
 | Phase 01.1 P05 | 20min | 2 tasks | 3 files |
 | Phase 01.1 P07 | 25min | 2 tasks | 2 files |
+| Phase 01.1 P08 | 20m | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,7 @@ Recent decisions affecting current work:
 - [Roadmap]: Branded auth emails (MAIL-01) placed in Phase 5, after the signed design canvas, not in Phase 1 — design before code.
 - [Roadmap]: PLAT-10 (Vercel removal) completes in Phase 8 because it includes deleting the Vercel project after the proof window; code-side BotID/analytics removal happens in Phase 2 under PLAT-05/PLAT-06.
 - [Phase 01.1]: [01.1-05] Archive records previous_slug and archived_episode_ids in the audit log; restore uses newest committed record with legacy fallback
+- [Phase ?]: 01.1-08: episode reorder uses atomic public.reorder_episode RPC; swap reversed via opposite direction if audit fails
 
 ### Pending Todos
 
@@ -85,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-20T00:27:09.854Z
+Last session: 2026-10-20T00:30:38.232Z
 Stopped at: Roadmap created, awaiting Koss's approval
 Resume file: None
