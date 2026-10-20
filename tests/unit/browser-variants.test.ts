@@ -5,7 +5,8 @@ import {
   planBrowserVariants,
   scaledSize,
   uploadProgressLine,
-  combineProgress,
+  progressPercent,
+  formatBytes,
 } from '../../src/lib/browser-variants.ts'
 
 test('planBrowserVariants: only widths narrower than the source, at most 640/1280/1920', () => {
@@ -41,13 +42,14 @@ test('scaledSize keeps the aspect ratio and never returns 0', () => {
   assert.deepEqual(scaledSize(5000, 1, 640), { width: 640, height: 1 })
 })
 
-test('combineProgress: original is 100% of the bar until variants run', () => {
-  assert.equal(combineProgress(0, 0, 3), 0)
-  assert.equal(combineProgress(0.5, 0, 3), 50)
-  assert.equal(combineProgress(1, 0, 3), 100)
-  assert.equal(combineProgress(1, 3, 3), 100)
-  assert.equal(combineProgress(2, 0, 0), 100)
-  assert.equal(combineProgress(-1, 0, 0), 0)
+test('progressPercent clamps to 0..100 and rounds', () => {
+  assert.equal(progressPercent(0), 0)
+  assert.equal(progressPercent(0.5), 50)
+  assert.equal(progressPercent(0.624), 62)
+  assert.equal(progressPercent(1), 100)
+  assert.equal(progressPercent(7), 100)
+  assert.equal(progressPercent(-1), 0)
+  assert.equal(progressPercent(Number.NaN), 0)
 })
 
 test('uploadProgressLine uses the signed text for 3 copies, honest counts otherwise', () => {
@@ -56,4 +58,12 @@ test('uploadProgressLine uses the signed text for 3 copies, honest counts otherw
   assert.equal(uploadProgressLine('image', 1), 'Uploading… then 1 smaller copy')
   assert.equal(uploadProgressLine('image', 0), 'Uploading…')
   assert.equal(uploadProgressLine('video', 0), 'Uploading…')
+})
+
+test('formatBytes matches the signed "3.4 MB" style', () => {
+  assert.equal(formatBytes(3.4 * 1024 * 1024), '3.4 MB')
+  assert.equal(formatBytes(38 * 1024 * 1024), '38 MB')
+  assert.equal(formatBytes(200 * 1024), '200 KB')
+  assert.equal(formatBytes(12), '12 B')
+  assert.equal(formatBytes(-1), '')
 })
