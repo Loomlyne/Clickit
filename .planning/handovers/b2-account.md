@@ -21,10 +21,17 @@ Branch `claude/design-b2-account-91fbe1` (base `main` merged in at `53e2598`). S
 ## Gates
 `npm run gate:local` under the shared lock, 2026-10-20 11:36 CET: lint 0 errors (15 warnings, none new from B2 except the pre-existing avatar `<img>`), unit tests 78 pass / 0 fail (3 new in `tests/unit/password-rules.test.ts`), `next build` compiled and exit 0. Log: `/Users/koss/.clickit-logs/b2/gate.log` (`exit=0`). Build needs placeholder Supabase env (`NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321`, dummy keys) — without it `legal/[slug]` fails with `supabaseUrl is required` (unchanged code, same as B3). Merge commit of `origin/main` at `53e2598`; main had not moved after.
 
+## Verified in a real dev server (placeholder Supabase env, 375px, Chrome pane; measured in the DOM)
+- `/en/auth`: eye 44×44, tabbable, `aria-pressed` flips and input type toggles; tab triggers 44px; forgot link 44px; submit yellow rgb(255,204,0) 44px; form `method=post`; no horizontal scroll; one `data-turnstile-slot` per form.
+- Sign-up: inline errors with `{min}` filled ("at least 8"); strength "weak" for `Ab1!` (short); two eyes; terms row 44px, checkbox 20px, sentence on one line in en and ar.
+- `/ar/auth`: **found and fixed** — Radix `Tabs` forced `dir="ltr"` so the whole Arabic form rendered left-to-right (pre-existing). `auth-panel.tsx` now passes `dir={dirFor(locale)}`; afterwards the form is RTL and the eye sits on the left edge (the logical end), no overflow.
+- `/en/auth/reset-password`: one h1 "Reset password", two 44px eyes, strength meter, no overflow.
+- Profile pieces (header, account settings, history rows, rendered from a temporary preview route that is **not** committed): buttons 44px, avatar 80px target with camera badge, h1/h2 order, history rows 301px wide (no scroll), progress bar `aria-valuenow=62`, password change shows two labelled fields with 44px eyes, inline errors for short/mismatch, strength "strong" for `Abcdef1!`, email inline error `role=alert`. Arabic: eye on the left, badge mirrored, no overflow.
+
 ## NOT verified
-- No local Supabase env: auth/profile pages were not run against a real session; no screenshots of the coded pages (only of the picture). Browser UAT happens after the PR preview/deploy.
-- RTL (Arabic) mirroring of the eye and rail fade is by logical classes (`end-*`, `rtl:`) — not looked at.
-- Contrast numbers are computed from token hexes, not measured on rendered pages.
+- Anything needing a real Supabase session: real sign-in/sign-up/reset round trip, the actual `/profile` page (the pieces were rendered with mock data), My List / Liked rails with real posters.
+- Hero scrim contrast over a real admin-uploaded image (no image in the placeholder env); desktop two-column layout was not re-measured after the changes.
+- Screen-reader announcements (`role=alert` / `status`).
 
 ## Owner step (Koss) — Supabase Auth server-side password length
 The app now enforces 8 characters in the browser, but Supabase Auth has its own minimum (default 6) that applies to API calls that skip our forms. Changing it on the live project is an owner step; I did not touch it.
