@@ -8,11 +8,11 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   prettier,
-  // Phase 4 DS-02 guard. warn until the codemod lands; 04-13 flips it to error.
+  // Phase 4 DS-02 guard (error since 04-13)
   {
     files: ['src/**/*.{ts,tsx}'],
     plugins: { clickit },
-    rules: { 'clickit/no-raw-design-values': 'warn' },
+    rules: { 'clickit/no-raw-design-values': 'error' },
   },
   // Allowlist for files that legitimately hold raw values:
   // - src/lib/brand-colors.ts: the one brand colour map
