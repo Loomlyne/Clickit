@@ -55,6 +55,8 @@ None yet.
 - No code reaches production until Phase 3 (Vercel deploys are BLOCKED).
 - Owner decisions pending (pricing, not assumed): Workers Paid $5/mo if Free CPU fails (Phase 2); Image Transformations stays on the free tier only.
 - Stray Cloudflare NS pair (ignat/nataly) must be resolved before any NS change (Phase 1).
+- Live images broken (2026-10-19): live pages load media from `media.clickitstory.ae`, which has no DNS record (zone NS = tasjeel.ae). The same files return 200 on Supabase Storage. Fix first: point media back at Supabase (remove `NEXT_PUBLIC_MEDIA_CUTOVER_READY` on Vercel, or revert the DB rows with Koss's approval). Never switch to R2 until `media.clickitstory.ae` serves the files.
+- PR #16 (`images.unoptimized` + Supabase host from env) is parked for Phase 2 (Workers). It does not fix the dead media host.
 - Live migration state and `private.is_admin()` presence unverified — read-only audit in Phase 1 before any schema ship.
 
 

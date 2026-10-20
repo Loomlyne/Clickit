@@ -37,11 +37,45 @@ const mediaImagePattern = publicMediaOrigin
     })()
   : null
 
+// Storage images may come from whichever Supabase project this build connects
+// to (NEXT_PUBLIC_SUPABASE_URL), not only the original hardcoded one. Rows that
+// still point at the original project keep working through LEGACY_SUPABASE_HOST.
+const LEGACY_SUPABASE_HOST = 'lajguozmtissnnfccmej.supabase.co'
+const supabaseOrigin = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL
+      ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL)
+      : null
+  } catch {
+    return null
+  }
+})()
+const supabaseImagePatterns = [
+  {
+    protocol: 'https' as const,
+    hostname: LEGACY_SUPABASE_HOST,
+    pathname: '/storage/v1/object/public/**',
+  },
+  ...(supabaseOrigin && supabaseOrigin.host !== LEGACY_SUPABASE_HOST
+    ? [
+        {
+          protocol: supabaseOrigin.protocol.replace(':', '') as 'http' | 'https',
+          hostname: supabaseOrigin.hostname,
+          ...(supabaseOrigin.port ? { port: supabaseOrigin.port } : {}),
+          pathname: '/storage/v1/object/public/**',
+        },
+      ]
+    : []),
+]
+// img-src already allows any https: origin; a local http Supabase needs its own entry.
+const supabaseHttpImgSrc =
+  supabaseOrigin?.protocol === 'http:' ? ` ${supabaseOrigin.origin}` : ''
+
 const cspDirectives = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${devScriptSrc} https://www.googletagmanager.com https://connect.facebook.net https://www.youtube.com https://s.ytimg.com https://va.vercel-scripts.com https://vercel.live`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https:",
+  `img-src 'self' data: blob: https:${supabaseHttpImgSrc}`,
   `media-src 'self' blob: https://*.supabase.co${publicMediaOrigin ? ` ${publicMediaOrigin}` : ''}`,
   "font-src 'self' data:",
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://stats.g.doubleclick.net https://va.vercel-scripts.com https://*.vercel-insights.com https://connect.facebook.net https://www.facebook.com https://www.youtube.com https://*.googlevideo.com https://youtubei.googleapis.com",
@@ -113,6 +147,10 @@ const nextConfig: NextConfig = {
     ]
   },
   images: {
+    // Serve images straight from their source. The /_next/image optimizer
+    // needs sharp, which Cloudflare Workers cannot run, so optimized images
+    // fail there. Resizing returns with the R2 media loader (Phase 4).
+    unoptimized: true,
     formats: ['image/avif', 'image/webp'],
     // Cache optimized images (YouTube thumbnails, show artwork) for 30 days —
     // reduces Supabase storage pulls on optimizer cache miss.
@@ -144,11 +182,7 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
-      {
-        protocol: 'https',
-        hostname: 'lajguozmtissnnfccmej.supabase.co',
-        pathname: '/storage/v1/object/public/**',
-      },
+      ...supabaseImagePatterns,
       ...(mediaImagePattern ? [mediaImagePattern] : []),
     ],
   },
