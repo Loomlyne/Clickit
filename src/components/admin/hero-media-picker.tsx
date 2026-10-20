@@ -13,14 +13,9 @@ import {
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import {
-  createShowVideoUpload,
-  saveShowVideoUpload,
-  finalizeArtworkUpload,
-} from '@/app/[locale]/admin/actions'
-import { uploadImageDirect, type UploadProgress } from '@/lib/browser-upload'
+import { finalizeArtworkUpload, finalizeShowVideoUpload } from '@/app/[locale]/admin/actions'
+import { UPLOAD_MESSAGES, uploadImageDirect, uploadVideoDirect, type UploadProgress } from '@/lib/browser-upload'
 import { UploadStatus, notifyUploadError, notifyUploaded } from '@/components/admin/upload-status'
-import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
 import {
   resolveSupabaseVideoUrl,
@@ -111,56 +106,44 @@ export function HeroMediaPicker({
     void uploadHeroImage(file)
   }
 
-  async function handleMp4Upload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleMp4Upload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     if (file.size > 50 * 1024 * 1024) {
       toast.error(t('videoTooLarge'))
       return
     }
+    void uploadHeroVideo(file)
+  }
+
+  // Hero video: browser -> R2 directly (02-18). commit:false keeps today's behaviour:
+  // the drawer holds the new URL and writes it on Save.
+  async function uploadHeroVideo(file: File) {
     setUploading(true)
+    setImageProgress({ fileName: file.name, fileSize: file.size, percent: 0, phase: 'uploading', variantCount: 0 })
     try {
-      const uploadTarget = await createShowVideoUpload({
-        name: file.name,
-        size: file.size,
-        type: file.type,
+      const result = await uploadVideoDirect({
+        file,
+        kind: 'show-video',
+        slot: variant,
         showId,
-        variant,
+        finalize: ({ key }) => finalizeShowVideoUpload({ showId, variant, key, commit: false }),
+        onProgress: setImageProgress,
       })
-      if (!uploadTarget.success || !uploadTarget.data) {
-        toast.error(uploadTarget.error ?? t('uploadFailed'))
+      if (!result.ok) {
+        notifyUploadError(result.error, {
+          retry: () => void uploadHeroVideo(file),
+          tooLargeMessage: t('videoTooLarge'),
+        })
         return
       }
-
-      const supabase = createBrowserSupabaseClient()
-      const { error: uploadError } = await supabase.storage
-        .from('site-assets')
-        .uploadToSignedUrl(
-          uploadTarget.data.path,
-          uploadTarget.data.token,
-          file,
-          {
-            contentType: 'video/mp4',
-            cacheControl: '31536000',
-          }
-        )
-
-      if (uploadError) {
-        toast.error(uploadError.message)
-        return
-      }
-
-      const result = await saveShowVideoUpload(uploadTarget.data.path)
-      if (!result.success || !result.data) {
-        toast.error(result.error ?? t('uploadFailed'))
-        return
-      }
-      onVideoChange({ url: result.data, type: 'mp4' })
+      onVideoChange({ url: result.url, type: 'mp4' })
       onImageChange(null)
       toast.success(t('uploadVideoSuccess', { label }))
     } catch {
       toast.error(t('uploadFailed'))
     } finally {
+      setImageProgress(null)
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
@@ -291,7 +274,11 @@ export function HeroMediaPicker({
         {uploading ? (
           imageProgress ? (
             <div className="absolute inset-0 flex items-center justify-center bg-black/60 p-3">
-              <UploadStatus progress={imageProgress} className="w-full" />
+              <UploadStatus
+                progress={imageProgress}
+                kind={mode === 'mp4' ? 'video' : 'image'}
+                className="w-full"
+              />
             </div>
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60">
@@ -349,6 +336,9 @@ export function HeroMediaPicker({
               {mode === 'mp4' ? t('clickToUploadMp4') : t('clickToUploadImage')}
             </p>
             <p className="text-muted-foreground text-[11px]">{sourceHint}</p>
+            {mode === 'mp4' && (
+              <p className="text-muted-foreground text-[11px]">{UPLOAD_MESSAGES.videoHint}</p>
+            )}
           </button>
         )}
       </div>

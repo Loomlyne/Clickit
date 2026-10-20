@@ -39,3 +39,28 @@ test('upload zone texts are the signed ones', () => {
   assert.match(up, /The file did not match its type and was removed\. Nothing was saved\./)
   assert.match(up, /This browser cannot make WebP copies; the original will be used\./)
 })
+
+const VIDEO_FILES: Array<{ path: string; finalize: string; kind: string }> = [
+  { path: 'src/components/admin/hero-video-manager.tsx', finalize: 'finalizeHeroVideoUpload', kind: 'hero-video' },
+  { path: 'src/components/admin/settings/preloader-video-field.tsx', finalize: 'finalizePreloaderVideoUpload', kind: 'preloader-video' },
+  { path: 'src/components/admin/hero-media-picker.tsx', finalize: 'finalizeShowVideoUpload', kind: 'show-video' },
+]
+
+for (const { path, finalize, kind } of VIDEO_FILES) {
+  test(`${path} uploads video browser -> R2 -> ${finalize}`, () => {
+    const src = read(path)
+    assert.match(src, /uploadVideoDirect/)
+    assert.match(src, new RegExp(`kind: '${kind}'`))
+    assert.match(src, new RegExp(finalize))
+    assert.match(src, /<UploadStatus/)
+    assert.match(src, /UPLOAD_MESSAGES\.videoHint/)
+    assert.equal(
+      /createHeroVideoUpload|saveHeroVideoUpload|createPreloaderVideoUpload|savePreloaderVideoUpload|createShowVideoUpload|saveShowVideoUpload|uploadToSignedUrl|supabase\/client/.test(src),
+      false
+    )
+  })
+}
+
+test('the show drawer keeps "upload then Save" for videos (commit: false)', () => {
+  assert.match(read('src/components/admin/hero-media-picker.tsx'), /finalizeShowVideoUpload\(\{[^}]*commit: false/)
+})

@@ -16,13 +16,13 @@ import {
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
-  createHeroVideoUpload,
-  saveHeroVideoUpload,
+  finalizeHeroVideoUpload,
   setHeroVideoUrl,
   removeHeroVideo,
   setHeroVideoMuted,
 } from '@/app/[locale]/admin/actions'
-import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client'
+import { UPLOAD_MESSAGES, uploadVideoDirect, type UploadProgress } from '@/lib/browser-upload'
+import { UploadStatus, notifyUploadError } from '@/components/admin/upload-status'
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
 import { probeLocalMp4HasAudio } from '@/lib/media-audio'
 import { resolveSupabaseVideoUrl } from '@/lib/supabase-media'
@@ -149,6 +149,7 @@ function HeroVariantPanel({
   const [video, setVideo] = useState<VideoConfig>(current)
   const [mode, setMode] = useState<'mp4' | 'youtube'>(current?.type ?? 'mp4')
   const [busy, setBusy] = useState(false)
+  const [progress, setProgress] = useState<UploadProgress | null>(null)
   const [youtubeInput, setYoutubeInput] = useState(
     current?.type === 'youtube' ? current.url : ''
   )
@@ -174,44 +175,36 @@ function HeroVariantPanel({
       return
     }
 
+    void uploadFile(file)
+  }
+
+  // Browser -> R2 directly (02-18), then finalize checks size, fast-start and audio.
+  async function uploadFile(file: File) {
     setBusy(true)
+    setProgress({ fileName: file.name, fileSize: file.size, percent: 0, phase: 'uploading', variantCount: 0 })
     try {
-      const uploadTarget = await createHeroVideoUpload(
-        { name: file.name, size: file.size, type: file.type },
-        variant
-      )
-      if (!uploadTarget.success || !uploadTarget.data) {
-        toast.error(uploadTarget.error ?? t('uploadFailed'))
+      const result = await uploadVideoDirect({
+        file,
+        kind: 'hero-video',
+        slot: variant,
+        finalize: ({ key }) => finalizeHeroVideoUpload({ variant, key }),
+        onProgress: setProgress,
+      })
+      if (!result.ok) {
+        notifyUploadError(result.error, {
+          retry: () => void uploadFile(file),
+          tooLargeMessage: t('videoTooLarge'),
+        })
         return
       }
-
-      const supabase = createBrowserSupabaseClient()
-      const { error: uploadError } = await supabase.storage
-        .from('site-assets')
-        .uploadToSignedUrl(
-          uploadTarget.data.path,
-          uploadTarget.data.token,
-          file,
-          { contentType: 'video/mp4', cacheControl: '31536000', upsert: true }
-        )
-      if (uploadError) {
-        toast.error(uploadError.message)
-        return
-      }
-
-      const result = await saveHeroVideoUpload(uploadTarget.data.path, variant)
-      if (!result.success || !result.data) {
-        toast.error(result.error ?? t('uploadFailed'))
-        return
-      }
-
-      setVideo({ url: result.data, type: 'mp4' })
+      setVideo({ url: result.url, type: 'mp4' })
       onMp4Saved?.()
       toast.success(t('uploadVideoSuccess', { label }))
       toast.message(t('videoAudioEnabled'))
     } catch {
       toast.error(t('uploadFailed'))
     } finally {
+      setProgress(null)
       setBusy(false)
       if (inputRef.current) inputRef.current.value = ''
     }
@@ -336,7 +329,9 @@ function HeroVariantPanel({
 
       {/* MP4 upload */}
       {mode === 'mp4' &&
-        (busy ? (
+        (progress ? (
+          <UploadStatus progress={progress} kind="video" />
+        ) : busy ? (
           <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6">
             <Loader2 className="text-muted-foreground size-5 animate-spin" />
             <p className="text-muted-foreground text-xs">
@@ -351,6 +346,9 @@ function HeroVariantPanel({
             </p>
             <p className="text-muted-foreground text-center text-[11px]">
               {hint}
+            </p>
+            <p className="text-muted-foreground text-center text-[11px]">
+              {UPLOAD_MESSAGES.videoHint}
             </p>
             <input
               ref={inputRef}
