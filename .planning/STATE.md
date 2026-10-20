@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-last_updated: "2026-10-20T13:08:33.404Z"
-last_activity: "2026-10-20 - Completed quick task 261020-ej8: Apply UI System ui.config.json tokens to Clickit"
+status: executing
+last_updated: "2026-10-20T00:46:09.831Z"
+last_activity: 2026-10-20
 progress:
   total_phases: 9
   completed_phases: 0
-  total_plans: 17
-  completed_plans: 0
+  total_plans: 13
+  completed_plans: 12
   percent: 0
 ---
 
@@ -20,16 +20,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-04)
 
 **Core value:** A signed-in viewer opens a show and an episode from YouTube plays immediately, with progress remembered — and the admin can put a whole YouTube season on the platform from one playlist link.
-**Current focus:** Phase 1: Safe Ground
+**Current focus:** Phase 01.1 — admin-actions-hardening-inserted
 
 ## Current Position
 
-Phase: 1 of 8 (Safe Ground)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-10-20 - Completed quick task 261020-ej8: Apply UI System ui.config.json tokens to Clickit
+Phase: 01.1 (admin-actions-hardening-inserted) — UAT PASSED, awaiting PR review and Ship
+Plan: 13 of 13
+Status: UAT passed (Koss, 2026-10-20; step 14 upload-audit gap to backlog) — merged origin/main cfbc8fb for landing
+Last activity: 2026-10-20 - Completed quick task 261020-ej8 on main: Apply UI System ui.config.json tokens to Clickit
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -51,6 +51,13 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01.1 P05 | 20min | 2 tasks | 3 files |
+| Phase 01.1 P07 | 25min | 2 tasks | 2 files |
+| Phase 01.1 P08 | 20m | 2 tasks | 3 files |
+| Phase 01.1 P09 | 20min | 2 tasks | 2 files |
+| Phase 01.1 P10 | 25min | 3 tasks | 4 files |
+| Phase 01.1 P11 | 30min | 3 tasks | 3 files |
+| Phase 01.1 P12 | 40min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -62,6 +69,12 @@ Recent decisions affecting current work:
 - [Roadmap]: Risk-first order; 12 research phases compressed to 8 (safety + DNS/Resend merged; Workers port + R2 media merged; accounts + app email merged; completeness/search + Arabic merged). Cutover and design system kept as their own phases.
 - [Roadmap]: Branded auth emails (MAIL-01) placed in Phase 5, after the signed design canvas, not in Phase 1 — design before code.
 - [Roadmap]: PLAT-10 (Vercel removal) completes in Phase 8 because it includes deleting the Vercel project after the proof window; code-side BotID/analytics removal happens in Phase 2 under PLAT-05/PLAT-06.
+- [Phase 01.1]: [01.1-05] Archive records previous_slug and archived_episode_ids in the audit log; restore uses newest committed record with legacy fallback
+- [Phase ?]: 01.1-08: episode reorder uses atomic public.reorder_episode RPC; swap reversed via opposite direction if audit fails
+- [Phase 01.1]: Unschedule trusts only the newest committed bulk_schedule record, validated by bulkScheduleRecordSchema; unreadable record is refused, no fallback
+- [Phase 01.1]: runAdminAction revalidates in finally on success/wrote/throw; revalidate errors logged only
+- [Phase 01.1]: Plan 11: revalidation show id comes from core result; client id only as UUID-checked fallback
+- [Phase 01.1]: Hero cores share one tail: audit row written before staged media deletion commits; audit failure restores config and rolls back
 
 ### Pending Todos
 
@@ -74,6 +87,7 @@ None yet.
 - Stray Cloudflare NS pair (ignat/nataly) must be resolved before any NS change (Phase 1).
 - Live migration state and `private.is_admin()` presence unverified — read-only audit in Phase 1 before any schema ship.
 
+
 ### Quick Tasks Completed
 
 | # | Description | Date | Commit | Directory |
@@ -85,10 +99,22 @@ None yet.
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| *(none)* | | | |
+| admin audit | uploadSiteImage / uploadSocialIcon write no audit row (favicon, OG, social icon uploads); found in 1.1 UAT step 14, not one of the 21 findings | open | 2026-10-20 (1.1 UAT) |
+| i18n | `admin.seasonForm.addSeason` missing in en.json (raw key on Add Season button) | open | 2026-10-20 (1.1 UAT) |
+| i18n | `siteTitleHint` "Shown in <title> ..." fails ICU parsing (INVALID_MESSAGE on Settings) | open | 2026-10-20 (1.1 UAT) |
+| routing | /en/admin/shows (no index route) returns 500 "No intl context found" instead of 404 | open | 2026-10-20 (1.1 UAT) |
+| local dev | CSP connect-src allows only https://*.supabase.co, so browser uploads to a local Supabase (127.0.0.1:55321) fail | open | 2026-10-20 (1.1 UAT) |
+| admin atomicity | reorderCategories and reorderShort are not atomic (multi-row renumber without compensation) | open | 2026-10-20 (PR #23 review) |
+| admin validation | youtube_video_id, image_url and expires_at are not validated in the shorts/cast actions | open | 2026-10-20 (PR #23 review) |
+| admin media | uploadArtwork and uploadCastImage do not sniff image bytes (declared type only) | open | 2026-10-20 (PR #23 review) |
+| admin perf | fillArabic has no cache (repeat translations of unchanged text) | open | 2026-10-20 (PR #23 review) |
+| admin errors | raw Supabase error messages reach the admin UI; map them to plain messages | open | 2026-10-20 (PR #23 review) |
+| admin tests | no export-level test that every server action calls assertAdmin (only per-action scans) | open | 2026-10-20 (PR #23 review) |
+| admin design | app-level compensation instead of DB transactions (D-05): revisit with an RPC per multi-step write | open | 2026-10-20 (PR #23 review) |
+| admin deletes | shorts, reviews, FAQs and legal pages still hard-delete with no archive-first rule (shorts already has an `archived` column); only the audit snapshot keeps the content | open | 2026-10-20 (PR #23 fix verification L4) |
 
 ## Session Continuity
 
-Last session: 2026-10-20T13:08:33.398Z
-Stopped at: Phase 1 planned (4 plans, 3 waves); waiting at plan gate for Koss
-Resume file: .planning/phases/01-safe-ground/01-04-PLAN.md
+Last session: 2026-10-20T00:46:09.826Z
+Stopped at: Completed 01.1-12-PLAN.md
+Resume file: None

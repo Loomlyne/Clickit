@@ -64,7 +64,16 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
     const result = await updateTopTicker({ enabled, items })
     setSaving(false)
     if (result.success) {
-      toast.success(t('newsTickerSaved'))
+      const data: unknown = result.data
+      const untranslated =
+        data && typeof data === 'object' && 'untranslated' in data
+          ? (data as { untranslated: unknown }).untranslated
+          : 0
+      if (typeof untranslated === 'number' && untranslated > 0) {
+        toast.warning(t('newsTickerArabicMissing', { count: untranslated }))
+      } else {
+        toast.success(t('newsTickerSaved'))
+      }
       if (items.length === 0) {
         setRows([emptyRow()])
       }
