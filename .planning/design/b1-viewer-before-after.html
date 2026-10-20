@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>B1 viewer — before / after</title>
+<style>
+/* ── Product tokens: copied from src/styles/globals.css (:root) ── */
+:root{
+  --bg-0:#090909;--bg-1:#101010;--bg-2:#191919;--bg-3:#2A2A2A;--bg-4:#424242;
+  --line:rgba(255,255,255,.08);--line-2:rgba(255,255,255,.14);
+  --text:#F4F4F4;--text-dim:#CCCCCC;--text-mute:#A1A1A1;
+  --primary:#ffcc00;--primary-fg:#090909;--accent-yellow:#ffcc00;
+  --destructive:#ff3b30;
+  --uis-primary-hover:#D7AD16;--uis-primary-soft:#312915;--uis-line-strong:#424242;
+  --uis-r-card:12px;--uis-r-panel:16px;--uis-r-media:11px;--uis-r-field:8px;
+  --brand-blue:#2C3569;--brand-purple:#9F54A0;--brand-green:#50A258;--brand-red:#DB3F34;--brand-orange:#EA8C2E;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+/* ── Sheet chrome (not product) ── */
+*{box-sizing:border-box}
+html{background:#0c0c0c;color:#e8e8e8;font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+body{margin:0;padding:28px 36px 90px;min-width:1400px}
+h1{font-size:26px;margin:0 0 6px}
+h2.pg{font-size:20px;margin:56px 0 4px;padding-top:24px;border-top:1px solid #2a2a2a}
+h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#9a9a9a;margin:26px 0 10px}
+.sub{color:#9a9a9a;max-width:980px;margin:0 0 12px}
+.route{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#ffcc00}
+.bar{position:sticky;top:0;z-index:50;background:#0c0c0cee;backdrop-filter:blur(6px);padding:10px 0;margin:0 0 6px;display:flex;gap:22px;align-items:center;border-bottom:1px solid #222}
+.bar label{cursor:pointer;display:flex;gap:6px;align-items:center;font-size:13px}
+.bar a{color:#ffcc00;text-decoration:none;font-size:13px}
+.sum{background:#141414;border:1px solid #2a2a2a;border-radius:10px;padding:14px 18px;max-width:1100px;margin:14px 0}
+.sum ol{margin:6px 0 0;padding-left:20px}.sum li{margin:3px 0}
+.chg{background:#141414;border:1px solid #2a2a2a;border-radius:10px;padding:10px 16px;max-width:1100px;margin:10px 0 4px}
+.chg ol{margin:4px 0;padding-left:20px;columns:1}.chg li{margin:2px 0;color:#cfcfcf}
+.chg b{color:#fff}
+.row{display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap}
+.cap{font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 6px;display:flex;gap:8px;align-items:center}
+.tag-b{color:#ff8b82}.tag-a{color:#77d586}
+.stack>div{margin-bottom:22px}
+.scroll{overflow-x:auto;padding-bottom:6px}
+.note{font-size:12px;color:#9a9a9a;max-width:900px}
+table.t{border-collapse:collapse;font-size:12.5px;margin:8px 0}
+table.t td,table.t th{border:1px solid #2a2a2a;padding:5px 10px;text-align:left;vertical-align:top}
+table.t th{background:#161616;color:#aaa;font-weight:600}
+.vtag{position:absolute;z-index:99;background:#ff3b30;color:#fff;font:600 10px/1 system-ui;padding:2px 4px;border-radius:3px;pointer-events:none;white-space:nowrap;transform:translateY(-100%)}
+body:not(.showv) .vtag{display:none}
+body.showv .before [data-v]{outline:1.5px dashed #ff3b30;outline-offset:1px}
+
+/* ── Frame: a page rendered with product tokens ── */
+.frame{position:relative;overflow:hidden;background:var(--bg-0);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.5;border:1px solid #2c2c2c;border-radius:6px;flex:none}
+.frame.p{width:375px}.frame.d{width:1280px}
+.frame a{color:inherit;text-decoration:none}
+.frame .disp{font-weight:400;letter-spacing:-.01em}
+/* variant variables */
+.before{--mono:11px;--lbl:10.5px;--c-dim:rgba(255,255,255,.7);--c-mute:rgba(255,255,255,.5);--c-faint:rgba(255,255,255,.38);
+  --r-thumb:14px;--r-row:10px;--r-tray:8px;--r-tthumb:16px;--r-ta:16px;--r-short:10px;
+  --tab-h:38px;--cta-h:41px;--sm-h:31px;--ico-card:36px;--ico-chrome:32px;--arrow:40px;--chip-h:40px;--tray-btn:36px;--ap-h:37px;
+  --tiny:10px;--badge:9.5px;--pink:#f472b6}
+.before.p{--mono:10px}
+.after{--mono:11px;--lbl:11px;--c-dim:var(--text-dim);--c-mute:var(--text-mute);--c-faint:var(--text-mute);
+  --r-thumb:11px;--r-row:12px;--r-tray:16px;--r-tthumb:11px;--r-ta:8px;--r-short:11px;
+  --tab-h:44px;--cta-h:44px;--sm-h:44px;--ico-card:44px;--ico-chrome:44px;--arrow:44px;--chip-h:44px;--tray-btn:44px;--ap-h:44px;
+  --tiny:11px;--badge:11px;--pink:var(--primary)}
+.mono{font-size:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim)}
+.lbl{font-size:var(--lbl);letter-spacing:.14em;text-transform:uppercase;color:var(--text-mute)}
+
+/* nav stub (outside B1) */
+.nav{position:absolute;inset:0 0 auto 0;z-index:30;display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:#fff;font-weight:700;background:linear-gradient(#090909cc,transparent)}
+.frame.p .nav{height:69px}.frame.d .nav{height:81px;padding:0 40px}
+.nav small{font-weight:400;font-size:11px;color:var(--text-mute);border:1px dashed #444;border-radius:99px;padding:2px 8px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;font-weight:500;white-space:nowrap;border:1px solid transparent;min-height:var(--cta-h);padding:0 18px;font-size:13.5px}
+.btn.pri{background:var(--primary);color:var(--primary-fg)}
+.btn.out{border-color:var(--line-2);color:var(--text)}
+.btn.ghost{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.08);color:#fff}
+.before .btn{min-height:0;padding:10px 16px;font-size:13px;line-height:19.5px}
+.before .btn.big{padding:12px 28px;font-size:14px;line-height:21px}
+.after .btn.big{padding:0 28px;font-size:14px}
+.before .btn.sm{padding:6px 12px;font-size:12.5px;line-height:18.5px}
+.after .btn.sm{min-height:44px;padding:0 18px;font-size:13.5px}
+.ico{width:20px;height:20px;flex:none}
+.circ{display:inline-flex;align-items:center;justify-content:center;border-radius:99px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.05);color:rgba(255,255,255,.7)}
+.circ.on-b{background:rgba(236,72,153,.2);border-color:rgba(236,72,153,.5);color:var(--pink)}
+.circ.on-a{background:var(--uis-primary-soft);border-color:var(--primary);color:var(--primary)}
+.circ.wl-on-b{background:#fff;border-color:#fff;color:#000}
+
+/* hero slide / series hero */
+.hero{position:relative;overflow:hidden}
+.hero .bgart{position:absolute;inset:0}
+.hero .scrim{position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,10,10,.9),rgba(10,10,10,.5) 40%,transparent 70%),linear-gradient(180deg,transparent 40%,var(--bg-0) 98%)}
+.hero .copy{position:absolute;bottom:32px;inset-inline:20px;max-width:620px}
+.frame.d .hero .copy{bottom:80px;inset-inline-start:40px}
+.hero h1{margin:0 0 12px;line-height:.95;font-weight:400;color:#fff;letter-spacing:-.02em}
+.hero .meta{display:flex;align-items:center;gap:8px;margin-bottom:12px;letter-spacing:.12em}
+.hero .dot{width:3px;height:3px;border-radius:99px;background:var(--text-mute)}
+.hero p.syn{margin:0 0 16px;max-width:560px;font-size:14px;color:var(--text-dim)}
+.frame.d .hero p.syn{font-size:16px;margin-bottom:24px}
+.hero .acts{display:flex;gap:8px}
+
+/* rails + cards */
+.rail{padding:20px 16px 8px}
+.frame.d .rail{padding:32px 40px 12px}
+.rail .rh{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px}
+.rail h2{margin:0;font-size:20px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.frame.d .rail h2{font-size:26px}
+.rail .va{display:inline-flex;align-items:center;gap:6px;min-height:44px}
+.track{display:flex;gap:20px}
+.frame.p .track{flex-direction:column;gap:10px}
+.card{position:relative;overflow:hidden;border-radius:12px;background:var(--bg-2);flex:none;aspect-ratio:16/9;width:340px}
+.frame.p .card{width:100%}
+.card .art,.poster .art,.short .art,.th .art,.im .art{position:absolute;inset:0}
+.card .ov{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:14px;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.85))}
+.card h3{margin:0 0 2px;font-size:18px;line-height:1.1;font-weight:400;color:#fff;text-transform:none;letter-spacing:0}
+.card .m{font-size:var(--tiny);letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim)}
+.before .card .m{font-size:10.5px}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:7px 12px;font-size:12.5px;font-weight:500;background:var(--primary);color:var(--primary-fg)}
+.pill.out{background:rgba(10,10,10,.5);border:1px solid var(--line-2);color:#fff}
+.newb{position:absolute;top:10px;inset-inline-start:10px;border-radius:99px;padding:4px 8px;font-size:var(--badge);font-weight:600;letter-spacing:.14em;text-transform:uppercase;background:var(--primary);color:var(--primary-fg)}
+.after .newb{background:var(--uis-primary-soft);color:var(--primary);padding:4px 10px;letter-spacing:.08em}
+.shorts{display:flex;gap:20px;overflow:hidden}
+.short{position:relative;flex:none;width:180px;aspect-ratio:9/16;border-radius:var(--r-short);overflow:hidden;background:var(--bg-2)}
+.short .sb{position:absolute;top:10px;inset-inline-start:10px;border-radius:99px;padding:3px 6px;background:var(--primary);color:var(--primary-fg);font-size:9px;letter-spacing:.14em}
+.after .short .sb{font-size:11px;padding:3px 10px;background:var(--uis-primary-soft);color:var(--primary);letter-spacing:.08em}
+.short .si{position:absolute;inset-inline:12px;bottom:12px}
+.short .si b{display:block;font-weight:400;font-size:16px;line-height:1.15;margin-bottom:4px}
+.short .si span{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim)}
+.after .short .si span{font-size:11px}
+.banner{margin:24px 16px 0;border:1px solid var(--line);border-left-width:3px;border-radius:12px;background:var(--bg-2);padding:20px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.frame.d .banner{margin:24px 40px 0}
+.before.p .banner{margin:24px 40px 0}
+
+/* series */
+.sh{height:585px}.frame.d .sh{height:576px}
+.sh h1{font-size:48px;font-weight:600;line-height:1;margin:0 0 20px;color:#fff}
+.frame.d .sh h1{font-size:90px}
+.sh .copy{inset-inline:16px;bottom:40px;max-width:720px}
+.frame.d .sh .copy{inset-inline:40px;bottom:60px}
+.sh p.syn{font-size:16px;color:var(--c-dim);line-height:1.6;margin:0 0 24px}
+.frame.d .sh p.syn{font-size:18px}
+.sh .metarow{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--c-mute);margin-bottom:28px}
+.sh .ctas{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.sticky{display:flex;align-items:center;justify-content:space-between;max-width:1100px;border:1px solid var(--line);border-radius:99px;background:var(--bg-1);padding:12px 20px}
+.sticky .c{display:inline-flex;align-items:center;gap:6px;border-radius:99px;background:var(--primary);color:var(--primary-fg);font-weight:600;padding:0 20px;min-height:var(--cta-h);font-size:12px}
+.before .sticky .c{min-height:0;padding:8px 20px;line-height:18px}
+.after .sticky .c{font-size:13.5px}
+.sec{padding:0 24px}.frame.d .sec{padding:0 48px}
+.cast{display:flex;gap:20px;overflow:hidden}
+.cast .pp{width:100px;text-align:center;flex:none}
+.cast .av{width:80px;height:80px;border-radius:99px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-weight:500;color:var(--text-dim)}
+.cast b{display:block;font-size:13px;font-weight:500}
+.after .cast b{font-size:14px}
+.cast small{display:block;font-size:var(--tiny);letter-spacing:.08em;text-transform:uppercase;color:var(--text-mute)}
+.layout{display:flex;gap:32px}
+.panel{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;background:var(--bg-1);padding:24px}
+.frame.p .panel{padding:16px}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tab{margin-bottom:-1px;padding:0 16px;min-height:var(--tab-h);display:inline-flex;align-items:center;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mute);border-bottom:2px solid transparent}
+.after .tab{font-size:13px}
+.tab.on{color:#fff;border-color:var(--primary)}
+.eprow{display:flex;gap:16px;align-items:flex-start;padding:16px;border-radius:var(--r-row);border:1px solid transparent;margin-top:12px}
+.eprow.cur{border:1px solid var(--line);border-inline-start:3px solid var(--brand-purple);background:var(--bg-1)}
+.eprow .th{position:relative;flex:none;width:120px;aspect-ratio:16/9;border-radius:var(--r-thumb);overflow:hidden}
+.frame.d .eprow .th{width:180px}
+.eprow .th .en{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:24px;color:rgba(255,255,255,.4)}
+.eprow .num{font-size:28px;line-height:1;color:var(--text-dim);flex:none}
+.eprow .tt{font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eprow .ds{font-size:14px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
+.bdg{display:inline-flex;align-items:center;border-radius:99px;padding:4px 10px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:var(--text-dim)}
+.bdg.or{background:var(--brand-orange);color:#000;border-color:transparent}
+.prog{height:4px;max-width:200px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:8px}
+.prog i{display:block;height:100%;background:var(--brand-purple)}
+.done{display:inline-flex;margin-top:8px;border-radius:99px;background:rgba(255,255,255,.1);padding:2px 10px;font-size:11px;color:var(--c-mute)}
+.meta-card{width:288px;flex:none;border:1px solid var(--line);border-radius:12px;background:var(--bg-1);padding:24px}
+.meta-card .k{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-mute)}
+.meta-card hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+.stat3{display:flex;border:1px solid var(--line);border-radius:12px;background:var(--bg-1);margin-bottom:16px}
+.stat3>div{flex:1;padding:12px 14px;border-inline-end:1px solid var(--line)}.stat3>div:last-child{border:0}
+.stat3 .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-mute)}
+.comp{border:1px solid var(--line);border-radius:12px;background:var(--bg-1);padding:20px}
+.stars{display:flex;align-items:center;gap:4px;margin-bottom:12px}
+.stars button{all:unset;display:inline-flex;align-items:center;justify-content:center;color:var(--text-mute);width:26px;height:26px}
+.after .stars button{width:44px;height:44px}
+.stars button.on{color:var(--primary)}
+.ta{width:100%;height:84px;resize:none;border:1px solid var(--line);background:var(--bg-0);border-radius:var(--r-ta);color:var(--text-mute);padding:10px 12px;font-size:14px}
+.rv{border-top:1px solid var(--line);padding:20px 0}
+.rv .av{width:32px;height:32px;border-radius:99px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;background:var(--bg-3);color:var(--text-dim);flex:none}
+.rv .mm{font-size:var(--tiny);letter-spacing:.08em;text-transform:uppercase;color:var(--text-mute)}
+.errbox{margin-top:12px;border-radius:8px;padding:8px 12px;font-size:14px}
+.before .errbox{border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.1);color:#fecaca;border-radius:8px}
+.after .errbox{border:1px solid var(--destructive);background:rgba(255,59,48,.12);color:var(--text);border-radius:8px}
+
+/* watch player */
+.player{position:relative;background:#000;overflow:hidden}
+.player .video{position:absolute;left:0;right:0;top:0;background:#000;display:flex;align-items:center;justify-content:center}
+.player .video i{display:block;width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,#3a1d3b,#9F54A0 55%,#d9a0dc);opacity:.85}
+.frame.d .player .video i{height:100%;aspect-ratio:auto;width:auto;aspect-ratio:16/9}
+.chrome{position:absolute;inset:0 0 auto 0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:16px 16px 32px;border-bottom:1px solid var(--cl);background:var(--cbg);box-shadow:0 8px 32px -8px rgba(0,0,0,.65);backdrop-filter:blur(12px)}
+.before .chrome{--cl:rgba(255,255,255,.1);--cbg:rgba(9,9,11,.9)}
+.after .chrome{--cl:var(--line);--cbg:rgba(9,9,9,.9)}
+.chrome .back{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--c-dim);min-height:0}
+.after .chrome .back{min-height:44px}
+.chrome .ct{display:flex;flex-direction:column;align-items:center;gap:2px}
+.chrome .ct b{font-size:14px;font-weight:500;line-height:1;color:#fff}
+.chrome .ct span{font-size:12px;line-height:1;color:var(--c-mute);font-family:ui-monospace,Menlo,monospace}
+.chrome .acts{display:flex;align-items:center;gap:12px}
+.chrome .acts span{display:inline-flex;align-items:center;justify-content:center;width:var(--ico-chrome);height:var(--ico-chrome);color:var(--c-dim)}
+.frame.p .chrome .ct b{max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frame.p .chrome .acts{gap:0}
+.arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:20;width:var(--arrow);height:var(--arrow);display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);color:#fff}
+.before .arrow{border-radius:10px;left:12px}.before .arrow.nx{left:auto;right:12px}
+.after .arrow{border-radius:99px;inset-inline-start:12px}.after .arrow.nx{inset-inline-start:auto;inset-inline-end:12px}
+.tray{position:absolute;inset-inline:0;bottom:0;z-index:30;display:flex;flex-direction:column;background:rgba(0,0,0,.92);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-tray) var(--r-tray) 0 0;box-shadow:0 25px 50px -12px rgba(0,0,0,.6);backdrop-filter:blur(24px);color:#fff}
+.after .tray{border:1px solid var(--line);background:rgba(16,16,16,.94)}
+.tray .th{display:flex;align-items:center;gap:16px;min-height:72px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+.frame.d .tray .th{padding:12px 32px}
+.chips{display:flex;gap:8px}
+.chip{display:inline-flex;align-items:center;height:var(--chip-h);padding:0 12px;border-radius:99px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);font:12px ui-monospace,Menlo,monospace;color:var(--tc)}
+.before .chip{--tc:rgba(255,255,255,.55)}.after .chip{--tc:var(--text-dim)}
+.chip.on{background:#fff;color:#000;border-color:#fff}
+.after .chip.on{background:var(--primary);border-color:var(--primary);color:var(--primary-fg)}
+.tray .tt{flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tray .tt b{font-size:18px;font-weight:600;white-space:nowrap}
+.tray .tt span.d{font-size:14px;color:var(--c-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tray .tb{flex:none;width:var(--tray-btn);height:var(--tray-btn);border-radius:99px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;color:var(--c-dim)}
+.tray .eps{display:flex;gap:20px;padding:20px 20px;overflow:hidden}
+.frame.d .tray .eps{padding:20px 32px}
+.tcard{flex:none;width:260px;border:1px solid transparent;border-radius:var(--r-tray);display:flex;flex-direction:column}
+.frame.d .tcard{width:400px}
+.after .tcard{border-radius:12px}
+.tcard.cur{border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.12)}
+.after .tcard.cur{border-color:var(--primary);background:rgba(255,255,255,.06)}
+.tcard .im{position:relative;aspect-ratio:16/9;border-radius:var(--r-tthumb);overflow:hidden}
+.tcard .du{position:absolute;right:12px;bottom:12px;border-radius:99px;background:rgba(0,0,0,.75);padding:4px 8px;font-size:14px;font-weight:600}
+.after .tcard .du{right:auto;inset-inline-end:12px;font-size:12px}
+.tcard .bd{padding:16px 4px 8px}
+.tcard .p1{display:flex;gap:8px;align-items:center}
+.tcard .p1 span{border-radius:99px;padding:2px 8px;font:var(--tiny) ui-monospace,Menlo,monospace;background:rgba(255,255,255,.1);color:var(--tc)}
+.tcard .p1 span.now{background:#fff;color:#000}
+.after .tcard .p1 span.now{background:var(--primary);color:var(--primary-fg)}
+.tcard b{display:block;margin-top:8px;font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tcard small{display:block;margin-top:4px;font-size:12px;color:var(--c-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.before .tcard small{color:rgba(255,255,255,.45)}
+.ap{position:absolute;inset:0;z-index:25;display:flex;align-items:flex-end;justify-content:space-between;padding:16px;background:linear-gradient(0deg,rgba(0,0,0,.9),rgba(0,0,0,.5) 50%,transparent)}
+.frame.p .ap{flex-direction:column;align-items:stretch;justify-content:flex-end;gap:16px;padding-bottom:160px}
+.ap .l{display:flex;flex-direction:column;gap:8px}
+.ap .l .e{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--c-mute);font-weight:500}
+.ap .l .s{font-size:14px;color:var(--c-dim)}
+.ap .l .t{font-size:18px;font-weight:600;color:#fff}
+.ap .l .cd{display:inline-flex;width:fit-content;border-radius:99px;background:rgba(255,255,255,.1);padding:4px 12px;font-size:12px;color:var(--c-dim)}
+.ap .r{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.frame.p .ap .r{flex-direction:row;align-items:stretch}.frame.p .ap .r>*{flex:1}
+.ap .b1,.ap .b2{display:inline-flex;align-items:center;justify-content:center;border-radius:99px;font-size:14px;min-height:var(--ap-h)}
+.before .ap .b1,.before .ap .b2{min-height:0}
+.before .ap .b1{padding:8px 24px;line-height:21px}.before .ap .b2{padding:8px 16px;line-height:19px}
+.ap .b1{background:#fff;color:#000;font-weight:600;padding:0 24px}
+.after .ap .b1{background:var(--primary);color:var(--primary-fg)}
+.ap .b2{border:1px solid rgba(255,255,255,.2);color:var(--c-dim);padding:0 16px}
+.after .ap .b2{border-color:var(--line-2);color:var(--text)}
+
+/* my list */
+.ml-head{padding:64px 24px 48px}.frame.d .ml-head{padding:64px 48px 48px}
+.ml-in{max-width:1024px;margin:0 auto}
+.frame.d .ml-in{padding:0}
+.ml-head h1{margin:0;font-size:40px;line-height:1.05;font-weight:400}
+.frame.d .ml-head h1{font-size:56px}
+.ml-grid{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(0,1fr));padding:0 24px}
+.frame.d .ml-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:20px;max-width:1024px;margin:0 auto;padding:0 48px}
+.frame.d .ml-gwrap{padding:0}
+.cell{position:relative}
+.before .poster{position:relative;overflow:hidden;border-radius:12px;background:var(--bg-2);aspect-ratio:2/3;width:120px}
+.frame.d.before .poster{width:220px}
+.after .poster{position:relative;overflow:hidden;border-radius:12px;background:var(--bg-2);aspect-ratio:2/3;width:100%}
+.before .cell{outline:1px dotted rgba(255,255,255,.18);outline-offset:0}
+.cell .wl{position:absolute;top:12px;inset-inline-end:12px;z-index:5;width:var(--ico-card);height:var(--ico-card);border-radius:99px;display:flex;align-items:center;justify-content:center}
+.before .cell .wl{background:#fff;border:1px solid #fff;color:#000}
+.after .cell .wl{background:var(--uis-primary-soft);border:1px solid var(--primary);color:var(--primary)}
+.cell .cap2{padding:10px 2px 0}
+.cell .cap2 b{display:block;font-size:14px;font-weight:500;color:var(--text);line-height:1.3}
+.cell .cap2 span{font-size:12px;color:var(--text-mute)}
+.ml-empty{border-top:1px solid var(--line);padding:96px 24px;text-align:center}
+.ml-empty h3{margin:0;font-size:32px;line-height:1.1;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text)}
+.ml-empty p{margin:12px 0 0;font-size:14px;color:var(--text-dim)}
+.before .ml-empty .cta{display:inline-block;margin-top:24px;border:1px solid var(--line-2);border-radius:99px;padding:12px 24px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim)}
+.after .ml-empty .cta{margin-top:24px}
+.redirect{background:#141414;border:1px solid #2a2a2a;border-radius:10px;padding:14px 18px;max-width:760px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:#cfcfcf}
+</style>
+</head>
+<body class="showv">
+<h1>B1 viewer — before / after</h1>
+<p class="sub">Clickit Story · design-system pass, group B1 (viewer). Real tokens copied from <code>src/styles/globals.css</code>, real component markup and class values read from the code, real seed copy (Last Call, Review Documentary, Doctor Care, Saturn Podcast, Poets Platform). No Supabase locally, so data is mocked in the real shape. The product font is local LBC; this sheet falls back to the system font, so letter widths differ slightly. Posters are colour blocks, not artwork.</p>
+
+<div class="bar">
+  <label><input type="checkbox" id="tv" checked> Mark violations in BEFORE (red dashed)</label>
+  <a href="#p-browse">/browse</a><a href="#p-watch">/watch</a><a href="#p-series">/series/[slug]</a><a href="#p-player">/watch/[episodeId]</a><a href="#p-mylist">/my-list</a><a href="#p-shared">shared + not changed</a>
+</div>
+
+<div class="sum">
+  <b>What changes, in five lines</b>
+  <ol>
+    <li><b>Targets:</b> every control in these pages reaches 44px (41px hero CTAs, 38px season tabs, 36px list toggle, 32px player icons, 31px review buttons, 26px stars, 37px autoplay buttons).</li>
+    <li><b>Type and contrast:</b> nothing under 11px (9–10.5px labels fixed); 31 white-alpha text colours become <code>--text</code> / <code>--text-dim</code> / <code>--text-mute</code>; two true contrast failures fixed (3.5:1 and 4.49:1).</li>
+    <li><b>Radius roles:</b> episode and tray thumbs 14/16 → media 11, rows 10 → card 12, tray 8 → panel 16, review box 16 → field 8, shorts 10 → media 11, player arrows → pill.</li>
+    <li><b>Real bugs:</b> My list cards overlap on desktop and have no visible title on phones; three controls that look live but do nothing (card “+”, shorts “View all”, rail “View all” without a link); fake “K” avatar; “25:00” shown for 25 minutes; hard-coded English.</li>
+    <li><b>One active-state colour:</b> list and like toggles both become primary-soft with a primary icon (pink and white-fill go away); player chrome uses <code>--bg-0</code> / <code>--line</code> instead of zinc / black-alpha; RTL: physical left/right swapped for start/end.</li>
+  </ol>
+</div>
+
+<!-- ═════════ BROWSE ═════════ -->
+<h2 class="pg" id="p-browse">1 · <span class="route">(viewer)/browse</span></h2>
+<p class="sub">Server redirect to <code>/watch</code> (keeps <code>?category=</code>). It renders nothing, so there is nothing to draw and nothing to change. Not touched.</p>
+<div class="redirect">/browse?category=documentary &nbsp;→&nbsp; 307 &nbsp;→&nbsp; /watch?category=documentary &nbsp; <span style="color:#77d586">no change</span></div>
+
+<!-- ═════════ WATCH ═════════ -->
+<h2 class="pg" id="p-watch">2 · <span class="route">(viewer)/watch</span> — the catalogue</h2>
+<p class="sub">Hero slide, “Continue watching”, Short Click rail, content rails, category banner. Hero and rails are used only by this page.</p>
+<div class="chg"><b>Changes</b><ol>
+<li>Hero CTAs 41px → 44px; meta line 10px → 11px on phones (global <code>.mono</code>).</li>
+<li>Card overlay: “10.5px” meta → 11px; hard-coded “2 seasons · 10 eps” → translated counts; “New” badge 9.5px → 11px on primary-soft (as the signed home page does for “Short”).</li>
+<li>The “+” chip on the card is a dead span → removed (the whole card is the link).</li>
+<li>Coming-soon rail: “View all” text with no link → not rendered when there is no destination.</li>
+<li>Short Click: dead “View all” button removed; cards become real buttons (keyboard); badge 9px → 11px, sub-label 9px → 11px, radius 10 → 11.</li>
+<li>Category banner: 40px side padding on phones → 16px like the rails.</li></ol></div>
+
+<h3>Phone · 375</h3>
+<div class="row" id="w-phone"></div>
+<h3>Desktop · 1280</h3>
+<div class="stack scroll" id="w-desk"></div>
+
+<!-- ═════════ SERIES ═════════ -->
+<h2 class="pg" id="p-series">3 · <span class="route">(viewer)/series/[slug]</span> — Last Call</h2>
+<p class="sub">Hero, cast, season tabs + episode rows, metadata card, reviews, more-like-this rail (same rail as above). Not-found page and loading skeleton already use tokens and stay as they are.</p>
+<div class="chg"><b>Changes</b><ol>
+<li>Hero looks the same; the sticky mini-bar CTA (34px, “▶” text glyph) becomes 44px with the Play icon. Heart and list toggles share one active colour (primary on primary-soft); pink is gone.</li>
+<li>Season tabs 38px → 44px, 12px → 13px.</li>
+<li>Episode thumbs 14px → 11px, rows 10px → 12px; “Completed” and meta text use tokens.</li>
+<li>Metadata: “IMDb” and “CIT Rating” become translated labels; on phones the numbers (rating, seasons, episodes) show as a 3-cell strip above the episodes (they were hidden below 1024px).</li>
+<li>Cast role line 10px → 11px, name 13px → 14px.</li>
+<li>Reviews: stars hit area 26px → 44px (icon stays 22px), Clear/Post 31px → 44px, textarea radius 16px → field 8px, avatar uses the viewer’s own initials instead of “K”, 10px meta → 11px, error boxes use the danger token.</li>
+<li>Empty state (no seasons): 3.5:1 label and white-alpha copy → tokens.</li></ol></div>
+<h3>Phone · 375</h3>
+<div class="row" id="s-phone"></div>
+<h3>Desktop · 1280</h3>
+<div class="stack scroll" id="s-desk"></div>
+<h3>Detail · sticky mini-bar (appears after scrolling 70% of the hero)</h3>
+<div class="stack scroll" id="s-sticky"></div>
+
+<!-- ═════════ PLAYER ═════════ -->
+<h2 class="pg" id="p-player">4 · <span class="route">(watch)/watch/[episodeId]</span> — the player</h2>
+<p class="sub">Full-screen route with no navbar. Top chrome auto-hides after 3 seconds of no movement; episode tray sits at 134px and rises to half the screen. Frames use a 375×812 and 1280×720 viewport.</p>
+<div class="chg"><b>Changes</b><ol>
+<li>Top bar: background zinc-950 → <code>--bg-0</code>, border → <code>--line</code>, text → tokens; Bookmark / Heart / Share 32px → 44px; back link gets a 44px target; liked heart pink → primary.</li>
+<li>Prev / next arrows 40px rounded square → 44px pill; positioned with start/end so Arabic mirrors them.</li>
+<li>Tray: container radius 8 → panel 16; season chips 40px → 44px; raise button 36px → 44px; episode thumbs 16 → media 11; selected card gets a primary border; “Now” and S/E pills 10px → 11px; description 4.49:1 → token 7.4:1.</li>
+<li>Duration pill “25:00” (25 minutes shown as mm:00) → “25 min”.</li>
+<li>Autoplay overlay: Play now / Cancel 37px → 44px; Play now uses primary; labels use tokens.</li>
+<li>Loading skeleton: <code>#0a0a0a</code> and white-alpha → <code>--bg-0</code> / <code>--bg-2</code>.</li></ol></div>
+<h3>Phone · 375×812 — playing, chrome visible, tray collapsed</h3>
+<div class="row" id="pl-phone"></div>
+<h3>Phone · tray raised, and autoplay overlay</h3>
+<div class="row" id="pl-phone2"></div>
+<h3>Desktop · 1280×720 — chrome visible, tray raised</h3>
+<div class="stack scroll" id="pl-desk"></div>
+
+<!-- ═════════ MY LIST ═════════ -->
+<h2 class="pg" id="p-mylist">5 · <span class="route">(viewer)/my-list</span></h2>
+<p class="sub">Header, saved shows grid, empty state. The card is the shared <code>PortraitShowCard</code> (also used by profile, B2).</p>
+<div class="chg"><b>Changes</b><ol>
+<li><b>Bug:</b> the card is a fixed 220px (140 / 120 on small screens) inside a fluid grid. At 1280 the 5 columns are 170px, so cards overlap by 50px; at 375 cards sit 120px wide in 155px cells. After: card fills its cell.</li>
+<li><b>Bug:</b> title, genre and Play only show on hover, so on a phone the list is bare posters. After: title and genre are always shown under the poster; hover only lifts the card.</li>
+<li>List toggle 36px → 44px, primary-soft active state, start/end placement; “New” badge 11px; hard-coded “Play / season / New” gone.</li>
+<li>Empty-state button: 42px mono pill → the standard 44px outline button.</li></ol></div>
+<h3>Phone · 375 — with shows</h3>
+<div class="row" id="m-phone"></div>
+<h3>Desktop · 1280 — with shows</h3>
+<div class="stack scroll" id="m-desk"></div>
+<h3>Empty state</h3>
+<div class="row" id="m-empty"></div>
+
+<!-- ═════════ SHARED ═════════ -->
+<h2 class="pg" id="p-shared">Shared files this group needs (controller sequences) · not changed</h2>
+<table class="t">
+<tr><th>File</th><th>Change</th><th>Used by</th></tr>
+<tr><td><code>globals.css</code> <code>.mono</code>, <code>.label</code></td><td>10px (≤720px) and 10.5px → 11px</td><td>every page</td></tr>
+<tr><td><code>components/ui/button.tsx</code></td><td>44px floor on <code>sm</code>, <code>icon</code> (36), <code>icon-sm</code>, <code>icon-xs</code></td><td>all groups</td></tr>
+<tr><td><code>shows/portrait-show-card.tsx</code></td><td>fills its cell, caption always visible, translated labels. B1 proposes to own it; B2 (profile) only consumes.</td><td>my-list (B1), profile (B2), series “more like this”</td></tr>
+<tr><td><code>watchlist/watchlist-toggle-button.tsx</code>, <code>likes/like-button.tsx</code></td><td>B1-only components; listed here because the active colour is a site-wide choice</td><td>series hero, cards</td></tr>
+</table>
+<p class="note">Not changed in B1: navbar and footer (<code>navbar.tsx</code> has 10px badges), the rail titles’ uppercase style, <code>ui.config.json</code>, <code>src/components/ui/*</code>, the player’s behaviour (idle timer, progress, autoplay timing), any query, any copy that is not a hard-coded string.</p>
+
+<script>
+/* ───────── helpers ───────── */
+const $=id=>document.getElementById(id);
+const V=(m,t)=>m==='before'?` data-v="${t}"`:'';
+const icon={
+ play:'<svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>',
+ info:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg>',
+ plus:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+ check:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+ heart:'<svg class="ico" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M12 21s-8-5-8-11a4.5 4.5 0 018-2.7A4.5 4.5 0 0120 10c0 6-8 11-8 11z"/></svg>',
+ heartO:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-8-5-8-11a4.5 4.5 0 018-2.7A4.5 4.5 0 0120 10c0 6-8 11-8 11z"/></svg>',
+ bm:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-6-4-6 4z"/></svg>',
+ share:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.7 10.7l6.6-4.4M8.7 13.3l6.6 4.4"/></svg>',
+ back:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 5l-7 7 7 7"/></svg>',
+ arr:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+ chl:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>',
+ chr:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>',
+ up:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l7-7 7 7"/></svg>',
+ star:(on)=>`<svg width="22" height="22" viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15 9 22 9.3 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9.3 9 9"/></svg>`,
+ star11:(on)=>`<svg width="11" height="11" viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15 9 22 9.3 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9.3 9 9"/></svg>`
+};
+const art=(c,c2)=>`<div class="art" style="background:linear-gradient(135deg,${c2||'#12091a'},${c} 70%,${c}cc)"></div>`;
+const col={purple:'#9F54A0',blue:'#2C3569',green:'#50A258',orange:'#EA8C2E',red:'#DB3F34'};
+const frame=(m,w,inner,h)=>`<div class="frame ${w} ${m}" style="${h?`height:${h}px`:''}">${inner}</div>`;
+const pair=(label,fn,w,ids)=>{ // before/after
+  const mk=m=>`<div><p class="cap ${m==='before'?'tag-b':'tag-a'}">${m==='before'?'● Before (as coded today)':'● After'}${label?` · ${label}`:''}</p>${fn(m)}</div>`;
+  return [mk('before'),mk('after')];
+};
+const put=(id,w,items)=>{ // phone: side by side; desktop: stacked
+  $(id).innerHTML=items.join('');
+};
+const nav=(w)=>`<div class="nav">clickit story<small>navbar · unchanged</small></div>`;
+
+/* ───────── /watch ───────── */
+function showCard(m,s,isNew){
+ return `<div class="card">${art(s.c)}<div class="ov"><h3>${s.t}</h3>
+  <div class="m"${V(m,'10.5px · EN-only text')}>${s.g} · ${s.s} season${s.s>1?'s':''} · ${s.e} eps</div>
+  <div style="display:flex;gap:6px;margin-top:10px"><span class="pill">${icon.play.replace('class="ico"','width="12" height="12"')} Play</span>${m==='before'?`<span class="pill out"${V(m,'dead “+” span')}>${icon.plus.replace('class="ico"','width="12" height="12"')}</span>`:''}</div></div>
+  ${isNew?`<div class="newb"${V(m,'9.5px · physical left')}>New</div>`:''}</div>`;
+}
+function showCardA(m,s,isNew){ // after: translated counts, no dead +
+ if(m==='before') return showCard(m,s,isNew);
+ return `<div class="card">${art(s.c)}<div class="ov"><h3>${s.t}</h3>
+  <div class="m">${s.g} · ${s.s} ${s.s>1?'Seasons':'Season'} · ${s.e} Episodes</div>
+  <div style="display:flex;gap:6px;margin-top:10px"><span class="pill">${icon.play.replace('class="ico"','width="12" height="12"')} Play</span></div></div>
+  ${isNew?`<div class="newb">New</div>`:''}</div>`;
+}
+const SHOWS=[{t:'Last Call',g:'Entertainment',s:2,e:10,c:col.purple},{t:'Review Documentary',g:'Documentary',s:1,e:6,c:col.blue},{t:'Doctor Care',g:'Health',s:2,e:8,c:col.green},{t:'Saturn Podcast',g:'Tech',s:3,e:15,c:col.orange}];
+function rail(m,w,title,withLink,shows,newFirst){
+ const link=withLink?`<a class="mono va">View all ${icon.arr}</a>`
+   :(m==='before'?`<span class="mono va" style="color:var(--text-mute)"${V(m,'“View all” with no link')}>View all ${icon.arr}</span>`:'');
+ return `<section class="rail"><div class="rh"><h2>${title}</h2>${link}</div><div class="track">${shows.map((s,i)=>showCardA(m,s,newFirst&&i===0)).join('')}</div></section>`;
+}
+function shorts(m,w){
+ const S=[['Dune of Silence','Short',27,col.orange],['Corniche at Dawn','Abu Dhabi',31,col.blue],['Souq Sound','Clickit',22,col.green],['Midnight Chai','Clickit',18,col.purple]];
+ const n=w==='p'?2:5;
+ return `<section class="rail"><div class="rh"><h2>SHORT CLICK</h2>${m==='before'?`<button class="mono va" style="all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:44px;font-size:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim)"${V(m,'dead button')}>View all ${icon.arr}</button>`:''}</div>
+ <div class="shorts">${S.concat([['Gold Hour','Clickit',20,col.red]]).slice(0,n).map(s=>`<div class="short"${V(m,'div onClick · r10')} style="${m==='before'?'':''}">${art(s[3])}<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.9))"></div><div class="sb"${V(m,'9px')}>SHORT</div><div class="si"><b>${s[0]}</b><span${V(m,'9px')}>${s[1]} · ${s[2]}s</span></div></div>`).join('')}</div></section>`;
+}
+function heroSlide(m,w){
+ const d=w==='d';
+ return `<div class="hero" style="height:${d?600:560}px">
+  <div class="bgart" style="background:linear-gradient(135deg,#1a0b22,#9F54A0 60%,#c98acb)"></div><div class="scrim"></div>${nav(w)}
+  <div class="copy"><h1 style="font-size:${d?77:28}px">Last Call</h1>
+   <div class="meta mono"${V(m,w==='p'?'10px mono':'')}><span>2S</span><i class="dot"></i><span>10 eps</span><i class="dot"></i><span>Entertainment</span></div>
+   <p class="syn">Follow host Khalid as he roams the streets of Abu Dhabi after midnight, turning chance encounters into unforgettable conversations.</p>
+   <div class="acts"><a class="btn pri"${V(m,'41px target')}>${icon.play.replace('class="ico"','width="16" height="16"')} ${d?'Watch now':'Play'}</a><a class="btn ghost"${V(m,'41px target')}>${icon.info.replace('class="ico"','width="16" height="16"')} ${d?'More info':'Info'}</a></div></div></div>`;
+}
+function banner(m,w){
+ return `<div class="banner" style="border-left-color:${col.blue}"${V(m,w==='p'?'40px gutter ≠ rails 16px':'')}><div><div class="mono" style="color:var(--text-mute);margin-bottom:2px">Active category</div><h2 style="margin:0;font-size:24px;font-weight:400">Documentary</h2></div><a class="mono" style="min-height:44px;display:inline-flex;align-items:center">Clear filter</a></div>`;
+}
+function watchPhone(m){
+ return frame(m,'p',heroSlide(m,'p')+rail(m,'p','PROGRAMS',true,SHOWS.slice(0,2),true)+rail(m,'p','COMING SOON',false,[{t:'Poets Platform',g:'Poetry',s:1,e:4,c:col.red}],false)+shorts(m,'p')+banner(m,'p'));
+}
+function watchDesk(m){
+ return frame(m,'d',heroSlide(m,'d')+rail(m,'d','PROGRAMS',true,SHOWS.slice(0,3),true)+rail(m,'d','COMING SOON',false,[{t:'Poets Platform',g:'Poetry',s:1,e:4,c:col.red}],false)+shorts(m,'d')+banner(m,'d'));
+}
+put('w-phone','p',pair('',watchPhone));
+put('w-desk','d',pair('',watchDesk));
+
+/* ───────── /series ───────── */
+function tog(m,on){
+ const cl=on==='wl'?(m==='before'?'wl-on-b':'on-a'):(m==='before'?'on-b':'on-a');
+ return cl;
+}
+function seriesHero(m,w){
+ const d=w==='d';
+ return `<div class="hero sh">
+  <div class="bgart" style="background:linear-gradient(135deg,#1a0b22,#9F54A0 55%,#d9a0dc);opacity:.8"></div>
+  <div class="scrim" style="background:linear-gradient(180deg,transparent,rgba(10,10,10,.4) 40%,var(--bg-0) 98%),linear-gradient(90deg,rgba(10,10,10,.8),transparent 60%)"></div>${nav(w)}
+  <div class="copy"><h1>Last Call</h1>
+   <p class="syn" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;max-width:560px">Follow host Khalid as he roams the streets of Abu Dhabi after midnight, turning chance encounters into unforgettable conversations. From taxi drivers to CEOs, every night has a story waiting to be told.</p>
+   <div class="metarow"><span>Entertainment</span><span>·</span><span>2 Seasons</span><span>·</span><span>10 Episodes</span><span>·</span><span>★ 8.1 IMDb</span></div>
+   <div class="ctas"><a class="btn pri big">${icon.play.replace('class="ico"','width="16" height="16"')} Watch S1 E1</a>
+    <span class="circ ${tog(m,'wl')}" style="width:44px;height:44px"${V(m,'')}>${icon.check}</span>
+    <span class="circ ${tog(m,'like')}" style="width:44px;height:44px"${V(m,'pink: off-palette')}>${icon.heart}</span></div></div></div>`;
+}
+function cast(m){
+ const C=[['Khalid Al Mansoori','Host',col.purple],['Mariam Saif','Producer',col.blue],['Omar Rashed','Director',col.green],['Noor Hamdan','Editor',col.orange],['Sultan Ali','Camera',col.red]];
+ return `<div class="sec" style="margin-top:48px"><div class="lbl" style="margin-bottom:16px"${V(m,'10.5px .label (global)')}>Cast</div><div class="cast">${C.map(c=>`<div class="pp"><div class="av" style="background:${c[2]}33">${c[0].slice(0,2).toUpperCase()}</div><b${V(m,'13px')}>${c[0]}</b><small${V(m,'10px')}>${c[1]}</small></div>`).join('')}</div></div>`;
+}
+function epRow(m,n,t,d,o){ // o: {cur,dur,state:'live'|'soon'|'draft',prog,done,c}
+ const thumb=`<div class="th"${n<=2?V(m,'r14 ≠ media 11'):''}>${art(o.c||col.purple)}<div class="en">E${n}</div></div>`;
+ const badges=`<div style="margin-top:8px;display:flex;gap:8px"><span class="bdg">${o.dur} min</span>${o.state==='soon'?'<span class="bdg or">Coming soon</span>':''}${o.state==='draft'?'<span class="bdg" style="background:var(--bg-3);color:var(--text)">Draft</span>':''}</div>`;
+ const prog=o.done?`<span class="done"${V(m,'')}>Completed</span>`:(o.prog?`<div class="prog"><i style="width:${o.prog}%"></i></div>`:'');
+ return `<div class="eprow ${o.cur?'cur':''}"${n<=2?V(m,'row r10 ≠ card 12'):''} style="${o.state!=='live'?'':''}"><div style="flex:none;${o.state!=='live'?'opacity:.45':''}">${thumb}</div>
+  <div style="min-width:0;flex:1"><div style="display:flex;gap:12px;align-items:center"><span class="num disp" ${o.cur?`style="color:${col.purple}"`:''}>${n}</span><span class="tt">${t}</span></div>
+  <div class="ds">${d}</div>${badges}${prog}</div></div>`;
+}
+function seasonTabs(m){return `<div class="tabs"><span class="tab on"${V(m,'38px target')}>S1</span><span class="tab"${V(m,'38px target')}>S2</span></div>`}
+function episodesPanel(m,w){
+ return `<div class="panel">${seasonTabs(m)}<div style="margin-top:12px">
+  ${epRow(m,1,'Late Night in Abu Dhabi','Street interviews after midnight in the capital city.',{cur:true,dur:25,state:'live',prog:42})}
+  ${epRow(m,2,'The Corniche Confessions','People share their deepest thoughts along the waterfront.',{dur:22,state:'live',done:true,c:col.blue})}
+  ${epRow(m,3,'Desert Voices','Stories from travellers passing through the Al Dhafra region.',{dur:28,state:'live',c:col.orange})}
+  ${epRow(m,4,'Midnight Majlis','A special gathering under the stars with surprise guests.',{dur:30,state:'soon',c:col.green})}
+ </div></div>`;
+}
+function metaCard(m){
+ return `<div class="meta-card"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span class="k"${V(m,'EN-only “IMDb”')}>IMDb</span><span>★ 8.1/10</span></div>
+ <div style="display:flex;justify-content:space-between"><span class="k"${V(m,'EN-only “CIT Rating”')}>${m==='before'?'CIT Rating':'CIT rating'}</span><span>★ 4.6/5</span></div><hr>
+ <div class="k">Genre</div><span class="bdg" style="margin-top:4px">Entertainment</span><hr><div class="k">Seasons</div><div style="margin-top:4px;font-size:14px">2</div><hr><div class="k">Episodes</div><div style="margin-top:4px;font-size:14px">10</div></div>`;
+}
+function stat3(){return `<div class="stat3"><div><div class="k">IMDb</div>★ 8.1</div><div><div class="k">CIT rating</div>★ 4.6</div><div><div class="k">Seasons</div>2</div></div>`}
+function reviews(m,w){
+ const ta=`<div class="comp"><div style="display:flex;gap:12px;align-items:center;margin-bottom:16px"><div style="width:36px;height:36px;border-radius:99px;background:var(--primary);color:var(--primary-fg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500"${V(m,'hard-coded “K”')}>${m==='before'?'K':'MS'}</div><div style="font-size:14px;font-weight:500">Your review</div></div>
+ <div class="stars"${V(m,'stars 26px target')}>${[1,2,3,4,5].map(n=>`<button class="${n<=4?'on':''}">${icon.star(n<=4)}</button>`).join('')}<span class="mono" style="margin-inline-start:8px">Great</span></div>
+ <div class="ta"${V(m,'textarea r16 ≠ field 8')}>Share what you thought of Last Call…</div>
+ ${m==='before'?`<div class="errbox"${V(m,'red-500 raw')}>Couldn’t post your review. Try again.</div>`:`<div class="errbox">Couldn’t post your review. Try again.</div>`}
+ <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center"><span class="mono" style="color:var(--text-mute)">0 / 600</span><div style="display:flex;gap:8px"><a class="btn out sm"${V(m,'31px target')}>Clear</a><a class="btn pri sm"${V(m,'31px target')}>Post review</a></div></div></div>`;
+ const rv=(i,nm,d,st,b,mine)=>`<div class="rv" ${mine?`style="border-inline-start:2px solid var(--primary);padding-inline-start:16px"`:''}><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div style="display:flex;gap:12px;align-items:center"><span class="av" ${mine?'style="background:var(--primary);color:var(--primary-fg)"':''}>${i}</span><div><div style="font-size:13px;font-weight:500">${nm}${mine?` <span class="mono" style="margin-inline-start:8px;color:var(--primary);font-size:var(--tiny)"${V(m,'10px')}>Yours</span>`:''}</div><div class="mm"${V(m,'10px')}>${d}</div></div></div><div style="display:flex;gap:2px;color:var(--primary)">${[0,1,2,3,4].map(j=>icon.star11(j<st)).join('')}</div></div><p style="margin:0;font-size:14px;line-height:1.6;color:var(--text-dim)">${b}</p></div>`;
+ return `<div class="sec" style="margin-top:48px"><div class="lbl" style="margin-bottom:16px"${V(m,'10.5px')}>Reviews · 2 reviews</div>${ta}<div style="margin-top:20px">${rv('MS','Mariam S.','Oct 2026',4,'Khalid has a real gift for getting strangers to open up. The Corniche episode stayed with me.',true)}${rv('AR','Ahmed R.','Sep 2026',5,'Late-night Abu Dhabi has never looked better.',false)}</div></div>`;
+}
+function seriesPhone(m){
+ return frame(m,'p',seriesHero(m,'p')+cast(m)+`<div class="sec" style="margin-top:32px">${m==='after'?stat3():''}${episodesPanel(m,'p')}</div>`+reviews(m,'p')+'<div style="height:32px"></div>');
+}
+function seriesDesk(m){
+ return frame(m,'d',seriesHero(m,'d')+cast(m)+`<div class="sec" style="margin-top:32px"><div class="layout">${episodesPanel(m,'d')}${metaCard(m)}</div></div>`+reviews(m,'d')+'<div style="height:32px"></div>');
+}
+function sticky(m){
+ return `<div class="frame d ${m}" style="padding:24px 40px;background:var(--bg-0)"><div class="sticky"><b>Last Call</b><a class="c"${V(m,'34px target')}>${m==='before'?'<span'+V(m,'text glyph ▶')+'>▶</span>':icon.play.replace('class="ico"','width="16" height="16"')} Watch Now</a></div></div>`;
+}
+put('s-phone','p',pair('',seriesPhone));
+put('s-desk','d',pair('',seriesDesk));
+put('s-sticky','d',pair('',sticky));
+
+/* ───────── /watch/[episodeId] ───────── */
+function chrome(m,w){
+ return `<div class="chrome"><a class="back"${V(m,'no min height')}>${icon.back} Last Call</a><div class="ct"><b>Late Night in Abu Dhabi</b><span${V(m,'12px mono · white/50')}>S1 E1</span></div>
+ <div class="acts"><span${V(m,'32px target')}>${icon.bm}</span><span${V(m,'32px target')} style="${m==='before'?'color:#f472b6':'color:var(--primary)'}">${icon.heart}</span><span${V(m,'32px target')}>${icon.share}</span></div></div>`;
+}
+function arrows(m){
+ return `<div class="arrow"${V(m,'40px · r10 · physical left')}>${icon.chl}</div><div class="arrow nx"${V(m,'40px · physical right')}>${icon.chr}</div>`;
+}
+function tcard(m,n,t,d,cur,c,dur,prog){
+ return `<div class="tcard ${cur?'cur':''}"${V(m,cur?'r8 ≠ card 12':'')}><div class="im"${V(m,'thumb r16 ≠ media 11')}>${art(c)}<div class="du"${V(m,'“'+dur+':00” = minutes')}>${m==='before'?dur+':00':dur+' min'}</div></div>
+ <div class="bd"><div class="p1"><span${V(m,'10px')}>S1 E${n}</span>${cur?`<span class="now"${V(m,'10px')}>Now</span>`:''}</div><b>${t}</b><small${V(m,'white/45 = 4.49:1')}>${d}</small>${prog?`<div class="prog" style="max-width:none"><i style="width:${prog}%"></i></div>`:''}</div></div>`;
+}
+function tray(m,w,raised,h){
+ const eps=tcard(m,1,'Late Night in Abu Dhabi','Street interviews after midnight in the capital city.',true,col.purple,25,42)+tcard(m,2,'The Corniche Confessions','People share their deepest thoughts along the waterfront.',false,col.blue,22)+tcard(m,3,'Desert Voices','Stories from travellers passing through Al Dhafra.',false,col.orange,28)+(w==='d'?tcard(m,4,'Market After Dark','Exploring the vibrant night markets.',false,col.green,24):'');
+ return `<div class="tray" style="${raised?`top:${h*0.5}px`:`height:134px`}"><div class="th">
+  <div class="chips"><span class="chip on"${V(m,'40px target')}>S1</span><span class="chip"${V(m,'40px · white/55')}>S2</span></div>
+  <div class="tt"><div style="display:flex;gap:${w==='d'?40:12}px;align-items:baseline;min-width:0;${w==='p'?'flex-direction:column;gap:0':''}"><b${V(m,'')}>Last Call</b><span class="d"${V(m,'')}>Late Night in Abu Dhabi</span></div>
+  <span class="tb"${V(m,'36px target')}>${icon.up}</span></div></div>${raised?`<div class="eps">${eps}</div>`:''}</div>`;
+}
+function player(m,w,o){
+ const h=w==='p'?812:720;
+ const vid=w==='p'?`<div class="video" style="top:${(812-134-211)/2}px"><i></i></div>`:`<div class="video" style="bottom:134px"><i></i></div>`;
+ return `<div class="frame ${w} ${m}" style="height:${h}px"><div class="player" style="height:${h}px">${vid}${o.ap?autoplay(m,w):''}${chrome(m,w)}${arrows(m)}${tray(m,w,o.raised,h)}</div></div>`;
+}
+function autoplay(m,w){
+ return `<div class="ap"><div class="l"><span class="e"${V(m,'white/50')}>Next episode</span><span class="s">S1 E2</span><span class="t">The Corniche Confessions</span><span class="cd">Next episode in 6s</span></div>
+ <div class="r"><a class="b1"${V(m,'37px target')}>Play now</a><a class="b2"${V(m,'37px target')}>Cancel autoplay</a></div></div>`;
+}
+put('pl-phone','p',pair('',m=>player(m,'p',{})));
+$('pl-phone2').innerHTML=[ ...pair('tray raised',m=>player(m,'p',{raised:true})), ...pair('autoplay',m=>player(m,'p',{ap:true}))].join('');
+put('pl-desk','d',pair('tray raised',m=>player(m,'d',{raised:true})));
+
+/* ───────── /my-list ───────── */
+function mlHead(m,w){
+ return `<div class="ml-head"><div class="ml-in"><p class="mono" style="color:var(--text-mute);margin:0 0 16px"${V(m,w==='p'?'10px mono':'')}>Your watchlist</p><h1 class="disp">My List</h1><p style="margin:12px 0 0;color:var(--text-dim)">${w==='p'?'4':'5'} shows in your list</p></div></div>`;
+}
+function cell(m,s,isNew){
+ const poster=`<div class="poster" ${m==='before'?V(m,'fixed 220/120px in fluid cell'):''}>${art(s.c)}${isNew?`<div class="newb"${V(m,'9.5px · hard-coded')}>New</div>`:''}</div>`;
+ const wl=`<span class="wl"${V(m,'36px target · physical right')}>${icon.check}</span>`;
+ const cap=m==='after'?`<div class="cap2"><b>${s.t}</b><span>${s.g} · ${s.s} ${s.s>1?'Seasons':'Season'}</span></div>`:'';
+ return `<div class="cell">${wl}${poster}${cap}</div>`;
+}
+function mlFull(m,w){
+ const L=SHOWS.concat([{t:'Poets Platform',g:'Poetry',s:1,e:4,c:col.red}]);
+ const n=w==='p'?4:5;
+ return frame(m,w,nav(w)+`<div style="padding-top:${w==='p'?69:81}px"></div>`+mlHead(m,w)+`<div class="ml-grid">${L.slice(0,n).map((s,i)=>cell(m,s,i===3)).join('')}</div><div style="height:80px"></div>`);
+}
+function mlEmpty(m,w){
+ return frame(m,w,`<div style="padding-top:${w==='p'?69:81}px"></div>${nav(w)}<div class="ml-head"><div class="ml-in"><p class="mono" style="color:var(--text-mute);margin:0 0 16px">Your watchlist</p><h1 class="disp">My List</h1><p style="margin:12px 0 0;color:var(--text-dim)">Save shows to build your list.</p></div></div>
+ <div class="ml-in" style="padding:0 ${w==='p'?24:48}px"><div class="ml-empty"><h3 class="disp">Nothing here yet.</h3><p>Save shows to build your list.</p>${m==='before'?`<a class="cta"${V(m,'42px · 12px mono')}>Watch Shows</a>`:`<a class="btn out" style="margin-top:24px">Watch Shows</a>`}</div></div><div style="height:48px"></div>`);
+}
+put('m-phone','p',pair('',m=>mlFull(m,'p')));
+put('m-desk','d',pair('5 columns at 1280 → 170px cells',m=>mlFull(m,'d')));
+$('m-empty').innerHTML=[...pair('',m=>mlEmpty(m,'p'))].join('');
+
+/* ───────── violation tags ───────── */
+function tagAll(){
+ document.querySelectorAll('.vtag').forEach(n=>n.remove());
+ document.querySelectorAll('.frame.before').forEach(f=>{
+  const fr=f.getBoundingClientRect();
+  f.querySelectorAll('[data-v]').forEach(el=>{
+   const t=el.getAttribute('data-v'); if(!t) return;
+   const r=el.getBoundingClientRect();
+   if(r.width===0&&r.height===0) return;
+   const i=document.createElement('i'); i.className='vtag'; i.textContent=t;
+   i.style.left=Math.max(0,r.left-fr.left)+'px'; i.style.top=Math.max(12,r.top-fr.top+1)+'px';
+   f.appendChild(i);
+  });
+ });
+}
+window.addEventListener('load',()=>{tagAll();});
+window.addEventListener('resize',tagAll);
+$('tv').addEventListener('change',e=>{document.body.classList.toggle('showv',e.target.checked);});
+</script>
+</body>
+</html>

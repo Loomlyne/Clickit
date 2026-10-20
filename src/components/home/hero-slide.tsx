@@ -104,7 +104,7 @@ export function HeroSlide({
           {firstEpisodeId && show.status === 'streaming' ? (
             <Link
               href={`/watch/${firstEpisodeId}`}
-              className="btn bg-primary text-primary-foreground inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-[13px] font-medium whitespace-nowrap transition-[transform,background] duration-[120ms] hover:bg-white active:translate-y-px sm:gap-2 sm:px-[26px] sm:py-3.5 sm:text-[15px]"
+              className="btn bg-primary text-primary-foreground inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2.5 text-[13px] font-medium whitespace-nowrap transition-[transform,background] duration-[120ms] hover:bg-white active:translate-y-px sm:gap-2 sm:px-[26px] sm:py-3.5 sm:text-[15px]"
             >
               <Play className="size-3.5 fill-current sm:size-4" />
               <span className="sm:hidden">{t('play')}</span>
@@ -113,13 +113,13 @@ export function HeroSlide({
               </span>
             </Link>
           ) : (
-            <span className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.08] px-4 py-2.5 text-[13px] font-medium text-white/50 backdrop-blur-[8px] sm:px-[26px] sm:py-3.5 sm:text-[15px]">
+            <span className="inline-flex min-h-11 cursor-not-allowed items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.08] px-4 py-2.5 text-[13px] font-medium text-[var(--text-mute)] backdrop-blur-[8px] sm:px-[26px] sm:py-3.5 sm:text-[15px]">
               {t('comingSoonBadge')}
             </span>
           )}
           <Link
             href={`/series/${show.slug}`}
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.08] px-4 py-2.5 text-[13px] font-medium text-white backdrop-blur-[8px] transition-[transform,background,border-color] duration-[120ms] hover:border-[var(--line-2)] hover:bg-white/[0.14] active:translate-y-px sm:gap-2 sm:px-[26px] sm:py-3.5 sm:text-[15px]"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.08] px-4 py-2.5 text-[13px] font-medium text-white backdrop-blur-[8px] transition-[transform,background,border-color] duration-[120ms] hover:border-[var(--line-2)] hover:bg-white/[0.14] active:translate-y-px sm:gap-2 sm:px-[26px] sm:py-3.5 sm:text-[15px]"
           >
             <Info className="size-3.5 sm:size-4" />
             <span className="sm:hidden">{t('info')}</span>

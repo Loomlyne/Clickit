@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { getLocale } from '@/lib/locale-server'
+import { LegalUpdated } from '@/components/info/legal-document'
 
 /**
  * Renders admin-authored plain-text legal content.
@@ -22,20 +23,20 @@ export async function LegalPageContent({
     .filter(Boolean)
 
   return (
-    <div className="prose prose-invert max-w-none space-y-6 text-[15px] leading-relaxed text-[var(--text-dim)]">
+    <div className="space-y-6">
       {paragraphs.map((para, i) => (
         <p key={i} style={{ whiteSpace: 'pre-wrap' }}>
           {para}
         </p>
       ))}
       {updatedAt && (
-        <p className="mono border-t border-[var(--line)] pt-8 text-[11px] text-[var(--text-mute)]">
+        <LegalUpdated>
           {t('lastUpdatedLabel')}{' '}
           {new Date(updatedAt).toLocaleDateString(
             locale === 'ar' ? 'ar-AE' : 'en-US',
             { day: 'numeric', month: 'long', year: 'numeric' }
           )}
-        </p>
+        </LegalUpdated>
       )}
     </div>
   )

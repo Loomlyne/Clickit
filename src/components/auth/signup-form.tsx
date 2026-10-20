@@ -2,23 +2,26 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { useRouter } from '@/i18n/navigation'
-import { useForm } from 'react-hook-form'
+import { Link, useRouter } from '@/i18n/navigation'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { mapAuthError } from '@/lib/auth-errors'
 import { signUpAction } from '@/app/[locale]/(viewer)/auth/actions'
+import { AuthAlert } from './auth-alert'
+import { PasswordField } from './password-field'
+import { NAME_MIN, PASSWORD_MIN, errorParams } from './password-rules'
 
 const signupSchema = z
   .object({
-    name: z.string().min(2, 'nameMin'),
+    name: z.string().min(NAME_MIN, 'nameMin'),
     email: z.string().email('emailInvalid'),
-    password: z.string().min(6, 'passwordMin'),
+    password: z.string().min(PASSWORD_MIN, 'passwordMin'),
     confirmPassword: z.string(),
     terms: z.boolean().refine((v) => v === true, 'termsRequired'),
   })
@@ -34,14 +37,12 @@ export function SignupForm() {
   const tErrors = useTranslations('errors')
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
 
   const {
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -54,14 +55,10 @@ export function SignupForm() {
     },
   })
 
-  const termsValue = watch('terms')
-  const passwordValue = watch('password') ?? ''
-  const passwordScore = [
-    passwordValue.length >= 8,
-    /[A-Z]/.test(passwordValue),
-    /[0-9]/.test(passwordValue),
-    /[^A-Za-z0-9]/.test(passwordValue),
-  ].filter(Boolean).length
+  const termsValue = useWatch({ control, name: 'terms' })
+  const passwordValue = useWatch({ control, name: 'password' }) ?? ''
+  const fieldError = (key?: string) =>
+    key ? tErrors(key as never, errorParams(key) as never) : undefined
 
   async function onSubmit(data: SignupFormData) {
     setServerError(null)
@@ -70,7 +67,11 @@ export function SignupForm() {
     const result = await signUpAction(data.email, data.password, data.name)
 
     if (!result.ok) {
-      setServerError(mapAuthError(result.error))
+      setServerError(
+        result.error === 'passwordMin'
+          ? fieldError('passwordMin')!
+          : mapAuthError(result.error)
+      )
       return
     }
 
@@ -80,27 +81,27 @@ export function SignupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 md:space-y-4">
-      {serverError && (
-        <div className="rounded-full border border-[#DB3F34]/25 bg-[#DB3F34]/10 px-4 py-3 text-sm text-red-300">
-          <div className="flex items-start gap-2.5">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{serverError}</span>
-          </div>
-        </div>
-      )}
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="flex flex-col gap-4"
+      method="post"
+      noValidate
+    >
+      {serverError && <AuthAlert variant="error">{serverError}</AuthAlert>}
 
       <div>
         <Label htmlFor="signup-name">{t('displayName')}</Label>
         <Input
           id="signup-name"
+          autoComplete="name"
           placeholder={t('displayNamePlaceholder')}
           className="mt-1.5"
+          aria-invalid={errors.name ? true : undefined}
           {...register('name')}
         />
         {errors.name && (
-          <p className="text-brand-red-safe mt-1 text-xs">
-            {tErrors(errors.name.message as never)}
+          <p className="mt-1 text-[13px] text-[var(--color-brand-red-safe)]">
+            {fieldError(errors.name.message)}
           </p>
         )}
       </div>
@@ -110,126 +111,88 @@ export function SignupForm() {
         <Input
           id="signup-email"
           type="email"
+          autoComplete="email"
           placeholder={t('emailPlaceholder')}
           className="mt-1.5"
+          aria-invalid={errors.email ? true : undefined}
           {...register('email')}
         />
         {errors.email && (
-          <p className="text-brand-red-safe mt-1 text-xs">
-            {tErrors(errors.email.message as never)}
+          <p className="mt-1 text-[13px] text-[var(--color-brand-red-safe)]">
+            {fieldError(errors.email.message)}
           </p>
         )}
       </div>
+
+      <PasswordField
+        id="signup-password"
+        label={t('password')}
+        autoComplete="new-password"
+        placeholder="••••••••"
+        strengthOf={passwordValue}
+        error={fieldError(errors.password?.message)}
+        {...register('password')}
+      />
+
+      <PasswordField
+        id="signup-confirm"
+        label={t('confirmPassword')}
+        autoComplete="new-password"
+        placeholder="••••••••"
+        error={fieldError(errors.confirmPassword?.message)}
+        {...register('confirmPassword')}
+      />
 
       <div>
-        <Label htmlFor="signup-password">{t('password')}</Label>
-        <div className="relative mt-1.5">
-          <Input
-            id="signup-password"
-            type={showPassword ? 'text' : 'password'}
-            placeholder="••••••••"
-            className="pe-10"
-            {...register('password')}
+        <div className="flex min-h-11 items-center gap-3">
+          <Checkbox
+            id="signup-terms"
+            checked={termsValue}
+            onCheckedChange={(checked) =>
+              setValue('terms', checked === true, { shouldValidate: true })
+            }
           />
-          <button
-            type="button"
-            tabIndex={-1}
-            onClick={() => setShowPassword(!showPassword)}
-            aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-            className="absolute top-1/2 end-3 -translate-y-1/2 text-white/40 transition-colors hover:text-white/70"
+          <Label
+            htmlFor="signup-terms"
+            className="block text-sm leading-normal font-normal text-[var(--text-dim)]"
           >
-            {showPassword ? (
-              <EyeOff className="size-4" />
-            ) : (
-              <Eye className="size-4" />
-            )}
-          </button>
+            {t.rich('termsAccept', {
+              terms: (chunks) => (
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener"
+                  className="text-[var(--text)] underline underline-offset-[3px]"
+                >
+                  {chunks}
+                </Link>
+              ),
+              privacy: (chunks) => (
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener"
+                  className="text-[var(--text)] underline underline-offset-[3px]"
+                >
+                  {chunks}
+                </Link>
+              ),
+            })}
+          </Label>
         </div>
-        <div
-          className="mt-2 grid grid-cols-4 gap-1.5"
-          aria-label={t('passwordStrengthAria')}
-        >
-          {[1, 2, 3, 4].map((level) => (
-            <span
-              key={level}
-              className={`h-1 rounded-full ${passwordScore >= level ? 'bg-[var(--primary)]' : 'bg-[var(--bg-3)]'}`}
-            />
-          ))}
-        </div>
-        <p className="mono mt-1.5 text-[10px] text-[var(--text-mute)]">
-          {t('strengthLabel', {
-            level:
-              passwordScore < 2
-                ? t('strengthWeak')
-                : passwordScore < 4
-                  ? t('strengthGood')
-                  : t('strengthStrong'),
-          })}
-        </p>
-        {errors.password && (
-          <p className="text-brand-red-safe mt-1 text-xs">
-            {tErrors(errors.password.message as never)}
+        {errors.terms && (
+          <p className="mt-1 text-[13px] text-[var(--color-brand-red-safe)]">
+            {fieldError(errors.terms.message)}
           </p>
         )}
       </div>
 
-      <div>
-        <Label htmlFor="signup-confirm">{t('confirmPassword')}</Label>
-        <div className="relative mt-1.5">
-          <Input
-            id="signup-confirm"
-            type={showConfirm ? 'text' : 'password'}
-            placeholder="••••••••"
-            className="pe-10"
-            {...register('confirmPassword')}
-          />
-          <button
-            type="button"
-            tabIndex={-1}
-            onClick={() => setShowConfirm(!showConfirm)}
-            aria-label={showConfirm ? t('hidePassword') : t('showPassword')}
-            className="absolute top-1/2 end-3 -translate-y-1/2 text-white/40 transition-colors hover:text-white/70"
-          >
-            {showConfirm ? (
-              <EyeOff className="size-4" />
-            ) : (
-              <Eye className="size-4" />
-            )}
-          </button>
-        </div>
-        {errors.confirmPassword && (
-          <p className="text-brand-red-safe mt-1 text-xs">
-            {tErrors(errors.confirmPassword.message as never)}
-          </p>
-        )}
-      </div>
+      {/* Job C mounts the Cloudflare Turnstile widget here. */}
+      <div data-turnstile-slot className="empty:hidden" />
 
-      <div className="flex items-start gap-2">
-        <Checkbox
-          id="signup-terms"
-          checked={termsValue}
-          onCheckedChange={(checked) => setValue('terms', checked === true)}
-        />
-        <Label
-          htmlFor="signup-terms"
-          className="text-muted-foreground text-sm leading-relaxed"
-        >
-          {t('termsAccept')}
-        </Label>
-      </div>
-      {errors.terms && (
-        <p className="text-brand-red-safe text-xs">
-          {tErrors(errors.terms.message as never)}
-        </p>
-      )}
-
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="bg-primary text-primary-foreground w-full rounded-full px-7 py-3 text-sm font-semibold transition-colors hover:bg-[#7082ff] disabled:cursor-not-allowed disabled:opacity-50"
-      >
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? t('signUpButton') + '…' : t('signUpButton')}
-      </button>
+      </Button>
     </form>
   )
 }

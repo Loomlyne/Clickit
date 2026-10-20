@@ -27,10 +27,10 @@ export function SeasonSelector({
             key={season.id}
             onClick={() => onSeasonChange(season.id)}
             className={cn(
-              '-mb-px cursor-pointer border-b-2 px-4 py-2.5 font-[family-name:var(--font-mono)] text-[12px] tracking-[0.1em] uppercase transition-colors',
+              'focus-visible:ring-ring -mb-px inline-flex min-h-11 cursor-pointer items-center border-b-2 px-4 font-[family-name:var(--font-mono)] text-[13px] tracking-[0.1em] uppercase transition-colors focus-visible:ring-2 focus-visible:outline-none',
               activeSeason === season.id
-                ? 'border-[var(--primary)] text-white'
-                : 'border-transparent text-[var(--text-mute)] hover:text-white'
+                ? 'border-[var(--primary)] text-[var(--text)]'
+                : 'border-transparent text-[var(--text-mute)] hover:text-[var(--text)]'
             )}
           >
             {t('seasonShortLabel', { number: season.seasonNumber })}
