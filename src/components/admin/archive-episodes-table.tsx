@@ -19,6 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { canDeletePermanently } from '@/lib/admin/guards'
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { AdminPanel, AdminTableShell } from '@/components/admin/admin-shell'
 import {
@@ -35,6 +36,7 @@ export interface ArchivedEpisode {
   showTitle: string
   showId: string
   updatedAt: string
+  archived: boolean
 }
 
 const DATE_LOCALES: Record<string, string> = {
@@ -59,9 +61,8 @@ export function ArchiveEpisodesTable({ episodes }: ArchiveEpisodesTableProps) {
   const locale = useLocale()
   const [restoring, setRestoring] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [deletingEpisode, setDeletingEpisode] = useState<ArchivedEpisode | null>(
-    null
-  )
+  const [deletingEpisode, setDeletingEpisode] =
+    useState<ArchivedEpisode | null>(null)
   const [deleting, setDeleting] = useState(false)
 
   if (episodes.length === 0) return null
@@ -165,22 +166,24 @@ export function ArchiveEpisodesTable({ episodes }: ArchiveEpisodesTableProps) {
                           {t('restoreEpisodeTooltip')}
                         </TooltipContent>
                       </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => {
-                              setDeletingEpisode(episode)
-                              setDeleteDialogOpen(true)
-                            }}
-                          >
-                            <Trash2 className="me-1 size-3.5" />
-                            {tCommon('delete')}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{t('deleteTooltip')}</TooltipContent>
-                      </Tooltip>
+                      {canDeletePermanently(episode) && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                setDeletingEpisode(episode)
+                                setDeleteDialogOpen(true)
+                              }}
+                            >
+                              <Trash2 className="me-1 size-3.5" />
+                              {tCommon('delete')}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t('deleteTooltip')}</TooltipContent>
+                        </Tooltip>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
