@@ -100,6 +100,67 @@ test('apply: plan orders by episode number and uses the broadcast slots', async 
   }
 })
 
+test('plan: limited to a list of episode ids (only A and C, in order)', async () => {
+  const f = world()
+  const r = await planShowScheduleCore(f.client, S1, NOW, [E3, E2])
+  assert.equal(r.ok, true)
+  if (r.ok) {
+    assert.deepEqual(
+      r.plan.map((p) => [p.episodeId, p.publishAt]),
+      [
+        [E2, SLOTS[0]],
+        [E3, SLOTS[1]],
+      ]
+    )
+  }
+})
+
+test('plan: a duplicated id in the list counts once', async () => {
+  const f = world()
+  const r = await planShowScheduleCore(f.client, S1, NOW, [E2, E2])
+  assert.equal(r.ok, true)
+  if (r.ok) assert.deepEqual(r.plan.map((p) => p.episodeId), [E2])
+})
+
+test('plan: bad, foreign, archived or published ids refuse the whole plan', async () => {
+  const OTHER = id('f', 9)
+  const f = world([
+    ep(E1, 1),
+    ep(E2, 2, { archived: true }),
+    ep(E3, 3, { status: 'published', publish_at: OLD_PUBLISH }),
+    ep(OTHER, 1, { show_id: id('b'), season_id: id('d') }),
+  ])
+  const msg = 'Some selected episodes cannot be scheduled.'
+  for (const bad of ['not-a-uuid', id('9', 9), E2, E3, OTHER]) {
+    const r = await planShowScheduleCore(f.client, S1, NOW, [E1, bad])
+    assert.deepEqual(r, { ok: false, error: msg }, `id ${bad}`)
+  }
+  // a non-uuid is refused before any read
+  const g = world()
+  await planShowScheduleCore(g.client, S1, NOW, ['x'])
+  assert.equal(g.calls.length, 0)
+})
+
+test('plan: slots carry needsEnglishTitle and youtubeStatus', async () => {
+  const f = world([
+    ep(E1, 1, { title: '\u062d\u0644\u0642\u0629', youtube_status: 'ok' }),
+    ep(E2, 2, { title: 'Episode 1 \u062d\u0644\u0642\u0629' }),
+    ep(E3, 3, { title: '\u062d\u0644\u0642\u0629 3', title_ar: '\u062d\u0644\u0642\u0629 3' }),
+  ])
+  const r = await planShowScheduleCore(f.client, S1, NOW)
+  assert.equal(r.ok, true)
+  if (r.ok) {
+    assert.deepEqual(
+      r.plan.map((p) => [p.needsEnglishTitle, p.youtubeStatus]),
+      [
+        [true, 'ok'],
+        [false, null],
+        [true, null],
+      ]
+    )
+  }
+})
+
 test('apply: forced failure on the 3rd episode update leaves every episode as before', async () => {
   const f = world()
   const before = epSnap(f)
