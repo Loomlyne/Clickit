@@ -23,4 +23,4 @@ No edit was changed or rejected, so no plan revision is needed. In plan 02-22's 
 - The phase branch carries the same edits plus the Phase 2 plan list, so a later merge only adds the plan list.
 - New IDs: PLAT-11 (Vercel project deletion, Phase 3) and MEDIA-08 (DB URL rewrite, Phase 3). v1 count 73 → 75.
 
-**Planning-note commit on main:** (control session fills in the sha)
+**Planning-note commit on main:** `840dc5b` (local main, applied by the control session 2026-10-20, not pushed)
