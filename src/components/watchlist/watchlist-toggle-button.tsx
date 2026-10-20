@@ -46,7 +46,7 @@ export function WatchlistToggleButton({
             key="ring"
             className={cn(
               'absolute inset-0 rounded-full border-2',
-              variant === 'card' ? 'border-white/60' : 'border-white/50'
+              'border-[var(--primary)]/60'
             )}
             initial={{ scale: 1, opacity: 0.7 }}
             animate={{ scale: 1.7, opacity: 0 }}
@@ -86,10 +86,10 @@ export function WatchlistToggleButton({
         whileTap={{ scale: 0.85 }}
         aria-label={isInList ? t('removeFromList') : t('addToList')}
         className={cn(
-          'absolute top-3 right-3 z-20 flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200',
+          'absolute end-3 top-3 z-20 flex size-11 items-center justify-center rounded-full transition-all duration-200',
           isInList
-            ? 'border border-white bg-white text-black'
-            : 'border border-white/20 bg-black/50 text-white/80 backdrop-blur-md hover:bg-black/70'
+            ? 'border border-[var(--primary)] bg-[var(--uis-primary-soft)] text-[var(--primary)]'
+            : 'border border-white/20 bg-black/50 text-[var(--text)] backdrop-blur-md hover:bg-black/70'
         )}
       >
         {iconContent}
@@ -106,8 +106,8 @@ export function WatchlistToggleButton({
       className={cn(
         'flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-sm transition-colors',
         isInList
-          ? 'border-white bg-white text-black'
-          : 'border-white/25 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+          ? 'border-[var(--primary)] bg-[var(--uis-primary-soft)] text-[var(--primary)]'
+          : 'border-white/25 bg-white/5 text-[var(--text-dim)] hover:bg-white/10 hover:text-[var(--text)]'
       )}
     >
       {iconContent}

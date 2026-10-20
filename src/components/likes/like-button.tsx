@@ -18,12 +18,12 @@ const PARTICLES = Array.from({ length: PARTICLE_COUNT }, (_, i) => {
 })
 
 const PARTICLE_COLORS = [
-  '#ff6b8a',
-  '#ff8fa3',
-  '#ffb3c1',
-  '#ff477e',
-  '#e05297',
-  '#ff85a1',
+  '#ffcc00',
+  '#ffd633',
+  '#ffe066',
+  '#f0c000',
+  '#fff0a8',
+  '#d7ad16',
 ]
 
 interface LikeButtonProps {
@@ -55,8 +55,8 @@ export function LikeButton({
       className={cn(
         'relative flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-sm transition-all duration-300',
         isLiked
-          ? 'border-pink-500/50 bg-pink-500/20 text-pink-400 hover:bg-pink-500/30'
-          : 'border-white/25 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+          ? 'border-[var(--primary)] bg-[var(--uis-primary-soft)] text-[var(--primary)]'
+          : 'border-white/25 bg-white/5 text-[var(--text-dim)] hover:bg-white/10 hover:text-[var(--text)]'
       )}
     >
       {/* Ring pulse on like */}
@@ -64,7 +64,7 @@ export function LikeButton({
         {isLiked && justLiked && (
           <motion.span
             key="ring"
-            className="absolute inset-0 rounded-full border-2 border-pink-400/60"
+            className="absolute inset-0 rounded-full border-2 border-[var(--primary)]/60"
             initial={{ scale: 1, opacity: 0.8 }}
             animate={{ scale: 1.8, opacity: 0 }}
             exit={{ opacity: 0 }}
@@ -120,7 +120,7 @@ export function LikeButton({
         <Heart
           className={cn(
             'h-5 w-5 transition-colors duration-300',
-            isLiked && 'fill-pink-400 stroke-pink-400'
+            isLiked && 'fill-[var(--primary)] stroke-[var(--primary)]'
           )}
         />
       </motion.span>
