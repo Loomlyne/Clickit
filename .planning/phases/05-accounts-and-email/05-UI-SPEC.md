@@ -378,7 +378,7 @@ Font stack `-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif` (Ar
 | Footer (inside the card, under a 1px #E5E5E5 rule) | 12px #767676 or darker on #FFFFFF (Phase 4 pin; #777777 is 4.48:1 and fails AA) | 12px #A1A1A1, rule #222 |
 | Button | #ffcc00 background, #090909 ink | same |
 
-Dark rules live in one `<style>` block in `<head>` with `!important` overrides on classes (`.cs-page`, `.cs-card`, `.cs-text`, …); inline styles carry the light values so clients that strip `<style>` show the light look. Gmail (web and apps) ignores the media query and may auto-invert: the logo is a PNG with its own solid #090909 plate (stays a dark band with a readable wordmark under inversion), the button is a solid `bgcolor` table cell with inline colours, no text inside transparent images. The Q12 picture shows light, dark and the Gmail-dark result; Koss signs it before 05-07, 05-10, 05-11 execute.
+Dark rules live in one `<style>` block in `<head>` with `!important` overrides on classes (`.cs-page`, `.cs-card`, `.cs-text`, …); inline styles carry the light values so clients that strip `<style>` show the light look. Gmail (web and apps) ignores the media query and may auto-invert: the logo is a PNG with its own solid #090909 plate (stays a dark band with a readable wordmark under inversion), the button is a solid `bgcolor` table cell with inline colours, no text inside transparent images. The Q12 picture (light, dark, Gmail-dark) was signed by Koss 2026-10-20 ~19:00 CET; it is the reference look for 05-07, 05-10, 05-11.
 
 Footer content (all emails): line 1 "Clickit Story - Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates"; line 2 "Help: clickitstory.ae/support" (link). **Digest and newsletter confirm only** add `{postalLine}` (Q19 = B signed: exactly "Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates", no street). Digest adds the unsubscribe link and the Profile link. Welcome, auth and support emails have no unsubscribe link (transactional).
 
@@ -603,7 +603,7 @@ No third-party block is declared, so the registry vetting gate did not run.
 
 Everything in this file is provisional until Koss signs 05-CONTEXT.md. Open items, in order of how much code they change:
 
-1. **Email colour.** RESOLVED 2026-10-20: Q12 = C (scheme-adaptive, section 7.1); Phase 4 owns the hex values. Remaining: Koss signs the Q12 picture (`mockups/05-q12-schemes.png`) and Phase 4 supplies the logo PNG on its own #090909 plate.
+1. **Email colour.** RESOLVED 2026-10-20: Q12 = C (scheme-adaptive, section 7.1); Phase 4 owns the hex values. Q12 picture (`mockups/05-q12-schemes.png`) signed 2026-10-20 ~19:00 CET. Remaining: Phase 4 supplies the logo PNG on its own #090909 plate.
 2. **Phase 4 canvas not signed.** Boards V1 (sign-in), V4 (Arabic) and E0-E7 (emails) win over this file once signed; this file then gets a revision, not a rewrite. Phase 4's V1 button wording "Continue with email" is replaced here by the picture's "Send code".
 3. **Second authenticator: skippable or required (D-20).** Recommended skippable (an admin with one device would otherwise be locked out of setup). The Admins list shows only "set up / not set up", not how many.
 4. **"Free with an account" chip (picture q4).** It is a claim about price. Kept because the picture drew it; wording and Arabic ("مجاناً مع حساب") need Koss's word (no invented pricing or legal copy).
