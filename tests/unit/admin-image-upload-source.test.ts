@@ -56,3 +56,21 @@ test('artwork columns map every upload slot to a distinct shows column', () => {
   const cols = [...m[1]!.matchAll(/:\s*'([a-z_]+)'/g)].map((x) => x[1])
   assert.deepEqual(cols, ['poster_url', 'card_image_url', 'hero_url', 'hero_image_mobile_url', 'logo_url'])
 })
+
+test('every image finalize names the scope where its key could already be live (01.1 review)', () => {
+  const scopes: Record<string, RegExp> = {
+    finalizeArtworkUpload: /live: \{ type: 'show-artwork', showId, columns: ARTWORK_COLUMNS \}/,
+    finalizeSiteImageUpload: /live: \{ type: 'app-config', columns: SITE_IMAGE_COLUMNS \}/,
+    finalizeSocialIconUpload: /live: \{ type: 'social-icons' \}/,
+    finalizeCastImageUpload: /live: \{ type: 'show-cast', showId \}/,
+  }
+  for (const [name, re] of Object.entries(scopes)) assert.match(body(admin, name), re, name)
+  const avatar = body(profile, 'finalizeAvatarUpload')
+  assert.match(avatar, /live: \{ type: 'profile', userId \}/)
+  assert.ok(avatar.includes('readLive'))
+  // The finalize gate gets the live keys too, on both port builders.
+  assert.ok(avatar.includes('liveKeys: i.liveKeys'))
+  assert.ok(admin.includes('liveKeys: input.liveKeys'))
+  assert.ok(admin.includes('liveKeys: (url) => liveKeysForUrl(url, mediaOrigin)'))
+  assert.ok(avatar.includes('liveKeys: (url) => liveKeysForUrl(url, mediaOrigin)'))
+})

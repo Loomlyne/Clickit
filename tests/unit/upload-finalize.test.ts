@@ -284,3 +284,51 @@ test('the sniff reads at most 64 bytes', async () => {
   await finalizeUploadedObject({ kind: 'artwork', slot: 'poster', key: posterKey, variantKeys: [], bucket })
   assert.deepEqual(seen[0], { range: { offset: 0, length: 64 } })
 })
+
+// ---- 01.1 review carried to images: a key that is already live is never deleted ----
+
+test('liveKeys: a live original is refused before any read, and nothing is deleted', async () => {
+  // Over the cap, so without the guard it would be refused AND deleted.
+  const { bucket, deleted } = fakeBucket({ [posterKey]: { bytes: PNG, size: 11 * MB } })
+  const r = await finalizeUploadedObject({
+    kind: 'artwork',
+    slot: 'poster',
+    showId: SHOW,
+    key: posterKey,
+    variantKeys: [variantKeyFor(posterKey, 640)],
+    liveKeys: [posterKey, variantKeyFor(posterKey, 640)],
+    bucket,
+  })
+  assert.deepEqual(r, { ok: false, error: 'This file is already live; upload a new file instead.' })
+  assert.deepEqual(deleted, [])
+})
+
+test('liveKeys: a live variant key is refused and nothing is deleted', async () => {
+  const v = variantKeyFor(posterKey, 1280)
+  const { bucket, deleted } = fakeBucket({ [posterKey]: PNG, [v]: PNG })
+  const r = await finalizeUploadedObject({
+    kind: 'artwork',
+    slot: 'poster',
+    showId: SHOW,
+    key: posterKey,
+    variantKeys: [v],
+    liveKeys: [v],
+    bucket,
+  })
+  assert.equal(r.ok, false)
+  assert.deepEqual(deleted, [])
+})
+
+test('liveKeys that do not touch this upload change nothing', async () => {
+  const { bucket } = fakeBucket({ [posterKey]: PNG })
+  const r = await finalizeUploadedObject({
+    kind: 'artwork',
+    slot: 'poster',
+    showId: SHOW,
+    key: posterKey,
+    variantKeys: [],
+    liveKeys: ['show-artwork/shows/x/poster-1.webp'],
+    bucket,
+  })
+  assert.equal(r.ok, true)
+})

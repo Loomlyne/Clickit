@@ -8,6 +8,8 @@ const ORIGIN = 'https://media.test'
 const SHOW = '3f2504e0-4f89-41d3-9a0c-0305e82c3301'
 const OTHER_SHOW = '3f2504e0-4f89-41d3-9a0c-0305e82c3302'
 const CAST = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
+const CAST2 = '7c9e6679-7425-40de-944b-e07fc1f90ae8'
+const CAST3 = '7c9e6679-7425-40de-944b-e07fc1f90ae9'
 const NEW_KEY = `show-artwork/shows/${SHOW}/poster-1760000000000-abcdef01.webp`
 const OLD_KEY = `show-artwork/shows/${SHOW}/poster-1750000000000-12345678.webp`
 
@@ -16,8 +18,26 @@ const tables = () => ({
     { id: SHOW, poster_url: `${ORIGIN}/${OLD_KEY}`, card_image_url: 'card-old', hero_url: 'hero-old' },
     { id: OTHER_SHOW, poster_url: 'other-poster', card_image_url: null },
   ],
-  app_config: [{ id: 1, og_image_url: 'og-old', favicon_url: 'fav-old', admin_user_id: 'admin-1' }],
-  show_cast: [{ id: CAST, show_id: SHOW, name: 'A', image_url: null }],
+  app_config: [
+    {
+      id: 1,
+      og_image_url: 'og-old',
+      favicon_url: 'fav-old',
+      admin_user_id: 'admin-1',
+      footer_content: {
+        social: [
+          { platform: 'x', url: 'https://x.com/a', iconUrl: `${ORIGIN}/site-assets/settings/social-icons/1750000000000-12345678.png` },
+          { platform: 'ig', url: 'https://instagram.com/a', iconUrl: '' },
+          'junk',
+        ],
+      },
+    },
+  ],
+  show_cast: [
+    { id: CAST, show_id: SHOW, name: 'A', image_url: null },
+    { id: CAST2, show_id: SHOW, name: 'B', image_url: `${ORIGIN}/show-artwork/shows/${SHOW}/cast/1750000000000-12345678.png` },
+    { id: CAST3, show_id: OTHER_SHOW, name: 'C', image_url: 'other-cast' },
+  ],
   profiles: [],
 })
 
@@ -30,6 +50,7 @@ function ports(fake: ReturnType<typeof createFakeSupabase>, auditError?: string)
     audit: async (e) => (auditError ? { error: auditError } : fake.auditWriter(e)),
     mediaOrigin: ORIGIN,
     previousR2Keys: (u) => (u?.startsWith(`${ORIGIN}/`) ? [u.slice(ORIGIN.length + 1)] : []),
+    liveKeys: (u) => (u?.startsWith(`${ORIGIN}/`) ? [u.slice(ORIGIN.length + 1)] : []),
   }
   return Object.assign(p, { deleted })
 }
@@ -48,6 +69,7 @@ test('artwork finalize changes only the slot column of that show, plus one audit
     variantKeys: [],
     userId: 'admin-1',
     target: { type: 'show-artwork', showId: SHOW, column: 'poster_url' },
+    live: { type: 'show-artwork', showId: SHOW, columns: ['poster_url'] },
   })
   assert.equal(res.success, true)
   const after = fake.snapshot({ exclude: ['admin_audit_log'] })
@@ -71,6 +93,7 @@ test('site image finalize changes only the one app_config column', async () => {
     variantKeys: [],
     userId: 'admin-1',
     target: { type: 'app-config', column: 'og_image_url' },
+    live: { type: 'app-config', columns: ['og_image_url'] },
   })
   assert.equal(res.success, true)
   const expected = structuredClone(before)
@@ -88,6 +111,7 @@ test('cast finalize writes only that member; a member of another show is not fou
     key,
     variantKeys: [],
     userId: 'admin-1',
+    live: { type: 'show-cast', showId: SHOW } as const,
   }
   const wrongShow = await finalizeImageUploadCore(ports(fake), {
     ...input,
@@ -115,6 +139,7 @@ test('audit failure restores the previous slot value in the database', async () 
     variantKeys: [],
     userId: 'admin-1',
     target: { type: 'show-artwork', showId: SHOW, column: 'poster_url' },
+    live: { type: 'show-artwork', showId: SHOW, columns: ['poster_url'] },
   })
   assert.equal(res.success, false)
   assert.equal(fake.tables.shows![0]!.poster_url, `${ORIGIN}/${OLD_KEY}`)
@@ -132,8 +157,76 @@ test('an unknown show is refused before anything is written', async () => {
     variantKeys: [],
     userId: 'admin-1',
     target: { type: 'show-artwork', showId: '3f2504e0-4f89-41d3-9a0c-0305e82c3399', column: 'poster_url' },
+    live: { type: 'show-artwork', showId: '3f2504e0-4f89-41d3-9a0c-0305e82c3399', columns: ['poster_url'] },
   })
   assert.equal(res.success, false)
   assert.equal(writeCalls(fake).length, 0)
   assert.deepEqual((p as unknown as { deleted: string[][] }).deleted, [[NEW_KEY]])
+})
+
+// ---- live scope reads (01.1 review: a re-sent live key is refused before finalize) ----
+
+test('show-artwork scope reads every listed column of that show, read-only', async () => {
+  const fake = createFakeSupabase(tables())
+  const db = adminImageDb(fake.client as never)
+  const r = await db.readLive({ type: 'show-artwork', showId: SHOW, columns: ['poster_url', 'card_image_url', 'hero_url', 'logo_url'] })
+  assert.deepEqual(r, { urls: [`${ORIGIN}/${OLD_KEY}`, 'card-old', 'hero-old', null], error: null })
+  assert.equal(writeCalls(fake).length, 0)
+})
+
+test('show-artwork scope of a show that does not exist yet has nothing live', async () => {
+  const fake = createFakeSupabase(tables())
+  const r = await adminImageDb(fake.client as never).readLive({
+    type: 'show-artwork',
+    showId: '3f2504e0-4f89-41d3-9a0c-0305e82c3399',
+    columns: ['poster_url'],
+  })
+  assert.deepEqual(r, { urls: [], error: null })
+})
+
+test('app-config scope reads the listed site image columns', async () => {
+  const fake = createFakeSupabase(tables())
+  const r = await adminImageDb(fake.client as never).readLive({ type: 'app-config', columns: ['og_image_url', 'favicon_url'] })
+  assert.deepEqual(r, { urls: ['og-old', 'fav-old'], error: null })
+})
+
+test('show-cast scope reads every cast image of that show only', async () => {
+  const fake = createFakeSupabase(tables())
+  const r = await adminImageDb(fake.client as never).readLive({ type: 'show-cast', showId: SHOW })
+  assert.equal(r.error, null)
+  assert.deepEqual(r.urls, [null, `${ORIGIN}/show-artwork/shows/${SHOW}/cast/1750000000000-12345678.png`])
+})
+
+test('social-icons scope reads every icon url in footer_content.social', async () => {
+  const fake = createFakeSupabase(tables())
+  const r = await adminImageDb(fake.client as never).readLive({ type: 'social-icons' })
+  assert.deepEqual(r, { urls: [`${ORIGIN}/site-assets/settings/social-icons/1750000000000-12345678.png`, ''], error: null })
+})
+
+test('a failed scope read is an error (the core then refuses and deletes nothing)', async () => {
+  const fake = createFakeSupabase(tables())
+  fake.failOn({ table: 'app_config', op: 'select', nth: 1 })
+  const r = await adminImageDb(fake.client as never).readLive({ type: 'social-icons' })
+  assert.equal(r.urls.length, 0)
+  assert.ok(r.error)
+})
+
+test('a re-sent live cast image (commit false, no member) is refused against the real db port', async () => {
+  const fake = createFakeSupabase(tables())
+  const p = ports(fake)
+  const key = `show-artwork/shows/${SHOW}/cast/1750000000000-12345678.png`
+  const res = await finalizeImageUploadCore(p, {
+    kind: 'cast-image',
+    slot: null,
+    showId: SHOW,
+    key,
+    variantKeys: [],
+    userId: 'admin-1',
+    target: null,
+    live: { type: 'show-cast', showId: SHOW },
+  })
+  assert.equal(res.success, false)
+  assert.equal(res.error, 'This file is already the live image; upload a new file instead.')
+  assert.deepEqual((p as unknown as { deleted: string[][] }).deleted, [])
+  assert.equal(writeCalls(fake).length, 0)
 })

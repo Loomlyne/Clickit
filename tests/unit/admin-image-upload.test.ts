@@ -5,6 +5,7 @@ import {
   finalizeImageUploadCore,
   type ImageTarget,
   type ImageUploadPorts,
+  type LiveScope,
 } from '../../src/lib/admin/image-upload.ts'
 
 const ORIGIN = 'https://media.test'
@@ -17,6 +18,8 @@ const OLD_R2_URL = `${ORIGIN}/${OLD_KEY}`
 const OLD_SUPABASE_URL = 'https://proj.supabase.co/storage/v1/object/public/show-artwork/shows/x/poster-1.webp'
 
 const ARTWORK_TARGET: ImageTarget = { type: 'show-artwork', showId: SHOW, column: 'poster_url' }
+const ARTWORK_LIVE: LiveScope = { type: 'show-artwork', showId: SHOW, columns: ['poster_url', 'card_image_url'] }
+const PROFILE_LIVE: LiveScope = { type: 'profile', userId: USER }
 
 type Opts = {
   previous?: string | null
@@ -29,6 +32,9 @@ type Opts = {
   auditError?: string | null
   noAudit?: boolean
   deleteFails?: boolean | 'first'
+  /** Other live urls in the scope besides the target's current value. */
+  live?: Array<string | null>
+  liveError?: string
 }
 
 function setup(opts: Opts = {}) {
@@ -36,16 +42,25 @@ function setup(opts: Opts = {}) {
   const writes: Array<{ target: ImageTarget; url: string | null }> = []
   const audits: unknown[] = []
   const deletes: string[][] = []
+  const finalizeInputs: Array<{ key: string; liveKeys?: readonly string[] }> = []
+  const liveScopes: LiveScope[] = []
   let value: string | null = 'previous' in opts ? (opts.previous ?? null) : OLD_R2_URL
   let deleteCalls = 0
 
   const ports: ImageUploadPorts = {
     finalize: async (input) => {
       log.push('finalize')
+      finalizeInputs.push(input)
       if (opts.finalizeOk === false) return { ok: false, error: opts.finalizeError ?? 'Invalid upload key' }
       return { ok: true, key: input.key, variants: [...input.variantKeys] }
     },
     db: {
+      readLive: async (scope) => {
+        log.push('live')
+        liveScopes.push(scope)
+        if (opts.liveError) return { urls: [], error: opts.liveError }
+        return { urls: [value, ...(opts.live ?? [])], error: null }
+      },
       readCurrent: async () => {
         log.push('read')
         return opts.readError ? { error: opts.readError, url: null } : { error: null, url: value }
@@ -88,8 +103,13 @@ function setup(opts: Opts = {}) {
       const k = url.slice(ORIGIN.length + 1).split('?')[0]!
       return [k, `_v/640/webp/${k}`]
     },
+    liveKeys: (url) => {
+      if (!url || !url.startsWith(`${ORIGIN}/`)) return []
+      const k = url.slice(ORIGIN.length + 1).split('?')[0]!
+      return [k, `_v/640/webp/${k}`, `_v/1280/webp/${k}`]
+    },
   }
-  return { ports, log, writes, audits, deletes, current: () => value }
+  return { ports, log, writes, audits, deletes, finalizeInputs, liveScopes, current: () => value }
 }
 
 const input = (over: Partial<Parameters<typeof finalizeImageUploadCore>[1]> = {}) => ({
@@ -99,6 +119,7 @@ const input = (over: Partial<Parameters<typeof finalizeImageUploadCore>[1]> = {}
   key: NEW_KEY,
   variantKeys: [NEW_V],
   target: ARTWORK_TARGET as ImageTarget | null,
+  live: ARTWORK_LIVE,
   userId: 'admin-1',
   ...over,
 })
@@ -110,7 +131,7 @@ test('happy path: finalize, write, audit, then delete the previous R2 key', asyn
   assert.equal(res.data, `${ORIGIN}/${NEW_KEY}`)
   assert.equal(res.wrote, true)
   assert.equal(res.mediaCleanupFailed, undefined)
-  assert.deepEqual(w.log, ['finalize', 'read', 'write', 'audit', 'delete'])
+  assert.deepEqual(w.log, ['live', 'finalize', 'read', 'write', 'audit', 'delete'])
   assert.equal(w.current(), `${ORIGIN}/${NEW_KEY}`)
   assert.deepEqual(w.deletes, [[OLD_KEY, `_v/640/webp/${OLD_KEY}`]])
 })
@@ -120,7 +141,7 @@ test('previous value is a Supabase Storage URL: nothing is deleted for it', asyn
   const res = await finalizeImageUploadCore(w.ports, input())
   assert.equal(res.success, true)
   assert.deepEqual(w.deletes, [])
-  assert.deepEqual(w.log, ['finalize', 'read', 'write', 'audit'])
+  assert.deepEqual(w.log, ['live', 'finalize', 'read', 'write', 'audit'])
 })
 
 test('previous value empty: nothing is deleted', async () => {
@@ -130,11 +151,106 @@ test('previous value empty: nothing is deleted', async () => {
   assert.deepEqual(w.deletes, [])
 })
 
-test('previous value is the same key: it is never deleted', async () => {
-  const w = setup({ previous: `${ORIGIN}/${NEW_KEY}` })
+// Phase 01.1 review (PR #23, 974922f), carried from the video core (9898ecb): a key that
+// is already live is refused before finalize, so no refusal, failed write or failed audit
+// can delete the live file.
+const LIVE_MESSAGE = 'This file is already the live image; upload a new file instead.'
+function assertUntouched(w: ReturnType<typeof setup>, liveUrl: string | null) {
+  assert.deepEqual(w.log, ['live'])
+  assert.deepEqual(w.finalizeInputs, [])
+  assert.deepEqual(w.deletes, [])
+  assert.deepEqual(w.writes, [])
+  assert.equal(w.audits.length, 0)
+  assert.equal(w.current(), liveUrl)
+}
+
+test('previous value is the same key: refused as live, nothing finalized, written or deleted', async () => {
+  const w = setup({ previous: `${ORIGIN}/${NEW_KEY}?v=2` })
+  const res = await finalizeImageUploadCore(w.ports, input())
+  assert.deepEqual(res, { success: false, error: LIVE_MESSAGE, wrote: false })
+  assertUntouched(w, `${ORIGIN}/${NEW_KEY}?v=2`)
+})
+
+test('a live key with a write that would fail and an audit that would fail is still never deleted', async () => {
+  for (const fail of [{ writeError: 'permission denied' }, { auditError: 'audit down' }]) {
+    const w = setup({ previous: `${ORIGIN}/${NEW_KEY}`, ...fail })
+    const res = await finalizeImageUploadCore(w.ports, input())
+    assert.deepEqual(res, { success: false, error: LIVE_MESSAGE, wrote: false })
+    assertUntouched(w, `${ORIGIN}/${NEW_KEY}`)
+  }
+})
+
+test('a finalize that would refuse is never reached for a live key (its refusal deletes)', async () => {
+  const w = setup({ previous: `${ORIGIN}/${NEW_KEY}`, finalizeOk: false, finalizeError: 'Image must be under 10MB' })
+  const res = await finalizeImageUploadCore(w.ports, input())
+  assert.equal(res.error, LIVE_MESSAGE)
+  assertUntouched(w, `${ORIGIN}/${NEW_KEY}`)
+})
+
+test('the key live in another column of the same scope is refused too', async () => {
+  const w = setup({ live: [`${ORIGIN}/${NEW_KEY}`] })
+  const res = await finalizeImageUploadCore(w.ports, input())
+  assert.equal(res.error, LIVE_MESSAGE)
+  assertUntouched(w, OLD_R2_URL)
+  assert.deepEqual(w.liveScopes, [ARTWORK_LIVE])
+})
+
+test('a sent variant key that is live is refused, even when the original key is new', async () => {
+  const w = setup({ live: [`${ORIGIN}/${OLD_KEY}`] })
+  const res = await finalizeImageUploadCore(w.ports, input({ variantKeys: [`_v/1280/webp/${OLD_KEY}`] }))
+  assert.equal(res.error, LIVE_MESSAGE)
+  assertUntouched(w, OLD_R2_URL)
+})
+
+test('reading the live scope fails: refused with that error, nothing finalized or deleted', async () => {
+  const w = setup({ liveError: 'db down', writeError: 'x', auditError: 'y' })
+  const res = await finalizeImageUploadCore(w.ports, input())
+  assert.deepEqual(res, { success: false, error: 'db down', wrote: false })
+  assertUntouched(w, OLD_R2_URL)
+})
+
+test('commit false (no target): a key live in the scope is refused and nothing is deleted', async () => {
+  for (const extra of [{}, { auditError: 'audit down' }, { finalizeOk: false }]) {
+    const w = setup({ live: [`${ORIGIN}/${NEW_KEY}`], ...extra })
+    const res = await finalizeImageUploadCore(w.ports, input({ target: null }))
+    assert.deepEqual(res, { success: false, error: LIVE_MESSAGE, wrote: false })
+    assertUntouched(w, OLD_R2_URL)
+  }
+})
+
+test('social icon and cast without a member: their scopes are read and a live key is refused', async () => {
+  const scopes: LiveScope[] = [{ type: 'social-icons' }, { type: 'show-cast', showId: SHOW }]
+  for (const live of scopes) {
+    const w = setup({ live: [`${ORIGIN}/${NEW_KEY}`], auditError: 'audit down' })
+    const res = await finalizeImageUploadCore(w.ports, input({ kind: 'social-icon', slot: null, target: null, live }))
+    assert.equal(res.error, LIVE_MESSAGE)
+    assertUntouched(w, OLD_R2_URL)
+    assert.deepEqual(w.liveScopes, [live])
+  }
+})
+
+test('avatar: the live avatar key is refused and the profile is untouched', async () => {
+  const key = `avatars/${USER}/avatar-1760000000000-abcdef01.webp`
+  const w = setup({ previous: `${ORIGIN}/${key}`, noAudit: true, writeError: 'denied' })
+  const res = await finalizeImageUploadCore(w.ports, {
+    kind: 'avatar',
+    slot: null,
+    showId: null,
+    key,
+    variantKeys: [],
+    target: { type: 'profile', userId: USER },
+    live: PROFILE_LIVE,
+    userId: USER,
+  })
+  assert.equal(res.error, LIVE_MESSAGE)
+  assertUntouched(w, `${ORIGIN}/${key}`)
+})
+
+test('a new key goes on to finalize with the live keys, so finalize can refuse them too', async () => {
+  const w = setup()
   const res = await finalizeImageUploadCore(w.ports, input())
   assert.equal(res.success, true)
-  assert.deepEqual(w.deletes, [])
+  assert.deepEqual(w.finalizeInputs[0]!.liveKeys, [OLD_KEY, `_v/640/webp/${OLD_KEY}`, `_v/1280/webp/${OLD_KEY}`])
 })
 
 test('finalize refused: no db call, no audit, error returned', async () => {
@@ -143,7 +259,7 @@ test('finalize refused: no db call, no audit, error returned', async () => {
   assert.equal(res.success, false)
   assert.equal(res.error, 'SVG images are not allowed')
   assert.equal(res.wrote, false)
-  assert.deepEqual(w.log, ['finalize'])
+  assert.deepEqual(w.log, ['live', 'finalize'])
   assert.deepEqual(w.writes, [])
 })
 
@@ -175,7 +291,7 @@ test('strict audit failure: previous value restored, new key and variants delete
   assert.match(res.error ?? '', /audit/i)
   assert.equal(w.current(), OLD_R2_URL)
   assert.deepEqual(w.deletes, [[NEW_KEY, NEW_V]])
-  assert.deepEqual(w.log, ['finalize', 'read', 'write', 'audit', 'restore', 'delete'])
+  assert.deepEqual(w.log, ['live', 'finalize', 'read', 'write', 'audit', 'restore', 'delete'])
 })
 
 test('audit failure and restore failure: both reported, new object still removed', async () => {
@@ -212,6 +328,7 @@ test('avatar: another user\'s key is refused by finalize and nothing is written'
     key: 'avatars/00000000-0000-4000-8000-000000000000/avatar-1760000000000-abcdef01.webp',
     variantKeys: [],
     target: { type: 'profile', userId: USER },
+    live: PROFILE_LIVE,
     userId: USER,
   })
   assert.equal(res.success, false)
@@ -229,10 +346,11 @@ test('avatar without an audit port: writes the profile, skips the audit', async 
     key: `avatars/${USER}/avatar-1760000000000-abcdef01.webp`,
     variantKeys: [],
     target: { type: 'profile', userId: USER },
+    live: PROFILE_LIVE,
     userId: USER,
   })
   assert.equal(res.success, true)
-  assert.deepEqual(w.log, ['finalize', 'read', 'write'])
+  assert.deepEqual(w.log, ['live', 'finalize', 'read', 'write'])
 })
 
 test('no target (cast image before the member exists): finalize and audit only, url returned, no db write', async () => {
@@ -240,7 +358,7 @@ test('no target (cast image before the member exists): finalize and audit only, 
   const res = await finalizeImageUploadCore(w.ports, input({ kind: 'cast-image', slot: null, target: null }))
   assert.equal(res.success, true)
   assert.equal(res.data, `${ORIGIN}/${NEW_KEY}`)
-  assert.deepEqual(w.log, ['finalize', 'audit'])
+  assert.deepEqual(w.log, ['live', 'finalize', 'audit'])
   assert.deepEqual(w.writes, [])
   assert.deepEqual(w.deletes, [])
 })
