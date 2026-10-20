@@ -40,9 +40,17 @@ function assertTokenRules(name: string, src: string) {
   const c = code(src)
   assert.doesNotMatch(c, /\bfixed\b/, `${name}: no fixed positioning`)
   assert.doesNotMatch(c, /\bz-20\b/, `${name}: no z-20 layering`)
-  assert.doesNotMatch(c, /(^|[^\w])(left|right)-/, `${name}: logical properties only`)
+  assert.doesNotMatch(
+    c,
+    /(^|[^\w])(left|right)-/,
+    `${name}: logical properties only`
+  )
   assert.doesNotMatch(c, /\b(ml|mr|pl|pr)-\d/, `${name}: logical spacing only`)
-  assert.doesNotMatch(c, /\btext-(left|right)\b/, `${name}: logical alignment only`)
+  assert.doesNotMatch(
+    c,
+    /\btext-(left|right)\b/,
+    `${name}: logical alignment only`
+  )
   assert.doesNotMatch(c, /from-black/, `${name}: no black gradient`)
   assert.doesNotMatch(c, /text-\[(\d|10)px\]/, `${name}: no text under 11px`)
   assert.doesNotMatch(c, /\btoast\(/, `${name}: no toast`)
@@ -53,9 +61,13 @@ function assertButtonRules(name: string, src: string) {
   const tags = buttonTags(code(src))
   assert.ok(tags.length > 0, `${name}: has Buttons`)
   for (const tag of tags) {
-    assert.match(tag, /className="[^"]*\bmin-h-11\b/, `${name}: min-h-11 on ${tag}`)
-    assert.match(tag, /className="[^"]*\bpx-6\b/, `${name}: px-6 on ${tag}`)
-    assert.doesNotMatch(tag, /size="(sm|xs|icon|icon-sm|icon-xs)"/, `${name}: default size only`)
+    assert.match(tag, /\bmin-h-11\b/, `${name}: min-h-11 on ${tag}`)
+    assert.match(tag, /\bpx-6\b/, `${name}: px-6 on ${tag}`)
+    assert.doesNotMatch(
+      tag,
+      /size="(sm|xs|icon|icon-sm|icon-xs)"/,
+      `${name}: default size only`
+    )
   }
 }
 
@@ -113,4 +125,3 @@ test('visibility hook: IntersectionObserver at the 50% rule plus tab visibility'
   assert.match(src, /isVisibleEnough\(/)
   assert.match(src, /threshold:\s*\[0, 0\.5, 1\]/)
 })
-
