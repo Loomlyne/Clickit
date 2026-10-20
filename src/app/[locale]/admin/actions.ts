@@ -6,7 +6,11 @@ import sharp from 'sharp'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { validateYouTubeUrl } from '@/lib/youtube'
-import { logAudit } from '@/lib/audit'
+import { logAudit, logAuditStrict } from '@/lib/audit'
+import { runAdminAction, type AdminActionEnv } from '@/lib/admin/action-runner'
+import { archiveShowCore, restoreShowCore } from '@/lib/admin/show-archive'
+import { getActiveShowNamespaceConflict } from '@/lib/admin/show-namespace'
+import type { RestoreResult } from '@/lib/admin/ports'
 import { generateSlug } from '@/lib/slug'
 import { fillArabic, translateToArabic, translateBatchToArabic } from '@/lib/translate'
 import { mp4BytesHasAudioTrack } from '@/lib/mp4-audio'
@@ -104,26 +108,11 @@ function isMp4File(file: { name?: string; type?: string }) {
   )
 }
 
-export type EpisodeConflict = {
-  episodeId: string
-  episodeTitle: string
-  episodeNumber: number
-  seasonId: string
-  seasonNumber: number
-  conflictingEpisodeTitle: string
-}
-
-export type ShowRestoreConflict = {
-  title: string
-  slug: string
-  titleConflictTitle?: string
-  slugConflictTitle?: string
-}
-
-export type RestoreResult = ActionResult & {
-  conflicts?: EpisodeConflict[]
-  showConflict?: ShowRestoreConflict
-}
+export type {
+  EpisodeConflict,
+  ShowRestoreConflict,
+  RestoreResult,
+} from '@/lib/admin/ports'
 
 // ---------------------------------------------------------------------------
 // Auth helper: defense-in-depth (D-12) — every action verifies admin
@@ -146,6 +135,13 @@ async function assertAdmin() {
 
   if (config?.admin_user_id !== user.id) throw new Error('Unauthorized')
   return user
+}
+
+const adminEnv: AdminActionEnv = {
+  assertAdmin,
+  createDb: createAdminClient,
+  audit: logAuditStrict,
+  logError: (label, err) => console.error(label, err),
 }
 
 // ---------------------------------------------------------------------------
@@ -297,69 +293,6 @@ async function syncShowCategories(
   )
 
   if (insertError) throw insertError
-}
-
-function normalizeEnglishTitle(title: string) {
-  return title.trim().replace(/\s+/g, ' ').toLowerCase()
-}
-
-function archiveSlugForShow(id: string) {
-  return `archived-${id.slice(0, 8)}`
-}
-
-async function findActiveTitleConflict(
-  admin: ReturnType<typeof createAdminClient>,
-  title: string,
-  excludeId?: string
-) {
-  const normalized = normalizeEnglishTitle(title)
-  const { data, error } = await admin
-    .from('shows')
-    .select('id, title, slug')
-    .eq('archived', false)
-
-  if (error) throw error
-
-  return (data ?? []).find((show) => {
-    return (
-      show.id !== excludeId && normalizeEnglishTitle(show.title) === normalized
-    )
-  })
-}
-
-async function findActiveSlugConflict(
-  admin: ReturnType<typeof createAdminClient>,
-  slug: string,
-  excludeId?: string
-) {
-  const { data, error } = await admin
-    .from('shows')
-    .select('id, title, slug')
-    .eq('archived', false)
-    .eq('slug', slug)
-
-  if (error) throw error
-
-  return (data ?? []).find((show) => show.id !== excludeId)
-}
-
-async function getActiveShowNamespaceConflict(
-  admin: ReturnType<typeof createAdminClient>,
-  input: { title: string; slug: string; excludeId?: string }
-): Promise<ShowRestoreConflict | null> {
-  const [titleConflict, slugConflict] = await Promise.all([
-    findActiveTitleConflict(admin, input.title, input.excludeId),
-    findActiveSlugConflict(admin, input.slug, input.excludeId),
-  ])
-
-  if (!titleConflict && !slugConflict) return null
-
-  return {
-    title: input.title,
-    slug: input.slug,
-    titleConflictTitle: titleConflict?.title,
-    slugConflictTitle: slugConflict?.title,
-  }
 }
 
 const seasonSchema = z.object({
@@ -559,37 +492,23 @@ export async function updateShow(
 }
 
 export async function archiveShow(id: string): Promise<ActionResult> {
-  try {
-    const user = await assertAdmin()
-    const admin = createAdminClient()
-
-    const { error: showError } = await admin
-      .from('shows')
-      .update({ archived: true, slug: archiveSlugForShow(id) })
-      .eq('id', id)
-
-    if (showError) return { success: false, error: showError.message }
-
-    // Also archive all episodes for this show
-    await admin.from('episodes').update({ archived: true }).eq('show_id', id)
-
-    await logAudit({
-      adminUserId: user.id,
-      action: 'archive',
-      entity: 'show',
-      entityId: id,
-    })
-
-    bumpCatalogCache()
-    updateTag('episodes')
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to archive show',
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      archiveShowCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        id
+      ),
+    {
+      fallbackError: 'Failed to archive show',
+      revalidate: () => {
+        bumpCatalogCache()
+        updateTag('episodes')
+        revalidatePath('/admin/archive')
+      },
     }
-  }
+  )
 }
 
 export async function reorderShow(
@@ -650,177 +569,45 @@ export async function reorderShow(
   }
 }
 
-// Internal implementation. Callers must have already run assertAdmin() —
-// split out so resolveConflictsAndRestore() doesn't pay the auth roundtrip
-// twice (once for itself, once through a nested restoreShow call).
-async function _restoreShow(
-  admin: ReturnType<typeof createAdminClient>,
-  id: string
-): Promise<RestoreResult> {
-  const { data: show, error: showFetchError } = await admin
-    .from('shows')
-    .select('id, title, slug')
-    .eq('id', id)
-    .single()
-
-  if (showFetchError) return { success: false, error: showFetchError.message }
-
-  const generatedSlug = generateSlug(show.title, `show-${id.slice(0, 8)}`)
-  const restoreSlug =
-    show.slug === archiveSlugForShow(id)
-      ? generatedSlug
-      : generateSlug(show.slug, generatedSlug)
-  const showConflict = await getActiveShowNamespaceConflict(admin, {
-    title: show.title,
-    slug: restoreSlug,
-    excludeId: id,
-  })
-
-  if (showConflict) {
-    return {
-      success: false,
-      error: 'Resolve the show title or slug conflict before restoring.',
-      showConflict,
-    }
-  }
-
-  // Check for episode number conflicts before restoring
-  const { data: archivedEpisodes } = await admin
-    .from('episodes')
-    .select('id, title, episode_number, season_id')
-    .eq('show_id', id)
-    .eq('archived', true)
-
-  if (archivedEpisodes && archivedEpisodes.length > 0) {
-    // Get seasons for this show to include season_number in conflict info
-    const { data: seasons } = await admin
-      .from('seasons')
-      .select('id, season_number')
-      .eq('show_id', id)
-
-    const seasonMap = new Map(
-      seasons?.map((s) => [s.id, s.season_number]) ?? []
-    )
-
-    // Batch-fetch all visible episodes for the seasons involved in one round
-    // trip. The previous implementation ran one query per archived episode,
-    // so restoring a show with 20 episodes meant 20 sequential DB calls.
-    const involvedSeasonIds = [
-      ...new Set(archivedEpisodes.map((ep) => ep.season_id)),
-    ]
-    const { data: visibleEpisodes } = await admin
-      .from('episodes')
-      .select('season_id, episode_number, title')
-      .in('season_id', involvedSeasonIds)
-      .eq('archived', false)
-
-    // Lookup key: "{seasonId}:{episodeNumber}" → title of the blocker
-    const blockerByKey = new Map<string, string>()
-    for (const ve of visibleEpisodes ?? []) {
-      blockerByKey.set(`${ve.season_id}:${ve.episode_number}`, ve.title)
-    }
-
-    const conflicts: EpisodeConflict[] = []
-    for (const ep of archivedEpisodes) {
-      const blockerTitle = blockerByKey.get(
-        `${ep.season_id}:${ep.episode_number}`
-      )
-      if (blockerTitle) {
-        conflicts.push({
-          episodeId: ep.id,
-          episodeTitle: ep.title,
-          episodeNumber: ep.episode_number,
-          seasonId: ep.season_id,
-          seasonNumber: seasonMap.get(ep.season_id) ?? 0,
-          conflictingEpisodeTitle: blockerTitle,
-        })
-      }
-    }
-
-    if (conflicts.length > 0) {
-      return {
-        success: false,
-        error: `${conflicts.length} episode(s) have number conflicts with existing episodes.`,
-        conflicts,
-      }
-    }
-  }
-
-  // No conflicts — proceed with restore
-  const { error: showError } = await admin
-    .from('shows')
-    .update({ archived: false, slug: restoreSlug })
-    .eq('id', id)
-
-  if (showError) return { success: false, error: showError.message }
-
-  await admin.from('episodes').update({ archived: false }).eq('show_id', id)
-
+const revalidateRestore = () => {
   bumpCatalogCache()
   revalidatePath('/admin/archive')
   updateTag('episodes')
-  return { success: true }
 }
 
 export async function restoreShow(id: string): Promise<RestoreResult> {
-  try {
-    const user = await assertAdmin()
-    const admin = createAdminClient()
-    const result = await _restoreShow(admin, id)
-    if (result.success) {
-      await logAudit({
-        adminUserId: user.id,
-        action: 'restore',
-        entity: 'show',
-        entityId: id,
-      })
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      restoreShowCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        { showId: id }
+      ),
+    {
+      fallbackError: 'Failed to restore show',
+      revalidate: revalidateRestore,
     }
-    return result
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to restore show',
-    }
-  }
+  )
 }
 
 export async function resolveConflictsAndRestore(
   showId: string,
   fixes: { episodeId: string; newEpisodeNumber: number }[]
 ): Promise<RestoreResult> {
-  try {
-    await assertAdmin()
-    const admin = createAdminClient()
-
-    // Apply the number fixes to archived episodes in parallel — admin action,
-    // small N, safe to batch concurrently.
-    const results = await Promise.all(
-      fixes.map((fix) =>
-        admin
-          .from('episodes')
-          .update({ episode_number: fix.newEpisodeNumber })
-          .eq('id', fix.episodeId)
-      )
-    )
-    const firstError = results.find((r) => r.error)?.error
-    if (firstError) {
-      return {
-        success: false,
-        error: `Failed to update episode: ${firstError.message}`,
-      }
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      restoreShowCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        { showId, fixes }
+      ),
+    {
+      fallbackError: 'Failed to resolve conflicts',
+      revalidate: revalidateRestore,
     }
-
-    // Re-run restore with conflict check (skipping redundant assertAdmin —
-    // we already authenticated this caller).
-    return await _restoreShow(admin, showId)
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to resolve conflicts',
-    }
-  }
+  )
 }
 
 export async function resolveRestoreConflictsAndRestore(
@@ -831,85 +618,26 @@ export async function resolveRestoreConflictsAndRestore(
     episodeFixes?: { episodeId: string; newEpisodeNumber: number }[]
   }
 ): Promise<RestoreResult> {
-  try {
-    const user = await assertAdmin()
-    const admin = createAdminClient()
-
-    if (data.title || data.slug) {
-      const { data: currentShow, error: fetchError } = await admin
-        .from('shows')
-        .select('title, slug')
-        .eq('id', showId)
-        .single()
-
-      if (fetchError) return { success: false, error: fetchError.message }
-
-      const title = (data.title ?? currentShow.title).trim()
-      const slug = generateSlug(
-        data.slug ?? currentShow.slug,
-        generateSlug(title, `show-${showId.slice(0, 8)}`)
-      )
-
-      if (!title) return { success: false, error: 'Title is required.' }
-      if (!slug) return { success: false, error: 'Slug is required.' }
-
-      const showConflict = await getActiveShowNamespaceConflict(admin, {
-        title,
-        slug,
-        excludeId: showId,
-      })
-      if (showConflict) {
-        return {
-          success: false,
-          error: 'Resolve the show title or slug conflict before restoring.',
-          showConflict,
+  const rename: { title?: string; slug?: string } = {}
+  if (data?.title) rename.title = data.title
+  if (data?.slug) rename.slug = data.slug
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      restoreShowCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        {
+          showId,
+          rename: Object.keys(rename).length > 0 ? rename : undefined,
+          fixes: data?.episodeFixes,
         }
-      }
-
-      const { error: updateError } = await admin
-        .from('shows')
-        .update({ title, slug })
-        .eq('id', showId)
-
-      if (updateError) return { success: false, error: updateError.message }
+      ),
+    {
+      fallbackError: 'Failed to resolve conflicts',
+      revalidate: revalidateRestore,
     }
-
-    const fixes = data.episodeFixes ?? []
-    if (fixes.length > 0) {
-      const results = await Promise.all(
-        fixes.map((fix) =>
-          admin
-            .from('episodes')
-            .update({ episode_number: fix.newEpisodeNumber })
-            .eq('id', fix.episodeId)
-        )
-      )
-      const firstError = results.find((r) => r.error)?.error
-      if (firstError) {
-        return {
-          success: false,
-          error: `Failed to update episode: ${firstError.message}`,
-        }
-      }
-    }
-
-    const result = await _restoreShow(admin, showId)
-    if (result.success) {
-      await logAudit({
-        adminUserId: user.id,
-        action: 'restore',
-        entity: 'show',
-        entityId: showId,
-      })
-    }
-    return result
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to resolve conflicts',
-    }
-  }
+  )
 }
 
 export async function deleteShowPermanently(id: string): Promise<ActionResult> {
