@@ -13,6 +13,8 @@
 //   signed out: /en/profile, /en/my-list, /en/design-system redirect to /en/auth
 //               (to /en/coming-soon with --expect-coming-soon), /en/admin redirects to /en/auth
 //   /api/cron/* without the secret answers 401
+//   dev routes (DEV_ROUTES, today /api/dev/r2-put) answer 404 (403 only on a loopback base,
+//     where LOCAL_DEV=1 may be set); the probe is a tokenless PUT, which can never write
 //   --admin-cookie-file:  /en/admin answers 200
 //   --viewer-cookie-file: /en/admin does not answer 200 (redirect or 403)
 //   --expect-coming-soon: a non-allowlisted page (/en/watch) redirects to /en/coming-soon
@@ -73,9 +75,22 @@ function readCookie(path) {
   return text
 }
 
-async function get(base, path, cookie) {
+/** Local-preview-only routes. They must be invisible (404) on workers.dev and production. */
+export const DEV_ROUTES = Object.freeze([{ path: '/api/dev/r2-put/gate-check/probe.bin', method: 'PUT' }])
+
+/** Loopback base: LOCAL_DEV=1 may be set there, which turns the 404 into a 403 for a tokenless call. */
+export function isLoopbackBase(base) {
+  try {
+    const u = new URL(base)
+    return u.hostname === '127.0.0.1' || u.hostname === 'localhost'
+  } catch {
+    return false
+  }
+}
+
+async function get(base, path, cookie, method = 'GET') {
   const res = await fetch(`${base}${path}`, {
-    method: 'GET',
+    method,
     redirect: 'manual',
     headers: cookie ? { cookie } : {},
   })
@@ -124,6 +139,12 @@ export async function run(opts, log = console.log) {
   for (const path of ['/api/cron/publish-scheduled', '/api/cron/cleanup-media']) {
     const r = await get(base, path)
     report(r.status === 401, `${path} without the secret answers 401`, `status ${r.status}`)
+  }
+
+  for (const route of DEV_ROUTES) {
+    const r = await get(base, route.path, null, route.method)
+    const allowed = isLoopbackBase(base) ? [404, 403] : [404]
+    report(allowed.includes(r.status), `${route.method} ${route.path.split('/').slice(0, 4).join('/')} dev route is not reachable`, `status ${r.status}`)
   }
 
   if (opts.expectComingSoon) {

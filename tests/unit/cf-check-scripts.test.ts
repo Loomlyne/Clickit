@@ -74,3 +74,31 @@ test('check-revalidate parseArgs reads the via-admin-action options', () => {
   assert.equal(o.expect, 'T')
   assert.equal(o.cookieFile, 'c')
 })
+
+test('check-gates lists /api/dev/r2-put as a dev route and only tolerates 403 on loopback', () => {
+  assert.ok(gates.DEV_ROUTES.some((r) => r.path.startsWith('/api/dev/r2-put/') && r.method === 'PUT'))
+  assert.equal(gates.isLoopbackBase('http://127.0.0.1:8787'), true)
+  assert.equal(gates.isLoopbackBase('https://clickit.x.workers.dev'), false)
+})
+
+test('check-gates dev-route probe fails when the route answers anything but 404 on a remote base', async () => {
+  const saved = globalThis.fetch
+  const seen: string[] = []
+  globalThis.fetch = (async (url: string, init?: { method?: string }) => {
+    seen.push(`${init?.method} ${new URL(url).pathname}`)
+    const path = new URL(url).pathname
+    if (path.startsWith('/api/dev/')) return new Response(null, { status: 403 })
+    return new Response(null, { status: 404 })
+  }) as unknown as typeof fetch
+  try {
+    const lines: string[] = []
+    await gates.run({ base: 'https://clickit.x.workers.dev' }, (l: string) => lines.push(l))
+    assert.ok(seen.includes('PUT /api/dev/r2-put/gate-check/probe.bin'))
+    assert.ok(lines.some((l) => l.startsWith('FAIL PUT /api/dev/r2-put')))
+    lines.length = 0
+    await gates.run({ base: 'http://127.0.0.1:8787' }, (l: string) => lines.push(l))
+    assert.ok(lines.some((l) => l.startsWith('PASS PUT /api/dev/r2-put')))
+  } finally {
+    globalThis.fetch = saved
+  }
+})
