@@ -9,8 +9,14 @@ import { validateYouTubeUrl } from '@/lib/youtube'
 import { logAudit, logAuditStrict } from '@/lib/audit'
 import { runAdminAction, type AdminActionEnv } from '@/lib/admin/action-runner'
 import { archiveShowCore, restoreShowCore } from '@/lib/admin/show-archive'
-import { getActiveShowNamespaceConflict } from '@/lib/admin/show-namespace'
 import type { RestoreResult } from '@/lib/admin/ports'
+import {
+  createShowCore,
+  deleteShowCore,
+  reorderShowCore,
+  updateShowCore,
+} from '@/lib/admin/show-writes'
+import { categoryOrderSchema, formatZodError, parseId } from '@/lib/admin/schemas'
 import { generateSlug } from '@/lib/slug'
 import { fillArabic, translateToArabic, translateBatchToArabic } from '@/lib/translate'
 import { mp4BytesHasAudioTrack } from '@/lib/mp4-audio'
@@ -251,50 +257,6 @@ function bumpCatalogCache() {
   updateTag('categories')
 }
 
-function swapByDirection<T>(
-  rows: T[],
-  currentIndex: number,
-  direction: 'up' | 'down'
-) {
-  const adjacentIndex =
-    direction === 'up' ? currentIndex - 1 : currentIndex + 1
-  if (
-    currentIndex < 0 ||
-    adjacentIndex < 0 ||
-    adjacentIndex >= rows.length
-  ) {
-    return null
-  }
-
-  return { current: rows[currentIndex]!, adjacent: rows[adjacentIndex]! }
-}
-
-async function syncShowCategories(
-  admin: ReturnType<typeof createAdminClient>,
-  showId: string,
-  categoryIds: string[]
-) {
-  const uniqueCategoryIds = [...new Set(categoryIds)]
-
-  const { error: deleteError } = await admin
-    .from('show_categories')
-    .delete()
-    .eq('show_id', showId)
-
-  if (deleteError) throw deleteError
-
-  if (uniqueCategoryIds.length === 0) return
-
-  const { error: insertError } = await admin.from('show_categories').insert(
-    uniqueCategoryIds.map((categoryId) => ({
-      show_id: showId,
-      category_id: categoryId,
-    }))
-  )
-
-  if (insertError) throw insertError
-}
-
 const seasonSchema = z.object({
   show_id: z.string().uuid(),
   title: z.string().min(1, 'Title is required'),
@@ -325,170 +287,82 @@ const episodeSchema = z.object({
 export async function createShow(
   data: z.input<typeof showSchema>
 ): Promise<ActionResult> {
-  try {
-    const user = await assertAdmin()
-    const parsed = showSchema.parse(data)
-    const admin = createAdminClient()
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = showSchema.parse(data)
+      const { id, category_ids, ...rest } = parsed
+      rest.slug = generateSlug(
+        rest.slug,
+        generateSlug(rest.title, id ? `show-${id.slice(0, 8)}` : undefined)
+      )
 
-    const { id, category_ids, ...rest } = parsed
-    rest.slug = generateSlug(
-      rest.slug,
-      generateSlug(rest.title, id ? `show-${id.slice(0, 8)}` : undefined)
-    )
+      // Auto-fill blank Arabic fields from their English source (DeepL).
+      // fillArabic is strict: a failed translation stores null, not English.
+      rest.title_ar = await fillArabic(rest.title, rest.title_ar)
+      rest.description_ar = await fillArabic(rest.description, rest.description_ar)
+      rest.tagline_ar = await fillArabic(rest.tagline, rest.tagline_ar)
 
-    // Auto-fill blank Arabic fields from their English source (DeepL).
-    rest.title_ar = await fillArabic(rest.title, rest.title_ar)
-    rest.description_ar = await fillArabic(rest.description, rest.description_ar)
-    rest.tagline_ar = await fillArabic(rest.tagline, rest.tagline_ar)
-
-    const conflict = await getActiveShowNamespaceConflict(admin, {
-      title: rest.title,
-      slug: rest.slug,
-    })
-    if (conflict?.titleConflictTitle) {
-      return {
-        success: false,
-        error: `An active show already uses the title "${rest.title}".`,
-      }
+      return createShowCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        { insertData: { ...(id ? { id } : {}), ...rest }, categoryIds: category_ids }
+      )
+    },
+    {
+      fallbackError: 'Failed to create show',
+      revalidate: () => bumpCatalogCache(),
     }
-    if (conflict?.slugConflictTitle) {
-      return {
-        success: false,
-        error: `An active show already uses the slug "${rest.slug}".`,
-      }
-    }
-
-    const { data: lastShow } = await admin
-      .from('shows')
-      .select('sort_order')
-      .eq('archived', false)
-      .order('sort_order', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    const insertData = {
-      ...(id ? { id } : {}),
-      ...rest,
-      sort_order: (lastShow?.sort_order ?? -1) + 1,
-    }
-
-    const { data: show, error } = await admin
-      .from('shows')
-      .insert(insertData)
-      .select()
-      .single()
-
-    if (error) return { success: false, error: error.message }
-
-    await syncShowCategories(admin, show.id, category_ids)
-
-    await logAudit({
-      adminUserId: user.id,
-      action: 'create',
-      entity: 'show',
-      entityId: show.id,
-      diff: {
-        data: {
-          title: show.title,
-          slug: show.slug,
-          status: show.status,
-          category_ids,
-        },
-      },
-    })
-
-    bumpCatalogCache()
-    return { success: true, data: show }
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to create show',
-    }
-  }
+  )
 }
 
 export async function updateShow(
   id: string,
   data: z.input<typeof showSchema>
 ): Promise<ActionResult> {
-  try {
-    const user = await assertAdmin()
-    const parsed = showSchema.parse(data)
-    const admin = createAdminClient()
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = showSchema.parse(data)
+      const { id: _parsedId, category_ids, ...updateData } = parsed
+      void _parsedId
 
-    const { id: _parsedId, category_ids, ...updateData } = parsed
-    void _parsedId
-
-    // Defense: normalize the slug; if it strips to empty (e.g. user typed only
-    // non-ASCII chars), regenerate from title; if title also empties, fall back
-    // to the show's id prefix. Prevents save with a slug that would 404.
-    const normalizedSlug = generateSlug(
-      updateData.slug,
-      generateSlug(updateData.title ?? '', `show-${id.slice(0, 8)}`)
-    )
-    if (normalizedSlug && normalizedSlug !== updateData.slug) {
-      updateData.slug = normalizedSlug
-    }
-
-    // Auto-fill blank Arabic fields from their English source (DeepL).
-    updateData.title_ar = await fillArabic(updateData.title, updateData.title_ar)
-    updateData.description_ar = await fillArabic(
-      updateData.description,
-      updateData.description_ar
-    )
-    updateData.tagline_ar = await fillArabic(updateData.tagline, updateData.tagline_ar)
-
-    const conflict = await getActiveShowNamespaceConflict(admin, {
-      title: updateData.title,
-      slug: updateData.slug,
-      excludeId: id,
-    })
-    if (conflict?.titleConflictTitle) {
-      return {
-        success: false,
-        error: `An active show already uses the title "${updateData.title}".`,
+      // Defense: normalize the slug; if it strips to empty (e.g. user typed only
+      // non-ASCII chars), regenerate from title; if title also empties, fall back
+      // to the show's id prefix. Prevents save with a slug that would 404.
+      const normalizedSlug = generateSlug(
+        updateData.slug,
+        generateSlug(updateData.title ?? '', `show-${String(id).slice(0, 8)}`)
+      )
+      if (normalizedSlug && normalizedSlug !== updateData.slug) {
+        updateData.slug = normalizedSlug
       }
-    }
-    if (conflict?.slugConflictTitle) {
-      return {
-        success: false,
-        error: `An active show already uses the slug "${updateData.slug}".`,
-      }
-    }
 
-    const { data: show, error } = await admin
-      .from('shows')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single()
+      // Auto-fill blank Arabic fields from their English source (DeepL).
+      updateData.title_ar = await fillArabic(updateData.title, updateData.title_ar)
+      updateData.description_ar = await fillArabic(
+        updateData.description,
+        updateData.description_ar
+      )
+      updateData.tagline_ar = await fillArabic(
+        updateData.tagline,
+        updateData.tagline_ar
+      )
 
-    if (error) return { success: false, error: error.message }
-
-    await syncShowCategories(admin, id, category_ids)
-
-    await logAudit({
-      adminUserId: user.id,
-      action: 'update',
-      entity: 'show',
-      entityId: id,
-      diff: {
-        changed: [...Object.keys(updateData), 'category_ids'],
-        title: show.title,
+      return updateShowCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        { id, updateData, categoryIds: category_ids }
+      )
+    },
+    {
+      fallbackError: 'Failed to update show',
+      revalidate: () => {
+        bumpCatalogCache()
+        revalidatePath(`/admin/shows/${id}`)
       },
-    })
-
-    bumpCatalogCache()
-    revalidatePath(`/admin/shows/${id}`)
-    return { success: true, data: show }
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to update show',
     }
-  }
+  )
 }
 
 export async function archiveShow(id: string): Promise<ActionResult> {
@@ -515,58 +389,19 @@ export async function reorderShow(
   id: string,
   direction: 'up' | 'down'
 ): Promise<ActionResult> {
-  try {
-    const user = await assertAdmin()
-    const admin = createAdminClient()
-
-    const { data: shows, error: fetchError } = await admin
-      .from('shows')
-      .select('id, title, sort_order')
-      .eq('archived', false)
-      .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: false })
-
-    if (fetchError) return { success: false, error: fetchError.message }
-
-    const currentIndex = (shows ?? []).findIndex((show) => show.id === id)
-    const pair = swapByDirection(shows ?? [], currentIndex, direction)
-    if (!pair) return { success: false, error: 'No show to swap with' }
-
-    const [first, second] = await Promise.all([
-      admin
-        .from('shows')
-        .update({ sort_order: pair.adjacent.sort_order })
-        .eq('id', pair.current.id),
-      admin
-        .from('shows')
-        .update({ sort_order: pair.current.sort_order })
-        .eq('id', pair.adjacent.id),
-    ])
-
-    const error = first.error ?? second.error
-    if (error) return { success: false, error: error.message }
-
-    await logAudit({
-      adminUserId: user.id,
-      action: 'update',
-      entity: 'show',
-      entityId: id,
-      diff: {
-        direction,
-        swapped_with: pair.adjacent.id,
-        ordered_titles: [pair.current.title, pair.adjacent.title],
-      },
-    })
-
-    bumpCatalogCache()
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/shows] reorder failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to reorder show',
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      reorderShowCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        { id, direction }
+      ),
+    {
+      fallbackError: 'Failed to reorder show',
+      revalidate: () => bumpCatalogCache(),
     }
-  }
+  )
 }
 
 const revalidateRestore = () => {
@@ -640,102 +475,91 @@ export async function resolveRestoreConflictsAndRestore(
   )
 }
 
-export async function deleteShowPermanently(id: string): Promise<ActionResult> {
-  try {
-    const user = await assertAdmin()
-    const admin = createAdminClient()
+// List and delete every file under shows/{id}/ in both buckets. Listing (not
+// hard-coded names) works for legacy stable-path rows and versioned rows
+// (hero-{timestamp}.webp): whatever is in the folder gets staged for deletion.
+async function stageShowMedia(
+  admin: ReturnType<typeof createAdminClient>,
+  showId: string
+): Promise<MirroredPublicMediaDeletion[]> {
+  const staged: MirroredPublicMediaDeletion[] = []
 
-    // Capture show title BEFORE deletion so the audit row has recognizable
-    // context (after DELETE the id is all we'd know).
-    const { data: showRow } = await admin
-      .from('shows')
-      .select('title, slug')
-      .eq('id', id)
-      .single()
+  async function listShowFolderFiles(bucket: string, prefix: string) {
+    const paths: string[] = []
+    let offset = 0
 
-    // List and delete every file under shows/{id}/ in both buckets.
-    // Before versioning landed the stable paths were predictable
-    // (shows/{id}/poster.webp etc.) so hard-coded removes worked. After the
-    // versioning migration (hero-{timestamp}.webp) the hard-coded list stopped
-    // matching real filenames and permanent delete became a silent no-op. The
-    // listing approach works for both legacy stable-path rows and versioned
-    // rows — whatever is in the folder gets deleted.
-    const stagedMediaDeletes: MirroredPublicMediaDeletion[] = []
-    async function listShowFolderFiles(bucket: string, prefix: string) {
-      const paths: string[] = []
-      let offset = 0
+    for (;;) {
+      const { data, error: listError } = await admin.storage
+        .from(bucket)
+        .list(prefix, { limit: 1000, offset })
+      if (listError) throw new Error('Could not list show media')
 
-      for (;;) {
-        const { data, error: listError } = await admin.storage
-          .from(bucket)
-          .list(prefix, { limit: 1000, offset })
-        if (listError) throw new Error('Could not list show media')
-
-        const entries = data ?? []
-        for (const entry of entries) {
-          if (!entry.name) continue
-          const path = prefix + '/' + entry.name
-          if (entry.id) {
-            paths.push(path)
-          } else {
-            paths.push(...(await listShowFolderFiles(bucket, path)))
-          }
+      const entries = data ?? []
+      for (const entry of entries) {
+        if (!entry.name) continue
+        const path = prefix + '/' + entry.name
+        if (entry.id) {
+          paths.push(path)
+        } else {
+          paths.push(...(await listShowFolderFiles(bucket, path)))
         }
-
-        if (entries.length < 1000) return paths
-        offset += entries.length
       }
-    }
 
-    async function purgeShowFolder(bucket: 'show-artwork' | 'site-assets') {
-      const paths = await listShowFolderFiles(bucket, ['shows', id].join('/'))
-      if (paths.length === 0) return
-      stagedMediaDeletes.push(
-        await stageMirroredPublicMediaDeletion(admin, bucket, paths)
-      )
-    }
-    try {
-      await purgeShowFolder('show-artwork') // poster, hero, hero-mobile, logo
-      await purgeShowFolder('site-assets') // hero videos
-    } catch (mediaError) {
-      await Promise.all(stagedMediaDeletes.map((deletion) => deletion.rollback()))
-      throw mediaError
-    }
-
-    // Then delete DB record — CASCADE handles seasons/episodes
-    const { error } = await admin.from('shows').delete().eq('id', id)
-
-    if (error) {
-      await Promise.all(stagedMediaDeletes.map((deletion) => deletion.rollback()))
-      return { success: false, error: error.message }
-    }
-
-    const backupCleanup = await Promise.all(
-      stagedMediaDeletes.map((deletion) => deletion.commit())
-    )
-    if (!backupCleanup.every(Boolean)) {
-      console.error('[deleteShowPermanently] media cleanup failed')
-    }
-
-    await logAudit({
-      adminUserId: user.id,
-      action: 'delete',
-      entity: 'show',
-      entityId: id,
-      diff: { title: showRow?.title, slug: showRow?.slug },
-    })
-
-    revalidatePath('/admin/archive')
-    bumpCatalogCache()
-    updateTag('episodes')
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to delete show',
+      if (entries.length < 1000) return paths
+      offset += entries.length
     }
   }
+
+  async function purgeShowFolder(bucket: 'show-artwork' | 'site-assets') {
+    const paths = await listShowFolderFiles(bucket, ['shows', showId].join('/'))
+    if (paths.length === 0) return
+    staged.push(await stageMirroredPublicMediaDeletion(admin, bucket, paths))
+  }
+
+  try {
+    await purgeShowFolder('show-artwork') // poster, hero, hero-mobile, logo
+    await purgeShowFolder('site-assets') // hero videos
+  } catch (mediaError) {
+    await Promise.all(staged.map((deletion) => deletion.rollback()))
+    throw mediaError
+  }
+  return staged
+}
+
+export async function deleteShowPermanently(id: string): Promise<ActionResult> {
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      deleteShowCore(
+        ctx.db,
+        {
+          audit: ctx.audit,
+          adminUserId: ctx.adminUserId,
+          media: {
+            stage: async (showId) =>
+              (await stageShowMedia(ctx.db, showId)).map((deletion) => ({
+                commit: async () => {
+                  const ok = await deletion.commit()
+                  if (!ok) console.error('[deleteShowPermanently] media cleanup failed')
+                  return ok
+                },
+                rollback: async () => {
+                  await deletion.rollback()
+                },
+              })),
+          },
+        },
+        id
+      ),
+    {
+      fallbackError: 'Failed to delete show',
+      revalidate: () => {
+        revalidatePath('/admin/archive')
+        bumpCatalogCache()
+        updateTag('episodes')
+      },
+    }
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -783,7 +607,13 @@ export async function updateCategory(
 ): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
-    const parsed = categorySchema.parse(data)
+    const idParsed = parseId(id, 'category')
+    if (!idParsed.ok) return { success: false, error: idParsed.error }
+    id = idParsed.value
+    // sort_order stays optional so an omitted value is not written as 0.
+    const parsed = categorySchema
+      .extend({ sort_order: z.number().int().min(0).optional() })
+      .parse(data)
     const admin = createAdminClient()
 
     const { data: category, error } = await admin
@@ -817,17 +647,29 @@ export async function updateCategory(
 export async function deleteCategory(id: string): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
+    const idParsed = parseId(id, 'category')
+    if (!idParsed.ok) return { success: false, error: idParsed.error }
+    id = idParsed.value
     const admin = createAdminClient()
 
-    const { data: category } = await admin
+    const { data: category, error: lookupError } = await admin
       .from('categories')
       .select('name_en, slug')
       .eq('id', id)
-      .single()
+      .maybeSingle()
 
-    const { error } = await admin.from('categories').delete().eq('id', id)
+    if (lookupError) return { success: false, error: lookupError.message }
+    if (!category) return { success: false, error: 'Category not found.' }
+
+    const { data: deleted, error } = await admin
+      .from('categories')
+      .delete()
+      .eq('id', id)
+      .select('id')
 
     if (error) return { success: false, error: error.message }
+    if (!deleted || deleted.length === 0)
+      return { success: false, error: 'Category not found.' }
 
     await logAudit({
       adminUserId: user.id,
@@ -853,6 +695,10 @@ export async function reorderCategories(
 ): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
+    const orderParsed = categoryOrderSchema.safeParse(categoryIds)
+    if (!orderParsed.success)
+      return { success: false, error: formatZodError(orderParsed.error) }
+    categoryIds = orderParsed.data
     const admin = createAdminClient()
 
     const results = await Promise.all(
@@ -2399,6 +2245,9 @@ export async function saveShowVideoUpload(
 export async function toggleFeatured(showId: string) {
   try {
     await assertAdmin()
+    const idParsed = parseId(showId, 'show')
+    if (!idParsed.ok) return { success: false, error: idParsed.error }
+    showId = idParsed.value
     const admin = createAdminClient()
 
     // Get current featured state
