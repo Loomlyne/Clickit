@@ -155,7 +155,7 @@ Not in this phase: sending newsletters (only the confirmed sign-up), SMS/WhatsAp
 
 - Sign-in copy: "Sign in or join" / "Enter your email. We'll send you a 6-digit code." (Q1 picture A).
 - Admin code page link: "Lost your phone? Contact Koss" (Q7 picture) — final wording at UAT.
-- Code email: subject "Your Clickit Story code: 481523" puts the code in the subject (phones show it in the notification). Planning checks Supabase subjects accept `{{ .Token }}` and conditionals; if not, a neutral bilingual subject.
+- Code email: neutral subject "Your Clickit Story sign-in code" / "رمز الدخول إلى Clickit Story" (no code in the subject: a locked phone would show a live code; UI checker). Subjects branch on `.Data.locale` (research F16).
 
 ## Phase 6 contract (Phase 6 is planned in parallel and codes against this)
 1. `requireAdmin(): Promise<{ id: string; email: string; displayName: string }>` exported from `src/server/auth-guards.ts` (server-only). It enforces: signed in, row in `public.admins`, AAL2 with a TOTP verification younger than 12 h. `adminEnv.assertAdmin` in `src/app/[locale]/admin/actions.ts` delegates to it; `requireAdminUser()` stays (returns the id).
