@@ -125,3 +125,97 @@ test('watch-actions: logical classes only, no fixed layering', () => {
   assert.doesNotMatch(c, /\b(ml|mr|pl|pr)-\d/)
   assert.doesNotMatch(c, /dangerouslySetInnerHTML/)
 })
+
+// ---------------------------------------------------------------------------
+// Task 2: static EpisodeList
+// ---------------------------------------------------------------------------
+
+test('episode-list: static section, no drawer, hover raise, overlay or tooltip', () => {
+  const src = read(LIST_PATH)
+  const c = code(src)
+  assert.match(src, /^'use client'/, 'client component')
+  assert.match(c, /export function EpisodeList/)
+  assert.doesNotMatch(c, /vaul/, 'no vaul')
+  assert.doesNotMatch(c, /Drawer/, 'no Drawer')
+  assert.doesNotMatch(c, /onMouseEnter|onMouseLeave/, 'no hover handlers')
+  assert.doesNotMatch(c, /\bfixed\b/, 'no fixed positioning')
+  assert.doesNotMatch(c, /\btoast\(/, 'no toast call')
+  assert.doesNotMatch(c, /from 'sonner'/, 'no sonner import')
+  assert.doesNotMatch(
+    c,
+    /import[^\n]*\b(Tooltip|Popover|DropdownMenu|HoverCard)\b/,
+    'no overlay components'
+  )
+  assert.doesNotMatch(c, /dangerouslySetInnerHTML/, 'no raw HTML')
+})
+
+test('episode-list: logical classes only', () => {
+  const c = code(read(LIST_PATH))
+  assert.doesNotMatch(c, /(^|[^\w])(left|right)-/, 'no left-/right-')
+  assert.doesNotMatch(c, /\b(ml|mr|pl|pr)-\d/, 'no ml/mr/pl/pr')
+  assert.doesNotMatch(c, /\btext-(left|right)\b/, 'no text-left/right')
+})
+
+test('episode-list: current item and season pills expose their state', () => {
+  const c = code(read(LIST_PATH))
+  assert.match(c, /aria-current=/, 'aria-current')
+  assert.match(c, /aria-pressed=/, 'aria-pressed on the pills')
+  assert.match(c, /aria-disabled=/, 'aria-disabled on unplayable items')
+  assert.match(c, /\bdisabled=/, 'disabled on unplayable items')
+  assert.match(c, /opacity-40/, 'unplayable thumbnail dims')
+  assert.match(c, /min-h-11/, 'pills are 44px tall')
+  assert.match(c, /length > 1/, 'pills only with more than one season')
+  assert.match(c, /ms-auto/, 'phone actions sit at the end')
+})
+
+test('episode-list: thumbnails come from i.ytimg.com, unoptimized, with fallback', () => {
+  const c = code(read(LIST_PATH))
+  assert.match(c, /i\.ytimg\.com\/vi\//)
+  assert.doesNotMatch(c, /img\.youtube\.com/, 'old thumbnail host is gone')
+  assert.match(c, /\bunoptimized\b/)
+  assert.match(c, /maxresdefault/)
+  assert.match(c, /sddefault/)
+  assert.match(c, /hqdefault/)
+  assert.match(c, /onError/, 'falls back through onError')
+})
+
+test('episode-list: progress, status meta and headings use the Phase 6 keys', () => {
+  const c = code(read(LIST_PATH))
+  assert.match(c, /progressPercent\(/, 'percent from the 06-04 helper')
+  assert.match(c, /h-\[3px\]/, '3px progress bar')
+  for (const key of [
+    'episodesHeading',
+    'nowPlaying',
+    'watched',
+    'minutesLeft',
+    'notOutYet',
+  ]) {
+    assert.match(c, new RegExp(`'${key}'`), `uses ${key}`)
+  }
+  assert.match(c, /minutesAbbr/, 'not-started shows the duration')
+  assert.match(c, /seasonLabel/, 'pill label')
+  assert.match(c, /<h2 className="sr-only">/, 'visually hidden heading')
+})
+
+test('episode-list: layout matches the signed rail and phone list', () => {
+  const c = code(read(LIST_PATH))
+  assert.match(c, /w-\[220px\]/, '220px rail card')
+  assert.match(c, /snap-x/)
+  assert.match(c, /snap-start/)
+  assert.match(c, /overflow-x-auto/)
+  assert.match(c, /rounded-\[11px\]/, 'thumbnail radius')
+  assert.match(c, /outline-\[var\(--primary\)\]/, 'current outline')
+  assert.match(c, /outline-offset-2/)
+  assert.match(c, /w-28|w-\[112px\]/, 'phone thumbnail is 112px wide')
+  assert.match(c, /md:hidden/, 'phone list hides from md up')
+  assert.match(c, /max-md:hidden|hidden md:/, 'rail hides below md')
+})
+
+test('episode-list: titles are bdi text, selection scrolls into view', () => {
+  const c = code(read(LIST_PATH))
+  assert.match(c, /<bdi>/)
+  assert.match(c, /scrollIntoView\(/)
+  assert.match(c, /prefers-reduced-motion/, 'reduced motion jumps instead of smoothing')
+  assert.match(c, /inline: 'nearest'/)
+  assert.match(c, /block: 'nearest'/)
+})
