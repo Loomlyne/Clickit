@@ -383,6 +383,7 @@
     "savedEmailFailedInline": "Your message is saved. Email notification is offline right now."
   },
   "newsletter": {
+    "emailLabel": "Email address",
     "placeholder": "your@email.com",
     "submitAria": "Submit newsletter signup",
     "defaultButton": "Get updates",

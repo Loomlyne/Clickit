@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 
+import { PageEyebrow, PageTitle } from '@/components/info/page-header'
 import { NewsletterSignupForm } from '@/components/layout/newsletter-signup-form'
 import { createClient } from '@/lib/supabase/server'
 
@@ -31,10 +32,8 @@ export default async function UpdatesPage({
   return (
     <div className="px-4 pt-8 pb-16 sm:px-6 md:px-12">
       <div className="mx-auto max-w-3xl rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6 sm:p-10">
-        <p className="mono mb-4 text-[var(--text-mute)]">{t('eyebrow')}</p>
-        <h1 className="font-display text-[clamp(34px,6vw,60px)] leading-[0.98] tracking-[-0.04em] text-[var(--text)]">
-          {t('heading')}
-        </h1>
+        <PageEyebrow>{t('eyebrow')}</PageEyebrow>
+        <PageTitle size="card">{t('heading')}</PageTitle>
         <p className="mt-4 max-w-2xl text-[16px] leading-7 text-[var(--text-dim)]">
           {showTitle
             ? t('descriptionForShow', { showTitle })

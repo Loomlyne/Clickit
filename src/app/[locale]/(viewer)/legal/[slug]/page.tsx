@@ -3,7 +3,9 @@ import type { Metadata } from 'next'
 import { getLegalPageBySlug, getAllLegalPages } from '@/lib/queries'
 import { pickLocalized } from '@/lib/locale'
 import { getLocale } from '@/lib/locale-server'
+import { getTranslations } from 'next-intl/server'
 import { LegalPageContent } from '@/components/legal/legal-page-content'
+import { LegalDocument } from '@/components/info/legal-document'
 
 export async function generateStaticParams() {
   const pages = await getAllLegalPages()
@@ -27,7 +29,11 @@ export default async function LegalPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const [page, locale] = await Promise.all([getLegalPageBySlug(slug), getLocale()])
+  const [page, locale, tLegal] = await Promise.all([
+    getLegalPageBySlug(slug),
+    getLocale(),
+    getTranslations('legal'),
+  ])
 
   if (!page) notFound()
 
@@ -35,11 +41,8 @@ export default async function LegalPage({
   const content = pickLocalized(locale, page.content, page.content_ar)
 
   return (
-    <main className="mx-auto max-w-[860px] px-4 py-24 sm:px-6 md:px-10">
-      <h1 className="mb-12 font-[family-name:var(--font-display)] text-[clamp(36px,5vw,64px)] leading-none font-normal tracking-[-0.02em]">
-        {title}
-      </h1>
+    <LegalDocument eyebrow={tLegal('eyebrow')} title={title}>
       <LegalPageContent content={content} updatedAt={page.updated_at} />
-    </main>
+    </LegalDocument>
   )
 }
