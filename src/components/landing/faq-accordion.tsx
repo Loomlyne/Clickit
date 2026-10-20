@@ -51,7 +51,7 @@ export function FaqAccordion({ items }: { items: { q: string; a: string }[] }) {
             </h3>
             <div
               id={aId}
-              role="region"
+              role={items.length <= 6 ? 'region' : undefined}
               aria-labelledby={qId}
               inert={!isOpen}
               className="grid transition-[grid-template-rows] duration-300"
