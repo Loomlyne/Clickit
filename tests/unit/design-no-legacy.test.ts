@@ -68,6 +68,33 @@ test('every clickit/no-raw-design-values waiver carries a reason after " -- "', 
   assert.deepEqual(bad, [])
 })
 
+test('no file-wide clickit/no-raw-design-values waiver (next-line only)', () => {
+  const bad: string[] = []
+  for (const file of srcFiles) {
+    readFileSync(file, 'utf8')
+      .split('\n')
+      .forEach((line, i) => {
+        if (/eslint-disable(?!-next-line)\b[^\n]*clickit\/no-raw-design-values/.test(line)) {
+          bad.push(`${rel(file)}:${i + 1}`)
+        }
+      })
+  }
+  assert.deepEqual(bad, [])
+})
+
+test('the guard allowlist is only the three token-source files', () => {
+  const cfg = readFileSync(join(ROOT, 'eslint.config.mjs'), 'utf8')
+  assert.ok(!cfg.includes("'src/emails/**'"))
+  assert.ok(!cfg.includes("'src/lib/mail/templates/**'"))
+  const block = cfg.slice(cfg.indexOf('files: [', cfg.indexOf('Allowlist')))
+  const files = block.slice(0, block.indexOf(']')).match(/'[^']+'/g)
+  assert.deepEqual(files, [
+    "'src/lib/brand-colors.ts'",
+    "'src/lib/design-truth.ts'",
+    "'src/lib/email-tokens.ts'",
+  ])
+})
+
 test('eslint.config.mjs sets clickit/no-raw-design-values to error for src', () => {
   const cfg = readFileSync(join(ROOT, 'eslint.config.mjs'), 'utf8')
   assert.ok(cfg.includes("'clickit/no-raw-design-values': 'error'"))

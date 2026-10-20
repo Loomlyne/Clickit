@@ -49,6 +49,40 @@ const FAILS: Array<[string, string]> = [
   ],
   ['style hex literal', "const a = <div style={{ background: '#0a0a0a' }} />"],
   ['raw non-neutral rgba string', "const a = 'rgba(8,8,12,0.96)'"],
+  // review fix 1: side and modifier prefixes on palette classes
+  ['side border palette', "const a = 'border-t-red-500'"],
+  ['logical side border palette', "const a = 'border-s-blue-400'"],
+  ['axis border palette', "const a = 'hover:border-x-zinc-800'"],
+  ['ring-offset palette', "const a = 'ring-offset-blue-400'"],
+  ['placeholder palette', "const a = 'placeholder-gray-400'"],
+  ['placeholder variant palette', "const a = 'placeholder:text-gray-500'"],
+  ['divide palette', "const a = 'divide-slate-700'"],
+  ['outline palette', "const a = 'outline-amber-300'"],
+  ['decoration palette', "const a = 'decoration-pink-500'"],
+  ['accent palette', "const a = 'accent-emerald-500'"],
+  ['caret palette', "const a = 'caret-sky-400'"],
+  ['fill palette', "const a = 'fill-rose-600'"],
+  ['stroke palette', "const a = 'stroke-violet-500'"],
+  ['palette with opacity', "const a = 'bg-red-500/40'"],
+  // review fix 1: hsl()/oklch() values
+  ['hsl value', "const a = 'hsl(0 0% 50%)'"],
+  ['hsla value', "const a = 'hsla(210, 40%, 50%, 0.5)'"],
+  ['oklch value', "const a = 'oklch(60% 0.2 25)'"],
+  ['bracket hsl', "const a = 'bg-[hsl(210,40%,50%)]'"],
+  // review fix 1: named colours in arbitrary values
+  ['named colour bracket', "const a = 'bg-[red]'"],
+  ['named colour side bracket', "const a = 'border-t-[navy]'"],
+  ['named colour typed bracket', "const a = 'text-[color:tomato]'"],
+  ['named colour in gradient', "const a = 'bg-[linear-gradient(to_right,red,blue)]'"],
+  // review fix 1: rgb exemption is exact
+  ['rgb with fractional third channel', "const a = 'rgb(0 0 0.5)'"],
+  ['rgba with fractional third channel', "const a = 'rgba(0,0,0.5,1)'"],
+  ['underscore rgb non-neutral', "const a = 'bg-[rgb(0_0_1)]'"],
+  // review fix 2: real hex still flagged
+  ['three-digit hex alone', "const a = '#abc'"],
+  ['hex after a CSS keyword', "const a = '1px solid #333'"],
+  ['hex after color:', "const a = 'color: #123'"],
+  ['eight-digit hex', "const a = '#0a0a0aff'"],
 ]
 
 const PASSES: Array<[string, string]> = [
@@ -75,6 +109,25 @@ const PASSES: Array<[string, string]> = [
     'named utilities',
     "const a = 'rounded-card shadow-popover drop-shadow-splash'",
   ],
+  // review fix 1: neutral underscore rgb, var-based colour functions, safe words
+  ['underscore neutral black rgb', "const a = 'bg-[rgb(0_0_0/0.5)]'"],
+  ['underscore neutral white rgb', "const a = 'bg-[rgb(255_255_255/0.1)]'"],
+  ['neutral rgb space form', "const a = 'rgb(0 0 0 / 0.4)'"],
+  ['hsl with var', "const a = 'hsl(var(--primary))'"],
+  ['oklch with var', "const a = 'oklch(var(--x) / 0.5)'"],
+  ['transparent and current', "const a = 'bg-transparent text-current border-[currentColor]'"],
+  ['image url with a colour word', "const a = 'bg-[url(/img/red.png)]'"],
+  ['var with a colour word', "const a = 'text-[var(--red)]'"],
+  ['non-colour utility with a colour word', "const a = 'grid-cols-[tan_1fr]'"],
+  // review fix 2: fragment links and order numbers
+  ['fragment link add', '<a href="#add" />'],
+  ['fragment link face', '<Link href="#face" />'],
+  ['router to fragment', '<Link to="#bad" />'],
+  ['href property', "const a = { href: '#add' }"],
+  ['four-letter hash word', "const a = '#face'"],
+  ['order number', "const a = 'Item #123'"],
+  ['long order number', "const a = 'Order #123456 is ready'"],
+  ['ticket ref in prose', "const a = `Ticket #${n} and tag #bad`"],
 ]
 
 for (const [name, code] of FAILS) {
@@ -82,7 +135,7 @@ for (const [name, code] of FAILS) {
     const found = reports(code)
     assert.ok(found.length >= 1, `expected a report for: ${code}`)
     for (const m of found) {
-      assert.match(m.message, /Raw (hex|rgb|radius|shadow|palette) value/)
+      assert.match(m.message, /Raw (hex|rgb|colorfn|named|radius|shadow|palette) value/)
       assert.match(m.message, /eslint-disable-next-line clickit\/no-raw-design-values -- /)
     }
   })
@@ -97,14 +150,52 @@ for (const [name, code] of PASSES) {
   })
 }
 
-test('PATTERNS has exactly hex, rgb, radius, shadow, palette', () => {
+test('PATTERNS has exactly hex, rgb, colorfn, named, radius, shadow, palette', () => {
   assert.deepEqual(Object.keys(PATTERNS).sort(), [
+    'colorfn',
     'hex',
+    'named',
     'palette',
     'radius',
     'rgb',
     'shadow',
   ])
+})
+
+// review fix 3: a waiver must carry " -- <reason>"
+const NO_REASON = /waiver needs a reason/
+
+test('flags: waiver without a reason', () => {
+  const found = reports(
+    "// eslint-disable-next-line clickit/no-raw-design-values\nconst a = '#123456'",
+  )
+  assert.equal(found.length, 1)
+  assert.match(found[0].message, NO_REASON)
+})
+
+test('flags: waiver with an empty reason', () => {
+  const found = reports(
+    "// eslint-disable-next-line clickit/no-raw-design-values -- \nconst a = '#123456'",
+  )
+  assert.ok(found.some((m) => NO_REASON.test(m.message)))
+})
+
+test('allows: waiver with a reason', () => {
+  assert.deepEqual(
+    reports(
+      "// eslint-disable-next-line clickit/no-raw-design-values -- colour comes from the CMS row\nconst a = '#123456'",
+    ).map((m) => m.message),
+    [],
+  )
+})
+
+test('allows: other rules waived without a reason', () => {
+  assert.deepEqual(
+    reports(
+      "// eslint-disable-next-line no-console\nconst a = 1",
+    ).map((m) => m.message),
+    [],
+  )
 })
 
 test('message names the kind, the fragment and the named utility', () => {

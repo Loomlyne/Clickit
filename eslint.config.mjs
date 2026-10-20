@@ -18,16 +18,14 @@ const eslintConfig = defineConfig([
   // - src/lib/brand-colors.ts: the one brand colour map
   // - src/lib/design-truth.ts: the signed token values and codemod maps
   // - src/lib/email-tokens.ts: email-safe literal hex for both schemes (Q7 = C)
-  // - src/emails/** and src/lib/mail/templates/**: future Phase 5 email
-  //   templates carry inline hex because mail clients cannot read CSS variables
+  // Email templates take their colours from email-tokens.ts, so they need no
+  // entry here; Phase 5 adds a file only if it truly needs raw hex.
   // CSS files are not linted; src/styles/*.css and ui.config.json are the token sources.
   {
     files: [
       'src/lib/brand-colors.ts',
       'src/lib/design-truth.ts',
       'src/lib/email-tokens.ts',
-      'src/emails/**',
-      'src/lib/mail/templates/**',
     ],
     rules: { 'clickit/no-raw-design-values': 'off' },
   },
