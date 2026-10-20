@@ -19,6 +19,7 @@ import { deleteIfUnreferenced } from '../../server/r2-delete.ts'
 import { originalMediaKey } from '../../server/r2-keys.ts'
 import { HERO_VIDEO_MAX_BYTES, HERO_VIDEO_TOO_LARGE } from './media-guards.ts'
 import { parseHeroVariant, parseId } from './schemas.ts'
+import { updatedAtOf, type RowVersion } from './row-version.ts'
 import type { HeroVariant } from './schemas.ts'
 import type { AdminDb, AuditWriter, CoreResult } from './ports'
 
@@ -96,6 +97,11 @@ export type HeroVideoPorts = {
   previousR2Keys(url: string | null): string[]
   /** The object key behind a stored url for the audit row, or null. */
   storagePathFromUrl(url: string | null): string | null
+  /**
+   * The settings page's app_config updated_at (deferred item 23, residual b). Hero and preloader
+   * writes also require it and record the new value in it; restores and show videos ignore it.
+   */
+  appConfigVersion?: RowVersion
 }
 
 type Deps = { audit: AuditWriter; adminUserId: string }
@@ -103,8 +109,17 @@ type HeroResult<T = unknown> = CoreResult<T> & { mediaCleanupFailed?: boolean }
 
 type Slot = {
   read(db: AdminDb): Promise<{ error: string } | { error: null; url: string | null; type: HeroType }>
-  /** Compare-and-swap: only while the url column still holds `expected`; MEDIA_SAVE_CONFLICT otherwise. */
-  write(db: AdminDb, url: string | null, type: HeroType, expected: string | null): Promise<string | null>
+  /**
+   * Compare-and-swap: only while the url column still holds `expected` (and, for app_config,
+   * the page's updated_at when `version` is given); MEDIA_SAVE_CONFLICT otherwise.
+   */
+  write(
+    db: AdminDb,
+    url: string | null,
+    type: HeroType,
+    expected: string | null,
+    version?: RowVersion
+  ): Promise<string | null>
 }
 
 /**
@@ -117,17 +132,23 @@ async function casUpdate(
   id: string | number,
   patch: Record<string, unknown>,
   column: string,
-  expected: string | null
+  expected: string | null,
+  version?: RowVersion
 ): Promise<string | null> {
   // Columns newer than database.types (preloader, mobile hero) are typed as one known column.
   const c = column as 'hero_video_url'
-  const q = db
+  const row = db
     .from(table as 'shows')
     .update(patch as never)
     .eq('id', id as string)
-  const { data, error } = await (expected === null ? q.is(c, null) : q.eq(c, expected)).select('id')
+  const q = version ? row.eq('updated_at', version.expected) : row
+  const { data, error } = await (expected === null ? q.is(c, null) : q.eq(c, expected)).select(
+    version ? 'id, updated_at' : 'id'
+  )
   if (error) return error.message
-  return Array.isArray(data) && data.length > 0 ? null : MEDIA_SAVE_CONFLICT
+  if (!Array.isArray(data) || data.length === 0) return MEDIA_SAVE_CONFLICT
+  if (version) version.next = updatedAtOf(data)
+  return null
 }
 
 function referenceGuard(ports: HeroVideoPorts) {
@@ -150,14 +171,15 @@ function heroSlot(variant: HeroVariant): Slot {
         type: (row[HERO_TYPE_COLUMN[variant]] ?? null) as HeroType,
       }
     },
-    write: (db, url, type, expected) =>
+    write: (db, url, type, expected, version) =>
       casUpdate(
         db,
         'app_config',
         1,
         { [HERO_URL_COLUMN[variant]]: url, [HERO_TYPE_COLUMN[variant]]: type },
         HERO_URL_COLUMN[variant],
-        expected
+        expected,
+        version
       ),
   }
 }
@@ -172,8 +194,8 @@ function preloaderSlot(): Slot {
       const row = data as unknown as Record<string, string | null>
       return { error: null, url: row.preloader_video_url ?? null, type: row.preloader_video_url ? 'mp4' : null }
     },
-    write: (db, url, _type, expected) =>
-      casUpdate(db, 'app_config', 1, { preloader_video_url: url }, 'preloader_video_url', expected),
+    write: (db, url, _type, expected, version) =>
+      casUpdate(db, 'app_config', 1, { preloader_video_url: url }, 'preloader_video_url', expected, version),
   }
 }
 
@@ -273,7 +295,7 @@ async function applyVideoChange<T>(
   if (slot) {
     // Compare-and-swap on the value read above: a save that landed meanwhile wins, the staged
     // deletion of the old (still live) object is rolled back, and only the fresh upload goes.
-    const configError = await slot.write(ports.db, input.newUrl, input.newType, previousUrl)
+    const configError = await slot.write(ports.db, input.newUrl, input.newType, previousUrl, ports.appConfigVersion)
     if (configError) {
       const restored = await staged?.rollback()
       return withCleanup({

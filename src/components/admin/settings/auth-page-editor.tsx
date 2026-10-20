@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { updateAuthPageConfig } from '@/app/[locale]/admin/actions'
 import { SettingsCard, SettingsField } from './settings-card'
+import { useSharedRowVersion } from '@/components/admin/row-version'
 
 type Values = {
   auth_heading: string
@@ -24,6 +25,7 @@ type Values = {
 
 export function AuthPageEditor({ initial }: { initial: Values }) {
   const t = useTranslations('admin.settings')
+  const version = useSharedRowVersion()
   const [values, setValues] = useState<Values>(initial)
   const [saving, setSaving] = useState(false)
 
@@ -38,21 +40,27 @@ export function AuthPageEditor({ initial }: { initial: Values }) {
   async function onSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const result = await updateAuthPageConfig({
-      auth_heading: values.auth_heading.trim() || null,
-      auth_heading_ar: values.auth_heading_ar.trim() || null,
-      auth_subheading: values.auth_subheading.trim() || null,
-      auth_subheading_ar: values.auth_subheading_ar.trim() || null,
-      auth_quote: values.auth_quote.trim() || null,
-      auth_quote_ar: values.auth_quote_ar.trim() || null,
-      auth_quote_attribution: values.auth_quote_attribution.trim() || null,
-      auth_quote_attribution_ar:
-        values.auth_quote_attribution_ar.trim() || null,
-      auth_allow_skip: values.auth_allow_skip,
-    })
+    const expected = version.expected()
+    const result = await updateAuthPageConfig(
+      {
+        auth_heading: values.auth_heading.trim() || null,
+        auth_heading_ar: values.auth_heading_ar.trim() || null,
+        auth_subheading: values.auth_subheading.trim() || null,
+        auth_subheading_ar: values.auth_subheading_ar.trim() || null,
+        auth_quote: values.auth_quote.trim() || null,
+        auth_quote_ar: values.auth_quote_ar.trim() || null,
+        auth_quote_attribution: values.auth_quote_attribution.trim() || null,
+        auth_quote_attribution_ar:
+          values.auth_quote_attribution_ar.trim() || null,
+        auth_allow_skip: values.auth_allow_skip,
+      },
+      expected
+    )
     setSaving(false)
-    if (result.success) toast.success(t('authConfigSaved'))
-    else toast.error(result.error ?? t('saveFailed'))
+    if (result.success) {
+      version.saved(expected, result.updatedAt)
+      toast.success(t('authConfigSaved'))
+    } else toast.error(result.error ?? t('saveFailed'))
   }
 
   return (

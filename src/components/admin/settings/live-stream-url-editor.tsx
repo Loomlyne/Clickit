@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { updateLiveStreamUrl } from '@/app/[locale]/admin/actions'
 import { SettingsCard, SettingsField } from './settings-card'
+import { useSharedRowVersion } from '@/components/admin/row-version'
 
 export function LiveStreamUrlEditor({
   initialUrl,
@@ -23,6 +24,7 @@ export function LiveStreamUrlEditor({
   const [labelAr, setLabelAr] = useState(initialLabelAr ?? '')
   const [saving, setSaving] = useState(false)
   const t = useTranslations('admin.settings')
+  const version = useSharedRowVersion()
 
   const dirty =
     url !== (initialUrl ?? '') ||
@@ -32,13 +34,18 @@ export function LiveStreamUrlEditor({
   async function onSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const result = await updateLiveStreamUrl({
-      live_stream_url: url === '' ? null : url,
-      live_stream_label: label === '' ? null : label,
-      live_stream_label_ar: labelAr === '' ? null : labelAr,
-    })
+    const expected = version.expected()
+    const result = await updateLiveStreamUrl(
+      {
+        live_stream_url: url === '' ? null : url,
+        live_stream_label: label === '' ? null : label,
+        live_stream_label_ar: labelAr === '' ? null : labelAr,
+      },
+      expected
+    )
     setSaving(false)
     if (result.success) {
+      version.saved(expected, result.updatedAt)
       toast.success(t('liveStreamSaved'))
     } else {
       toast.error(result.error ?? t('saveFailed'))

@@ -25,11 +25,13 @@ import { notifyUploadError, notifyUploaded } from '@/components/admin/upload-sta
 import { SOCIAL_PLATFORMS } from '@/lib/social-platforms'
 import { stripStorageCacheBust } from '@/lib/supabase-media'
 import { SettingsCard, SettingsField } from './settings-card'
+import { useSharedRowVersion } from '@/components/admin/row-version'
 
 export function FooterEditor({ initial }: { initial: FooterContent }) {
   const [v, setV] = useState<FooterContent>(initial)
   const [saving, setSaving] = useState(false)
   const t = useTranslations('admin.settings')
+  const version = useSharedRowVersion()
 
   const dirty = JSON.stringify(v) !== JSON.stringify(initial)
 
@@ -62,10 +64,13 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
   async function onSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const result = await updateFooterContent(v)
+    const expected = version.expected()
+    const result = await updateFooterContent(v, expected)
     setSaving(false)
-    if (result.success) toast.success(t('footerSaved'))
-    else toast.error(result.error ?? t('saveFailed'))
+    if (result.success) {
+      version.saved(expected, result.updatedAt)
+      toast.success(t('footerSaved'))
+    } else toast.error(result.error ?? t('saveFailed'))
   }
 
   return (

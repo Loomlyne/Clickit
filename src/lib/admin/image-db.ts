@@ -2,6 +2,7 @@
 // column or row per target. No next/*, server-only or '@/' imports: node --test loads
 // this file, and the tests record every write against the fake Supabase.
 import { MEDIA_SAVE_CONFLICT } from '../../server/media-references.ts'
+import { updatedAtOf, type RowVersion } from './row-version.ts'
 import type { AdminDb } from './ports'
 import type { ImageTarget, ImageUploadPorts, LiveScope } from './image-upload'
 
@@ -56,12 +57,15 @@ export async function readAdminLiveUrls(db: AdminDb, scope: LiveScope): Promise<
  * Compare-and-swap write of one target (deferred item 23): the row is updated only while
  * the column still holds `expected`, the value read before. 0 rows means another save got
  * there first: MEDIA_SAVE_CONFLICT, and the caller must not delete anything that was live.
+ * `version` (app_config only): the settings page's updated_at must also still match, and the
+ * new one is written back into it, so the forms sharing the row keep one chain (residual b).
  */
 export async function writeAdminImageTarget(
   db: AdminDb,
   target: ImageTarget,
   url: string | null,
-  expected: string | null
+  expected: string | null,
+  version?: RowVersion
 ): Promise<string | null> {
   let result: { data: unknown[] | null; error: { message: string } | null }
   if (target.type === 'show-artwork') {
@@ -72,12 +76,18 @@ export async function writeAdminImageTarget(
     const column = target.column as 'poster_url'
     result = await (expected === null ? q.is(column, null) : q.eq(column, expected)).select('id')
   } else if (target.type === 'app-config') {
-    const q = db
+    const row = db
       .from('app_config')
       .update({ [target.column]: url } as never)
       .eq('id', 1)
+    const q = version ? row.eq('updated_at', version.expected) : row
     const column = target.column as 'og_image_url'
-    result = await (expected === null ? q.is(column, null) : q.eq(column, expected)).select('id')
+    result = await (expected === null ? q.is(column, null) : q.eq(column, expected)).select(
+      version ? 'id, updated_at' : 'id'
+    )
+    if (version && !result.error && Array.isArray(result.data) && result.data.length > 0) {
+      version.next = updatedAtOf(result.data)
+    }
   } else if (target.type === 'cast') {
     const q = db
       .from('show_cast')
@@ -92,8 +102,12 @@ export async function writeAdminImageTarget(
   return Array.isArray(result.data) && result.data.length > 0 ? null : MEDIA_SAVE_CONFLICT
 }
 
-/** Finalize core db port for the admin kinds (shows, app_config, show_cast). */
-export function adminImageDb(db: AdminDb): ImageUploadPorts['db'] {
+/**
+ * Finalize core db port for the admin kinds (shows, app_config, show_cast). `version` is the
+ * settings page's app_config updated_at: it applies to the write only, never to the
+ * audit-failure restore (that one is a CAS on the value we wrote).
+ */
+export function adminImageDb(db: AdminDb, version?: RowVersion): ImageUploadPorts['db'] {
   return {
     readLive: (scope) => readAdminLiveUrls(db, scope),
     async readCurrent(target) {
@@ -133,7 +147,7 @@ export function adminImageDb(db: AdminDb): ImageUploadPorts['db'] {
       }
       return { url: null, error: 'Unsupported image target' }
     },
-    write: (target, url, expected) => writeAdminImageTarget(db, target, url, expected),
+    write: (target, url, expected) => writeAdminImageTarget(db, target, url, expected, version),
     restore: (target, previous, expected) => writeAdminImageTarget(db, target, previous, expected),
   }
 }

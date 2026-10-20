@@ -193,7 +193,11 @@ test('every UPDATE of shows, app_config or show_cast checks updated_at or is lis
     used.add(entry)
     if (entry.check) assert.match(site.after, entry.check, `${site.file}:${site.line} lost its ${entry.kind} check`)
     if (entry.pageVersion) {
-      assert.match(site.after, /\.eq\('updated_at', \w+\.expected\)/, `${site.file}:${site.line} must apply the page version`)
+      assert.match(
+        site.after,
+        /\.eq\('updated_at'(?: as '\w+')?, \w+\.expected\)/,
+        `${site.file}:${site.line} must apply the page version`
+      )
     }
   }
   assert.deepEqual(offenders, [], `UPDATEs without an updated_at check:\n${offenders.join('\n')}`)
@@ -217,7 +221,13 @@ function actions(): Array<{ name: string; body: string }> {
   const starts: Array<{ name: string; index: number }> = []
   let m: RegExpExecArray | null
   while ((m = re.exec(src))) starts.push({ name: m[1]!, index: m.index })
-  return starts.map((s, i) => ({ name: s.name, body: src.slice(s.index, starts[i + 1]?.index ?? src.length) }))
+  // The function ends at its first closing brace in column 0 (helpers declared between two
+  // exports belong to neither).
+  return starts.map((s, i) => {
+    const text = src.slice(s.index, starts[i + 1]?.index ?? src.length)
+    const end = text.indexOf('\n}\n')
+    return { name: s.name, body: end === -1 ? text : text.slice(0, end + 2) }
+  })
 }
 
 /** Actions that save shows or app_config from a loaded form: they take the page's updated_at. */
@@ -253,7 +263,9 @@ test('every action that saves app_config or a show form takes and validates upda
     const a = all.find((x) => x.name === name)
     assert.ok(a, `${name} missing`)
     assert.ok(a.body.includes('rowVersion('), `${name} must validate updated_at with rowVersion()`)
-    assert.ok(/updatedAt/.test(a.body), `${name} must return the new updatedAt`)
+    // updateShow passes the core's result through; updateShowCore returns the new value itself.
+    const viaCore = a.body.includes('updateShowCore(') && /updatedAt: written/.test(readFileSync('src/lib/admin/show-writes.ts', 'utf8'))
+    assert.ok(/\bupdatedAt\b|withUpdatedAt\(/.test(a.body) || viaCore, `${name} must return the new updatedAt`)
   }
   const unlisted = all.filter((a) => WRITES_ROW.test(a.body) && !VERSIONED_ACTIONS.includes(a.name)).map((a) => a.name)
   assert.deepEqual(unlisted, [], 'actions that write app_config or a show form without the updated_at check')

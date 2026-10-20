@@ -26,6 +26,7 @@ import { UploadStatus, notifyUploadError } from '@/components/admin/upload-statu
 import { extractYouTubeId, getYouTubeThumbnailUrl } from '@/lib/youtube'
 import { probeLocalMp4HasAudio } from '@/lib/media-audio'
 import { resolveSupabaseVideoUrl } from '@/lib/supabase-media'
+import { useSharedRowVersion } from '@/components/admin/row-version'
 
 type VideoConfig = { url: string; type: 'mp4' | 'youtube' } | null
 type HeroVariant = 'desktop' | 'mobile'
@@ -42,16 +43,19 @@ export function HeroVideoManager({
   const t = useTranslations('admin.heroMedia')
   const [muted, setMuted] = useState(heroVideoMuted)
   const [savingAudio, setSavingAudio] = useState(false)
+  const version = useSharedRowVersion()
 
   async function handleToggleAudio() {
     const next = !muted
     setSavingAudio(true)
     try {
-      const result = await setHeroVideoMuted(next)
+      const expected = version.expected()
+      const result = await setHeroVideoMuted(next, expected)
       if (!result.success) {
         toast.error(result.error ?? t('saveFailed'))
         return
       }
+      version.saved(expected, result.updatedAt)
       setMuted(next)
       toast.success(next ? t('audioMuted') : t('audioOn'))
     } catch {
@@ -154,6 +158,7 @@ function HeroVariantPanel({
     current?.type === 'youtube' ? current.url : ''
   )
   const inputRef = useRef<HTMLInputElement>(null)
+  const version = useSharedRowVersion()
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -187,7 +192,12 @@ function HeroVariantPanel({
         file,
         kind: 'hero-video',
         slot: variant,
-        finalize: ({ key }) => finalizeHeroVideoUpload({ variant, key }),
+        finalize: async ({ key }) => {
+          const expected = version.expected()
+          const r = await finalizeHeroVideoUpload({ variant, key, expectedUpdatedAt: expected })
+          if (r.success) version.saved(expected, r.updatedAt)
+          return r
+        },
         onProgress: setProgress,
       })
       if (!result.ok) {
@@ -222,11 +232,13 @@ function HeroVariantPanel({
 
     setBusy(true)
     try {
-      const result = await setHeroVideoUrl(youtubeInput.trim(), variant)
+      const expected = version.expected()
+      const result = await setHeroVideoUrl(youtubeInput.trim(), variant, expected)
       if (!result.success) {
         toast.error(result.error ?? t('saveFailed'))
         return
       }
+      version.saved(expected, result.updatedAt)
       setVideo({ url: youtubeInput.trim(), type: 'youtube' })
       toast.success(t('youtubeSetSuccess', { label }))
     } catch {
@@ -239,11 +251,13 @@ function HeroVariantPanel({
   async function handleRemove() {
     setBusy(true)
     try {
-      const result = await removeHeroVideo(variant)
+      const expected = version.expected()
+      const result = await removeHeroVideo(variant, expected)
       if (!result.success) {
         toast.error(result.error ?? t('removeFailed'))
         return
       }
+      version.saved(expected, result.updatedAt)
       setVideo(null)
       setYoutubeInput('')
       toast.success(t('removeSuccess', { label }))

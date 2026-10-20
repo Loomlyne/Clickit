@@ -11,6 +11,7 @@ import {
 import { requireArchived } from './guards.ts'
 import { parseDirection, parseId } from './schemas.ts'
 import { getActiveShowNamespaceConflict } from './show-namespace.ts'
+import { SAVE_CONFLICT, rowVersion, updatedAtOf } from './row-version.ts'
 import type { Database } from '../database.types'
 import type { AdminDb, AuditWriter, CoreResult } from './ports'
 
@@ -206,6 +207,12 @@ export async function createShowCore(
   }
 }
 
+/**
+ * The show drawer save. `expectedUpdatedAt` is the row's updated_at the drawer was loaded
+ * with (deferred item 23, residual b): the UPDATE lands only while the row still holds it, so
+ * a stale drawer never writes back old values (or an old media url). Success returns the new
+ * updated_at for a second save from the same drawer.
+ */
 export async function updateShowCore(
   db: AdminDb,
   deps: Deps,
@@ -213,11 +220,15 @@ export async function updateShowCore(
     id: unknown
     updateData: ShowUpdate & { title: string; slug: string }
     categoryIds: string[]
+    expectedUpdatedAt: unknown
   }
-): Promise<CoreResult<ShowData>> {
+): Promise<CoreResult<ShowData> & { updatedAt?: string }> {
   const parsed = parseId(input.id, 'show')
   if (!parsed.ok) return { success: false, error: parsed.error, wrote: false }
   const id = parsed.value
+  const version = rowVersion(input.expectedUpdatedAt)
+  if (!version.ok) return { success: false, error: version.error, wrote: false, data: { showId: id } }
+  const expected = version.value.expected
   const { updateData, categoryIds } = input
   const refuse = (error: string): CoreResult<ShowData> => ({
     success: false,
@@ -257,6 +268,8 @@ export async function updateShowCore(
     }
 
     let updated: Record<string, unknown> | undefined
+    let written: string | null = null
+    let stale = false
     const steps: WriteStep[] = [
       {
         name: 'update-show',
@@ -265,18 +278,27 @@ export async function updateShowCore(
             .from('shows')
             .update(updateData)
             .eq('id', id)
+            .eq('updated_at', expected)
             .select()
-            .single()
           if (error) return { error: error.message }
-          updated = data
-          return { error: null }
+          if (!Array.isArray(data) || data.length !== 1) {
+            stale = true
+            return { error: SAVE_CONFLICT }
+          }
+          updated = data[0] as Record<string, unknown>
+          written = updatedAtOf(data)
+          return written ? { error: null } : { error: 'The saved show came back without updated_at.' }
         },
+        // Compare-and-swap on the value we wrote: a save that landed after ours is never undone.
         undo: async () => {
-          const { error } = await db
+          if (!written) return { error: 'No updated_at to restore against.' }
+          const res = await db
             .from('shows')
             .update(previousValues as ShowUpdate)
             .eq('id', id)
-          return { error: error?.message ?? null }
+            .eq('updated_at', written)
+            .select('id')
+          return oneRow(res, 'restore show')
         },
       },
       ...replaceShowCategoriesSteps(db, id, previous, unique),
@@ -286,11 +308,13 @@ export async function updateShowCore(
       },
     ]
     const result = await runWithCompensation(steps)
+    // Someone saved since the drawer loaded: the first step changed 0 rows, nothing else ran.
+    if (stale) return refuse(SAVE_CONFLICT)
     if (!result.ok) {
       await failedAudit(deps, 'update', id, result, context)
       return { success: false, error: result.error, wrote: result.wrote, data: { showId: id } }
     }
-    return { success: true, wrote: true, data: { showId: id, show: updated } }
+    return { success: true, wrote: true, data: { showId: id, show: updated }, updatedAt: written ?? undefined }
   } catch (e) {
     return refuse(errText(e))
   }
@@ -415,11 +439,22 @@ export async function reorderShowCore(
     const cur = list[i]!
     const adj = list[j]!
 
-    const setOrder = async (rowId: string, n: number): Promise<StepResult> =>
-      oneRow(
-        await db.from('shows').update({ sort_order: n }).eq('id', rowId).select('id'),
-        'reorder show'
-      )
+    // Per-row compare-and-swap on the sort_order read above: a reorder that landed meanwhile
+    // wins (SAVE_CONFLICT) and the first move is undone the same way.
+    let conflict = false
+    const setOrder = async (rowId: string, n: number, expected: number): Promise<StepResult> => {
+      const res = await db
+        .from('shows')
+        .update({ sort_order: n })
+        .eq('id', rowId)
+        .eq('sort_order', expected)
+        .select('id')
+      if (!res.error && Array.isArray(res.data) && res.data.length === 0) {
+        conflict = true
+        return { error: SAVE_CONFLICT }
+      }
+      return oneRow(res, 'reorder show')
+    }
     const context = {
       direction,
       swapped_with: adj.id,
@@ -428,13 +463,13 @@ export async function reorderShowCore(
     const result = await runWithCompensation([
       {
         name: 'move-current',
-        run: () => setOrder(cur.id, adj.sort_order),
-        undo: () => setOrder(cur.id, cur.sort_order),
+        run: () => setOrder(cur.id, adj.sort_order, cur.sort_order),
+        undo: () => setOrder(cur.id, cur.sort_order, adj.sort_order),
       },
       {
         name: 'move-adjacent',
-        run: () => setOrder(adj.id, cur.sort_order),
-        undo: () => setOrder(adj.id, adj.sort_order),
+        run: () => setOrder(adj.id, cur.sort_order, adj.sort_order),
+        undo: () => setOrder(adj.id, adj.sort_order, cur.sort_order),
       },
       {
         name: 'audit',
@@ -442,8 +477,11 @@ export async function reorderShowCore(
       },
     ])
     if (!result.ok) {
+      // A conflict on the first move wrote nothing: no audit row, nothing to revalidate.
+      if (conflict && result.failedStep === 'move-current') return refuse(SAVE_CONFLICT)
       await failedAudit(deps, 'update', id, result, context)
-      return { success: false, error: result.error, wrote: result.wrote, data: { showId: id } }
+      const error = conflict ? SAVE_CONFLICT : result.error
+      return { success: false, error, wrote: result.wrote, data: { showId: id } }
     }
     return { success: true, wrote: true, data: { showId: id } }
   } catch (e) {

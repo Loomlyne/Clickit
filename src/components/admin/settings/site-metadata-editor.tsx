@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { updateSiteMetadata } from '@/app/[locale]/admin/actions'
 import { SettingsCard, SettingsField } from './settings-card'
+import { useSharedRowVersion } from '@/components/admin/row-version'
 
 type Values = {
   site_title: string
@@ -22,6 +23,7 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
   const [values, setValues] = useState<Values>(initial)
   const [saving, setSaving] = useState(false)
   const t = useTranslations('admin.settings')
+  const version = useSharedRowVersion()
 
   const dirty =
     values.site_title !== initial.site_title ||
@@ -33,16 +35,22 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
   async function onSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const result = await updateSiteMetadata({
-      site_title: values.site_title,
-      site_description: values.site_description || null,
-      site_description_ar: values.site_description_ar || null,
-      site_tagline: values.site_tagline,
-      site_tagline_ar: values.site_tagline_ar || null,
-    })
+    const expected = version.expected()
+    const result = await updateSiteMetadata(
+      {
+        site_title: values.site_title,
+        site_description: values.site_description || null,
+        site_description_ar: values.site_description_ar || null,
+        site_tagline: values.site_tagline,
+        site_tagline_ar: values.site_tagline_ar || null,
+      },
+      expected
+    )
     setSaving(false)
-    if (result.success) toast.success(t('siteMetadataSaved'))
-    else toast.error(result.error ?? t('saveFailed'))
+    if (result.success) {
+      version.saved(expected, result.updatedAt)
+      toast.success(t('siteMetadataSaved'))
+    } else toast.error(result.error ?? t('saveFailed'))
   }
 
   return (

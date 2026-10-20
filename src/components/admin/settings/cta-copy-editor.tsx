@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { updateCtaCopy } from '@/app/[locale]/admin/actions'
 import type { CtaCopy, CtaStageCopy } from '@/lib/config'
 import { SettingsCard, SettingsField } from './settings-card'
+import { useSharedRowVersion } from '@/components/admin/row-version'
 
 type Stage = keyof CtaCopy // 'zero' | 'growing' | 'full'
 
@@ -38,6 +39,7 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
   const [copy, setCopy] = useState<CtaCopy>(initial)
   const [saving, setSaving] = useState(false)
   const t = useTranslations('admin.settings')
+  const version = useSharedRowVersion()
   const STAGE_LABELS = getStageLabels(t)
   const STAGE_HINTS = getStageHints(t)
 
@@ -46,10 +48,13 @@ export function CtaCopyEditor({ initial }: { initial: CtaCopy }) {
   async function onSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const result = await updateCtaCopy(copy)
+    const expected = version.expected()
+    const result = await updateCtaCopy(copy, expected)
     setSaving(false)
-    if (result.success) toast.success(t('ctaCopySaved'))
-    else toast.error(result.error ?? t('saveFailed'))
+    if (result.success) {
+      version.saved(expected, result.updatedAt)
+      toast.success(t('ctaCopySaved'))
+    } else toast.error(result.error ?? t('saveFailed'))
   }
 
   function patch(stage: Stage, patch: Partial<CtaStageCopy>) {

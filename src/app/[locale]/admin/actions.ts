@@ -69,6 +69,7 @@ import {
 } from '@/server/r2-delete'
 import { readMediaReferenceUrls, type ReferenceDb } from '@/server/media-references'
 import { removeMediaCore } from '@/lib/admin/media-removal'
+import { SAVE_CONFLICT, rowVersion, updateIfUnchanged, type RowVersion } from '@/lib/admin/row-version'
 
 /**
  * Deferred items 21-23: every R2 delete of a key that was ever live re-reads every media
@@ -92,6 +93,16 @@ type ActionResult<T = unknown> = {
   error?: string
   data?: T
 }
+
+/**
+ * A save of a shows or app_config row from a loaded form (deferred item 23, residual b): it
+ * takes the updated_at the form was loaded with and, on success, returns the new one so the
+ * next save from the same page chains on it. A stale value: the conflict line, nothing written.
+ */
+type VersionedResult<T = unknown> = ActionResult<T> & { updatedAt?: string }
+
+const withUpdatedAt = <R extends { success: boolean }>(r: R, version: RowVersion): R & { updatedAt?: string } =>
+  r.success && version.next ? { ...r, updatedAt: version.next } : r
 
 export type {
   EpisodeConflict,
@@ -274,11 +285,15 @@ export async function createShow(
 
 export async function updateShow(
   id: string,
-  data: z.input<typeof showSchema>
-): Promise<ActionResult> {
+  data: z.input<typeof showSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   return runAdminAction(
     adminEnv,
     async (ctx) => {
+      // Refuse a missing or malformed updated_at before any translation call or db read.
+      const version = rowVersion(expectedUpdatedAt)
+      if (!version.ok) return { success: false, error: version.error, wrote: false }
       const parsed = showSchema.parse(data)
       const { id: _parsedId, category_ids, ...updateData } = parsed
       void _parsedId
@@ -308,7 +323,7 @@ export async function updateShow(
       return updateShowCore(
         ctx.db,
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
-        { id, updateData, categoryIds: category_ids }
+        { id, updateData, categoryIds: category_ids, expectedUpdatedAt: version.value.expected }
       )
     },
     {
@@ -968,13 +983,14 @@ const UUID_RE =
  * head, a 4 MiB range read and delete. Nothing here reads a whole video, and nothing
  * deletes a Supabase Storage original: only keys behind our own media origin qualify.
  */
-async function videoPorts(db: AdminDb): Promise<HeroVideoPorts> {
+async function videoPorts(db: AdminDb, appConfigVersion?: RowVersion): Promise<HeroVideoPorts> {
   const env = await getWorkerEnv()
   const bucket = env.MEDIA as unknown as FinalizeBucket
   const mediaOrigin = getPublicMediaOrigin()
   return {
     db,
     mediaOrigin,
+    appConfigVersion,
     finalize: async (input) => {
       const r = await finalizeUploadedObject({
         kind: input.kind,
@@ -1010,13 +1026,16 @@ async function videoPorts(db: AdminDb): Promise<HeroVideoPorts> {
 
 export async function setHeroVideoUrl(
   youtubeUrl: string,
-  variant: HeroVariant = 'desktop'
-): Promise<ActionResult> {
+  variant: HeroVariant,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   // The runner checks admin first; validation runs inside it so a non-admin
   // learns nothing about what a valid URL looks like.
   return runAdminAction(
     adminEnv,
     async (ctx) => {
+      const version = rowVersion(expectedUpdatedAt)
+      if (!version.ok) return { success: false, error: version.error, wrote: false }
       const trimmed = typeof youtubeUrl === 'string' ? youtubeUrl.trim() : ''
       if (!trimmed) return { success: false, error: 'URL is required', wrote: false }
 
@@ -1038,12 +1057,12 @@ export async function setHeroVideoUrl(
       // Store canonical form so viewers always get a predictable embed URL.
       const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`
       const r = await setHeroVideoUrlCore(
-        await videoPorts(ctx.db),
+        await videoPorts(ctx.db, version.value),
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
         { canonicalUrl, variant }
       )
       if (r.mediaCleanupFailed) console.error('[setHeroVideoUrl] media cleanup failed')
-      return r
+      return withUpdatedAt(r, version.value)
     },
     {
       fallbackError: 'Failed to save URL',
@@ -1056,18 +1075,21 @@ export async function setHeroVideoUrl(
 }
 
 export async function removeHeroVideo(
-  variant: HeroVariant = 'desktop'
-): Promise<ActionResult> {
+  variant: HeroVariant,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   return runAdminAction(
     adminEnv,
     async (ctx) => {
+      const version = rowVersion(expectedUpdatedAt)
+      if (!version.ok) return { success: false, error: version.error, wrote: false }
       const r = await removeHeroVideoCore(
-        await videoPorts(ctx.db),
+        await videoPorts(ctx.db, version.value),
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
         { variant }
       )
       if (r.mediaCleanupFailed) console.error('[removeHeroVideo] media cleanup failed')
-      return r
+      return withUpdatedAt(r, version.value)
     },
     {
       fallbackError: 'Failed to remove video',
@@ -1079,24 +1101,28 @@ export async function removeHeroVideo(
   )
 }
 
-export async function setHeroVideoMuted(muted: boolean): Promise<ActionResult> {
+export async function setHeroVideoMuted(
+  muted: boolean,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     await assertAdmin()
-    const admin = createAdminClient()
-
-    // hero_video_muted not yet in generated database.types — `as never` is the
-    // codebase convention for columns added by a migration before gen-types runs.
-    const { error } = await admin
-      .from('app_config')
-      .update({ hero_video_muted: muted } as never)
-      .eq('id', 1)
-
-    if (error) return { success: false, error: error.message }
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
+    if (typeof muted !== 'boolean') return { success: false, error: 'Invalid audio setting' }
+    const { error } = await updateIfUnchanged(
+      createAdminClient(),
+      'app_config',
+      1,
+      { hero_video_muted: muted },
+      version.value
+    )
+    if (error) return { success: false, error }
 
     updateTag('site-config')
     revalidatePath('/')
 
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1110,9 +1136,11 @@ export async function setHeroVideoMuted(muted: boolean): Promise<ActionResult> {
 // Preloader Video Management
 // ---------------------------------------------------------------------------
 
-export async function removePreloaderVideo(): Promise<ActionResult> {
+export async function removePreloaderVideo(expectedUpdatedAt: string): Promise<VersionedResult> {
   try {
     await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const admin = createAdminClient()
     // Compare-and-swap clear, then the R2 object goes only if nothing else uses it (R2 only:
     // a preloader that still points at a Supabase original keeps that file, MEDIA-07).
@@ -1121,6 +1149,7 @@ export async function removePreloaderVideo(): Promise<ActionResult> {
         db: admin,
         media: (await getWorkerEnv()).MEDIA as unknown as DeletableBucket,
         mediaOrigin: getPublicMediaOrigin(),
+        version: version.value,
       },
       {
         kind: 'clear-column',
@@ -1136,7 +1165,7 @@ export async function removePreloaderVideo(): Promise<ActionResult> {
     updateTag('site-config')
     revalidatePath('/', 'layout')
 
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[removePreloaderVideo] failed', err)
     return {
@@ -1179,12 +1208,16 @@ export async function toggleFeatured(showId: string) {
 
     const newFeatured = !show.featured
 
-    const { error } = await admin
+    // Compare-and-swap on the value just read: two clicks at once flip it exactly once.
+    const { data: flipped, error } = await admin
       .from('shows')
-      .update({ featured: newFeatured })
+      .update({ featured: !show.featured })
       .eq('id', showId)
+      .eq('featured', show.featured)
+      .select('id')
 
     if (error) throw error
+    if (!flipped || flipped.length === 0) return { success: false, error: SAVE_CONFLICT }
 
     revalidatePath('/admin')
     revalidatePath('/')
@@ -1410,29 +1443,41 @@ async function auditConfigUpdate(
   })
 }
 
+/**
+ * Write one settings section of the app_config row (deferred item 23, residual b): only while
+ * the row still holds the updated_at the settings page loaded (or our own last save produced).
+ * 0 rows is the conflict line and nothing is written; success leaves the new value in
+ * `version.next`.
+ */
+function saveConfigSection(patch: Record<string, unknown>, version: RowVersion) {
+  return updateIfUnchanged(createAdminClient(), 'app_config', 1, patch, version)
+}
+
 export async function updateLiveStreamUrl(
-  input: z.input<typeof liveStreamUrlSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof liveStreamUrlSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = liveStreamUrlSchema.parse(input)
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      .update({
+    const { error } = await saveConfigSection(
+      {
         live_stream_url: parsed.live_stream_url,
         live_stream_label: parsed.live_stream_label,
         live_stream_label_ar: parsed.live_stream_label_ar,
-      })
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+      },
+      version.value
+    )
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, [
       'live_stream_url',
       'live_stream_label',
       'live_stream_label_ar',
     ])
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1443,10 +1488,13 @@ export async function updateLiveStreamUrl(
 }
 
 export async function updateSiteMetadata(
-  input: z.input<typeof siteMetadataSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof siteMetadataSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = siteMetadataSchema.parse(input)
 
     // Auto-fill blank Arabic fields from their English source (DeepL).
@@ -1456,16 +1504,11 @@ export async function updateSiteMetadata(
     )
     parsed.site_tagline_ar = await fillArabic(parsed.site_tagline, parsed.site_tagline_ar)
 
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update(parsed as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    const { error } = await saveConfigSection(parsed, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, Object.keys(parsed))
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1476,10 +1519,13 @@ export async function updateSiteMetadata(
 }
 
 export async function updateAuthPageConfig(
-  input: z.input<typeof authPageSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof authPageSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = authPageSchema.parse(input)
 
     // Auto-fill blank Arabic copy from the English source (DeepL).
@@ -1497,15 +1543,11 @@ export async function updateAuthPageConfig(
       parsed.auth_quote_attribution_ar
     )
 
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      .update(parsed as never)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    const { error } = await saveConfigSection(parsed, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, Object.keys(parsed))
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1516,25 +1558,25 @@ export async function updateAuthPageConfig(
 }
 
 export async function updateFooterContent(
-  input: z.input<typeof footerSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof footerSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = footerSchema.parse(input)
 
     // Auto-fill blank Arabic tagline from English (DeepL).
     parsed.taglineAr = (await fillArabic(parsed.tagline, parsed.taglineAr)) ?? ''
 
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ footer_content: parsed } as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    // The social icon urls ride in this jsonb: a stale footer form can no longer write back
+    // an icon url another save already replaced.
+    const { error } = await saveConfigSection({ footer_content: parsed }, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, ['footer_content'])
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1552,10 +1594,13 @@ const portfolioContentSchema = z.object({
 })
 
 export async function updatePortfolioContent(
-  input: z.input<typeof portfolioContentSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof portfolioContentSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = portfolioContentSchema.parse(input)
 
     // Auto-fill blank Arabic fields from their English source (DeepL).
@@ -1568,21 +1613,15 @@ export async function updatePortfolioContent(
       parsed.portfolio_heading_ar
     )
 
-    const admin = createAdminClient()
-
     const updatePayload = {
       hero_description: parsed.hero_description,
       hero_description_ar: parsed.hero_description_ar,
       portfolio_heading: parsed.portfolio_heading,
       portfolio_heading_ar: parsed.portfolio_heading_ar,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any
-    const { error } = await admin
-      .from('app_config')
-      .update(updatePayload)
-      .eq('id', 1)
+    }
+    const { error } = await saveConfigSection(updatePayload, version.value)
 
-    if (error) return { success: false, error: error.message }
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, [
       'hero_description',
       'hero_description_ar',
@@ -1590,7 +1629,7 @@ export async function updatePortfolioContent(
       'portfolio_heading_ar',
     ])
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1601,10 +1640,13 @@ export async function updatePortfolioContent(
 }
 
 export async function updateContactRecipient(
-  input: { contactEmail: string }
-): Promise<ActionResult> {
+  input: { contactEmail: string },
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const admin = createAdminClient()
 
     // Read footer_content fresh (not cached getAppConfig, which defaults to
@@ -1630,16 +1672,14 @@ export async function updateContactRecipient(
       ...currentFooter,
       contactEmail: input.contactEmail,
     })
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ footer_content: parsed } as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    // Lands only while the row still holds the updated_at the inbox page loaded, so the footer
+    // read above is the one we merge into (no other save in between).
+    const { error } = await updateIfUnchanged(admin, 'app_config', 1, { footer_content: parsed }, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, ['footer_content.contactEmail'])
     bumpSiteConfigCache()
     revalidatePath('/admin/inbox')
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1650,21 +1690,19 @@ export async function updateContactRecipient(
 }
 
 export async function updateCtaCopy(
-  input: z.input<typeof ctaCopySchema>
-): Promise<ActionResult> {
+  input: z.input<typeof ctaCopySchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = ctaCopySchema.parse(input)
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ cta_copy: parsed } as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    const { error } = await saveConfigSection({ cta_copy: parsed }, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, ['cta_copy'])
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1675,21 +1713,19 @@ export async function updateCtaCopy(
 }
 
 export async function updateGenreConfig(
-  input: z.input<typeof genreConfigSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof genreConfigSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = genreConfigSchema.parse(input)
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ genre_config: parsed } as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    const { error } = await saveConfigSection({ genre_config: parsed }, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, ['genre_config'])
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1700,10 +1736,13 @@ export async function updateGenreConfig(
 }
 
 export async function updateIntegrations(
-  input: z.input<typeof integrationsSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof integrationsSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = integrationsSchema.parse(input)
     // Empty strings from form inputs → null so DB stays clean
     const cleaned: Record<string, string | null> = {
@@ -1713,13 +1752,8 @@ export async function updateIntegrations(
     if (parsed.youtube_api_key !== undefined) {
       cleaned.youtube_api_key = parsed.youtube_api_key?.trim() || null
     }
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update(cleaned as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    const { error } = await saveConfigSection(cleaned, version.value)
+    if (error) return { success: false, error }
     // Log which integration keys were touched without leaking the secret values.
     const keysTouched = Object.entries(cleaned)
       .filter(([, v]) => v !== null)
@@ -1729,7 +1763,7 @@ export async function updateIntegrations(
       keysTouched.length ? keysTouched : ['integrations_cleared']
     )
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1740,21 +1774,19 @@ export async function updateIntegrations(
 }
 
 export async function updateFeatureFlags(
-  input: z.input<typeof featureFlagsSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof featureFlagsSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = featureFlagsSchema.parse(input)
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ feature_flags: parsed } as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    const { error } = await saveConfigSection({ feature_flags: parsed }, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, ['feature_flags'])
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1765,10 +1797,13 @@ export async function updateFeatureFlags(
 }
 
 export async function updateTopTicker(
-  input: z.input<typeof topTickerSchema>
-): Promise<ActionResult<{ untranslated: number }>> {
+  input: z.input<typeof topTickerSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult<{ untranslated: number }>> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = topTickerSchema.parse(input)
     const trimmed: TickerItem[] = parsed.items
       .map((row) => ({
@@ -1792,16 +1827,11 @@ export async function updateTopTicker(
     }
 
     const payload = { enabled: parsed.enabled, items }
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ top_ticker: payload } as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    const { error } = await saveConfigSection({ top_ticker: payload }, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, ['top_ticker'], { untranslated })
     bumpSiteConfigCache()
-    return { success: true, data: { untranslated } }
+    return { success: true, data: { untranslated }, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1828,11 +1858,14 @@ function isSiteImageKind(kind: unknown): kind is SiteImageKind {
 }
 
 export async function removeSiteImage(
-  kind: SiteImageKind
-): Promise<ActionResult> {
+  kind: SiteImageKind,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     await assertAdmin()
     if (!isSiteImageKind(kind)) return { success: false, error: 'Invalid kind' }
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const admin = createAdminClient()
     // Compare-and-swap clear, then the R2 object goes only if no other live value (another
     // site image, a show, a profile...) still uses it. R2 only; a Supabase original is never
@@ -1842,6 +1875,7 @@ export async function removeSiteImage(
         db: admin,
         media: (await getWorkerEnv()).MEDIA as unknown as DeletableBucket,
         mediaOrigin: getPublicMediaOrigin(),
+        version: version.value,
       },
       {
         kind: 'clear-column',
@@ -1855,7 +1889,7 @@ export async function removeSiteImage(
     if (!result.success) return { success: false, error: result.error }
 
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -2202,7 +2236,11 @@ const ARTWORK_COLUMN = {
 const ARTWORK_COLUMNS = Object.values(ARTWORK_COLUMN)
 const SITE_IMAGE_COLUMNS = Object.values(SITE_IMAGE_COLUMN)
 
-async function adminImagePorts(db: AdminDb, audit: AuditWriter): Promise<ImageUploadPorts> {
+async function adminImagePorts(
+  db: AdminDb,
+  audit: AuditWriter,
+  appConfigVersion?: RowVersion
+): Promise<ImageUploadPorts> {
   const env = await getWorkerEnv()
   const bucket = env.MEDIA as unknown as FinalizeBucket
   const mediaOrigin = getPublicMediaOrigin()
@@ -2218,7 +2256,7 @@ async function adminImagePorts(db: AdminDb, audit: AuditWriter): Promise<ImageUp
         liveKeys: input.liveKeys,
         bucket,
       }),
-    db: adminImageDb(db),
+    db: adminImageDb(db, appConfigVersion),
     media: { delete: (keys) => bucket.delete(keys) },
     audit,
     mediaOrigin,
@@ -2270,8 +2308,8 @@ const finalizeSiteImageSchema = finalizeKeySchema.extend({
 })
 
 export async function finalizeSiteImageUpload(
-  input: z.input<typeof finalizeSiteImageSchema>
-): Promise<ActionResult<string> & { mediaCleanupFailed?: boolean }> {
+  input: z.input<typeof finalizeSiteImageSchema> & { expectedUpdatedAt: string }
+): Promise<VersionedResult<string> & { mediaCleanupFailed?: boolean }> {
   return runAdminAction(
     adminEnv,
     async (ctx) => {
@@ -2279,8 +2317,12 @@ export async function finalizeSiteImageUpload(
       if (!parsed.success) {
         return { success: false, error: formatZodError(parsed.error), wrote: false }
       }
+      // The settings page's app_config updated_at (deferred item 23, residual b); input is an
+      // object here (the schema parse above refused anything else).
+      const version = rowVersion(input.expectedUpdatedAt)
+      if (!version.ok) return { success: false, error: version.error, wrote: false }
       const { kind, key, variantKeys } = parsed.data
-      return finalizeImageUploadCore(await adminImagePorts(ctx.db, ctx.audit), {
+      const r = await finalizeImageUploadCore(await adminImagePorts(ctx.db, ctx.audit, version.value), {
         kind: 'site-image',
         slot: kind,
         key,
@@ -2289,6 +2331,7 @@ export async function finalizeSiteImageUpload(
         target: { type: 'app-config', column: SITE_IMAGE_COLUMN[kind] },
         live: { type: 'app-config', columns: SITE_IMAGE_COLUMNS },
       })
+      return withUpdatedAt(r, version.value)
     },
     { fallbackError: 'Upload failed', revalidate: (r) => (r?.wrote ? bumpSiteConfigCache() : undefined) }
   )
@@ -2368,8 +2411,8 @@ const finalizeHeroVideoSchema = finalizeVideoKeySchema.extend({
 })
 
 export async function finalizeHeroVideoUpload(
-  input: z.input<typeof finalizeHeroVideoSchema>
-): Promise<ActionResult<string> & { mediaCleanupFailed?: boolean }> {
+  input: z.input<typeof finalizeHeroVideoSchema> & { expectedUpdatedAt: string }
+): Promise<VersionedResult<string> & { mediaCleanupFailed?: boolean }> {
   return runAdminAction(
     adminEnv,
     async (ctx) => {
@@ -2377,14 +2420,18 @@ export async function finalizeHeroVideoUpload(
       if (!parsed.success) {
         return { success: false, error: formatZodError(parsed.error), wrote: false }
       }
+      // The settings page's app_config updated_at (deferred item 23, residual b); input is an
+      // object here (the schema parse above refused anything else).
+      const version = rowVersion(input.expectedUpdatedAt)
+      if (!version.ok) return { success: false, error: version.error, wrote: false }
       const { variant, key } = parsed.data
       const r = await saveVideoCore(
-        await videoPorts(ctx.db),
+        await videoPorts(ctx.db, version.value),
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
         { key, target: variant === 'mobile' ? 'hero-mobile' : 'hero-desktop' }
       )
       if (r.mediaCleanupFailed) console.error('[finalizeHeroVideoUpload] media cleanup failed')
-      return r
+      return withUpdatedAt(r, version.value)
     },
     {
       fallbackError: 'Upload failed',
@@ -2399,8 +2446,8 @@ export async function finalizeHeroVideoUpload(
 }
 
 export async function finalizePreloaderVideoUpload(
-  input: z.input<typeof finalizeVideoKeySchema>
-): Promise<ActionResult<string> & { mediaCleanupFailed?: boolean }> {
+  input: z.input<typeof finalizeVideoKeySchema> & { expectedUpdatedAt: string }
+): Promise<VersionedResult<string> & { mediaCleanupFailed?: boolean }> {
   return runAdminAction(
     adminEnv,
     async (ctx) => {
@@ -2408,13 +2455,17 @@ export async function finalizePreloaderVideoUpload(
       if (!parsed.success) {
         return { success: false, error: formatZodError(parsed.error), wrote: false }
       }
+      // The settings page's app_config updated_at (deferred item 23, residual b); input is an
+      // object here (the schema parse above refused anything else).
+      const version = rowVersion(input.expectedUpdatedAt)
+      if (!version.ok) return { success: false, error: version.error, wrote: false }
       const r = await saveVideoCore(
-        await videoPorts(ctx.db),
+        await videoPorts(ctx.db, version.value),
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
         { key: parsed.data.key, target: 'preloader' }
       )
       if (r.mediaCleanupFailed) console.error('[finalizePreloaderVideoUpload] media cleanup failed')
-      return r
+      return withUpdatedAt(r, version.value)
     },
     {
       fallbackError: 'Upload failed',

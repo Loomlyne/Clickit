@@ -10,6 +10,7 @@ import { finalizeSiteImageUpload, removeSiteImage } from '@/app/[locale]/admin/a
 import { uploadImageDirect, type UploadProgress } from '@/lib/browser-upload'
 import { UploadStatus, notifyUploadError, notifyUploaded } from '@/components/admin/upload-status'
 import { stripStorageCacheBust } from '@/lib/supabase-media'
+import { useSharedRowVersion } from '@/components/admin/row-version'
 
 /**
  * Reusable image upload field for OG image + favicon.
@@ -41,6 +42,7 @@ export function ImageUploadField({
   const [progress, setProgress] = useState<UploadProgress | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const t = useTranslations('admin.settings')
+  const version = useSharedRowVersion()
 
   // Browser -> R2 directly (requestMediaUpload, PUT, finalize); the finalize action
   // writes the app_config column and the audit row.
@@ -51,7 +53,14 @@ export function ImageUploadField({
         file,
         kind: 'site-image',
         slot: kind,
-        finalize: ({ key, variantKeys }) => finalizeSiteImageUpload({ kind, key, variantKeys }),
+        // The page's app_config updated_at is read at finalize time, so a save made while the
+        // file was uploading is already in the chain.
+        finalize: async ({ key, variantKeys }) => {
+          const expected = version.expected()
+          const r = await finalizeSiteImageUpload({ kind, key, variantKeys, expectedUpdatedAt: expected })
+          if (r.success) version.saved(expected, r.updatedAt)
+          return r
+        },
         onProgress: setProgress,
       })
       if (!result.ok) {
@@ -79,12 +88,14 @@ export function ImageUploadField({
 
   async function onRemove() {
     setBusy(true)
-    const result = await removeSiteImage(kind)
+    const expected = version.expected()
+    const result = await removeSiteImage(kind, expected)
     setBusy(false)
     if (!result.success) {
       toast.error(result.error ?? t('removeFailed'))
       return
     }
+    version.saved(expected, result.updatedAt)
     setUrl(null)
     toast.success(t('removed'))
   }

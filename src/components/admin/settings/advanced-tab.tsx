@@ -23,6 +23,7 @@ import {
 import type { AppConfig, FeatureFlags } from '@/lib/config'
 import { SettingsCard, SettingsField } from './settings-card'
 import { SecretField } from './secret-field'
+import { useSharedRowVersion } from '@/components/admin/row-version'
 
 type FlagMeta = {
   key: keyof FeatureFlags
@@ -84,15 +85,19 @@ export function AdvancedTab({
 
   const t = useTranslations('admin.settings')
   const FLAGS = getFlags(t)
+  const version = useSharedRowVersion()
 
   const dirty = JSON.stringify(flags) !== JSON.stringify(config.flags)
 
   async function onSaveFlags() {
     setSaving(true)
-    const result = await updateFeatureFlags(flags)
+    const expected = version.expected()
+    const result = await updateFeatureFlags(flags, expected)
     setSaving(false)
-    if (result.success) toast.success(t('featureFlagsSaved'))
-    else toast.error(result.error ?? t('saveFailed'))
+    if (result.success) {
+      version.saved(expected, result.updatedAt)
+      toast.success(t('featureFlagsSaved'))
+    } else toast.error(result.error ?? t('saveFailed'))
   }
 
   async function onRevalidate() {
@@ -129,13 +134,18 @@ export function AdvancedTab({
       youtubeApiKey = undefined
     }
 
-    const result = await updateIntegrations({
-      google_analytics_id: gaEnabled && gaValue ? gaValue : null,
-      meta_pixel_id: pixelEnabled && pixelValue ? pixelValue : null,
-      youtube_api_key: youtubeApiKey,
-    })
+    const expected = version.expected()
+    const result = await updateIntegrations(
+      {
+        google_analytics_id: gaEnabled && gaValue ? gaValue : null,
+        meta_pixel_id: pixelEnabled && pixelValue ? pixelValue : null,
+        youtube_api_key: youtubeApiKey,
+      },
+      expected
+    )
     setSavingIntegrations(false)
     if (result.success) {
+      version.saved(expected, result.updatedAt)
       toast.success(t('integrationsSaved'))
       if (!ytEnabled) {
         setSavedHasYouTube(false)

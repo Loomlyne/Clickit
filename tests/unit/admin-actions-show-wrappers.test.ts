@@ -27,7 +27,7 @@ function world(): Fake {
   })
   return createFakeSupabase({
     shows: [
-      { id: A, title: 'Show A', title_ar: null, slug: 'show-a', description: 'd', status: 'published', genre: 'Drama', sort_order: 0, archived: false, created_at: '2025-01-01T00:00:00.000Z' },
+      { id: A, title: 'Show A', title_ar: null, slug: 'show-a', description: 'd', status: 'published', genre: 'Drama', sort_order: 0, archived: false, created_at: '2025-01-01T00:00:00.000Z', updated_at: '2026-10-20T16:43:24.123456+00:00' },
       { id: D, title: 'Show D', title_ar: null, slug: 'show-d', description: 'd', status: 'published', genre: 'Drama', sort_order: 1, archived: true, created_at: '2025-01-02T00:00:00.000Z' },
     ],
     seasons: [{ id: SA, show_id: A, season_number: 1 }],
@@ -144,7 +144,12 @@ test('update path with a forced category step failure: wrote true, revalidated',
       updateShowCore(
         ctx.db,
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
-        { id: A, updateData: { title: 'Show A2', slug: 'show-a2' } as never, categoryIds: [CAT2] }
+        {
+          id: A,
+          updateData: { title: 'Show A2', slug: 'show-a2' } as never,
+          categoryIds: [CAT2],
+          expectedUpdatedAt: '2026-10-20T16:43:24.123456+00:00',
+        }
       ),
     { fallbackError: 'Failed to update show', revalidate: spy.revalidate }
   )

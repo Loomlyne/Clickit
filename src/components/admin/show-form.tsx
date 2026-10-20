@@ -33,6 +33,7 @@ import { HeroMediaPicker } from '@/components/admin/hero-media-picker'
 import { ArtworkUploadZone } from '@/components/admin/artwork-upload-zone'
 import { generateSlug } from '@/lib/slug'
 import { createShow, updateShow } from '@/app/[locale]/admin/actions'
+import { useRowVersion } from '@/components/admin/row-version'
 import type { Database } from '@/lib/database.types'
 
 const showFormSchema = z.object({
@@ -196,6 +197,8 @@ export function ShowForm({
   const t = useTranslations('admin.showForm')
   const tCommon = useTranslations('common')
   const tErrors = useTranslations('errors')
+  // The row's updated_at from the edit page's read; the save is checked against it.
+  const version = useRowVersion(show?.updated_at ?? '')
 
   const generatedId = useMemo(() => {
     if (isEdit) return show.id
@@ -264,11 +267,14 @@ export function ShowForm({
     }
     if (!isEdit) normalized.id = generatedId
 
-    const result = isEdit
-      ? await updateShow(show.id, normalized)
-      : await createShow(normalized)
+    const expected = version.expected()
+    const result: { success: boolean; error?: string; updatedAt?: string } =
+      isEdit
+        ? await updateShow(show.id, normalized, expected)
+        : await createShow(normalized)
 
     if (result.success) {
+      if (isEdit) version.saved(expected, result.updatedAt)
       toast.success(isEdit ? t('showUpdated') : t('showCreated'))
       router.push(isEdit ? `/admin/shows/${show.id}` : '/admin')
     } else {

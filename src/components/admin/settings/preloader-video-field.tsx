@@ -9,6 +9,7 @@ import { finalizePreloaderVideoUpload, removePreloaderVideo } from '@/app/[local
 import { UPLOAD_MESSAGES, uploadVideoDirect, type UploadProgress } from '@/lib/browser-upload'
 import { UploadStatus, notifyUploadError } from '@/components/admin/upload-status'
 import { resolveSupabaseVideoUrl } from '@/lib/supabase-media'
+import { useSharedRowVersion } from '@/components/admin/row-version'
 
 const DEFAULT_PRELOADER_SRC = '/brand/clickit-preloader.mp4'
 
@@ -24,6 +25,7 @@ export function PreloaderVideoField({
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState<UploadProgress | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const version = useSharedRowVersion()
 
   const previewSrc = url ?? DEFAULT_PRELOADER_SRC
 
@@ -49,7 +51,12 @@ export function PreloaderVideoField({
       const result = await uploadVideoDirect({
         file,
         kind: 'preloader-video',
-        finalize: ({ key }) => finalizePreloaderVideoUpload({ key }),
+        finalize: async ({ key }) => {
+          const expected = version.expected()
+          const r = await finalizePreloaderVideoUpload({ key, expectedUpdatedAt: expected })
+          if (r.success) version.saved(expected, r.updatedAt)
+          return r
+        },
         onProgress: setProgress,
       })
       if (!result.ok) {
@@ -73,11 +80,13 @@ export function PreloaderVideoField({
   async function onRemove() {
     setBusy(true)
     try {
-      const result = await removePreloaderVideo()
+      const expected = version.expected()
+      const result = await removePreloaderVideo(expected)
       if (!result.success) {
         toast.error(result.error ?? t('removeFailed'))
         return
       }
+      version.saved(expected, result.updatedAt)
       setUrl(null)
       toast.success(t('preloaderVideoRemoved'))
     } catch {

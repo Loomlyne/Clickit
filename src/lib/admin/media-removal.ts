@@ -7,6 +7,7 @@
 // No next/*, server-only or '@/' imports: node --test loads this file.
 import { MEDIA_SAVE_CONFLICT, readMediaReferenceUrls, type ReferenceDb } from '../../server/media-references.ts'
 import { deleteMediaForUrl, type DeletableBucket } from '../../server/r2-delete.ts'
+import { updatedAtOf, type RowVersion } from './row-version.ts'
 import type { AdminDb, CoreResult } from './ports'
 
 export type MediaRemovalTarget =
@@ -32,6 +33,11 @@ export type MediaRemovalPorts = {
   db: AdminDb
   media: DeletableBucket
   mediaOrigin: string | null
+  /**
+   * The settings page's app_config updated_at (deferred item 23, residual b): a clear-column on
+   * app_config also requires it, and records the new value in it. Not used for show_cast.
+   */
+  version?: RowVersion
 }
 
 export type MediaRemovalResult = CoreResult & { mediaCleanupFailed?: boolean }
@@ -51,21 +57,24 @@ export async function removeMediaCore(
   if (!data) return { success: false, error: target.notFound, wrote: false }
   const previous = ((data as Record<string, unknown>)[column] as string | null | undefined) ?? null
 
-  const base =
+  const version = target.table === 'app_config' ? ports.version : undefined
+  const write =
     target.kind === 'clear-column'
       ? ports.db
           .from(table)
           .update({ [column]: null } as never)
           .eq('id', id)
       : ports.db.from(table).delete().eq('id', id)
+  const base = version ? write.eq('updated_at' as 'image_url', version.expected) : write
   const { data: rows, error: writeError } = await (previous === null
     ? base.is(column, null)
     : base.eq(column, previous)
-  ).select('id')
+  ).select(version ? 'id, updated_at' : 'id')
   if (writeError) return { success: false, error: writeError.message, wrote: false }
   if (!Array.isArray(rows) || rows.length === 0) {
     return { success: false, error: MEDIA_SAVE_CONFLICT, wrote: false }
   }
+  if (version) version.next = updatedAtOf(rows)
 
   const cleaned = await deleteMediaForUrl(ports.media, previous, {
     readReferences: () => readMediaReferenceUrls(ports.db as unknown as ReferenceDb),
