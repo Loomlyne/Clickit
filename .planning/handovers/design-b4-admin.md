@@ -24,6 +24,13 @@
 
 Log files: `/Users/koss/.clickit-logs/b4-gate.log`, `b4-build.log`, `b4-tsc.log`.
 
+## Review fixes (local `reviewer` agent, Opus; verdict of record is the controller's)
+
+Fixed in the follow-up commit: focus ring restored on checkbox and select trigger (admin.css used to blank the box-shadow), ghost/outline overrides no longer beat per-button colour/hover classes (red delete hover, featured star, show-form pickers), header row no longer lights on hover, nested `<main>` removed, `<a><button>` replaced by `Button asChild`, cast editor controls use logical `end-*`, hero URL inputs get a visible focus ring.
+Gate re-run: tsc 0, lint 0 errors/19 warnings, unit 369/369, build exit 0 (placeholder public env).
+Behaviour-adjacent layout changes to know about: Add short stays visible during selection; Create show moved to the page header; row delete buttons are now destructive-variant with an aria-label; inbox section headings and show-form section headings changed level (h2); archive `adminConsole` eyebrow dropped; `getBrandAccent` fallback `#6073FF` -> `#A1A1A1`.
+Not from this PR: `admin.seasonForm.addSeason` i18n key missing in en and ar (season-tabs.tsx:94).
+
 ## NOT verified
 
 - No render of the real admin app (no local Supabase, no admin session). `admin.css` selectors (`data-slot`, `data-size`, `data-state`) were checked by reading the shared components, not by looking at the running page. The picture used the same Tailwind classes but not `admin.css`.

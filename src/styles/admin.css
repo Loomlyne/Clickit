@@ -57,11 +57,17 @@ body:has(.admin-root) [data-slot='button'][data-variant='ghost'] {
   background: transparent;
   border-color: transparent;
   backdrop-filter: none;
+}
+body:has(.admin-root)
+  [data-slot='button'][data-variant='ghost']:not([class*='text-brand']):not([class*='text-[var']):not([class*='text-destructive']) {
   color: var(--text-dim);
 }
 body:has(.admin-root)
   [data-slot='button'][data-variant='ghost']:hover:not(:disabled) {
   background: var(--bg-3);
+}
+body:has(.admin-root)
+  [data-slot='button'][data-variant='ghost']:hover:not(:disabled):not([class*='hover:text-']):not([class*='text-brand']):not([class*='text-[var']):not([class*='text-destructive']) {
   color: var(--text);
 }
 body:has(.admin-root) [data-slot='button'][data-variant='destructive'] {
@@ -78,7 +84,7 @@ body:has(.admin-root)
   background: var(--uis-primary-hover);
 }
 body:has(.admin-root)
-  [data-slot='button'][data-variant='outline']:hover:not(:disabled) {
+  [data-slot='button'][data-variant='outline']:hover:not(:disabled):not([class*='hover:bg-[var']) {
   background: var(--bg-2);
 }
 
@@ -90,7 +96,6 @@ body:has(.admin-root) [data-slot='checkbox'] {
   border-radius: 6px;
   border-color: var(--line-2);
   background: var(--bg-2);
-  box-shadow: none;
 }
 body:has(.admin-root) [data-slot='checkbox']::before {
   content: '';
@@ -124,6 +129,9 @@ body:has(.admin-root) [data-slot='table-row'] {
 body:has(.admin-root) [data-slot='table-row']:hover {
   background: var(--bg-2);
 }
+body:has(.admin-root) [data-slot='table-header'] [data-slot='table-row']:hover {
+  background: transparent;
+}
 body:has(.admin-root) [data-slot='table-row'][data-state='selected'] {
   background: color-mix(in srgb, var(--uis-primary-soft) 40%, transparent);
 }
@@ -133,7 +141,14 @@ body:has(.admin-root) [data-slot='select-trigger'] {
   border-radius: 8px;
   border-color: var(--line);
   background: var(--bg-2);
-  box-shadow: none;
+}
+body:has(.admin-root) [data-slot='select-trigger'][aria-invalid='true'] {
+  border-color: var(--destructive);
+}
+body:has(.admin-root) [data-slot='checkbox']:focus-visible,
+body:has(.admin-root) [data-slot='select-trigger']:focus-visible {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 50%, transparent);
 }
 body:has(.admin-root) [data-slot='select-content'] {
   background: var(--popover);

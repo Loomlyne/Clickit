@@ -78,12 +78,12 @@ export default async function AdminPage() {
       <AdminPageHeader
         title={tDash('shows')}
         action={
-          <Link href="/admin/shows/new">
-            <Button>
+          <Button asChild>
+            <Link href="/admin/shows/new">
               <Plus className="size-4" />
               {tDash('createShow')}
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         }
       />
 

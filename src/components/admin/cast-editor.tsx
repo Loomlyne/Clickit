@@ -184,7 +184,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
                   <button
                     type="button"
                     onClick={clearImage}
-                    className="absolute -top-1 -right-1 flex size-9 items-center justify-center rounded-full bg-black/70 text-[var(--text)] transition-colors hover:bg-black"
+                    className="absolute -top-1 -end-1 flex size-9 items-center justify-center rounded-full bg-black/70 text-[var(--text)] transition-colors hover:bg-black"
                     aria-label={t('removeImageAria')}
                   >
                     <X className="size-3.5" />
@@ -275,7 +275,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
               )}
               {/* Delete button */}
               <button
-                className="text-brand-red-safe hover:text-brand-red-safe absolute top-1.5 right-1.5 flex size-9 items-center justify-center rounded-full bg-black/50 opacity-60 transition-opacity group-hover:opacity-100"
+                className="text-brand-red-safe hover:text-brand-red-safe absolute top-1.5 end-1.5 flex size-9 items-center justify-center rounded-full bg-black/50 opacity-60 transition-opacity group-hover:opacity-100"
                 onClick={() => handleDelete(c.id)}
                 disabled={deletingId === c.id}
               >
