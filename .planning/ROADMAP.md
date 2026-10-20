@@ -120,7 +120,7 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 04-01-PLAN.md — W1: [Q1/Q2/Q3] merge main; named radius/shadow/status + exact-value tokens; design-truth.ts; email-tokens.ts (Q7 = C); cn(); pin tests
+- [x] 04-01-PLAN.md — W1: [Q1/Q2/Q3] merge main; named radius/shadow/status + exact-value tokens; design-truth.ts; email-tokens.ts (Q7 = C); cn(); pin tests
 - [ ] 04-02-PLAN.md — W2: ESLint rule clickit/no-raw-design-values (warn) + fixtures + baseline inventory
 - [ ] 04-03-PLAN.md — W3: [Q4] one brand map (D-04); consumers; parity test; gate (W1-W3)
 - [ ] 04-04-PLAN.md — W4: [Q1/Q2/Q5] admin-only /admin/design-system page, sidebar link, EN+AR copy, access pins
@@ -203,7 +203,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | 1.1. Admin Actions Hardening (INSERTED) | 13/13 | UAT passed, PR open | - |
 | 2. Worker and R2 Media on workers.dev | 0/TBD | Not started | - |
 | 3. Production Cutover | 0/TBD | Not started | - |
-| 4. Design System Truth | 0/14 | Planned | - |
+| 4. Design System Truth | 1/14 | In Progress|  |
 | 5. Accounts and Email | 0/TBD | Not started | - |
 | 6. YouTube Import and Player | 0/TBD | Not started | - |
 | 7. Product Completeness, Search and Arabic | 0/TBD | Not started | - |
