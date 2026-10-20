@@ -21,7 +21,7 @@ import { planRenumber, type RenumberEpisode } from '@/lib/admin/renumber-plan'
 
 // UI-SPEC 5.2 (D-14, D-19): the deliberate "Renumber 1 to N". Its own Dialog,
 // not ConfirmDialog, so the archive dialogs are untouched. The primitive's
-// close button uses a physical `right-4` and a 32px target, so it is turned
+// close button uses a physical-side offset and a 32px target, so it is turned
 // off and replaced by a 44px logical-end one (checker flag d).
 
 const LIST_MAX = 8

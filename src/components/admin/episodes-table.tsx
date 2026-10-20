@@ -336,7 +336,7 @@ export function EpisodesTable({
                     </span>
                   )}
                   {(() => {
-                    // Flag only (D-17): nothing here hides or unpublishes.
+                    // Flag only (D-17): the episode stays exactly as it is.
                     const reason = cantPlayReason(episode)
                     if (!reason) return null
                     return (
