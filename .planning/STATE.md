@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-20T15:30:00.000Z"
+last_updated: "2026-10-20T16:30:00.000Z"
 last_activity: 2026-10-20
 progress:
   total_phases: 9
@@ -65,6 +65,7 @@ Progress: [█████████░] 92%
 | Phase 02 P11 | 35min | 2 tasks | 5 files |
 | Phase 02 P12 | 100min | 3 tasks | 16 files |
 | Phase 02 P13 | 150min | 2 tasks | 13 files |
+| Phase 02 P14 | 70min | 2 tasks | 23 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,7 @@ Recent decisions affecting current work:
 - [Phase 02]: 02-11: contact/newsletter refuse without a valid Turnstile token and a free fail-closed per-IP slot (IP folded into the rate_limits key); auth actions pass captchaToken to Supabase and never call siteverify; token is the last optional action argument (02-13 wires clients); no Arabic copy invented, messages keys deferred to Koss
 - [Phase 02]: 02-12: presign uses aws4fetch allHeaders so Content-Type is really signed; finalize deletes only keys proven ours (kind/owner shape check first, variants only as _v/<w>/webp/<verified key>); keys are <stem>-<ts>-<rand>.<ext> so the old hero/preloader path regexes do not match (02-16 uses keyMatchesKind); local shim route checks the Host header and buffers the body, proven on preview
 - [Phase 02]: 02-13: Turnstile on the five forms as signed (turnstile-A); token is the last action argument and captchaToken for the reset request; single-use token renewed by remounting the widget (React key, no ref); no site key means no widget and the server still refuses contact/newsletter; deploy guard stamp records the site key class and refuses test or missing keys; Arabic for turnstile.checkFailed pending Koss; BotID client code removed (package.json and next.config left to 02-14)
+- [Phase 02]: 02-14: CSP is a pure tested builder (src/lib/csp.ts); loopback Supabase/media origins only for the preview target (CSP_UPGRADE_INSECURE=false); exact R2 S3 host in connect-src; Cloudflare Web Analytics beacon renders only with NEXT_PUBLIC_CF_BEACON_TOKEN (owner step); vercel.json, .vercelignore, check-cron.sh, botid and @vercel/* removed, VERCEL=1 cleanup fallback dropped, no-vercel guard test; storage-range-proxy Vercel header kept until Phase 3
 - [Phase 02]: 02-04: security helpers are pure with injected I/O; cron auth and rate limiter refuse on every uncertain path; Turnstile reasons are fixed codes that never echo secret or token
 
 ### Pending Todos
@@ -120,5 +122,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-10-20T10:45:11.285Z
-Stopped at: Completed 02-13-PLAN.md (after 02-12) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above still shows 01.1, controller owns it)
+Stopped at: Completed 02-14-PLAN.md (after 02-13) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above still shows 01.1, controller owns it)
 Resume file: None
