@@ -47,27 +47,27 @@ created: 2026-10-20
 
 | Plan-Task | Req | Automated verify | Kind |
 |-----------|-----|------------------|------|
-| 03-01-T1 | DNS-02 | grep "ENTRY: PASS/STOP" in 03-ENTRY.md; merge-base check | record |
+| 03-01-T1 | DNS-02 | grep "^ENTRY: PASS" in 03-ENTRY.md (STOP fails the verify and halts); deploy-guard, verify-media-host and r2:media present; merge-base check | gate |
 | 03-01-T2 | DNS-03 | NT tests/unit/cron-schedule.test.ts tests/unit/scheduled.test.ts tests/unit/publish-scheduled-refresh.test.ts | unit |
 | 03-01-T3 | DNS-02, DNS-03 | NT tests/unit/cutover-config.test.ts tests/unit/deploy-guard.test.ts | unit |
 | 03-02-T1 | DNS-02, DNS-03, MEDIA-02 | NT tests/unit/production-target.test.ts tests/unit/deploy-guard.test.ts tests/unit/cutover-config.test.ts | unit |
-| 03-02-T2 | DNS-02 | npm run test:unit + script presence greps + guard dry run refuses | unit + dry run |
-| 03-03-T1 | DNS-01, MAIL-02, PLAT-11 | NT tests/unit/dns-check.test.ts; live read-only dns-check --phase ns | unit + read-only live |
+| 03-02-T2 | DNS-02 | npm run test:unit + script presence greps + offline guard dry run refuses (no wrangler) | unit + offline dry run |
+| 03-03-T1 | DNS-01, MAIL-02, PLAT-11 | NT tests/unit/dns-check.test.ts (incl. "resend includes registry rules"); live read-only dns-check --phase ns | unit + read-only live |
 | 03-03-T2 | DNS-04 | NT tests/unit/rollback.test.ts | unit |
 | 03-04-T1 | DNS-02 | NT tests/unit/runtime-header.test.ts tests/unit/proof-check.test.ts; npm run typecheck | unit |
 | 03-04-T2 | DNS-03, MEDIA-02 | NT tests/unit/keys-check.test.ts tests/unit/media-health-source.test.ts | unit |
 | 03-04-T3 | MAIL-02 | NT tests/unit/parse-auth-results.test.ts | unit |
 | 03-05-T1 | MEDIA-08 | NT tests/unit/rewrite-sql.test.ts; npm run guard:migrations | unit + guard |
-| 03-05-T2 | MEDIA-08 | /Users/koss/.clickit-checks/p3-sql-test.log has "test-local: PASS" and exit=0 | local DB (rolled back) |
-| 03-06-T1/T2 | all | runbook Step 1-56 presence greps; no key shapes | doc |
+| 03-05-T2 | MEDIA-08 | /Users/koss/.clickit-checks/p3-sql-test.log has "test-local: PASS" and exit=0 (via with-heavy-lock.sh; scan ignores a non-media workers.dev auth value) | local DB (rolled back) |
+| 03-06-T1/T2 | all | runbook Step 1-56 presence greps; no key shapes; every wrangler line HOME-pinned with whoami in the step; every later dns-check passes --with-resend | doc |
 | 03-06-T3 | all | p3-gate.log exit=0 (npm run gate:local); PR open | full gate |
 | 03-07 | DNS-01, MAIL-02, MEDIA-08 | log greps: "dns-check ns: ALL PASS", "dns-check resend: ALL PASS", "MAIL-02: PASS", "backup table: OK" | live read + owner |
-| 03-08 | MEDIA-02 | log greps: "verify ok ... 0 failures", "x-media-source: r2" | live read + owner |
-| 03-09 | DNS-03, DNS-04 | log greps: secret names, "env file counts: 5 1", "token active" or branch B | owner + read-back |
-| 03-10 | DNS-02, DNS-03, DNS-04 | log greps: "dns-check post-flip: ALL PASS", "proof-check worker: ALL PASS", "UAT www: pass", "publish-scheduled status 200" | live + owner UAT |
+| 03-08 | MEDIA-02 | r2:media logs end exit=0 (heavy lock); log greps: "verify ok ... 0 failures", "x-media-source: r2" | live read + owner |
+| 03-09 | DNS-03, DNS-04 | log greps: secret names, "env file counts: 5 1", "token active" or D-16 branch B, "Rocket Loader: off" | owner + read-back |
+| 03-10 | DNS-02, DNS-03, DNS-04 | log greps: "Vercel crons disabled" or signed branch B, "dns-check post-flip: ALL PASS", "proof-check worker: ALL PASS", "UAT www: pass", "publish-scheduled status 200" | live + owner UAT |
 | 03-11 | DNS-04 | 7 GREEN daily lines; "no rollback needed" or rollback ALL PASS; Koss's close word | live daily |
 | 03-12 | DNS-03, MEDIA-08 | log greps: "keys-check legacy-off: PASS", "captcha-probe on: PASS", "scan-old-hosts: 0 rows" | live + owner |
-| 03-13 | PLAT-11 | log greps: "dns-check final: ALL PASS", deletion or branch B line, evidence table | live + owner |
+| 03-13 | PLAT-11 | log greps: "dns-check final: ALL PASS", deletion or "branch B applied", signed rewording in REQUIREMENTS, evidence table | live + owner |
 
 ## Wave 0 Requirements
 

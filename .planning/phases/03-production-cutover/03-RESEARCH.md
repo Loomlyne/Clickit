@@ -557,18 +557,31 @@ HOME=/Users/koss/.clickit-cloudflare npx opennextjs-cloudflare deploy --env prod
 | A9 | Vercel's renewal window and domain-claim rules (dangling CNAME) behave as commonly documented | Pattern 10, Pitfall 8 | Rollback ceiling slightly different; retarget is cheap either way |
 | A10 | Workers log retention on Free is short (days) | Pattern 3 | Cron proof must be read the same day |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Who can edit DNS at night (D-04)?**
    - Known: DNS changes in Cloudflare are not in `wrangler`; the wrangler OAuth login probably lacks a DNS-edit scope; the Cloudflare MCP is the Vamos account.
    - Unclear: whether the controller can PATCH `/zones/d8fa01b24f24653a29a0a56431072dc2/dns_records/<www id>` `{"proxied": false}`.
    - Recommendation: before the flip, run `wrangler login --scopes-list` (read-only); if no DNS scope, one owner step: Koss creates an API token limited to Zone → DNS → Edit on `clickitstory.ae` only, stores it in macOS Keychain, and the rollback script reads it from there; otherwise D-04 downgrades to "Koss toggles it".
+   - RESOLVED: D-16 (signed Q16 A): Koss creates a Zone→DNS→Edit token for clickitstory.ae, stored in Keychain; `scripts/cutover/rollback.mjs` (plan 03-03) uses it; runbook Step 23.
+
 2. **D-08 tool choice** — confirm with the Phase 2 SUMMARY which tool wrote the final bucket contents (Pitfall 1).
+   - RESOLVED: D-08 (signed, `r2:media`, never `r2:copy --update-changed`) + entry check 03-01 Task 1 (records which tool wrote the bucket; confirms `r2:media` and `verify-media-host.mjs` on main).
+
 3. **Production target without Vercel access** — D-01 branch B: nothing can stop Vercel's Monday cleanup; accept per Pitfall 4 or ask the owner for one sign-in.
+   - RESOLVED: D-01 (signed Q1 A, branch B as fallback): Vercel crons off on flip day if access exists (runbook Step 27, plan 03-10), otherwise the signed branch-B wording in 03-GATES.md; Monday cleanup risk accepted with the media freeze.
+
 4. **Route failure mode** — keep fail-closed (Error 1027 at 100k/day) or set fail-open in the dashboard so overflow falls back to Vercel during the window? Not settable in wrangler as far as verified; default is closed. Recommend leave default and monitor.
+   - RESOLVED: D-17 (signed Q18 A): fail open during the proof window (runbook Step 30), back to the default at close (Step 46).
+
 5. **Web Analytics / `NEXT_PUBLIC_CF_BEACON_TOKEN` for www** — Phase 2 Step 22 may have been refused for workers.dev; create the www site token before the production build (inlined at build time).
+   - RESOLVED: runbook Step 20 (Web Analytics site for www, token in the production env file, Step 21); the production build guard refuses an empty token (plan 03-02).
+
 6. **Phase 2 CPU report / Workers Paid** — entry condition; if Free fails, cron and pages inherit it.
+   - RESOLVED: entry check 03-01 Task 1 (CPU report "Free passes" or Koss's Workers Paid answer; otherwise ENTRY: STOP).
+
 7. **Admin-audit history in the scan** — confirm the "zero old-host URLs" wording excludes `admin_audit_log.diff` (history) or Koss wants it rewritten.
+   - RESOLVED: D-19 (signed Q17 A): `admin_audit_log` excluded from the rewrite and from "zero", counted in `report.sql` (plan 03-05, runbook Step 51).
 
 ## Environment Availability
 
