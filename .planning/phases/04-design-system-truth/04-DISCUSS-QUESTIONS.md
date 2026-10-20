@@ -64,7 +64,7 @@ Example: a viewer asks for a sign-in code and gets the email in the picture.
 - **A (recommended).** Dark, like the site: #090909 page, #101010 card, yellow button with dark ink.
 - **B.** Light body with a dark header bar: white card, black header with the logo, yellow button.
 
-Answer:
+Answer: C (Koss, 2026-10-20, via the controller as Phase 5 Q12) — follows the reader's system colour scheme: light by default (black header, white body, yellow button), plus a dark version via `@media (prefers-color-scheme: dark)`, black like the site. Phase 5 owns the templates and their picture.
 
 ### Q8. How you sign the canvas (no picture: this is a process choice)
 Example: Phase 5 can start coding sign-in as soon as Foundations, Viewer and Email are signed, even if Admin still has a comment open.
