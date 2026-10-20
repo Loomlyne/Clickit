@@ -1,0 +1,182 @@
+name: Apply live migrations
+
+# Hand-started only, and only from main. Nothing applies migrations on a push any more.
+#
+#   1. Job `dry-run` (environment `live-db-plan`) prints what WOULD apply to the live
+#      database and writes nothing. The list goes to the run summary.
+#   2. Job `apply` (environment `live-db`) pauses for Koss's approval in the Actions UI,
+#      then applies exactly what the dry-run showed.
+#
+# Before dispatching, the controller takes a local pg_dump of live on the Mac (D-03) and
+# ticks the `pg_dump_taken` input; `dry-run` and `apply` both fail without it.
+#
+# Rules baked in:
+#   - The include-all flag is forbidden. A migration whose version sorts before one
+#     already applied must fail and come back to a human, not slip in (RESEARCH Pitfall 4).
+#   - Seeds never run here.
+#   - No debug flag: it could print connection details into the log.
+#   - The database URL is a secret named SUPABASE_DB_URL (Session-pooler connection
+#     string), passed only through env and never echoed.
+#
+# What protects live (review CR-02): workflow_dispatch runs this file from whatever ref
+# the dispatcher picks, so a branch can carry an edited copy of it. The "Main only"
+# steps below live in that same editable file: they are diagnostics, not protection.
+# The protection is outside the file:
+#   - SUPABASE_DB_URL exists ONLY as an environment secret, in `live-db-plan` (dry-run)
+#     and `live-db` (apply). There is no repo-level copy, so a copy of this workflow
+#     without `environment:` gets no database URL.
+#   - Both environments allow deployments from `main` only (custom deployment-branch
+#     policy), so a branch copy that names them is refused before any secret is read.
+#   - `live-db` requires Koss as reviewer.
+# The runbook creates both environments, sets the secrets, deletes the repo-level
+# secret and reads it all back BEFORE this file reaches main. GitHub auto-creates a
+# missing environment WITHOUT reviewers or branch policy, so no dispatch before that.
+#
+# Security posture:
+#   - Least-privilege GITHUB_TOKEN (read-only; these jobs never write to the repo).
+#   - Third-party actions pinned to a full commit SHA; version in the trailing comment.
+#   - Supabase CLI pinned to an exact version.
+#   - Job timeouts cap a hung or abused run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pg_dump_taken:
+        description: 'Local pg_dump of live taken on the Mac before this run (D-03)'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-migrations
+  cancel-in-progress: false
+
+jobs:
+  dry-run:
+    name: dry-run
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: live-db-plan
+    outputs:
+      pending: ${{ steps.plan.outputs.pending }}
+    steps:
+      - name: Main only
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Live migrations run from main only (got $GITHUB_REF)"
+            exit 1
+          fi
+
+      # The input reaches the shell only through env, never as an expression inside the
+      # script (review WR-04). Checked in dry-run too, so an unticked box fails before
+      # Koss is asked to approve.
+      - name: Backup confirmed
+        env:
+          PG_DUMP_TAKEN: ${{ inputs.pg_dump_taken }}
+        run: |
+          if [ "$PG_DUMP_TAKEN" != "true" ]; then
+            echo "::error::Take a local pg_dump first (D-03) and re-run with pg_dump_taken"
+            exit 1
+          fi
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.119.0
+
+      - name: Plan (dry run, writes nothing)
+        id: plan
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PG_DUMP_TAKEN: ${{ inputs.pg_dump_taken }}
+        run: |
+          set -o pipefail
+          supabase db push --dry-run --db-url "$SUPABASE_DB_URL" 2>&1 | tee dry-run.txt
+          {
+            echo "### Pending live migrations (dry run, nothing applied)"
+            echo
+            echo '```'
+            cat dry-run.txt
+            echo '```'
+            echo
+            echo "pg_dump_taken: $PG_DUMP_TAKEN"
+          } >> "$GITHUB_STEP_SUMMARY"
+          # Unknown output counts as pending and still needs approval (fails safe).
+          if grep -q "Remote database is up to date" dry-run.txt; then
+            echo "pending=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "pending=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  apply:
+    name: apply
+    needs: dry-run
+    if: needs.dry-run.outputs.pending == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: live-db
+    # actions: read lets the token read the environment's protection rules (review WR-03).
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Main only
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Live migrations run from main only (got $GITHUB_REF)"
+            exit 1
+          fi
+
+      # Fail closed (review WR-03): GitHub auto-creates a missing environment with no
+      # reviewers, and a deleted or edited live-db would let this job start unapproved.
+      # Refuse to write unless live-db has a required-reviewers rule right now.
+      - name: live-db must require a reviewer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! env_json="$(curl -fsS \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/environments/live-db")"; then
+            echo "::error::Could not read environment live-db; refusing to apply"
+            exit 1
+          fi
+          if jq -e 'any(.protection_rules[]?; .type == "required_reviewers")' <<< "$env_json" > /dev/null; then
+            echo "live-db has a required-reviewers rule"
+          else
+            echo "::error::Environment live-db has no required reviewer; refusing to apply (runbook steps 3 and 5)"
+            exit 1
+          fi
+
+      # The input reaches the shell only through env, never as an expression inside the
+      # script (review WR-04). Checked in dry-run too, so an unticked box fails before
+      # Koss is asked to approve.
+      - name: Backup confirmed
+        env:
+          PG_DUMP_TAKEN: ${{ inputs.pg_dump_taken }}
+        run: |
+          if [ "$PG_DUMP_TAKEN" != "true" ]; then
+            echo "::error::Take a local pg_dump first (D-03) and re-run with pg_dump_taken"
+            exit 1
+          fi
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.119.0
+
+      - name: Apply
+        run: supabase db push --db-url "$SUPABASE_DB_URL" --yes
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
