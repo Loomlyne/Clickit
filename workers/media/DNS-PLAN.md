@@ -30,7 +30,7 @@ Records in the Cloudflare zone at 11:40 UTC:
 |---|---|---|---|---|
 | `www` | CNAME | `ba211fb55cf67415.vercel-dns-017.com` | **proxied (orange)** | wrong: must be DNS only, see 5a |
 | `@` (apex) | — | — | — | **missing**: `https://clickitstory.ae` fails for everyone, see 5b |
-| `media` | — | — | — | created by the Worker custom domain, see 5c |
+| `media` | Worker custom domain | `clickit-media` | managed | **live since 11:46:28 UTC** |
 
 Records that existed at Tasjeel before the move (public DNS, 10:29 UTC): apex
 A `216.198.79.1`, `www` CNAME `ba211fb55cf67415.vercel-dns-017.com`. Nothing
@@ -124,3 +124,9 @@ with the records above, and can take up to ~24 h to settle (Cloudflare NS TTL
   from the Cloudflare zone.
 - 11:37 `ns3`/`ns4` removed at Tasjeel; registry lists only `brett`/`jen`.
 - 11:39 Zone Active. `www` found proxied; apex still missing.
+- 11:45 Koss deployed `clickit-media` with the custom domain (version `a0f75eb6`).
+- 11:46:28 `https://media.clickitstory.ae` serves through the Worker; all 54 live
+  media URLs 200 via the Cloudflare edge. Resolvers that cached the old "no such
+  host" answer catch up within their negative-cache time.
+- 11:47 `www` (still proxied) answers 200 through the Cloudflare edge: the edge
+  certificate is issued. Apex still has no record.
