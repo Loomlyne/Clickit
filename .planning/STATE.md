@@ -28,6 +28,7 @@ Phase: 01.1 (admin-actions-hardening-inserted) — EXECUTING
 Plan: 13 of 13
 Status: Ready to execute
 Last activity: 2026-10-20
+Quick tasks merged from ui-system-home: 261020-ej8 (UI System tokens), 261020-ewk (home page).
 
 Progress: [█████████░] 92%
 
@@ -86,6 +87,13 @@ None yet.
 - Owner decisions pending (pricing, not assumed): Workers Paid $5/mo if Free CPU fails (Phase 2); Image Transformations stays on the free tier only.
 - Stray Cloudflare NS pair (ignat/nataly) must be resolved before any NS change (Phase 1).
 - Live migration state and `private.is_admin()` presence unverified — read-only audit in Phase 1 before any schema ship.
+
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 261020-ej8 | Apply UI System ui.config.json tokens to Clickit | 2026-10-20 | 93e3a68 | [261020-ej8-apply-ui-system-ui-config-json-tokens-to](./quick/261020-ej8-apply-ui-system-ui-config-json-tokens-to/) |
 
 ## Deferred Items
 
