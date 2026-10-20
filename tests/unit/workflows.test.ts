@@ -276,6 +276,59 @@ test('apply (CR-02): comments name the real protection, not the main-only step',
   assert.match(t, /deployments from `main` only/)
 })
 
+test('apply (WR-03): apply job refuses to write unless live-db has a required reviewer', () => {
+  const t = apply()
+  const a = jobBlock(t, 'apply')
+  assert.match(a, /^ {4}permissions:\s*\n {6}contents: read\s*\n {6}actions: read\s*$/m)
+  const check = a.indexOf('name: live-db must require a reviewer')
+  const write = a.indexOf('supabase db push --db-url')
+  assert.ok(check > 0 && write > check, 'reviewer check must come before the apply command')
+  assert.ok(a.includes('GH_TOKEN: ${{ github.token }}'))
+  const script = runBlockOf(a, /name: live-db must require a reviewer/)
+  assert.match(script, /^set -euo pipefail$/m)
+  assert.ok(script.includes('"$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/environments/live-db"'))
+  assert.match(script, /curl -fsS/)
+  assert.ok(script.includes(`.type == "required_reviewers"`))
+  assert.match(script, /jq -e/)
+})
+
+test('apply (WR-03): reviewer check run locally with a fake curl', async () => {
+  const { mkdtemp, writeFile, chmod, rm } = await import('node:fs/promises')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const { spawnSync } = await import('node:child_process')
+  const jq = spawnSync('jq', ['--version'])
+  if (jq.status !== 0) return // jq is on ubuntu-latest; skip locally if absent
+  const script = runBlockOf(jobBlock(apply(), 'apply'), /name: live-db must require a reviewer/)
+  const bin = await mkdtemp(join(tmpdir(), 'fakecurl-'))
+  try {
+    async function run(body: string, curlExit = 0) {
+      const fake = join(bin, 'curl')
+      await writeFile(fake, `#!/bin/sh\ncat <<'JSON'\n${body}\nJSON\nexit ${curlExit}\n`)
+      await chmod(fake, 0o755)
+      return spawnSync('bash', ['-c', script], {
+        env: {
+          ...process.env,
+          PATH: `${bin}:${process.env.PATH}`,
+          GH_TOKEN: 'x',
+          GITHUB_API_URL: 'https://api.github.com',
+          GITHUB_REPOSITORY: 'o/r',
+        },
+        encoding: 'utf8',
+      }).status
+    }
+    const ok = '{"protection_rules":[{"type":"branch_policy"},{"type":"required_reviewers","reviewers":[{}]}]}'
+    assert.equal(await run(ok), 0)
+    assert.equal(await run('{"protection_rules":[{"type":"branch_policy"}]}'), 1)
+    assert.equal(await run('{"protection_rules":[]}'), 1)
+    assert.equal(await run('{"name":"live-db"}'), 1)
+    assert.equal(await run('not json'), 1)
+    assert.equal(await run(ok, 22), 1) // curl -f on HTTP 404/403
+  } finally {
+    await rm(bin, { recursive: true, force: true })
+  }
+})
+
 test('apply: pinned CLI version, pinned actions, least privilege, safe concurrency, timeouts', () => {
   const t = apply()
   assert.match(t, /version: 2\.119\.0/)

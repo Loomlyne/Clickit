@@ -97,7 +97,7 @@ gh secret list --repo Loomlyne/Clickit --env live-db-plan
 gh secret list --repo Loomlyne/Clickit
 ```
 
-Expected: `live-db` reviewer login `Loomlyne`, `prevent_self_review` false, `bp` = `{"protected_branches":false,"custom_branch_policies":true}`, branch policies exactly `["main","branch"]`; `live-db-plan` no reviewers, same `bp`, branch policies exactly `["main","branch"]`; `SUPABASE_DB_URL` listed in both environment secret lists; `SUPABASE_DB_URL` NOT listed by the last command (repo-level secrets). Stop if anything differs: no squash merge and no dispatch until this passes. Do not dispatch while `live-db` is missing or has no reviewer.
+Expected: `live-db` reviewer login `Loomlyne`, `prevent_self_review` false, `bp` = `{"protected_branches":false,"custom_branch_policies":true}`, branch policies exactly `["main","branch"]`; `live-db-plan` no reviewers, same `bp`, branch policies exactly `["main","branch"]`; `SUPABASE_DB_URL` listed in both environment secret lists; `SUPABASE_DB_URL` NOT listed by the last command (repo-level secrets). Stop if anything differs: no squash merge and no dispatch until this passes. Do not dispatch while `live-db` is missing or has no reviewer (the `apply` job also reads `live-db` through the API and refuses to write without a `required_reviewers` rule, review WR-03; that check is a backstop, not a reason to skip this readback).
 
 ## 6. `[CONTROLLER after Ship]` Create the ruleset on `main` (D-08)
 
@@ -212,7 +212,7 @@ Then run the count query used in `/Users/koss/.clickit-checks/p1-scratch-proof.s
 
 ## 14. Notes
 
-- What actually protects live (review CR-02): the DB URL exists only as an environment secret; both environments accept deployments from `main` only; `live-db` requires Koss's approval. The workflow's "Main only" steps are diagnostics.
+- What actually protects live (review CR-02): the DB URL exists only as an environment secret; both environments accept deployments from `main` only; `live-db` requires Koss's approval, and the `apply` job refuses to write unless that rule is present (WR-03). The workflow's "Main only" steps are diagnostics.
 
 - The guard in CI is the base branch copy (`git show HEAD^1`), so a PR cannot weaken the guard that judges it. Residual (Pitfall 9, accepted): the Phase 1 PR itself and PRs that edit `pr-gate.yml` are judged by their own text.
 - Allow-list `to` SHAs in `scripts/migration-guard.mjs` must be refreshed after any later edit of the five neutralised migrations.
