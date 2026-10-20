@@ -1,5 +1,6 @@
 'use client'
 
+import { adminPanelClass } from '@/components/admin/admin-shell'
 import { useState } from 'react'
 import { Loader2, Save } from 'lucide-react'
 import { toast } from 'sonner'
@@ -43,13 +44,11 @@ export function InboxRecipientForm({
   }
 
   return (
-    <section className="rounded-lg border border-white/8 bg-[var(--bg-2)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] md:p-6">
+    <section className={`${adminPanelClass} p-4`}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
-          <h2 className="text-foreground text-lg font-semibold tracking-tight">
-            {title}
-          </h2>
-          <p className="text-muted-foreground mt-1 text-sm leading-6">
+          <h2 className="text-[16px] font-semibold">{title}</h2>
+          <p className="mt-0.5 text-[14px] leading-6 text-[var(--text-dim)]">
             {description}
           </p>
         </div>
@@ -67,7 +66,6 @@ export function InboxRecipientForm({
             onChange={(event) => setEmail(event.target.value)}
             placeholder="contact@clickitstory.com"
             aria-describedby="notification-recipient-help"
-            className="rounded-[12px]"
           />
           <Button type="submit" disabled={saving}>
             {saving ? <Loader2 className="size-4 animate-spin" /> : <Save />}

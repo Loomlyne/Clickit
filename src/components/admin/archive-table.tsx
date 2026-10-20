@@ -352,7 +352,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
               {shows.map((show) => (
                 <TableRow
                   key={show.id}
-                  className="group transition-colors hover:bg-white/[0.02]"
+                  className="group transition-colors hover:bg-[var(--bg-2)]"
                   data-state={selectedSet.has(show.id) ? 'selected' : undefined}
                 >
                   <TableCell>
@@ -448,7 +448,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="size-5 text-amber-500" />
+              <AlertTriangle className="text-brand-orange-safe size-5" />
               {showConflict ? t('showConflictHeading') : t('conflictHeading')}
             </DialogTitle>
             <DialogDescription>
@@ -460,7 +460,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
 
           <div className="space-y-3 py-2">
             {showConflict && (
-              <div className="space-y-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+              <div className="border-brand-orange-safe/20 bg-brand-orange-safe/8 space-y-3 rounded-lg border p-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="restore-title">{t('titleLabel')}</Label>
                   <Input
@@ -474,7 +474,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                     }
                   />
                   {showConflict.titleConflictTitle && (
-                    <p className="text-xs text-amber-400">
+                    <p className="text-brand-orange-safe text-xs">
                       {t('titleConflictWithShow', {
                         title: showConflict.titleConflictTitle,
                       })}
@@ -494,7 +494,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                     }
                   />
                   {showConflict.slugConflictTitle && (
-                    <p className="text-xs text-amber-400">
+                    <p className="text-brand-orange-safe text-xs">
                       {t('slugConflictWithShow', {
                         title: showConflict.slugConflictTitle,
                       })}
@@ -506,7 +506,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
             {conflicts.map((c) => (
               <div
                 key={c.episodeId}
-                className="space-y-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3"
+                className="border-brand-orange-safe/20 bg-brand-orange-safe/8 space-y-2 rounded-lg border p-3"
               >
                 <div className="text-sm">
                   <span className="text-foreground font-medium">
@@ -517,7 +517,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
                     {c.episodeTitle}
                   </span>
                 </div>
-                <div className="text-xs text-amber-400">
+                <div className="text-brand-orange-safe text-xs">
                   {t('conflictsWithEpisode', {
                     title: c.conflictingEpisodeTitle,
                   })}

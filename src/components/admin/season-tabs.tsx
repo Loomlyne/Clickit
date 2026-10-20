@@ -116,7 +116,7 @@ export function SeasonTabs({
   return (
     <TooltipProvider delayDuration={300}>
       <Tabs defaultValue={defaultTab} className="space-y-4">
-        <TabsList className="h-auto! flex-wrap justify-start rounded-full p-1.5">
+        <TabsList className="h-auto! flex-wrap justify-start gap-2 rounded-full p-1.5">
           {seasons.map((season) => {
             const epCount = episodesBySeason[season.id]?.length ?? 0
             const title = getSeasonTitle(season, isArabic)
@@ -124,13 +124,13 @@ export function SeasonTabs({
               <TabsTrigger
                 key={season.id}
                 value={season.id}
-                className="h-8! gap-2 px-3"
+                className="h-9! gap-2 px-3.5 max-md:h-11!"
               >
                 <span className="text-muted-foreground text-xs">
                   {t('seasonNumber', { number: season.season_number })}
                 </span>
                 <span>{title}</span>
-                <span className="text-muted-foreground rounded-full bg-white/[0.06] px-2 py-0.5 text-xs">
+                <span className="rounded-full bg-[var(--bg-3)] px-2 py-0.5 text-[12px] text-[var(--text-dim)]">
                   {epCount}
                 </span>
               </TabsTrigger>
@@ -143,13 +143,13 @@ export function SeasonTabs({
           const title = getSeasonTitle(season, isArabic)
           return (
             <TabsContent key={season.id} value={season.id}>
-              <AdminPanel className="space-y-5 p-5 md:p-6">
+              <AdminPanel className="space-y-4 p-4 md:p-5">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <p className="text-muted-foreground text-xs tracking-[0.2em] uppercase">
+                    <p className="text-[11px] font-semibold tracking-[0.12em] text-[var(--text-mute)] uppercase">
                       {t('seasonNumber', { number: season.season_number })}
                     </p>
-                    <h3 className="text-foreground mt-2 text-xl font-semibold tracking-tight">
+                    <h3 className="mt-1 text-[16px] font-semibold text-[var(--text)]">
                       {title}
                     </h3>
                     {season.title_ar && !isArabic && (
@@ -175,7 +175,7 @@ export function SeasonTabs({
                             title: season.title,
                           })}
                         >
-                          <Pencil className="me-1 size-3.5" />
+                          <Pencil className="size-4" />
                           {t('editSeasonButton')}
                         </Button>
                       </TooltipTrigger>
@@ -185,7 +185,7 @@ export function SeasonTabs({
                       size="sm"
                       onClick={() => handleAddEpisode(season.id)}
                     >
-                      <Plus className="me-1 size-4" />
+                      <Plus className="size-4" />
                       {tEpisode('addEpisode')}
                     </Button>
                   </div>

@@ -2,6 +2,7 @@ import { getLocale } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdminHeader } from '@/components/admin/admin-header'
+import '@/styles/admin.css'
 
 export default async function AdminLayout({
   children,
@@ -31,10 +32,12 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-0)]">
+    <div className="admin-root min-h-screen bg-[var(--bg-0)]">
       <AdminHeader />
-      <div className="mx-auto max-w-7xl px-4 pt-28 pb-10 md:px-8 md:pt-32 md:pb-16">
-        {children}
+      <div className="min-h-0 max-lg:pt-14 lg:ps-60">
+        <div className="mx-auto max-w-[1180px] px-4 py-6 md:px-8 md:py-8">
+          {children}
+        </div>
       </div>
     </div>
   )

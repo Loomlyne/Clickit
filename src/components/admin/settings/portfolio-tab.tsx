@@ -100,7 +100,7 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
                     placeholder={t('heroDescriptionPlaceholder')}
                     maxLength={500}
                     rows={3}
-                    className="rounded-[12px]"
+                    className="rounded-lg"
                   />
                 </SettingsField>
               </div>
@@ -118,7 +118,7 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
                     placeholder={t('heroDescriptionArPlaceholder')}
                     maxLength={500}
                     rows={3}
-                    className="rounded-[12px]"
+                    className="rounded-lg"
                   />
                 </SettingsField>
               </div>
