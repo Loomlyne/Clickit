@@ -12,7 +12,9 @@
  *           drop policy if exists p on t; -- safe-drop: recreated below
  *
  *         Not waived: an empty reason, a waiver on another line, or text that
- *         only looks like a waiver inside a string literal.
+ *         only looks like a waiver inside a string literal. A string, quoted
+ *         identifier, block comment or dollar quote left open at the end of
+ *         the file also fails (the scan cannot be trusted past it).
  *
  *   D-05  A migration that already exists on the base branch is immutable:
  *         editing, renaming or deleting it fails, unless an exact
@@ -89,13 +91,23 @@ const WAIVER_RE = /^\s*safe-drop:\s*(\S.*)$/i
 /**
  * Scan SQL text for destructive statements.
  *
- * Single pass over the text producing a blanked copy of the same length:
- * `--` and nested block comments become spaces (newlines kept). Single-quoted
- * strings (E'..' honours backslash escapes), double-quoted identifiers and
- * $tag$ dollar-quoted bodies stay in the text, so dynamic SQL such as
- * `execute 'drop table x'` and function bodies are scanned. Quotes only
- * decide where a comment marker is NOT a comment; a misread quote can add
- * findings but never hides one.
+ * Produces a blanked copy of the text with the same length: `--` and nested
+ * block comments become spaces (newlines kept). Single-quoted strings (E'..'
+ * honours backslash escapes), double-quoted identifiers and $tag$ dollar-quoted
+ * bodies stay in the text, so dynamic SQL such as `execute 'drop table x'` and
+ * function bodies are scanned.
+ *
+ * Each $tag$ body is its own region: it ends at the first matching closing
+ * tag (as in Postgres), is scanned with fresh quote state (so comments inside
+ * plpgsql bodies are still stripped and waivers there still work), and every
+ * string, identifier and comment inside it is clamped to the body. A stray
+ * `'` or `"` inside a body (`$$it's$$`) therefore cannot change how the code
+ * after the closing tag is read.
+ *
+ * Fail closed: a string, quoted identifier, block comment or dollar quote
+ * still open at the end of the FILE is returned in `unterminated` and the
+ * guard treats it as a violation. Inside a body an open quote simply runs to
+ * the closing tag, which is valid text (`comment on t is $$it's$$`).
  */
 export function scanSql(sql) {
   const text = String(sql)
@@ -121,88 +133,120 @@ export function scanSql(sql) {
   }
   const isWordChar = (ch) => ch !== undefined && /[A-Za-z0-9_$\u0080-￿]/.test(ch)
 
-  let i = 0
-  while (i < n) {
-    const ch = text[i]
-    const next = text[i + 1]
+  const unterminated = []
+  // Anything left open at the end of a region: fatal at file level, harmless
+  // inside a dollar body (the body is text up to its closing tag).
+  const open = (kind, at, topLevel) => {
+    if (topLevel) unterminated.push({ line: lineOf(at), kind })
+  }
 
-    if (ch === '-' && next === '-') {
-      let end = text.indexOf('\n', i)
-      if (end === -1) end = n
-      const comment = text.slice(i + 2, end).replace(/\r$/, '')
-      const match = WAIVER_RE.exec(comment)
-      if (match) waivers.set(lineOf(i), match[1].trim())
-      blank(i, end)
-      i = end
-      continue
-    }
+  /** Scan text[start, end) with fresh quote state. */
+  const scanRegion = (start, end, topLevel) => {
+    let i = start
+    while (i < end) {
+      const ch = text[i]
+      const next = i + 1 < end ? text[i + 1] : undefined
 
-    if (ch === '/' && next === '*') {
-      let depth = 1
-      let k = i + 2
-      while (k < n && depth > 0) {
-        if (text[k] === '/' && text[k + 1] === '*') {
-          depth += 1
-          k += 2
-        } else if (text[k] === '*' && text[k + 1] === '/') {
-          depth -= 1
-          k += 2
-        } else {
-          k += 1
-        }
-      }
-      blank(i, k)
-      i = k
-      continue
-    }
-
-    if (ch === "'") {
-      const prev = text[i - 1]
-      const escapes =
-        (prev === 'E' || prev === 'e') && !isWordChar(text[i - 2])
-      let k = i + 1
-      while (k < n) {
-        if (escapes && text[k] === '\\') {
-          k += 2
-        } else if (text[k] === "'") {
-          if (text[k + 1] === "'") k += 2
-          else break
-        } else {
-          k += 1
-        }
-      }
-      i = Math.min(k + 1, n)
-      continue
-    }
-
-    if (ch === '"') {
-      let k = i + 1
-      while (k < n) {
-        if (text[k] === '"') {
-          if (text[k + 1] === '"') k += 2
-          else break
-        } else {
-          k += 1
-        }
-      }
-      i = Math.min(k + 1, n)
-      continue
-    }
-
-    if (ch === '$' && !isWordChar(text[i - 1])) {
-      // Dollar-quote tags are emitted as normal code: the body is scanned and
-      // its comments are stripped, so a waiver works inside function bodies.
-      const tag = /^\$(?:[A-Za-z_\u0080-￿][A-Za-z0-9_\u0080-￿]*)?\$/.exec(
-        text.slice(i, i + 64),
-      )
-      if (tag) {
-        i += tag[0].length
+      if (ch === '-' && next === '-') {
+        let stop = text.indexOf('\n', i)
+        if (stop === -1 || stop > end) stop = end
+        const comment = text.slice(i + 2, stop).replace(/\r$/, '')
+        const match = WAIVER_RE.exec(comment)
+        if (match) waivers.set(lineOf(i), match[1].trim())
+        blank(i, stop)
+        i = stop
         continue
       }
-    }
 
-    i += 1
+      if (ch === '/' && next === '*') {
+        let depth = 1
+        let k = i + 2
+        while (k < end && depth > 0) {
+          if (text[k] === '/' && k + 1 < end && text[k + 1] === '*') {
+            depth += 1
+            k += 2
+          } else if (text[k] === '*' && k + 1 < end && text[k + 1] === '/') {
+            depth -= 1
+            k += 2
+          } else {
+            k += 1
+          }
+        }
+        if (depth > 0) open('unterminated block comment', i, topLevel)
+        blank(i, Math.min(k, end))
+        i = Math.min(k, end)
+        continue
+      }
+
+      if (ch === "'") {
+        const prev = text[i - 1]
+        const escapes =
+          (prev === 'E' || prev === 'e') && !isWordChar(text[i - 2])
+        let k = i + 1
+        let closed = false
+        while (k < end) {
+          if (escapes && text[k] === '\\') {
+            k += 2
+          } else if (text[k] === "'") {
+            if (k + 1 < end && text[k + 1] === "'") k += 2
+            else {
+              closed = true
+              break
+            }
+          } else {
+            k += 1
+          }
+        }
+        if (!closed) open('unterminated string', i, topLevel)
+        i = Math.min(k + 1, end)
+        continue
+      }
+
+      if (ch === '"') {
+        let k = i + 1
+        let closed = false
+        while (k < end) {
+          if (text[k] === '"') {
+            if (k + 1 < end && text[k + 1] === '"') k += 2
+            else {
+              closed = true
+              break
+            }
+          } else {
+            k += 1
+          }
+        }
+        if (!closed) open('unterminated quoted identifier', i, topLevel)
+        i = Math.min(k + 1, end)
+        continue
+      }
+
+      if (ch === '$' && !isWordChar(text[i - 1])) {
+        const tag = /^\$(?:[A-Za-z_\u0080-￿][A-Za-z0-9_\u0080-￿]*)?\$/.exec(
+          text.slice(i, Math.min(i + 64, end)),
+        )
+        if (tag) {
+          // The body ends at the first matching closing tag inside this region
+          // and is scanned as its own region, so its quotes cannot leak out.
+          const bodyStart = i + tag[0].length
+          const close = text.indexOf(tag[0], bodyStart)
+          if (close === -1 || close + tag[0].length > end) {
+            open(`unterminated dollar quote ${tag[0]}`, i, topLevel)
+            scanRegion(bodyStart, end, false)
+            i = end
+          } else {
+            scanRegion(bodyStart, close, false)
+            i = close + tag[0].length
+          }
+          continue
+        }
+      }
+
+      i += 1
+    }
   }
+
+  scanRegion(0, n, true)
 
   const blanked = out.join('')
   const lines = text.split('\n')
@@ -228,7 +272,7 @@ export function scanSql(sql) {
       })
     }
   }
-  return { findings, waived }
+  return { findings, waived, unterminated }
 }
 
 /**
@@ -368,7 +412,15 @@ export function runGuard({
       (added || change.status === 'M') && change.path.endsWith('.sql')
     if (scannable) {
       const sql = runGit(cwd, ['show', `${head}:${change.path}`])
-      for (const finding of scanSql(sql).findings) {
+      const scan = scanSql(sql)
+      for (const open of scan.unterminated) {
+        violations.push({
+          path: change.path,
+          line: open.line,
+          reason: `${open.kind} still open at end of file: the guard cannot tell code from text after it; close it`,
+        })
+      }
+      for (const finding of scan.findings) {
         violations.push({
           path: change.path,
           line: finding.line,

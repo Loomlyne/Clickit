@@ -204,6 +204,91 @@ test('fixture 11: -- inside a string does not start a comment', () => {
   assert.deepEqual(kinds('select "a--b"; drop table t;'), ['drop'])
 })
 
+test('fixture 17 (CR-01): a quote inside a dollar body cannot hide later SQL', () => {
+  // apostrophe inside $$ followed by a real drop on the next line
+  assert.deepEqual(kinds("comment on table t is $$it's$$;\ndrop table users;\n"), ['drop'])
+  // double quote inside $$ followed by a real drop
+  assert.deepEqual(kinds('comment on table t is $$say "hi$$;\ndrop table users;\n'), ['drop'])
+  // same shapes with a comment marker in a real string/identifier after the
+  // body: the old scanner treated it as a comment and hid the drop
+  assert.deepEqual(
+    kinds("comment on table t is $$it's$$;\nselect '/*';\ndrop table users;\nselect '*/';\n"),
+    ['drop'],
+  )
+  assert.deepEqual(
+    kinds('comment on table t is $$say "hi$$;\nselect "/*";\ndrop table users;\nselect "*/";\n'),
+    ['drop'],
+  )
+  // the review probes: each must still flag `drop table users`
+  const probes = [
+    "comment on table t is $$it's$$; select 'x -- '; drop table users;",
+    "comment on table t is $$Viewer's progress$$;\nselect 'a';\ninsert into x values ('-- ');drop table users;",
+    "comment on table t is $$it's$$; select '/*';\ndrop table users;\nselect '*/';",
+    'comment on table t is $$say "hi$$; select \'x\'; select "a -- "; drop table users;',
+  ]
+  for (const sql of probes) {
+    const result = scanSql(sql)
+    assert.deepEqual(result.findings.map((f) => f.kind), ['drop'], sql)
+    assert.deepEqual(result.unterminated, [], sql)
+  }
+  // named tags and a nested tag inside a body
+  assert.deepEqual(kinds("comment on table t is $q$it's$q$;\ndrop table users;\n"), ['drop'])
+  assert.deepEqual(
+    kinds("do $f$ begin execute $q$select 'it''s'$q$; end $f$;\ndrop table users;\n"),
+    ['drop'],
+  )
+  // a comment marker inside a body ends at the closing tag, not the line end
+  assert.deepEqual(kinds('do $$ begin null; -- note $$; drop table users;'), ['drop'])
+  // valid files report nothing open
+  assert.deepEqual(scanSql("comment on table t is $$it's$$;").unterminated, [])
+})
+
+test('fixture 18 (CR-01): anything left open at end of file fails closed', () => {
+  const cases: Array<[string, RegExp]> = [
+    ['do $$ begin\n  null;\nend;\n', /unterminated dollar quote \$\$/],
+    ['create function f() returns void as $body$ begin null; end; $b$;', /unterminated dollar quote \$body\$/],
+    ["select 'never closed;\ndrop table users;\n", /unterminated string/],
+    ['select "never closed;\n', /unterminated quoted identifier/],
+    ['/* never closed\ndrop table users;\n', /unterminated block comment/],
+  ]
+  for (const [sql, kind] of cases) {
+    const { unterminated } = scanSql(sql)
+    assert.equal(unterminated.length, 1, sql)
+    assert.match(unterminated[0].kind, kind, sql)
+    assert.equal(unterminated[0].line, 1, sql)
+  }
+})
+
+test('fixture 19 (CR-01): an unclosed dollar quote fails the guard (CLI exit 1)', async () => {
+  await withRepo(
+    (repo) => put(repo, '20260107000000_open.sql', 'create table c (id int);\ndo $$ begin\n  null;\n'),
+    ({ repo, base, head }) => {
+      const { violations } = runGuard({ cwd: repo, base, head })
+      assert.equal(violations.length, 1)
+      assert.equal(violations[0].line, 2)
+      assert.match(violations[0].reason, /unterminated dollar quote \$\$ still open at end of file/)
+      const cli = spawnSync(
+        process.execPath,
+        [SCRIPT, '--base', base, '--head', head],
+        { cwd: repo, encoding: 'utf8' },
+      )
+      assert.equal(cli.status, 1, cli.stdout + cli.stderr)
+      assert.match(cli.stdout, /20260107000000_open\.sql:2: unterminated dollar quote/)
+    },
+  )
+})
+
+test('every committed migration scans with nothing left open', async () => {
+  const { readdir, readFile } = await import('node:fs/promises')
+  const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', DIR)
+  const names = (await readdir(root)).filter((f) => f.endsWith('.sql'))
+  assert.ok(names.length > 0)
+  for (const name of names) {
+    const { unterminated } = scanSql(await readFile(join(root, name), 'utf8'))
+    assert.deepEqual(unterminated, [], name)
+  }
+})
+
 test('classifyChanges parses name-status -z output', () => {
   const out = classifyChanges('A\0x.sql\0M\0y.sql\0R100\0old.sql\0new.sql\0D\0z.sql\0')
   assert.deepEqual(out, [
