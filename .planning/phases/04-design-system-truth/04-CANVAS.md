@@ -313,7 +313,7 @@ Each board's token legend as drawn (label: value). Copied from the board files; 
 | 4 | F4, A1, A3, A4, V1 | Field drawn --bg-1, --line-2, px 14, 15px | Shared `.field` now --bg-2, --line, px 16, 14px (16px on phones), as input.tsx. Fixed. |
 | 5 | F4 | Button px 20; invalid border #ff8b82; badges at 700 | `.btn` px 18; invalid border --destructive #ff3b30 (message stays #ff8b82); badges 400, px 10. Fixed. |
 | 6 | F4 | Password eye 36 × 36 | 44 × 44, as password-field.tsx. Fixed. |
-| 7 | F4, V1, A3 | Arabic eye side: DESIGN.md / 04-UI-SPEC say physical right (owner rule); Phase 6 G6 and password-field.tsx say end side | Boards draw option A (physical right); F4 shows option A and option B side by side. **Open question for Koss**, asked with the Foundations signature. Code is not changed in Phase 4. |
+| 7 | F4, V1, A3 | Arabic eye side: DESIGN.md / 04-UI-SPEC say physical right (owner rule); Phase 6 G6 and password-field.tsx say end side | Boards draw option A (physical right); F4 shows option A and option B side by side. Koss answered A (physical right), 2026-10-21. Code is not changed in Phase 4; password-field.tsx is a Phase 5 follow-up. |
 | 8 | A3 | Panel --bg-1 / r16 / p20; stacked layout | Redrawn to Phase 6 §6: card --bg-2, --line border, r12, 12/16; chip and help on row 1; field with Save and Test in one row; last-test line on row 3. Fixed. |
 | 9 | V3 | Error card solid --bg-1; no phone progress bars; "Private" row missing | Card --bg-0 plus brand glow at 25% (85% 40%); progress bar inside phone thumbnails; Private row added. Fixed. |
 | 10 | A1, chip | Chip px 10 / gap 6; Arabic sheet drops # and Time at ≥640; entry button outline | Chip px 12 / gap 4; Arabic table has # and Time; entry button primary. Fixed. |
@@ -328,14 +328,16 @@ Each board's token legend as drawn (label: value). Copied from the board files; 
 Also fixed during the review: E7 said the admin area is English-only. Phase 6 has Arabic admin strings, so the rule now says the admin copy goes out in each admin's language.
 
 Follow-ups outside Phase 4 (not changed here):
-- password-field.tsx eye side, depending on Koss's answer to #7.
+- password-field.tsx: move the eye to the physical right in Arabic (Koss chose A, 2026-10-21). Phase 5.
 - Phase 5 text fields should use the live Input values (#15).
 
 ## Signatures
 
-Recorded in `04-GATE.md` §3 when Koss signs (04-14).
+Mirrored from `04-GATE.md` §3 (Koss's own answers in the question form, relayed verbatim by the controller, 2026-10-21 00:05 CET).
 
-- Foundations: not signed
-- Viewer: not signed
-- Admin: not signed
-- Email: not signed
+- Foundations — Koss, 2026-10-21
+- Viewer — Koss, 2026-10-21
+- Admin — Koss, 2026-10-21
+- Email — Koss, 2026-10-21
+
+Decision with the signatures: the show/hide eye in an Arabic password field sits on the physical right ("A: right (Recommended)"), as DESIGN.md already says. Live `src/components/auth/password-field.tsx` uses `end-0` (left in Arabic): moving it to the physical right is a Phase 5 follow-up.

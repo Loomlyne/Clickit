@@ -2,6 +2,7 @@
 
 Work session branch `claude/phase-04-design-system-truth-26dcc6`. Planning files only: no code, no database write, no deploy.
 Status 2026-10-20 18:48 CET: Koss answered "all recommended" (Q1-Q6, Q8 = A; Q9 = yes); Q7 = C via Phase 5 Q12; Q6 = A confirmed by Koss at 18:45 CET as his final call (an earlier "UI System first" relay is withdrawn; it became a deferred item). Plan gate (§2) signed 18:48 CET. Canvas signatures (§3) open.
+Status 2026-10-21 00:05 CET: Koss signed all four canvas groups in the question form ("Foundations signed", "Viewer signed", "Admin signed", "Email signed"), relayed verbatim by the controller. Arabic password eye: "A: right (Recommended)" = physical right in English and Arabic (password-field.tsx follow-up goes to Phase 5).
 
 How the controller records an answer: write the letter and date in the "Koss" column, e.g. `A (Koss, 2026-10-21)`. "All recommended" fills every row with A.
 
@@ -48,10 +49,10 @@ Visible-change ledger if all A: dropdown menus (still 98% opaque) and toasts go 
 
 After Koss's own answer, the line becomes `- <group> — Koss, <date>`.
 
-- Foundations — pending
-- Viewer — pending
-- Admin — pending
-- Email — pending
+- Foundations — Koss, 2026-10-21
+- Viewer — Koss, 2026-10-21
+- Admin — Koss, 2026-10-21
+- Email — Koss, 2026-10-21
 
 ## 4. Phase 6 compatibility (for the controller)
 

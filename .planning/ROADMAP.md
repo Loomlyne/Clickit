@@ -133,7 +133,7 @@ Plans:
 - [x] 04-11-PLAN.md — W7: codemod 3/5 (watch, shorts, landing, support, coming-soon, lib gradients)
 - [x] 04-12-PLAN.md — W8: codemod 4/5 (viewer routes, loading skeletons); gate (W7-W8)
 - [x] 04-13-PLAN.md — W9: [Q1/Q2/Q3] codemod 5/5 (admin + admin.css), rule to error, banned-literal tests, ledger; gate
-- [ ] 04-14-PLAN.md — W10: [orchestrator] reviewer pass on board legends, [OWNER] four signatures (D-08); final gate
+- [x] 04-14-PLAN.md — W10: [orchestrator] reviewer pass on board legends, [OWNER] four signatures (D-08); final gate
 
 Deferred (not a Phase 4 plan): After Phases 5–6 ship, a separate job moves the proven Clickit patterns into Loomlyne/ui-system as general components, its own repo PR (Koss, 2026-10-20 18:45 CET): playlist import preview, 6-digit code boxes, up-next bar, key field with the right-side eye, status chips, skeletons, the admin TOTP page. Not a Phase 4 plan; the UI System repo is not changed in Phase 4.
 
@@ -203,7 +203,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | 1.1. Admin Actions Hardening (INSERTED) | 13/13 | UAT passed, PR open | - |
 | 2. Worker and R2 Media on workers.dev | 0/TBD | Not started | - |
 | 3. Production Cutover | 0/TBD | Not started | - |
-| 4. Design System Truth | 7/14 | In Progress|  |
+| 4. Design System Truth | 14/14 | UAT pending (PR) |  |
 | 5. Accounts and Email | 0/TBD | Not started | - |
 | 6. YouTube Import and Player | 0/TBD | Not started | - |
 | 7. Product Completeness, Search and Arabic | 0/TBD | Not started | - |
