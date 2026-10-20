@@ -49,7 +49,6 @@ const SKIP_PROTECTED_ALWAYS = [
   '/my-list',
   '/profile',
   '/admin',
-  '/design-system',
 ]
 
 function isWatchPath(pathWithoutLocale: string): boolean {

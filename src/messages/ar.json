@@ -382,6 +382,7 @@
     "savedEmailFailedInline": "تم حفظ الرسالة. التنبيه عبر البريد غير مفعّل حالياً."
   },
   "newsletter": {
+    "emailLabel": "البريد الإلكتروني",
     "placeholder": "بريدك الإلكتروني",
     "submitAria": "إرسال الاشتراك في النشرة",
     "defaultButton": "اشترِك للحصول على التحديثات",
