@@ -200,6 +200,8 @@ export type Database = {
           created_at: string
           description: string
           description_ar: string | null
+          description_ar_edited: boolean
+          description_edited: boolean
           duration: number | null
           episode_number: number
           fts: unknown
@@ -212,6 +214,8 @@ export type Database = {
           status: string
           title: string
           title_ar: string | null
+          title_ar_edited: boolean
+          title_edited: boolean
           updated_at: string
           youtube_checked_at: string | null
           youtube_duration_seconds: number | null
@@ -223,6 +227,8 @@ export type Database = {
           created_at?: string
           description?: string
           description_ar?: string | null
+          description_ar_edited?: boolean
+          description_edited?: boolean
           duration?: number | null
           episode_number: number
           fts?: unknown
@@ -235,6 +241,8 @@ export type Database = {
           status?: string
           title: string
           title_ar?: string | null
+          title_ar_edited?: boolean
+          title_edited?: boolean
           updated_at?: string
           youtube_checked_at?: string | null
           youtube_duration_seconds?: number | null
@@ -246,6 +254,8 @@ export type Database = {
           created_at?: string
           description?: string
           description_ar?: string | null
+          description_ar_edited?: boolean
+          description_edited?: boolean
           duration?: number | null
           episode_number?: number
           fts?: unknown
@@ -258,6 +268,8 @@ export type Database = {
           status?: string
           title?: string
           title_ar?: string | null
+          title_ar_edited?: boolean
+          title_edited?: boolean
           updated_at?: string
           youtube_checked_at?: string | null
           youtube_duration_seconds?: number | null
@@ -551,6 +563,7 @@ export type Database = {
         Row: {
           archived: boolean | null
           channel_name: string | null
+          channel_name_edited: boolean
           created_at: string | null
           duration_seconds: number | null
           expires_at: string | null
@@ -560,12 +573,15 @@ export type Database = {
           sort_order: number | null
           thumbnail_url: string | null
           title: string
+          title_edited: boolean
           updated_at: string | null
+          youtube_checked_at: string | null
           youtube_video_id: string
         }
         Insert: {
           archived?: boolean | null
           channel_name?: string | null
+          channel_name_edited?: boolean
           created_at?: string | null
           duration_seconds?: number | null
           expires_at?: string | null
@@ -575,12 +591,15 @@ export type Database = {
           sort_order?: number | null
           thumbnail_url?: string | null
           title: string
+          title_edited?: boolean
           updated_at?: string | null
+          youtube_checked_at?: string | null
           youtube_video_id: string
         }
         Update: {
           archived?: boolean | null
           channel_name?: string | null
+          channel_name_edited?: boolean
           created_at?: string | null
           duration_seconds?: number | null
           expires_at?: string | null
@@ -590,7 +609,9 @@ export type Database = {
           sort_order?: number | null
           thumbnail_url?: string | null
           title?: string
+          title_edited?: boolean
           updated_at?: string | null
+          youtube_checked_at?: string | null
           youtube_video_id?: string
         }
         Relationships: []
@@ -990,6 +1011,7 @@ export type Database = {
     Functions: {
       get_youtube_key: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
+      record_short_checks: { Args: { p_rows: Json }; Returns: number }
       record_youtube_checks: { Args: { p_rows: Json }; Returns: number }
       renumber_season: {
         Args: { p_season_id: string }

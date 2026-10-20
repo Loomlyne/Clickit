@@ -38,7 +38,11 @@ export type VerifyOptions = {
 // returns snippet.channelTitle, read through this narrow local type.
 type SnippetWithChannel = { channelTitle?: unknown }
 
-function meta(videoId: string, v: YouTubeVideoResource): YouTubeMeta {
+/**
+ * A videos.list item as the metadata the forms show. Exported so the daily
+ * check refreshes shorts with the same thumbnail choice as the shorts form.
+ */
+export function videoMeta(videoId: string, v: YouTubeVideoResource): YouTubeMeta {
   const t = v.snippet?.thumbnails
   const seconds = parseIsoDuration(v.contentDetails?.duration ?? '')
   const channel = (v.snippet as SnippetWithChannel | undefined)?.channelTitle
@@ -89,7 +93,7 @@ export async function verifyVideoCore(
       }
     }
   }
-  return { ok: true, meta: meta(videoId, video) }
+  return { ok: true, meta: videoMeta(videoId, video) }
 }
 
 // Plain English for server results and logs; the UI translates the code with

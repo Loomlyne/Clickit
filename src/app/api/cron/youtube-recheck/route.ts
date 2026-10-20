@@ -11,8 +11,13 @@ import { getServerYouTubeClient } from '@/server/youtube-service'
  *
  * Refreshes youtube_status, youtube_checked_at and the length of every stored
  * episode video (archived included) with one read, batched videos.list calls
- * and one record_youtube_checks write. Never changes text columns and never
- * unpublishes; admins see "Can't play" from the stored status.
+ * and one record_youtube_checks write. It also refreshes the YouTube text of
+ * episodes (title, title_ar, description, description_ar) and shorts (title,
+ * channel, thumbnail) unless an admin changed the field on Clickit (CHANGED by
+ * Koss 2026-10-20, PR #27 review item 7: refresh unless edited); shorts go
+ * through one record_short_checks write. Never unpublishes; admins see
+ * "Can't play" from the stored status. The JSON reports checked (episodes),
+ * notOk and shortsChecked.
  *
  * Schedule: none yet. Until Phase 2 registers the trigger (TODO at the top) the
  * check runs by hand:
