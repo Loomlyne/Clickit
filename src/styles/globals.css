@@ -385,7 +385,7 @@ html::-webkit-scrollbar-thumb:hover {
 
   .label {
     font-family: var(--font-app);
-    font-size: 10.5px;
+    font-size: 11px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--text-mute);
@@ -590,10 +590,6 @@ html[lang='ar'] [class*='tracking-['] {
     --poster-w: 140px;
     --landscape-w: 260px;
     --rail-gap: 10px;
-  }
-
-  .mono {
-    font-size: 10px;
   }
 
   /* Rails */
