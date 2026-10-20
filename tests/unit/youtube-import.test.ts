@@ -417,6 +417,12 @@ test('commit new season: season max+1, one episodes insert of drafts, counts, on
       [AR1, 3, 'draft', 'ok', false],
     ]
   )
+  // Review item 7: imported text is YouTube's own, so every edited flag is false.
+  for (const e of eps) {
+    for (const f of ['title', 'title_ar', 'description', 'description_ar']) {
+      assert.equal(e[`${f}_edited`], false, `${f}_edited on ${e.youtube_video_id}`)
+    }
+  }
   assert.equal(eps[0]!.show_id, S1)
   assert.equal(eps[0]!.duration, 12)
   assert.equal(eps[0]!.youtube_duration_seconds, 720)

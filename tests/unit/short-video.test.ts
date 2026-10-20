@@ -1,6 +1,7 @@
 // Server check of a short's YouTube link (PR #27 review, finding 3): strict
 // parse, verifyVideoCore with checkDuplicate false, key missing fails closed,
-// bare 11-character id stored. Fake YouTube client; no live call.
+// bare 11-character id stored. A fetched video also returns its metadata for
+// the edited flags (review item 7). Fake YouTube client; no live call.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
@@ -45,6 +46,15 @@ function fakeYouTube(videos: Record<string, YouTubeVideoResource>, fail?: Error)
   return { client, calls }
 }
 
+/** ok with the fetched video's metadata (title from the fake snippet). */
+function assertFetched(res: Awaited<ReturnType<typeof checkShortVideoCore>>, vid: string) {
+  assert.equal(res.ok, true)
+  if (!res.ok) return
+  assert.equal(res.videoId, vid)
+  assert.equal(res.meta?.videoId, vid)
+  assert.equal(res.meta?.title, `Title ${vid}`)
+}
+
 // An episode already uses USED: a short may still use it (no duplicate rule).
 const world = () =>
   createFakeSupabase({
@@ -66,7 +76,7 @@ test('a full link is checked once and stored as the bare 11-character id', async
   const yt = fakeYouTube({ [OK]: video(OK) })
   const g = getter(yt.client)
   const res = await checkShortVideoCore(world().client, g.get, `https://www.youtube.com/shorts/${OK}`)
-  assert.deepEqual(res, { ok: true, videoId: OK })
+  assertFetched(res, OK)
   assert.deepEqual(yt.calls, [[OK]])
   assert.equal(g.reads(), 1)
 })
@@ -129,7 +139,7 @@ test('a video already used by an episode is fine for a short (checkDuplicate fal
   const yt = fakeYouTube({ [USED]: video(USED) })
   const fake = world()
   const res = await checkShortVideoCore(fake.client, getter(yt.client).get, USED)
-  assert.deepEqual(res, { ok: true, videoId: USED })
+  assertFetched(res, USED)
   assert.equal(fake.calls.filter((c) => c.table === 'episodes').length, 0)
 })
 
@@ -144,7 +154,7 @@ test('edit: a changed video is checked', async () => {
   const yt = fakeYouTube({ [USED]: video(USED) })
   const g = getter(yt.client)
   const res = await checkShortVideoCore(world().client, g.get, USED, OK)
-  assert.deepEqual(res, { ok: true, videoId: USED })
+  assertFetched(res, USED)
   assert.deepEqual(yt.calls, [[USED]])
   const missing = await checkShortVideoCore(world().client, getter(null).get, USED, OK)
   assert.equal(missing.ok, false)
