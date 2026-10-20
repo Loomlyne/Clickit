@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
+import { useArabicMissingToast } from '@/components/admin/arabic-missing-toast'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -39,6 +40,7 @@ type Values = {
 
 export function PortfolioTab({ config }: { config: AppConfig }) {
   const t = useTranslations('admin.settings')
+  const warnArabicMissing = useArabicMissingToast()
   const version = useSharedRowVersion()
   const [values, setValues] = useState<Values>({
     hero_description: config.heroDescription ?? '',
@@ -77,7 +79,7 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
     setSaving(false)
     if (result.success) {
       version.saved(expected, result.updatedAt)
-      toast.success(t('portfolioSaved'))
+      if (!warnArabicMissing(result)) toast.success(t('portfolioSaved'))
     } else toast.error(result.error ?? t('saveFailed'))
   }
 

@@ -20,6 +20,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { clientIpFrom } from '@/server/client-ip'
 import { guardPublicForm, readCaptchaToken, type GuardError } from '@/server/form-guard'
 import type { RateLimitStore } from '@/server/rate-limit-policy'
+import { supabaseRateLimitStore } from '@/server/rate-limit-store'
 import { verifyTurnstileToken } from '@/server/turnstile'
 
 function validationError(fieldErrors: Record<string, string[] | undefined>) {
@@ -31,29 +32,11 @@ function validationError(fieldErrors: Record<string, string[] | undefined>) {
 }
 
 // Abuse throttle store for public unauthenticated actions: the rate_limits
-// ledger (service_role only). The table has only a `key` column, so the client
-// IP is folded into the key as `<key>:<ip>`. Errors THROW (never allow): the
-// caller (decideRateLimit) turns a throw into a refusal, so the limiter fails
-// closed.
+// ledger (service_role only), shared helper in src/server/rate-limit-store.ts.
+// The client IP is folded into the key as `<key>:<ip>`; errors throw, so the
+// limiter (decideRateLimit) fails closed.
 function rateLimitStore(): RateLimitStore {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const admin = createAdminClient() as any
-  return {
-    async count(ip, key, sinceIso) {
-      const { count, error } = await admin
-        .from('rate_limits')
-        .select('id', { count: 'exact', head: true })
-        .eq('key', `${key}:${ip}`)
-        .gte('created_at', sinceIso)
-      if (error) throw new Error('rate_limits count failed')
-      if (typeof count !== 'number') throw new Error('rate_limits count missing')
-      return count
-    },
-    async record(ip, key) {
-      const { error } = await admin.from('rate_limits').insert({ key: `${key}:${ip}` })
-      if (error) throw new Error('rate_limits insert failed')
-    },
-  }
+  return supabaseRateLimitStore(createAdminClient())
 }
 
 // Messages are plain strings in the action result (same shape as before). The

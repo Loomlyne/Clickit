@@ -1,5 +1,8 @@
 import 'server-only'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
+import type { AiBinding } from '@/lib/arabic-text'
+
+export type { AiBinding }
 
 /**
  * Minimal structural R2 bucket type (only what the app calls). Kept local so
@@ -20,6 +23,8 @@ export type R2BucketLike = {
  */
 export type WorkerEnv = {
   MEDIA: R2BucketLike
+  /** Workers AI (wrangler.jsonc `ai`). Optional: absent in node tests and builds. */
+  AI?: AiBinding
   CLOUDFLARE_ACCOUNT_ID: string
   CLOUDFLARE_R2_BUCKET: string
   CLICKIT_RUNTIME?: string
@@ -35,4 +40,19 @@ export type WorkerEnv = {
 export async function getWorkerEnv(): Promise<WorkerEnv> {
   const { env } = await getCloudflareContext({ async: true })
   return env as unknown as WorkerEnv
+}
+
+/**
+ * The Workers AI binding, or undefined. Reads only the context the Worker (or
+ * `next dev`) already put on the global scope: never the async mode, which would
+ * start a wrangler platform proxy (and a remote AI session) inside `next build`.
+ */
+export function getWorkerAi(): AiBinding | undefined {
+  try {
+    const { env } = getCloudflareContext()
+    const ai = (env as unknown as Partial<WorkerEnv>).AI
+    return ai && typeof ai.run === 'function' ? ai : undefined
+  } catch {
+    return undefined
+  }
 }

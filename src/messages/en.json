@@ -1371,7 +1371,8 @@
       "loading": "Loading…",
       "noEpisodes": "No episodes yet",
       "noShows": "No shows yet",
-      "adminNavAria": "Admin"
+      "adminNavAria": "Admin",
+      "arabicAutoFillMissing": "Saved. {count} Arabic field(s) could not be translated automatically; fill them in by hand."
     },
     "heroMedia": {
       "desktopHero": "Desktop Hero",

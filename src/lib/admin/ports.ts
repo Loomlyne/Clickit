@@ -12,6 +12,8 @@ export type ActionResult<T = unknown> = {
   success: boolean
   error?: string
   data?: T
+  /** Saved, but this many Arabic fields could not be auto-filled and stay empty. */
+  arabicMissing?: number
 }
 
 /** `wrote` is true when at least one write step ran, so the wrapper must revalidate even on failure. */

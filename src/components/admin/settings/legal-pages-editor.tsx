@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
+import { useArabicMissingToast } from '@/components/admin/arabic-missing-toast'
 import { Pencil, Plus, Trash2, Loader2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -66,6 +67,7 @@ const emptyDraft = (): Draft => ({
 
 export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
   const t = useTranslations('admin.settings')
+  const warnArabicMissing = useArabicMissingToast()
   const tc = useTranslations('common')
   const [pages, setPages] = useState<LegalPage[]>(initial)
   const [draft, setDraft] = useState<Draft | null>(null)
@@ -120,7 +122,7 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
         : [...prev, saved]
     )
     setDraft(null)
-    toast.success(draft.id ? t('legalUpdated') : t('legalCreated'))
+    if (!warnArabicMissing(result)) toast.success(draft.id ? t('legalUpdated') : t('legalCreated'))
   }
 
   async function onDelete() {

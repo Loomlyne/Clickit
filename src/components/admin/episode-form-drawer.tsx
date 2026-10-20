@@ -6,6 +6,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { useArabicMissingToast } from '@/components/admin/arabic-missing-toast'
 import { Loader2, Sparkles } from 'lucide-react'
 import { getVideoDuration } from '@/lib/youtube'
 
@@ -112,6 +113,7 @@ export function EpisodeFormDrawer({
   const isEdit = !!episode
   const t = useTranslations('admin.episodeForm')
   const tCommon = useTranslations('common')
+  const warnArabicMissing = useArabicMissingToast()
   const tErrors = useTranslations('errors')
 
   const STATUS_OPTIONS = [
@@ -228,7 +230,7 @@ export function EpisodeFormDrawer({
     }
     const result = await onSave(normalized)
     if (result.success) {
-      toast.success(isEdit ? t('episodeUpdated') : t('episodeCreated'))
+      if (!warnArabicMissing(result)) toast.success(isEdit ? t('episodeUpdated') : t('episodeCreated'))
       onOpenChange(false)
     } else {
       toast.error(result.error || tCommon('error'))

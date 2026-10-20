@@ -46,7 +46,8 @@ import {
   type PlannedEpisodeSlot,
 } from '@/lib/admin/show-schedule'
 import { generateSlug } from '@/lib/slug'
-import { fillArabic, translateBatchToArabicStrict } from '@/lib/translate'
+import { createArabicFiller } from '@/lib/translate'
+import { withArabicMissing } from '@/lib/admin/arabic-missing'
 import { fillTickerArabic, type TickerItem } from '@/lib/admin/ticker'
 import {
   removeHeroVideoCore,
@@ -92,6 +93,8 @@ type ActionResult<T = unknown> = {
   success: boolean
   error?: string
   data?: T
+  /** Saved, but this many Arabic fields could not be auto-filled and stay empty. */
+  arabicMissing?: number
 }
 
 /**
@@ -264,17 +267,19 @@ export async function createShow(
         generateSlug(rest.title, id ? `show-${id.slice(0, 8)}` : undefined)
       )
 
-      // Auto-fill blank Arabic fields from their English source (DeepL).
-      // fillArabic is strict: a failed translation stores null, not English.
-      rest.title_ar = await fillArabic(rest.title, rest.title_ar)
-      rest.description_ar = await fillArabic(rest.description, rest.description_ar)
-      rest.tagline_ar = await fillArabic(rest.tagline, rest.tagline_ar)
+      // Auto-fill blank Arabic fields from their English source (Workers AI).
+      // Strict: a failed translation stores null, not English.
+      const arabic = createArabicFiller(ctx.adminUserId)
+      rest.title_ar = await arabic.fill(rest.title, rest.title_ar)
+      rest.description_ar = await arabic.fill(rest.description, rest.description_ar)
+      rest.tagline_ar = await arabic.fill(rest.tagline, rest.tagline_ar)
 
-      return createShowCore(
+      const result = await createShowCore(
         ctx.db,
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
         { insertData: { ...(id ? { id } : {}), ...rest }, categoryIds: category_ids }
       )
+      return withArabicMissing(result, arabic.missing())
     },
     {
       fallbackError: 'Failed to create show',
@@ -309,22 +314,24 @@ export async function updateShow(
         updateData.slug = normalizedSlug
       }
 
-      // Auto-fill blank Arabic fields from their English source (DeepL).
-      updateData.title_ar = await fillArabic(updateData.title, updateData.title_ar)
-      updateData.description_ar = await fillArabic(
+      // Auto-fill blank Arabic fields from their English source (Workers AI).
+      const arabic = createArabicFiller(ctx.adminUserId)
+      updateData.title_ar = await arabic.fill(updateData.title, updateData.title_ar)
+      updateData.description_ar = await arabic.fill(
         updateData.description,
         updateData.description_ar
       )
-      updateData.tagline_ar = await fillArabic(
+      updateData.tagline_ar = await arabic.fill(
         updateData.tagline,
         updateData.tagline_ar
       )
 
-      return updateShowCore(
+      const result = await updateShowCore(
         ctx.db,
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
         { id, updateData, categoryIds: category_ids, expectedUpdatedAt: version.value.expected }
       )
+      return withArabicMissing(result, arabic.missing())
     },
     {
       fallbackError: 'Failed to update show',
@@ -384,12 +391,15 @@ const revalidateRestore = () => {
 export async function restoreShow(id: string): Promise<RestoreResult> {
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      restoreShowCore(
+    async (ctx) => {
+      const arabic = createArabicFiller(ctx.adminUserId)
+      const result = await restoreShowCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
         { showId: id }
-      ),
+      )
+      return withArabicMissing(result, arabic.missing())
+    },
     {
       fallbackError: 'Failed to restore show',
       revalidate: revalidateRestore,
@@ -403,12 +413,15 @@ export async function resolveConflictsAndRestore(
 ): Promise<RestoreResult> {
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      restoreShowCore(
+    async (ctx) => {
+      const arabic = createArabicFiller(ctx.adminUserId)
+      const result = await restoreShowCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
         { showId, fixes }
-      ),
+      )
+      return withArabicMissing(result, arabic.missing())
+    },
     {
       fallbackError: 'Failed to resolve conflicts',
       revalidate: revalidateRestore,
@@ -429,16 +442,19 @@ export async function resolveRestoreConflictsAndRestore(
   if (data?.slug) rename.slug = data.slug
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      restoreShowCore(
+    async (ctx) => {
+      const arabic = createArabicFiller(ctx.adminUserId)
+      const result = await restoreShowCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
         {
           showId,
           rename: Object.keys(rename).length > 0 ? rename : undefined,
           fixes: data?.episodeFixes,
         }
-      ),
+      )
+      return withArabicMissing(result, arabic.missing())
+    },
     {
       fallbackError: 'Failed to resolve conflicts',
       revalidate: revalidateRestore,
@@ -684,12 +700,15 @@ export async function createSeason(
 ): Promise<ActionResult> {
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      createSeasonCore(
+    async (ctx) => {
+      const arabic = createArabicFiller(ctx.adminUserId)
+      const result = await createSeasonCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
         data
-      ),
+      )
+      return withArabicMissing(result, arabic.missing())
+    },
     {
       fallbackError: 'Failed to create season',
       revalidate: (result) => {
@@ -706,13 +725,16 @@ export async function updateSeason(
 ): Promise<ActionResult> {
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      updateSeasonCore(
+    async (ctx) => {
+      const arabic = createArabicFiller(ctx.adminUserId)
+      const result = await updateSeasonCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
         id,
         data
-      ),
+      )
+      return withArabicMissing(result, arabic.missing())
+    },
     {
       fallbackError: 'Failed to update season',
       revalidate: (result) => {
@@ -735,12 +757,15 @@ export async function createEpisode(
 ): Promise<ActionResult> {
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      createEpisodeCore(
+    async (ctx) => {
+      const arabic = createArabicFiller(ctx.adminUserId)
+      const result = await createEpisodeCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
         data
-      ),
+      )
+      return withArabicMissing(result, arabic.missing())
+    },
     {
       fallbackError: 'Failed to create episode',
       revalidate: (result) => {
@@ -758,13 +783,16 @@ export async function updateEpisode(
 ): Promise<ActionResult> {
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      updateEpisodeCore(
+    async (ctx) => {
+      const arabic = createArabicFiller(ctx.adminUserId)
+      const result = await updateEpisodeCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
         id,
         data
-      ),
+      )
+      return withArabicMissing(result, arabic.missing())
+    },
     {
       fallbackError: 'Failed to update episode',
       revalidate: (result) => {
@@ -1497,18 +1525,22 @@ export async function updateSiteMetadata(
     if (!version.ok) return { success: false, error: version.error }
     const parsed = siteMetadataSchema.parse(input)
 
-    // Auto-fill blank Arabic fields from their English source (DeepL).
-    parsed.site_description_ar = await fillArabic(
+    // Auto-fill blank Arabic fields from their English source (Workers AI).
+    const arabic = createArabicFiller(user.id)
+    parsed.site_description_ar = await arabic.fill(
       parsed.site_description,
       parsed.site_description_ar
     )
-    parsed.site_tagline_ar = await fillArabic(parsed.site_tagline, parsed.site_tagline_ar)
+    parsed.site_tagline_ar = await arabic.fill(parsed.site_tagline, parsed.site_tagline_ar)
 
     const { error } = await saveConfigSection(parsed, version.value)
     if (error) return { success: false, error }
     await auditConfigUpdate(user.id, Object.keys(parsed))
     bumpSiteConfigCache()
-    return { success: true, updatedAt: version.value.next ?? undefined }
+    return withArabicMissing(
+      { success: true, updatedAt: version.value.next ?? undefined },
+      arabic.missing()
+    )
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1528,17 +1560,18 @@ export async function updateAuthPageConfig(
     if (!version.ok) return { success: false, error: version.error }
     const parsed = authPageSchema.parse(input)
 
-    // Auto-fill blank Arabic copy from the English source (DeepL).
-    parsed.auth_heading_ar = await fillArabic(
+    // Auto-fill blank Arabic copy from the English source (Workers AI).
+    const arabic = createArabicFiller(user.id)
+    parsed.auth_heading_ar = await arabic.fill(
       parsed.auth_heading,
       parsed.auth_heading_ar
     )
-    parsed.auth_subheading_ar = await fillArabic(
+    parsed.auth_subheading_ar = await arabic.fill(
       parsed.auth_subheading,
       parsed.auth_subheading_ar
     )
-    parsed.auth_quote_ar = await fillArabic(parsed.auth_quote, parsed.auth_quote_ar)
-    parsed.auth_quote_attribution_ar = await fillArabic(
+    parsed.auth_quote_ar = await arabic.fill(parsed.auth_quote, parsed.auth_quote_ar)
+    parsed.auth_quote_attribution_ar = await arabic.fill(
       parsed.auth_quote_attribution,
       parsed.auth_quote_attribution_ar
     )
@@ -1547,7 +1580,10 @@ export async function updateAuthPageConfig(
     if (error) return { success: false, error }
     await auditConfigUpdate(user.id, Object.keys(parsed))
     bumpSiteConfigCache()
-    return { success: true, updatedAt: version.value.next ?? undefined }
+    return withArabicMissing(
+      { success: true, updatedAt: version.value.next ?? undefined },
+      arabic.missing()
+    )
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1567,8 +1603,9 @@ export async function updateFooterContent(
     if (!version.ok) return { success: false, error: version.error }
     const parsed = footerSchema.parse(input)
 
-    // Auto-fill blank Arabic tagline from English (DeepL).
-    parsed.taglineAr = (await fillArabic(parsed.tagline, parsed.taglineAr)) ?? ''
+    // Auto-fill blank Arabic tagline from English (Workers AI).
+    const arabic = createArabicFiller(user.id)
+    parsed.taglineAr = (await arabic.fill(parsed.tagline, parsed.taglineAr)) ?? ''
 
     // The social icon urls ride in this jsonb: a stale footer form can no longer write back
     // an icon url another save already replaced.
@@ -1576,7 +1613,10 @@ export async function updateFooterContent(
     if (error) return { success: false, error }
     await auditConfigUpdate(user.id, ['footer_content'])
     bumpSiteConfigCache()
-    return { success: true, updatedAt: version.value.next ?? undefined }
+    return withArabicMissing(
+      { success: true, updatedAt: version.value.next ?? undefined },
+      arabic.missing()
+    )
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1603,12 +1643,13 @@ export async function updatePortfolioContent(
     if (!version.ok) return { success: false, error: version.error }
     const parsed = portfolioContentSchema.parse(input)
 
-    // Auto-fill blank Arabic fields from their English source (DeepL).
-    parsed.hero_description_ar = await fillArabic(
+    // Auto-fill blank Arabic fields from their English source (Workers AI).
+    const arabic = createArabicFiller(user.id)
+    parsed.hero_description_ar = await arabic.fill(
       parsed.hero_description,
       parsed.hero_description_ar
     )
-    parsed.portfolio_heading_ar = await fillArabic(
+    parsed.portfolio_heading_ar = await arabic.fill(
       parsed.portfolio_heading,
       parsed.portfolio_heading_ar
     )
@@ -1629,7 +1670,10 @@ export async function updatePortfolioContent(
       'portfolio_heading_ar',
     ])
     bumpSiteConfigCache()
-    return { success: true, updatedAt: version.value.next ?? undefined }
+    return withArabicMissing(
+      { success: true, updatedAt: version.value.next ?? undefined },
+      arabic.missing()
+    )
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1816,8 +1860,9 @@ export async function updateTopTicker(
       }))
       .filter((row) => row.tag.length > 0 || row.text.length > 0 || (row.tag2 ?? '').length > 0)
 
-    // Auto-fill blank Arabic fields in one strict batch: never English in an Arabic slot.
-    const { items, untranslated } = await fillTickerArabic(trimmed, translateBatchToArabicStrict)
+    // Auto-fill blank Arabic fields (strict, per-admin rate limit): never English in an Arabic slot.
+    const arabic = createArabicFiller(user.id)
+    const { items, untranslated } = await fillTickerArabic(trimmed, arabic.fillBatch)
 
     if (parsed.enabled && items.length === 0) {
       return {
@@ -2599,7 +2644,7 @@ export async function upsertLegalPage(
   raw: unknown
 ): Promise<ActionResult<LegalPage>> {
   try {
-    await assertAdmin()
+    const user = await assertAdmin()
     const parsed = legalPageSchema.safeParse(raw)
     if (!parsed.success)
       return { success: false, error: parsed.error.issues[0].message }
@@ -2607,9 +2652,10 @@ export async function upsertLegalPage(
     const supabase = await createClient()
     const { id, ...fields } = parsed.data
 
-    // Auto-fill blank Arabic fields from their English source (DeepL).
-    fields.title_ar = await fillArabic(fields.title, fields.title_ar)
-    fields.content_ar = await fillArabic(fields.content, fields.content_ar)
+    // Auto-fill blank Arabic fields from their English source (Workers AI).
+    const arabic = createArabicFiller(user.id)
+    fields.title_ar = await arabic.fill(fields.title, fields.title_ar)
+    fields.content_ar = await arabic.fill(fields.content, fields.content_ar)
 
     if (id) {
       const { data, error } = await supabase
@@ -2620,7 +2666,7 @@ export async function upsertLegalPage(
         .single()
       if (error) return { success: false, error: error.message }
       bumpLegalCache(parsed.data.slug)
-      return { success: true, data: data as LegalPage }
+      return withArabicMissing({ success: true, data: data as LegalPage }, arabic.missing())
     } else {
       const { data, error } = await supabase
         .from('legal_pages')
@@ -2629,7 +2675,7 @@ export async function upsertLegalPage(
         .single()
       if (error) return { success: false, error: error.message }
       bumpLegalCache(parsed.data.slug)
-      return { success: true, data: data as LegalPage }
+      return withArabicMissing({ success: true, data: data as LegalPage }, arabic.missing())
     }
   } catch (err) {
     console.error('[admin/legal] upsert failed', err)
@@ -2682,7 +2728,7 @@ export async function getFaqs(): Promise<Faq[]> {
 
 export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
   try {
-    await assertAdmin()
+    const user = await assertAdmin()
     const parsed = faqSchema.safeParse(raw)
     if (!parsed.success)
       return { success: false, error: parsed.error.issues[0].message }
@@ -2690,9 +2736,10 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
     const supabase = await createClient()
     const { id, ...fields } = parsed.data
 
-    // Auto-fill blank Arabic fields from their English source (DeepL).
-    fields.question_ar = await fillArabic(fields.question, fields.question_ar)
-    fields.answer_ar = await fillArabic(fields.answer, fields.answer_ar)
+    // Auto-fill blank Arabic fields from their English source (Workers AI).
+    const arabic = createArabicFiller(user.id)
+    fields.question_ar = await arabic.fill(fields.question, fields.question_ar)
+    fields.answer_ar = await arabic.fill(fields.answer, fields.answer_ar)
 
     if (id) {
       const { data, error } = await supabase
@@ -2703,7 +2750,7 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
         .single()
       if (error) return { success: false, error: error.message }
       bumpFaqCache()
-      return { success: true, data: data as Faq }
+      return withArabicMissing({ success: true, data: data as Faq }, arabic.missing())
     } else {
       const { data, error } = await supabase
         .from('faqs')
@@ -2712,7 +2759,7 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
         .single()
       if (error) return { success: false, error: error.message }
       bumpFaqCache()
-      return { success: true, data: data as Faq }
+      return withArabicMissing({ success: true, data: data as Faq }, arabic.missing())
     }
   } catch (err) {
     console.error('[admin/faq] upsert failed', err)

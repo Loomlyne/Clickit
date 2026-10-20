@@ -129,10 +129,7 @@ Command: `HOME=/Users/koss/.clickit-cloudflare npx wrangler secret put RESEND_AP
 Expected: "Success! Uploaded secret RESEND_API_KEY". (Contact and newsletter are not exercised on workers.dev; they are tested on local preview.)
 Then wait.
 
-**Step 19 [KOSS] - Google Translate key (admin Arabic fill)**
-Command: `HOME=/Users/koss/.clickit-cloudflare npx wrangler secret put GOOGLE_TRANSLATE_API_KEY --name clickit`
-Expected: "Success! Uploaded secret GOOGLE_TRANSLATE_API_KEY".
-Then wait.
+**Step 19 - removed (2026-10-20)**: admin Arabic fill uses the Workers AI binding `AI` (wrangler.jsonc, model `@cf/google/gemma-4-26b-a4b-it`); no secret needed. Nothing to type.
 
 ### Turnstile and Web Analytics
 
@@ -160,7 +157,7 @@ Then wait.
 
 **Step 24 [KOSS] - secret names read-back**
 Command: `HOME=/Users/koss/.clickit-cloudflare npx wrangler secret list --name clickit`
-Expected: names only: CRON_SECRET, GOOGLE_TRANSLATE_API_KEY, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY, TURNSTILE_SECRET_KEY. No values are shown.
+Expected: names only: CRON_SECRET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY, TURNSTILE_SECRET_KEY. No values are shown.
 Then wait.
 
 ### Media copy (reads Supabase Storage, writes R2 only; never deletes the source)

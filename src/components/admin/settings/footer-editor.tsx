@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
+import { useArabicMissingToast } from '@/components/admin/arabic-missing-toast'
 import Image from 'next/image'
 import { Loader2, Plus, Trash2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -31,6 +32,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
   const [v, setV] = useState<FooterContent>(initial)
   const [saving, setSaving] = useState(false)
   const t = useTranslations('admin.settings')
+  const warnArabicMissing = useArabicMissingToast()
   const version = useSharedRowVersion()
 
   const dirty = JSON.stringify(v) !== JSON.stringify(initial)
@@ -69,7 +71,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
     setSaving(false)
     if (result.success) {
       version.saved(expected, result.updatedAt)
-      toast.success(t('footerSaved'))
+      if (!warnArabicMissing(result)) toast.success(t('footerSaved'))
     } else toast.error(result.error ?? t('saveFailed'))
   }
 

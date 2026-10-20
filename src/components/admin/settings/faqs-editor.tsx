@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
+import { useArabicMissingToast } from '@/components/admin/arabic-missing-toast'
 import { Pencil, Plus, Trash2, Loader2, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -47,6 +48,7 @@ const emptyDraft = (nextOrder: number): Draft => ({
 
 export function FaqsEditor({ initial }: { initial: Faq[] }) {
   const t = useTranslations('admin.settings')
+  const warnArabicMissing = useArabicMissingToast()
   const tc = useTranslations('common')
   const [faqs, setFaqs] = useState<Faq[]>(initial)
   const [draft, setDraft] = useState<Draft | null>(null)
@@ -87,7 +89,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
         : [...prev, saved]
     )
     setDraft(null)
-    toast.success(draft.id ? t('faqUpdated') : t('faqCreated'))
+    if (!warnArabicMissing(result)) toast.success(draft.id ? t('faqUpdated') : t('faqCreated'))
   }
 
   async function onDelete() {

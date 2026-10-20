@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { useArabicMissingToast } from '@/components/admin/arabic-missing-toast'
 import { ChevronDown, RefreshCw } from 'lucide-react'
 import { useRouter } from '@/i18n/navigation'
 
@@ -195,6 +196,7 @@ export function ShowForm({
   const isEdit = !!show
   const router = useRouter()
   const t = useTranslations('admin.showForm')
+  const warnArabicMissing = useArabicMissingToast()
   const tCommon = useTranslations('common')
   const tErrors = useTranslations('errors')
   // The row's updated_at from the edit page's read; the save is checked against it.
@@ -275,7 +277,7 @@ export function ShowForm({
 
     if (result.success) {
       if (isEdit) version.saved(expected, result.updatedAt)
-      toast.success(isEdit ? t('showUpdated') : t('showCreated'))
+      if (!warnArabicMissing(result)) toast.success(isEdit ? t('showUpdated') : t('showCreated'))
       router.push(isEdit ? `/admin/shows/${show.id}` : '/admin')
     } else {
       toast.error(result.error || t('toastSaveFailed'))

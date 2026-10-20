@@ -5,9 +5,12 @@ import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare'
 import { buildCsp } from './src/lib/csp'
 import { getPublicMediaOrigin } from './src/lib/supabase-media'
 
-// OpenNext dev hook: exposes Cloudflare bindings to `next dev` only.
+// OpenNext dev hook: exposes Cloudflare bindings to `next dev` only. Remote
+// bindings stay off: the `AI` binding would otherwise open a remote Workers AI
+// session with whatever wrangler login the shell has (and spend neurons). In dev
+// the binding is present but its calls fail, so Arabic auto-fill leaves fields empty.
 if (process.env.NODE_ENV === 'development') {
-  initOpenNextCloudflareForDev()
+  initOpenNextCloudflareForDev({ remoteBindings: false })
 }
 
 const withBundleAnalyzer = bundleAnalyzer({

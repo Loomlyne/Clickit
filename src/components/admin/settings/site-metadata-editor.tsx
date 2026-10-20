@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
+import { useArabicMissingToast } from '@/components/admin/arabic-missing-toast'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,6 +24,7 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
   const [values, setValues] = useState<Values>(initial)
   const [saving, setSaving] = useState(false)
   const t = useTranslations('admin.settings')
+  const warnArabicMissing = useArabicMissingToast()
   const version = useSharedRowVersion()
 
   const dirty =
@@ -49,7 +51,7 @@ export function SiteMetadataEditor({ initial }: { initial: Values }) {
     setSaving(false)
     if (result.success) {
       version.saved(expected, result.updatedAt)
-      toast.success(t('siteMetadataSaved'))
+      if (!warnArabicMissing(result)) toast.success(t('siteMetadataSaved'))
     } else toast.error(result.error ?? t('saveFailed'))
   }
 

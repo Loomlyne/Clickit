@@ -1371,7 +1371,8 @@
       "loading": "جارٍ التحميل…",
       "noEpisodes": "لا توجد حلقات بعد",
       "noShows": "لا توجد برامج بعد",
-      "adminNavAria": "الإدارة"
+      "adminNavAria": "الإدارة",
+      "arabicAutoFillMissing": "تم الحفظ. تعذّرت الترجمة التلقائية لـ {count} من الحقول العربية؛ أدخلها يدويًا."
     },
     "heroMedia": {
       "desktopHero": "هيرو سطح المكتب",

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
+import { useArabicMissingToast } from '@/components/admin/arabic-missing-toast'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,6 +26,7 @@ type Values = {
 
 export function AuthPageEditor({ initial }: { initial: Values }) {
   const t = useTranslations('admin.settings')
+  const warnArabicMissing = useArabicMissingToast()
   const version = useSharedRowVersion()
   const [values, setValues] = useState<Values>(initial)
   const [saving, setSaving] = useState(false)
@@ -59,7 +61,7 @@ export function AuthPageEditor({ initial }: { initial: Values }) {
     setSaving(false)
     if (result.success) {
       version.saved(expected, result.updatedAt)
-      toast.success(t('authConfigSaved'))
+      if (!warnArabicMissing(result)) toast.success(t('authConfigSaved'))
     } else toast.error(result.error ?? t('saveFailed'))
   }
 
