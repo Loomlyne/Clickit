@@ -37,7 +37,13 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Owner-gated**: [OWNER] Supabase plan/backup check in the dashboard; [OWNER] approve each live migration dry-run.
 **Note**: SAFE-01, SAFE-02 and SAFE-04 must close before Phase 3's live migrations; SAFE-05 must close before Phase 3's NS change. SAFE-03 (CI) does not block Phase 2.
 **Research flag**: Find who owns the NS pair.
-**Plans**: TBD
+**Plans**: 4 plans (3 waves)
+
+Plans:
+- [ ] 01-01-PLAN.md — W1: migration guard script (scanner, applied-file rule, blob-SHA allow-list) + fixture tests + typecheck/guard scripts
+- [ ] 01-02-PLAN.md — W1: PR gate workflow (gate + migration-guard) and hand-started dry-run → approved apply workflow + text tests
+- [ ] 01-03-PLAN.md — W2: neutralise DROP block and seed migrations, seed.sql + seeding on, scratch-DB proof, allow-list SHAs pinned
+- [ ] 01-04-PLAN.md — W3: controller runbook (environments, secrets, ruleset, backup, first dry-run), full gate, hand-over, PR
 
 ### Phase 1.1: Admin Actions Hardening (INSERTED)
 **Goal**: Every admin server action in `src/app/[locale]/admin/actions.ts` validates its input with a schema, scopes ids to their parent, leaves an audit row for each destructive or renumbering write, and fails whole or not at all. Source: two read-only agent audits of all 66 actions (50 confirmed findings: 2 high, 19 medium, 29 low); see `.planning/research/ADMIN-ACTIONS-AUDIT-DRAFT.md`.
