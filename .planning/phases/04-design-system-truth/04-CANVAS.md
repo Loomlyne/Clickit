@@ -33,10 +33,10 @@ The repo is public, so this file names the canvas and holds no link. The link is
 | V2 | Home and show | 1280, 375 | live pages | built |
 | V3 | Watch page (YouTube rules) | 1280, 375, EN | reproduced #q8 G1-B (supersedes #q9) #q11 | built |
 | V4 | Arabic right-to-left | 1280, 375 | new | built |
-| A1 | Playlist import preview | 1280 (sheet 640), 375, EN + AR | reproduced Phase 6 #q1 | not built |
-| A2 | Episodes order and flags | 1280, 375 | reproduced Phase 6 #q13 | not built |
-| A3 | YouTube key setting | 1280, 375 | reproduced Phase 6 G6 | not built |
-| A4 | Inbox | 1280, 375, EN + AR | new | not built |
+| A1 | Playlist import preview | 1280 (sheet 640), 375, EN + AR | reproduced #q1 | built |
+| A2 | Episodes order and flags | 1280, 375 | reproduced #q13 | built |
+| A3 | YouTube key setting | 1280, 375 | reproduced G6 | built |
+| A4 | Inbox | 1280, 375, EN + AR | new | built |
 | E0 | Template shell | 600, 375, light + dark | Phase 5 05-q12-schemes | not built |
 | E1 | Sign-in code | 600, 375, light + dark | Phase 5 05-q12-schemes | not built |
 | E2 | Confirm signup | 600, 375, light + dark | Phase 5 05-q12-schemes | not built |
