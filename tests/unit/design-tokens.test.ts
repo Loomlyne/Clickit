@@ -50,7 +50,7 @@ function blocks(header: string): string[] {
 function decl(body: string, name: string): string | undefined {
   const re = new RegExp(`(?:^|[\\s;])${name.replace(/[-]/g, '\\-')}\\s*:\\s*([^;]+);`)
   const m = re.exec(body)
-  return m ? m[1].replace(/\s+/g, ' ').trim() : undefined
+  return m ? m[1].replace(/\s+/g, ' ').replace(/\( /g, '(').replace(/ \)/g, ')').trim() : undefined
 }
 
 const root = block(':root')

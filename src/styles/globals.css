@@ -102,9 +102,28 @@
     rgba(9, 9, 9, 0) 100%
   );
   --bloom-opacity: 0.22;
-  --shadow-soft: 0 24px 80px rgba(0, 0, 0, 0.38);
-  --shadow-panel:
-    0 10px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  /* Exact legacy values kept as tokens (Phase 4, no visible change) */
+  --ink-legacy-rgb: 10 10 10;
+  --ink-cinema-rgb: 8 8 12;
+  --ink-scrim-rgb: 4 6 10;
+  --primary-rgb: 255 204 0;
+  --live-dot: oklch(63.7% 0.237 25.331);
+  --scrim-nav: rgb(var(--ink-legacy-rgb) / 0.96);
+  --gradient-nav-fade: linear-gradient(
+    180deg,
+    rgb(var(--ink-legacy-rgb) / 0.95),
+    rgb(var(--ink-legacy-rgb) / 0.65)
+  );
+  --scrim-dialog: rgb(var(--ink-scrim-rgb) / 0.82);
+  --scrim-sheet: rgb(var(--ink-scrim-rgb) / 0.8);
+
+  /* Status tones (Phase 6 chips; same values as the brand safe tints) */
+  --status-success: var(--color-brand-green-safe);
+  --status-warning: var(--color-brand-orange-safe);
+  --status-danger: var(--color-brand-red-safe);
+  --status-neutral: var(--text-mute);
+  --status-neutral-line: var(--line-2);
 
   /* UI System aliases (--uis-*) for future UI System components */
   --uis-bg: var(--bg-0);
@@ -213,14 +232,45 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
+  --color-live-dot: var(--live-dot);
+
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-danger: var(--status-danger);
+  --color-status-neutral: var(--status-neutral);
+  --color-status-neutral-line: var(--status-neutral-line);
+
+  --color-surface-1: var(--bg-1);
+  --color-surface-2: var(--bg-2);
+  --color-surface-3: var(--bg-3);
+  --color-surface-4: var(--bg-4);
+
+  --color-text-primary: var(--text);
+  --color-text-secondary: var(--text-dim);
+  --color-text-muted: var(--text-mute);
+
+  /* Named radius roles — the UI System roles (:root --uis-r-*) */
+  --radius-chip: var(--uis-r-chip);
+  --radius-control: var(--uis-r-control);
+  --radius-shell: var(--uis-r-shell);
+  --radius-field: var(--uis-r-field);
+  --radius-card: var(--uis-r-card);
+  --radius-media: var(--uis-r-media);
+  --radius-panel: var(--uis-r-panel);
+}
+
+/* Standard radius scale (unchanged values) + hairline. Static so the vars exist
+   at runtime for plain CSS (admin.css uses var(--radius-md)). */
+@theme static {
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
   --radius-xl: 10px;
   --radius-2xl: 12px;
+  --radius-hairline: 1px;
 }
 
-@theme {
+@theme static {
   --color-brand-blue: #2c3569;
   --color-brand-purple: #9f54a0;
   --color-brand-green: #50a258;
@@ -234,15 +284,21 @@
   --color-brand-red-safe: #ff8b82;
   --color-brand-orange-safe: #ffb46e;
   --color-brand-yellow-safe: #f8d86f;
+}
 
-  --color-surface-1: #101010;
-  --color-surface-2: #191919;
-  --color-surface-3: #2A2A2A;
-  --color-surface-4: #424242;
-
-  --color-text-primary: #F4F4F4;
-  --color-text-secondary: #CCCCCC;
-  --color-text-muted: #A1A1A1;
+/* Named shadows. Static so they are always emitted to :root; the existing
+   shadow-[var(--shadow-soft)] call sites keep working. */
+@theme static {
+  --shadow-soft: 0 24px 80px rgba(0, 0, 0, 0.38);
+  --shadow-panel:
+    0 10px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-popover: 0 24px 80px rgba(0, 0, 0, 0.42);
+  --shadow-modal: 0 40px 120px rgba(0, 0, 0, 0.6);
+  --shadow-bar: 0 8px 32px -8px rgba(0, 0, 0, 0.65);
+  --shadow-inset-hairline: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-live-dot: 0 0 6px rgba(239, 68, 68, 0.9);
+  --shadow-cta-glow: 0 16px 40px rgba(255, 204, 0, 0.18);
+  --drop-shadow-splash: 0 24px 80px rgba(0, 0, 0, 0.55);
 }
 
 /* Arabic locale: LBC body, same as English. */
