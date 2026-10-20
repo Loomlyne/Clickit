@@ -20,45 +20,33 @@ Example: the watch page canvas, the admin canvas and the email page background a
 - **A (recommended).** #090909, as live today. The roadmap line is corrected to #090909. Two stray `#0a0a0a` uses in code snap to the token.
 - **B.** #0a0a0a. Every surface token moves one step; Phase 6's spec is updated to match.
 
-Answer:
-
-### Q2. Corner shapes — picture `mockups/04-q2.png`
+Answer: A (Koss, 2026-10-20, "all recommended")### Q2. Corner shapes — picture `mockups/04-q2.png`
 Example: the "Send code" button on the sign-in screen and the episode card under it.
 - **A (recommended).** Keep the live roles: buttons, chips and nav are full pills; fields 8px; cards 12px; thumbnails 11px; sheets and dialogs 16px. "8px base radius" means the field and base value.
 - **B.** 8px everywhere: buttons, chips, cards and sheets all become 8px. Every button on the live site changes, and Phase 6's signed pictures would need redoing.
 
-Answer:
-
-### Q3. Blue-era leftovers on the live site — picture `mockups/04-q3.png`
+Answer: A (Koss, 2026-10-20, "all recommended")### Q3. Blue-era leftovers on the live site — picture `mockups/04-q3.png`
 Example: open a season dropdown — its menu is blue-black #11151d; hover "Browse shows" on /portfolio — it turns indigo with an indigo glow.
 - **A (recommended).** Snap all three to the tokens: dropdown menus and toasts to #101010, the hover to the darker yellow #D7AD16 with a soft yellow glow. These are the only visible changes in this phase.
 - **B.** Leave them as they are and list them as allowed exceptions.
 
-Answer:
-
-### Q4. Category colours — picture `mockups/04-q4.png`
+Answer: A (Koss, 2026-10-20, "all recommended")### Q4. Category colours — picture `mockups/04-q4.png`
 The 15 live categories each have a colour the admins picked (for example Health & Wellness #00FFFB). It shows only as the small dot on each category pill. None is a brand colour.
 Example: Sports & Gaming keeps its bright green #00FF0D dot.
 - **A (recommended).** Category colours are content (like show artwork) and stay free; the colour picker stays. Everything else in the app takes its colours from one brand map (the 6 CIT colours plus their safe tints).
 - **B.** Only the 6 brand colours allowed; the 15 live categories are moved to the nearest one (a live write of 15 rows, your word first; several categories end up sharing a colour).
 
-Answer:
-
-### Q5. The in-app design-system page — picture `mockups/04-q5.png`
+Answer: A (Koss, 2026-10-20, "all recommended")### Q5. The in-app design-system page — picture `mockups/04-q5.png`
 Example: Issam opens Admin → Design system and sees the real colours, type, radii and buttons, drawn from the live CSS.
 - **A (recommended).** One read-only admin page at `/admin/design-system`, inside the admin area, so the admin guard refuses signed-out visitors and viewers (Phase 5's two-admin TOTP guard covers it automatically later). It is drawn from the live CSS variables, so it cannot drift.
 - **B.** No in-app page. The truth is DESIGN.md plus the Claude Design canvas; DS-01 and DS-04 are reworded.
 
-Answer:
-
-### Q6. Where the Claude Design boards live — picture `mockups/04-q6.png`
+Answer: A (Koss, 2026-10-20, "all recommended")### Q6. Where the Claude Design boards live — picture `mockups/04-q6.png`
 Example: Nejib's playlist import preview board sits next to the email-code sign-in board and the email templates.
 - **A (recommended).** A new "Clickit Story" Design canvas that installs the UI System design system with Clickit's values. Four groups: Foundations (colour + brand map, type EN + AR, radius + surfaces, components), Viewer (email-code sign-in, home + show, watch page that follows YouTube's rules, Arabic right-to-left), Admin (playlist import preview, inbox), Email (sign-in code, confirm / reset, welcome, new-episodes digest). Phase 6's signed import and player pictures are copied in unchanged.
 - **B.** Add the Clickit boards to the existing brand-neutral "UI System" canvas.
 
-Answer:
-
-### Q7. Email look — picture `mockups/04-q7.png`
+Answer: A (Koss, 2026-10-20, "all recommended")### Q7. Email look — picture `mockups/04-q7.png`
 One template serves every email. Mail apps cannot load LBC, so the text falls back to the system font; the logo is an image. (The "10 minutes" in the picture is a placeholder: the code expiry is a Phase 5 setting you set.)
 Example: a viewer asks for a sign-in code and gets the email in the picture.
 - **A (recommended).** Dark, like the site: #090909 page, #101010 card, yellow button with dark ink.
@@ -71,12 +59,10 @@ Example: Phase 5 can start coding sign-in as soon as Foundations, Viewer and Ema
 - **A (recommended).** Four signatures, one per board group (Foundations, Viewer, Admin, Email), each written in `04-GATE.md` with the date. A phase may start coding a screen once its group is signed.
 - **B.** One signature for the whole canvas; nothing in Phases 5-7 starts until all boards are signed.
 
-Answer:
-
-### Q9. LBC font in Claude Design (no picture: licence question)
+Answer: A (Koss, 2026-10-20, "all recommended")### Q9. LBC font in Claude Design (no picture: licence question)
 The canvas boards look right only if they use LBC. That means uploading the two LBC font files (400 and 700) into the private "Clickit Story" canvas.
 Example: the email-code sign-in board renders its title in LBC, as on the site.
 - **A (recommended, if the licence allows it).** Yes, the LBC licence allows the upload; the boards use LBC.
 - **B.** No upload; the boards use a system font stand-in, and type is checked against the live site instead.
 
-Answer:
+Answer: A — yes (Koss, 2026-10-20, "all recommended")

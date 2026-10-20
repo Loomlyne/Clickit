@@ -10,14 +10,14 @@
 
 | Q | Area | A (recommended, used for planning) | B | Koss |
 |---|------|-----------------------------------|---|------|
-| 1 | Page background | #090909 (live) | #0a0a0a (roadmap text) | pending |
-| 2 | Corner shapes | live roles: pill controls, 8/12/11/16 | 8px everywhere | pending |
-| 3 | Blue-era leftovers | snap to tokens (only visible change) | keep, list as exceptions | pending |
-| 4 | Category colours | free (content); one brand map for chrome | 6 brand colours only, live rewrite | pending |
-| 5 | In-app page | /admin/design-system, live CSS | none; DESIGN.md + canvas only | pending |
-| 6 | Canvas | new "Clickit Story" canvas installing UI System | append to UI System canvas | pending |
-| 7 | Email look | dark | light body, dark header | pending |
-| 8 | Signing | 4 group signatures | one signature | pending |
+| 1 | Page background | #090909 (live) | #0a0a0a (roadmap text) | A (2026-10-20) |
+| 2 | Corner shapes | live roles: pill controls, 8/12/11/16 | 8px everywhere | A (2026-10-20) |
+| 3 | Blue-era leftovers | snap to tokens (only visible change) | keep, list as exceptions | A (2026-10-20) |
+| 4 | Category colours | free (content); one brand map for chrome | 6 brand colours only, live rewrite | A (2026-10-20) |
+| 5 | In-app page | /admin/design-system, live CSS | none; DESIGN.md + canvas only | A (2026-10-20) |
+| 6 | Canvas | new "Clickit Story" canvas installing UI System | append to UI System canvas | A (2026-10-20) |
+| 7 | Email look | dark | light body, dark header | C (2026-10-20, via Phase 5 Q12) |
+| 8 | Signing | 4 group signatures | one signature | A (2026-10-20) |
 
 ## Claude's discretion (controller may override)
 Guard script in gate:local; named radius/shadow utilities; `white/NN` overlays allowed; token pin tests; avatar gradient to chart tokens.

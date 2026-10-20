@@ -1,7 +1,7 @@
 # Phase 4 — Design System Truth: gate for Koss
 
 Work session branch `claude/phase-04-design-system-truth-26dcc6`. Planning files only: no code, no database write, no deploy.
-Status 2026-10-20: discuss + UI contract + research + 11 plans done on the **recommended** answers. Nothing here is signed yet.
+Status 2026-10-20 18:33 CET: Koss answered "all recommended" in the Phase 4 session (Q1-Q6, Q8 = A; Q9 = yes); Q7 = C earlier via Phase 5 Q12. Plan gate (§2) and canvas signatures (§3) still open.
 
 How the controller records an answer: write the letter and date in the "Koss" column, e.g. `A (Koss, 2026-10-21)`. "All recommended" fills every row with A.
 
@@ -11,15 +11,15 @@ Full wording and examples: `04-DISCUSS-QUESTIONS.md`. Pictures: `mockups/04-q1.p
 
 | Q | Decision | A (recommended) | B | Picture | If B, plans that change | Koss |
 |---|----------|-----------------|---|---------|-------------------------|------|
-| 1 | Page background number | #090909, as live | #0a0a0a (roadmap text) | 04-q1.png | 04-01, 04-05, 04-06, 04-07, 04-09 | |
-| 2 | Corner shapes | live roles: pill buttons/chips, field 8, card 12, image 11, sheet 16 | 8px everywhere (every button changes; Phase 6 pictures redone) | 04-q2.png | 04-01, 04-04, 04-06, 04-07, 04-09..04-13 | |
-| 3 | Blue-era leftovers (dropdown #11151d, toast #10131a, /portfolio button hover indigo) | snap to the tokens (only visible changes of the phase) | keep them as listed exceptions | 04-q3.png | 04-01, 04-05, 04-13 | |
-| 4 | Category colours | stay free (content); one brand map for the app chrome | 6 brand colours only + live rewrite of 15 categories (your word) | 04-q4.png | 04-02, 04-03, 04-06 | |
-| 5 | In-app design-system page | read-only `/admin/design-system`, admin guard | no page; DESIGN.md + canvas only | 04-q5.png | 04-04 dropped; 04-06 rewords DS-01/DS-04 | |
-| 6 | Claude Design boards | new "Clickit Story" canvas installing UI System | add to the existing UI System canvas | 04-q6.png | 04-07 | |
+| 1 | Page background number | #090909, as live | #0a0a0a (roadmap text) | 04-q1.png | 04-01, 04-05, 04-06, 04-07, 04-09 | A (Koss, 2026-10-20) |
+| 2 | Corner shapes | live roles: pill buttons/chips, field 8, card 12, image 11, sheet 16 | 8px everywhere (every button changes; Phase 6 pictures redone) | 04-q2.png | 04-01, 04-04, 04-06, 04-07, 04-09..04-13 | A (Koss, 2026-10-20) |
+| 3 | Blue-era leftovers (dropdown #11151d, toast #10131a, /portfolio button hover indigo) | snap to the tokens (only visible changes of the phase) | keep them as listed exceptions | 04-q3.png | 04-01, 04-05, 04-13 | A (Koss, 2026-10-20) |
+| 4 | Category colours | stay free (content); one brand map for the app chrome | 6 brand colours only + live rewrite of 15 categories (your word) | 04-q4.png | 04-02, 04-03, 04-06 | A (Koss, 2026-10-20) |
+| 5 | In-app design-system page | read-only `/admin/design-system`, admin guard | no page; DESIGN.md + canvas only | 04-q5.png | 04-04 dropped; 04-06 rewords DS-01/DS-04 | A (Koss, 2026-10-20) |
+| 6 | Claude Design boards | new "Clickit Story" canvas installing UI System | add to the existing UI System canvas | 04-q6.png | 04-07 | A (Koss, 2026-10-20) |
 | 7 | Email look | dark, like the site | light body, dark header | 04-q7.png | 04-01, 04-06, 04-08 | C (Koss, 2026-10-20) |
-| 8 | How you sign the canvas | four signatures (Foundations, Viewer, Admin, Email) | one signature for all | no picture (process) | 04-07, 04-14 | |
-| 9 | LBC font licence | yes: the LBC licence allows uploading the two font files to a private Claude Design canvas | no: boards use a system-font stand-in and are reviewed against the live site for type | no picture (licence) | 04-07 | |
+| 8 | How you sign the canvas | four signatures (Foundations, Viewer, Admin, Email) | one signature for all | no picture (process) | 04-07, 04-14 | A (Koss, 2026-10-20) |
+| 9 | LBC font licence | yes: the LBC licence allows uploading the two font files to a private Claude Design canvas | no: boards use a system-font stand-in and are reviewed against the live site for type | no picture (licence) | 04-07 | yes (Koss, 2026-10-20) |
 
 Q7 note: answered as Phase 5 Q12 and relayed by the controller — emails follow the reader's colour scheme: light by default (black header, white body, yellow button) plus dark via `prefers-color-scheme: dark`. Phase 5 owns the templates and their picture; Phase 4 supplies email-safe hex tokens for both schemes (§6). Picture of the answer: `mockups/04-q7c.png` (light + dark). Not asked again.
 
