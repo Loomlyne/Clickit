@@ -1,7 +1,7 @@
 # Phase 4: Design System Truth - Context
 
 **Gathered:** 2026-10-20
-**Status:** SIGNED 2026-10-20 18:33 CET — Koss answered "all recommended" (D-01..D-06, D-08 = A; Q9 LBC upload = yes); D-07 = C (scheme-adaptive emails, answered as Phase 5 Q12). Plan gate and canvas signatures are separate (04-GATE.md §2-3).
+**Status:** SIGNED 2026-10-20 18:33 CET — Koss answered "all recommended" (D-01..D-05, D-08 = A; Q9 LBC upload = yes); D-07 = C (scheme-adaptive emails, answered as Phase 5 Q12). D-06 CHANGED by Koss later the same day (via the controller) to C: missing patterns go into the general UI System first. Open: D-09 (Q10) and D-10 (Q11). Plan gate and canvas signatures are separate (04-GATE.md §2-3).
 
 <domain>
 ## Phase Boundary
@@ -31,9 +31,14 @@ Not in this phase: building the OTP sign-in, emails, import or inbox screens in 
 - **D-05 (Q5, A — signed by Koss 2026-10-20):** One read-only page at `/[locale]/admin/design-system` inside the existing admin layout (guard: `app_config.admin_user_id`, redirect to `/watch`; Phase 5's `requireAdmin` + TOTP replaces it without changes here). It reads the CSS custom properties at runtime (`getComputedStyle`) for swatches, and renders LBC type scale (EN + AR), radius roles and the real `Button`/`Input`/`Badge` primitives. Linked from the admin sidebar. No `/design-system` top-level route is added back; DS-01/DS-04 wording is updated to `/admin/design-system`.
 
 ### Claude Design canvas
-- **D-06 (Q6, A — signed by Koss 2026-10-20):** A new Claude Design canvas "Clickit Story" (Artifact, Design type) that installs the published "UI System" design system (link in the local note /Users/koss/.clickit-checks/p4-ui-system-links.txt) with `UIS.Root primary="#ffcc00" accent="#ffcc00" neutral="#737373" mode="dark" roundness=50 pill field=8 surface="glass"` and LBC loaded from the canvas assets. Four groups: Foundations (colour + brand map, type EN + AR, radius + surfaces, components), Viewer (email-code sign-in incl. 6-digit entry and Arabic-Indic digits, home + show, watch page per YouTube RMF — nothing over the playing video, Arabic RTL of home + watch), Admin (playlist import preview, inbox), Email (sign-in code, confirm/reset/email-change, welcome, new-episodes digest, support auto-reply). Phase 6's latest signed pictures are reproduced, not redesigned: import sheet (#q1), stacked watch page (#q8), up-next as countdown in the control bar (G1-B, supersedes #q9 card), error card (#q11), episode order (#q13), editable YouTube key field (G6, supersedes #q15). The existing brand-neutral UI System canvas is not edited.
+- **D-06 (Q6, C — Koss 2026-10-20 via the controller; replaces his earlier A):** His words: "The UI system is general, so if those are missing from the UI system, that will make the design system more powerful. Add them, with the design system colors and style, and then implement those into the program, to the Clickit here." So: (1) every pattern Clickit needs that the UI System lacks is built first in Loomlyne/ui-system as a general part in the UI System's own colours and style, in its own branch, PR and gate (`04-UIS-TRACK.md`; list in D-09); (2) Clickit adopts the released parts with its theme (plan 04-15); (3) the private canvas "Clickit Story" (Artifact, Design type) installs the UI System design system at that release (link in the local note /Users/koss/.clickit-checks/p4-ui-system-links.txt) with `UIS.Root primary="#ffcc00" accent="#ffcc00" neutral="#737373" mode="dark" roundness=50 pill field=8 surface="glass"` and LBC (from the new own-font support, or canvas assets as before), and its boards are built from those parts. Groups: Foundations (colour + brand map, type EN + AR, radius + surfaces, components incl. the new parts), Viewer (email-code sign-in incl. 6-digit entry and Arabic-Indic digits, home + show, watch page per YouTube RMF — nothing over the playing video, Arabic RTL of home + watch), Admin (playlist import preview, episode order, YouTube key, inbox, admin authenticator), Email (sign-in code, confirm/reset/email-change, welcome, new-episodes digest, support auto-reply). Phase 5 and Phase 6 latest signed pictures stay the visual target and are reproduced, not redesigned: import sheet (#q1), stacked watch page (#q8), up-next as countdown in the control bar (G1-B, supersedes #q9 card), error card (#q11), episode order (#q13), editable YouTube key field (G6, supersedes #q15), Phase 5 sign-in (#q1) and admin authenticator (#q7). The brand-neutral UI System canvas gets one board per new general part in its default theme (done by the UI System track), never a Clickit board.
 - **D-07 (Q7, ANSWERED by Koss 2026-10-20 as Phase 5 Q12 — option C):** Emails follow the reader's system colour scheme: light by default (black header bar with the logo, white body/card, yellow #ffcc00 button with #090909 ink) and a dark version through `@media (prefers-color-scheme: dark)` that is black like the site (#090909 page, #101010 card). Phase 5 owns the email templates and their picture. Phase 4 supplies email-safe tokens for BOTH schemes as literal hex values (no CSS variables — mail apps drop them), in DESIGN.md and in one token module (e.g. `src/lib/email-tokens.ts`, allowlisted in the lint rule), so Phase 5 imports them. The canvas Email group shows Phase 5's signed email picture in both schemes, reproduced, not redesigned. Copy is Phase 5's.
 - **D-08 (Q8, A — signed by Koss 2026-10-20):** Koss signs four groups separately (Foundations, Viewer, Admin, Email) in `04-GATE.md` with date. A later phase may code a screen once its group is signed.
+
+### UI System additions (from D-06 = C)
+- **D-09 (Q10, OPEN — recommended A):** The parts added to the UI System first: CodeInput, SecretInput (eye on the right), CountdownBar, SelectableTable, ReorderList, Skeleton, TotpSetup, Inbox (A only; B adds it with Phase 7), and own font files in the engine (`type.fonts`). Already present and reused: Badge tones for status chips, Drawer for sheets (RTL start side checked), Dialog, Toast, Tabs, Table, Checkbox. Not general (stay in Clickit): the YouTube player area and the emails. Picture `mockups/04-q10.png`.
+- **D-10 (Q11, OPEN — recommended A):** Phase 6 keeps building from its signed pictures; once both land, a small follow-up swaps its own parts (up-next bar, key field, import table, order list) for the UI System parts pixel for pixel, recorded in `04-P6-ADDENDUM.md`. B: Phase 6 pauses its screen tasks until the UI System release.
+- Adoption (Claude's discretion, 04-15): Clickit installs `@ui-system/core` and `@ui-system/react` from the pinned GitHub release tarballs (public repo, no token; `package-lock.json` keeps the integrity hash), imports the parts' CSS once, and maps the extra `--uis-*` variables the parts read to existing Clickit tokens (status tones, soft fills) as exact values. Existing Clickit components are not replaced in Phase 4 (zero visible change outside the admin page); Phases 5-7 build their new screens with the UI System parts. The admin design-system page shows the parts in a "From the UI System" block.
 
 ### Claude's Discretion
 - Guard mechanism: a Node script `scripts/check-design-tokens.mjs` wired into `gate:local` (and the PR CI that runs `gate:local`), with an allowlist file for the token files, `src/lib/brand-colors.ts`, data-driven colours (categories, show artwork), and email templates.
@@ -53,7 +58,8 @@ Not in this phase: building the OTP sign-in, emails, import or inbox screens in 
 - `.planning/ROADMAP.md` §Phase 4 — goal, success criteria 1-4, owner gates
 - `.planning/REQUIREMENTS.md` — DS-01..DS-04 (lines 107-110)
 - `.planning/phases/04-design-system-truth/04-DISCUSS-QUESTIONS.md` — the 8 questions and recommended options
-- `.planning/phases/04-design-system-truth/mockups/04-q1.png` … `04-q7.png` and `04-mockups.html` — option pictures
+- `.planning/phases/04-design-system-truth/mockups/04-q1.png` … `04-q7.png` and `04-mockups.html` — option pictures; `04-q10.png` / `04-q10.html` — the UI System additions sheet (two themes)
+- `.planning/phases/04-design-system-truth/04-UIS-TRACK.md` — the UI System track brief (scope, rules, gate)
 
 ### Tokens and engine
 - `src/styles/globals.css` — live tokens (`:root`, `.dark`, `@theme inline`, `@theme`)
@@ -66,6 +72,7 @@ Not in this phase: building the OTP sign-in, emails, import or inbox screens in 
 ### Cross-phase contracts
 - Branch `phase-06-youtube-import-player`: `.planning/phases/06-youtube-import-and-player/06-UI-SPEC.md` — uses #090909, pill/8/12/11/16 radii, LBC 400/700, 11px minimum, `rounded-[12px]` / `rounded-[11px]` / `rounded-[16px]` bracket radii (conflict list in `04-GATE.md`)
 - Branch `phase-06-youtube-import-player`: `mockups/06-q1.png`, `06-q8.png`, `06-q11.png`, `06-q13.png`, `06-g1-b.png`, `06-g1-b-states.png`, `06-g6-key-*.png` — latest signed pictures to reproduce (G1-B and G6 supersede #q9 and #q15) in the canvas
+- Branch `claude/phase-05-accounts-and-email-61ece8`: `mockups/05-mockups.html` #q1 (sign-in, code boxes 46×54), #q7 (admin authenticator) — Clickit-theme targets for CodeInput, SecretInput, TotpSetup
 - Memory: `ui-system-is-the-repo` — "design system" = Loomlyne/ui-system + the Claude Design artifacts; UI System canvas the brand-neutral UI System canvas (link in the local note /Users/koss/.clickit-checks/p4-ui-system-links.txt)
 
 </canonical_refs>
@@ -101,7 +108,7 @@ Not in this phase: building the OTP sign-in, emails, import or inbox screens in 
 <deferred>
 ## Deferred Ideas
 
-- Generating `globals.css` from `ui.config.json` with the ui-system CLI (needs ui-system local-font support first; today the values were applied by hand and are pinned by tests).
+- Generating `globals.css` from `ui.config.json` with the ui-system CLI. The UI System track adds own-font support (D-09 #9), which removes the blocker; the switch itself stays deferred (values stay hand-applied and pinned by tests in Phase 4).
 - A light theme: not in scope (dark only).
 - Moving category colours to the brand map (Q4 B) — only if Koss picks it; it needs a live write.
 
@@ -110,4 +117,4 @@ Not in this phase: building the OTP sign-in, emails, import or inbox screens in 
 ---
 
 *Phase: 04-design-system-truth*
-*Context gathered: 2026-10-20 (recommended answers, pending Koss)*
+*Context gathered: 2026-10-20; D-01..D-05, D-07, D-08 signed; D-06 changed to C; D-09, D-10 open*
