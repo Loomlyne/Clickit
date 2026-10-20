@@ -28,7 +28,7 @@ Records in the Cloudflare zone at 11:40 UTC:
 
 | Name | Type | Value | Proxy | State |
 |---|---|---|---|---|
-| `www` | CNAME | `ba211fb55cf67415.vercel-dns-017.com` | **proxied (orange)** | wrong: must be DNS only, see 5a |
+| `www` | CNAME | `ba211fb55cf67415.vercel-dns-017.com` | DNS only (grey) | set grey by Koss 11:58 UTC |
 | `@` (apex) | AAAA | `100::` | proxied | placeholder for the redirect rule (11:52 UTC), see 5b |
 | `media` | Worker custom domain | `clickit-media` | managed | **live since 11:46:28 UTC** |
 
@@ -134,3 +134,4 @@ with the records above, and can take up to ~24 h to settle (Cloudflare NS TTL
   "HTTP to HTTPS" (templates) deployed. 11:54 checks: `https://clickitstory.ae/en`
   → 301 `https://www.clickitstory.ae/en` (path and query kept) → 200; `http://`
   → 301 to `https://`; `www` 200; `media` 200. No Vercel record added.
+- 11:59 `www` DNS only confirmed on brett and jen (CNAME to Vercel target); www 200, apex → www 200, media 200.
