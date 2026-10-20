@@ -83,6 +83,22 @@ What changed for a viewer:
 - Lighthouse scores are flat within run-to-run noise (±0.3 s LCP). The ~5 s mobile LCP floor is client JS (F7) plus the preloader (F6); both need the proposals below.
 
 
+## Lenis removed (Koss, 2026-10-20: "if there is Lenis scroll animation, remove it from all pages")
+
+- Removed the `SmoothScroll` (Lenis) provider from the viewer layout, every `data-lenis-prevent`, and the `lenis` package. Scrolling is native everywhere; no global `scroll-behavior: smooth`.
+- The navbar's hide/show uses one passive, rAF-throttled `scroll` listener with the same thresholds; scroll persistence uses `window.scrollY` / `window.scrollTo` with a `scrollHeight - innerHeight` clamp.
+- Client JS, sum of every `.next/static/chunks/*.js` (gzip -9): **834,231 → 827,984 bytes (−6.2 KB gz, −19.9 KB raw, 59 → 58 files)**. Lenis was loaded by the viewer layout, so the saving lands on every viewer page. Minified Lenis core + React adapter is ~6.0 KB gz (5.1 + 0.9). Lenis also ran a requestAnimationFrame loop on every frame while smoothing wheel scrolls on desktop; that main-thread work is gone too.
+- Click-through on a prod build (Playwright, en + ar, 1440 and 375 px), 66 + 4 checks:
+  - wheel scrolling works on home, hub, series
+  - the navbar hides on scroll down and shows on scroll up (and stays pinned on the landing page)
+  - the shorts overlay locks the page and restores the position on close
+  - the desktop user dropdown opens with its items
+  - the 375 px menu sheet opens without moving the page
+  - back from an episode restores the series scroll (900 → 900)
+  - the episode shell does not scroll the page
+  - no horizontal overflow
+  - The only failure was the known local artifact: supabase-js `getUser` "Failed to fetch" because the production CSP blocks `http://127.0.0.1:55321` from the browser.
+
 ## What is slow (step 2 findings)
 
 | # | Finding | Where | Safe to fix here? |

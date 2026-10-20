@@ -9,6 +9,7 @@ Branch `claude/perf-skeletons-6f6fc9`, base `origin/main` cfbc8fb, then merged w
   - `/watch/[episodeId]`: resume point joins the watchlist/like/progress wave (one round trip fewer).
   - Hero carousel: only slide 1 gets `priority`; the other slides load eager at normal priority (`cinematic-backdrop.tsx` `priority` prop, `hero-slide.tsx`, `hero-banner.tsx`).
 - `5233f43` feat(viewer): new `src/components/skeletons/viewer-skeletons.tsx` (Hub, Series, MyList, Watch skeletons), `.skeleton-bone` in `globals.css` (token gradient, shimmer, mirrored in RTL, static for reduce-motion). The `loading.tsx` files for watch hub / browse / viewer root, series, my-list and episode render these.
+- `05ae2b8` perf(viewer): Lenis removed (Koss's instruction via the controller). No `SmoothScroll` provider, no `data-lenis-prevent`, no `lenis` package. The navbar hide/show runs on a native passive rAF-throttled scroll listener (same thresholds and mount sync), and scroll persistence uses `window.scrollY`/`scrollTo`. Client JS −6.2 KB gz total. `git grep -i lenis -- src package.json package-lock.json` returns nothing.
 - `7184890` docs: `.planning/perf/` (BASELINE.md, signed picture + mockup).
 - No admin, next.config, open-next/wrangler, workers/, proxy, auth/Turnstile/BotID or upload file touched.
 
@@ -23,11 +24,24 @@ Run 2026-10-20 14:20:37–14:21:02 on d26c5a5 (after the merge):
 - `npm run gate:local`: exit 0. Lint 0 errors, 17 warnings (pre-existing). Unit tests 451/451 pass. `next build` exit 0 (59 pages; env from the gitignored `.env.local`, local stack).
 - Visual click-through (prod build, en + ar, 375 px and 1440 px; watch, series, episode, my-list, profile): all four skeletons render with shimmer and the status label, RTL anchors right, no horizontal overflow, no React/hydration errors. The only console errors are local environment artifacts: CSP blocking http 127.0.0.1:55321, `_vercel` scripts, 400 from the local favicon/og through next/image, one ytimg 404.
 
+Lenis removal, re-run 2026-10-20 14:37:19–14:37:43 on 28ed36e (after merging origin/main 2f56e55):
+- `npx tsc --noEmit` exit 0.
+- `npm run gate:local` exit 0: lint 0 errors / 17 warnings, unit tests 458/458, build OK.
+- Click-through (Playwright on the prod build, en + ar, 1440 + 375 px; logs `/Users/koss/.clickit-checks/perf-ct.log` and `perf-ct-sheet.log`): 66/70 checks pass. Covered:
+  - home, hub, series wheel scroll
+  - navbar hide/show
+  - shorts overlay lock and restore
+  - user dropdown (desktop) and menu sheet (375 px)
+  - back restores the series scroll
+  - episode shell
+  - no horizontal overflow
+  The 4 failures are the same local CSP artifact (supabase-js getUser "Failed to fetch", browser blocked from http://127.0.0.1:55321).
+
 ## NOT verified
 - Hero image priority fix: local data has no show artwork, so not measurable; check on live data after deploy.
 - Real Worker→Supabase latency (only a fixed +40 ms local proxy).
 - Playwright e2e not run. Lighthouse on the live site not run (local only, by rule).
-- Click-through was done before the merge of d517ddc (admin-only changes merged; viewer files unchanged).
+- Real touch devices (iOS Safari momentum, Android) not tried: Playwright used mouse wheel only.
 
 ## Local side effects
 - One local-only test viewer on the shared `_Clickit` stack: `perf-lighthouse@clickit.local` ("Perf Lighthouse"), created by anon sign-up for signed-in Lighthouse runs. Credentials outside the repo (`/Users/koss/.clickit-checks/perf-tools/test-user.env`). No reset, no stop, no other writes.
@@ -47,7 +61,10 @@ Run 2026-10-20 14:20:37–14:21:02 on d26c5a5 (after the merge):
 6. Open an episode (/en/watch/<id>) on Slow 4G → black player with a quiet play mark, top bar and bottom tray bones; no grey flash.
 7. macOS Settings → Accessibility → Display → Reduce motion on, repeat step 1 → bones are static grey, no shimmer.
 8. VoiceOver on, repeat step 1 → "Loading" announced once.
-9. Open an episode, then a show page, normal network → everything loads as before (resume point, like, My List state correct).
+9. Scroll /en/watch with a mouse wheel and a trackpad → native scrolling (no glide after you stop), navbar slides away going down and comes back going up; same in /ar.
+10. Open a show, scroll down, open an episode, press Back → same scroll position on the show page.
+11. Open a short from the hub, scroll the wheel → the page behind does not move; close → same place on the page.
+12. Open an episode, then a show page, normal network → everything loads as before (resume point, like, My List state correct).
 
 ## PR
 https://github.com/Loomlyne/Clickit/pull/25 (branch `claude/perf-skeletons-6f6fc9`). No merge, no deploy from this session.
