@@ -125,7 +125,7 @@ Plans:
 - [x] 04-03-PLAN.md — W3: [Q4] one brand map (D-04); consumers; parity test; gate (W1-W3)
 - [x] 04-04-PLAN.md — W4: [Q1/Q2/Q5] admin-only /admin/design-system page, sidebar link, EN+AR copy, access pins
 - [x] 04-05-PLAN.md — W4: [Q1/Q3] D-03 snaps (select at /98, toaster, /portfolio CTA) + D-01 literals
-- [ ] 04-07-PLAN.md — W4: [Q1/Q2/Q6/Q8, Q7=C, Q9=yes; orchestrator] canvas spike + Foundations + Viewer boards
+- [x] 04-07-PLAN.md — W4: [Q1/Q2/Q6/Q8, Q7=C, Q9=yes; orchestrator] canvas spike + Foundations + Viewer boards
 - [ ] 04-06-PLAN.md — W5: [Q1/Q2/Q4/Q5, Q7=C] DESIGN.md (+ two-scheme email tokens) + parity test; wording; 04-P6-ADDENDUM.md; gate (W4)
 - [ ] 04-08-PLAN.md — W5: [orchestrator] canvas Admin boards + Email boards from Phase 5's signed picture (both schemes)
 - [ ] 04-09-PLAN.md — W6: [Q1/Q2] merge main; codemod 1/5 (UI primitives, chrome); gate (W5-W6)
