@@ -15,7 +15,8 @@ interface UseLikesReturn {
 export function useLikes(
   showId: string,
   initialLiked: boolean,
-  userId: string | null
+  userId: string | null,
+  opts?: { onError?: (message: string) => void }
 ): UseLikesReturn {
   const [isLiked, setIsLiked] = useState(initialLiked)
   const [isLoading, setIsLoading] = useState(false)
@@ -23,6 +24,17 @@ export function useLikes(
   const router = useRouter()
   const locale = useLocale()
   const isArabic = locale === 'ar'
+  const onError = opts?.onError
+
+  // Watch-page callers pass onError so nothing toasts over the video; every
+  // other page keeps the toast.
+  const reportError = useCallback(
+    (message: string) => {
+      if (onError) onError(message)
+      else toast.error(message)
+    },
+    [onError]
+  )
 
   const toggle = useCallback(async () => {
     if (!userId || busyRef.current) {
@@ -52,19 +64,19 @@ export function useLikes(
           router.push(`/auth?next=${encodeURIComponent(window.location.pathname)}`)
           return
         }
-        toast.error(prev
+        reportError(prev
           ? (isArabic ? 'تعذّر إلغاء الإعجاب' : 'Failed to unlike')
           : (isArabic ? 'تعذّر الإعجاب' : 'Failed to like'))
       }
     } catch (err) {
       console.error('Like network error:', err)
       setIsLiked(prev)
-      toast.error(isArabic ? 'خطأ في الشبكة — حاول مجدداً' : 'Network error — please try again')
+      reportError(isArabic ? 'خطأ في الشبكة — حاول مجدداً' : 'Network error — please try again')
     } finally {
       setIsLoading(false)
       busyRef.current = false
     }
-  }, [showId, userId, isLiked, router, isArabic])
+  }, [showId, userId, isLiked, router, isArabic, reportError])
 
   return { isLiked, toggle, isLoading }
 }

@@ -79,7 +79,7 @@ test('watch-actions: share swaps to Check for 2000 ms and announces', () => {
   assert.match(c, /\bCheck\b/, 'Check icon')
   assert.match(c, /2000/, '2 s swap')
   assert.match(c, /navigator\.share/)
-  assert.match(c, /navigator\.clipboard\.writeText/)
+  assert.match(c, /navigator\.clipboard\s*\.writeText/)
   assert.match(c, /t\('linkCopied'\)/, 'label and announcement use linkCopied')
   assert.match(c, /announce\(t\('linkCopied'\)\)/)
 })
