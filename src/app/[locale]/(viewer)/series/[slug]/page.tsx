@@ -211,11 +211,11 @@ export default async function SeriesDetailPage({ params }: Props) {
                       {c.name.slice(0, 2).toUpperCase()}
                     </div>
                   )}
-                  <div className="truncate text-[13px] font-medium">
+                  <div className="truncate text-[14px] font-medium">
                     {c.name}
                   </div>
                   {c.role && (
-                    <div className="mono truncate text-[10px] text-[var(--text-mute)]">
+                    <div className="mono truncate text-[var(--text-mute)]">
                       {c.role}
                     </div>
                   )}
@@ -230,18 +230,16 @@ export default async function SeriesDetailPage({ params }: Props) {
         <div className="mx-auto max-w-7xl">
           {viewSeasons.length === 0 ? (
             <div className="py-16">
-              <p className="text-[11px] font-normal tracking-[0.28em] text-white/38 uppercase">
-                {t('seasonsLabel')}
-              </p>
-              <h2 className="font-display mt-2 text-3xl font-semibold text-white">
+              <p className="label">{t('seasonsLabel')}</p>
+              <h2 className="font-display mt-2 text-3xl font-semibold text-[var(--text)]">
                 {t('emptyEpisodesHeading')}
               </h2>
-              <p className="mt-2 text-white/50">
+              <p className="mt-2 text-[var(--text-dim)]">
                 {t('emptyEpisodesDescription')}
               </p>
               <Link
                 href="/watch"
-                className="mt-4 inline-flex items-center text-sm text-white/60 transition-colors hover:text-white"
+                className="mt-2 inline-flex min-h-11 items-center text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]"
               >
                 {t('comingSoonEyebrow')} &rarr;
               </Link>
@@ -261,7 +259,15 @@ export default async function SeriesDetailPage({ params }: Props) {
       {/* Reviews */}
       <div className="mt-12 px-6 md:px-12">
         <div className="mx-auto max-w-7xl">
-          <ReviewComposer showId={dbShow.id} userId={user?.id ?? null} />
+          <ReviewComposer
+            showId={dbShow.id}
+            userId={user?.id ?? null}
+            userName={
+              (user?.user_metadata?.display_name as string | undefined) ??
+              user?.email?.split('@')[0] ??
+              null
+            }
+          />
         </div>
       </div>
 

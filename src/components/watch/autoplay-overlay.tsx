@@ -46,10 +46,10 @@ export function AutoplayOverlay({
     <div className="absolute inset-0 z-20 flex items-end justify-between bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 max-sm:flex-col max-sm:items-stretch max-sm:gap-4 md:p-6">
       {/* Left column - next episode info */}
       <div className="flex flex-col gap-2">
-        <span className="text-xs font-medium tracking-widest text-white/50 uppercase">
+        <span className="text-xs font-medium tracking-widest text-[var(--text-mute)] uppercase">
           {t('nextEpisode')}
         </span>
-        <span className="text-sm text-white/70">
+        <span className="text-sm text-[var(--text-dim)]">
           <Tr
             k="seasonEpisodeShort"
             values={{
@@ -61,7 +61,7 @@ export function AutoplayOverlay({
         <span className="text-lg font-semibold text-white">
           {nextEpisode.title}
         </span>
-        <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs text-white/70">
+        <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs text-[var(--text-dim)]">
           {t('autoplayCountdown', { seconds: countdown })}
         </span>
       </div>
@@ -70,7 +70,7 @@ export function AutoplayOverlay({
       <div className="flex flex-col items-end gap-2 max-sm:w-full max-sm:flex-row max-sm:items-stretch">
         <button
           onClick={onPlayNow}
-          className="rounded-full bg-white px-6 py-2 text-sm font-semibold text-black transition-colors duration-200 hover:bg-white/90 max-sm:flex-1"
+          className="min-h-11 rounded-full bg-[var(--primary)] px-6 text-sm font-semibold text-[var(--primary-foreground)] transition-colors duration-200 hover:bg-white max-sm:flex-1"
         >
           {t('autoplayPlayNow')}
         </button>
@@ -79,7 +79,7 @@ export function AutoplayOverlay({
             if (intervalRef.current) clearInterval(intervalRef.current)
             onCancel()
           }}
-          className="rounded-full border border-white/20 px-4 py-2 text-sm text-white/70 transition-all duration-200 hover:border-white/40 hover:text-white max-sm:flex-1"
+          className="min-h-11 rounded-full border border-[var(--line-2)] px-4 text-sm text-[var(--text)] transition-all duration-200 hover:bg-white/[0.06] max-sm:flex-1"
         >
           {t('autoplayCancelButton')}
         </button>

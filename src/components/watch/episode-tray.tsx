@@ -44,6 +44,7 @@ export function EpisodeTray({
   onEpisodeSelect,
 }: EpisodeTrayProps) {
   const t = useTranslations('watch')
+  const tEpisode = useTranslations('episode')
   const brandColor = BRAND_COLOR_HEX[show.brandColor] ?? '#2C3569'
   const activeEpisodes = episodesBySeason[activeSeasonId] ?? []
   const isTrayRaised = activeSnapPoint === WATCH_TRAY_SNAP_POINTS[1]
@@ -71,10 +72,10 @@ export function EpisodeTray({
         <Drawer.Content
           onMouseEnter={() => onSnapPointChange(WATCH_TRAY_SNAP_POINTS[1])}
           onMouseLeave={() => onSnapPointChange(WATCH_TRAY_SNAP_POINTS[0])}
-          className="fixed inset-x-0 bottom-0 z-30 flex h-[95dvh] max-h-[95dvh] flex-col rounded-t-[8px] border border-white/10 bg-black/92 text-white shadow-2xl backdrop-blur-xl outline-none"
+          className="fixed inset-x-0 bottom-0 z-30 flex h-[95dvh] max-h-[95dvh] flex-col rounded-t-[16px] border border-[var(--line)] bg-[var(--bg-1)]/95 text-[var(--text)] shadow-2xl backdrop-blur-xl outline-none"
         >
           <div className="flex min-h-0 flex-1 flex-col">
-            <div className="flex min-h-[72px] items-center gap-4 border-b border-white/10 bg-black/80 px-4 py-3 backdrop-blur-xl sm:px-8">
+            <div className="flex min-h-[72px] items-center gap-4 border-b border-[var(--line)] bg-[var(--bg-1)]/80 px-4 py-3 backdrop-blur-xl sm:px-8">
               <div className="flex max-w-[34vw] shrink-0 gap-2 overflow-x-auto pb-1 sm:max-w-none">
                 {seasons.map((season) => (
                   <button
@@ -82,14 +83,17 @@ export function EpisodeTray({
                     type="button"
                     onClick={() => onSeasonChange(season.id)}
                     className={cn(
-                      'h-10 shrink-0 rounded-full border px-3 font-mono text-xs transition',
+                      'h-11 shrink-0 rounded-full border px-4 font-mono text-xs transition',
                       activeSeasonId === season.id
-                        ? 'border-white bg-white text-black'
-                        : 'border-white/10 bg-white/5 text-white/55 hover:bg-white/10 hover:text-white'
+                        ? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--primary-foreground)]'
+                        : 'border-[var(--line)] bg-white/5 text-[var(--text-dim)] hover:bg-white/10 hover:text-[var(--text)]'
                     )}
                     aria-pressed={activeSeasonId === season.id}
                   >
-                    <Tr k="seasonShort" values={{ season: season.seasonNumber }} />
+                    <Tr
+                      k="seasonShort"
+                      values={{ season: season.seasonNumber }}
+                    />
                   </button>
                 ))}
               </div>
@@ -99,7 +103,7 @@ export function EpisodeTray({
                   <Drawer.Title className="truncate text-lg font-semibold tracking-normal">
                     {show.title}
                   </Drawer.Title>
-                  <Drawer.Description className="truncate text-sm text-white/50">
+                  <Drawer.Description className="truncate text-sm text-[var(--text-mute)]">
                     {currentEpisode.title}
                   </Drawer.Description>
                 </div>
@@ -112,7 +116,7 @@ export function EpisodeTray({
                         : WATCH_TRAY_SNAP_POINTS[1]
                     )
                   }
-                  className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 hover:text-white"
+                  className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--line)] bg-white/5 text-[var(--text-dim)] transition hover:bg-white/10 hover:text-[var(--text)]"
                   aria-label={isTrayRaised ? t('lowerTray') : t('raiseTray')}
                 >
                   <ChevronUp
@@ -146,10 +150,10 @@ export function EpisodeTray({
                         episode.status !== 'published' || !episode.youtubeId
                       }
                       className={cn(
-                        'group flex h-fit w-[260px] shrink-0 flex-col rounded-[8px] border p-0 text-left transition sm:w-[360px] md:w-[400px]',
+                        'group flex h-fit w-[260px] shrink-0 flex-col rounded-[12px] border p-0 text-start transition sm:w-[360px] md:w-[400px]',
                         isCurrent
-                          ? 'border-white/35 bg-white/12'
-                          : 'border-transparent bg-transparent hover:border-white/12',
+                          ? 'border-[var(--primary)] bg-white/[0.06]'
+                          : 'border-transparent bg-transparent hover:border-[var(--line-2)]',
                         (episode.status !== 'published' ||
                           !episode.youtubeId) &&
                           'cursor-not-allowed opacity-45'
@@ -160,7 +164,7 @@ export function EpisodeTray({
                         brandColor={brandColor}
                         title={episode.title}
                         imageUrl={thumbnailUrl}
-                        className="w-full rounded-[16px]"
+                        className="w-full rounded-[11px]"
                       >
                         <div className="flex h-full items-center justify-center bg-black/20 opacity-0 transition group-hover:opacity-100">
                           <span className="flex size-12 items-center justify-center rounded-full bg-black/65">
@@ -168,15 +172,17 @@ export function EpisodeTray({
                           </span>
                         </div>
                         {episode.duration && (
-                          <div className="absolute right-3 bottom-3 rounded-full bg-black/75 px-2 py-1 text-sm font-semibold text-white">
-                            {episode.duration}:00
+                          <div className="absolute end-3 bottom-3 rounded-full bg-black/75 px-2.5 py-1 text-xs font-semibold text-white">
+                            {tEpisode('minutesAbbr', {
+                              duration: episode.duration,
+                            })}
                           </div>
                         )}
                       </ShowArt>
 
                       <span className="mt-4 flex min-w-0 flex-col px-1 pb-2">
                         <span className="flex min-w-0 items-center gap-2">
-                          <span className="rounded-full bg-white/10 px-2 py-0.5 font-mono text-[10px] text-white/55">
+                          <span className="rounded-full bg-white/10 px-2 py-0.5 font-mono text-[11px] text-[var(--text-dim)]">
                             <Tr
                               k="seasonEpisodeShort"
                               values={{
@@ -189,15 +195,15 @@ export function EpisodeTray({
                             />
                           </span>
                           {isCurrent && (
-                            <span className="rounded-full bg-white px-2 py-0.5 font-mono text-[10px] text-black">
+                            <span className="rounded-full bg-[var(--primary)] px-2 py-0.5 font-mono text-[11px] text-[var(--primary-foreground)]">
                               {t('nowPlayingBadge')}
                             </span>
                           )}
                         </span>
-                        <span className="mt-2 truncate text-sm font-medium text-white">
+                        <span className="mt-2 truncate text-sm font-medium text-[var(--text)]">
                           {episode.title}
                         </span>
-                        <span className="mt-1 line-clamp-1 text-xs text-white/45">
+                        <span className="mt-1 line-clamp-1 text-xs text-[var(--text-mute)]">
                           {episode.description}
                         </span>
                         {!progress?.completed && progress?.progressPercent ? (

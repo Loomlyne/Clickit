@@ -56,7 +56,9 @@ export default async function WatchPage({
     getShortsForBrowse(),
     getIsMobile(),
     getCategoryRails(locale),
-    categorySlug ? getCategoryRailBySlug(categorySlug, locale) : Promise.resolve(null),
+    categorySlug
+      ? getCategoryRailBySlug(categorySlug, locale)
+      : Promise.resolve(null),
     getFirstEpisodesForShows(featured.map((s) => s.id)),
     getTranslations('watch'),
   ])
@@ -124,19 +126,16 @@ export default async function WatchPage({
       )}
 
       {activeCategory && (
-        <section className="px-10 pt-6">
-          <div
-            className="flex flex-col gap-3 rounded-[12px] border border-[var(--line)] bg-[var(--bg-2)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between"
-            style={
-              activeCategory.color
-                ? {
-                    borderLeftColor: activeCategory.color,
-                    borderLeftWidth: '3px',
-                  }
-                : undefined
-            }
-          >
-            <div>
+        <section className="px-4 pt-6 sm:px-10">
+          <div className="flex flex-col gap-3 rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              {activeCategory.color && (
+                <span
+                  aria-hidden
+                  className="size-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: activeCategory.color }}
+                />
+              )}
               <h2 className="font-display text-[24px]">
                 {locale === 'ar'
                   ? activeCategory.nameAr
@@ -166,7 +165,7 @@ export default async function WatchPage({
       ))}
 
       {categorySlug && !activeCategory && (
-        <section className="px-10 pt-8">
+        <section className="px-4 pt-8 sm:px-10">
           <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-2)] px-5 py-6 text-center">
             <div className="mono mb-2 text-[var(--text-mute)]">
               {t('categoryNotFound')}

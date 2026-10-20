@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { toast } from 'sonner'
+import { User } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 
 interface Review {
@@ -18,9 +20,14 @@ interface Review {
 interface ReviewComposerProps {
   showId: string
   userId: string | null
+  userName?: string | null
 }
 
-export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
+export function ReviewComposer({
+  showId,
+  userId,
+  userName,
+}: ReviewComposerProps) {
   const t = useTranslations('reviews')
   const locale = useLocale()
   const dateLocale = locale === 'ar' ? 'ar-AE' : 'en-US'
@@ -113,6 +120,11 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
   }
 
   const activeStars = hoverStars || draftStars
+  const myName =
+    reviews.find((r) => r.user_id === userId)?.profiles?.display_name ||
+    userName ||
+    ''
+  const myInitials = myName ? myName.slice(0, 2).toUpperCase() : null
 
   return (
     <div>
@@ -127,8 +139,8 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
       {userId && (
         <div className="mb-8 rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-5">
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--primary)] font-[family-name:var(--font-mono)] text-xs font-medium text-[var(--primary-foreground)]">
-              K
+            <div className="flex size-9 items-center justify-center rounded-full bg-[var(--primary)] font-[family-name:var(--font-mono)] text-xs font-medium text-[var(--primary-foreground)]">
+              {myInitials ?? <User className="size-4" aria-hidden />}
             </div>
             <div className="flex-1">
               <div className="text-sm font-medium">{t('yourReview')}</div>
@@ -143,7 +155,8 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
             {[1, 2, 3, 4, 5].map((n) => (
               <button
                 key={n}
-                className="p-0.5 transition-colors"
+                type="button"
+                className="focus-visible:ring-ring flex size-11 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 onMouseEnter={() => setHoverStars(n)}
                 onClick={() => setDraftStars(n)}
                 aria-label={t('starsAria', { n })}
@@ -170,7 +183,7 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
           </div>
 
           <textarea
-            className="w-full resize-none rounded-[16px] border border-[var(--line)] bg-[var(--bg-0)] px-3 py-2.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--primary)]"
+            className="w-full resize-none rounded-[8px] border border-[var(--line)] bg-[var(--bg-0)] px-3 py-2.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--primary)]"
             placeholder={t('composerPlaceholder')}
             value={draftText}
             onChange={(e) => setDraftText(e.target.value)}
@@ -179,18 +192,22 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
           />
 
           {submitError && (
-            <div className="mt-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+            <div
+              className="mt-3 rounded-lg border border-[var(--destructive)] bg-[var(--destructive)]/10 px-3 py-2 text-sm text-[var(--text)]"
+              role="alert"
+            >
               {submitError}
             </div>
           )}
 
           <div className="mt-3 flex items-center justify-between">
-            <span className="mono text-[11px] text-[var(--text-mute)]">
+            <span className="mono text-[var(--text-mute)]">
               {draftText.length} / 600
             </span>
             <div className="flex gap-2">
-              <button
-                className="rounded-full border border-[var(--line-2)] px-3 py-1.5 text-[12.5px] text-[var(--text)] transition-colors hover:bg-white/[0.04] disabled:opacity-40"
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => {
                   setDraftStars(0)
                   setDraftText('')
@@ -198,21 +215,24 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
                 disabled={!draftText && !draftStars}
               >
                 {t('clear')}
-              </button>
-              <button
-                className="rounded-full bg-[var(--primary)] px-3 py-1.5 text-[12.5px] font-medium text-[var(--primary-foreground)] transition-colors hover:bg-white disabled:opacity-40"
+              </Button>
+              <Button
+                size="sm"
                 onClick={submitReview}
                 disabled={!draftText.trim() || draftStars === 0 || submitting}
               >
                 {submitting ? t('posting') : t('postReview')}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
 
       {loadError && (
-        <div className="mb-5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+        <div
+          className="mb-5 rounded-lg border border-[var(--destructive)] bg-[var(--destructive)]/10 px-4 py-3 text-sm text-[var(--text)]"
+          role="alert"
+        >
           {t('loadError', { error: loadError ?? '' })}
         </div>
       )}
@@ -227,7 +247,7 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
           return (
             <div
               key={r.id}
-              className={`border-t border-[var(--line)] py-5 ${isMine ? 'border-s-2 border-s-[var(--primary)] ps-4' : ''}`}
+              className={`border-t border-[var(--line)] py-5 ${isMine ? 'rounded-[12px] border-transparent bg-[var(--bg-1)] px-4' : ''}`}
             >
               <div className="mb-2 flex items-start justify-between">
                 <div className="flex items-center gap-3">
@@ -251,12 +271,12 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
                     <div className="text-[13px] font-medium">
                       {name}
                       {isMine && (
-                        <span className="mono ms-2 text-[10px] text-[var(--primary)]">
+                        <span className="mono ms-2 text-[var(--primary)]">
                           {t('yoursBadge')}
                         </span>
                       )}
                     </div>
-                    <div className="mono text-[10px] text-[var(--text-mute)]">
+                    <div className="mono text-[var(--text-mute)]">
                       {new Date(r.created_at).toLocaleDateString(dateLocale, {
                         month: 'short',
                         year: 'numeric',
@@ -264,7 +284,11 @@ export function ReviewComposer({ showId, userId }: ReviewComposerProps) {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-0.5 text-[var(--primary)]">
+                <div
+                  role="img"
+                  aria-label={t('starsAria', { n: r.stars })}
+                  className="flex items-center gap-0.5 text-[var(--primary)]"
+                >
                   {[...Array(5)].map((_, j) => (
                     <svg
                       key={j}
