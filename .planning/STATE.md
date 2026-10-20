@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-20T00:46:09.831Z"
+last_updated: "2026-10-20T10:37:22.734Z"
 last_activity: 2026-10-20
 progress:
   total_phases: 9
@@ -58,6 +58,7 @@ Progress: [█████████░] 92%
 | Phase 01.1 P10 | 25min | 3 tasks | 4 files |
 | Phase 01.1 P11 | 30min | 3 tasks | 3 files |
 | Phase 01.1 P12 | 40min | 3 tasks | 5 files |
+| Phase 02 P02 | 15min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,7 @@ Recent decisions affecting current work:
 - [Phase 02-01]: proxy.ts runs as the OpenNext Node middleware under local preview; no edge middleware.ts fallback needed
 - [Phase 02-01]: Worker gzip bundle is 3079.28 KiB, 7 KiB over 3 MiB; confirm the real Free size limit at the plan 02-10 deploy
 - [Phase 02-01]: react-hooks/set-state-in-effect set to warn after the eslint-config-next 16.4.2 bump; refactor deferred (phase 02 deferred-items.md)
+- [Phase 02]: 02-02: R2 CORS builder refuses http, wildcard, path/query/hash and credentials; runbook Rule 5 lists the four owner-gated live-Supabase exceptions
 
 ### Pending Todos
 
@@ -89,7 +91,6 @@ None yet.
 - Owner decisions pending (pricing, not assumed): Workers Paid $5/mo if Free CPU fails (Phase 2); Image Transformations stays on the free tier only.
 - Stray Cloudflare NS pair (ignat/nataly) must be resolved before any NS change (Phase 1).
 - Live migration state and `private.is_admin()` presence unverified — read-only audit in Phase 1 before any schema ship.
-
 
 ### Quick Tasks Completed
 
@@ -105,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-20T10:35:00Z
-Stopped at: Completed 02-01-PLAN.md (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above still shows 01.1, controller owns it)
+Last session: 2026-10-20T10:37:22.726Z
+Stopped at: Completed 02-02-PLAN.md (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above still shows 01.1, controller owns it)
 Resume file: None

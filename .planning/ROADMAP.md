@@ -87,7 +87,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — W1: Local spike: 01.1 precondition, [OWNER] package check, Next 16.4.2 + OpenNext 1.20.12 upgrade, base wrangler/OpenNext config, account guard, proxy.ts preview check, bundle/startup, cron URL
-- [ ] 02-02-PLAN.md — W2: Runbook upkeep and the R2 CORS rule builder
+- [x] 02-02-PLAN.md — W2: Runbook upkeep and the R2 CORS rule builder
 - [ ] 02-03-PLAN.md — W2: Media Worker clickit-media (Range/206, 304, ETag, AVIF/WebP negotiation, original fallback, allowlist, SVG CSP)
 - [ ] 02-04-PLAN.md — W2: Pure security helpers: constant-time cron auth, cron map, CF-Connecting-IP, fail-closed rate limit, Turnstile siteverify
 - [x] 02-05-PLAN.md — W1: [OWNER] Mockups signed (Turnstile placement, upload states) + roadmap edits 1-9 signed and applied as a planning note
@@ -201,7 +201,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 |-------|----------------|--------|-----------|
 | 1. Safe Ground | 0/TBD | Not started | - |
 | 1.1. Admin Actions Hardening (INSERTED) | 12/13 | In Progress|  |
-| 2. Worker and R2 Media on workers.dev | 2/22 | In Progress|  |
+| 2. Worker and R2 Media on workers.dev | 3/22 | In Progress|  |
 | 3. Production Cutover | 0/TBD | Not started | - |
 | 4. Design System Truth | 0/TBD | Not started | - |
 | 5. Accounts and Email | 0/TBD | Not started | - |
