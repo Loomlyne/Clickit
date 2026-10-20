@@ -13,7 +13,9 @@
     "rewrite-slugs": "node scripts/rewrite-slugs.mjs",
     "fix-archived-show-duplicates": "node scripts/fix-archived-show-duplicates.mjs",
     "r2:media": "node scripts/migrate-supabase-media-to-r2.mjs",
-    "gate:local": "npm run lint && npm run test:unit && npm run build",
+    "typecheck": "tsc --noEmit",
+    "guard:migrations": "node scripts/migration-guard.mjs",
+    "gate:local": "npm run lint && npm run typecheck && npm run test:unit && npm run guard:migrations && npm run build",
     "media:health": "node scripts/media-health.mjs"
   },
   "dependencies": {

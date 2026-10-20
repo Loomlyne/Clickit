@@ -35,6 +35,10 @@
  * The file is deliberately self-contained (only node: imports) so CI can run
  * a lone copy of the BASE branch's version of it.
  */
+import { execFileSync } from 'node:child_process'
+import { pathToFileURL } from 'node:url'
+import { posix } from 'node:path'
+import process from 'node:process'
 
 /**
  * Destructive-SQL patterns, applied to comment-stripped text, case-insensitive.
@@ -247,4 +251,194 @@ export function classifyChanges(nameStatusZ) {
     }
   }
   return changes
+}
+
+const NAME_RE = /^\d{14}_[a-z0-9_]+\.sql$/
+const VERSION_RE = /^(\d{14})_/
+
+/** Error for bad arguments or a failing git command (CLI exit code 2). */
+export class GuardError extends Error {}
+
+function runGit(cwd, args) {
+  try {
+    return execFileSync('git', args, {
+      cwd,
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+  } catch (error) {
+    const detail = String(error?.stderr || error?.message || error).trim()
+    throw new GuardError(`git ${args[0]} failed: ${detail.split('\n')[0]}`)
+  }
+}
+
+function existsOn(cwd, rev, path) {
+  try {
+    execFileSync('git', ['cat-file', '-e', `${rev}:${path}`], {
+      cwd,
+      stdio: ['ignore', 'ignore', 'ignore'],
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+function blobSha(cwd, rev, path) {
+  return runGit(cwd, ['rev-parse', `${rev}:${path}`]).trim()
+}
+
+function describeStatus(status) {
+  if (status === 'M') return 'modified'
+  if (status === 'D') return 'deleted'
+  if (status.startsWith('R')) return 'renamed'
+  return `changed (${status})`
+}
+
+/**
+ * Check the migrations changed between base and head (committed changes only).
+ * Rules in order: name (A), applied-file immutability (everything but A),
+ * destructive SQL (A and M .sql), ordering warning (A).
+ */
+export function runGuard({
+  cwd,
+  base,
+  head,
+  dir = 'supabase/migrations',
+  allowList = PHASE1_NEUTRALISATION,
+}) {
+  for (const rev of [base, head]) {
+    if (!rev || rev.startsWith('-')) throw new GuardError(`invalid revision: ${rev}`)
+  }
+  const violations = []
+  const warnings = []
+
+  const diff = runGit(cwd, [
+    'diff',
+    '--name-status',
+    '-z',
+    '--find-renames',
+    `${base}...${head}`,
+    '--',
+    dir,
+  ])
+  const changes = classifyChanges(diff)
+
+  const baseVersions = runGit(cwd, ['ls-tree', '--name-only', base, `${dir}/`])
+    .split('\n')
+    .map((line) => VERSION_RE.exec(posix.basename(line))?.[1])
+    .filter(Boolean)
+  const highestBase = baseVersions.sort().pop()
+
+  for (const change of changes) {
+    // A copy creates a new file; treat it like an addition.
+    const added = change.status === 'A' || change.status.startsWith('C')
+    const name = posix.basename(change.path)
+
+    if (added && !NAME_RE.test(name)) {
+      violations.push({
+        path: change.path,
+        reason: 'bad migration file name (need 14-digit version, snake_case, .sql)',
+      })
+      continue
+    }
+
+    if (!added) {
+      const oldPath = change.oldPath ?? change.path
+      if (existsOn(cwd, base, oldPath)) {
+        const entry = allowList?.[change.path]
+        const allowed =
+          change.status === 'M' &&
+          entry &&
+          entry.to &&
+          blobSha(cwd, base, change.path) === entry.from &&
+          blobSha(cwd, head, change.path) === entry.to
+        if (!allowed) {
+          violations.push({
+            path: change.path,
+            reason: `applied migration ${describeStatus(change.status)} (D-05): migrations on the base branch are immutable`,
+          })
+          continue
+        }
+      }
+    }
+
+    const scannable =
+      (added || change.status === 'M') && change.path.endsWith('.sql')
+    if (scannable) {
+      const sql = runGit(cwd, ['show', `${head}:${change.path}`])
+      for (const finding of scanSql(sql).findings) {
+        violations.push({
+          path: change.path,
+          line: finding.line,
+          reason: `${finding.kind} without \`-- safe-drop: <reason>\` (D-04): ${finding.text}`,
+        })
+      }
+    }
+
+    if (added) {
+      const version = VERSION_RE.exec(name)?.[1]
+      if (version && highestBase && version <= highestBase) {
+        warnings.push({
+          path: change.path,
+          reason:
+            'version sorts before applied migrations; the apply workflow will refuse it',
+        })
+      }
+    }
+  }
+
+  return { violations, warnings, checked: changes.length }
+}
+
+function parseArgs(argv) {
+  const opts = { base: 'origin/main', head: 'HEAD', dir: 'supabase/migrations' }
+  for (let i = 0; i < argv.length; i += 1) {
+    const flag = argv[i]
+    if (flag === '--base' || flag === '--head' || flag === '--dir') {
+      const value = argv[i + 1]
+      if (!value) throw new GuardError(`${flag} needs a value`)
+      opts[flag.slice(2)] = value
+      i += 1
+    } else {
+      throw new GuardError(
+        `unknown argument: ${flag}\nusage: migration-guard.mjs [--base <rev>] [--head <rev>] [--dir <path>]`,
+      )
+    }
+  }
+  return opts
+}
+
+function main() {
+  const ci = process.env.GITHUB_ACTIONS === 'true'
+  try {
+    const opts = parseArgs(process.argv.slice(2))
+    const { violations, warnings, checked } = runGuard({ cwd: process.cwd(), ...opts })
+    for (const v of violations) {
+      console.log(`${v.path}${v.line ? `:${v.line}` : ''}: ${v.reason}`)
+      if (ci) {
+        const where = v.line ? `file=${v.path},line=${v.line}` : `file=${v.path}`
+        console.log(`::error ${where}::${v.reason}`)
+      }
+    }
+    for (const w of warnings) {
+      console.log(`warning: ${w.path}: ${w.reason}`)
+      if (ci) console.log(`::warning file=${w.path}::${w.reason}`)
+    }
+    console.log(
+      `migration-guard: ${checked} files checked, ${violations.length} violations, ${warnings.length} warnings`,
+    )
+    process.exit(violations.length ? 1 : 0)
+  } catch (error) {
+    if (error instanceof GuardError) {
+      console.error(`migration-guard: ${error.message}`)
+      process.exit(2)
+    }
+    throw error
+  }
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
 }
