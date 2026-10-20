@@ -97,14 +97,17 @@ test('logs use the [cron/youtube-recheck] prefix and never mention a key, url or
 
 test('route does no cache tagging and imports no Phase 2 module', () => {
   assert.doesNotMatch(route, /updateTag|revalidateTag|revalidatePath/)
-  assert.doesNotMatch(route, /cron-auth|cron-schedule|server\/scheduled/)
+  // The TODO comments name the Phase 2 files; no import may use them yet.
+  assert.doesNotMatch(route, /from ['"][^'"]*(cron-auth|cron-schedule|scheduled)['"]/)
 })
 
 test('youtube-service starts with server-only and builds the client from the Vault key, header only', () => {
   assert.ok(service.startsWith("import 'server-only'"))
   assert.ok(service.includes('readYouTubeApiKey()'))
   assert.ok(service.includes('createYouTubeClient({ apiKey'))
-  assert.doesNotMatch(service, /fetchImpl|transport|keyTransport|process\.env/)
+  const code = service.replace(/^\s*\/\/.*$/gm, '')
+  assert.ok(code.includes('createYouTubeClient({ apiKey })'), 'no option besides apiKey')
+  assert.doesNotMatch(code, /fetchImpl|transport|keyTransport|process\.env/)
   assert.match(service, /export async function getServerYouTubeClient\(\)/)
   assert.match(service, /\{ missing: true \}/)
 })
