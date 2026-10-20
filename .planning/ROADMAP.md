@@ -89,6 +89,9 @@ Plans:
   5. CPU per page is measured on Workers Free and recorded. Deploys run with local wrangler from the control session after `npm run gate:local` passes and Koss says Ship; `wrangler whoami` shows the ClickitStory account first. No Vercel artefact remains in the repo.
 **Owner-gated**: [OWNER] create the R2 and D1 resources in the ClickitStory account (never the default wrangler login); [OWNER] set the Worker secrets and the Turnstile keys; [OWNER] run the media copy; [OWNER] if pages fail on Free, decide on Workers Paid ($5/mo); [OWNER] UAT on workers.dev. (Media custom domain and Supabase CAPTCHA moved to Phase 3; Queue to Phase 5; no GitHub Environment; Image Transformations not used. Signed by Koss 2026-10-20.)
 **Research flag**: done (02-RESEARCH.md, 2026-10-20).
+**Phase 6 hand-off**: `src/server/youtube/rate-limit.ts` — replace the `withinRateLimitCore` stand-in with `decideRateLimit` from `src/server/rate-limit-policy.ts` (used by the viewer error report and the YouTube key save).
+**Phase 6 hand-off**: `src/app/api/cron/youtube-recheck/route.ts` — swap the inline `Bearer <CRON_SECRET>` check for `cronAuthOk(header, secret)` from `src/server/cron-auth.ts` (constant time).
+**Phase 6 hand-off**: `src/app/api/cron/youtube-recheck/route.ts` — register the `30 1 * * *` trigger for `/api/cron/youtube-recheck` in `CRON_ROUTES` (`src/server/cron-schedule.ts`) and in `wrangler.jsonc` `triggers.crons` (deployed switched off like the other crons).
 **Plans**: TBD
 **UI hint**: yes
 
@@ -116,6 +119,8 @@ Plans:
   3. The Claude Design canvas shows foundations, viewer screens (including the OTP sign-in, the RTL treatment and an RMF-compliant player), admin screens (playlist import preview, inbox) and the email templates. Koss has signed it.
   4. A signed-out visitor or a non-admin viewer opening `/design-system` is refused.
 **Owner-gated**: [OWNER] sign the canvas (it blocks UI build in Phases 5-7); [OWNER] Ship.
+**Phase 6 hand-off**: `src/components/admin/youtube-status-chip.tsx` — the `brand-green-safe` / `brand-red-safe` / `brand-orange-safe` tone classes may be renamed by the token pass; update the chip to the final names.
+**Phase 6 hand-off**: `src/components/admin/settings/advanced-tab.tsx` — swap `text-brand-green-safe` on the Test-ok icon for `var(--safe-green)` once Phase 4 adds that token.
 **Plans**: TBD
 **UI hint**: yes
 
@@ -130,6 +135,8 @@ Plans:
   4. A new viewer gets exactly one welcome email. A support message produces an auto-reply to the sender and an admin copy they can reply to. A newsletter sign-up is active only after the confirmation link is clicked.
   5. A viewer with a show on My List gets one Dubai-evening digest when new episodes publish, can turn it off in the profile, and can unsubscribe with one click from the email. A retried or failed send never duplicates and is retried from the queue.
 **Owner-gated**: [OWNER] set Supabase custom SMTP to Resend, the email templates (Confirm signup and Magic Link included), the OTP expiry and the auth email rate limit; [OWNER] turn on leaked-password protection; [OWNER] insert Nejib's admin row and enrol both TOTP devices; [OWNER] approve each live migration; [OWNER] approve the first emails to real users; [OWNER] Ship.
+**Phase 6 hand-off**: `src/app/[locale]/admin/actions.ts` — swap `requireAdminForYouTube` for `requireAdmin()` (admins table + TOTP) so the second admin can import; every YouTube action goes through that one function.
+**Phase 6 hand-off**: `/Users/koss/.clickit-checks/phase06-uat-admin.cjs` (outside the repo) — the local UAT admin also gains its `admins` row and TOTP enrolment.
 **Plans**: TBD
 **UI hint**: yes
 
@@ -198,7 +205,7 @@ Plans:
   2. The repo has no unrendered components, unused queries, duplicate files, starter SVGs or stale Playwright specs. It also has no Vercel artefact: no `vercel.json`, `@vercel/*`, `botid`, `VERCEL_*` fallbacks, `.vercelignore` or `check-cron.sh`. CLAUDE.md, AGENTS.md, MEMORY.md and .hermes.md describe Cloudflare + Supabase.
   3. The live CSP has no wildcard image source, no `supabase.co`, `picsum` or `unsplash` hosts, and no script `unsafe-inline` where it can be avoided. The site still renders and plays.
   4. After Koss approves, Supabase Storage is empty. The live site keeps working, with every media URL on R2.
-**Owner-gated**: [OWNER] close the proof window; [OWNER] approve the contract migrations (drop `admin_user_id` and `youtube_api_key`); [OWNER] empty Supabase Storage; [OWNER] Ship.
+**Owner-gated**: [OWNER] close the proof window; [OWNER] approve the contract migration (drop `admin_user_id`; `youtube_api_key` is dropped in Phase 6); [OWNER] empty Supabase Storage; [OWNER] Ship.
 **Plans**: TBD
 
 ## Progress
