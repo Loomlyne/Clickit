@@ -1,5 +1,6 @@
-// Pure validation for admin server actions. Imports only zod so node --test can load it.
+// Pure validation for admin server actions. Imports only zod and the pure YouTube id regexes so node --test can load it.
 import { z } from 'zod'
+import { PLAYLIST_ID_RE, VIDEO_ID_RE } from '../../server/youtube/urls.ts'
 
 export type ParseResult<T> = { ok: true; value: T } | { ok: false; error: string }
 
@@ -72,6 +73,37 @@ export const categoryOrderSchema = z
   .min(1)
   .max(500)
   .refine((ids) => new Set(ids).size === ids.length, { message: 'Duplicate category ids.' })
+
+// ---------------------------------------------------------------------------
+// YouTube import (Phase 6, RESEARCH Pattern 1 bounds)
+// ---------------------------------------------------------------------------
+
+export const videoIdSchema = z.string().regex(VIDEO_ID_RE, 'Invalid YouTube video id.')
+export const playlistIdSchema = z.string().regex(PLAYLIST_ID_RE, 'Invalid YouTube playlist id.')
+
+/** One preview page. Page 0..3 caps the preview at 200 items (4 pages of 50). */
+export const previewPageSchema = z.strictObject({
+  showId: z.uuid(),
+  url: z.string().max(2048).optional(),
+  playlistId: playlistIdSchema.optional(),
+  pageToken: z.string().max(200).optional(),
+  page: z.number().int().min(0).max(3),
+})
+
+/** Commit takes ids only; titles and statuses are re-fetched on the server. */
+export const commitImportSchema = z.strictObject({
+  showId: z.uuid(),
+  playlistId: playlistIdSchema,
+  videoIds: z
+    .array(videoIdSchema)
+    .min(1)
+    .max(200)
+    .refine((ids) => new Set(ids).size === ids.length, { message: 'Duplicate video ids.' }),
+  target: z.discriminatedUnion('kind', [
+    z.strictObject({ kind: z.literal('new'), seasonTitle: z.string().trim().min(1).max(120) }),
+    z.strictObject({ kind: z.literal('existing'), seasonId: z.uuid() }),
+  ]),
+})
 
 export function formatZodError(error: z.ZodError): string {
   const issue = error.issues[0]
