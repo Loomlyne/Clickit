@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { toast } from 'sonner'
 import { User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { viewerInitials } from '@/lib/initials'
 import { createClient } from '@/lib/supabase/client'
 
 interface Review {
@@ -120,11 +121,10 @@ export function ReviewComposer({
   }
 
   const activeStars = hoverStars || draftStars
-  const myName =
+  const myInitials = viewerInitials(
     reviews.find((r) => r.user_id === userId)?.profiles?.display_name ||
-    userName ||
-    ''
-  const myInitials = myName ? myName.slice(0, 2).toUpperCase() : null
+      userName
+  )
 
   return (
     <div>
@@ -149,14 +149,14 @@ export function ReviewComposer({
 
           {/* Star rating */}
           <div
-            className="mb-3 flex items-center gap-1"
+            className="mb-3 flex flex-wrap items-center gap-x-1"
             onMouseLeave={() => setHoverStars(0)}
           >
             {[1, 2, 3, 4, 5].map((n) => (
               <button
                 key={n}
                 type="button"
-                className="focus-visible:ring-ring flex size-11 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className="focus-visible:ring-ring flex size-11 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 onMouseEnter={() => setHoverStars(n)}
                 onClick={() => setDraftStars(n)}
                 aria-label={t('starsAria', { n })}
@@ -208,6 +208,7 @@ export function ReviewComposer({
               <Button
                 variant="outline"
                 size="sm"
+                className="min-h-11"
                 onClick={() => {
                   setDraftStars(0)
                   setDraftText('')
@@ -218,6 +219,7 @@ export function ReviewComposer({
               </Button>
               <Button
                 size="sm"
+                className="min-h-11"
                 onClick={submitReview}
                 disabled={!draftText.trim() || draftStars === 0 || submitting}
               >

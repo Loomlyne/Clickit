@@ -191,7 +191,7 @@
     "genreLabel": "النوع",
     "yearLabel": "السنة",
     "episodeCountLabel": "{count, plural, one {حلقة #} other {# حلقة}}",
-    "seasonCountLabel": "{count, plural, one {موسم #} other {# موسم}}",
+    "seasonCountLabel": "{count, plural, one {موسم واحد} two {موسمان} few {# مواسم} many {# موسمًا} other {# موسم}}",
     "imdbLabel": "IMDb",
     "citRatingLabel": "تقييم كليك إت",
     "runtimeLabel": "المدة",

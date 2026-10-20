@@ -166,7 +166,7 @@ export default async function WatchPage({
 
       {categorySlug && !activeCategory && (
         <section className="px-4 pt-8 sm:px-10">
-          <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-2)] px-5 py-6 text-center">
+          <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] px-5 py-6 text-center">
             <div className="mono mb-2 text-[var(--text-mute)]">
               {t('categoryNotFound')}
             </div>

@@ -34,7 +34,7 @@ export function EpisodeRow({
   const isDraft = episode.status === 'draft'
   const isDimmed = !isLive
   const isCurrentEpisode = currentEpisodeId === episode.id
-  const brandColorHex = BRAND_COLOR_HEX[showBrandColor] ?? '#2C3569'
+  const brandColorHex = BRAND_COLOR_HEX[showBrandColor] ?? BRAND_COLOR_HEX['brand-blue']
   const thumbnailUrl = episode.youtubeId
     ? `https://img.youtube.com/vi/${episode.youtubeId}/hqdefault.jpg`
     : undefined

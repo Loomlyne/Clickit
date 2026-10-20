@@ -131,16 +131,22 @@ export default async function SeriesDetailPage({ params }: Props) {
   const allEpisodeIds = Object.values(viewEpisodesBySeason)
     .flat()
     .map((e) => e.id)
-  const [inWatchlist, isLiked, episodesProgressMap] = user
+  const [inWatchlist, isLiked, episodesProgressMap, profileRow] = user
     ? await Promise.all([
         getShowWatchlistState(user.id, dbShow.id),
         getShowLikeState(user.id, dbShow.id),
         getEpisodesProgress(user.id, allEpisodeIds),
+        supabase
+          .from('profiles')
+          .select('display_name')
+          .eq('id', user.id)
+          .maybeSingle(),
       ])
     : [
         false,
         false,
         {} as Record<string, { progressPercent: number; completed: boolean }>,
+        null,
       ]
 
   // "More Like This" rail: prefer same-genre shows; if this show is the only
@@ -263,8 +269,8 @@ export default async function SeriesDetailPage({ params }: Props) {
             showId={dbShow.id}
             userId={user?.id ?? null}
             userName={
-              (user?.user_metadata?.display_name as string | undefined) ??
-              user?.email?.split('@')[0] ??
+              profileRow?.data?.display_name ||
+              user?.email?.split('@')[0] ||
               null
             }
           />

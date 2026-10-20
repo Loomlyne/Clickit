@@ -18,12 +18,10 @@ const PARTICLES = Array.from({ length: PARTICLE_COUNT }, (_, i) => {
 })
 
 const PARTICLE_COLORS = [
-  '#ffcc00',
-  '#ffd633',
-  '#ffe066',
-  '#f0c000',
-  '#fff0a8',
-  '#d7ad16',
+  'var(--primary)',
+  'var(--uis-primary-hover)',
+  'var(--accent-yellow)',
+  'var(--text)',
 ]
 
 interface LikeButtonProps {

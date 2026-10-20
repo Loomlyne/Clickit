@@ -45,7 +45,7 @@ export function EpisodeTray({
 }: EpisodeTrayProps) {
   const t = useTranslations('watch')
   const tEpisode = useTranslations('episode')
-  const brandColor = BRAND_COLOR_HEX[show.brandColor] ?? '#2C3569'
+  const brandColor = BRAND_COLOR_HEX[show.brandColor] ?? BRAND_COLOR_HEX['brand-blue']
   const activeEpisodes = episodesBySeason[activeSeasonId] ?? []
   const isTrayRaised = activeSnapPoint === WATCH_TRAY_SNAP_POINTS[1]
 

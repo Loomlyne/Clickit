@@ -5,7 +5,7 @@ import { Slot } from 'radix-ui'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-full text-[13.5px] font-medium whitespace-nowrap transition-[transform,background,border-color] duration-[120ms] ease-[var(--ease)] outline-none active:scale-[0.97] active:duration-75 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-0)] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 border border-transparent",
+  "relative inline-flex shrink-0 items-center justify-center gap-2 rounded-full text-[13.5px] font-medium whitespace-nowrap transition-[transform,background,border-color] duration-[120ms] ease-[var(--ease)] outline-none active:scale-[0.97] active:duration-75 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-0)] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 border border-transparent after:absolute after:top-1/2 after:left-1/2 after:h-full after:min-h-11 after:w-full after:min-w-11 after:-translate-x-1/2 after:-translate-y-1/2",
   {
     variants: {
       variant: {
@@ -22,11 +22,11 @@ const buttonVariants = cva(
       size: {
         default: 'min-h-11 px-[18px] py-2.5',
         xs: 'px-2.5 py-1 text-xs gap-1',
-        sm: 'min-h-11 px-3 py-[7px] text-[12.5px] gap-1.5',
+        sm: 'px-3 py-[7px] text-[12.5px] gap-1.5',
         lg: 'min-h-11 px-[26px] py-3.5 text-[15px]',
-        icon: 'size-11 rounded-full p-0',
-        'icon-xs': 'size-11 p-0',
-        'icon-sm': 'size-11 p-0',
+        icon: 'size-9 rounded-full p-0',
+        'icon-xs': 'size-7 p-0',
+        'icon-sm': 'size-8 p-0',
         'icon-lg': 'size-11 rounded-full p-0',
       },
     },
