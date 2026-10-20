@@ -102,7 +102,7 @@
     "resetButton": "إعادة تعيين كلمة المرور",
     "resetSuccess": "تم تحديث كلمة المرور بنجاح!",
     "accountCreated": "تم إنشاء الحساب! أهلاً بك في كلِك إت ستوري.",
-    "termsAccept": "أوافق على شروط الخدمة وسياسة الخصوصية",
+    "termsAccept": "أوافق على <terms>شروط الخدمة</terms> و<privacy>سياسة الخصوصية</privacy>",
     "showPassword": "إظهار كلمة المرور",
     "hidePassword": "إخفاء كلمة المرور",
     "callbackError": "تعذّر التحقق من هويتك",

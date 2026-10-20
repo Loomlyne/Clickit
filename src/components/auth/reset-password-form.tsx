@@ -3,18 +3,20 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { mapAuthError } from '@/lib/auth-errors'
+import { AuthAlert } from './auth-alert'
+import { PasswordField } from './password-field'
+import { PASSWORD_MIN, errorParams } from './password-rules'
 
 const resetSchema = z
   .object({
-    password: z.string().min(6, 'passwordMin'),
+    password: z.string().min(PASSWORD_MIN, 'passwordMin'),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -29,16 +31,20 @@ export function ResetPasswordForm() {
   const tErrors = useTranslations('errors')
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
 
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<ResetFormData>({
     resolver: zodResolver(resetSchema),
+    defaultValues: { password: '', confirmPassword: '' },
   })
+
+  const passwordValue = useWatch({ control, name: 'password' }) ?? ''
+  const fieldError = (key?: string) =>
+    key ? tErrors(key as never, errorParams(key) as never) : undefined
 
   async function onSubmit(data: ResetFormData) {
     setServerError(null)
@@ -49,7 +55,7 @@ export function ResetPasswordForm() {
     })
 
     if (error) {
-      setServerError(error.message)
+      setServerError(mapAuthError(error.message))
       return
     }
 
@@ -59,85 +65,35 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {serverError && (
-        <div className="rounded-full border border-[#DB3F34]/25 bg-[#DB3F34]/10 px-4 py-3 text-sm text-red-300">
-          <div className="flex items-start gap-2.5">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{serverError}</span>
-          </div>
-        </div>
-      )}
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="flex flex-col gap-4"
+      noValidate
+    >
+      {serverError && <AuthAlert variant="error">{serverError}</AuthAlert>}
 
-      <div>
-        <Label htmlFor="reset-password">{t('newPassword')}</Label>
-        <div className="relative mt-1.5">
-          <Input
-            id="reset-password"
-            type={showPassword ? 'text' : 'password'}
-            placeholder="••••••••"
-            className="pe-10"
-            {...register('password')}
-          />
-          <button
-            type="button"
-            tabIndex={-1}
-            onClick={() => setShowPassword(!showPassword)}
-            aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-            className="absolute top-1/2 end-3 -translate-y-1/2 text-white/40 transition-colors hover:text-white/70"
-          >
-            {showPassword ? (
-              <EyeOff className="size-4" />
-            ) : (
-              <Eye className="size-4" />
-            )}
-          </button>
-        </div>
-        {errors.password && (
-          <p className="text-brand-red-safe mt-1 text-xs">
-            {tErrors(errors.password.message as never)}
-          </p>
-        )}
-      </div>
+      <PasswordField
+        id="reset-password"
+        label={t('newPassword')}
+        autoComplete="new-password"
+        placeholder="••••••••"
+        strengthOf={passwordValue}
+        error={fieldError(errors.password?.message)}
+        {...register('password')}
+      />
 
-      <div>
-        <Label htmlFor="reset-confirm">{t('confirmPassword')}</Label>
-        <div className="relative mt-1.5">
-          <Input
-            id="reset-confirm"
-            type={showConfirm ? 'text' : 'password'}
-            placeholder="••••••••"
-            className="pe-10"
-            {...register('confirmPassword')}
-          />
-          <button
-            type="button"
-            tabIndex={-1}
-            onClick={() => setShowConfirm(!showConfirm)}
-            aria-label={showConfirm ? t('hidePassword') : t('showPassword')}
-            className="absolute top-1/2 end-3 -translate-y-1/2 text-white/40 transition-colors hover:text-white/70"
-          >
-            {showConfirm ? (
-              <EyeOff className="size-4" />
-            ) : (
-              <Eye className="size-4" />
-            )}
-          </button>
-        </div>
-        {errors.confirmPassword && (
-          <p className="text-brand-red-safe mt-1 text-xs">
-            {tErrors(errors.confirmPassword.message as never)}
-          </p>
-        )}
-      </div>
+      <PasswordField
+        id="reset-confirm"
+        label={t('confirmPassword')}
+        autoComplete="new-password"
+        placeholder="••••••••"
+        error={fieldError(errors.confirmPassword?.message)}
+        {...register('confirmPassword')}
+      />
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="bg-primary text-primary-foreground w-full rounded-full px-7 py-3 text-sm font-semibold transition-colors hover:bg-[#7082ff] disabled:cursor-not-allowed disabled:opacity-50"
-      >
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? t('resetButton') + '…' : t('resetButton')}
-      </button>
+      </Button>
     </form>
   )
 }
