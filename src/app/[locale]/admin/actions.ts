@@ -1037,8 +1037,7 @@ export async function renumberSeason(
   showId: string,
   seasonId: string
 ): Promise<ActionResult<{ showId?: string; map?: unknown }>> {
-  return runAdminAction(
-    youtubeAdminEnv,
+  return runAdminAction(youtubeAdminEnv,
     (ctx) =>
       renumberSeasonCore(
         ctx.db,
@@ -1103,8 +1102,7 @@ export async function commitImport(input: {
   videoIds: string[]
   target: z.input<typeof commitImportSchema>['target']
 }): Promise<YouTubeActionResult<ImportData>> {
-  return runAdminAction(
-    youtubeAdminEnv,
+  return runAdminAction(youtubeAdminEnv,
     async (ctx): Promise<YouTubeActionResult<ImportData>> => {
       const yt = await getServerYouTubeClient()
       if ('missing' in yt) {
