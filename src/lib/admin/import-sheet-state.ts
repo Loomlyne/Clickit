@@ -124,6 +124,23 @@ export function bannerForCode(code: YouTubeErrorCode): BannerSpec {
   }
 }
 
+/**
+ * The banner after a failed Import: these codes get their own message; every
+ * other failure (null) shows importFailed with the server's reason.
+ */
+export function importFailureSpec(
+  code: YouTubeErrorCode | null
+): { messageKey: string; needsTime: boolean } | null {
+  switch (code) {
+    case 'quota':
+      return { messageKey: YOUTUBE_ERROR_MESSAGE_KEYS.quota, needsTime: true }
+    case 'rate_limited':
+      return { messageKey: YOUTUBE_ERROR_MESSAGE_KEYS[code], needsTime: false }
+    default:
+      return null
+  }
+}
+
 export type CanImportInput = {
   tickedCount: number
   target: { kind: 'new' } | { kind: 'existing' }

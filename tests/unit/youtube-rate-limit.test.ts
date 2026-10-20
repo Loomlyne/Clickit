@@ -3,7 +3,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { withinRateLimitCore } from '../../src/server/youtube/rate-limit.ts'
+import {
+  YOUTUBE_ACTION_LIMITS,
+  withinRateLimitCore,
+  withinYouTubeActionLimit,
+} from '../../src/server/youtube/rate-limit.ts'
 import { createFakeSupabase } from './helpers/fake-supabase.ts'
 
 // The fake stamps inserts from 2026-01-01T00:00:00.001Z upward.
@@ -102,4 +106,52 @@ test('max 0 refuses without writing', async () => {
   const fake = createFakeSupabase({ rate_limits: [] })
   assert.equal(await withinRateLimitCore(fake.client, opts({ max: 0 })), false)
   assert.equal(fake.tables.rate_limits.length, 0)
+})
+
+// --- Per-admin limits on the admin YouTube actions (PR #27 review, finding 2) ---
+
+test('admin YouTube limits: preview and meta 60, import and key test 10, all per 10 minutes', () => {
+  assert.deepEqual(YOUTUBE_ACTION_LIMITS, {
+    preview: { prefix: 'yt-preview', max: 60, windowSec: 600 },
+    meta: { prefix: 'yt-meta', max: 60, windowSec: 600 },
+    import: { prefix: 'yt-import', max: 10, windowSec: 600 },
+    keyTest: { prefix: 'yt-key-test', max: 10, windowSec: 600 },
+  })
+})
+
+test('withinYouTubeActionLimit keys per admin and action and refuses at the max', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  for (let i = 0; i < 10; i++) {
+    assert.equal(await withinYouTubeActionLimit(fake.client, 'import', 'admin-1', NOW), true)
+  }
+  assert.equal(await withinYouTubeActionLimit(fake.client, 'import', 'admin-1', NOW), false)
+  // Another admin and another action have their own budgets.
+  assert.equal(await withinYouTubeActionLimit(fake.client, 'import', 'admin-2', NOW), true)
+  assert.equal(await withinYouTubeActionLimit(fake.client, 'keyTest', 'admin-1', NOW), true)
+  const keys = new Set(fake.tables.rate_limits.map((r) => r.key))
+  assert.deepEqual([...keys].sort(), ['yt-import:admin-1', 'yt-import:admin-2', 'yt-key-test:admin-1'])
+  assert.equal(fake.tables.rate_limits.filter((r) => r.key === 'yt-import:admin-1').length, 10)
+
+  const select = fake.calls.find((c) => c.table === 'rate_limits' && c.op === 'select')
+  assert.deepEqual(select?.filters, [
+    { kind: 'eq', col: 'key', value: 'yt-import:admin-1' },
+    { kind: 'gte', col: 'created_at', value: '2025-12-31T23:50:30.000Z' },
+  ])
+})
+
+test('withinYouTubeActionLimit: preview allows 60, the 61st is refused', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  for (let i = 0; i < 60; i++) {
+    assert.equal(await withinYouTubeActionLimit(fake.client, 'preview', 'admin-1', NOW), true)
+  }
+  assert.equal(await withinYouTubeActionLimit(fake.client, 'preview', 'admin-1', NOW), false)
+})
+
+test('withinYouTubeActionLimit fails open when the ledger fails', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  fake.failOn({ table: 'rate_limits', op: 'select', nth: 1 })
+  assert.equal(await withinYouTubeActionLimit(fake.client, 'meta', 'admin-1', NOW), true)
+  const thrown = createFakeSupabase({ rate_limits: [] })
+  thrown.throwOn({ table: 'rate_limits', op: 'select', nth: 1 })
+  assert.equal(await withinYouTubeActionLimit(thrown.client, 'meta', 'admin-1', NOW), true)
 })

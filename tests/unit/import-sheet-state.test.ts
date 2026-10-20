@@ -6,6 +6,7 @@ import { test } from 'node:test'
 import {
   bannerForCode,
   canImport,
+  importFailureSpec,
   initialTicks,
   summarizeTicks,
   tickedInPlaylistOrder,
@@ -200,4 +201,28 @@ test('the module imports nothing from @/, next/* or server-only', () => {
   assert.equal(/from '@\/|server-only|from 'next\//.test(src), false)
   const relative = [...src.matchAll(/^import (?!type)[^\n]*from '(\.[^']+)'/gm)]
   for (const m of relative) assert.match(m[1], /\.ts$/, `runtime import ${m[1]} must end in .ts`)
+})
+
+test('importFailureSpec: quota needs the reset time, rate_limited has its own message, others use importFailed', () => {
+  assert.deepEqual(importFailureSpec('quota'), { messageKey: 'quota', needsTime: true })
+  assert.deepEqual(importFailureSpec('rate_limited'), { messageKey: 'rateLimited', needsTime: false })
+  assert.equal(importFailureSpec(null), null)
+  assert.equal(importFailureSpec('video_duplicate'), null)
+  assert.equal(importFailureSpec('network'), null)
+})
+
+test('bannerForCode: rate_limited is a plain banner with no action', () => {
+  assert.deepEqual(bannerForCode('rate_limited'), {
+    messageKey: 'rateLimited',
+    action: null,
+    needsTime: false,
+    disableLink: false,
+    panel: 'banner',
+  })
+})
+
+test('the sheet renders an import failure through importFailureSpec', () => {
+  const sheet = readFileSync('src/components/admin/import-playlist-sheet.tsx', 'utf8')
+  assert.ok(sheet.includes('importFailureSpec(failure.code)'))
+  assert.ok(sheet.includes('{importFailureText(importFailure)}'))
 })

@@ -65,6 +65,7 @@ import {
 import type { AdminDb } from '@/lib/admin/ports'
 import type { YouTubeErrorCode } from '@/lib/youtube-errors'
 import { getServerYouTubeClient } from '@/server/youtube-service'
+import { withinYouTubeActionLimit } from '@/server/youtube/rate-limit'
 import { saveYouTubeApiKeyCore, type SaveKeyResult } from '@/lib/admin/youtube-key-save'
 import { testYouTubeKeyCore, type KeyTestResult } from '@/lib/admin/youtube-key-status'
 import { nextQuotaReset } from '@/lib/youtube-quota'
@@ -232,6 +233,16 @@ type YouTubeRefusal = { code: YouTubeErrorCode; params?: DuplicateParams }
 export type YouTubeActionResult<T> =
   | { success: true; data: T; error?: undefined; wrote?: boolean }
   | { success: false; error: string; data?: YouTubeRefusal; wrote?: boolean }
+
+/** The refusal when an admin made too many YouTube calls in the window. */
+function rateLimitedRefusal(): { success: false; wrote: false; error: string; data: { code: 'rate_limited' } } {
+  return {
+    success: false,
+    wrote: false,
+    error: verifyMessage({ ok: false, code: 'rate_limited' }),
+    data: { code: 'rate_limited' },
+  }
+}
 
 /** Moves a core's top-level YouTube code into data.code for the UI. */
 function toYouTubeResult<T>(r: YouTubeCoreResult<T>, fallbackError: string): YouTubeActionResult<T> {
@@ -1078,12 +1089,15 @@ export async function previewPlaylistPage(input: {
   page: number
 }): Promise<YouTubeActionResult<PreviewPage>> {
   try {
-    await requireAdminForYouTube()
+    const admin = await requireAdminForYouTube()
+    const db = createAdminClient()
+    // Per-admin limit before any key read or YouTube call (quota guard).
+    if (!(await withinYouTubeActionLimit(db, 'preview', admin.id))) return rateLimitedRefusal()
     const yt = await getServerYouTubeClient()
     if ('missing' in yt) {
       return { success: false, error: 'The YouTube key is not set.', data: { code: 'key_missing' } }
     }
-    const result = await previewPlaylistPageCore(createAdminClient(), yt.client, input)
+    const result = await previewPlaylistPageCore(db, yt.client, input)
     return toYouTubeResult(result, 'Failed to read the playlist')
   } catch (err) {
     // The error only: never the input link (D-20, T-06-51).
@@ -1107,6 +1121,10 @@ export async function commitImport(input: {
 }): Promise<YouTubeActionResult<ImportData>> {
   return runAdminAction(youtubeAdminEnv,
     async (ctx): Promise<YouTubeActionResult<ImportData>> => {
+      // Per-admin limit before any key read or YouTube call (quota guard).
+      if (!(await withinYouTubeActionLimit(ctx.db, 'import', ctx.adminUserId))) {
+        return rateLimitedRefusal()
+      }
       const yt = await getServerYouTubeClient()
       if ('missing' in yt) {
         return {
@@ -1144,10 +1162,13 @@ export async function fetchYouTubeMeta(
   opts?: { forShort?: boolean; excludeEpisodeId?: string }
 ): Promise<YouTubeActionResult<YouTubeMeta>> {
   try {
-    await requireAdminForYouTube()
+    const admin = await requireAdminForYouTube()
+    const db = createAdminClient()
+    // Per-admin limit before any key read or YouTube call (quota guard).
+    if (!(await withinYouTubeActionLimit(db, 'meta', admin.id))) return rateLimitedRefusal()
     const yt = await getServerYouTubeClient()
     const outcome = await verifyVideoCore(
-      createAdminClient(),
+      db,
       'missing' in yt ? null : yt.client,
       url,
       {
@@ -1215,10 +1236,20 @@ export async function saveYouTubeApiKey(
  * key is read from Vault on this request, so a key saved a moment ago is used.
  */
 export async function testYouTubeKey(): Promise<
-  { success: true; wrote: true; data: KeyTestData } | { success: false; error: string }
+  | { success: true; wrote: true; data: KeyTestData }
+  | { success: false; error: string; data?: { code: 'rate_limited' } }
 > {
   return runAdminAction(youtubeAdminEnv,
-    async (ctx) => {
+    async (
+      ctx
+    ): Promise<
+      | { success: true; wrote: true; data: KeyTestData }
+      | ReturnType<typeof rateLimitedRefusal>
+    > => {
+      // Per-admin limit before any key read or YouTube call (quota guard).
+      if (!(await withinYouTubeActionLimit(ctx.db, 'keyTest', ctx.adminUserId))) {
+        return rateLimitedRefusal()
+      }
       const yt = await getServerYouTubeClient()
       const r = await testYouTubeKeyCore(
         ctx.db,

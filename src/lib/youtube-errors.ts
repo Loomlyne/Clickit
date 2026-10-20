@@ -21,6 +21,7 @@ export type YouTubeErrorCode =
   | 'api_not_allowed'
   | 'quota'
   | 'network'
+  | 'rate_limited'
 
 /** Every member of YouTubeErrorCode, in the same order as the type. */
 export const YOUTUBE_ERROR_CODES = [
@@ -41,6 +42,7 @@ export const YOUTUBE_ERROR_CODES = [
   'api_not_allowed',
   'quota',
   'network',
+  'rate_limited',
 ] as const satisfies readonly YouTubeErrorCode[]
 
 /** Code -> key under `admin.youtubeErrors` (UI-SPEC message table). */
@@ -64,6 +66,8 @@ export const YOUTUBE_ERROR_MESSAGE_KEYS: Record<YouTubeErrorCode, string> = {
   api_not_allowed: 'keyRejected',
   quota: 'quota',
   network: 'network',
+  // Too many admin YouTube calls in a short time (per-admin limit).
+  rate_limited: 'rateLimited',
 }
 
 /** The error shown for a video that cannot play; null when it can. */

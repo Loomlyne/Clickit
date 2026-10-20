@@ -71,6 +71,45 @@ for (const [name, core] of WRITES) {
   })
 }
 
+const LIMITED: Array<[string, string]> = [
+  ['previewPlaylistPage', 'preview'],
+  ['fetchYouTubeMeta', 'meta'],
+  ['commitImport', 'import'],
+  ['testYouTubeKey', 'keyTest'],
+]
+
+for (const [name, action] of LIMITED) {
+  test(`${name} checks its per-admin limit after the admin check and before the key or YouTube`, () => {
+    const text = block(name)
+    const limit = text.indexOf(`withinYouTubeActionLimit(`)
+    assert.ok(limit !== -1, `${name} lacks withinYouTubeActionLimit(`)
+    assert.equal(text.split('withinYouTubeActionLimit(').length - 1, 1, `${name} checks the limit once`)
+    assert.match(
+      text,
+      new RegExp(`withinYouTubeActionLimit\\([\\w.]+, '${action}', [\\w.]+\\)`),
+      `${name} uses the '${action}' limit with the admin id`
+    )
+    const admin = text.includes('runAdminAction(')
+      ? text.indexOf('async (')
+      : text.indexOf('await requireAdminForYouTube()')
+    assert.ok(admin !== -1 && admin < limit, `${name} checks the limit before the admin check`)
+    assert.ok(limit < text.indexOf('getServerYouTubeClient('), `${name} reads the key before the limit`)
+    const core = text.search(/\w+Core\(/)
+    assert.ok(limit < core, `${name} calls a core before the limit`)
+    assert.match(text, /return rateLimitedRefusal\(\)/, `${name} returns the rate_limited refusal`)
+  })
+}
+
+test('the rate_limited refusal carries data.code and writes nothing', () => {
+  const start = src.indexOf('function rateLimitedRefusal()')
+  assert.ok(start !== -1, 'rateLimitedRefusal not found')
+  const fn = src.slice(start, src.indexOf('\n}\n', start))
+  assert.ok(fn.includes("data: { code: 'rate_limited' }"))
+  assert.ok(fn.includes('wrote: false'))
+  assert.ok(fn.includes('success: false'))
+  assert.match(src, /import \{ withinYouTubeActionLimit \} from '@\/server\/youtube\/rate-limit'/)
+})
+
 test('no Phase 6 action calls assertAdmin directly', () => {
   for (const name of PHASE6) {
     assert.ok(!/\bassertAdmin\(/.test(block(name)), `${name} calls assertAdmin(`)

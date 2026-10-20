@@ -35,3 +35,33 @@ export async function withinRateLimitCore(
     return failOpen
   }
 }
+
+// Per-admin limits on the four admin YouTube calls (PR #27 review, finding 2),
+// so a loop cannot burn the 10,000-unit daily quota. Keyed per admin user and
+// action. Fail open: a ledger hiccup must not lock the admins out of their own
+// tools; the quota itself is the hard stop.
+export const YOUTUBE_ACTION_LIMITS = {
+  preview: { prefix: 'yt-preview', max: 60, windowSec: 10 * 60 },
+  meta: { prefix: 'yt-meta', max: 60, windowSec: 10 * 60 },
+  import: { prefix: 'yt-import', max: 10, windowSec: 10 * 60 },
+  keyTest: { prefix: 'yt-key-test', max: 10, windowSec: 10 * 60 },
+} as const
+
+export type YouTubeLimitedAction = keyof typeof YOUTUBE_ACTION_LIMITS
+
+/** True when this admin may make one more call of this kind now. */
+export function withinYouTubeActionLimit(
+  db: AdminDb,
+  action: YouTubeLimitedAction,
+  adminUserId: string,
+  now: Date = new Date()
+): Promise<boolean> {
+  const limit = YOUTUBE_ACTION_LIMITS[action]
+  return withinRateLimitCore(db, {
+    key: `${limit.prefix}:${adminUserId}`,
+    max: limit.max,
+    windowSec: limit.windowSec,
+    now,
+    failOpen: true,
+  })
+}

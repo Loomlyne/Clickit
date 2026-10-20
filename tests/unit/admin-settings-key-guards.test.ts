@@ -106,6 +106,14 @@ test('advanced tab: the key block is its own form and calls both key actions', (
   assert.match(advanced, /<form\s+onSubmit=\{onSaveKey\}/)
 })
 
+test('advanced tab: a rate-limited key test shows a toast and keeps the last-test line', () => {
+  const at = advanced.indexOf("r.data?.code === 'rate_limited'")
+  assert.ok(at !== -1, 'no rate_limited branch in onTestKey')
+  const branch = advanced.slice(at, advanced.indexOf('} else {', at))
+  assert.ok(branch.includes('toast.error(tYtErrors(YOUTUBE_ERROR_MESSAGE_KEYS.rate_limited))'))
+  assert.ok(!branch.includes('setLastTest('), 'a rate limit must not record a failed test')
+})
+
 test('advanced tab: state copy from UI-SPEC §6', () => {
   for (const key of [
     'youtubeKeyTitle',

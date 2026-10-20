@@ -25,6 +25,7 @@ import {
 import type { AppConfig, FeatureFlags } from '@/lib/config'
 import { YouTubeStatusChip } from '@/components/admin/youtube-status-chip'
 import { localeTag } from '@/lib/i18n-format'
+import { YOUTUBE_ERROR_MESSAGE_KEYS } from '@/lib/youtube-errors'
 import { formatQuotaReset, nextQuotaReset } from '@/lib/youtube-quota'
 import { YOUTUBE_KEY_FORMAT } from '@/server/youtube/key'
 import { SettingsCard, SettingsField } from './settings-card'
@@ -294,6 +295,8 @@ function formatTestDate(at: string, locale: string): string {
 function YouTubeKeyBlock({ initial }: { initial: YouTubeKeyView }) {
   const t = useTranslations('admin.settings')
   const tErrors = useTranslations('errors')
+  // The key comes from YOUTUBE_ERROR_MESSAGE_KEYS, so the typed translator is widened.
+  const tYtErrors = useTranslations('admin.youtubeErrors') as unknown as (key: string) => string
   const locale = useLocale()
 
   const [last4, setLast4] = useState<string | null>(
@@ -385,6 +388,9 @@ function YouTubeKeyBlock({ initial }: { initial: YouTubeKeyView }) {
           reason: r.data.ok ? null : r.data.reason,
           resetAt: r.data.resetAt,
         })
+      } else if (r.data?.code === 'rate_limited') {
+        // Not a key failure: the last-test line stays as it was.
+        toast.error(tYtErrors(YOUTUBE_ERROR_MESSAGE_KEYS.rate_limited))
       } else {
         setLastTest({
           at: new Date().toISOString(),

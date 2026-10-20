@@ -112,6 +112,7 @@ const MESSAGES: Record<YouTubeErrorCode, string> = {
   api_not_allowed: 'The API key is not allowed to use the YouTube Data API.',
   quota: "YouTube's daily limit for Clickit is used up.",
   network: "YouTube didn't answer. Try again in a minute.",
+  rate_limited: 'Too many requests. Wait a few minutes and try again.',
 }
 
 export function verifyMessage(outcome: { ok: false; code: YouTubeErrorCode; params?: DuplicateParams }): string {

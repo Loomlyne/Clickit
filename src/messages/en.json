@@ -1669,7 +1669,8 @@
       "videoNotEmbeddable": "This video can't play on other sites. Turn on \"Allow embedding\" in YouTube Studio, then try again.",
       "videoBlockedUae": "YouTube blocks this video in the UAE, so viewers here can't play it. Change its country settings on YouTube, or pick another video.",
       "videoNotReady": "This video is still processing or hasn't premiered yet. Try again when it's live on YouTube.",
-      "videoDuplicate": "This video is already on Clickit: <bdi>{show}</bdi> · Season {season, number} · Episode {episode, number}. Pick another video."
+      "videoDuplicate": "This video is already on Clickit: <bdi>{show}</bdi> · Season {season, number} · Episode {episode, number}. Pick another video.",
+      "rateLimited": "Too many requests. Wait a few minutes and try again."
     }
   },
   "errors": {

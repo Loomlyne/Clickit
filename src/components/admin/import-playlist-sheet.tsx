@@ -36,6 +36,7 @@ import { commitImport, previewPlaylistPage } from '@/app/[locale]/admin/actions'
 import {
   bannerForCode,
   canImport,
+  importFailureSpec,
   initialTicks,
   summarizeTicks,
   tickedInPlaylistOrder,
@@ -233,6 +234,14 @@ export function ImportPlaylistSheet({
       spec.messageKey,
       spec.needsTime ? { time: quotaTime } : undefined
     )
+  }
+
+  function importFailureText(failure: ImportFailure): string {
+    const spec = importFailureSpec(failure.code)
+    if (spec) {
+      return tErr(spec.messageKey, spec.needsTime ? { time: quotaTime } : undefined)
+    }
+    return tErr('importFailed', { reason: sentence(failure.reason) })
   }
 
   function clearTimer() {
@@ -629,11 +638,7 @@ export function ImportPlaylistSheet({
 
                 {importFailure ? (
                   <SheetBanner>
-                    {importFailure.code === 'quota'
-                      ? tErr('quota', { time: quotaTime })
-                      : tErr('importFailed', {
-                          reason: sentence(importFailure.reason),
-                        })}
+                    {importFailureText(importFailure)}
                   </SheetBanner>
                 ) : null}
 

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
+import { YOUTUBE_ERROR_MESSAGE_KEYS } from '../../src/lib/youtube-errors.ts'
+
 // Phase 6 (06-05): every string the UI-SPEC copywriting contract lists exists in
 // both locales with the same placeholders, and the digit rule holds.
 
@@ -86,6 +88,7 @@ const NEW_KEYS: string[] = [
   'admin.youtubeErrors.videoBlockedUae',
   'admin.youtubeErrors.videoNotReady',
   'admin.youtubeErrors.videoDuplicate',
+  'admin.youtubeErrors.rateLimited',
   'admin.episodeForm.needsEnglishTitleHint',
   'admin.episodeForm.notSavedToast',
   'admin.episodesTable.moved',
@@ -327,6 +330,21 @@ test('number arguments are {x, number} or plural; no literal digits', () => {
       }
     }
   }
+})
+
+test('every YOUTUBE_ERROR_MESSAGE_KEYS value exists under admin.youtubeErrors in en and ar', () => {
+  for (const [code, key] of Object.entries(YOUTUBE_ERROR_MESSAGE_KEYS)) {
+    for (const [name, m] of [['en', en], ['ar', ar]] as const) {
+      const v = get(m, `admin.youtubeErrors.${key}`)
+      assert.equal(typeof v, 'string', `${name}: ${code} -> ${key} missing`)
+      assert.ok((v as string).length > 0, `${name}: ${code} -> ${key} empty`)
+    }
+  }
+})
+
+test('rate limit copy is the agreed wording in en and ar', () => {
+  assert.equal(get(en, 'admin.youtubeErrors.rateLimited'), 'Too many requests. Wait a few minutes and try again.')
+  assert.equal(get(ar, 'admin.youtubeErrors.rateLimited'), 'طلبات كثيرة جدًا. انتظر بضع دقائق ثم حاول مرة أخرى.')
 })
 
 test('quota messages carry {time}; the old "tomorrow" text is gone', () => {
