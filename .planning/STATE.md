@@ -103,6 +103,13 @@ None yet.
 | i18n | `siteTitleHint` "Shown in <title> ..." fails ICU parsing (INVALID_MESSAGE on Settings) | open | 2026-10-20 (1.1 UAT) |
 | routing | /en/admin/shows (no index route) returns 500 "No intl context found" instead of 404 | open | 2026-10-20 (1.1 UAT) |
 | local dev | CSP connect-src allows only https://*.supabase.co, so browser uploads to a local Supabase (127.0.0.1:55321) fail | open | 2026-10-20 (1.1 UAT) |
+| admin atomicity | reorderCategories and reorderShort are not atomic (multi-row renumber without compensation) | open | 2026-10-20 (PR #23 review) |
+| admin validation | youtube_video_id, image_url and expires_at are not validated in the shorts/cast actions | open | 2026-10-20 (PR #23 review) |
+| admin media | uploadArtwork and uploadCastImage do not sniff image bytes (declared type only) | open | 2026-10-20 (PR #23 review) |
+| admin perf | fillArabic has no cache (repeat translations of unchanged text) | open | 2026-10-20 (PR #23 review) |
+| admin errors | raw Supabase error messages reach the admin UI; map them to plain messages | open | 2026-10-20 (PR #23 review) |
+| admin tests | no export-level test that every server action calls assertAdmin (only per-action scans) | open | 2026-10-20 (PR #23 review) |
+| admin design | app-level compensation instead of DB transactions (D-05): revisit with an RPC per multi-step write | open | 2026-10-20 (PR #23 review) |
 
 ## Session Continuity
 

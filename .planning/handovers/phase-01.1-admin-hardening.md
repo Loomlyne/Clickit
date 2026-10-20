@@ -1,5 +1,7 @@
 # Hand-over: Phase 1.1 admin actions hardening (landing)
 
+Scope: show, season, episode, hero-video and the listed deletes (legal page, FAQ, review, short), plus preloader/show video uploads. Other legacy admin actions are outside this hardening (see STATE.md Deferred Items).
+
 - Branch: `claude/goofy-mclaren-ec2cf1` (cut from `phase-01.1-admin-actions-hardening-inserted` f793b31, merged `origin/main` cfbc8fb as b01da68).
 - Final commit: see `git log -1` on the branch (this file's commit).
 - PR: opened after Koss's UAT pass (2026-10-20); link in the PR list for branch claude/goofy-mclaren-ec2cf1.
@@ -49,3 +51,14 @@ Pass word: "approved" / "done" / "correct" / "working". A failure: the step numb
 ## After UAT (done)
 
 Dev server stopped by PID; poller exited; this worktree's `.env.local` removed. Still for the controller: stop the local `_Clickit` stack when no session needs it (`supabase stop` from a Clickit checkout, local), remove `~/clickit-uat-01.1/` (fixtures, local test account file, run scripts) and the phase-01.1 worktree's own `.env.local`; run the read-only live `reorder_episode` check before Ship.
+
+
+## Review fixes (PR #23 review of record, FIX FIRST, 2026-10-20)
+
+1. AVIF dropped: media-guards allow-lists, sniffer, SVG-rejected copy, accept attributes (branding OG, footer social icon), tests. No migration.
+2. `deleteSeason` export removed (no UI caller); `deleteSeasonCore` also refuses while any episode in the season is not archived.
+3. `savePreloaderVideoUpload` / `saveShowVideoUpload` run through `runAdminAction` and new cores in `src/lib/admin/video-uploads.ts`: storage info() size proof (20MB / 50MB) plus downloaded-blob check, pending + terminal audit rows.
+4. `deleteLegalPage`, `deleteFaq`, `deleteReview`, `deleteShort` use `deleteRowAuditedCore` (`src/lib/admin/row-deletes.ts`): row snapshot (review: body, stars, user_id, show title), pending + terminal rows. New audit entities `legal_page`, `faq` (no DB constraint on entity_type).
+5. `setHeroVideoUrl` validates inside the runner (admin first); `restoreEpisodeCore` refuses an episode that is not archived (no write, no audit row); `isSiteImageKind` uses an own-key check (`Object.prototype.hasOwnProperty.call`, same semantics as `Object.hasOwn`, which the tsconfig ES lib does not type) and also guards `removeSiteImage`.
+
+UAT step to repeat: **9** (the SVG refusal message now reads "SVG uploads are not accepted. Upload a raster image (PNG, JPEG or WebP; ICO for the favicon).").
