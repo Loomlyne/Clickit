@@ -67,6 +67,12 @@ import type { YouTubeErrorCode } from '@/lib/youtube-errors'
 import { getServerYouTubeClient } from '@/server/youtube-service'
 import { withinYouTubeActionLimit } from '@/server/youtube/rate-limit'
 import { checkShortVideoCore, type ShortVideoCheck } from '@/lib/admin/short-video'
+import {
+  SHORT_TEXT_FIELDS,
+  flagsOnCreate,
+  flagsOnUpdate,
+  shortTextFromYouTube,
+} from '@/lib/admin/youtube-text-edits'
 import { saveYouTubeApiKeyCore, type SaveKeyResult } from '@/lib/admin/youtube-key-save'
 import { testYouTubeKeyCore, type KeyTestResult } from '@/lib/admin/youtube-key-status'
 import { nextQuotaReset } from '@/lib/youtube-quota'
@@ -2854,6 +2860,13 @@ export async function createShort(
     const video = await checkShortVideoCore(admin, serverYouTubeClientOrNull, parsed.youtube_video_id)
     if (!video.ok) return shortVideoRefusal(video)
     parsed.youtube_video_id = video.videoId
+    // Review item 7: a field that differs from the verified video's text is
+    // "edited on Clickit"; the daily check keeps it.
+    const edited = flagsOnCreate(
+      SHORT_TEXT_FIELDS,
+      parsed,
+      video.meta ? shortTextFromYouTube(video.meta) : null
+    )
 
     const { data: lastShort } = await admin
       .from('shorts')
@@ -2864,7 +2877,7 @@ export async function createShort(
 
     const { data: short, error } = await admin
       .from('shorts')
-      .insert({ ...parsed, sort_order: (lastShort?.sort_order ?? -1) + 1 })
+      .insert({ ...parsed, ...edited, sort_order: (lastShort?.sort_order ?? -1) + 1 })
       .select()
       .single()
 
@@ -2906,7 +2919,7 @@ export async function updateShort(
 
     const { data: current, error: readError } = await admin
       .from('shorts')
-      .select('youtube_video_id')
+      .select('youtube_video_id, title, channel_name, title_edited, channel_name_edited')
       .eq('id', id)
       .maybeSingle()
     if (readError) return { success: false, error: readError.message }
@@ -2921,10 +2934,18 @@ export async function updateShort(
     )
     if (!video.ok) return shortVideoRefusal(video)
     parsed.youtube_video_id = video.videoId
+    // Review item 7: a changed title or channel gets its edited flag in the
+    // same UPDATE; a flag is never cleared.
+    const edited = flagsOnUpdate(
+      SHORT_TEXT_FIELDS,
+      parsed,
+      current,
+      video.meta ? shortTextFromYouTube(video.meta) : null
+    )
 
     const { data: short, error } = await admin
       .from('shorts')
-      .update(parsed)
+      .update({ ...parsed, ...edited })
       .eq('id', id)
       .select()
       .single()

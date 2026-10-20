@@ -18,6 +18,14 @@ import {
   seasonUpdateSchema,
 } from './schemas.ts'
 import { verifyMessage, type DuplicateParams, type VerifyOutcome } from './youtube-verify.ts'
+import {
+  EPISODE_TEXT_FIELDS,
+  episodeTextFromYouTube,
+  flagsOnCreate,
+  flagsOnUpdate,
+  type EpisodeTextField,
+  type TextValues,
+} from './youtube-text-edits.ts'
 import { parseVideoIdStrict } from '../../server/youtube/urls.ts'
 import type { YouTubeErrorCode } from '../youtube-errors'
 import type { AdminDb, ArabicFill, AuditWriter, CoreResult } from './ports'
@@ -51,22 +59,26 @@ const isDupVideo = (e: { code?: string; message: string }) =>
   e.code === '23505' && e.message.includes('episodes_youtube_video_id_key')
 
 /**
- * Runs deps.verifyVideo. Returns the normalized id, or a refusal result to
- * return as-is. A throw (database read failed) is a plain error, never ok.
+ * Runs deps.verifyVideo. Returns the normalized id and the video's text routed
+ * as the import routes it (for the edited flags, review item 7), or a refusal
+ * result to return as-is. A throw (database read failed) is a plain error,
+ * never ok.
  */
 async function checkVideo(
   deps: Deps,
   raw: string,
   opts: { excludeEpisodeId?: string },
   showId: string
-): Promise<{ videoId: string } | { refusal: CoreResult<EpisodeData> }> {
+): Promise<
+  { videoId: string; youtube: TextValues<EpisodeTextField> } | { refusal: CoreResult<EpisodeData> }
+> {
   let outcome: VerifyOutcome
   try {
     outcome = await (deps.verifyVideo as NonNullable<Deps['verifyVideo']>)(raw, opts)
   } catch (e) {
     return { refusal: { success: false, error: errText(e), wrote: false, data: { showId } } }
   }
-  if (outcome.ok) return { videoId: outcome.meta.videoId }
+  if (outcome.ok) return { videoId: outcome.meta.videoId, youtube: episodeTextFromYouTube(outcome.meta) }
   const youtubeError: YouTubeError = outcome.params
     ? { code: outcome.code, params: outcome.params }
     : { code: outcome.code }
@@ -421,10 +433,12 @@ export async function createEpisodeCore(
     return { success: false, error: 'Season does not belong to this show.', wrote: false }
   }
 
+  let youtube: TextValues<EpisodeTextField> | null = null
   if (deps.verifyVideo && !blank(parsed.youtube_video_id)) {
     const v = await checkVideo(deps, parsed.youtube_video_id as string, {}, showId)
     if ('refusal' in v) return v.refusal
     parsed.youtube_video_id = v.videoId
+    youtube = v.youtube
   }
 
   const t = await fill(deps, parsed.title, parsed.title_ar)
@@ -433,6 +447,10 @@ export async function createEpisodeCore(
   if (d.error) return { success: false, error: d.error, wrote: false }
   parsed.title_ar = t.value
   parsed.description_ar = d.value
+  // Review item 7: a saved field that differs from the verified video's text
+  // is "edited on Clickit", so the daily check keeps it. No verified video:
+  // every non-empty field counts as edited.
+  const edited = flagsOnCreate(EPISODE_TEXT_FIELDS, parsed, youtube)
 
   const visible = await db
     .from('episodes')
@@ -472,7 +490,11 @@ export async function createEpisodeCore(
     {
       name: 'insert-episode',
       run: async () => {
-        const res = await db.from('episodes').insert({ ...parsed, archived: false } as never).select().single()
+        const res = await db
+          .from('episodes')
+          .insert({ ...parsed, ...edited, archived: false } as never)
+          .select()
+          .single()
         if (res.error) {
           dupVideo = isDupVideo(res.error)
           if (dupVideo) return { error: DUP_VIDEO }
@@ -542,6 +564,7 @@ export async function updateEpisodeCore(
   const patch: Obj = { ...rest }
 
   // Verify only a present and changed video link (same id in another form is not a change).
+  let youtube: TextValues<EpisodeTextField> | null = null
   if (deps.verifyVideo && typeof patch.youtube_video_id === 'string' && !blank(patch.youtube_video_id)) {
     const raw = patch.youtube_video_id
     const same = parseVideoIdStrict(raw)
@@ -551,6 +574,7 @@ export async function updateEpisodeCore(
       const v = await checkVideo(deps, raw, { excludeEpisodeId: episodeId }, showId)
       if ('refusal' in v) return v.refusal
       patch.youtube_video_id = v.videoId
+      youtube = v.youtube
     }
   }
 
@@ -570,6 +594,10 @@ export async function updateEpisodeCore(
       patch.description_ar = ar.value
     }
   }
+
+  // Review item 7: a text field changed on Clickit gets its edited flag, in
+  // the same UPDATE as the text, so the daily check skips it from then on.
+  Object.assign(patch, flagsOnUpdate(EPISODE_TEXT_FIELDS, patch, row, youtube))
 
   const steps: WriteStep[] = []
   if (patch.episode_number !== undefined && patch.episode_number !== row.episode_number) {

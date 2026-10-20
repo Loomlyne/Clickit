@@ -9,10 +9,14 @@ import { parseVideoIdStrict } from '../../server/youtube/urls.ts'
 import type { YouTubeClientLike } from '../../server/youtube/client'
 import type { YouTubeErrorCode } from '../youtube-errors.ts'
 import type { AdminDb } from './ports'
-import { verifyMessage, verifyVideoCore } from './youtube-verify.ts'
+import { verifyMessage, verifyVideoCore, type YouTubeMeta } from './youtube-verify.ts'
 
+/**
+ * `meta` is present only when YouTube was asked (a new or changed link); the
+ * save compares the admin's fields with it for the edited flags (review item 7).
+ */
 export type ShortVideoCheck =
-  | { ok: true; videoId: string }
+  | { ok: true; videoId: string; meta?: YouTubeMeta }
   | { ok: false; code: YouTubeErrorCode; error: string }
 
 /**
@@ -35,6 +39,6 @@ export async function checkShortVideoCore(
 
   const client = await getClient()
   const outcome = await verifyVideoCore(db, client, parsed.id, { checkDuplicate: false })
-  if (outcome.ok) return { ok: true, videoId: outcome.meta.videoId }
+  if (outcome.ok) return { ok: true, videoId: outcome.meta.videoId, meta: outcome.meta }
   return { ok: false, code: outcome.code, error: verifyMessage(outcome) }
 }

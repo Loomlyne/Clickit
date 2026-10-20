@@ -19,6 +19,7 @@ import { dominantScript } from '../../server/youtube/script.ts'
 import { videoReason } from '../../server/youtube/status.ts'
 import { parsePlaylistId } from '../../server/youtube/urls.ts'
 import { parseIsoDuration } from '../../server/youtube/duration.ts'
+import { UNEDITED_EPISODE_TEXT } from './youtube-text-edits.ts'
 import type {
   YouTubeClientLike,
   YouTubePlaylist,
@@ -461,7 +462,14 @@ export async function commitImportCore(
       name: 'insert-episodes',
       run: async () => {
         if (!seasonId) return { error: 'No target season.' }
-        const rows = plan.rows.map((r) => ({ ...r, show_id: showId, season_id: seasonId as string, archived: false }))
+        // YouTube's own text, so the daily check may refresh it (review item 7).
+        const rows = plan.rows.map((r) => ({
+          ...r,
+          ...UNEDITED_EPISODE_TEXT,
+          show_id: showId,
+          season_id: seasonId as string,
+          archived: false,
+        }))
         // ONE statement: a unique violation fails every row (T-06-26).
         const res = await db.from('episodes').insert(rows).select('id')
         if (res.error) {
