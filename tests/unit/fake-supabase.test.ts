@@ -22,9 +22,9 @@ function seed() {
 
 test('select filters eq/neq/in/is/not-null/gt/lt, order, limit', async () => {
   const f = seed()
-  const c = f.client as any
+  const c = f.client
   const r1 = await c.from('shows').select('id').eq('archived', false)
-  assert.deepEqual(r1.data.map((r: any) => r.id), ['a', 'c'])
+  assert.deepEqual(r1.data.map((r) => r.id), ['a', 'c'])
   const r2 = await c.from('shows').select('id').neq('id', 'a')
   assert.equal(r2.data.length, 2)
   const r3 = await c.from('shows').select('id').in('id', ['a', 'b'])
@@ -42,12 +42,12 @@ test('select filters eq/neq/in/is/not-null/gt/lt, order, limit', async () => {
     .select('id')
     .order('season_count', { ascending: false })
     .limit(1)
-  assert.deepEqual(r8.data.map((r: any) => r.id), ['c'])
+  assert.deepEqual(r8.data.map((r) => r.id), ['c'])
 })
 
 test('single errors PGRST116 on 0 or many rows; maybeSingle returns null', async () => {
   const f = seed()
-  const c = f.client as any
+  const c = f.client
   const none = await c.from('shows').select('*').eq('id', 'zzz').single()
   assert.equal(none.error.code, 'PGRST116')
   const many = await c.from('shows').select('*').single()
@@ -61,7 +61,7 @@ test('single errors PGRST116 on 0 or many rows; maybeSingle returns null', async
 
 test('count head returns count and null data', async () => {
   const f = seed()
-  const c = f.client as any
+  const c = f.client
   const r = await c
     .from('episodes')
     .select('id', { count: 'exact', head: true })
@@ -78,21 +78,21 @@ test('eq on JSON path diff->>outcome', async () => {
       { id: '2', diff: { outcome: 'failed' } },
     ],
   })
-  const r = await (f.client as any)
+  const r = await (f.client)
     .from('admin_audit_log')
     .select('id')
     .eq('diff->>outcome', 'committed')
-  assert.deepEqual(r.data.map((x: any) => x.id), ['1'])
+  assert.deepEqual(r.data.map((x) => x.id), ['1'])
 })
 
 test('update/delete apply to filtered rows; data only with select()', async () => {
   const f = seed()
-  const c = f.client as any
+  const c = f.client
   const u = await c.from('shows').update({ title: 'Z' }).eq('id', 'a')
   assert.equal(u.error, null)
   assert.equal(u.data, null)
-  assert.equal(f.tables.shows.find((s: any) => s.id === 'a').title, 'Z')
-  assert.equal(f.tables.shows.find((s: any) => s.id === 'c').title, 'C')
+  assert.equal(f.tables.shows.find((s) => s.id === 'a').title, 'Z')
+  assert.equal(f.tables.shows.find((s) => s.id === 'c').title, 'C')
   const u2 = await c.from('shows').update({ title: 'Y' }).eq('id', 'c').select()
   assert.equal(u2.data.length, 1)
   const d = await c.from('shows').delete().eq('id', 'b').select()
@@ -102,7 +102,7 @@ test('update/delete apply to filtered rows; data only with select()', async () =
 
 test('insert assigns uuid id and created_at', async () => {
   const f = seed()
-  const r = await (f.client as any)
+  const r = await (f.client)
     .from('shows')
     .insert({ title: 'N', slug: 'n' })
     .select()
@@ -114,7 +114,7 @@ test('insert assigns uuid id and created_at', async () => {
 
 test('duplicate (season_id, episode_number) returns 23505 and leaves table unchanged', async () => {
   const f = seed()
-  const c = f.client as any
+  const c = f.client
   const before = f.snapshot()
   const r = await c
     .from('episodes')
@@ -131,7 +131,7 @@ test('duplicate (season_id, episode_number) returns 23505 and leaves table uncha
 
 test('duplicate shows.slug returns 23505', async () => {
   const f = seed()
-  const r = await (f.client as any)
+  const r = await (f.client)
     .from('shows')
     .insert({ title: 'X', slug: 'a' })
   assert.equal(r.error.code, '23505')
@@ -140,13 +140,13 @@ test('duplicate shows.slug returns 23505', async () => {
 
 test('failOn nth makes only the nth matching op fail', async () => {
   const f = seed()
-  const c = f.client as any
+  const c = f.client
   f.failOn({ table: 'episodes', op: 'update', nth: 2 })
   const a = await c.from('episodes').update({ title: 'x' }).eq('id', 'e1')
   assert.equal(a.error, null)
   const b = await c.from('episodes').update({ title: 'y' }).eq('id', 'e3')
   assert.equal(b.error.message, 'forced failure')
-  assert.equal(f.tables.episodes.find((e: any) => e.id === 'e3').title, undefined)
+  assert.equal(f.tables.episodes.find((e) => e.id === 'e3').title, undefined)
   const d = await c.from('episodes').update({ title: 'z' }).eq('id', 'e3')
   assert.equal(d.error, null)
 })
@@ -155,7 +155,7 @@ test('throwOn throws on the nth op', async () => {
   const f = seed()
   f.throwOn({ table: 'shows', op: 'delete', nth: 1 })
   await assert.rejects(async () => {
-    await (f.client as any).from('shows').delete().eq('id', 'a')
+    await (f.client).from('shows').delete().eq('id', 'a')
   })
   assert.equal(f.tables.shows.length, 3)
 })
@@ -171,22 +171,22 @@ test('snapshot excludes tables and is a deep copy', async () => {
 test('auditWriter inserts rows with increasing created_at; failOn nth fails', async () => {
   const f = seed()
   const e = { adminUserId: 'u', action: 'delete', entity: 'episode', entityId: null } as const
-  const r1 = await f.auditWriter({ ...e, diff: { n: 1 } } as any)
-  const r2 = await f.auditWriter({ ...e, diff: { n: 2 } } as any)
+  const r1 = await f.auditWriter({ ...e, diff: { n: 1 } })
+  const r2 = await f.auditWriter({ ...e, diff: { n: 2 } })
   assert.equal(r1.error, null)
   assert.equal(r2.error, null)
   assert.ok(f.auditRows()[0].created_at < f.auditRows()[1].created_at)
   f.failOn({ table: 'admin_audit_log', op: 'insert', nth: 3 })
-  const r3 = await f.auditWriter({ ...e, diff: { n: 3 } } as any)
+  const r3 = await f.auditWriter({ ...e, diff: { n: 3 } })
   assert.equal(r3.error, 'forced failure')
   assert.equal(f.auditRows().length, 2)
 })
 
 test('registerRpc handler runs; unregistered returns PGRST202; failOn rpc', async () => {
   const f = seed()
-  const c = f.client as any
-  f.registerRpc('bump', (args: any, tables: any) => {
-    tables.shows.find((s: any) => s.id === args.id).season_count = 99
+  const c = f.client
+  f.registerRpc('bump', (args, tables) => {
+    tables.shows.find((s) => s.id === args.id).season_count = 99
     return { data: 'ok', error: null }
   })
   const ok = await c.rpc('bump', { id: 'a' })
@@ -201,10 +201,10 @@ test('registerRpc handler runs; unregistered returns PGRST202; failOn rpc', asyn
 
 test('calls records ordered ops', async () => {
   const f = seed()
-  const c = f.client as any
+  const c = f.client
   await c.from('shows').update({ title: 'Q' }).eq('id', 'a')
   await c.from('shows').delete().eq('id', 'c')
-  const ops = f.calls.map((x: any) => x.op)
+  const ops = f.calls.map((x) => x.op)
   assert.deepEqual(ops, ['update', 'delete'])
   assert.equal(f.calls[0].table, 'shows')
 })

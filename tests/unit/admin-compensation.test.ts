@@ -113,7 +113,7 @@ test('audit diff builders', () => {
   )
   assert.deepEqual(
     compensationAuditDiff(
-      { ok: false, failedStep: 'b', error: 'e', undone: ['a'], leftInPlace: [], completed: [], wrote: true } as any,
+      { ok: false, failedStep: 'b', error: 'e', undone: ['a'], leftInPlace: [], completed: [], wrote: true },
       { id: 'x' }
     ),
     { outcome: 'failed', failed_step: 'b', error: 'e', undone: ['a'], left_in_place: [], id: 'x' }
@@ -121,7 +121,7 @@ test('audit diff builders', () => {
 })
 
 function deleteInput(f: ReturnType<typeof createFakeSupabase>) {
-  const c = f.client as any
+  const c = f.client
   return {
     audit: f.auditWriter,
     adminUserId: 'u1',

@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- loose test fake mimicking the untyped supabase-js builder */
 /* In-memory Supabase fake for unit tests. Test-only; never bundled. */
 import { randomUUID } from 'node:crypto'
 
-type Row = Record<string, any>
+export type Row = Record<string, any>
 type Tables = Record<string, Row[]>
 type Op = 'select' | 'insert' | 'update' | 'delete'
 type FailRule = {
@@ -320,7 +321,7 @@ export function createFakeSupabase(initial: Tables = {}) {
     }
   }
 
-  const client = {
+  const client: any = {
     from: (table: string) => new Builder(table),
     async rpc(name: string, args: any) {
       calls.push({ table: name, op: 'rpc', filters: [], patch: args })
