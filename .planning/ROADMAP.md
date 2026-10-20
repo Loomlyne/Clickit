@@ -138,28 +138,34 @@ Plans:
   4. Nothing is drawn over the playing video (the autoplay-next card sits off the player). Player chrome and captions follow the site language. A removed or blocked video shows a branded error state.
   5. Reordering episodes never leaves a gap or a duplicate, and a failed reorder shows an error.
 **Owner-gated**: [OWNER] create the restricted YouTube API key and set it as a Worker secret; [OWNER] rotate the old key; [OWNER] approve the migration that removes the DB key column copy; [OWNER] Ship.
-**Plans**: 19 plans (8 waves)
+**Plans**: 25 plans (11 waves, W0-W10)
 
 Plans:
-- [ ] 06-01-PLAN.md — W1: [BLOCKING] upstream check; expand + contract migrations; key resolver; controller local apply + types
-- [ ] 06-02-PLAN.md — W1: pure YouTube modules (urls, duration, status, script, error codes, API client) with fixtures
-- [ ] 06-03-PLAN.md — W1: pure watch logic (resume, ENDED_MODE state machine, player errors, player vars) and quota/clock helpers
-- [ ] 06-04-PLAN.md — W1: every EN/AR string and the shared YouTubeStatusChip
-- [ ] 06-05-PLAN.md — W2: playlist preview, import commit and single-video verify cores
-- [ ] 06-06-PLAN.md — W2: renumber core and scheduler episode filter
-- [ ] 06-07-PLAN.md — W2: daily re-check core, Can't-play rule, cron route and registration
-- [ ] 06-08-PLAN.md — W2: overlay-free player, tracker race fix, watch reads, viewer error report
-- [ ] 06-09-PLAN.md — W2: up-next card (card and bar modes) and branded error card
-- [ ] 06-10-PLAN.md — W3: admin Server Action wrappers (import, meta, verify on save, renumber, filtered schedule)
-- [ ] 06-11-PLAN.md — W3: stacked watch page, resume on switch, ENDED/error wiring, no Toaster on /watch
-- [ ] 06-12-PLAN.md — W4: single-link add via server action; shorts switch; delete /api/youtube-meta
-- [ ] 06-13-PLAN.md — W5: admin arrows, Renumber 1 to N dialog, Can't play / Needs English marks, dashboard panel
-- [ ] 06-14-PLAN.md — W4: Settings read-only key status and Test key; remove youtube_api_key write path
-- [ ] 06-15-PLAN.md — W4: import side sheet, show-page entry, scheduler for the new drafts
-- [ ] 06-16-PLAN.md — W5: remove old key reader and unused strings; ROADMAP Phase 8 drift
-- [ ] 06-17-PLAN.md — W6: gate, hand-over, PR; [OWNER] create key, set secret, UAT
-- [ ] 06-18-PLAN.md — W7: [OWNER] Ship, expand migration on live, live Test key
-- [ ] 06-19-PLAN.md — W8: [OWNER] contract migration (drop youtube_api_key), delete old key
+- [ ] 06-00-PLAN.md — W0: [BLOCKING] merge origin/main; upstream preconditions; migrations workflow has no push-to-main apply; record Worker name, crons, waiver
+- [ ] 06-01-PLAN.md — W1: expand migration only; key resolver; controller local apply + types under the lock
+- [ ] 06-02-PLAN.md — W1: pure classifiers (error codes, urls, duration, status, script / needsEnglishTitle)
+- [ ] 06-03-PLAN.md — W1: YouTube API client (header key, paging, batching, error mapping) with documented-shape fixtures
+- [ ] 06-04-PLAN.md — W1: pure watch logic (resume, progress gate, ENDED_MODE, player errors, hidden-iframe predicate) and quota/clock helpers
+- [ ] 06-05-PLAN.md — W1: every EN/AR string and the shared YouTubeStatusChip
+- [ ] 06-06-PLAN.md — W2: playlist preview, import commit and single-video verify cores
+- [ ] 06-07-PLAN.md — W2: renumber core and scheduler episode filter
+- [ ] 06-08-PLAN.md — W2: daily re-check core, Can't-play rule, cron route, 30 1 * * * added to the active crons
+- [ ] 06-09-PLAN.md — W2: player plumbing (React-owned hidden wrapper, tracker gated on video id, status map read, viewer error report)
+- [ ] 06-10-PLAN.md — W2: up-next card (card and bar modes) and branded error card
+- [ ] 06-11-PLAN.md — W2: watch actions without toasts (revert + live region) and static episode list
+- [ ] 06-12-PLAN.md — W2: import preview table and its pure row view
+- [ ] 06-13-PLAN.md — W3: admin Server Action wrappers (import, meta, verify on save, renumber, filtered schedule)
+- [ ] 06-14-PLAN.md — W3: stacked watch shell, resume on switch, ENDED/error wiring, no Toaster on /watch
+- [ ] 06-15-PLAN.md — W4: single-link add via server action; shorts switch; delete /api/youtube-meta
+- [ ] 06-16-PLAN.md — W4: Settings read-only key status and Test key; remove youtube_api_key write path
+- [ ] 06-17-PLAN.md — W4: import side sheet (core, states, success), show-page entry, scheduler for the new drafts
+- [ ] 06-18-PLAN.md — W5: admin arrows, Renumber 1 to N dialog, Can't play / Needs English marks, dashboard panel
+- [ ] 06-19-PLAN.md — W5: remove old key reader and unused strings; ROADMAP Phase 8 drift
+- [ ] 06-20-PLAN.md — W6: gate, hand-over, PR; [OWNER] create key; [OWNER] UAT on the local stack
+- [ ] 06-21-PLAN.md — W7: [OWNER] Ship; [OWNER] expand migration on live; [OWNER] approve deploy; controller deploys and checks the cron trigger
+- [ ] 06-22-PLAN.md — W8: [OWNER] Worker secret after deploy; [OWNER] live Test key; [OWNER] go for one real re-check
+- [ ] 06-23-PLAN.md — W9: contract migration (drop youtube_api_key) in its own branch and PR
+- [ ] 06-24-PLAN.md — W10: [OWNER] Ship the contract PR; [OWNER] approve the live apply; [OWNER] delete the old key
 **UI hint**: yes
 
 ### Phase 7: Product Completeness, Search and Arabic
@@ -202,6 +208,6 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | 3. Production Cutover | 0/TBD | Not started | - |
 | 4. Design System Truth | 0/TBD | Not started | - |
 | 5. Accounts and Email | 0/TBD | Not started | - |
-| 6. YouTube Import and Player | 0/19 | Planned | - |
+| 6. YouTube Import and Player | 0/25 | Planned | - |
 | 7. Product Completeness, Search and Arabic | 0/TBD | Not started | - |
 | 8. Hardening and Contract Cleanup | 0/TBD | Not started | - |

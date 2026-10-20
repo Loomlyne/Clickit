@@ -546,18 +546,24 @@ grant execute on function public.renumber_season(uuid) to service_role;
 | A16 | Region/Content ID blocks sometimes show an in-iframe message without firing `onError` | Pattern 10 | If always signalled, preflight is redundant but harmless |
 | A17 | A cron run through `handler.fetch` may exceed 10 ms CPU on Workers Free | Pattern 11 | Cron fails on Free; mitigation: direct call from `scheduled()`, or Koss's priced Paid decision |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **D-09 policy risk: accept or use the bar-below fallback?**
    - What we know: RMF allows unmounting/hiding the player when nothing overlays a visible one; the Developer Policies Guide says not to disable or block Related Video links after completion. The earlier project research (PITFALLS 13) judged "unmount or hide the iframe" fine; this session found the Guide line it did not cite.
    - What's unclear: whether YouTube would treat a custom up-next card as "blocking" related links; no enforcement precedent found.
    - Recommendation: implement D-09 as signed behind `ENDED_MODE`, state the risk in the plan, and let Koss confirm at the plan gate. If he prefers zero risk, flip to `bar-below-player` (same countdown, iframe stays visible).
+   - RESOLVED: default built (`ENDED_MODE = 'card'` in 06-04/06-14, `'bar'` is one constant away); Koss confirms at plan gate.
 2. **D-17 and D-05: what exactly does the 30-day refresh cover?**
    - Recommendation: the cron refreshes status, length and checked-at; titles/descriptions are treated as Clickit-authored after import (A9). Koss should know this is an interpretation, not a quote from the policy.
+   - RESOLVED: default built (06-08 re-check writes status, length while still the YouTube value, and checked-at; never titles or descriptions; `record_youtube_checks` test in 06-01); Koss confirms at plan gate.
 3. **Archived rows during `renumber_season`:** recommend moving them to N+1..N+K. Alternative: leave archived numbers untouched and fail if they collide. Planner may pick the alternative if the audit diff should not touch archived rows.
+   - RESOLVED: default built (archived rows move to N+1..N+K in `renumber_season`, 06-01/06-07); Koss confirms at plan gate.
 4. **Shorts and hero YouTube ids** are outside D-17's wording. Recommend adding shorts ids to the same batch in Phase 7 (PROD-07).
+   - RESOLVED: deferred to Phase 7 PROD-07; Phase 6 re-checks episode ids only.
 5. **Player error 5 and 2 as "flags":** recommend reporting all reportable codes but weighting 5 as low severity (transient). Koss's D-11 lists them as flagged; keep, but show the code in the admin badge tooltip so admins can judge.
+   - RESOLVED: declined. All reportable codes are stored (`player_error_code`), but the admin badge shows the plain reason ("Reported by a viewer" or the status chip text), not the raw code (06-08 `cantPlayReason`, 06-18).
 6. **After the user presses Cancel on the up-next card:** recommend card stays with "Play now" and "Watch again" (Pattern 8).
+   - RESOLVED: in the cards plan, 06-10 (numbered 06-09 before the checker revision): after Cancel the card stays with "Play now" and "Watch again".
 
 ## Environment Availability
 
