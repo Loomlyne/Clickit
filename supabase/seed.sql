@@ -411,6 +411,29 @@ BEGIN
 
 END $$;
 
+-- Distinct catalog order 1..15 in seed order (shows.sort_order is NOT NULL default 0
+-- since 20260520000000; without this every seeded show would sort as 0).
+UPDATE public.shows AS s
+SET sort_order = o.n
+FROM (VALUES
+  ('last-call', 1),
+  ('review-documentary', 2),
+  ('doctor-care', 3),
+  ('saturn-podcast', 4),
+  ('poets-platform', 5),
+  ('kids-area', 6),
+  ('infocus', 7),
+  ('break-fast-daily', 8),
+  ('meta-talk', 9),
+  ('360', 10),
+  ('music-hub', 11),
+  ('laugh-or-leave', 12),
+  ('island-cooke', 13),
+  ('60-questions-challenge', 14),
+  ('nexthub', 15)
+) AS o(slug, n)
+WHERE s.slug = o.slug;
+
 -- Example shorts (was 20260425000001_seed_example_shorts.sql)
 INSERT INTO public.shorts (youtube_video_id, title, channel_name, thumbnail_url, duration_seconds, genre, sort_order) VALUES
   ('RyWAAM7EkCE', 'Abu Dhabi Street Food Tour', 'Travel Eats', 'https://i.ytimg.com/vi/RyWAAM7EkCE/hq720.jpg', 58, 'Travel', 1),
