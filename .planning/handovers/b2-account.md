@@ -8,6 +8,7 @@ Branch `claude/design-b2-account-91fbe1` (base `main` merged in at `53e2598`). S
 - `(viewer)/profile`: 44px targets, real labels, inline errors (toasts kept), eye + strength on password change, permanent avatar camera badge, h2 section titles, 2-line history rows that fit 375px (no sideways scroll), RTL rail fade, empty-state "Watch Shows" buttons.
 - Skeletons for auth and profile match the pages. Deleted unused `components/auth/show-collage.tsx`.
 - Password minimum 8 for every new password (sign-up, reset, profile) via `components/auth/password-rules.ts`; sign-in only checks non-empty so older accounts still get in. `tErrors('passwordMin'|'nameMin')` now receive `{min}`.
+- Review fixes (controller's reviewer, Opus): terms Label `block`; eye has fixed `aria-label` + `aria-pressed`; strength is `weak` below the minimum length; `signUpAction` rejects passwords under 8 server-side (returns `passwordMin`, shown localized); `auth-errors.ts` copy says 8; profile inline errors go through `mapAuthError`; scrims use the `--bg-0` token via `color-mix`; removed unused `auth.passwordStrengthAria`; `method="post"` on the auth forms.
 - Shared files (B2 owns): `ui/tabs` (trigger `min-h-11`, list `h-auto`: **admin tabs also grow ~8px — B4 should look**), `ui/checkbox` (20px on every width, 6px radius). Not touched: `globals.css`, `ui/button.tsx`, `PortraitShowCard` (consumed only).
 
 ## Commits
@@ -44,6 +45,9 @@ The app now enforces 8 characters in the browser, but Supabase Auth has its own 
 11. `/ar/profile` and `/ar/auth`: eye sits on the left edge of the field, rail fade on the left of the lists' end side.
 12. Job C check: DevTools → Elements → `[data-turnstile-slot]` exists in sign-in, sign-up and forgot, empty, no visible gap.
 
+## Heads-up for B4 (shared UI changes)
+- `ui/checkbox` lost `sm:size-4`: admin checkboxes (`categories-manager`, `reviews-table`, `shows-table`, `shorts-table`, `archive-table`) grow from 16px to 20px on desktop.
+- `ui/tabs` trigger is now `min-h-11`: admin season pills grow 32px→44px and `season-tabs.tsx:127` `h-8!` no longer has effect (dead class, B4 file, left alone).
+
 ## Follow-ups (not in this PR)
 - Expired/invalid reset link state (needs copy).
-- `ui/*` consumers elsewhere: admin tabs grew; B4/controller to eyeball.

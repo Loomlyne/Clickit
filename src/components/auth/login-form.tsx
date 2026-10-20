@@ -118,6 +118,7 @@ export function LoginForm() {
           <form
             onSubmit={forgotForm.handleSubmit(onForgot)}
             className="flex flex-col gap-4"
+            method="post"
             noValidate
           >
             {serverError && (
@@ -170,6 +171,7 @@ export function LoginForm() {
     <form
       onSubmit={loginForm.handleSubmit(onLogin)}
       className="flex flex-col gap-4"
+      method="post"
       noValidate
     >
       {serverError && <AuthAlert variant="error">{serverError}</AuthAlert>}

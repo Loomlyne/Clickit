@@ -68,6 +68,7 @@ export function ResetPasswordForm() {
     <form
       onSubmit={handleSubmit(onSubmit)}
       className="flex flex-col gap-4"
+      method="post"
       noValidate
     >
       {serverError && <AuthAlert variant="error">{serverError}</AuthAlert>}

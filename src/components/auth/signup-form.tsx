@@ -67,7 +67,11 @@ export function SignupForm() {
     const result = await signUpAction(data.email, data.password, data.name)
 
     if (!result.ok) {
-      setServerError(mapAuthError(result.error))
+      setServerError(
+        result.error === 'passwordMin'
+          ? fieldError('passwordMin')!
+          : mapAuthError(result.error)
+      )
       return
     }
 
@@ -80,6 +84,7 @@ export function SignupForm() {
     <form
       onSubmit={handleSubmit(onSubmit)}
       className="flex flex-col gap-4"
+      method="post"
       noValidate
     >
       {serverError && <AuthAlert variant="error">{serverError}</AuthAlert>}
@@ -149,7 +154,7 @@ export function SignupForm() {
           />
           <Label
             htmlFor="signup-terms"
-            className="text-sm leading-normal font-normal text-[var(--text-dim)]"
+            className="block text-sm leading-normal font-normal text-[var(--text-dim)]"
           >
             {t.rich('termsAccept', {
               terms: (chunks) => (

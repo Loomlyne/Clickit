@@ -2,6 +2,7 @@
 
 import { checkBotId } from 'botid/server'
 import { createClient } from '@/lib/supabase/server'
+import { PASSWORD_MIN } from '@/components/auth/password-rules'
 
 /**
  * Server Actions for sign-in / sign-up, observed (not gated) by BotID.
@@ -81,6 +82,13 @@ export async function signUpAction(
   displayName: string
 ): Promise<AuthResult> {
   await logBotSignal('signUp')
+
+  // Same minimum as the form, enforced here too so a direct call to the
+  // Server Action cannot create a shorter password. The client maps the
+  // 'passwordMin' key to the localized errors.passwordMin message.
+  if (password.length < PASSWORD_MIN) {
+    return { ok: false, error: 'passwordMin' }
+  }
 
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signUp({ email, password })

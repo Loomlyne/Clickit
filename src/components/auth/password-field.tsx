@@ -42,7 +42,7 @@ export function PasswordField({
   const errorId = `${inputId}-error`
   const strengthId = `${inputId}-strength`
   const score = strengthOf === undefined ? 0 : passwordScore(strengthOf)
-  const level = passwordStrength(score)
+  const level = passwordStrength(strengthOf ?? '')
 
   return (
     <div>
@@ -63,7 +63,7 @@ export function PasswordField({
         <button
           type="button"
           onClick={() => setShown((v) => !v)}
-          aria-label={shown ? t('hidePassword') : t('showPassword')}
+          aria-label={t('showPassword')}
           aria-pressed={shown}
           className="absolute end-0 top-0 flex size-11 items-center justify-center rounded-lg text-[var(--text-mute)] transition-colors outline-none hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
         >

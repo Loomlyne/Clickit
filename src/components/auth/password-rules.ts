@@ -18,7 +18,10 @@ export function passwordScore(value: string): number {
 
 export type PasswordStrength = 'weak' | 'good' | 'strong'
 
-export function passwordStrength(score: number): PasswordStrength {
+/** Anything shorter than the minimum is weak, whatever else it contains. */
+export function passwordStrength(value: string): PasswordStrength {
+  if (value.length < PASSWORD_MIN) return 'weak'
+  const score = passwordScore(value)
   return score < 2 ? 'weak' : score < 4 ? 'good' : 'strong'
 }
 

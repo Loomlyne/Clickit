@@ -89,7 +89,7 @@ export default async function AuthPage({
         )}
         <div
           aria-hidden
-          className="absolute inset-0 bg-[linear-gradient(0deg,rgba(9,9,9,0.94)_0%,rgba(9,9,9,0.62)_42%,rgba(9,9,9,0.08)_100%)]"
+          className="absolute inset-0 bg-[linear-gradient(0deg,color-mix(in_srgb,var(--bg-0)_94%,transparent)_0%,color-mix(in_srgb,var(--bg-0)_62%,transparent)_42%,color-mix(in_srgb,var(--bg-0)_8%,transparent)_100%)]"
         />
         <div className="relative flex h-full w-full flex-col justify-end p-12">
           <div className="flex max-w-md flex-col items-start">

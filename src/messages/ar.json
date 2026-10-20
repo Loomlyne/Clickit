@@ -120,8 +120,7 @@
     "strengthWeak": "ضعيفة",
     "strengthGood": "جيدة",
     "strengthStrong": "قوية",
-    "strengthLabel": "القوة · {level}",
-    "passwordStrengthAria": "قوة كلمة المرور"
+    "strengthLabel": "القوة · {level}"
   },
   "home": {
     "heroHeadline": "كل قصة تنقر.",

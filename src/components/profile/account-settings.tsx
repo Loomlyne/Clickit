@@ -7,6 +7,7 @@ import { Check, Loader2, Mail, KeyRound, User } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { mapAuthError } from '@/lib/auth-errors'
 import { PasswordField } from '@/components/auth/password-field'
 import { PASSWORD_MIN } from '@/components/auth/password-rules'
 import { createClient } from '@/lib/supabase/client'
@@ -182,7 +183,9 @@ function EmailRow({ email, t, tCommon }: { email: string; t: T; tCommon: T }) {
     })
     setSaving(false)
     if (updateError) {
-      const message = updateError.message || tCommon('error')
+      const message = updateError.message
+        ? mapAuthError(updateError.message)
+        : tCommon('error')
       setError(message)
       toast.error(message)
       return
@@ -289,7 +292,9 @@ function PasswordRow({ t, tCommon }: { t: T; tCommon: T }) {
     const { error } = await supabase.auth.updateUser({ password: pw })
     setSaving(false)
     if (error) {
-      const message = error.message || tCommon('error')
+      const message = error.message
+        ? mapAuthError(error.message)
+        : tCommon('error')
       setPwError(message)
       toast.error(message)
       return

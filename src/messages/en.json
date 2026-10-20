@@ -120,8 +120,7 @@
     "strengthWeak": "weak",
     "strengthGood": "good",
     "strengthStrong": "strong",
-    "strengthLabel": "Strength · {level}",
-    "passwordStrengthAria": "Password strength"
+    "strengthLabel": "Strength · {level}"
   },
   "home": {
     "heroHeadline": "Every Story Clicks.",

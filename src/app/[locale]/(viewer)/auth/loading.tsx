@@ -5,7 +5,7 @@ export default function AuthLoading() {
       <div className="relative hidden w-1/2 animate-pulse bg-white/[0.03] lg:block">
         <div
           aria-hidden
-          className="absolute inset-0 bg-[linear-gradient(0deg,rgba(9,9,9,0.94)_0%,rgba(9,9,9,0.62)_42%,rgba(9,9,9,0.08)_100%)]"
+          className="absolute inset-0 bg-[linear-gradient(0deg,color-mix(in_srgb,var(--bg-0)_94%,transparent)_0%,color-mix(in_srgb,var(--bg-0)_62%,transparent)_42%,color-mix(in_srgb,var(--bg-0)_8%,transparent)_100%)]"
         />
         {/* Quote skeleton at bottom */}
         <div className="absolute bottom-12 start-12 space-y-3">

@@ -24,10 +24,17 @@ test('password score counts length, upper case, digit and symbol', () => {
   assert.equal(passwordScore('Ab1!'), 3)
 })
 
-test('strength labels follow the score', () => {
-  assert.equal(passwordStrength(0), 'weak')
-  assert.equal(passwordStrength(1), 'weak')
-  assert.equal(passwordStrength(2), 'good')
-  assert.equal(passwordStrength(3), 'good')
-  assert.equal(passwordStrength(4), 'strong')
+test('strength labels follow the criteria once the minimum length is met', () => {
+  assert.equal(passwordStrength(''), 'weak')
+  assert.equal(passwordStrength('abcdefgh'), 'weak')
+  assert.equal(passwordStrength('Abcdefgh'), 'good')
+  assert.equal(passwordStrength('Abcdefg1'), 'good')
+  assert.equal(passwordStrength('Abcdef1!'), 'strong')
+})
+
+test('anything shorter than the minimum is weak, whatever it contains', () => {
+  // score 3 (upper, digit, symbol) but only 4 characters
+  assert.equal(passwordScore('Ab1!'), 3)
+  assert.equal(passwordStrength('Ab1!'), 'weak')
+  assert.equal(passwordStrength('Ab1!xyz'), 'weak')
 })
