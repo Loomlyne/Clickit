@@ -21,6 +21,7 @@ import {
   episodeSchema,
   formatZodError,
   parseHeroVariant,
+  parseDirection,
   parseId,
   seasonSchema,
   type HeroVariant,
@@ -1605,9 +1606,8 @@ export async function createShowVideoUpload(file: {
     const admin = createAdminClient()
     const { name, size, type, showId, variant } = file
 
-    if (!showId) {
-      return { success: false, error: 'Missing showId' }
-    }
+    const showIdParsed = parseId(showId, 'show')
+    if (!showIdParsed.ok) return { success: false, error: showIdParsed.error }
 
     if (variant !== 'desktop' && variant !== 'mobile') {
       return { success: false, error: 'Invalid variant' }
@@ -1621,7 +1621,7 @@ export async function createShowVideoUpload(file: {
       return { success: false, error: 'Video must be under 50MB' }
     }
 
-    const path = `shows/${showId}/hero-${variant}-${Date.now()}.mp4`
+    const path = `shows/${showIdParsed.value}/hero-${variant}-${Date.now()}.mp4`
     const { data, error } = await admin.storage
       .from('site-assets')
       .createSignedUploadUrl(path)
@@ -1644,7 +1644,7 @@ export async function saveShowVideoUpload(
   try {
     await assertAdmin()
 
-    if (!/^shows\/[^/]+\/hero-(desktop|mobile)-\d+\.mp4$/.test(path)) {
+    if (!/^shows\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/hero-(desktop|mobile)-\d+\.mp4$/i.test(path)) {
       return { success: false, error: 'Invalid upload path' }
     }
 
@@ -2649,6 +2649,9 @@ export async function updateShort(
 ): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
+    const idParsed = parseId(id, 'short')
+    if (!idParsed.ok) return { success: false, error: idParsed.error }
+    id = idParsed.value
     const parsed = shortSchema.parse(data)
     const admin = createAdminClient()
 
@@ -2687,6 +2690,9 @@ export async function toggleShortFeatured(
 ): Promise<ActionResult> {
   try {
     await assertAdmin()
+    const idParsed = parseId(id, 'short')
+    if (!idParsed.ok) return { success: false, error: idParsed.error }
+    id = idParsed.value
     const admin = createAdminClient()
     const { error } = await admin
       .from('shorts')
@@ -2711,6 +2717,12 @@ export async function reorderShort(
 ): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
+    const idParsed = parseId(id, 'short')
+    if (!idParsed.ok) return { success: false, error: idParsed.error }
+    id = idParsed.value
+    const dirParsed = parseDirection(direction)
+    if (!dirParsed.ok) return { success: false, error: dirParsed.error }
+    direction = dirParsed.value
     const admin = createAdminClient()
 
     const { data: shorts, error: fetchError } = await admin
@@ -2771,6 +2783,9 @@ export async function reorderShort(
 export async function deleteShort(id: string): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
+    const idParsed = parseId(id, 'short')
+    if (!idParsed.ok) return { success: false, error: idParsed.error }
+    id = idParsed.value
     const admin = createAdminClient()
 
     const { error } = await admin.from('shorts').delete().eq('id', id)
@@ -2803,6 +2818,9 @@ export async function deleteShort(id: string): Promise<ActionResult> {
 export async function deleteReview(id: string): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
+    const idParsed = parseId(id, 'review')
+    if (!idParsed.ok) return { success: false, error: idParsed.error }
+    id = idParsed.value
     const admin = createAdminClient()
 
     const { error } = await admin.from('reviews').delete().eq('id', id)
@@ -2904,8 +2922,9 @@ export async function uploadCastImage(
     if (!file || file.size === 0) {
       return { success: false, error: 'No file provided' }
     }
-    if (!showId) {
-      return { success: false, error: 'Show ID is required' }
+    const showIdParsed = parseId(showId, 'show')
+    if (!showIdParsed.ok) {
+      return { success: false, error: showIdParsed.error }
     }
     if (file.size > 2 * 1024 * 1024) {
       return { success: false, error: 'Image must be under 2MB' }
@@ -2924,7 +2943,7 @@ export async function uploadCastImage(
       }
     }
 
-    const path = `shows/${showId}/cast/${Date.now()}.${ext}`
+    const path = `shows/${showIdParsed.value}/cast/${Date.now()}.${ext}`
 
     const { error: uploadError } = await admin.storage
       .from('show-artwork')
@@ -2960,6 +2979,9 @@ export async function uploadCastImage(
 export async function deleteCastMember(id: string): Promise<ActionResult> {
   try {
     const user = await assertAdmin()
+    const idParsed = parseId(id, 'cast member')
+    if (!idParsed.ok) return { success: false, error: idParsed.error }
+    id = idParsed.value
     const admin = createAdminClient()
 
     const { data: cast, error: castError } = await admin
@@ -3104,6 +3126,9 @@ export async function upsertLegalPage(
 export async function deleteLegalPage(id: string): Promise<ActionResult> {
   try {
     await assertAdmin()
+    const idParsed = parseId(id, 'legal page')
+    if (!idParsed.ok) return { success: false, error: idParsed.error }
+    id = idParsed.value
     const supabase = await createClient()
     const { error } = await supabase
       .from('legal_pages')
@@ -3199,6 +3224,9 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
 export async function deleteFaq(id: string): Promise<ActionResult> {
   try {
     await assertAdmin()
+    const idParsed = parseId(id, 'FAQ')
+    if (!idParsed.ok) return { success: false, error: idParsed.error }
+    id = idParsed.value
     const supabase = await createClient()
     const { error } = await supabase.from('faqs').delete().eq('id', id)
     if (error) return { success: false, error: error.message }
