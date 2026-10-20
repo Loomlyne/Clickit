@@ -44,7 +44,7 @@ patterns-established:
   - "Signed values live in globals.css and in design-truth.ts; design-tokens.test.ts fails when they diverge"
   - "Codemod maps are data with a test that checks each target resolves to the same px/value as its source"
 
-requirements-completed: [DS-01, DS-02]
+requirements-completed: []  # DS-01 and DS-02 only partly delivered here (tokens); left unchecked in REQUIREMENTS.md until DESIGN.md, the codemod and the admin page land in later plans
 
 duration: 25min
 completed: 2026-10-20
