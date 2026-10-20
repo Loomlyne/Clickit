@@ -5,12 +5,11 @@
 // No next/*, server-only or '@/' imports: node --test loads this file.
 import type { AuditWriter, CoreResult } from './ports'
 
-/** The single column or row a finalize may change. Opaque to the core. */
+/** The single column or row a finalize may change. Opaque to the core. A social icon has no target: its url lives in form state until the footer is saved. */
 export type ImageTarget =
   | { type: 'show-artwork'; showId: string; column: string }
   | { type: 'app-config'; column: string }
-  | { type: 'social-icon'; index: number }
-  | { type: 'cast'; castId: string }
+  | { type: 'cast'; castId: string; showId: string }
   | { type: 'profile'; userId: string }
 
 export type FinalizeOutcome =

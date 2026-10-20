@@ -9,7 +9,9 @@ import { validateYouTubeUrl } from '@/lib/youtube'
 import { logAudit, logAuditStrict } from '@/lib/audit'
 import { runAdminAction, type AdminActionEnv } from '@/lib/admin/action-runner'
 import { archiveShowCore, restoreShowCore } from '@/lib/admin/show-archive'
-import type { RestoreResult } from '@/lib/admin/ports'
+import type { AdminDb, AuditWriter, RestoreResult } from '@/lib/admin/ports'
+import { adminImageDb } from '@/lib/admin/image-db'
+import { finalizeImageUploadCore, type ImageUploadPorts } from '@/lib/admin/image-upload'
 import {
   createShowCore,
   deleteShowCore,
@@ -62,6 +64,10 @@ import {
   type HeroVideoPorts,
 } from '@/lib/admin/hero-video'
 import { mp4BytesHasAudioTrack } from '@/lib/mp4-audio'
+import { getPublicMediaOrigin } from '@/lib/supabase-media'
+import { getWorkerEnv } from '@/server/cloudflare'
+import { r2KeysForUrl } from '@/server/r2-keys'
+import { finalizeUploadedObject, type FinalizeBucket } from '@/server/upload-finalize'
 import {
   assertPublicMediaWriteReady,
   mirrorPublicMediaObject,
@@ -2974,6 +2980,173 @@ export async function uploadCastImage(
       error: err instanceof Error ? err.message : 'Failed to upload cast image',
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Direct-to-R2 image finalize (plan 02-15). The browser has already PUT the object
+// (and optional WebP variants) to R2 with a presigned URL; these actions take only
+// the key, verify it (size, kind/owner prefix, magic bytes), write ONE target,
+// audit strictly, then delete the previous R2 object. No file body ever arrives.
+// The old FormData upload* actions above stay until plan 02-19 removes them.
+// ---------------------------------------------------------------------------
+
+const finalizeKeySchema = z.object({
+  key: z.string().min(1).max(300),
+  variantKeys: z.array(z.string().max(400)).max(3).default([]),
+})
+
+const ARTWORK_COLUMN = {
+  poster: 'poster_url',
+  card: 'card_image_url',
+  hero: 'hero_url',
+  'hero-mobile': 'hero_image_mobile_url',
+  logo: 'logo_url',
+} as const satisfies Record<(typeof ARTWORK_UPLOAD_SLOTS)[number], string>
+
+async function adminImagePorts(db: AdminDb, audit: AuditWriter): Promise<ImageUploadPorts> {
+  const env = await getWorkerEnv()
+  const bucket = env.MEDIA as unknown as FinalizeBucket
+  const mediaOrigin = getPublicMediaOrigin()
+  return {
+    finalize: (input) =>
+      finalizeUploadedObject({
+        kind: input.kind as Parameters<typeof finalizeUploadedObject>[0]['kind'],
+        slot: input.slot,
+        showId: input.showId,
+        userId: input.userId,
+        key: input.key,
+        variantKeys: input.variantKeys,
+        bucket,
+      }),
+    db: adminImageDb(db),
+    media: { delete: (keys) => bucket.delete(keys) },
+    audit,
+    mediaOrigin,
+    previousR2Keys: (url) => r2KeysForUrl(url, mediaOrigin),
+  }
+}
+
+const finalizeArtworkSchema = finalizeKeySchema.extend({
+  showId: z.string().regex(UUID_RE, 'Invalid showId or slot'),
+  slot: z.enum(ARTWORK_UPLOAD_SLOTS, { message: 'Invalid showId or slot' }),
+  /**
+   * Default true: the slot column of this show is written. A form that holds the
+   * new url in its own state until Save (as the artwork drawer does today) passes false.
+   */
+  commit: z.boolean().default(true),
+})
+
+export async function finalizeArtworkUpload(
+  input: z.input<typeof finalizeArtworkSchema>
+): Promise<ActionResult<string> & { mediaCleanupFailed?: boolean }> {
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = finalizeArtworkSchema.safeParse(input)
+      if (!parsed.success) {
+        return { success: false, error: formatZodError(parsed.error), wrote: false }
+      }
+      const { showId, slot, key, variantKeys, commit } = parsed.data
+      return finalizeImageUploadCore(await adminImagePorts(ctx.db, ctx.audit), {
+        kind: 'artwork',
+        slot,
+        showId,
+        key,
+        variantKeys,
+        userId: ctx.adminUserId,
+        target: commit ? { type: 'show-artwork', showId, column: ARTWORK_COLUMN[slot] } : null,
+      })
+    },
+    { fallbackError: 'Upload failed', revalidate: (r) => (r?.wrote ? bumpCatalogCache() : undefined) }
+  )
+}
+
+const finalizeSiteImageSchema = finalizeKeySchema.extend({
+  kind: z.enum(['og', 'favicon', 'favicon-dark', 'auth'], { message: 'Invalid kind' }),
+})
+
+export async function finalizeSiteImageUpload(
+  input: z.input<typeof finalizeSiteImageSchema>
+): Promise<ActionResult<string> & { mediaCleanupFailed?: boolean }> {
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = finalizeSiteImageSchema.safeParse(input)
+      if (!parsed.success) {
+        return { success: false, error: formatZodError(parsed.error), wrote: false }
+      }
+      const { kind, key, variantKeys } = parsed.data
+      return finalizeImageUploadCore(await adminImagePorts(ctx.db, ctx.audit), {
+        kind: 'site-image',
+        slot: kind,
+        key,
+        variantKeys,
+        userId: ctx.adminUserId,
+        target: { type: 'app-config', column: SITE_IMAGE_COLUMN[kind] },
+      })
+    },
+    { fallbackError: 'Upload failed', revalidate: (r) => (r?.wrote ? bumpSiteConfigCache() : undefined) }
+  )
+}
+
+// A social icon url lives in the footer form until the footer is saved (as today),
+// so this finalize verifies and audits the object but changes no database row.
+export async function finalizeSocialIconUpload(
+  input: z.input<typeof finalizeKeySchema>
+): Promise<ActionResult<string> & { mediaCleanupFailed?: boolean }> {
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = finalizeKeySchema.safeParse(input)
+      if (!parsed.success) {
+        return { success: false, error: formatZodError(parsed.error), wrote: false }
+      }
+      const { key, variantKeys } = parsed.data
+      return finalizeImageUploadCore(await adminImagePorts(ctx.db, ctx.audit), {
+        kind: 'social-icon',
+        slot: null,
+        key,
+        variantKeys,
+        userId: ctx.adminUserId,
+        target: null,
+      })
+    },
+    { fallbackError: 'Upload failed', revalidate: () => undefined }
+  )
+}
+
+const finalizeCastImageSchema = finalizeKeySchema.extend({
+  showId: z.string().regex(UUID_RE, 'Invalid show id'),
+  /** Absent while the cast member does not exist yet: the url is returned and saved with the member. */
+  castId: z.string().regex(UUID_RE, 'Invalid cast member id').optional(),
+})
+
+export async function finalizeCastImageUpload(
+  input: z.input<typeof finalizeCastImageSchema>
+): Promise<ActionResult<string> & { mediaCleanupFailed?: boolean }> {
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = finalizeCastImageSchema.safeParse(input)
+      if (!parsed.success) {
+        return { success: false, error: formatZodError(parsed.error), wrote: false }
+      }
+      const { showId, castId, key, variantKeys } = parsed.data
+      return finalizeImageUploadCore(await adminImagePorts(ctx.db, ctx.audit), {
+        kind: 'cast-image',
+        slot: null,
+        showId,
+        key,
+        variantKeys,
+        userId: ctx.adminUserId,
+        target: castId ? { type: 'cast', castId, showId } : null,
+      })
+    },
+    {
+      fallbackError: 'Failed to upload cast image',
+      revalidate: (r) => (r?.wrote ? bumpCatalogCache() : undefined),
+    }
+  )
 }
 
 export async function deleteCastMember(id: string): Promise<ActionResult> {

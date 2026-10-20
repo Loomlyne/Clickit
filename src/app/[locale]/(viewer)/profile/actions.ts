@@ -1,6 +1,13 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { finalizeImageUploadCore, type ImageUploadPorts } from '@/lib/admin/image-upload'
+import { getPublicMediaOrigin } from '@/lib/supabase-media'
+import { requireSignedInUser } from '@/server/auth-guards'
+import { getWorkerEnv } from '@/server/cloudflare'
+import { r2KeysForUrl } from '@/server/r2-keys'
+import { finalizeUploadedObject, type FinalizeBucket } from '@/server/upload-finalize'
 import {
   assertPublicMediaWriteReady,
   mirrorPublicMediaObject,
@@ -150,5 +157,84 @@ export async function uploadAvatar(formData: FormData) {
   return {
     avatarUrl:
       stripStorageCacheBust(storedAvatarUrl) ?? storedAvatarUrl,
+  }
+}
+
+const finalizeAvatarSchema = z.object({
+  key: z.string().min(1).max(300),
+  variantKeys: z.array(z.string().max(400)).max(3).default([]),
+})
+
+/**
+ * Direct-to-R2 avatar finalize (plan 02-15). The browser has PUT the object; this
+ * takes only the key. The signed-in user's own id is the owner: finalize refuses a
+ * key that is not under avatars/<that id>/, and only that user's profile row is
+ * written. No admin audit row (a user's own avatar). The old uploadAvatar above
+ * stays until plan 02-19.
+ */
+export async function finalizeAvatarUpload(
+  input: z.input<typeof finalizeAvatarSchema>
+): Promise<{ success: boolean; error?: string; data?: string; mediaCleanupFailed?: boolean }> {
+  try {
+    const userId = await requireSignedInUser()
+    const parsed = finalizeAvatarSchema.safeParse(input)
+    if (!parsed.success) return { success: false, error: 'Invalid upload' }
+    const supabase = await createClient()
+    const bucket = (await getWorkerEnv()).MEDIA as unknown as FinalizeBucket
+    const mediaOrigin = getPublicMediaOrigin()
+
+    const writeAvatar = async (url: string | null) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: url, updated_at: new Date().toISOString() })
+        .eq('id', userId)
+      return error ? error.message : null
+    }
+
+    const ports: ImageUploadPorts = {
+      finalize: (i) =>
+        finalizeUploadedObject({
+          kind: 'avatar',
+          userId: i.userId,
+          key: i.key,
+          variantKeys: i.variantKeys,
+          bucket,
+        }),
+      db: {
+        readCurrent: async () => {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('avatar_url')
+            .eq('id', userId)
+            .single()
+          if (error || !data) return { url: null, error: error?.message ?? 'Could not load profile' }
+          return { url: data.avatar_url ?? null, error: null }
+        },
+        write: (_target, url) => writeAvatar(url),
+        restore: (_target, previous) => writeAvatar(previous),
+      },
+      media: { delete: (keys) => bucket.delete(keys) },
+      audit: null,
+      mediaOrigin,
+      previousR2Keys: (url) => r2KeysForUrl(url, mediaOrigin),
+    }
+
+    const result = await finalizeImageUploadCore(ports, {
+      kind: 'avatar',
+      slot: null,
+      showId: null,
+      key: parsed.data.key,
+      variantKeys: parsed.data.variantKeys,
+      userId,
+      target: { type: 'profile', userId },
+    })
+    if (result.success || result.wrote) {
+      revalidatePath('/profile')
+      revalidatePath('/', 'layout') // refresh navbar avatar
+    }
+    return result
+  } catch (err) {
+    console.error('[finalizeAvatarUpload] failed', err)
+    return { success: false, error: err instanceof Error ? err.message : 'Upload failed' }
   }
 }
