@@ -107,7 +107,7 @@ test('120 episodes (archived included): one read, 3 videos.list calls, one write
   }
 
   const res = await recheckVideosCore(db, client, NOW)
-  assert.deepEqual(res, { ok: true, checked: 120, notOk: 0 })
+  assert.deepEqual(res, { ok: true, checked: 120, notOk: 0, checkedAt: NOW.toISOString() })
   assert.equal(seen.length, 1)
   assert.equal(seen[0]!.length, 120)
   assert.equal(fetchUrls.length, 3)
@@ -132,7 +132,7 @@ test('episodes with a null or empty video id are skipped', async () => {
   ])
   const yt = fakeYouTube({ [vid(1)]: okVideo(vid(1)), [vid(4)]: okVideo(vid(4)) })
   const res = await recheckVideosCore(db, yt.client, NOW)
-  assert.deepEqual(res, { ok: true, checked: 2, notOk: 0 })
+  assert.deepEqual(res, { ok: true, checked: 2, notOk: 0, checkedAt: NOW.toISOString() })
   assert.deepEqual(yt.calls, [[vid(1), vid(4)]])
   const rows = rpcCalls(fake)[0]!.patch.p_rows as Row[]
   assert.deepEqual(rows.map((r) => r.id).sort(), [uuid(1), uuid(4)])
@@ -158,7 +158,7 @@ test('each row carries classifyVideo status and parseIsoDuration seconds (0 for 
     }),
   })
   const res = await recheckVideosCore(db, yt.client, NOW)
-  assert.deepEqual(res, { ok: true, checked: 6, notOk: 5 })
+  assert.deepEqual(res, { ok: true, checked: 6, notOk: 5, checkedAt: NOW.toISOString() })
   const rows = new Map(
     (rpcCalls(fake)[0]!.patch.p_rows as Row[]).map((r) => [r.id, r])
   )
@@ -254,7 +254,7 @@ test('zero episodes: ok with checked 0, no YouTube call, no write', async () => 
   const { fake, db } = setup([episode(1, { youtube_video_id: null })])
   const yt = fakeYouTube({})
   const res = await recheckVideosCore(db, yt.client, NOW)
-  assert.deepEqual(res, { ok: true, checked: 0, notOk: 0 })
+  assert.deepEqual(res, { ok: true, checked: 0, notOk: 0, checkedAt: NOW.toISOString() })
   assert.equal(yt.calls.length, 0)
   assert.equal(rpcCalls(fake).length, 0)
 })
