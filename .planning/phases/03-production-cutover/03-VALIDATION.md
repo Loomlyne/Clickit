@@ -43,7 +43,7 @@ created: 2026-10-20
 
 ## Per-Task Verification Map
 
-`NT` = `node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test`. Code plans create their tests test-first inside the same task (no separate Wave 0 plan). Ops tasks verify by grepping the plan's log for the recorded command verdicts.
+`NT` = `node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test`. Code plans create their tests test-first inside the same task (no separate Wave 0 plan). Ops tasks verify by grepping the plan's log for the recorded command verdicts; ops logs live outside the repo at /Users/koss/.clickit-checks/p3-ops/ while a plan runs (deploy guards refuse a dirty tree) and are copied into this folder and committed after the plan's last deploy step.
 
 | Plan-Task | Req | Automated verify | Kind |
 |-----------|-----|------------------|------|
