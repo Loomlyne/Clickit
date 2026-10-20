@@ -19,7 +19,7 @@ created: 2026-10-20
 |----------|-------|
 | **Framework** | `node:test` via `node --experimental-strip-types` (no vitest/jest) |
 | **Config file** | none; globs in `package.json` `test:unit` |
-| **Quick run command** | `node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/unit/design-tokens.test.ts tests/unit/clickit-tokens-rule.test.ts` |
+| **Quick run command** | `node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/unit/design-*.test.ts tests/unit/email-tokens.test.ts tests/unit/brand-colors.test.ts tests/unit/clickit-tokens-rule.test.ts` |
 | **Full suite command** | `npm run gate:local` (build with placeholder public env, under `/Users/koss/.clickit-heavy.lock`) |
 | **Estimated runtime** | quick ~10 s; full ~4-6 min |
 
@@ -36,21 +36,20 @@ created: 2026-10-20
 
 ## Per-Task Verification Map
 
-Filled by the planner per task (`<automated>` in each PLAN). Requirement → check:
+Generated from each plan's `<files>` / `<automated>` (2026-10-20, after checker round 3).
 
-| Requirement | Behavior | Test Type | Automated Command | File Exists | Status |
-|-------------|----------|-----------|-------------------|-------------|--------|
-| DS-01 | `globals.css` pins #090909 / #ffcc00 / ink / LBC / `--radius 8px`; roles equal the engine formula on `ui.config.json` | unit | `--test tests/unit/design-tokens.test.ts` | ❌ W0 | ⬜ pending |
-| DS-01 | DESIGN.md token table equals `globals.css`; no `#0a0a0a` / indigo in DESIGN.md | unit | same | ❌ W0 | ⬜ pending |
-| DS-01 | Admin page token list ⊆ `globals.css` and covers every `:root` colour token | unit | same | ❌ W0 | ⬜ pending |
-| DS-02 | No raw hex / rgb / bracket radius / bracket shadow / raw palette class in `src/` outside allowlist | lint | `npx eslint "src/**/*.{ts,tsx}"` exit 0 | ❌ W0 | ⬜ pending |
-| DS-02 | Rule fixtures pass/fail as listed | unit | `--test tests/unit/clickit-tokens-rule.test.ts` | ❌ W0 | ⬜ pending |
-| DS-02 | One brand map: `@theme --color-brand-*` == `BRAND_COLOR_HEX`; no second hex map | unit | design-tokens test | ❌ W0 | ⬜ pending |
-| DS-02 | `cn()` merges named radius/shadow utilities | unit | design-tokens test | ❌ W0 | ⬜ pending |
-| DS-02 | Bracket → named utility resolves to the same px (codemod table) | unit | design-tokens test | ❌ W0 | ⬜ pending |
-| DS-02 | Email-safe tokens (light + dark, literal hex) pinned in `src/lib/email-tokens.ts` | unit | design-tokens test | ❌ W0 | ⬜ pending |
-| DS-03 | `04-GATE.md` has four dated group signature lines | grep | `grep -cE '^- (Foundations\|Viewer\|Admin\|Email) — Koss, [0-9]{4}-[0-9]{2}-[0-9]{2}' .planning/phases/04-design-system-truth/04-GATE.md` = 4 | ❌ W0 | ⬜ pending |
-| DS-04 | Page under `src/app/[locale]/admin/`; no top-level `design-system` route; admin layout redirect intact | unit (static pin) | design-tokens test | ❌ W0 | ⬜ pending |
+| Requirement | Behavior | Plan | Automated Command | File Exists | Status |
+|-------------|----------|------|-------------------|-------------|--------|
+| DS-01 | Tokens pinned (#090909, #ffcc00, ink, LBC, --radius 8px, engine radius roles), named utilities, status tones, exact-value tokens, `cn()` merge | 04-01 | `node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/unit/design-tokens.test.ts` | ❌ W0 | ⬜ pending |
+| DS-02 | Email-safe tokens, both schemes, literal hex, footer ≥ 4.5:1 | 04-01 | `node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/unit/email-tokens.test.ts` | ❌ W0 | ⬜ pending |
+| DS-02 | Lint rule fixtures pass/fail | 04-02 | `node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/unit/clickit-tokens-rule.test.ts` | ❌ W0 | ⬜ pending |
+| DS-02 | One brand map; no second hex map; consumers import it | 04-03 | `node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/unit/brand-colors.test.ts` | ❌ W0 | ⬜ pending |
+| DS-01, DS-04 | Admin page under `src/app/[locale]/admin/`; token list ⊆ globals.css; admin guard intact; no top-level route | 04-04 | `node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/unit/design-system-page.test.ts` | ❌ W0 | ⬜ pending |
+| DS-02 | D-03 snaps + D-01 literals (popover keeps /98) | 04-05 | `node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/unit/design-snaps.test.ts` | ❌ W0 | ⬜ pending |
+| DS-01 | DESIGN.md tables equal globals.css / email-tokens.ts (every name in the first cell) | 04-06 | `node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/unit/design-doc.test.ts` | ❌ W0 | ⬜ pending |
+| DS-02 | No banned legacy literals; admin.css has no px radius / hex; every waiver has a reason | 04-13 | `node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/unit/design-no-legacy.test.ts` | ❌ W0 | ⬜ pending |
+| DS-02 | No raw hex / rgb / bracket radius / bracket shadow / palette class in src/ (rule at error) | 04-13 | `npx eslint (via `npm run lint`)` | ❌ W0 | ⬜ pending |
+| DS-03 | Four dated group signature lines in 04-GATE.md | 04-14 | `grep -cE '^- (Foundations|Viewer|Admin|Email) — Koss, [0-9]{4}-[0-9]{2}-[0-9]{2}' .planning/phases/04-design-system-truth/04-GATE.md = 4` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -59,7 +58,7 @@ Filled by the planner per task (`<automated>` in each PLAN). Requirement → che
 ## Wave 0 Requirements
 
 - [ ] `eslint-rules/clickit-tokens.mjs` + registration in `eslint.config.mjs` (starts `warn`, flips to `error` after the codemod)
-- [ ] `tests/unit/design-tokens.test.ts`, `tests/unit/clickit-tokens-rule.test.ts`
+- [ ] `tests/unit/design-tokens.test.ts`, `email-tokens.test.ts`, `clickit-tokens-rule.test.ts`, `brand-colors.test.ts`, `design-system-page.test.ts`, `design-snaps.test.ts`, `design-doc.test.ts`, `design-no-legacy.test.ts` (each created RED in its plan)
 - [ ] `tests/unit/helpers/ui-system-radius.ts` (vendored `buildRadius`, source comment with ui-system commit)
 - [ ] `.planning/phases/04-design-system-truth/04-GATE.md` signature lines
 - No framework install needed

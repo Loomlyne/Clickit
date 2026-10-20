@@ -350,14 +350,14 @@ Existing, unchanged: `--shadow-soft` = `0 24px 80px rgba(0, 0, 0, 0.38)`; `--sha
 
 ## 4. Claude Design canvas (D-06, D-08, DS-03)
 
-**Canvas:** new Artifact, type Design, named "Clickit Story". Installs the published "UI System" design system (claude.ai/artifact/XTKikX3yqayDRfUixvkNrS) with `UIS.Root primary="#ffcc00" accent="#ffcc00" neutral="#737373" mode="dark" roundness=50 pill field=8 surface="glass"`. LBC loaded from canvas assets (`lbc-regular.woff2` 400, `lbc-bold.woff2` 700). The existing brand-neutral UI System canvas is not edited.
+**Canvas:** new Artifact, type Design, named "Clickit Story". Installs the published "UI System" design system (link in the local note /Users/koss/.clickit-checks/p4-ui-system-links.txt) with `UIS.Root primary="#ffcc00" accent="#ffcc00" neutral="#737373" mode="dark" roundness=50 pill field=8 surface="glass"`. LBC loaded from canvas assets (`lbc-regular.woff2` 400, `lbc-bold.woff2` 700). The existing brand-neutral UI System canvas is not edited.
 
 **Board conventions (every board):**
 - Dark only, page `#090909`. Colours, radii and shadows only from the tokens in this contract; no new colour appears on a board. Each board carries a small token legend (name and value) so the executor can map pixel to token.
 - Frames: desktop **1280×800**, phone **375×812**, email **600 wide** (plus a 375 phone render). Every viewer and admin board has an English frame and an Arabic RTL frame, desktop and phone, unless the board says otherwise.
 - Type only 11 / 14 / 20 / 24 at 400 or 700 (emails: system sans, below). Touch targets 44px. Focus ring shown on one control per board.
 - Copy on boards is placeholder where marked; no price, legal text, expiry, sender line or rate appears except as `{placeholder}`.
-- Boards marked **reproduced** copy the Phase 6 signed pictures unchanged (`06-mockups.html` #q1, #q8, #q9, #q11, #q13, #q15) and are redrawn from `06-UI-SPEC.md`; any difference from the signed picture is the one listed in Phase 6's "Differs from the signed picture".
+- Boards marked **reproduced** copy the LATEST signed Phase 6 version (`06-mockups.html` #q1, #q8, #q11, #q13, plus G1-B `06-g1-b`/`06-g1-b-states` which supersedes #q9, and G6 `06-g6-key-*` which supersedes #q15; check 06-UI-SPEC "Owner-visible deviations" first) and are redrawn from `06-UI-SPEC.md`; any difference from the signed picture is the one listed in Phase 6's "Differs from the signed picture".
 - Koss signs four groups separately in `04-GATE.md` with the date. Group → boards below.
 
 ### Group 1 — Foundations
@@ -379,7 +379,7 @@ Focal points (one per board): V1a the email field; V1b the six code boxes; V2 th
 |----|-------|--------|----------------------------|--------|
 | V1 | Email-code sign-in | 1280, 375, EN + AR | (a) Enter email (single field, `Continue with email` primary, "Use a password instead" link); (b) Enter 6-digit code: six boxes `h-11` (44px) in `dir="ltr"`, 8px gaps (50px each at 375), paste/auto-fill note, **Arabic-Indic digits ٠–٩ typed are shown as typed and accepted**; (c) wrong code error (`role="alert"`, brand-red-safe text, field `aria-invalid`); (d) resend with a disabled-until `{seconds}` countdown; (e) expired code; (f) password alternative with the right-side show/hide eye; (g) success (brief check, then the app). A never-seen email lands in the same flow (account is created) | new, needs signature |
 | V2 | Home and show | 1280, 375 | The current live home (hero bottom-left, rails, category pills with free colours) and the show page, redrawn as shipped, not redesigned | live pages |
-| V3 | Watch page (YouTube rules) | 1280, 375, EN | **Reproduced** from Phase 6 §3: top bar, 16:9 stage with black letterbox, control bar, episode rail (desktop) / list (phone). Annotated proof that **nothing is drawn over any pixel of the iframe**: no overlay, gradient, toast, tooltip, ring or loading tint. Player box never below 200×200. Up-next card wide + narrow (#q9), series-end variant, error card wide + narrow (#q11) with the error table copy | signed (#q8, #q9, #q11) |
+| V3 | Watch page (YouTube rules) | 1280, 375, EN | **Reproduced** from Phase 6 §3: top bar, 16:9 stage with black letterbox, control bar, episode rail (desktop) / list (phone). Annotated proof that **nothing is drawn over any pixel of the iframe**: no overlay, gradient, toast, tooltip, ring or loading tint. Player box never below 200×200. Up-next as signed at G1-B: countdown in the control bar, wide + narrow (`06-g1-b`, `06-g1-b-states`, 06-UI-SPEC §4.2b), series-end variant, error card wide + narrow (#q11) with the error table copy | signed (#q8, G1-B, #q11) |
 | V4 | Arabic right-to-left | 1280, 375 | Home hero anchored bottom-right, rail scrolling from the right, watch page mirrored (Back at the right, Previous at the right edge, chevrons rotated), sign-in with the code boxes staying left-to-right inside an RTL page, `bdi` isolation of show titles | new, needs signature |
 
 ### Group 3 — Admin
@@ -388,7 +388,7 @@ Focal points (one per board): V1a the email field; V1b the six code boxes; V2 th
 |----|-------|--------|----------------------------|--------|
 | A1 | Playlist import preview | 1280 (sheet 640), 375, EN + AR | **Reproduced** from Phase 6 §1 (#q1): empty, reading (skeletons), loaded table with chips (Ready, Private, Removed, Not embeddable, Blocked in UAE, Not ready, Already on Clickit), nothing new, error banner, importing, success with "Schedule these N episodes". Sheet opens from the start side flipped for Arabic | signed (#q1) |
 | A2 | Episodes order and flags | 1280, 375 | **Reproduced** from Phase 6 §5 (#q13): up/down arrows, renumber 1 to N, "Can't play" badge, "Needs English title" mark | signed (#q13) |
-| A3 | Key status | 1280, 375 | **Reproduced** from Phase 6 §6 (#q15): read-only key status states | signed (#q15) |
+| A3 | YouTube key setting | 1280, 375 | **Reproduced** from Phase 6 §6 as signed at G6: editable key field states editing / missing / saved / test (`06-g6-key-*`) | signed (G6) |
 | A4 | Inbox | 1280, 375, EN + AR | Message list (unread dot is `--primary`, not red), message detail with the viewer's email and a **reply** composer (admin copy of a support auto-reply, per roadmap), empty inbox, loading, send failed (banner with next step), sent. Shell = admin sidebar (with the "Design system" entry) at 1280, `h-14` top bar at 375 | new, needs signature |
 
 ### Group 4 — Email
@@ -426,10 +426,10 @@ Contract in §5 (revision 3). One board per template, each reproduced from Phase
 | Text | `#333333` | `#CCCCCC` |
 | Code box | bg `#f6f6f6`, border `#e5e5e5`, text `#090909` | bg `#191919`, border `#2A2A2A`, text `#ffcc00` |
 | Button | `#ffcc00`, ink `#090909`, radius 999px | same |
-| Footer text | `#777777` | `#A1A1A1` |
+| Footer text | `#767676` | `#A1A1A1` |
 | Divider | `#eeeeee` | `#1d1d1d` |
 
-Contrast (computed): light heading 18.9:1, text 12.6:1, button ink 13.2:1, **footer #777777 on #ffffff 4.48:1 (just under 4.5:1; flagged for Phase 5)**; dark heading 18.1:1, text 12.4:1, footer 7.7:1, code text #ffcc00 on #191919 11.6:1.
+Contrast (computed): light heading 18.9:1, text 12.6:1, button ink 13.2:1, **footer #767676 on #ffffff 4.54:1 (Phase 5's picture shows #777777 = 4.48:1, just under AA; #767676 is the nearest passing value and looks the same; Phase 5 confirms)**; dark heading 18.1:1, text 12.4:1, footer 7.7:1, code text #ffcc00 on #191919 11.6:1.
 
 **Rules kept from the earlier contract:** table-based, inline styles; system sans stack (LBC cannot load in mail); logo hosted on `media.clickitstory.ae`; one primary action per email; plain-URL fallback under the button; no web fonts, no tracking pixels; sender line, expiry, legal footer and Arabic copy are Phase 5 / Koss placeholders.
 
@@ -545,7 +545,7 @@ Choices CONTEXT.md did not settle, picked to keep the live look and Phase 6 comp
 10. **"Show a sample toast" button on a read-only page.** It writes nothing; it exists so snap 2 can be seen without causing a real toast elsewhere. Remove it if a button on a read-only page is unwanted.
 11. **Code input and email digits.** The 6 code boxes stay left-to-right inside Arabic pages (digits read left to right) and emails show Western digits; the app accepts Arabic-Indic digits when typed. Phase 7 (AR-01..03) still owns the digit system for the rest of the UI.
 12. **`select-item` check indicator uses `right-2`** (not logical) and is not changed here (invisible bug in Arabic: indicator on the wrong side). Phase 7 RTL pass owns it.
-13. **Email look answered (revision 3):** Q7 = C (Koss, 2026-10-20): light by default, dark via prefers-color-scheme; Phase 5 owns the picture; Phase 4 supplies `src/lib/email-tokens.ts`. Light footer #777777 is 4.48:1 on white (flagged for Phase 5).
+13. **Email look answered (revision 3):** Q7 = C (Koss, 2026-10-20): light by default, dark via prefers-color-scheme; Phase 5 owns the picture; Phase 4 supplies `src/lib/email-tokens.ts`. Light footer #767676 is 4.48:1 on white (flagged for Phase 5).
 14. **Email legal footer, expiry, sender line, Arabic text** are placeholders; nothing is invented. `Clickit Story <no-reply@clickitstory.ae>` is the roadmap's sender and is not drawn on boards.
 15. **Canvas boards that are new design** (no signed picture): F0–F5, V1, V4, A4, E0–E7. V2 redraws the live pages as shipped. V3, A1–A3 are Phase 6's signed pictures, unchanged.
 16. **Phase 6 spec is not edited.** It keeps `rounded-[12px]` etc.; the executor writes the named utilities (same pixels). If Phase 6 merges first, its bracket classes are converted in this phase's token clean-up.
