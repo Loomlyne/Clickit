@@ -29,10 +29,10 @@ The repo is public, so this file names the canvas and holds no link. The link is
 | F3 | Radius and surfaces | 1280, 375 | live tokens | built |
 | F4 | Components | 1280 EN, 375 AR | live primitives | built |
 | F5 | Spacing, focus, motion | 1280 | live + DESIGN.md | built |
-| V1 | Email-code sign-in | 1280, 375, EN + AR | new (Phase 5 #q1 code boxes) | not built |
-| V2 | Home and show | 1280, 375 | live pages | not built |
-| V3 | Watch page (YouTube rules) | 1280, 375, EN | reproduced #q8 G1-B (supersedes #q9) #q11 | not built |
-| V4 | Arabic right-to-left | 1280, 375 | new | not built |
+| V1 | Email-code sign-in | 1280, 375, EN + AR | new (Phase 5 #q1 code boxes) | built |
+| V2 | Home and show | 1280, 375 | live pages | built |
+| V3 | Watch page (YouTube rules) | 1280, 375, EN | reproduced #q8 G1-B (supersedes #q9) #q11 | built |
+| V4 | Arabic right-to-left | 1280, 375 | new | built |
 | A1 | Playlist import preview | 1280 (sheet 640), 375, EN + AR | reproduced Phase 6 #q1 | not built |
 | A2 | Episodes order and flags | 1280, 375 | reproduced Phase 6 #q13 | not built |
 | A3 | YouTube key setting | 1280, 375 | reproduced Phase 6 G6 | not built |
