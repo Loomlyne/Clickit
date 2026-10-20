@@ -48,9 +48,17 @@ Left alone: `src/lib/category-chip.ts` is now unused (delete in a cleanup); swit
 Phone/tablet top bar is `fixed` again (sticky never engaged because `html, body` carry `overflow-x: hidden`; content gets `max-lg:pt-14`); the show-form Save bar is a plain row (its sticky never worked either). Table cells keep their own `py-*`/`text-xs` classes (admin.css guards), reviews table shows the review text under the user on phones, cast editor buttons and Branding mode toggles and drawer footer buttons have the 44px target, upload zones and the episode fetch button have a hover that shows. Gate re-run: tsc 0, lint 0 errors/17 warnings, unit 377/377, build exit 0.
 Open, not done: audit details and inbox email columns are still hidden on phones; expired shorts rows use `opacity-60` (contrast); 36px-visible controls stay 36px (44px tap area) on phones in a few raw buttons; two icon-only buttons without a name (`artwork-upload-zone.tsx:133`, `shorts-table.tsx:424`); switch knobs use physical `left-0.5`; audit badge colours repeat; `:has()` needs Firefox 121+.
 
+## Visual check on the real components (2026-10-20)
+
+A throwaway page (not committed) rendered the real `AdminHeader`, `ShowsTable`, `ReviewsTable` and the shared Button/Checkbox/Tabs/Select/Textarea with mock props under `next dev`, placeholder env, no database. Measured in the browser at 1280 and 375, plus `/ar`:
+- Found and fixed: every Tooltip-wrapped row action (move, feature, edit, archive) rendered 32px, because Radix overwrites `data-slot="button"` with `tooltip-trigger`. `admin.css` button rules now match the trigger slots too. After the fix: 36px visible with a 44px hit area on desktop, 44px on phone, no overlapping hit areas anywhere in the shows and reviews tables.
+- Found and fixed: the table-cell guard (`py-*`) matched the shared default `py-4`, so rows were 69px; now 57px (10px cell padding) and only `py-8/10/12`, `pt-*`, `pb-*` cells keep their own padding.
+- Confirmed: checkbox focus ring (yellow, 3px) with a real Tab key; header 40px at 11px; cell text 14px; the phone top bar stays at the top after scrolling; no horizontal page overflow at 375; sidebar mirrors to the right in `/ar` and tables mirror.
+- Gate after this: tsc 0, lint 0 errors/17 warnings, unit 377/377, build exit 0.
+
 ## NOT verified
 
-- No render of the real admin app (no local Supabase, no admin session). `admin.css` selectors (`data-slot`, `data-size`, `data-state`) were checked by reading the shared components, not by looking at the running page. The picture used the same Tailwind classes but not `admin.css`.
+- No render of the real admin app with real data and a signed-in session (the check above used mock props on the real components; the other admin pages - settings, categories, episode drawer, inbox - were not rendered) (no local Supabase). `admin.css` selectors (`data-slot`, `data-size`, `data-state`) were checked by reading the shared components, not by looking at the running page. The picture used the same Tailwind classes but not `admin.css`.
 - Unit tests do not cover visual changes.
 - RTL (Arabic) layout of the sidebar (`start-0`, `border-e`, `lg:ps-60`) not looked at.
 - Hit areas (44px) measured by CSS, not with a pointer.
