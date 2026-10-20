@@ -1,5 +1,5 @@
 // ISO 8601 duration parsing for videos.list contentDetails.duration. Pure: no
-// imports. Replaces the old parseIsoDuration in api/youtube-meta, which dropped
+// imports. Replaces the old parseIsoDuration in the removed metadata route, which dropped
 // the day part.
 
 const ISO_DURATION_RE = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/

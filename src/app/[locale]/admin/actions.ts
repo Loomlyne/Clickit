@@ -1133,7 +1133,7 @@ export async function commitImport(input: {
 
 /**
  * Check one video link and return its YouTube metadata (title, description,
- * channel, thumbnail, length). Writes nothing. Replaces GET /api/youtube-meta.
+ * channel, thumbnail, length). Writes nothing. Replaced the old key-reading GET route.
  * Shorts pass forShort: true (no duplicate check against episodes).
  */
 export async function fetchYouTubeMeta(

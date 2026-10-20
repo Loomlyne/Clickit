@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
@@ -17,7 +17,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { createShort, updateShort } from '@/app/[locale]/admin/actions'
+import {
+  createShort,
+  fetchYouTubeMeta,
+  updateShort,
+} from '@/app/[locale]/admin/actions'
+import { YOUTUBE_ERROR_MESSAGE_KEYS } from '@/lib/youtube-errors'
+import { formatQuotaReset, nextQuotaReset } from '@/lib/youtube-quota'
 import { extractYouTubeId } from '@/lib/youtube'
 import type { Database } from '@/lib/database.types'
 
@@ -64,6 +70,8 @@ export function ShortFormDrawer({
   const t = useTranslations('admin.shortForm')
   const tShowForm = useTranslations('admin.showForm')
   const tCommon = useTranslations('common')
+  const tYtErrors = useTranslations('admin.youtubeErrors')
+  const locale = useLocale()
   const formSchema = useMemo(() => buildFormSchema(t), [t])
   type FormData = z.infer<typeof formSchema>
 
@@ -140,20 +148,32 @@ export function ShortFormDrawer({
 
     setFetching(true)
     try {
-      const res = await fetch(
-        `/api/youtube-meta?url=${encodeURIComponent(url)}`
-      )
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        toast.error(body.error || t('toastMetaFailed'))
+      // Metadata only: shorts are outside the duplicate rule (forShort).
+      const res = await fetchYouTubeMeta(url, { forShort: true })
+      if (!res.success) {
+        const code = res.data?.code
+        if (code && code in YOUTUBE_ERROR_MESSAGE_KEYS) {
+          // Words come from the code and i18n keys, never raw server text.
+          const tYt = tYtErrors as unknown as (
+            key: string,
+            values?: Record<string, string>
+          ) => string
+          toast.error(
+            tYt(YOUTUBE_ERROR_MESSAGE_KEYS[code], {
+              time: formatQuotaReset(nextQuotaReset(new Date()), locale),
+            })
+          )
+        } else {
+          toast.error(t('toastMetaFailed'))
+        }
         setFetching(false)
         return
       }
-      const meta = await res.json()
+      const meta = res.data
       setValue('youtube_video_id', meta.videoId)
       setValue('title', meta.title)
       setValue('channel_name', meta.channelTitle)
-      setValue('thumbnail_url', meta.thumbnail)
+      setValue('thumbnail_url', meta.thumbnailUrl)
       setValue('duration_seconds', meta.durationSeconds)
       toast.success(t('toastMetaLoaded'))
     } catch {
