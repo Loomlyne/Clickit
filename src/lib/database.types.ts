@@ -204,6 +204,8 @@ export type Database = {
           episode_number: number
           fts: unknown
           id: string
+          player_error_at: string | null
+          player_error_code: number | null
           publish_at: string | null
           season_id: string
           show_id: string
@@ -225,6 +227,8 @@ export type Database = {
           episode_number: number
           fts?: unknown
           id?: string
+          player_error_at?: string | null
+          player_error_code?: number | null
           publish_at?: string | null
           season_id: string
           show_id: string
@@ -246,6 +250,8 @@ export type Database = {
           episode_number?: number
           fts?: unknown
           id?: string
+          player_error_at?: string | null
+          player_error_code?: number | null
           publish_at?: string | null
           season_id?: string
           show_id?: string

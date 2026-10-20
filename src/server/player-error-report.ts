@@ -22,16 +22,6 @@ export type PlayerErrorReportResult =
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-/** The two columns this core writes. */
-type ErrorPatch = { player_error_code: number; player_error_at: string }
-
-/** Narrow view of the update this core makes, on the one table it writes. */
-type EpisodeErrorWriter = {
-  update(patch: ErrorPatch): {
-    eq(column: 'id', value: string): PromiseLike<{ error: { message: string } | null }>
-  }
-}
-
 export async function reportPlayerErrorCore(input: {
   db: AdminDb
   userId: string | null | undefined
@@ -74,11 +64,8 @@ export async function reportPlayerErrorCore(input: {
   })
   if (!allowed) return { ok: false, reason: 'limited' }
 
-  // player_error_* are Phase 6 columns not yet in the committed database.types
-  // (06-01 added the youtube_* columns only), so the write goes through a
-  // narrow view of the table.
-  const episodes = db.from('episodes') as unknown as EpisodeErrorWriter
-  const { error } = await episodes
+  const { error } = await db
+    .from('episodes')
     .update({ player_error_code: code, player_error_at: now.toISOString() })
     .eq('id', episodeId)
   if (error) return { ok: false, reason: 'failed' }

@@ -91,7 +91,7 @@ Failed: nothing.
 - **Fix:** The update goes through a narrow local view of the `episodes` table (`EpisodeErrorWriter`, cast from `db.from('episodes')`), with a comment. The select and the rate-limit call stay fully typed.
 - **Files modified:** src/server/player-error-report.ts
 - **Commit:** e7f94b4
-- **Follow-up for the controller:** add `player_error_code` and `player_error_at` to `src/lib/database.types.ts`, then drop the cast. 06-08's `youtube-health.ts` already reads these columns, so check how it types them.
+- **Resolved (orchestrator, after this plan):** `player_error_code` and `player_error_at` were added to `src/lib/database.types.ts` from the local generated output, and the cast was removed; the update is fully typed. 06-08's `youtube-health.ts` already reads these columns, so check how it types them.
 
 **2. [Rule 1 - Bug avoided] Wrapper sizing class**
 - **Found during:** Task 1
