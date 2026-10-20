@@ -31,17 +31,6 @@ const withNextIntl = createNextIntlPlugin()
 // needs it, so this CSP token is added only outside production builds.
 const devScriptSrc = process.env.NODE_ENV === 'production' ? '' : " 'unsafe-" + "eval'"
 const publicMediaOrigin = getPublicMediaOrigin()
-const mediaImagePattern = publicMediaOrigin
-  ? (() => {
-      const origin = new URL(publicMediaOrigin)
-      return {
-        protocol: 'https' as const,
-        hostname: origin.hostname,
-        ...(origin.port ? { port: origin.port } : {}),
-        pathname: '/**',
-      }
-    })()
-  : null
 
 const cspDirectives = [
   "default-src 'self'",
@@ -118,45 +107,13 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  // Custom loader: media-origin URLs get ?w=<640|1280|1920> (R2 variants via
+  // the clickit-media Worker); every other src is used as-is. No Vercel image
+  // optimizer, so no formats / minimumCacheTTL / remotePatterns (those only
+  // configure the built-in loader).
   images: {
-    formats: ['image/avif', 'image/webp'],
-    // Cache optimized images (YouTube thumbnails, show artwork) for 30 days —
-    // reduces Supabase storage pulls on optimizer cache miss.
-    minimumCacheTTL: 2_592_000,
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'img.youtube.com',
-        pathname: '/vi/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'i.ytimg.com',
-        pathname: '/vi/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'yt3.ggpht.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'picsum.photos',
-      },
-      {
-        protocol: 'https',
-        hostname: 'fastly.picsum.photos',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'lajguozmtissnnfccmej.supabase.co',
-        pathname: '/storage/v1/object/public/**',
-      },
-      ...(mediaImagePattern ? [mediaImagePattern] : []),
-    ],
+    loader: 'custom',
+    loaderFile: './image-loader.ts',
   },
 };
 
