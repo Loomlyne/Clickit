@@ -44,6 +44,10 @@ CI: Phase 1's `pr-gate.yml` / `apply-live-migrations.yml` (on main) replace the 
 
 ## Remaining plans (owner/controller-gated)
 
+- Cron placeholder (controller, 2026-10-20): PR #27 (Phase 6) adds `/api/cron/youtube-recheck`, which needs a daily Worker cron trigger. Whichever of Phase 2 / Phase 6 lands second wires it: one entry in `src/server/cron-schedule.ts` (cron map) plus the trigger in `wrangler.jsonc` `triggers.crons` at the Phase 3 cutover (crons stay `[]` until then). Phase 2 does not edit Phase 6 files.
+- Admin Arabic fill (2026-10-20): Workers AI `AI` binding, `@cf/google/gemma-4-26b-a4b-it`, live-checked on the ClickitStory account (about 2 neurons per short field; free allowance 10,000/day). Google Translate and its secret are gone (RUNBOOK Step 19 removed).
+
+
 - 02-10: RUNBOOK Steps 1-24 (login, subdomain, enable R2 [4b], buckets, CORS, D1, env file incl. Turnstile widget [20 before 12], first workers.dev deploy [12], secrets, Web Analytics, Supabase redirect URL), then CPU sample.
 - 02-20: code-complete deploy, media Worker deploy (Step 28 production stop), copy, verify, flag-on build.
 - 02-21: per-route CPU on Workers Free, stop rule with the priced question.

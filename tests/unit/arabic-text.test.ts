@@ -69,6 +69,11 @@ test('system prompt: MSA, UAE streaming, only the translation, keep names, line 
   assert.match(p, /numbers/)
   assert.match(p, /@handles/)
   assert.match(p, /Do not translate the proper names of shows/)
+  // Live check on workers.dev 2026-10-20: without this line the model kept
+  // "Abu Dhabi", "November" and "PM" in English.
+  assert.match(p, /Translate everything else into Arabic, including place names/)
+  assert.match(p, /month and day names/)
+  assert.match(p, /times/)
 })
 
 test('request: system + user messages, temperature 0, thinking off, bounded output', () => {
