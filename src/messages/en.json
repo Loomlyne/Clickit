@@ -1547,5 +1547,8 @@
     "authEmailNotConfirmed": "Please confirm your email first",
     "authRateLimit": "Too many sign-in attempts. Please wait and try again.",
     "authGeneric": "Authentication failed. Please try again."
+  },
+  "turnstile": {
+    "checkFailed": "Security check failed. Please try again."
   }
 }

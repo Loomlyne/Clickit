@@ -1547,5 +1547,8 @@
     "authEmailNotConfirmed": "يُرجى تأكيد بريدك الإلكتروني أولاً",
     "authRateLimit": "محاولات كثيرة جداً. يُرجى الانتظار والمحاولة لاحقاً.",
     "authGeneric": "فشل المصادقة. يُرجى المحاولة مرة أخرى."
+  },
+  "turnstile": {
+    "checkFailed": "Security check failed. Please try again."
   }
 }
