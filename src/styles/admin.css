@@ -400,6 +400,25 @@ body:has(.admin-root) [data-slot='tabs-trigger'][data-state='active'] {
   border-color: var(--primary);
   color: var(--primary-foreground);
 }
+@media (max-width: 639px) {
+  /* phone: tighter table cells, and buttons are already 44px, so no extra tap-area bleed */
+  body:has(.admin-root) [data-slot='table-cell'],
+  body:has(.admin-root) [data-slot='table-head'] {
+    padding-inline: 12px;
+  }
+  body:has(.admin-root)
+    :is(
+      [data-slot='button'],
+      [data-slot='tooltip-trigger'],
+      [data-slot='dropdown-menu-trigger'],
+      [data-slot='popover-trigger'],
+      [data-slot='dialog-trigger'],
+      [data-slot='alert-dialog-trigger'],
+      [data-slot='sheet-trigger']
+    )[data-variant]::after {
+    inset: 0;
+  }
+}
 @media (max-width: 767px) {
   body:has(.admin-root) [data-slot='tabs-trigger'] {
     min-height: 44px;

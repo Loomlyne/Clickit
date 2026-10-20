@@ -299,10 +299,10 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                   <TableHead className="hidden sm:table-cell">
                     {t('colExpires')}
                   </TableHead>
-                  <TableHead className="w-20 text-center">
-                    {t('colFeatured')}
+                  <TableHead className="w-16 text-center sm:w-20">
+                    <span className="max-sm:sr-only">{t('colFeatured')}</span>
                   </TableHead>
-                  <TableHead className="w-36 text-end">
+                  <TableHead className="w-28 text-end sm:w-36">
                     {t('colActions')}
                   </TableHead>
                 </TableRow>
@@ -334,8 +334,8 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                         />
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">
-                      <div className="flex max-w-[200px] items-start gap-2 md:max-w-[360px]">
+                    <TableCell className="font-medium whitespace-normal">
+                      <div className="flex max-w-[130px] items-start gap-2 sm:max-w-[200px] md:max-w-[360px]">
                         <span className="line-clamp-2 break-words">
                           {s.title}
                         </span>
@@ -370,6 +370,11 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                         className={s.is_featured ? 'text-[var(--primary)]' : ''}
                         disabled={togglingId === s.id}
                         onClick={() => handleToggleFeatured(s)}
+                        aria-label={
+                          s.is_featured
+                            ? t('featuredRemoveAria', { title: s.title })
+                            : t('featuredMarkAria', { title: s.title })
+                        }
                         title={
                           s.is_featured
                             ? t('featuredRemove')
@@ -386,6 +391,7 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
+                              className="max-md:hidden"
                               variant="ghost"
                               size="icon"
                               disabled={
@@ -404,6 +410,7 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
+                              className="max-md:hidden"
                               variant="ghost"
                               size="icon"
                               disabled={
@@ -424,6 +431,7 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={t('editAria', { title: s.title })}
                           onClick={() => {
                             setEditingShort(s)
                             setDrawerOpen(true)

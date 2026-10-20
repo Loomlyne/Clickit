@@ -322,7 +322,7 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                 <TableHead className="hidden w-[100px] md:table-cell">
                   {tShows('genreColumn')}
                 </TableHead>
-                <TableHead className="w-[110px]">
+                <TableHead className="hidden w-[110px] sm:table-cell">
                   {tShows('statusColumn')}
                 </TableHead>
                 <TableHead className="hidden w-[70px] sm:table-cell">
@@ -361,6 +361,9 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                     >
                       {show.title}
                     </Link>
+                    <div className="mt-2 sm:hidden">
+                      <StatusBadge status={show.status} />
+                    </div>
                     <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-xs md:hidden">
                       <span>{show.genre}</span>
                       {show.featured && (
@@ -384,7 +387,7 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                   <TableCell className="text-muted-foreground hidden md:table-cell">
                     {show.genre}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <StatusBadge status={show.status} />
                   </TableCell>
                   <TableCell className="text-muted-foreground hidden sm:table-cell">
@@ -400,6 +403,7 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
+                            className="max-md:hidden"
                             variant="ghost"
                             size="icon-sm"
                             onClick={() => handleReorder(show.id, 'up')}
@@ -420,6 +424,7 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
+                            className="max-md:hidden"
                             variant="ghost"
                             size="icon-sm"
                             onClick={() => handleReorder(show.id, 'down')}

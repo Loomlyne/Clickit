@@ -605,6 +605,9 @@
       "moveDown": "Move down",
       "moveUpAria": "Move {title} up",
       "moveDownAria": "Move {title} down",
+      "featuredRemoveAria": "Remove {title} from featured",
+      "featuredMarkAria": "Mark {title} as featured",
+      "editAria": "Edit {title}",
       "expiryNever": "Never",
       "expiryExpired": "Expired"
     },

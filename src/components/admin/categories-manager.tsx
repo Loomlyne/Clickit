@@ -523,8 +523,10 @@ export function CategoriesManager({
                 <TableHead className="hidden w-36 md:table-cell">
                   {tCat('colColor')}
                 </TableHead>
-                <TableHead className="w-32">{tCat('colAssigned')}</TableHead>
-                <TableHead className="w-52 text-end">
+                <TableHead className="hidden w-32 sm:table-cell">
+                  {tCat('colAssigned')}
+                </TableHead>
+                <TableHead className="w-24 text-end sm:w-52">
                   {tCat('colActions')}
                 </TableHead>
               </TableRow>
@@ -585,8 +587,8 @@ export function CategoriesManager({
                           })}
                         />
                       </TableCell>
-                      <TableCell>
-                        <div className="min-w-[180px]">
+                      <TableCell className="whitespace-normal">
+                        <div className="sm:min-w-[180px]">
                           <div className="text-foreground font-medium">
                             {category.name_en}
                           </div>
@@ -595,6 +597,9 @@ export function CategoriesManager({
                           </div>
                           <div className="text-muted-foreground mt-1 text-xs md:hidden">
                             {category.name_ar}
+                          </div>
+                          <div className="text-muted-foreground mt-1 text-xs sm:hidden">
+                            {tCat('colAssigned')}: {category.showCount}
                           </div>
                         </div>
                       </TableCell>
@@ -618,14 +623,15 @@ export function CategoriesManager({
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-muted-foreground hidden sm:table-cell">
                         {category.showCount}
                       </TableCell>
                       <TableCell>
-                        <div className="flex min-w-[168px] items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-2 sm:min-w-[168px]">
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
+                                className="max-md:hidden"
                                 type="button"
                                 variant="ghost"
                                 size="icon-sm"
@@ -647,6 +653,7 @@ export function CategoriesManager({
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
+                                className="max-md:hidden"
                                 type="button"
                                 variant="ghost"
                                 size="icon-sm"
