@@ -1,6 +1,6 @@
 # Phase 5 Accounts and Email: plan gate
 
-41 plans (05-00 to 05-40) in 14 waves (0 to 13). G1 to G19 carry Koss's signed discuss answers (2026-10-20 ~18:05 CET, relayed by the controller; `05-CONTEXT.md` status line), and the plans were revised to match them (revision 1). Rows G20 to G25 still need Koss's answer in the "Koss" column; nothing executes until every row has one (05-00 Task 1 stops otherwise). An answer other than the recommended one names the plans that change; those plans get a revision pass (`/gsd-plan-phase 5 --revision`) before execution.
+42 plans (05-00 to 05-41) in 15 waves (0 to 14). G1 to G19 carry Koss's signed discuss answers (2026-10-20 ~18:05 CET, relayed by the controller; `05-CONTEXT.md` status line), and the plans were revised to match them (revision 1). Rows G20 to G25 still need Koss's answer in the "Koss" column; nothing executes until every row has one (05-00 Task 1 stops otherwise). An answer other than the recommended one names the plans that change; those plans get a revision pass (`/gsd-plan-phase 5 --revision`) before execution.
 
 How to answer the open rows: row number and letter, for example `G20 A, G23 A`. "All recommended" is fine.
 
@@ -37,9 +37,20 @@ Live fact applied (D-16, controller read 2026-10-20): live `app_config.admin_use
 | G20 | Execution order. Phase 2 (custom-worker.ts, wrangler.jsonc, auth-guards.ts, form-guard.ts, client-ip.ts, rate-limit-policy.ts, cron-schedule.ts, scheduled.ts, cron-auth.ts, turnstile-field.tsx) is not on main yet. A: execute Phase 5 after Phase 2 merges. B: execute now with stand-ins and rework them later. | A | B: revision pass on 05-00, 05-15, 05-16, 05-18, 05-19, 05-20, 05-21, 05-22, 05-24, 05-28 (TODO(phase-2) stand-ins) | |
 | G21 | Controller FYI, contract change for Phase 6: the admin MFA page is `/{locale}/auth/mfa` (not under `/admin`, research F10: the admin layout itself redirects there, so a page inside `/admin` would loop). Phase 6 plans that link or test the MFA page use that path; `npm run seed:local-admin` replaces `/Users/koss/.clickit-checks/phase06-uat-admin.cjs` and applies M2 to the local stack, so local admin pages need the TOTP code first. | Accept | none in Phase 5; Phase 6 UAT re-run after this lands (05-34 hand-over) | |
 | G22 | Email look conflict with Phase 4 Q7. Settled by G12 = C (one scheme-adaptive answer for both phases; Phase 4 owns the colour values). | Settled (C) | none | C (via G12), 2026-10-20 |
-| G23 | Migrations in two PRs: PR 1 carries M1a and M1b (additive); M2 (is_admin requires an admins row + AAL2) and M3 (anon revoke) are proven in PR 1 under `supabase/pending/` and shipped in a second PR, because `apply-live-migrations.yml` applies every pending file in one approval: M3 must follow the catalog-client deploy and M2 must follow the two admins inserts (D-16 order). | A (two PRs) | B (one PR, apply all at once): 05-14 moves the files into `supabase/migrations`, 05-37 is dropped; M3 before the deploy would empty the catalog on the old code, and M2 before the inserts leaves no admin | |
-| G24 | UI-SPEC open items needing your word: (3) second authenticator skippable; (5) "Lost your phone? Ask Koss to reset your authenticator." as plain text; (7) name step says "Add a password later" as text; (12) /auth no longer uses the admin "auth heading" setting (fields stay, retire in Phase 8). Item (4), the "Free with an account" chip, is gone with G4 = B. | All as listed | (3) 05-25; (5) 05-06, 05-25; (7) 05-24; (12) 05-22 | |
+| G23 | Migration order (D-40). Sign exactly: "two PRs; the second (M2+M3) is prepared and reviewed before the first deploy; M2+M3 apply in one approval after the admins rows are read back, then Issam and Nejib enrol; admin pages show nothing from the deploy until enrolment". Why two PRs: `apply-live-migrations.yml` applies every pending file in one approval; M1 must precede the deploy, M3 must follow it (catalog client), and M2 must follow the admins inserts. | A (as quoted) | B (one PR, apply M1+M2+M3 at once before the deploy): 05-14 moves the files into `supabase/migrations`, 05-41 and 05-37 Task 1 are dropped; M3 before the deploy empties the catalog on the old code and M2 before the inserts leaves no admin | |
+| G24 | UI-SPEC open items needing your word, each with a picture per option (see "Pictures for G24" below): (3) second authenticator step skippable (A) or required (B); (5) "Lost your phone? Ask Koss to reset your authenticator." as plain text (A) or as a link (B); (7) name step says "Add a password later" as plain text (A) or as a link (B); (12) /auth h1 is the fixed sign-in heading (A) or keeps the admin "auth heading" setting (B; fields stay either way, retire in Phase 8). Item (4), the "Free with an account" chip, is gone with G4 = B. | A for each | (3) 05-25; (5) 05-06, 05-25; (7) 05-24; (12) 05-22 | |
 | G25 | Support auto-reply promises a reply "within 48 hours". | A (48 hours) | B (no time stated): 05-11 (SUPPORT_REPLY_HOURS removed from src/lib/email-constants.ts), 05-06 copy, 05-28 | |
+
+## Pictures for G24 (W9: every UI choice gets a picture per option before Koss answers)
+
+| Item | Option A | Option B | Existing picture | New picture needed |
+|------|----------|----------|------------------|--------------------|
+| (3) second authenticator step | skippable ("Add a second one" / "Skip for now") | required (no skip) | none: `mockups/05-q7.png` shows the two-step enrol only, no second-authenticator step | yes, both options |
+| (5) lost-phone line on /auth/mfa | plain text | link | `mockups/05-q7.png` shows it as a link (option B only) | yes, option A |
+| (7) name step "Add a password later" | plain text | link | `mockups/05-q3.png` shows it as a link (option B only) | yes, option A |
+| (12) /auth heading | fixed sign-in heading (`signInOrJoinTitle`) | admin-configured "auth heading" | none (05-q1.png shows the new layout without the admin heading question) | yes, both options |
+
+Task 0 (controller, before Koss answers G24): render the four new pictures (items 3, 5, 7, 12) with real product tokens, in `mockups/05-g24-*.png`, and show them to Koss next to `05-q3.png` and `05-q7.png`. No G24 answer is taken from text alone.
 
 ## Facts (read by the controller, recorded)
 
@@ -57,6 +68,6 @@ Live fact applied (D-16, controller read 2026-10-20): live `app_config.admin_use
 
 ## Next steps
 
-- GSD: after your answers to G20, G21, G23, G24, G25, `/gsd-execute-phase 5` in this work session (worktree `phase-05-accounts-and-email-61ece8`); it stops at 05-33 (your local UAT) and 05-34 (PR open, not merged); 05-35 to 05-37 run in the controller with your numbered steps.
+- GSD: after your answers to G20, G21, G23, G24, G25, `/gsd-execute-phase 5` in this work session (worktree `phase-05-accounts-and-email-61ece8`); it stops at 05-33 (your local UAT) and 05-34 (PR open, not merged); 05-41 (second PR, a new work session) runs right after the Phase 5 PR lands, in parallel with 05-35; 05-35 to 05-37 run in the controller with your numbered steps.
 - Jev: proposal only, not in any plan: a Jev triage call on each incoming support message (route to "playback", "account", "billing-question", "other" with a confidence; low confidence goes to both admins unlabelled). Added only on your word.
 - Automation: proposal only, not in any plan: a daily unattended email-health check (read-only: `email_outbox` rows stuck in sending or failed, DLQ depth, Resend bounce rate) that posts one line to the controller and alerts only on a threshold. Added only on your word.
