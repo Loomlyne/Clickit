@@ -38,6 +38,9 @@ import {
 import { loadManifestInfo } from '../../scripts/cf/build-target.mjs'
 import { isFaststart, topLevelBoxes } from '../../scripts/media/faststart.mjs'
 import { manifestFileInfo } from '../../scripts/media/report.mjs'
+import { runVerify } from '../../scripts/media/verify-media-host.mjs'
+import { checkVerifyReport } from '../../scripts/cf/deploy-guard.mjs'
+import { handleMediaRequest } from '../../workers/media/src/handler.ts'
 
 test('R2 migration manifest keeps the Supabase bucket and object key unchanged', () => {
   const manifest = createR2MediaManifest({
@@ -1055,5 +1058,78 @@ test('02-08 the copy script has no .vercel path, no hard-coded object count and 
     assert.doesNotMatch(text, /\.vercel/, file)
     assert.doesNotMatch(text, /\b86\b/, file)
     assert.doesNotMatch(text, /Delete(Object|Objects)?Command|\.remove\(/, file)
+  }
+})
+
+// The copy report must be provable by the verify script against the real media
+// Worker handler, and the verify report must pass the deploy guard.
+test('02-08 a report produced by the copy passes verify against the real media Worker handler and the deploy guard', async () => {
+  const fixture = await makeFixture()
+  try {
+    await fixture.dryRun()
+    const r2 = createFakeR2()
+    const { report: copyReport } = await fixture.copy(r2)
+
+    const bucket = {
+      async head(key: string) {
+        const stored = r2.objects.get(key)
+        if (!stored) return null
+        return {
+          size: stored.body.length,
+          etag: 'e',
+          httpEtag: `"${sha256(stored.body).slice(0, 16)}"`,
+          uploaded: new Date('2026-10-20T00:00:00Z'),
+          httpMetadata: { contentType: stored.input.ContentType, cacheControl: stored.input.CacheControl },
+        }
+      },
+      async get(key: string, options?: { range?: Headers }) {
+        const base = await this.head(key)
+        if (!base) return null
+        const body = r2.objects.get(key)!.body
+        const range = options?.range?.get('range')?.match(/^bytes=(\d+)-(\d+)$/)
+        const offset = range ? Number(range[1]) : 0
+        const length = range ? Math.min(Number(range[2]) - offset + 1, body.length - offset) : body.length
+        return {
+          ...base,
+          range: range ? { offset, length } : undefined,
+          body: new Blob([new Uint8Array(body.subarray(offset, offset + length))]).stream(),
+        }
+      },
+    }
+    const worker = (async (url: string, init?: RequestInit) =>
+      handleMediaRequest(new Request(url, init), {
+        MEDIA_BUCKET: bucket,
+        SUPABASE_URL: ORIGIN,
+      })) as unknown as typeof fetch
+
+    const verifyReport = await runVerify({
+      origin: 'https://clickit-media.example.workers.dev',
+      copyReport,
+      manifest: manifestFileInfo(fixture.manifestPath),
+      fetchImpl: worker,
+    })
+    assert.deepEqual(verifyReport.failures, [])
+    assert.equal(verifyReport.originalsChecked, copyReport.manifestObjectCount)
+    assert.equal(verifyReport.variantsChecked, 4)
+    assert.equal(verifyReport.originalsKeptNotRequested, 1)
+    assert.deepEqual(
+      checkVerifyReport(verifyReport, loadManifestInfo(fixture.manifestPath)),
+      { ok: true, reasons: [] }
+    )
+
+    // A missing object on the host is caught.
+    r2.objects.delete('_v/640/webp/show-artwork/poster.png')
+    const broken = await runVerify({
+      origin: 'https://clickit-media.example.workers.dev',
+      copyReport,
+      manifest: manifestFileInfo(fixture.manifestPath),
+      fetchImpl: worker,
+    })
+    // The Worker falls back to the original for a missing variant, so the
+    // content-type check is what catches it.
+    assert.equal(broken.failures.length, 1)
+    assert.match(broken.failures[0].key, /_v\/640\/webp/)
+  } finally {
+    await fixture.cleanup()
   }
 })
