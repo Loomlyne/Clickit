@@ -13,7 +13,7 @@ type FailRule = {
   kind: 'error' | 'throw'
 }
 type Filter =
-  | { kind: 'eq' | 'neq' | 'gt' | 'lt'; col: string; value: any }
+  | { kind: 'eq' | 'neq' | 'gt' | 'gte' | 'lt'; col: string; value: any }
   | { kind: 'in'; col: string; value: any[] }
   | { kind: 'is'; col: string; value: any }
   | { kind: 'notnull'; col: string }
@@ -56,6 +56,8 @@ function matches(row: Row, f: Filter): boolean {
       return v !== f.value
     case 'gt':
       return v > f.value
+    case 'gte':
+      return v >= f.value
     case 'lt':
       return v < f.value
     case 'in':
@@ -161,6 +163,10 @@ export function createFakeSupabase(initial: Tables = {}) {
     }
     gt(col: string, value: any) {
       this.filters.push({ kind: 'gt', col, value })
+      return this
+    }
+    gte(col: string, value: any) {
+      this.filters.push({ kind: 'gte', col, value })
       return this
     }
     lt(col: string, value: any) {
