@@ -64,7 +64,7 @@ test('player: cleanup destroys the player and removes the leftover child', () =>
 
 test('player: exposes the reported video id for the tracker', () => {
   assert.match(PLAYER, /export function getPlayerVideoId/)
-  assert.match(PLAYER, /getVideoData\(\)/)
+  assert.match(PLAYER, /getVideoData\??\.?\(\)/)
   assert.match(PLAYER, /video_id/)
 })
 
