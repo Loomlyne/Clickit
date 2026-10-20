@@ -4,7 +4,7 @@ import test from 'node:test'
 import { runAdminAction, type AdminActionEnv } from '../../src/lib/admin/action-runner.ts'
 import {
   removeHeroVideoCore,
-  saveHeroVideoCore,
+  saveVideoCore,
   setHeroVideoUrlCore,
   type HeroVideoPorts,
 } from '../../src/lib/admin/hero-video.ts'
@@ -49,7 +49,7 @@ const spyReval = () => {
   return { calls, revalidate: (r: unknown) => void calls.push(r) }
 }
 
-test('saveHeroVideoUpload path, forced audit failure: failed, revalidated once, config restored', async () => {
+test('finalizeHeroVideoUpload path, forced audit failure: failed, revalidated once, config restored', async () => {
   const w = world()
   const before = w.fake.snapshot({ exclude: ['admin_audit_log'] })
   w.fake.failOn({ table: 'admin_audit_log', op: 'insert', nth: 1 })
@@ -57,7 +57,7 @@ test('saveHeroVideoUpload path, forced audit failure: failed, revalidated once, 
   const res = await runAdminAction(
     env(w.fake),
     (ctx) =>
-      saveHeroVideoCore(w.ports, { audit: ctx.audit, adminUserId: ctx.adminUserId }, { path: NEW_PATH, variant: 'desktop' }),
+      saveVideoCore(w.ports, { audit: ctx.audit, adminUserId: ctx.adminUserId }, { key: NEW_PATH, target: 'hero-desktop' }),
     { fallbackError: 'Upload failed', revalidate: spy.revalidate }
   )
   assert.equal(res.success, false)
@@ -97,13 +97,13 @@ test('removeHeroVideo path success: revalidated once, one audit row', async () =
   assert.equal(w.fake.auditRows().length, 1)
 })
 
-test('saveHeroVideoUpload path, forged size: refused, not revalidated', async () => {
+test('finalizeHeroVideoUpload path, forged size (server 50 MB check): refused, not revalidated', async () => {
   const w = world({ infoSize: 60 * MB })
   const spy = spyReval()
   const res = await runAdminAction(
     env(w.fake),
     (ctx) =>
-      saveHeroVideoCore(w.ports, { audit: ctx.audit, adminUserId: ctx.adminUserId }, { path: NEW_PATH, variant: 'desktop' }),
+      saveVideoCore(w.ports, { audit: ctx.audit, adminUserId: ctx.adminUserId }, { key: NEW_PATH, target: 'hero-desktop' }),
     { fallbackError: 'Upload failed', revalidate: spy.revalidate }
   )
   assert.equal(res.success, false)
@@ -120,7 +120,9 @@ function bodyOf(name: string): string {
 
 test('source scan: hero actions go through the runner and their core', () => {
   for (const [name, core] of [
-    ['saveHeroVideoUpload', 'saveHeroVideoCore('],
+    ['finalizeHeroVideoUpload', 'saveVideoCore('],
+    ['finalizePreloaderVideoUpload', 'saveVideoCore('],
+    ['finalizeShowVideoUpload', 'saveVideoCore('],
     ['setHeroVideoUrl', 'setHeroVideoUrlCore('],
     ['removeHeroVideo', 'removeHeroVideoCore('],
   ] as const) {
@@ -128,17 +130,32 @@ test('source scan: hero actions go through the runner and their core', () => {
     assert.ok(b.includes('runAdminAction('), `${name} lacks runAdminAction(`)
     assert.ok(b.includes(core), `${name} lacks ${core}`)
   }
-  const create = bodyOf('createHeroVideoUpload')
-  assert.ok(create.includes('parseHeroVariant('))
-  assert.ok(create.includes('checkHeroVideoSize('))
 })
 
-test('source scan: image uploads use checkImageUpload and the ticker is strict', () => {
-  assert.ok(bodyOf('uploadSiteImage').includes('checkImageUpload('))
-  assert.ok(bodyOf('uploadSocialIcon').includes('checkImageUpload('))
+test('source scan: image finalizers run through the runner and the strict audit writer; the ticker is strict', () => {
+  for (const name of [
+    'finalizeArtworkUpload',
+    'finalizeSiteImageUpload',
+    'finalizeSocialIconUpload',
+    'finalizeCastImageUpload',
+  ]) {
+    const b = bodyOf(name)
+    assert.ok(b.includes('runAdminAction('), `${name} lacks runAdminAction(`)
+    assert.ok(b.includes('finalizeImageUploadCore('), `${name} lacks the core`)
+  }
+  assert.ok(src.includes('audit: logAuditStrict'), 'image ports must audit with logAuditStrict')
   const ticker = bodyOf('updateTopTicker')
   assert.ok(ticker.includes('fillTickerArabic('))
   assert.ok(ticker.includes('translateBatchToArabicStrict'))
+})
+
+test('source scan: no admin media action takes a Supabase original or the old FormData path', () => {
+  for (const name of ['removePreloaderVideo', 'removeSiteImage', 'deleteCastMember', 'deleteShowPermanently']) {
+    const b = bodyOf(name)
+    assert.ok(!b.includes('storage.from('), `${name} must not touch Supabase Storage`)
+    assert.ok(!b.includes('stageMirroredPublicMediaDeletion'), `${name} still uses the old mirror`)
+  }
+  assert.ok(!src.includes('storage.from('), 'admin actions make no Supabase Storage call (MEDIA-07)')
 })
 
 test('source scan: removed code is gone', () => {

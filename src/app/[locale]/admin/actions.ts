@@ -2,7 +2,6 @@
 
 import { revalidatePath, updateTag } from 'next/cache'
 import { z } from 'zod'
-import sharp from 'sharp'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { validateYouTubeUrl } from '@/lib/youtube'
@@ -22,7 +21,6 @@ import {
   categoryOrderSchema,
   episodeSchema,
   formatZodError,
-  parseHeroVariant,
   parseDirection,
   parseId,
   seasonSchema,
@@ -51,15 +49,7 @@ import { generateSlug } from '@/lib/slug'
 import { fillArabic, translateBatchToArabicStrict } from '@/lib/translate'
 import { fillTickerArabic, type TickerItem } from '@/lib/admin/ticker'
 import {
-  SITE_IMAGE_MIME_EXT,
-  SOCIAL_ICON_MIME_EXT,
-  checkHeroVideoSize,
-  checkImageUpload,
-} from '@/lib/admin/media-guards'
-import {
-  createHeroVideoPath,
   removeHeroVideoCore,
-  saveHeroVideoCore,
   saveVideoCore,
   setHeroVideoUrlCore,
   type HeroVideoPorts,
@@ -70,12 +60,12 @@ import { getWorkerEnv } from '@/server/cloudflare'
 import { r2KeyFromUrl, r2KeysForUrl } from '@/server/r2-keys'
 import { finalizeUploadedObject, type FinalizeBucket } from '@/server/upload-finalize'
 import {
-  assertPublicMediaWriteReady,
-  mirrorPublicMediaObject,
-  prepareMirroredPublicMediaDeletion,
-  R2MediaRollbackError,
-} from '@/lib/r2-media'
-import type { MirroredPublicMediaDeletion } from '@/lib/r2-media'
+  deleteMediaForUrl,
+  stageR2DeletionForUrl,
+  stageShowMedia as stageR2ShowMedia,
+  type ListableBucket,
+  type StagedR2Deletion,
+} from '@/server/r2-delete'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -85,81 +75,6 @@ type ActionResult<T = unknown> = {
   success: boolean
   error?: string
   data?: T
-}
-
-async function stageMirroredPublicMediaDeletion(
-  admin: ReturnType<typeof createAdminClient>,
-  bucket: 'show-artwork' | 'site-assets' | 'avatars',
-  paths: string[]
-): Promise<MirroredPublicMediaDeletion> {
-  const r2Deletion = await prepareMirroredPublicMediaDeletion(bucket, paths)
-  return {
-    commit: async () => {
-      const { error } = await admin.storage.from(bucket).remove(paths)
-      if (error) {
-        await r2Deletion.rollback()
-        return false
-      }
-      return r2Deletion.commit()
-    },
-    rollback: r2Deletion.rollback,
-  }
-}
-
-async function removeMirroredPublicMedia(
-  admin: ReturnType<typeof createAdminClient>,
-  bucket: 'show-artwork' | 'site-assets' | 'avatars',
-  paths: string[]
-) {
-  const deletion = await stageMirroredPublicMediaDeletion(admin, bucket, paths)
-  return deletion.commit()
-}
-
-async function cleanupMirroredPublicMedia(
-  admin: ReturnType<typeof createAdminClient>,
-  bucket: 'show-artwork' | 'site-assets' | 'avatars',
-  paths: string[],
-  label: string
-) {
-  try {
-    if (!(await removeMirroredPublicMedia(admin, bucket, paths))) {
-      console.error(`${label} media cleanup failed`)
-    }
-  } catch (error) {
-    console.error(`${label} media cleanup failed`, error)
-  }
-}
-
-async function mirrorUploadedPublicMedia(
-  admin: ReturnType<typeof createAdminClient>,
-  input: Parameters<typeof mirrorPublicMediaObject>[0]
-) {
-  try {
-    await mirrorPublicMediaObject(input)
-  } catch (error) {
-    if (error instanceof R2MediaRollbackError) throw error
-    const { error: removeError } = await admin.storage
-      .from(input.bucket)
-      .remove([input.key])
-    if (removeError) {
-      console.error('[mirrorUploadedPublicMedia] source cleanup failed', removeError)
-    }
-    throw error
-  }
-}
-
-export type SignedVideoUploadTarget = {
-  path: string
-  token: string
-}
-
-function isMp4File(file: { name?: string; type?: string }) {
-  const name = file.name?.toLowerCase() ?? ''
-  const type = file.type ?? ''
-  return (
-    type === 'video/mp4' ||
-    (name.endsWith('.mp4') && (!type || type === 'application/octet-stream'))
-  )
 }
 
 export type {
@@ -500,55 +415,13 @@ export async function resolveRestoreConflictsAndRestore(
   )
 }
 
-// List and delete every file under shows/{id}/ in both buckets. Listing (not
-// hard-coded names) works for legacy stable-path rows and versioned rows
-// (hero-{timestamp}.webp): whatever is in the folder gets staged for deletion.
-async function stageShowMedia(
-  admin: ReturnType<typeof createAdminClient>,
-  showId: string
-): Promise<MirroredPublicMediaDeletion[]> {
-  const staged: MirroredPublicMediaDeletion[] = []
-
-  async function listShowFolderFiles(bucket: string, prefix: string) {
-    const paths: string[] = []
-    let offset = 0
-
-    for (;;) {
-      const { data, error: listError } = await admin.storage
-        .from(bucket)
-        .list(prefix, { limit: 1000, offset })
-      if (listError) throw new Error('Could not list show media')
-
-      const entries = data ?? []
-      for (const entry of entries) {
-        if (!entry.name) continue
-        const path = prefix + '/' + entry.name
-        if (entry.id) {
-          paths.push(path)
-        } else {
-          paths.push(...(await listShowFolderFiles(bucket, path)))
-        }
-      }
-
-      if (entries.length < 1000) return paths
-      offset += entries.length
-    }
-  }
-
-  async function purgeShowFolder(bucket: 'show-artwork' | 'site-assets') {
-    const paths = await listShowFolderFiles(bucket, ['shows', showId].join('/'))
-    if (paths.length === 0) return
-    staged.push(await stageMirroredPublicMediaDeletion(admin, bucket, paths))
-  }
-
-  try {
-    await purgeShowFolder('show-artwork') // poster, hero, hero-mobile, logo
-    await purgeShowFolder('site-assets') // hero videos
-  } catch (mediaError) {
-    await Promise.all(staged.map((deletion) => deletion.rollback()))
-    throw mediaError
-  }
-  return staged
+// List and delete every R2 object under <bucket>/shows/{id}/ in both buckets (artwork,
+// logo, cast portraits, hero videos). Listing (not hard-coded names) works for legacy
+// stable-path rows and versioned rows (hero-{timestamp}.webp). R2 only: Supabase Storage
+// originals are never deleted here (MEDIA-07).
+async function stageShowMedia(showId: string): Promise<StagedR2Deletion[]> {
+  const bucket = (await getWorkerEnv()).MEDIA as unknown as ListableBucket
+  return stageR2ShowMedia(bucket, showId)
 }
 
 export async function deleteShowPermanently(id: string): Promise<ActionResult> {
@@ -562,7 +435,7 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
           adminUserId: ctx.adminUserId,
           media: {
             stage: async (showId) =>
-              (await stageShowMedia(ctx.db, showId)).map((deletion) => ({
+              (await stageShowMedia(showId)).map((deletion) => ({
                 commit: async () => {
                   const ok = await deletion.commit()
                   if (!ok) console.error('[deleteShowPermanently] media cleanup failed')
@@ -1083,121 +956,6 @@ const ARTWORK_UPLOAD_SLOTS = [
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
-export async function uploadArtwork(
-  formData: FormData
-): Promise<ActionResult<string>> {
-  try {
-    await assertAdmin()
-    assertPublicMediaWriteReady()
-    const admin = createAdminClient()
-
-    const file = formData.get('file') as File | null
-    const showId = formData.get('showId') as string | null
-    const slot = formData.get('slot') as string | null
-
-    if (!file || !showId || !slot) {
-      console.warn('[uploadArtwork] missing args', {
-        hasFile: !!file,
-        showId,
-        slot,
-      })
-      return { success: false, error: 'Missing file, showId, or slot' }
-    }
-
-    if (
-      !UUID_RE.test(showId) ||
-      showId.includes('/') ||
-      showId.includes('..') ||
-      slot.includes('/') ||
-      slot.includes('..') ||
-      !ARTWORK_UPLOAD_SLOTS.includes(
-        slot as (typeof ARTWORK_UPLOAD_SLOTS)[number]
-      )
-    ) {
-      return { success: false, error: 'Invalid showId or slot' }
-    }
-
-    const ALLOWED_MIME = ['image/webp', 'image/png', 'image/jpeg']
-    if (!ALLOWED_MIME.includes(file.type)) {
-      console.warn('[uploadArtwork] bad mime rejected', {
-        showId,
-        slot,
-        mime: file.type,
-      })
-      return {
-        success: false,
-        error: 'File must be a WebP, PNG, or JPEG image',
-      }
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      console.warn('[uploadArtwork] oversize rejected', {
-        showId,
-        slot,
-        sizeMB: Math.round(file.size / 1024 / 1024),
-      })
-      return { success: false, error: 'Image must be under 10MB' }
-    }
-
-    // All slots use versioned paths so uploads never overwrite the live DB-referenced
-    // asset in-place. Form state holds the new URL; DB commit happens on Save.
-    // Clicking Cancel on the drawer keeps the DB pointing at the still-existing old
-    // file, so the live viewer is never shown a half-saved state. Orphans from saves
-    // (where the DB moves to the new URL and the old file is abandoned) are cleaned
-    // up by the scheduled sweep (see /api/cron/cleanup-media).
-    const ext = slot === 'logo' ? 'png' : 'webp'
-
-    // Transcode non-matching inputs to the storage format. For logo slot we keep PNG
-    // (preserves transparency and is the convention). For hero/poster slots we convert
-    // JPEG/PNG to WebP so the .webp extension accurately describes the bytes. If the
-    // upload is already in the target format we pass the bytes through unchanged.
-    let uploadBody: Buffer | File = file
-    let uploadContentType = file.type
-    const targetMime = ext === 'png' ? 'image/png' : 'image/webp'
-    if (file.type !== targetMime) {
-      const input = Buffer.from(await file.arrayBuffer())
-      const pipeline = sharp(input)
-      const transcoded =
-        ext === 'png'
-          ? await pipeline.png().toBuffer()
-          : await pipeline.webp({ quality: 88 }).toBuffer()
-      uploadBody = transcoded
-      uploadContentType = targetMime
-    }
-
-    const path = `shows/${showId}/${slot}-${Date.now()}.${ext}`
-
-    const { error } = await admin.storage
-      .from('show-artwork')
-      .upload(path, uploadBody, {
-        upsert: false,
-        contentType: uploadContentType,
-        cacheControl: '31536000',
-      })
-
-    if (error) return { success: false, error: error.message }
-
-    await mirrorUploadedPublicMedia(admin, {
-      bucket: 'show-artwork',
-      key: path,
-      body: uploadBody,
-      contentType: uploadContentType,
-      cacheControl: '31536000',
-    })
-
-    const { data: urlData } = admin.storage
-      .from('show-artwork')
-      .getPublicUrl(path)
-
-    return { success: true, data: urlData.publicUrl }
-  } catch (err) {
-    console.error('[uploadArtwork] failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
-    }
-  }
-}
-
 // Note: an earlier deleteArtwork() server action was removed here. Post-versioning
 // the UI uses form-state clearing (null-out the URL on Save) instead of an
 // imperative storage delete — the orphaned versioned files are collected by the
@@ -1262,77 +1020,6 @@ async function videoPorts(db: AdminDb): Promise<HeroVideoPorts> {
     previousR2Keys: (url) => r2KeysForUrl(url, mediaOrigin),
     storagePathFromUrl: (url) => r2KeyFromUrl(url, mediaOrigin) ?? getPublicStoragePath(url, 'site-assets'),
   }
-}
-
-export async function createHeroVideoUpload(
-  file: {
-    name: string
-    size: number
-    type: string
-  },
-  variant: HeroVariant = 'desktop'
-): Promise<ActionResult<SignedVideoUploadTarget>> {
-  try {
-    await assertAdmin()
-    assertPublicMediaWriteReady()
-    const admin = createAdminClient()
-
-    const v = parseHeroVariant(variant)
-    if (!v.ok) return { success: false, error: v.error }
-
-    if (!isMp4File(file)) {
-      return { success: false, error: 'File must be an MP4 video' }
-    }
-
-    // Client-reported size only; the server proof is saveHeroVideoCore (storage info()).
-    const sizeCheck = checkHeroVideoSize(file.size)
-    if (!sizeCheck.ok) return { success: false, error: sizeCheck.error }
-
-    const path = createHeroVideoPath(v.value)
-    const { data, error } = await admin.storage
-      .from('site-assets')
-      .createSignedUploadUrl(path)
-
-    if (error) return { success: false, error: error.message }
-
-    return { success: true, data: { path: data.path, token: data.token } }
-  } catch (err) {
-    console.error('[createHeroVideoUpload] failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
-    }
-  }
-}
-
-// Legacy: kept compiling until plan 02-19 deletes it (02-18 switches the client to
-// finalizeHeroVideoUpload). The core now takes an R2 key, so a Supabase-signed-upload
-// path is refused with 'Invalid upload key'.
-export async function saveHeroVideoUpload(
-  path: string,
-  variant: HeroVariant = 'desktop'
-): Promise<ActionResult<string>> {
-  const res = await runAdminAction(
-    adminEnv,
-    async (ctx) => {
-      const r = await saveHeroVideoCore(
-        await videoPorts(ctx.db),
-        { audit: ctx.audit, adminUserId: ctx.adminUserId },
-        { path, variant }
-      )
-      if (r.mediaCleanupFailed) console.error('[saveHeroVideoUpload] media cleanup failed')
-      return r
-    },
-    {
-      fallbackError: 'Upload failed',
-      revalidate: () => {
-        updateTag('site-config')
-        revalidatePath('/')
-        revalidatePath('/portfolio')
-      },
-    }
-  )
-  return res
 }
 
 export async function setHeroVideoUrl(
@@ -1435,137 +1122,6 @@ export async function setHeroVideoMuted(muted: boolean): Promise<ActionResult> {
 // Preloader Video Management
 // ---------------------------------------------------------------------------
 
-function createPreloaderVideoPath() {
-  return `preloader/video-${Date.now()}.mp4`
-}
-
-function isPreloaderVideoUploadPath(path: string) {
-  return /^preloader\/video-\d+\.mp4$/.test(path)
-}
-
-export async function createPreloaderVideoUpload(file: {
-  name: string
-  size: number
-  type: string
-}): Promise<ActionResult<SignedVideoUploadTarget>> {
-  try {
-    await assertAdmin()
-    assertPublicMediaWriteReady()
-    const admin = createAdminClient()
-
-    if (!isMp4File(file)) {
-      return { success: false, error: 'File must be an MP4 video' }
-    }
-
-    if (file.size > 20 * 1024 * 1024) {
-      return { success: false, error: 'Video must be under 20MB' }
-    }
-
-    const path = createPreloaderVideoPath()
-    const { data, error } = await admin.storage
-      .from('site-assets')
-      .createSignedUploadUrl(path)
-
-    if (error) return { success: false, error: error.message }
-
-    return { success: true, data: { path: data.path, token: data.token } }
-  } catch (err) {
-    console.error('[createPreloaderVideoUpload] failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
-    }
-  }
-}
-
-export async function savePreloaderVideoUpload(
-  path: string
-): Promise<ActionResult<string>> {
-  try {
-    await assertAdmin()
-    const admin = createAdminClient()
-
-    if (!isPreloaderVideoUploadPath(path)) {
-      return { success: false, error: 'Invalid upload path' }
-    }
-
-    const { data: previousConfig, error: previousConfigError } = await admin
-      .from('app_config')
-      .select('preloader_video_url')
-      .eq('id', 1)
-      .single()
-    if (previousConfigError || !previousConfig) {
-      return {
-        success: false,
-        error: previousConfigError?.message ?? 'Could not load site config',
-      }
-    }
-
-    const previousUrl = (
-      previousConfig as unknown as { preloader_video_url: string | null }
-    ).preloader_video_url
-
-    const { data: uploadedFile, error: downloadError } = await admin.storage
-      .from('site-assets')
-      .download(path)
-    if (downloadError || !uploadedFile) {
-      return {
-        success: false,
-        error: downloadError?.message ?? 'Could not verify uploaded video',
-      }
-    }
-
-    await mirrorUploadedPublicMedia(admin, {
-      bucket: 'site-assets',
-      key: path,
-      body: uploadedFile,
-      contentType: 'video/mp4',
-      cacheControl: '31536000',
-    })
-
-    const { data: urlData } = admin.storage
-      .from('site-assets')
-      .getPublicUrl(path)
-
-    const publicUrl = `${urlData.publicUrl}?v=${Date.now()}`
-
-    const { error } = await admin
-      .from('app_config')
-      .update({ preloader_video_url: publicUrl } as never)
-      .eq('id', 1)
-
-    if (error) {
-      await cleanupMirroredPublicMedia(
-        admin,
-        'site-assets',
-        [path],
-        '[savePreloaderVideoUpload]'
-      )
-      return { success: false, error: error.message }
-    }
-
-    const previousPath = getPublicStoragePath(previousUrl, 'site-assets')
-    if (previousPath && previousPath !== path) {
-      await cleanupMirroredPublicMedia(
-        admin,
-        'site-assets',
-        [previousPath],
-        '[savePreloaderVideoUpload]'
-      )
-    }
-
-    updateTag('site-config')
-    revalidatePath('/', 'layout')
-    return { success: true, data: publicUrl }
-  } catch (err) {
-    console.error('[savePreloaderVideoUpload] failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
-    }
-  }
-}
-
 export async function removePreloaderVideo(): Promise<ActionResult> {
   try {
     await assertAdmin()
@@ -1586,12 +1142,13 @@ export async function removePreloaderVideo(): Promise<ActionResult> {
     const previousPreloaderUrl = (
       previousConfig as unknown as { preloader_video_url: string | null }
     ).preloader_video_url
-    const previousPath = getPublicStoragePath(previousPreloaderUrl, 'site-assets')
-    const mediaDeletion = previousPath
-      ? await stageMirroredPublicMediaDeletion(admin, 'site-assets', [
-          previousPath,
-        ])
-      : null
+    // R2 only: a preloader that still points at a Supabase original keeps that file
+    // (MEDIA-07: Supabase is emptied only after Koss approves).
+    const mediaDeletion = stageR2DeletionForUrl(
+      (await getWorkerEnv()).MEDIA,
+      previousPreloaderUrl,
+      getPublicMediaOrigin()
+    )
     const { error: configError } = await admin
       .from('app_config')
       .update({ preloader_video_url: null } as never)
@@ -1603,7 +1160,7 @@ export async function removePreloaderVideo(): Promise<ActionResult> {
         success: false,
         error: restored !== false
           ? configError.message
-          : 'Could not remove the preloader video and restore R2 media',
+          : 'Could not remove the preloader video',
       }
     }
 
@@ -1627,95 +1184,6 @@ export async function removePreloaderVideo(): Promise<ActionResult> {
 // ---------------------------------------------------------------------------
 // Per-Show Hero Video Management
 // ---------------------------------------------------------------------------
-
-// Uploads MP4 to storage and returns the public URL. Does NOT write to DB —
-// the URL is persisted when the parent form is saved (same pattern as artwork).
-export async function createShowVideoUpload(file: {
-  name: string
-  size: number
-  type: string
-  showId: string
-  variant: 'desktop' | 'mobile'
-}): Promise<ActionResult<SignedVideoUploadTarget>> {
-  try {
-    await assertAdmin()
-    assertPublicMediaWriteReady()
-    const admin = createAdminClient()
-    const { name, size, type, showId, variant } = file
-
-    const showIdParsed = parseId(showId, 'show')
-    if (!showIdParsed.ok) return { success: false, error: showIdParsed.error }
-
-    if (variant !== 'desktop' && variant !== 'mobile') {
-      return { success: false, error: 'Invalid variant' }
-    }
-
-    if (!isMp4File({ name, type })) {
-      return { success: false, error: 'File must be an MP4 video' }
-    }
-
-    if (size > 50 * 1024 * 1024) {
-      return { success: false, error: 'Video must be under 50MB' }
-    }
-
-    const path = `shows/${showIdParsed.value}/hero-${variant}-${Date.now()}.mp4`
-    const { data, error } = await admin.storage
-      .from('site-assets')
-      .createSignedUploadUrl(path)
-
-    if (error) return { success: false, error: error.message }
-
-    return { success: true, data: { path: data.path, token: data.token } }
-  } catch (err) {
-    console.error('[createShowVideoUpload] failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
-    }
-  }
-}
-
-export async function saveShowVideoUpload(
-  path: string
-): Promise<ActionResult<string>> {
-  try {
-    await assertAdmin()
-
-    if (!/^shows\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/hero-(desktop|mobile)-\d+\.mp4$/i.test(path)) {
-      return { success: false, error: 'Invalid upload path' }
-    }
-
-    const admin = createAdminClient()
-    const { data: uploadedFile, error: downloadError } = await admin.storage
-      .from('site-assets')
-      .download(path)
-    if (downloadError || !uploadedFile) {
-      return {
-        success: false,
-        error: downloadError?.message ?? 'Could not verify uploaded video',
-      }
-    }
-
-    await mirrorUploadedPublicMedia(admin, {
-      bucket: 'site-assets',
-      key: path,
-      body: uploadedFile,
-      contentType: 'video/mp4',
-      cacheControl: '31536000',
-    })
-
-    const { data: urlData } = admin.storage
-      .from('site-assets')
-      .getPublicUrl(path)
-    return { success: true, data: urlData.publicUrl }
-  } catch (err) {
-    console.error('[saveShowVideoUpload] failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
-    }
-  }
-}
 
 // Note: an earlier deleteShowVideoFile() server action was removed here. Same
 // reasoning as deleteArtwork — post-versioning the UI uses form-state clearing
@@ -2388,118 +1856,6 @@ const SITE_IMAGE_COLUMN = {
 
 type SiteImageKind = keyof typeof SITE_IMAGE_COLUMN
 
-// Upload OG image or favicon to site-assets bucket.
-// Returns the public URL and writes it to the matching app_config column.
-export async function uploadSiteImage(
-  formData: FormData
-): Promise<ActionResult<string>> {
-  try {
-    await assertAdmin()
-    assertPublicMediaWriteReady()
-    const admin = createAdminClient()
-
-    const file = formData.get('file') as File | null
-    const kind = formData.get('kind') as SiteImageKind | null
-    if (!file) return { success: false, error: 'No file provided' }
-    if (!kind || !(kind in SITE_IMAGE_COLUMN)) {
-      return { success: false, error: 'Invalid kind' }
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      return { success: false, error: 'Image must be under 5MB' }
-    }
-
-    // SVG is refused (declared type and sniffed bytes); PNG, JPEG, WebP, AVIF and ICO stay allowed.
-    const bytes = new Uint8Array(await file.arrayBuffer())
-    const checked = checkImageUpload({
-      declaredMime: file.type,
-      bytes,
-      allow: SITE_IMAGE_MIME_EXT,
-    })
-    if (!checked.ok) return { success: false, error: checked.error }
-    const mime = checked.mime
-    const ext = checked.ext
-
-    const column = SITE_IMAGE_COLUMN[kind]
-    const { data: previousConfig, error: previousConfigError } = await admin
-      .from('app_config')
-      .select(column)
-      .eq('id', 1)
-      .single()
-    if (previousConfigError || !previousConfig) {
-      return {
-        success: false,
-        error: previousConfigError?.message ?? 'Could not load site config',
-      }
-    }
-
-    const previousUrl = (
-      previousConfig as unknown as Record<string, string | null>
-    )[column]
-    const path = `settings/${kind}-${Date.now()}.${ext}`
-
-    const body = new Blob([bytes], { type: mime })
-
-    const { error: uploadError } = await admin.storage
-      .from('site-assets')
-      .upload(path, body, {
-        upsert: false,
-        contentType: mime,
-        cacheControl: '31536000',
-      })
-
-    if (uploadError) return { success: false, error: uploadError.message }
-
-    await mirrorUploadedPublicMedia(admin, {
-      bucket: 'site-assets',
-      key: path,
-      body,
-      contentType: mime,
-      cacheControl: '31536000',
-    })
-
-    const { data: urlData } = admin.storage
-      .from('site-assets')
-      .getPublicUrl(path)
-    // Cache-bust the URL so browsers always pick up the latest upload
-    const bustedUrl = `${urlData.publicUrl}?v=${Date.now()}`
-
-    const { error: dbError } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ [column]: bustedUrl } as any)
-      .eq('id', 1)
-
-    if (dbError) {
-      await cleanupMirroredPublicMedia(
-        admin,
-        'site-assets',
-        [path],
-        '[uploadSiteImage]'
-      )
-      return { success: false, error: dbError.message }
-    }
-
-    const previousPath = getPublicStoragePath(previousUrl, 'site-assets')
-    if (previousPath && previousPath !== path) {
-      await cleanupMirroredPublicMedia(
-        admin,
-        'site-assets',
-        [previousPath],
-        '[uploadSiteImage]'
-      )
-    }
-
-    bumpSiteConfigCache()
-    return { success: true, data: bustedUrl }
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
-    }
-  }
-}
-
 export async function removeSiteImage(
   kind: SiteImageKind
 ): Promise<ActionResult> {
@@ -2529,15 +1885,13 @@ export async function removeSiteImage(
       .eq('id', 1)
     if (error) return { success: false, error: error.message }
 
-    const previousPath = getPublicStoragePath(previousUrl, 'site-assets')
-    if (previousPath) {
-      await cleanupMirroredPublicMedia(
-        admin,
-        'site-assets',
-        [previousPath],
-        '[removeSiteImage]'
-      )
-    }
+    // R2 only; a Supabase original is never deleted (MEDIA-07).
+    await deleteMediaForUrl(
+      (await getWorkerEnv()).MEDIA,
+      previousUrl,
+      getPublicMediaOrigin(),
+      '[removeSiteImage]'
+    )
 
     bumpSiteConfigCache()
     return { success: true }
@@ -2546,55 +1900,6 @@ export async function removeSiteImage(
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to remove',
-    }
-  }
-}
-
-export async function uploadSocialIcon(
-  formData: FormData
-): Promise<ActionResult<string>> {
-  try {
-    await assertAdmin()
-    assertPublicMediaWriteReady()
-    const admin = createAdminClient()
-
-    const file = formData.get('file') as File | null
-    if (!file) return { success: false, error: 'No file provided' }
-    if (file.size > 2 * 1024 * 1024) {
-      return { success: false, error: 'Icon must be under 2MB' }
-    }
-
-    const bytes = new Uint8Array(await file.arrayBuffer())
-    const checked = checkImageUpload({
-      declaredMime: file.type,
-      bytes,
-      allow: SOCIAL_ICON_MIME_EXT,
-    })
-    if (!checked.ok) return { success: false, error: checked.error }
-
-    const path = `settings/social-icons/${Date.now()}.${checked.ext}`
-    const body = new Blob([bytes], { type: checked.mime })
-    const { error: uploadError } = await admin.storage
-      .from('site-assets')
-      .upload(path, body, { upsert: false, contentType: checked.mime, cacheControl: '31536000' })
-
-    if (uploadError) return { success: false, error: uploadError.message }
-
-    await mirrorUploadedPublicMedia(admin, {
-      bucket: 'site-assets',
-      key: path,
-      body,
-      contentType: checked.mime,
-      cacheControl: '31536000',
-    })
-
-    const { data: urlData } = admin.storage.from('site-assets').getPublicUrl(path)
-    return { success: true, data: urlData.publicUrl }
-  } catch (err) {
-    console.error('[admin/actions] uploadSocialIcon failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
     }
   }
 }
@@ -2945,74 +2250,6 @@ export async function addCastMember(
   }
 }
 
-export async function uploadCastImage(
-  formData: FormData
-): Promise<ActionResult<string>> {
-  try {
-    await assertAdmin()
-    assertPublicMediaWriteReady()
-    const admin = createAdminClient()
-
-    const file = formData.get('file') as File | null
-    const showId = formData.get('showId') as string | null
-
-    if (!file || file.size === 0) {
-      return { success: false, error: 'No file provided' }
-    }
-    const showIdParsed = parseId(showId, 'show')
-    if (!showIdParsed.ok) {
-      return { success: false, error: showIdParsed.error }
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      return { success: false, error: 'Image must be under 2MB' }
-    }
-
-    const extMap: Record<string, string> = {
-      'image/png': 'png',
-      'image/jpeg': 'jpg',
-      'image/webp': 'webp',
-    }
-    const ext = extMap[file.type]
-    if (!ext) {
-      return {
-        success: false,
-        error: 'Only PNG, JPEG, or WebP images are allowed',
-      }
-    }
-
-    const path = `shows/${showIdParsed.value}/cast/${Date.now()}.${ext}`
-
-    const { error: uploadError } = await admin.storage
-      .from('show-artwork')
-      .upload(path, file, {
-        upsert: false,
-        contentType: file.type,
-        cacheControl: '31536000',
-      })
-
-    if (uploadError) return { success: false, error: uploadError.message }
-
-    await mirrorUploadedPublicMedia(admin, {
-      bucket: 'show-artwork',
-      key: path,
-      body: file,
-      contentType: file.type,
-      cacheControl: '31536000',
-    })
-
-    const { data: urlData } = admin.storage
-      .from('show-artwork')
-      .getPublicUrl(path)
-    return { success: true, data: `${urlData.publicUrl}?v=${Date.now()}` }
-  } catch (err) {
-    console.error('[admin/cast] upload failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to upload cast image',
-    }
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Direct-to-R2 image finalize (plan 02-15). The browser has already PUT the object
 // (and optional WebP variants) to R2 with a presigned URL; these actions take only
@@ -3309,12 +2546,12 @@ export async function deleteCastMember(id: string): Promise<ActionResult> {
       }
     }
 
-    const imagePath = getPublicStoragePath(cast.image_url, 'show-artwork')
-    const mediaDeletion = imagePath
-      ? await stageMirroredPublicMediaDeletion(admin, 'show-artwork', [
-          imagePath,
-        ])
-      : null
+    // R2 only; a Supabase original is never deleted (MEDIA-07).
+    const mediaDeletion = stageR2DeletionForUrl(
+      (await getWorkerEnv()).MEDIA,
+      cast.image_url,
+      getPublicMediaOrigin()
+    )
 
     const { error } = await admin.from('show_cast').delete().eq('id', id)
 
@@ -3324,7 +2561,7 @@ export async function deleteCastMember(id: string): Promise<ActionResult> {
         success: false,
         error:
           restored === false
-            ? 'Could not delete cast and restore R2 media'
+            ? 'Could not delete cast member'
             : error.message,
       }
     }

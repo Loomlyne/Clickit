@@ -381,7 +381,7 @@ test('source scan: the R2 video ports read a 4 MiB range through the MEDIA bindi
   assert.ok(ports.includes('r2KeysForUrl('))
 })
 
-test('source scan: the old create*/save* video actions still exist until plan 02-19', () => {
+test('source scan: the old create*/save* video actions are gone (plan 02-19)', () => {
   for (const name of [
     'createHeroVideoUpload',
     'saveHeroVideoUpload',
@@ -390,6 +390,6 @@ test('source scan: the old create*/save* video actions still exist until plan 02
     'createShowVideoUpload',
     'saveShowVideoUpload',
   ]) {
-    assert.ok(src.includes(`export async function ${name}(`), `${name} was removed early`)
+    assert.ok(!src.includes(`export async function ${name}(`), `${name} is back`)
   }
 })

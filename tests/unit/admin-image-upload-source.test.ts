@@ -37,16 +37,17 @@ test('the avatar finalize checks the signed-in user, takes no file body, and wri
   assert.ok(!/input\.userId|parsed\.data\.userId/.test(b))
 })
 
-test('the old FormData actions still exist until plan 02-19', () => {
+test('the old FormData actions are gone (plan 02-19)', () => {
   for (const name of ['uploadArtwork', 'uploadSiteImage', 'uploadSocialIcon', 'uploadCastImage']) {
-    assert.ok(admin.includes(`export async function ${name}(`), `${name} removed too early`)
+    assert.ok(!admin.includes(`export async function ${name}(`), `${name} is back`)
   }
-  assert.ok(profile.includes('export async function uploadAvatar('))
+  assert.ok(!profile.includes('export async function uploadAvatar('))
 })
 
-test('the 01.1 guards stay on the old paths: SVG refusal and the strict audit writer', () => {
-  assert.ok(admin.includes('checkImageUpload({'))
+test('the 01.1 guards live on the finalize path: SVG refusal in finalize, strict audit writer in the ports', () => {
   assert.ok(admin.includes('audit: logAuditStrict'))
+  const finalize = readFileSync('src/server/upload-finalize.ts', 'utf8')
+  assert.ok(finalize.includes('SVG_REJECTED_MESSAGE'))
 })
 
 test('artwork columns map every upload slot to a distinct shows column', () => {

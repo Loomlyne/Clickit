@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cronAuthOk } from '@/server/cron-auth'
-import { prepareMirroredPublicMediaDeletion } from '@/lib/r2-media'
+import { getWorkerEnv } from '@/server/cloudflare'
+import { stageR2Deletion } from '@/server/r2-delete'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { supabaseCleanupEnabled } from '@/server/scheduled'
 
@@ -237,27 +238,21 @@ async function runCleanup() {
   ) {
     if (paths.length === 0) return 0
 
-    let r2Deletion
-    try {
-      r2Deletion = await prepareMirroredPublicMediaDeletion(bucket, paths)
-    } catch {
-      errors.push(`${label}: R2 deletion preparation failed`)
-      return 0
-    }
-
+    // Supabase original first, then its R2 mirror and variants by key (the MEDIA binding;
+    // nothing is deleted from R2 unless the Supabase delete worked). Only reached when
+    // CLEANUP_SUPABASE_ORIGINALS=on.
     const { error } = await admin.storage.from(bucket).remove(paths)
     if (error) {
-      const restored = await r2Deletion.rollback()
-      errors.push(
-        restored
-          ? `${label}: ${error.message}`
-          : `${label}: source delete failed and R2 rollback failed`
-      )
+      errors.push(`${label}: ${error.message}`)
       return 0
     }
 
-    if (!(await r2Deletion.commit())) {
-      errors.push(`${label}: R2 delete backup cleanup failed`)
+    const r2 = stageR2Deletion(
+      (await getWorkerEnv()).MEDIA,
+      paths.map((path) => `${bucket}/${path}`)
+    )
+    if (!(await r2.commit())) {
+      errors.push(`${label}: R2 mirror delete failed`)
     }
     return paths.length
   }
