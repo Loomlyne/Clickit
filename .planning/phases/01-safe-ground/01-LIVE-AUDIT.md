@@ -51,11 +51,16 @@ Phase 3's URL rewrite must include `app_config.footer_content` (jsonb), not only
 - `supabase backups list`: `pitr_enabled: false`, `backups: []` (no scheduled backups listed), WAL-G enabled.
 - Plan tier: not exposed by the CLI. An empty backup list with PITR off matches the Free plan, where no daily backup is downloadable. **[OWNER]** confirm plan and backup status in the dashboard (one numbered step), and treat "no restorable backup" as the working assumption: a local `pg_dump` before any live migration is required.
 
-## 6. SAFE-05 — closed by the NS move
+## 6. SAFE-05 — closed by the NS move (re-checked 2026-10-20 14:05 CET)
 
-`dig +short NS clickitstory.ae @1.1.1.1` (2026-10-20 13:1x CET):
+Registry (authoritative for `.ae`, no recursion):
 ```
-brett.ns.cloudflare.com.
-jen.ns.cloudflare.com.
+dig +norec NS clickitstory.ae @ns1.aedns.ae  ->  jen.ns.cloudflare.com, brett.ns.cloudflare.com
+dig +norec NS clickitstory.ae @ns2.aedns.ae  ->  brett.ns.cloudflare.com, jen.ns.cloudflare.com
 ```
-ignat/nataly no longer delegated. Closed: the registry now lists only the ClickitStory account's pair.
+Public resolvers 1.1.1.1 and 8.8.8.8: jen + brett only. jen/brett answer apex A (Cloudflare proxy IPs) and `www` CNAME `ba211fb55cf67415.vercel-dns-017.com`.
+
+Stray pair ruled out:
+- `ignat`/`nataly` are no longer in the registry delegation (`ns3/ns4.tasjeel.ae` are gone too).
+- Asked directly, `ignat` and `nataly` now return the **same** zone as jen/brett: SOA `brett.ns.cloudflare.com. dns.cloudflare.com. 2417983238`, same apex A. A made-up zone on `ignat` gets REFUSED. So the only active Cloudflare zone for clickitstory.ae is the ClickitStory account's (Cloudflare's nameservers answer for any active zone); no other account holds a live rival zone. Earlier REFUSED answers (2026-10-04) were from before any active Cloudflare zone existed.
+- Who first added ignat/nataly at the registry: not found, and no longer matters, because they are not delegated and serve no other zone.
