@@ -1,10 +1,13 @@
 'use client'
 
-// Browser side of direct-to-R2 image uploads (MEDIA-01, MEDIA-04).
+// Browser side of direct-to-R2 uploads (MEDIA-01, MEDIA-04, MEDIA-05).
 //
-//   check type + size -> read the image size -> make WebP copies (only if the
+// Images: check type + size -> read the image size -> make WebP copies (only if the
 //   browser really encodes WebP) -> requestMediaUpload -> PUT the original
 //   (XMLHttpRequest, progress) -> PUT the copies -> finalize*Upload.
+// Videos (uploadVideoDirect): check type + size -> requestMediaUpload (no copies) ->
+//   PUT the MP4 (same XHR progress code) -> finalize*VideoUpload. Nothing is decoded
+//   or transcoded in the browser; fast-start and audio are checked by finalize.
 //
 // No file bytes ever go to a server action. Client checks are UX only: the
 // real gate is the finalize action (magic bytes, size, owner, delete on refusal).
@@ -25,6 +28,12 @@ export const UPLOAD_MESSAGES = {
   network: 'Upload stopped: the connection dropped or the upload link expired. Nothing was saved.',
   refused: 'The file did not match its type and was removed. Nothing was saved.',
   safari: 'This browser cannot make WebP copies; the original will be used.',
+  /** Video texts, also signed in option M (mockups/upload-states.html). */
+  notMp4: 'Upload an MP4 video.',
+  notFastStart:
+    'This video is not fast-start. Re-export it with "fast start" (web optimised) on, then upload again. Nothing was saved.',
+  /** Helper line under a video field (the signed hint). */
+  videoHint: 'MP4, fast-start, under 50MB',
 } as const
 
 export type UploadErrorKind = 'too-large' | 'wrong-type' | 'network' | 'refused' | 'unavailable'
@@ -35,7 +44,7 @@ export type UploadProgress = {
   fileSize: number
   percent: number
   phase: 'uploading' | 'saving'
-  /** How many smaller copies follow the original (0 when none). */
+  /** How many smaller copies follow the original (0 when none; always 0 for video). */
   variantCount: number
 }
 
@@ -66,10 +75,15 @@ const WEBP_QUALITY = 0.8
 class PutFailed extends Error {}
 
 /** Type problems first (size ignored), then the size cap, with the server's own messages. */
-function checkFile(file: File, kind: ImageUploadKind, slot: string | undefined): UploadError | null {
-  const typeOnly = checkUploadRequest({ kind, slot, contentType: file.type, size: 1 })
+function checkFile(
+  file: File,
+  kind: UploadKind,
+  slot: string | undefined,
+  contentType: string = file.type
+): UploadError | null {
+  const typeOnly = checkUploadRequest({ kind, slot, contentType, size: 1 })
   if (!typeOnly.ok) return { kind: 'wrong-type', message: typeOnly.error }
-  const full = checkUploadRequest({ kind, slot, contentType: file.type, size: file.size })
+  const full = checkUploadRequest({ kind, slot, contentType, size: file.size })
   if (!full.ok) {
     return { kind: file.size > 0 ? 'too-large' : 'wrong-type', message: full.error }
   }
@@ -250,4 +264,95 @@ export async function uploadImageDirect(input: UploadImageInput): Promise<Upload
     return fail({ kind: 'refused', message })
   }
   return { ok: true, url: result.data, key: target.key, safariFallback: made.unsupported }
+}
+
+export type VideoUploadKind = Extract<UploadKind, 'hero-video' | 'preloader-video' | 'show-video'>
+
+export type UploadVideoResult =
+  | { ok: true; url: string; key: string }
+  | { ok: false; error: UploadError }
+
+export type UploadVideoInput = {
+  file: File
+  kind: VideoUploadKind
+  /** 'desktop' | 'mobile' for hero-video and show-video; none for preloader-video. */
+  slot?: 'desktop' | 'mobile'
+  /** Show id for show-video. */
+  showId?: string
+  finalize: (args: { key: string }) => Promise<FinalizeResult>
+  onProgress?: (progress: UploadProgress) => void
+  signal?: AbortSignal
+}
+
+/** Finalize refusals that name fast-start get the signed text; everything else passes through. */
+function videoRefusalMessage(raw: string): string {
+  if (/fast.?start/i.test(raw)) return UPLOAD_MESSAGES.notFastStart
+  if (/does not match/i.test(raw) || raw === '') return UPLOAD_MESSAGES.refused
+  return raw
+}
+
+/**
+ * Browser -> R2 for one MP4 (hero desktop/mobile, preloader, per-show hero). Same
+ * request, XHR PUT and error mapping as uploadImageDirect, with no copies. The real
+ * gate (size, magic bytes, fast-start, audio) is the finalize action, which deletes a
+ * refused object.
+ */
+export async function uploadVideoDirect(input: UploadVideoInput): Promise<UploadVideoResult> {
+  const { file, kind, slot, showId, finalize, onProgress, signal } = input
+  const fail = (error: UploadError): UploadVideoResult => ({ ok: false, error })
+
+  // Some systems report an empty type for .mp4; the picker already limits to video/mp4.
+  const contentType = file.type || (/\.mp4$/i.test(file.name) ? 'video/mp4' : '')
+  const checkError = checkFile(file, kind, slot, contentType)
+  if (checkError) {
+    return fail(checkError.kind === 'wrong-type' ? { kind: 'wrong-type', message: UPLOAD_MESSAGES.notMp4 } : checkError)
+  }
+
+  const report = (percent: number, phase: UploadProgress['phase']) =>
+    onProgress?.({ fileName: file.name, fileSize: file.size, percent, phase, variantCount: 0 })
+
+  report(0, 'uploading')
+  let target
+  try {
+    const res = await requestMediaUpload({
+      kind,
+      slot,
+      contentType,
+      size: file.size,
+      filename: file.name,
+      showId,
+      variantWidths: [],
+    })
+    if (!res.success) {
+      const kindOf: UploadErrorKind = /not available/i.test(res.error) ? 'unavailable' : 'wrong-type'
+      return fail({ kind: kindOf, message: res.error })
+    }
+    target = res.data
+  } catch {
+    return fail({ kind: 'network', message: UPLOAD_MESSAGES.network })
+  }
+
+  try {
+    await putWithProgress(
+      target.put.url,
+      target.put.headers['Content-Type'],
+      file,
+      (fraction) => report(progressPercent(fraction), 'uploading'),
+      signal
+    )
+  } catch {
+    return fail({ kind: 'network', message: UPLOAD_MESSAGES.network })
+  }
+
+  report(100, 'saving')
+  let result: FinalizeResult
+  try {
+    result = await finalize({ key: target.key })
+  } catch {
+    return fail({ kind: 'network', message: UPLOAD_MESSAGES.network })
+  }
+  if (!result.success || !result.data) {
+    return fail({ kind: 'refused', message: videoRefusalMessage(result.error ?? '') })
+  }
+  return { ok: true, url: result.data, key: target.key }
 }

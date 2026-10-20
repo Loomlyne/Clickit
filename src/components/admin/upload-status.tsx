@@ -50,7 +50,12 @@ export function UploadStatus({
   kind?: 'image' | 'video'
   className?: string
 }) {
-  const line = progress.phase === 'saving' && kind === 'image' ? 'Saving…' : uploadProgressLine(kind, progress.variantCount)
+  const line =
+    progress.phase === 'saving'
+      ? kind === 'image'
+        ? 'Saving…'
+        : 'Checking fast-start…'
+      : uploadProgressLine(kind, progress.variantCount)
   return (
     <div
       className={`cs-upload-zone flex flex-col items-center gap-2 rounded-lg border border-dashed bg-white/[0.02] p-4 ${className}`}
