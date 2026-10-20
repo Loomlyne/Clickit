@@ -116,21 +116,24 @@ Plans:
   3. The Claude Design canvas shows foundations, viewer screens (including the OTP sign-in, the RTL treatment and an RMF-compliant player), admin screens (playlist import preview, inbox) and the email templates. Koss has signed it.
   4. A signed-out visitor or a non-admin viewer opening `/design-system` is refused.
 **Owner-gated**: [OWNER] sign the canvas (it blocks UI build in Phases 5-7); [OWNER] Ship.
-**Plans**: 11 plans (5 waves). Plans name the pending owner answers (Q1-Q8) they depend on; owner-visible plans open with a 04-GATE.md checkpoint.
+**Plans**: 14 plans (9 waves). Owner-visible and codemod plans open with a 04-GATE.md answer check (stop on any B); every wave closes with a heavy-locked gate:local.
 **UI hint**: yes
 
 Plans:
-- [ ] 04-01-PLAN.md — W1: sync main; named radius/shadow/status + exact-value tokens in globals.css; design-truth.ts; cn() twMerge names; pin tests
+- [ ] 04-01-PLAN.md — W1: merge main; named radius/shadow/status + exact-value tokens; design-truth.ts; cn() twMerge names; pin tests
 - [ ] 04-02-PLAN.md — W1: ESLint rule clickit/no-raw-design-values (warn) + fixtures + baseline inventory
-- [ ] 04-03-PLAN.md — W1: one brand map (D-04) in brand-colors.ts; six consumers; parity test
-- [ ] 04-04-PLAN.md — W2: [gate Q5] admin-only /admin/design-system page, sidebar entry, EN+AR copy, access pins
-- [ ] 04-05-PLAN.md — W2: [gate Q3] D-03 snaps (select, toaster, /portfolio CTA) + D-01 literals
-- [ ] 04-06-PLAN.md — W2: DESIGN.md truth + parity test; DS-01/DS-04 and roadmap wording; 04-P6-ADDENDUM.md
-- [ ] 04-07-PLAN.md — W2: [gate Q6-Q8, orchestrator] Claude Design canvas spike + Foundations + Viewer boards
-- [ ] 04-08-PLAN.md — W3: [orchestrator] Admin + Email boards; [OWNER] four group signatures (D-08)
-- [ ] 04-09-PLAN.md — W3: sync main; codemod 1/3 (UI primitives, chrome, viewer cards)
-- [ ] 04-10-PLAN.md — W4: codemod 2/3 (watch, landing, lib gradients, viewer routes, skeletons)
-- [ ] 04-11-PLAN.md — W5: codemod 3/3 (admin), rule to error, banned-literal tests, full gate
+- [ ] 04-03-PLAN.md — W2: one brand map (D-04) in brand-colors.ts; consumers; parity test; gate (W1-W2)
+- [ ] 04-04-PLAN.md — W3: [Q1/Q2/Q5] admin-only /admin/design-system page, sidebar link, EN+AR copy, access pins
+- [ ] 04-05-PLAN.md — W3: [Q1/Q3] D-03 snaps (select, toaster, /portfolio CTA) + D-01 literals
+- [ ] 04-07-PLAN.md — W3: [Q1/Q2/Q6-Q9, orchestrator] canvas spike + Foundations + Viewer boards
+- [ ] 04-06-PLAN.md — W4: [Q1/Q2/Q4/Q5/Q7] DESIGN.md + parity test; DS-01/DS-04 + roadmap wording; 04-P6-ADDENDUM.md; gate (W3)
+- [ ] 04-08-PLAN.md — W4: [orchestrator] canvas Admin + Email boards
+- [ ] 04-09-PLAN.md — W5: [Q1/Q2] merge main; codemod 1/5 (UI primitives, chrome); gate (W4-W5)
+- [ ] 04-10-PLAN.md — W6: codemod 2/5 (show cards, home, browse, series)
+- [ ] 04-11-PLAN.md — W6: codemod 3/5 (watch, shorts, landing, support, coming-soon, lib gradients)
+- [ ] 04-12-PLAN.md — W7: codemod 4/5 (viewer routes, loading skeletons); gate (W6-W7)
+- [ ] 04-13-PLAN.md — W8: [Q1/Q2/Q3] codemod 5/5 (admin + admin.css), rule to error, banned-literal tests, ledger; gate
+- [ ] 04-14-PLAN.md — W9: [OWNER, orchestrator] four canvas group signatures (D-08); final gate
 
 ### Phase 5: Accounts and Email
 **Goal**: Only signed-in viewers get past the landing and legal pages. Viewers can join or sign in with a 6-digit email code or a password. Both admins work under their own TOTP-protected accounts, and every auth and app email arrives branded from `Clickit Story <no-reply@clickitstory.ae>`, once, in the viewer's language.
@@ -198,7 +201,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | 1.1. Admin Actions Hardening (INSERTED) | 13/13 | UAT passed, PR open | - |
 | 2. Worker and R2 Media on workers.dev | 0/TBD | Not started | - |
 | 3. Production Cutover | 0/TBD | Not started | - |
-| 4. Design System Truth | 0/11 | Planned | - |
+| 4. Design System Truth | 0/14 | Planned | - |
 | 5. Accounts and Email | 0/TBD | Not started | - |
 | 6. YouTube Import and Player | 0/TBD | Not started | - |
 | 7. Product Completeness, Search and Arabic | 0/TBD | Not started | - |

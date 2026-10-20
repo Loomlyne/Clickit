@@ -2,7 +2,7 @@
 phase: 04
 slug: design-system-truth
 status: approved
-revision: 1
+revision: 2
 shadcn_initialized: true
 preset: "shadcn new-york, baseColor neutral, cssVariables; every token overridden by UI System (ui.config.json → src/styles/globals.css, 2026-10-20)"
 created: 2026-10-20
@@ -272,7 +272,7 @@ Select and Select-related sibling changes in the same file with no visible effec
 Other stray literals that become tokens (invisible or ≤1 step):
 - `src/app/[locale]/(viewer)/layout.tsx:41` preload cover `#0a0a0a` → `var(--bg-0)` (#0a0a0a → #090909, one step of 255).
 - `src/components/layout/user-avatar.tsx:25` initials ink `text-[#0a0a0a]` → `text-[var(--primary-foreground)]` (one step); gradient `from-[#c8a04a] to-[#d97757]` → `from-[var(--chart-5)] to-[var(--chart-2)]` (identical colours).
-- `navbar.tsx:150,184` live dot `bg-red-500` + `shadow-[0_0_6px_rgba(239,68,68,0.9)]` → `bg-destructive` + `shadow-live-dot` (#ef4444 → #ff3b30 on an 8px dot; open item 8).
+- `navbar.tsx:150,184` live dot `bg-red-500` + `shadow-[0_0_6px_rgba(239,68,68,0.9)]` → `bg-live-dot` + `shadow-live-dot` (revision 2: exact value kept; `--live-dot` holds Tailwind's `red-500` verbatim, glow unchanged; no visible change).
 
 The design-system page is the UAT surface for snaps 1 and 2 (open the Select, press the toast button). Snap 3 is checked on `/portfolio`.
 
@@ -341,11 +341,11 @@ Existing, unchanged: `--shadow-soft` = `0 24px 80px rgba(0, 0, 0, 0.38)`; `--sha
 | `rounded-[8px]` | `rounded-field` | 9 | identical |
 | `rounded-[10px]` (play-overlay, shorts-overlay) | `rounded-xl` (Tailwind scale, `--radius-xl` 10px) | 2 | identical |
 | `rounded-[6px]` (shorts-table thumb, checkbox) | `rounded-md` (`--radius-md` 6px) | 2 | identical |
-| `rounded-[1px]` (3px support-page bars) | `rounded-xs` (2px) | 2 | 1px change on a 3px bar (open item 7) |
+| `rounded-[1px]` (3px support-page bars) | `rounded-hairline` (`--radius-hairline` 1px) | 2 | identical (revision 2) |
 
 **Phase 6 compatibility.** Phase 6's signed spec writes `rounded-[12px]`, `rounded-[11px]`, `rounded-[16px]`. The named utilities resolve to the same pixels, so no signed picture changes. Phase 6 executors use the named utilities (once this phase has merged) or the guard fails the PR; the spec text is not re-signed. `text-[20px]`, `text-[11px]`, `bg-white/[0.04]`, `border-brand-red-safe/35`, `bg-black` and `{brandHex}40` (data-driven, from the brand map) are not flagged by the guard.
 
-**What the guard flags** (so the contract and the script agree): hex literals (`#rgb`, `#rrggbb`, `#rrggbbaa`) in `src/` outside the allowlist; `rounded-[…]`, `shadow-[…]`, `drop-shadow-[…]`; raw Tailwind palette colour classes (`red-500`, `zinc-950`, …). **Allowlist:** `src/styles/globals.css`, `src/styles/admin.css`, `ui.config.json`, `src/lib/brand-colors.ts`, `src/lib/design-truth.ts`, email templates, and values read from data (category colours, show artwork). **Not flagged:** `white/NN`, `black/NN`, `var(--…)`, `bg-white`, `bg-black`. `watch-shell.tsx:270` (`shadow-[0_8px_32px_-8px_rgba(0,0,0,0.65)]`) is allowlisted until Phase 6 deletes the fixed chrome strip it belongs to.
+**What the guard flags** (so the contract and the script agree): hex literals (`#rgb`, `#rrggbb`, `#rrggbbaa`) in `src/` outside the allowlist; `rounded-[…]`, `shadow-[…]`, `drop-shadow-[…]`; raw Tailwind palette colour classes (`red-500`, `zinc-950`, …). **Allowlist:** `src/styles/globals.css`, `src/styles/admin.css`, `ui.config.json`, `src/lib/brand-colors.ts`, `src/lib/design-truth.ts`, email templates, and values read from data (category colours, show artwork). **Not flagged:** `white/NN`, `black/NN`, `var(--…)`, `bg-white`, `bg-black`. `watch-shell.tsx:270` (`shadow-[0_8px_32px_-8px_rgba(0,0,0,0.65)]`) becomes `shadow-bar` (exact; revision 2). The guard is an ESLint rule (`clickit/no-raw-design-values`), allowlist in `eslint.config.mjs`; CSS files are token sources and not linted.
 
 ---
 
@@ -561,13 +561,13 @@ V1: "Continue with email", "Use a password instead", "Enter the 6-digit code", "
 Choices CONTEXT.md did not settle, picked to keep the live look and Phase 6 compatibility. Each is reversible before the canvas is signed.
 
 1. **No `--shadow-popover` exists today.** CONTEXT lists it as "mapped to existing tokens". It is a new variable with the select popover's value (`0 24px 80px rgba(0,0,0,0.42)`). The Sonner toast used alpha 0.45; it moves to 0.42 (3 hundredths, not visible).
-2. **More shadow tokens than CONTEXT named**, so the bracket-shadow guard can pass: `shadow-modal` (shorts overlay), `shadow-inset-hairline` (select trigger, checkbox), `shadow-live-dot`, `shadow-cta-glow`, `drop-shadow-splash`. `watch-shell.tsx:270` stays allowlisted until Phase 6 removes that strip.
+2. **More shadow tokens than CONTEXT named**, so the bracket-shadow guard can pass: `shadow-modal` (shorts overlay), `shadow-inset-hairline` (select trigger, checkbox), `shadow-live-dot`, `shadow-cta-glow`, `drop-shadow-splash`, and `shadow-bar` for `watch-shell.tsx:270` (revision 2: a token with the exact value instead of an allowlist entry; Phase 6 may delete it with the strip). All live in `@theme static` (not the self-referencing `@theme inline` form in §3).
 3. **Desert Sand token keeps its code name `--color-brand-yellow`** (4 live uses: support page bars, star ratings). CONTEXT says `brand-sand`. Renaming is invisible but touches those files; the page and canvas call it "Desert Sand". Say the word to rename.
 4. **Landing CTA glow is visible at rest, not only on hover**, as it is today in indigo (live CSS carries `#6073ff47`). After the snap it is a soft yellow glow `rgba(255,204,0,0.18)`, weaker than the indigo 0.28. Two primary hovers coexist and both are live: `Button` default turns white; the landing link turns #D7AD16. Not unified here (that would change every button).
 5. **Two type tiers.** New screens use 11/14/20/24. The wider sizes (13, 13.5, 15, 16, 30, 36+) stay documented as "already on viewer pages" and are not extended. DESIGN.md's "Type scale target" line is replaced. Legacy classes in `globals.css` still below the 11px minimum (`.yt-side-now` 9px, `.yt-side-runtime` and `.yt-side-num` 10px, weights 500/600) belong to the old watch sidebar that Phase 6 replaces; the token guard does not check font sizes, so they remain until then.
 6. **Primitives still request weights 500/600** (`Button`, `Badge`, `Input` file label). They render as 400/700 because LBC has two files. Documented on the page, not changed.
-7. **Bracket radii outside the five roles:** 10px → `rounded-xl` and 6px → `rounded-md` are identical in px; the two `rounded-[1px]` bars on the support page become `rounded-xs` (2px), a 1px change on a 3px bar.
-8. **Small colour steps:** avatar initials ink and the preload cover `#0a0a0a` → #090909 (one step of 255); the navbar live dot `bg-red-500` (#ef4444) → `bg-destructive` (#ff3b30) with the glow in the same red.
+7. **Bracket radii outside the five roles:** 10px → `rounded-xl` and 6px → `rounded-md` are identical in px; the two `rounded-[1px]` bars on the support page become `rounded-hairline` (1px, identical; revision 2).
+8. **Small colour steps:** avatar initials ink and the preload cover `#0a0a0a` → #090909 (one step of 255, D-01). The navbar live dot keeps its exact red via `bg-live-dot` and its glow via `shadow-live-dot` (revision 2); `rgba(10,10,10,…)`, `rgba(8,8,12,…)` and `rgba(4,6,10,…)` keep exact values via `--ink-*-rgb` tokens.
 9. **Page uses a client component.** Swatch values appear after hydration (a single frame; "Reading the live styles…" is only seen on a slow device).
 10. **"Show a sample toast" button on a read-only page.** It writes nothing; it exists so snap 2 can be seen without causing a real toast elsewhere. Remove it if a button on a read-only page is unwanted.
 11. **Code input and email digits.** The 6 code boxes stay left-to-right inside Arabic pages (digits read left to right) and emails show Western digits; the app accepts Arabic-Indic digits when typed. Phase 7 (AR-01..03) still owns the digit system for the rest of the UI.
