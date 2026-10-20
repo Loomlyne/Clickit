@@ -267,9 +267,19 @@ export async function deleteSeasonCore(
     return { success: false, error: 'Season belongs to a different show.', wrote: false, data: { showId: storedShow } }
   }
 
-  const eps = await db.from('episodes').select('id').eq('season_id', seasonId)
+  const eps = await db.from('episodes').select('id, archived').eq('season_id', seasonId)
   if (eps.error) return { success: false, error: eps.error.message, wrote: false, data: { showId: storedShow } }
-  const episodeIds = ((eps.data ?? []) as Array<{ id: string }>).map((e) => e.id)
+  const epRows = (eps.data ?? []) as Array<{ id: string; archived: boolean | null }>
+  // Archive first (D-04): the delete cascades to episodes, so any active episode blocks it.
+  if (epRows.some((e) => e.archived !== true)) {
+    return {
+      success: false,
+      error: 'Archive every episode in this season before deleting it.',
+      wrote: false,
+      data: { showId: storedShow },
+    }
+  }
+  const episodeIds = epRows.map((e) => e.id)
 
   let countsError: string | null = null
   const res = await runAuditedDelete({

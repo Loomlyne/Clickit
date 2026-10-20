@@ -46,7 +46,7 @@ export function BrandingTab({ config }: { config: AppConfig }) {
         <ImageUploadField
           kind="og"
           currentUrl={config.ogImageUrl}
-          accept="image/png,image/jpeg,image/webp,image/avif"
+          accept="image/png,image/jpeg,image/webp"
           maxMb={5}
           previewClassName="aspect-[1200/630] w-full max-w-sm"
           hint={t('ogImageHint')}

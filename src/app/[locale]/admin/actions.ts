@@ -29,7 +29,6 @@ import {
 import {
   createSeasonCore,
   updateSeasonCore,
-  deleteSeasonCore,
   createEpisodeCore,
   updateEpisodeCore,
 } from '@/lib/admin/season-episode-writes'
@@ -811,29 +810,8 @@ export async function updateSeason(
   )
 }
 
-export async function deleteSeason(
-  id: string,
-  showId: string
-): Promise<ActionResult> {
-  return runAdminAction(
-    adminEnv,
-    (ctx) =>
-      deleteSeasonCore(
-        ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
-        id,
-        showId
-      ),
-    {
-      fallbackError: 'Failed to delete season',
-      revalidate: (result) => {
-        if (!revalidateShowPage(result, showId)) bumpCatalogCache()
-        updateTag('shows')
-        updateTag('episodes')
-      },
-    }
-  )
-}
+// deleteSeason is not exported: no admin screen deletes a season, and an exported
+// server action is callable by any admin client. deleteSeasonCore stays archive-first.
 
 // ---------------------------------------------------------------------------
 // Episode Actions
@@ -1302,29 +1280,31 @@ export async function setHeroVideoUrl(
   youtubeUrl: string,
   variant: HeroVariant = 'desktop'
 ): Promise<ActionResult> {
-  const trimmed = youtubeUrl.trim()
-  if (!trimmed) return { success: false, error: 'URL is required' }
-
-  // SECURITY: validate hostname is a real YouTube domain before storage.
-  // The extractYouTubeId regex alone matches the literal substring `youtu.be/`
-  // anywhere in the URL, which would let an admin save `https://attacker.com/youtu.be/xxxxxxxxxxx`
-  // and have every viewer load an attacker iframe. validateYouTubeUrl parses with
-  // new URL() and enforces an allowlist of YouTube hostnames.
-  const videoId = validateYouTubeUrl(trimmed)
-  if (!videoId) {
-    return {
-      success: false,
-      error:
-        'Invalid YouTube URL. Must be a youtube.com or youtu.be link with a valid video ID.',
-    }
-  }
-
-  // Store canonical form so viewers always get a predictable embed URL.
-  const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`
-
+  // The runner checks admin first; validation runs inside it so a non-admin
+  // learns nothing about what a valid URL looks like.
   return runAdminAction(
     adminEnv,
     async (ctx) => {
+      const trimmed = typeof youtubeUrl === 'string' ? youtubeUrl.trim() : ''
+      if (!trimmed) return { success: false, error: 'URL is required', wrote: false }
+
+      // SECURITY: validate hostname is a real YouTube domain before storage.
+      // The extractYouTubeId regex alone matches the literal substring `youtu.be/`
+      // anywhere in the URL, which would let an admin save `https://attacker.com/youtu.be/xxxxxxxxxxx`
+      // and have every viewer load an attacker iframe. validateYouTubeUrl parses with
+      // new URL() and enforces an allowlist of YouTube hostnames.
+      const videoId = validateYouTubeUrl(trimmed)
+      if (!videoId) {
+        return {
+          success: false,
+          error:
+            'Invalid YouTube URL. Must be a youtube.com or youtu.be link with a valid video ID.',
+          wrote: false,
+        }
+      }
+
+      // Store canonical form so viewers always get a predictable embed URL.
+      const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`
       const r = await setHeroVideoUrlCore(
         heroPorts(ctx.db),
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
@@ -2351,6 +2331,11 @@ const SITE_IMAGE_COLUMN = {
 
 type SiteImageKind = keyof typeof SITE_IMAGE_COLUMN
 
+// Own keys only: `in` would accept inherited names such as 'toString' or '__proto__'.
+function isSiteImageKind(kind: unknown): kind is SiteImageKind {
+  return typeof kind === 'string' && Object.hasOwn(SITE_IMAGE_COLUMN, kind)
+}
+
 // Upload OG image or favicon to site-assets bucket.
 // Returns the public URL and writes it to the matching app_config column.
 export async function uploadSiteImage(
@@ -2362,16 +2347,16 @@ export async function uploadSiteImage(
     const admin = createAdminClient()
 
     const file = formData.get('file') as File | null
-    const kind = formData.get('kind') as SiteImageKind | null
+    const kind = formData.get('kind')
     if (!file) return { success: false, error: 'No file provided' }
-    if (!kind || !(kind in SITE_IMAGE_COLUMN)) {
+    if (!isSiteImageKind(kind)) {
       return { success: false, error: 'Invalid kind' }
     }
     if (file.size > 5 * 1024 * 1024) {
       return { success: false, error: 'Image must be under 5MB' }
     }
 
-    // SVG is refused (declared type and sniffed bytes); PNG, JPEG, WebP, AVIF and ICO stay allowed.
+    // SVG is refused (declared type and sniffed bytes); PNG, JPEG, WebP and ICO stay allowed (AVIF is not in the site-assets bucket allow-list).
     const bytes = new Uint8Array(await file.arrayBuffer())
     const checked = checkImageUpload({
       declaredMime: file.type,
@@ -2468,6 +2453,7 @@ export async function removeSiteImage(
 ): Promise<ActionResult> {
   try {
     await assertAdmin()
+    if (!isSiteImageKind(kind)) return { success: false, error: 'Invalid kind' }
     const admin = createAdminClient()
     const column = SITE_IMAGE_COLUMN[kind]
     const { data: previousConfig, error: previousConfigError } = await admin
