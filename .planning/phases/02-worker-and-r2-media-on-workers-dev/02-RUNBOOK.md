@@ -1,6 +1,6 @@
 # Phase 2 runbook: owner steps (Worker and R2 media on workers.dev, then the Phase 3 path)
 
-**Status:** draft, written at plan time 2026-10-20. Plan 02-02 checks it against the code; plans 02-10, 02-20, 02-21 and 02-22 run it.
+**Status:** reviewed 2026-10-20 by plan 02-02 (see Review log). Written at plan time 2026-10-20; plan 02-02 checked it against the decisions and plans; plans 02-10, 02-20, 02-21 and 02-22 run it.
 **Who runs what:** steps marked **[KOSS]** are typed by Koss in his own terminal or dashboard. Steps marked **[CONTROL]** are run by the control session in `/Users/koss/Developer/Clickit`, only after Koss writes the word given in the step. Work sessions never deploy, never write live data, never see a secret.
 
 ## Rules for every step
@@ -9,7 +9,7 @@
 2. Every `wrangler` command starts with `HOME=/Users/koss/.clickit-cloudflare`. Never run wrangler without it (that would use the default Vamos login).
 3. Before every wrangler step, run the **whoami check** (Step 3). If it shows any account other than ClickitStory `e329b099b6e4272fc0915a99832e47fe`, or two accounts, stop and report.
 4. Secrets (keys, tokens, passwords) are typed or pasted only into the terminal prompt that wrangler or `read -rs` opens. Never into chat, never into a file in the repo, never into a command line argument.
-5. Nothing in Part A touches DNS, www.clickitstory.ae, the Vercel project, or live database rows. Part A writes only to the ClickitStory Cloudflare account and one Supabase dashboard setting (Step 23).
+5. Nothing in Part A touches DNS, www.clickitstory.ae or the Vercel project. Part A writes only to the ClickitStory Cloudflare account, plus four owner-gated exceptions in live Supabase, each with its own step and trigger word: the redirect allow-list setting (Step 23, dashboard, no SQL), the sign-in rows that measurement and UAT sign-ins create in Supabase Auth (Steps 31 and 34), and the one approved draft-show write with its exact row list (Step 32). Steps 25-27 only read Supabase Storage.
 6. Free tier only. If any screen asks for a payment method or a paid plan, stop and report the screen; do not accept.
 
 `<WORKTREE>` below is the Phase 2 worktree path the controller gives at that step (the copy and CORS scripts exist only on the phase branch until Ship). The `<SUB>` below is the account's workers.dev subdomain found in Step 4 (not a secret). The app Worker is `https://clickit.<SUB>.workers.dev`; the media Worker is `https://clickit-media.<SUB>.workers.dev`.
@@ -88,7 +88,7 @@ Then wait.
 **Step 12 [CONTROL] - first deploy of the app Worker, media flag off**
 Trigger: Koss writes "deploy workers.dev" (the same word for every app-Worker deploy in Phase 2, including redeploys).
 Command (control session, in a checkout of the pushed phase-branch commit the work session names): `npm run cf:deploy:workersdev -- --media-flag off`
-Expected: the guard prints `deploy-guard ok` (account, stamp target `workersdev`, no loopback, no local Supabase, D1 id set, crons empty), then wrangler prints the URL `https://clickit.<SUB>.workers.dev`. `curl -sI https://clickit.<SUB>.workers.dev/en` returns `HTTP/2 200` or a redirect. Pages that need the service role may fail until Step 13; that is expected.
+Expected: the guard prints `deploy-guard ok` (account, stamp target `workersdev`, no loopback, no local Supabase, D1 id set, crons empty, build stamp equals HEAD, clean tree, HEAD pushed to an origin branch), then wrangler prints the URL `https://clickit.<SUB>.workers.dev`. `curl -sI https://clickit.<SUB>.workers.dev/en` returns `HTTP/2 200` or a redirect. Pages that need the service role may fail until Step 13; that is expected.
 Then wait.
 
 ### Worker secrets (one per step, typed into the wrangler prompt only)
@@ -217,7 +217,8 @@ Expected: the progress bar completes, the new poster shows in the admin within 1
 Then wait.
 
 **Step 33 [KOSS] - Workers plan decision (only if the CPU report fails)**
-Only when `02-CPU-REPORT.md` shows a core route over the Free limits (p95 CPU over 10 ms, or 50 subrequests, or Error 1102). The controller brings the table and the price (Workers Paid, $5 per month, per Cloudflare's pricing page on the day). Koss answers "stay on Free" or "approve Workers Paid". Nothing is enabled before his answer.
+Only when `02-CPU-REPORT.md` shows a core route over the Free limits (p95 CPU over 10 ms, or 50 subrequests, or Error 1102). The controller brings the table and the price (Workers Paid, $5 per month, per Cloudflare's pricing page on the day).
+Expected: Koss answers "stay on Free" or "approve Workers Paid". Nothing is enabled before his answer.
 Then wait.
 
 **Step 34 [KOSS] - approve the measurement sign-ins (runs during plan 02-21, before Steps 31-32)**
@@ -241,10 +242,23 @@ Do not run any step in Part B during Phase 2. Each becomes a numbered step in th
 - **P3-8 (Phase 3, not now)** Enable Worker crons: set `triggers.crons` to `["0 1 * * *", "0 4 * * 1"]` in `wrangler.jsonc` (UTC, same as Vercel), deploy, read back in the dashboard. Only after P3-6.
 - **P3-9 (Phase 3, not now)** Attach the Worker custom domains `www.clickitstory.ae` and `clickitstory.ae`; add them to the Turnstile widget, Web Analytics and the R2 CORS list (already there for www); update `NEXT_PUBLIC_SITE_URL` and the Supabase Site URL.
 - **P3-10 (Phase 3, not now)** Database media URL rewrite, live DB, Koss's approval as one numbered step: create a backup/mapping table first, then rewrite both the Supabase Storage host and the `clickit-media.<SUB>.workers.dev` host (new uploads made on workers.dev in Phase 2) to `https://media.clickitstory.ae`. A DB-wide search finds zero old-host media URLs.
-- **P3-11 (Phase 3, not now)** Rotate the Supabase service role key; `wrangler secret put SUPABASE_SERVICE_ROLE_KEY --name clickit` with the new value; confirm the old Vercel deployment can no longer write.
+- **P3-11 (Phase 3, not now)** Rotate the Supabase service role key; `HOME=/Users/koss/.clickit-cloudflare npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY --name clickit` with the new value; confirm the old Vercel deployment can no longer write.
 - **P3-12 (Phase 3, not now)** Proof window: Koss decides its length; the written rollback path to Vercel stays usable until he closes it.
 - **P3-13 (Phase 3, not now, LAST)** Delete the Vercel project and its domain, only after Koss closes the proof window.
 
 Until P3-13 the Vercel project itself is untouched by Phase 2: Phase 2 deletes `vercel.json`, BotID and the Vercel packages from the repo only, which is safe because Vercel deploys are blocked and the code reaches main only through Koss's Ship.
 </content>
 </invoke>
+
+---
+
+## Review log
+
+Plan 02-02, 2026-10-20. Checked line by line against 02-CONTEXT.md (D-01..D-05, derived decisions, roadmap edits 1-9) and plans 02-03, 02-06, 02-08, 02-10, 02-20, 02-21.
+
+1. **Wrangler commands pinned to HOME=/Users/koss/.clickit-cloudflare** - fixed. Every `Command` line was already pinned; the P3-11 secret command was not, now pinned. Remaining unpinned `wrangler` mentions are prose (rules, Expected text).
+2. **Every Part A step has Expected and Then wait** - fixed. Step 33 had no Expected line; added. 34 steps, 34 "Then wait", 34 "Expected".
+3. **Part A touches no DNS, www, Vercel; live rows only in the approved steps** - fixed. Rule 5 claimed Part A wrote only to Cloudflare and Step 23, which contradicted Steps 31, 32 and 34; Rule 5 now lists all four live-Supabase exceptions. No step touches DNS, www or Vercel.
+4. **Script names and flags match plans 02-06 and 02-08** - pass. `cf:deploy:workersdev -- --media-flag off|verified --media-origin --verify-report`, `cf:deploy:media`, `r2:media -- --refresh`/`--execute`, `scripts/media/verify-media-host.mjs --origin --report`. Step 12's guard list extended to match 02-06 checkDeploy (stamp equals HEAD, clean tree, HEAD pushed). The CORS step uses `scripts/cf/r2-cors.mjs --app-origin` (built in this plan).
+5. **Part B P3-1..P3-13** - pass. All 13 marked "Phase 3, not now"; P3-13 (Vercel deletion) is last; P3-6 (Vercel crons off) precedes P3-8 (Worker crons on, schedules equal vercel.json); P3-7 Supabase CAPTCHA; P3-10 DB URL rewrite with backup table and Koss's approval; P3-11 service role rotation.
+6. **No secret value, placeholder secret or real key** - pass. Only `<anon/publishable key ...>` style descriptions and public ids (Supabase project ref, Cloudflare account id). A grep for JWT-shaped strings and Supabase secret-key prefixes prints 0.
