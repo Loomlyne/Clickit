@@ -3,7 +3,7 @@
  * reader's colour scheme: light by default, dark via @media (prefers-color-scheme: dark)).
  *
  * Literal hex only, NO imports and NO CSS variables: mail clients do not resolve
- * var() and do not blend rgba, so `#1d1d1d` is the solid of rgba(255,255,255,.08)
+ * custom properties and do not blend rgba, so `#1d1d1d` is the solid of rgba(255,255,255,.08)
  * over #090909.
  *
  * Source: Phase 5 picture
