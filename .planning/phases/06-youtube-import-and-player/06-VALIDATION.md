@@ -36,14 +36,14 @@ created: 2026-10-20
 
 ## Per-Task Verification Map
 
-Built from the final plans (revision 1). Every auto task runs its targeted `node --test` files plus per-file `eslint` (fast, under 30 s); `npx tsc --noEmit` runs at plan level and in `gate:local`. Quick command prefix: `node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test`.
+Built from the final plans (revision 3: Vault key, bar default, parallel execution). Every auto task runs its targeted `node --test` files plus per-file `eslint` (fast, under 30 s); `npx tsc --noEmit` runs at plan level and in `gate:local`. Quick command prefix: `node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test`.
 
 | Task ID | Plan | Wave | Requirement | Task | Test Type | Automated check | Status |
 |---------|------|------|-------------|------|-----------|-----------------|--------|
-| 06-00-01 | 00 | 0 | YT-01, YT-02, YT-03, YT-04, YT-05, YT-06, YT-07 | [BLOCKING] Merge origin/main and check the upstream modules | script/grep | shell check in verify | ⬜ pending |
-| 06-00-02 | 00 | 0 | YT-01, YT-02, YT-03, YT-04, YT-05, YT-06, YT-07 | [BLOCKING] Confirm migrations are approval-gated; record the waiver syntax | script/grep | shell check in verify | ⬜ pending |
+| 06-00-01 | 00 | 0 | YT-01, YT-02, YT-03, YT-04, YT-05, YT-06, YT-07 | [BLOCKING] Merge origin/main; Phase 1 and 1.1 present; record Phases 2-5 | script/grep | shell check in verify | ⬜ pending |
+| 06-00-02 | 00 | 0 | YT-01, YT-02, YT-03, YT-04, YT-05, YT-06, YT-07 | [BLOCKING] No workflow applies migrations on push; record the waiver syntax | script/grep | shell check in verify | ⬜ pending |
 | 06-01-01 | 01 | 1 | YT-02, YT-04, YT-07 | Expand migration with a text-level test | unit | `youtube-migration.test.ts` | ⬜ pending |
-| 06-01-02 | 01 | 1 | YT-02, YT-04, YT-07 | Key resolver, server wrapper and WorkerEnv field | unit + eslint | `youtube-key.test.ts` | ⬜ pending |
+| 06-01-02 | 01 | 1 | YT-02, YT-04, YT-07 | Vault key resolver, admin-guard-free key cores, and the rate-limit seam | unit + eslint | `youtube-key.test.ts`, `youtube-rate-limit.test.ts` | ⬜ pending |
 | 06-01-03 | 01 | 1 | YT-02, YT-04, YT-07 | [BLOCKING] Controller applies the expand migration locally and regenerates types | owner/controller checkpoint | controller check: log/grep in verify | ⬜ pending |
 | 06-02-01 | 02 | 1 | YT-01, YT-02, YT-03 | Error codes, URL/id parsing and ISO duration | unit + eslint | `youtube-duration.test.ts`, `youtube-urls.test.ts` | ⬜ pending |
 | 06-02-02 | 02 | 1 | YT-01, YT-02, YT-03 | Status classifier, script routing and the needs-English rule | unit + eslint | `youtube-script.test.ts`, `youtube-status.test.ts`, `youtube-urls.test.ts` | ⬜ pending |
@@ -61,11 +61,11 @@ Built from the final plans (revision 1). Every auto task runs its targeted `node
 | 06-07-02 | 07 | 2 | YT-07, YT-01 | Scheduler episode filter and warnings | unit + eslint | `admin-show-schedule.test.ts` | ⬜ pending |
 | 06-08-01 | 08 | 2 | YT-02, YT-06 | recheckVideosCore with a record_youtube_checks emulator | unit + eslint | `youtube-recheck.test.ts` | ⬜ pending |
 | 06-08-02 | 08 | 2 | YT-02, YT-06 | Shared Can't-play rule and dashboard summary | unit + eslint | `youtube-health.test.ts` | ⬜ pending |
-| 06-08-03 | 08 | 2 | YT-02, YT-06 | Server client factory, cron route and cron registration | unit + eslint | `cron-auth.test.ts`, `cron-schedule.test.ts`, `scheduled.test.ts`, `wrangler-guard.test.ts` | ⬜ pending |
+| 06-08-03 | 08 | 2 | YT-02, YT-06 | Server client factory and the cron route on main's guard (Phase 2 wiring left as TODOs) | unit + eslint | `youtube-recheck-route-guards.test.ts`, `youtube-recheck.test.ts` | ⬜ pending |
 | 06-09-01 | 09 | 2 | YT-05, YT-06 | Overlay-free player with a React-owned hidden wrapper; tracker race fix | unit + eslint | `watch-player-source.test.ts`, `watch-player-state.test.ts`, `watch-resume.test.ts` | ⬜ pending |
 | 06-09-02 | 09 | 2 | YT-05, YT-06 | Watch-page reads: progress seconds and stored non-ok statuses | unit + eslint | `watch-status-map.test.ts` | ⬜ pending |
 | 06-09-03 | 09 | 2 | YT-05, YT-06 | Viewer player-error report (core, action, test) | unit + eslint | `player-error-report.test.ts` | ⬜ pending |
-| 06-10-01 | 10 | 2 | YT-06 | Up-next card (stage and bar variants), countdown ring, visibility hook | unit + eslint | `watch-cards-guards.test.ts`, `watch-player-state.test.ts` | ⬜ pending |
+| 06-10-01 | 10 | 2 | YT-06 | `classifyPlayerError` (153 not reportable); ENDED state machine for the shipped `'bar'` mode (not hidden, not stopped on ENDED; countdown only while at least 50% in view; Esc/cancel returns the normal bar with Finished; reduced motion: no ring, no auto-advance, only Play now; series end) and the `'card'` alternative; `endedEffects`, `barView`, `isVisibleEnough`; `playerIframeHidden` for the error and blocked_ae cards; hidden on a React-owned wrapper; stored non-ok status picks the error reason; nothing over the player; no Tooltip/Popover/DropdownMenu/HoverCard in watch files; Watchlist/Like revert + live region; `hl`/`cc_lang_pref` set | unit (+ static source scan) | `watch-player-state.test.ts`, `watch-player-source.test.ts`, `watch-status-map.test.ts`, `watch-layout-guards.test.ts`, `watch-cards-guards.test.ts`, `watch-list-guards.test.ts` | ❌ created in task | ⬜ pending |
 | 06-10-02 | 10 | 2 | YT-06 | Branded error card and a source guard test for both cards | unit + eslint | `watch-cards-guards.test.ts` | ⬜ pending |
 | 06-11-01 | 11 | 2 | YT-05, YT-06 | Hooks accept onError; WatchActions with inline feedback | unit + eslint | `watch-list-guards.test.ts` | ⬜ pending |
 | 06-11-02 | 11 | 2 | YT-05, YT-06 | Static EpisodeList (replaces the tray content) | unit + eslint | `watch-list-guards.test.ts` | ⬜ pending |
@@ -79,9 +79,9 @@ Built from the final plans (revision 1). Every auto task runs its targeted `node
 | 06-14-03 | 14 | 3 | YT-05, YT-06 | Route-scoped Toaster and the remaining guards | unit + eslint | `watch-layout-guards.test.ts` | ⬜ pending |
 | 06-15-01 | 15 | 4 | YT-03 | Episode form uses the server action, shows refusals, needs-English hint, focus prop | unit + eslint | `admin-youtube-form-guards.test.ts`, `youtube-script.test.ts` | ⬜ pending |
 | 06-15-02 | 15 | 4 | YT-03 | Shorts form switch, delete the GET route, guard test | unit + eslint | `admin-youtube-form-guards.test.ts` | ⬜ pending |
-| 06-16-01 | 16 | 4 | YT-04 | Key test and last-result cores | unit + eslint | `youtube-key-status.test.ts` | ⬜ pending |
-| 06-16-02 | 16 | 4 | YT-04 | testYouTubeKey action and removal of the youtube_api_key write path | unit + eslint | `admin-actions-id-coverage.test.ts`, `admin-actions-youtube-wrappers.test.ts`, `admin-settings-key-guards.test.ts` | ⬜ pending |
-| 06-16-03 | 16 | 4 | YT-04 | Settings page data and secret-field cleanup | unit + eslint | `admin-settings-key-guards.test.ts` | ⬜ pending |
+| 06-16-01 | 16 | 4 | YT-04 | Vault key: migration 1 defines `private.get/set_youtube_key`, `youtube_key_meta` (security definer, `search_path = ''`) and `public` wrappers, each revoked from public/anon/authenticated and granted to service_role only, with no grant on `vault.*`; resolver reads by service-role RPC, per-request `cache()`, null on error, no logging; save core: format check before any RPC, rate limit, last 4 only in result and audit, non-admin refused through `runAdminAction`; Settings source never reads the key; old plaintext column absent from app source (generated types excepted until the contract PR); contract migration (06-23) nulls then drops it with the waiver | unit (+ source/SQL scan) + local Vault round trip (06-01 Task 3) | `youtube-migration.test.ts`, `youtube-key.test.ts`, `youtube-rate-limit.test.ts`, `youtube-key-save.test.ts`, `youtube-key-status.test.ts`, `admin-settings-key-guards.test.ts`, `youtube-key-removed.test.ts`, `youtube-contract-migration.test.ts` | ❌ created in task | ⬜ pending |
+| 06-16-02 | 16 | 4 | YT-04 | saveYouTubeApiKey and testYouTubeKey actions; remove the old write path | unit + eslint | `admin-actions-id-coverage.test.ts`, `admin-actions-youtube-wrappers.test.ts`, `admin-settings-key-guards.test.ts` | ⬜ pending |
+| 06-16-03 | 16 | 4 | YT-04 | Editable key field (SecretField update, advanced tab, settings page) | unit + eslint | `admin-settings-key-guards.test.ts` | ⬜ pending |
 | 06-17-01 | 17 | 4 | YT-01, YT-02 | Pure sheet state, then the sheet core (frame, link, target, reading loop, commit) | unit + eslint | `import-sheet-state.test.ts` | ⬜ pending |
 | 06-17-02 | 17 | 4 | YT-01, YT-02 | Sheet states, error banners and the success state | unit + eslint | `admin-import-sheet-guards.test.ts`, `import-sheet-state.test.ts` | ⬜ pending |
 | 06-17-03 | 17 | 4 | YT-01, YT-02 | Scheduler controlled mode with an episode filter, and the show page entry point | unit + eslint | `admin-import-sheet-guards.test.ts` | ⬜ pending |
@@ -95,11 +95,10 @@ Built from the final plans (revision 1). Every auto task runs its targeted `node
 | 06-20-02 | 20 | 6 | YT-01, YT-02, YT-03, YT-04, YT-05, YT-06, YT-07 | [OWNER] Create the API-restricted YouTube key | owner/controller checkpoint | controller check: Koss reply + controller read-back | ⬜ pending |
 | 06-20-03 | 20 | 6 | YT-01, YT-02, YT-03, YT-04, YT-05, YT-06, YT-07 | [OWNER] UAT on the local stack | owner/controller checkpoint | controller check: log/grep in verify | ⬜ pending |
 | 06-21-01 | 21 | 7 | YT-01, YT-02, YT-04, YT-06, YT-07 | [OWNER] Ship | owner/controller checkpoint | controller check: Koss reply + controller read-back | ⬜ pending |
-| 06-21-02 | 21 | 7 | YT-01, YT-02, YT-04, YT-06, YT-07 | [OWNER] Approve the expand migration on live | owner/controller checkpoint | controller check: Koss reply + controller read-back | ⬜ pending |
-| 06-21-03 | 21 | 7 | YT-01, YT-02, YT-04, YT-06, YT-07 | [OWNER] Approve deploy of the shipped commit; controller deploys and checks the cron trigger | owner/controller checkpoint | controller check: log/grep in verify | ⬜ pending |
-| 06-22-01 | 22 | 8 | YT-01, YT-02, YT-04, YT-06 | [OWNER] Set the Worker secret YOUTUBE_API_KEY | owner/controller checkpoint | controller check: Koss reply + controller read-back | ⬜ pending |
-| 06-22-02 | 22 | 8 | YT-01, YT-02, YT-04, YT-06 | [OWNER] Test key on the live site | owner/controller checkpoint | controller check: Koss reply + controller read-back | ⬜ pending |
-| 06-22-03 | 22 | 8 | YT-01, YT-02, YT-04, YT-06 | [OWNER] Go for one real re-check run on live | owner/controller checkpoint | controller check: Koss reply + controller read-back | ⬜ pending |
+| 06-21-02 | 21 | 7 | YT-01, YT-02, YT-04, YT-06, YT-07 | [CONTROLLER] Clear duplicate video ids (D-22), then [OWNER] approve migration 1 on live | owner/controller checkpoint | controller check: log/grep in verify | ⬜ pending |
+| 06-21-03 | 21 | 7 | YT-01, YT-02, YT-04, YT-06, YT-07 | [OWNER] Approve deploy of the shipped commit (after the Worker cutover); controller deploys | owner/controller checkpoint | controller check: log/grep in verify | ⬜ pending |
+| 06-22-01 | 22 | 8 | YT-01, YT-02, YT-04, YT-06 | [OWNER] Paste the key in live Settings and press Test key | owner/controller checkpoint | controller check: Koss reply + controller read-back | ⬜ pending |
+| 06-22-02 | 22 | 8 | YT-01, YT-02, YT-04, YT-06 | [OWNER] Go for one real re-check run on live | owner/controller checkpoint | controller check: Koss reply + controller read-back | ⬜ pending |
 | 06-23-01 | 23 | 9 | YT-04 | New branch, contract migration and its static test | unit + eslint | `youtube-contract-migration.test.ts`, `youtube-migration.test.ts` | ⬜ pending |
 | 06-23-02 | 23 | 9 | YT-04 | [CONTROLLER] Local apply and type regeneration under the heavy lock | owner/controller checkpoint | controller check: log/grep in verify | ⬜ pending |
 | 06-23-03 | 23 | 9 | YT-04 | Remove the scan exclusion, gate, hand-over and PR | unit | `youtube-key-removed.test.ts` | ⬜ pending |
@@ -118,7 +117,7 @@ Built from the final plans (revision 1). Every auto task runs its targeted `node
 | YT-05 | `resumeSecondsFor`; A→B→A positions reducer; completed starts at 0; saves gated until `getVideoData().video_id` matches or PLAYING after a switch (`videoMatchesFor`) | unit | `watch-resume.test.ts`, `watch-player-source.test.ts` | ❌ created in task | ⬜ pending |
 | YT-06 | `classifyPlayerError` (153 not reportable); ENDED state machine (advance only when visible; cancel keeps card); `playerIframeHidden` predicate; hidden on a React-owned wrapper; stored non-ok status picks the error reason; no element over the player; no Tooltip/Popover/DropdownMenu/HoverCard in watch files; Watchlist/Like revert + live region; `hl`/`cc_lang_pref` set | unit (+ static source scan) | `watch-player-state.test.ts`, `watch-player-source.test.ts`, `watch-status-map.test.ts`, `watch-layout-guards.test.ts`, `watch-cards-guards.test.ts`, `watch-list-guards.test.ts` | ❌ created in task | ⬜ pending |
 | YT-07 | Gap case 1,2,4 → move 4 up; `renumberSeasonCore` closes gaps, no duplicates, audit row, RPC failure leaves rows unchanged | unit (emulator) | `admin-episode-lifecycle.test.ts` (extend), `admin-renumber.test.ts` | partly | ⬜ pending |
-| D-17 | Recheck batches, one write RPC, updates status/checked/duration only, never titles; quota error writes nothing; cron path + auth; `30 1 * * *` in the active `wrangler.jsonc` crons and in `CRON_ROUTES` (same key set) | unit | `youtube-recheck.test.ts`, `youtube-health.test.ts`, extend `cron-schedule.test.ts`, `scheduled.test.ts`, `wrangler-guard.test.ts`, `cron-auth.test.ts` | partly | ⬜ pending |
+| D-17 | Recheck batches, one write RPC, updates status/checked/duration only, never titles (G2); quota error writes nothing; route uses main's cron-secret check with two `TODO(phase-2)` markers; no wrangler/CRON_ROUTES edits (G8) | unit (+ source scan) | `youtube-recheck.test.ts`, `youtube-health.test.ts`, `youtube-recheck-route-guards.test.ts` | ❌ created in task | ⬜ pending |
 | D-07 | Scheduler `episodeIds` filter; foreign-show ids refused | unit | extend `admin-show-schedule.test.ts` | partly | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
@@ -139,16 +138,17 @@ Built from the final plans (revision 1). Every auto task runs its targeted `node
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| Restricted key works from the Worker | YT-04 | Needs Koss's key and secret | After the 06-21 deploy, Koss sets the secret (06-22); live Admin › Settings › Test key → "key works" |
+| Key saved in Settings works at once | YT-04 | Needs Koss's real key | Local: Koss pastes the key into Settings, Save, Test key (06-20 step 1). Live: after the deploy, the same on live (06-22) → "•••• last4" and "key works" |
 | Real Unlisted playlist preview | YT-01, YT-02 | No live API calls in dev | Paste a real Unlisted playlist with a private, a deleted and a premiere video → statuses match |
 | UAE-blocked and non-embeddable videos | YT-06 | Real region rules | Open each → branded card with the right reason |
 | Nothing overlaps the iframe | YT-06 | Visual | 375px and desktop; element picker over corners and centre of the player |
-| Hidden iframe under the card | YT-06 | Real DOM | While the up-next card shows, the element picker on the card finds no iframe; console `document.querySelector('iframe')?.offsetParent === null` is true (06-20 UAT step 9) |
+| Up-next bar (shipped default) | YT-06 | Real player | On ENDED the video and YouTube's end screen stay visible; the strip replaces the control bar; countdown pauses below 50% in view; Esc returns the normal bar with Finished; reduced motion shows only Play now; series end shows Back to show (06-20 UAT step 9) |
+| Hidden iframe under the error card | YT-06 | Real DOM | While the error card shows, the element picker finds no iframe under it; console `document.querySelector('iframe')?.offsetParent === null` is true (06-20 UAT step 11) |
 | Non-embeddable episode | YT-06 | Needs a real video setting | Untick "Allow embedding" on a test video on no live episode, open its local episode → error card, then re-enable (06-20 UAT step 11) |
 | A→B→A resume | YT-05 | Real player | Desktop Chrome and iOS Safari: watch A 1 min, switch to B, back to A → resumes at A's position |
 | ENDED card | YT-06 | Real player | Let an episode end → card, countdown only while on screen, Cancel keeps card |
 | Captions and player language | YT-06 | Real player | `/en` English captions on when available; `/ar` follows viewer setting; menus in site language |
-| Daily recheck cron | D-17 | Worker runtime (`cronAuthOk` needs workerd) | Local: `opennextjs-cloudflare preview` with `CLOUDFLARE_INCLUDE_PROCESS_ENV=true`, curl with Koss's local CRON_SECRET (06-20 UAT step 13). Live: trigger listed after deploy (06-21), one real run on Koss's go (06-22) |
+| Re-check run | D-17 | Real API and database | Local: curl with Koss's local CRON_SECRET against `npm run dev` (06-20 step 13; main's guard works on Node). Live: one run on Koss's go (06-22). The daily schedule arrives with Phase 2 (TODO(phase-2)) |
 
 ---
 
@@ -161,4 +161,4 @@ Built from the final plans (revision 1). Every auto task runs its targeted `node
 - [x] Feedback latency < 30s (targeted files + per-file eslint per task; tsc and the full suite at plan and phase level)
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** planner sign-off (revision 1); Koss signs at the plan gate
+**Approval:** planner sign-off (revision 3). Plan gate answered (G1 = B, G2-G4 as recommended, G5, G6 and G8 changed, G7 accepted); open: Koss's signature on the G6 key-field pictures

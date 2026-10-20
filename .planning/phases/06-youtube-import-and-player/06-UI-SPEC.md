@@ -503,6 +503,23 @@ Behaviour:
 
 Series end (no next episode): same frame; overline `upNextDoneEyebrow` (the finished episode), title `seriesEndHeading`, body `text-sm text-[var(--text-dim)] mb-4` `seriesEndBody`, buttons primary `watchAgain`, outline `watch.backToShow` (link to `/series/{slug}`, `isolate(show)`).
 
+### 4.2b Up-next bar — SHIPPED DEFAULT (`ENDED_MODE = 'bar'`, Koss G1 = B, 2026-10-20)
+
+Pictures: `mockups/06-g1-b.png` (desktop + phone), `06-g1-b-states.png` (cancelled, reduced motion, series end). §4.2 (card) is kept only for `ENDED_MODE = 'card'`.
+
+- On `ENDED` with a next episode: the player and YouTube's end screen stay visible and untouched (no `hidden`, no `stopVideo`). Nothing is drawn on the player.
+- The control bar (§3.5) switches to the up-next strip, same height (60px desktop), `bg-[var(--uis-primary-soft)]`:
+  - start: countdown ring 44×44 (as §4.2 narrow ring);
+  - text `flex-1 min-w-0`: line 1 `text-sm font-bold truncate` "Up next: <bdi>{title}</bdi>" (`upNextBarTitle`), line 2 `text-sm text-[var(--text-dim)]` `seasonEpisodeLong`;
+  - end: primary `player.autoplayPlayNow` (`Play size-4 fill-current`), outline `upNextCancel`; both `px-6 text-sm font-bold`, 44px.
+- Phone (<640px): the strip grows to two rows (ring + text; then both buttons `flex-1`). The episode list below moves down; nothing overlaps the player.
+- Countdown advances only while the player box is at least 50% in view (IntersectionObserver); otherwise it pauses.
+- Esc = Cancel. One polite announcement `upNextAnnounce`; focus is not moved.
+- Cancel: strip returns to the normal control bar, status line `finished`, Next episode button enabled. Replay is YouTube's own end-screen control.
+- Reduced motion: no ring, no auto-advance; strip shows line 1 + line 2 and only "Play now".
+- Series end (no next episode): strip shows `seriesEndHeading` + `seriesEndBody` and outline `watch.backToShow`; no ring.
+- Play now / Next / list pick: normal episode switch (§3.5, resume at saved position).
+
 ### 4.3 Error card
 
 When it shows:
@@ -817,6 +834,7 @@ Every string below is new or replaced. Keys are relative to the namespace in the
 | upNextEyebrow | Up next · Season {season, number} · Episode {episode, number} | التالية · الموسم {season, number} · الحلقة {episode, number} |
 | upNextAnnounce | {seconds, plural, one {Next episode starts in # second} other {Next episode starts in # seconds}} | {seconds, plural, one {تبدأ الحلقة التالية خلال ثانية واحدة} two {تبدأ الحلقة التالية خلال ثانيتين} few {تبدأ الحلقة التالية خلال # ثوانٍ} many {تبدأ الحلقة التالية خلال # ثانية} other {تبدأ الحلقة التالية خلال # ثانية}} |
 | upNextCancel | Cancel | إلغاء |
+| upNextBarTitle | Up next: <bdi>{title}</bdi> | التالية: <bdi>{title}</bdi> |
 | watchAgain | Watch again | شاهدها مجدداً |
 | upNextDoneEyebrow | Season {season, number} · Episode {episode, number} | الموسم {season, number} · الحلقة {episode, number} |
 | seriesEndHeading | You've finished <bdi>{show}</bdi> | أنهيت مشاهدة <bdi>{show}</bdi> |
@@ -886,7 +904,7 @@ Hover/focus transitions 180–260ms with `var(--ease)` (DESIGN.md).
 6. Mixed-script and digit rules: add one `isolate()` helper and one `formatClock()` helper, used everywhere above.
 7. Watch page server read: the ids of visible episodes whose stored `youtube_status` is `blocked_ae` (admin client; the column is not readable by anon/authenticated), passed to the shell. Only `blocked_ae` gates loading; other statuses do not.
 8. `classifyPlayerError`: 153 → generic card, not reportable; all other codes reportable.
-9. 06-RESEARCH.md Pattern 8 flags a policy risk on D-09 (hiding YouTube's end screen) and proposes an `ENDED_MODE` switch; this contract specifies the signed `card-replaces-player` mode only.
+9. 06-RESEARCH.md Pattern 8 flags a policy risk on D-09 (hiding YouTube's end screen) and proposes an `ENDED_MODE` switch; Koss chose G1 = B: the shipped default is the bar (§4.2b); the card (§4.2) is the alternative constant.
 
 ---
 

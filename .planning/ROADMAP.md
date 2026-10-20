@@ -135,7 +135,7 @@ Plans:
 
 ### Phase 6: YouTube Import and Player
 **Goal**: An admin puts a whole YouTube season on the platform from one playlist link, or adds one episode from one video link. Viewers switching episodes resume where they left off, in a player that follows YouTube's embed rules.
-**Depends on**: Phase 5 (it needs `requireAdmin` and the two-admin audit)
+**Depends on**: Phase 1 and Phase 1.1 only, for execution. Plan gate G8 (Koss, 2026-10-20): Phase 6 runs in parallel with Phases 2-5, with `TODO(phase-N)` seams for the Phase 2 cron/rate-limit pieces, the Phase 4 tokens and the Phase 5 `requireAdmin` (table in 06-00). The live deploy (06-21 on) still waits for the Phase 2-3 Worker, because Vercel is frozen
 **Requirements**: YT-01, YT-02, YT-03, YT-04, YT-05, YT-06, YT-07
 **Success Criteria** (what must be TRUE):
   1. An admin pastes a playlist link and sees every video with its title, thumbnail, duration and status before importing. Private, deleted, non-embeddable and UAE-blocked videos are flagged and excluded. Imported episodes land as drafts. Importing the same playlist again adds nothing.
@@ -147,29 +147,29 @@ Plans:
 **Plans**: 25 plans (11 waves, W0-W10)
 
 Plans:
-- [ ] 06-00-PLAN.md — W0: [BLOCKING] merge origin/main; upstream preconditions; migrations workflow has no push-to-main apply; record Worker name, crons, waiver
-- [ ] 06-01-PLAN.md — W1: expand migration only; key resolver; controller local apply + types under the lock
+- [ ] 06-00-PLAN.md — W0: [BLOCKING] merge origin/main; Phase 1/1.1 present; no workflow applies migrations on push; record Phase 2-5 presence, admin mechanism, waiver; TODO(phase-N) table
+- [ ] 06-01-PLAN.md — W1: migration 1 (expand + Vault key functions); Vault key resolver; rate-limit seam; controller local apply, Vault round trip + types under the lock
 - [ ] 06-02-PLAN.md — W1: pure classifiers (error codes, urls, duration, status, script / needsEnglishTitle)
-- [ ] 06-03-PLAN.md — W1: YouTube API client (header key, paging, batching, error mapping) with documented-shape fixtures
-- [ ] 06-04-PLAN.md — W1: pure watch logic (resume, progress gate, ENDED_MODE, player errors, hidden-iframe predicate) and quota/clock helpers
+- [ ] 06-03-PLAN.md — W1: YouTube API client (header-only key, paging, batching, error mapping) with documented-shape fixtures
+- [ ] 06-04-PLAN.md — W1: pure watch logic (resume, progress gate, ENDED_MODE 'bar' default, player errors, hidden-iframe predicate) and quota/clock helpers
 - [ ] 06-05-PLAN.md — W1: every EN/AR string and the shared YouTubeStatusChip
 - [ ] 06-06-PLAN.md — W2: playlist preview, import commit and single-video verify cores
 - [ ] 06-07-PLAN.md — W2: renumber core and scheduler episode filter
-- [ ] 06-08-PLAN.md — W2: daily re-check core, Can't-play rule, cron route, 30 1 * * * added to the active crons
+- [ ] 06-08-PLAN.md — W2: re-check core, Can't-play rule, cron route on main's secret check (schedule: TODO(phase-2))
 - [ ] 06-09-PLAN.md — W2: player plumbing (React-owned hidden wrapper, tracker gated on video id, status map read, viewer error report)
-- [ ] 06-10-PLAN.md — W2: up-next card (card and bar modes) and branded error card
+- [ ] 06-10-PLAN.md — W2: up-next bar (shipped default) and card alternative; branded error card
 - [ ] 06-11-PLAN.md — W2: watch actions without toasts (revert + live region) and static episode list
 - [ ] 06-12-PLAN.md — W2: import preview table and its pure row view
-- [ ] 06-13-PLAN.md — W3: admin Server Action wrappers (import, meta, verify on save, renumber, filtered schedule)
-- [ ] 06-14-PLAN.md — W3: stacked watch shell, resume on switch, ENDED/error wiring, no Toaster on /watch
+- [ ] 06-13-PLAN.md — W3: admin Server Action wrappers behind the requireAdminForYouTube seam (import, meta, verify on save, renumber, filtered schedule)
+- [ ] 06-14-PLAN.md — W3: stacked watch shell, resume on switch, up-next bar / error wiring, no Toaster on /watch
 - [ ] 06-15-PLAN.md — W4: single-link add via server action; shorts switch; delete /api/youtube-meta
-- [ ] 06-16-PLAN.md — W4: Settings read-only key status and Test key; remove youtube_api_key write path
+- [ ] 06-16-PLAN.md — W4: editable Vault key field (save, •••• last4, Test key); remove the youtube_api_key write path
 - [ ] 06-17-PLAN.md — W4: import side sheet (core, states, success), show-page entry, scheduler for the new drafts
 - [ ] 06-18-PLAN.md — W5: admin arrows, Renumber 1 to N dialog, Can't play / Needs English marks, dashboard panel
 - [ ] 06-19-PLAN.md — W5: remove old key reader and unused strings; ROADMAP Phase 8 drift
-- [ ] 06-20-PLAN.md — W6: gate, hand-over, PR; [OWNER] create key; [OWNER] UAT on the local stack
-- [ ] 06-21-PLAN.md — W7: [OWNER] Ship; [OWNER] expand migration on live; [OWNER] approve deploy; controller deploys and checks the cron trigger
-- [ ] 06-22-PLAN.md — W8: [OWNER] Worker secret after deploy; [OWNER] live Test key; [OWNER] go for one real re-check
+- [ ] 06-20-PLAN.md — W6: gate, hand-over, PR; [OWNER] create key; [OWNER] UAT on the local stack (key pasted in local Settings)
+- [ ] 06-21-PLAN.md — W7: [OWNER] Ship; controller duplicate clear (D-22) then [OWNER] migration 1 on live; [OWNER] approve deploy after the Worker cutover
+- [ ] 06-22-PLAN.md — W8: [OWNER] paste the key in live Settings + Test key; [OWNER] go for one real re-check
 - [ ] 06-23-PLAN.md — W9: contract migration (drop youtube_api_key) in its own branch and PR
 - [ ] 06-24-PLAN.md — W10: [OWNER] Ship the contract PR; [OWNER] approve the live apply; [OWNER] delete the old key
 **UI hint**: yes

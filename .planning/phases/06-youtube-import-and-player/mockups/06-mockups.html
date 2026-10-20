@@ -343,7 +343,7 @@ svg{flex:none}
 
 <!-- ============================================================ G1 -->
 <section id="g1a">
-<h2>G1 · A (recommended, as signed) — when the episode ends, a Clickit card replaces the player</h2>
+<h2>G1 · A (not chosen — alternative constant only) — when the episode ends, a Clickit card replaces the player</h2>
 <p class="sub">The ended YouTube player is hidden and silent; YouTube's end screen never shows. Risk: YouTube's developer guide lists "blocking related videos after the video completes" as a don't. Phone: no thumbnail, smaller ring.</p>
 <div class="row">
 <div class="frame" style="width:880px"><div style="display:flex;flex-direction:column">
@@ -367,7 +367,7 @@ svg{flex:none}
 </section>
 
 <section id="g1b">
-<h2>G1 · B (fallback, ENDED_MODE = 'bar') — YouTube's end screen stays; the countdown sits in the bar under it</h2>
+<h2>G1 · B (SIGNED by Koss — shipped default, ENDED_MODE = 'bar') — YouTube's end screen stays; the countdown sits in the bar under it</h2>
 <p class="sub">No policy risk: the ended video and YouTube's own end screen (related videos chosen by YouTube) stay visible. Nothing is drawn on the player. Switching A ↔ B is one constant.</p>
 <div class="row">
 <div class="frame" style="width:880px"><div style="display:flex;flex-direction:column">
@@ -386,6 +386,19 @@ svg{flex:none}
 </div></div>
 </div>
 </section>
+
+<section id="g1b-states"><h2>G1 · B (signed) — bar states: after Cancel, reduced motion, last episode</h2><p class="sub">YouTube's end screen stays visible in all three; only the bar under the video changes.</p>
+<div style="display:flex;flex-direction:column;gap:20px">
+<div><div class="cap">After Cancel — normal bar, "Finished", Next episode</div><div class="frame" style="width:880px">
+  <div class="yt" style="height:120px"><div class="scene" style="filter:grayscale(.6) brightness(.5)"></div><span class="tag">YouTube end screen (unchanged)</span><span class="ytlogo">YouTube</span></div>
+  <div class="lbar"><span class="btn out">‹ Previous</span><div class="t"><div>Episode 3 — Sample title</div><small>Finished</small></div><span class="btn out">Next episode ›</span></div></div></div>
+<div><div class="cap">Reduced motion — no countdown, nothing plays by itself</div><div class="frame" style="width:880px">
+  <div class="yt" style="height:120px"><div class="scene" style="filter:grayscale(.6) brightness(.5)"></div><span class="tag">YouTube end screen (unchanged)</span><span class="ytlogo">YouTube</span></div>
+  <div class="lbar" style="background:var(--uis-primary-soft)"><div class="t" style="text-align:start"><div>Up next: Episode 4 — Sample title</div><small>Season 1 · Episode 4</small></div><span class="btn pri">▶ Play now</span></div></div></div>
+<div><div class="cap">Last episode of the show</div><div class="frame" style="width:880px">
+  <div class="yt" style="height:120px"><div class="scene" style="filter:grayscale(.6) brightness(.5)"></div><span class="tag">YouTube end screen (unchanged)</span><span class="ytlogo">YouTube</span></div>
+  <div class="lbar" style="background:var(--uis-primary-soft)"><div class="t" style="text-align:start"><div>You've finished Sample Show</div><small>No more episodes for now.</small></div><span class="btn out">Back to Sample Show</span></div></div></div>
+</div></section>
 
 <!-- ============================================================ G7 -->
 <h2 style="margin-top:28px">G7 — the 15 new screens with no signed picture yet</h2>

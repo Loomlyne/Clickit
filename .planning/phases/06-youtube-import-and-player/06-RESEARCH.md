@@ -552,12 +552,12 @@ grant execute on function public.renumber_season(uuid) to service_role;
    - What we know: RMF allows unmounting/hiding the player when nothing overlays a visible one; the Developer Policies Guide says not to disable or block Related Video links after completion. The earlier project research (PITFALLS 13) judged "unmount or hide the iframe" fine; this session found the Guide line it did not cite.
    - What's unclear: whether YouTube would treat a custom up-next card as "blocking" related links; no enforcement precedent found.
    - Recommendation: implement D-09 as signed behind `ENDED_MODE`, state the risk in the plan, and let Koss confirm at the plan gate. If he prefers zero risk, flip to `bar-below-player` (same countdown, iframe stays visible).
-   - RESOLVED: default built (`ENDED_MODE = 'card'` in 06-04/06-14, `'bar'` is one constant away); Koss confirms at plan gate.
+   - RESOLVED: signed G1 = B (2026-10-20). Shipped default `ENDED_MODE = 'bar'` (UI-SPEC §4.2b): YouTube's end screen stays visible, so the policy risk is removed; `'card'` stays as the built alternative.
 2. **D-17 and D-05: what exactly does the 30-day refresh cover?**
    - Recommendation: the cron refreshes status, length and checked-at; titles/descriptions are treated as Clickit-authored after import (A9). Koss should know this is an interpretation, not a quote from the policy.
-   - RESOLVED: default built (06-08 re-check writes status, length while still the YouTube value, and checked-at; never titles or descriptions; `record_youtube_checks` test in 06-01); Koss confirms at plan gate.
+   - RESOLVED: signed G2 (2026-10-20). The re-check writes status, length (while still the YouTube value) and checked-at; never titles or descriptions (06-08; `record_youtube_checks` test in 06-01).
 3. **Archived rows during `renumber_season`:** recommend moving them to N+1..N+K. Alternative: leave archived numbers untouched and fail if they collide. Planner may pick the alternative if the audit diff should not touch archived rows.
-   - RESOLVED: default built (archived rows move to N+1..N+K in `renumber_season`, 06-01/06-07); Koss confirms at plan gate.
+   - RESOLVED: signed G3 (2026-10-20). Live episodes get 1..N and archived ones move to N+1..N+K (`renumber_season`, 06-01/06-07).
 4. **Shorts and hero YouTube ids** are outside D-17's wording. Recommend adding shorts ids to the same batch in Phase 7 (PROD-07).
    - RESOLVED: deferred to Phase 7 PROD-07; Phase 6 re-checks episode ids only.
 5. **Player error 5 and 2 as "flags":** recommend reporting all reportable codes but weighting 5 as low severity (transient). Koss's D-11 lists them as flagged; keep, but show the code in the admin badge tooltip so admins can judge.
@@ -736,3 +736,23 @@ From `CLAUDE.md` (project), `CLAUDE.local.md` and the common rules the planner m
 
 **Research date:** 2026-10-20
 **Valid until:** 2026-11-03 (14 days: YouTube policies were updated 2026-10-15 and Phase 1/2/5 outputs may change the upstream seams)
+
+## Addendum (revision 3): Vault key storage and parallel execution
+
+Plan-gate answers of 2026-10-20 changed two research assumptions: G6 (D-15, D-20) and G8. Pattern 5 (Worker secret) and the "Upstream state this phase depends on" section are superseded where they conflict with this addendum.
+
+### Vault key storage (D-20)
+
+Checked against the live docs, 2026-10-20:
+- **API.** `vault.create_secret(secret, unique_name, description)` returns the new secret's UUID; `vault.update_secret(id, secret, name, description)` takes the UUID first. Decrypted values are read from the view `vault.decrypted_secrets` (`id, name, description, secret, decrypted_secret, key_id, nonce, created_at, updated_at`). [CITED: supabase.com/docs/guides/database/vault] The parameter names are not documented, so the plans call both functions with positional arguments.
+- **Availability.** "The Vault extension is enabled by default" (`supabase_vault`); local installs can add it with `create extension supabase_vault cascade`. [CITED: github.com/supabase/vault README] The hosted-project page does not say so explicitly, so 06-21 checks `pg_extension` read-only before migration 1. Migration 1 also raises a clear error if `vault.create_secret` or `vault.decrypted_secrets` is missing.
+- **Permissions.** The docs warn that anyone with access to `vault.decrypted_secrets` can read secrets, and that privileges on the view must be protected. Migration 1 grants nothing on `vault.*`. Only three `SECURITY DEFINER` functions (`set search_path = ''`) touch it, and their execute right is revoked from `public`, `anon` and `authenticated` and granted to `service_role` only. Supabase grants execute on new functions to `anon` and `authenticated` by default, and main already grants `usage on schema private to anon, authenticated` (for `private.is_admin()`), so the function-level revokes are required. 06-01 Task 3 proves them on the local stack.
+- **Exposure.** Only `public` is exposed by the Data API by default; another schema must be added under API settings and granted. [CITED: supabase.com/docs/guides/api/using-custom-schemas] supabase-js can call another schema with `.schema('x').rpc(…)`, but only if that schema is exposed. [CITED: supabase.com/docs/reference/javascript/rpc] `private` stays unexposed, so migration 1 adds thin `public` wrappers (`security invoker`, same grants) that the service-role client calls with `rpc('get_youtube_key')`, `rpc('set_youtube_key', { p_key })` and `rpc('youtube_key_meta')`.
+- **Logging.** Vault's README warns that statements that write secrets can land in the Postgres statement log, and suggests turning statement logging off. In this design the key reaches Postgres as an RPC parameter and is written inside a plpgsql function, so no top-level statement carries it as a literal. 06-21 still reads `log_statement` read-only and stops if it is `all`. The app never logs the key: source scans in 06-01, 06-08 and 06-16.
+- **Caching.** The resolver uses React `cache()`, which memoises within one server render and does not memoise outside a React request (route handlers, cron). There is never a module-level cache, so a saved key applies on the next request (D-15).
+- **Transport.** The key goes only in the `x-goog-api-key` header; the query-string fallback (A14) is removed. If YouTube rejects the header on live, a separate PR decides, and the key is never moved into a URL (06-22).
+
+### Parallel execution (G8)
+
+Phase 6 executes on top of main as of Phase 1 (a8f2487) plus Phase 1.1. Stand-ins and their `// TODO(phase-N)` markers are listed in 06-00. The cron route copies the inline `Bearer <CRON_SECRET>` check from `publish-scheduled` on main. That check works on `next dev`, so the local UAT re-check needs no workerd preview. The daily schedule is registered by Phase 2. The live deploy waits for the Phase 2-3 Worker, because Vercel is frozen.
+

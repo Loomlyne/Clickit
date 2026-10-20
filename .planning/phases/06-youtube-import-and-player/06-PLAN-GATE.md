@@ -9,7 +9,11 @@ Reply: `G1 yes … G8 yes`, or "all yes". Recommended answer first in each.
 - G2 signed (recommended). G4 signed (two migrations).
 - G5 CHANGED: duplicates are cleared automatically, keeping the newest row; the controller logs every affected row first and reads back after (D-22).
 - G6 CHANGED: no Worker secret. The key is pasted and changed in Admin › Settings, stored in Supabase Vault, read only by the service role, works on the next request (D-15, D-20). Pictures: `mockups/06-g6-key-missing.png`, `06-g6-key-editing.png`, `06-g6-key-saved.png`, `06-g6-key-test.png`.
-- Open: G1, G3, G7 (pictures ready), G8 met (Phase 1 on main).
+- G3 signed (recommended: live 1..N, then archived).
+- G8 CHANGED: Phase 6 executes now, in parallel with Phases 2–5. The precondition is only Phases 1 and 1.1 on main. Spots that stand in for Phase 2 (Worker cron), Phase 4 (tokens) and Phase 5 (admin accounts) carry `TODO(phase-N)` markers, listed in 06-00. The live deploy still waits for the Worker cutover (Vercel is frozen).
+- G1 signed **B**: shipped default `ENDED_MODE = 'bar'` (YouTube end screen stays, countdown in the bar). Pictures `06-g1-b.png`, `06-g1-b-states.png`. Card kept only as the alternative constant.
+- G7 accepted as pictured (15 screens); screen 15 is replaced by the G6 key-field pictures.
+- Open: G6 signature on the key-field pictures (`06-g6-key-*.png`).
 
 ## Decisions to sign
 
