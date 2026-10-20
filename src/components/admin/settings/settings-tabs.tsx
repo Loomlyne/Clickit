@@ -6,19 +6,19 @@ import type { AppConfig } from '@/lib/config'
 import type { LegalPage, Faq } from '@/app/[locale]/admin/actions'
 import { GeneralTab } from './general-tab'
 import { BrandingTab } from './branding-tab'
-import { AdvancedTab } from './advanced-tab'
+import { AdvancedTab, type YouTubeKeyView } from './advanced-tab'
 import { LegalTab } from './legal-tab'
 import { PortfolioTab } from './portfolio-tab'
 import { AuthTab } from './auth-tab'
 
 export function SettingsTabs({
   config,
-  hasYouTubeKey,
+  youtubeKey,
   legalPages,
   faqs,
 }: {
   config: AppConfig
-  hasYouTubeKey: boolean
+  youtubeKey: YouTubeKeyView
   legalPages: LegalPage[]
   faqs: Faq[]
 }) {
@@ -47,7 +47,7 @@ export function SettingsTabs({
       </TabsContent>
 
       <TabsContent value="advanced" className="space-y-6">
-        <AdvancedTab config={config} hasYouTubeKey={hasYouTubeKey} />
+        <AdvancedTab config={config} youtubeKey={youtubeKey} />
       </TabsContent>
 
       <TabsContent value="auth" className="space-y-6">

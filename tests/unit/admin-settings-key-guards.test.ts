@@ -144,7 +144,7 @@ test('advanced tab: row 3 is aria-live and the green icon carries TODO(phase-4)'
   const at = lines.findIndex((l) => l.includes('text-brand-green-safe'))
   assert.ok(at !== -1, 'no text-brand-green-safe icon')
   const near = lines.slice(Math.max(0, at - 3), at + 1).join('\n')
-  assert.match(near, /\/\/ TODO\(phase-4\)|\{\/\* TODO\(phase-4\)/)
+  assert.match(near, /\/\/ TODO\(phase-4\): use var\(--safe-green\)/)
 })
 
 test('settings page reads hasKey + last4 + last test only, never the key', () => {
