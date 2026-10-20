@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   experimental: {
     serverActions: {
-      bodySizeLimit: '55mb',
+      bodySizeLimit: '2mb',
     },
     staleTimes: {
       dynamic: 30,
