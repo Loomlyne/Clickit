@@ -1,6 +1,7 @@
 // Database side of the admin image finalize (plan 02-15): read and write exactly one
 // column or row per target. No next/*, server-only or '@/' imports: node --test loads
 // this file, and the tests record every write against the fake Supabase.
+import { MEDIA_SAVE_CONFLICT } from '../../server/media-references.ts'
 import type { AdminDb } from './ports'
 import type { ImageTarget, ImageUploadPorts, LiveScope } from './image-upload'
 
@@ -51,34 +52,44 @@ export async function readAdminLiveUrls(db: AdminDb, scope: LiveScope): Promise<
   return { urls: [], error: 'Unsupported live scope' }
 }
 
+/**
+ * Compare-and-swap write of one target (deferred item 23): the row is updated only while
+ * the column still holds `expected`, the value read before. 0 rows means another save got
+ * there first: MEDIA_SAVE_CONFLICT, and the caller must not delete anything that was live.
+ */
 export async function writeAdminImageTarget(
   db: AdminDb,
   target: ImageTarget,
-  url: string | null
+  url: string | null,
+  expected: string | null
 ): Promise<string | null> {
+  let result: { data: unknown[] | null; error: { message: string } | null }
   if (target.type === 'show-artwork') {
-    const { error } = await db
+    const q = db
       .from('shows')
       .update({ [target.column]: url } as never)
       .eq('id', target.showId)
-    return error ? error.message : null
-  }
-  if (target.type === 'app-config') {
-    const { error } = await db
+    const column = target.column as 'poster_url'
+    result = await (expected === null ? q.is(column, null) : q.eq(column, expected)).select('id')
+  } else if (target.type === 'app-config') {
+    const q = db
       .from('app_config')
       .update({ [target.column]: url } as never)
       .eq('id', 1)
-    return error ? error.message : null
-  }
-  if (target.type === 'cast') {
-    const { error } = await db
+    const column = target.column as 'og_image_url'
+    result = await (expected === null ? q.is(column, null) : q.eq(column, expected)).select('id')
+  } else if (target.type === 'cast') {
+    const q = db
       .from('show_cast')
       .update({ image_url: url })
       .eq('id', target.castId)
       .eq('show_id', target.showId)
-    return error ? error.message : null
+    result = await (expected === null ? q.is('image_url', null) : q.eq('image_url', expected)).select('id')
+  } else {
+    return 'Unsupported image target'
   }
-  return 'Unsupported image target'
+  if (result.error) return result.error.message
+  return Array.isArray(result.data) && result.data.length > 0 ? null : MEDIA_SAVE_CONFLICT
 }
 
 /** Finalize core db port for the admin kinds (shows, app_config, show_cast). */
@@ -122,7 +133,7 @@ export function adminImageDb(db: AdminDb): ImageUploadPorts['db'] {
       }
       return { url: null, error: 'Unsupported image target' }
     },
-    write: (target, url) => writeAdminImageTarget(db, target, url),
-    restore: (target, previous) => writeAdminImageTarget(db, target, previous),
+    write: (target, url, expected) => writeAdminImageTarget(db, target, url, expected),
+    restore: (target, previous, expected) => writeAdminImageTarget(db, target, previous, expected),
   }
 }

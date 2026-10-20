@@ -60,12 +60,28 @@ import { getWorkerEnv } from '@/server/cloudflare'
 import { liveKeysForUrl, r2KeyFromUrl, r2KeysForUrl } from '@/server/r2-keys'
 import { finalizeUploadedObject, type FinalizeBucket } from '@/server/upload-finalize'
 import {
-  deleteMediaForUrl,
-  stageR2DeletionForUrl,
+  stageR2Deletion,
   stageShowMedia as stageR2ShowMedia,
+  type DeletableBucket,
   type ListableBucket,
+  type MediaDeleteGuard,
   type StagedR2Deletion,
 } from '@/server/r2-delete'
+import { readMediaReferenceUrls, type ReferenceDb } from '@/server/media-references'
+import { removeMediaCore } from '@/lib/admin/media-removal'
+
+/**
+ * Deferred items 21-23: every R2 delete of a key that was ever live re-reads every media
+ * reference (all scopes) right before deleting, through this guard. `db` must be the
+ * service client so every row of every table is seen.
+ */
+function mediaGuard(db: AdminDb, label: string): MediaDeleteGuard {
+  return {
+    readReferences: () => readMediaReferenceUrls(db as unknown as ReferenceDb),
+    mediaOrigin: getPublicMediaOrigin(),
+    label,
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -418,10 +434,11 @@ export async function resolveRestoreConflictsAndRestore(
 // List and delete every R2 object under <bucket>/shows/{id}/ in both buckets (artwork,
 // logo, cast portraits, hero videos). Listing (not hard-coded names) works for legacy
 // stable-path rows and versioned rows (hero-{timestamp}.webp). R2 only: Supabase Storage
-// originals are never deleted here (MEDIA-07).
-async function stageShowMedia(showId: string): Promise<StagedR2Deletion[]> {
+// originals are never deleted here (MEDIA-07). Commit runs after the show row is gone and
+// keeps any file another show, the site settings or a profile still uses.
+async function stageShowMedia(showId: string, db: AdminDb): Promise<StagedR2Deletion[]> {
   const bucket = (await getWorkerEnv()).MEDIA as unknown as ListableBucket
-  return stageR2ShowMedia(bucket, showId)
+  return stageR2ShowMedia(bucket, showId, mediaGuard(db, '[deleteShowPermanently]'))
 }
 
 export async function deleteShowPermanently(id: string): Promise<ActionResult> {
@@ -435,7 +452,7 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
           adminUserId: ctx.adminUserId,
           media: {
             stage: async (showId) =>
-              (await stageShowMedia(showId)).map((deletion) => ({
+              (await stageShowMedia(showId, ctx.db)).map((deletion) => ({
                 commit: async () => {
                   const ok = await deletion.commit()
                   if (!ok) console.error('[deleteShowPermanently] media cleanup failed')
@@ -981,19 +998,9 @@ async function videoPorts(db: AdminDb): Promise<HeroVideoPorts> {
     },
     media: {
       delete: (keys) => bucket.delete(keys),
-      // Nothing is deleted before commit, so rollback has nothing to restore.
-      stageDeletion: async (keys) => ({
-        commit: async () => {
-          try {
-            await bucket.delete(keys)
-            return true
-          } catch (err) {
-            console.error('[video] R2 delete failed', err)
-            return false
-          }
-        },
-        rollback: async () => true,
-      }),
+      // Nothing is deleted before commit, so rollback has nothing to restore. Commit re-reads
+      // every reference and keeps a key still used anywhere (deferred items 21-23).
+      stageDeletion: async (keys) => stageR2Deletion(bucket, keys, mediaGuard(db, '[video]')),
     },
     hasAudioTrack: mp4BytesHasAudioTrack,
     previousR2Keys: (url) => r2KeysForUrl(url, mediaOrigin),
@@ -1107,47 +1114,24 @@ export async function removePreloaderVideo(): Promise<ActionResult> {
   try {
     await assertAdmin()
     const admin = createAdminClient()
-
-    const { data: previousConfig, error: previousConfigError } = await admin
-      .from('app_config')
-      .select()
-      .eq('id', 1)
-      .single()
-    if (previousConfigError || !previousConfig) {
-      return {
-        success: false,
-        error: previousConfigError?.message ?? 'Could not load site config',
-      }
-    }
-
-    const previousPreloaderUrl = (
-      previousConfig as unknown as { preloader_video_url: string | null }
-    ).preloader_video_url
-    // R2 only: a preloader that still points at a Supabase original keeps that file
-    // (MEDIA-07: Supabase is emptied only after Koss approves).
-    const mediaDeletion = stageR2DeletionForUrl(
-      (await getWorkerEnv()).MEDIA,
-      previousPreloaderUrl,
-      getPublicMediaOrigin()
+    // Compare-and-swap clear, then the R2 object goes only if nothing else uses it (R2 only:
+    // a preloader that still points at a Supabase original keeps that file, MEDIA-07).
+    const result = await removeMediaCore(
+      {
+        db: admin,
+        media: (await getWorkerEnv()).MEDIA as unknown as DeletableBucket,
+        mediaOrigin: getPublicMediaOrigin(),
+      },
+      {
+        kind: 'clear-column',
+        table: 'app_config',
+        id: 1,
+        column: 'preloader_video_url',
+        notFound: 'Could not load site config',
+      },
+      '[removePreloaderVideo]'
     )
-    const { error: configError } = await admin
-      .from('app_config')
-      .update({ preloader_video_url: null } as never)
-      .eq('id', 1)
-
-    if (configError) {
-      const restored = await mediaDeletion?.rollback()
-      return {
-        success: false,
-        error: restored !== false
-          ? configError.message
-          : 'Could not remove the preloader video',
-      }
-    }
-
-    if (mediaDeletion && !(await mediaDeletion.commit())) {
-      console.error('[removePreloaderVideo] media cleanup failed')
-    }
+    if (!result.success) return { success: false, error: result.error }
 
     updateTag('site-config')
     revalidatePath('/', 'layout')
@@ -1850,36 +1834,25 @@ export async function removeSiteImage(
     await assertAdmin()
     if (!isSiteImageKind(kind)) return { success: false, error: 'Invalid kind' }
     const admin = createAdminClient()
-    const column = SITE_IMAGE_COLUMN[kind]
-    const { data: previousConfig, error: previousConfigError } = await admin
-      .from('app_config')
-      .select(column)
-      .eq('id', 1)
-      .single()
-    if (previousConfigError || !previousConfig) {
-      return {
-        success: false,
-        error: previousConfigError?.message ?? 'Could not load site config',
-      }
-    }
-
-    const previousUrl = (
-      previousConfig as unknown as Record<string, string | null>
-    )[column]
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ [column]: null } as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
-
-    // R2 only; a Supabase original is never deleted (MEDIA-07).
-    await deleteMediaForUrl(
-      (await getWorkerEnv()).MEDIA,
-      previousUrl,
-      getPublicMediaOrigin(),
+    // Compare-and-swap clear, then the R2 object goes only if no other live value (another
+    // site image, a show, a profile...) still uses it. R2 only; a Supabase original is never
+    // deleted (MEDIA-07).
+    const result = await removeMediaCore(
+      {
+        db: admin,
+        media: (await getWorkerEnv()).MEDIA as unknown as DeletableBucket,
+        mediaOrigin: getPublicMediaOrigin(),
+      },
+      {
+        kind: 'clear-column',
+        table: 'app_config',
+        id: 1,
+        column: SITE_IMAGE_COLUMN[kind],
+        notFound: 'Could not load site config',
+      },
       '[removeSiteImage]'
     )
+    if (!result.success) return { success: false, error: result.error }
 
     bumpSiteConfigCache()
     return { success: true }
@@ -2251,6 +2224,8 @@ async function adminImagePorts(db: AdminDb, audit: AuditWriter): Promise<ImageUp
     mediaOrigin,
     previousR2Keys: (url) => r2KeysForUrl(url, mediaOrigin),
     liveKeys: (url) => liveKeysForUrl(url, mediaOrigin),
+    // Every scope, read fresh before finalize and again right before each delete.
+    references: () => readMediaReferenceUrls(db as unknown as ReferenceDb),
   }
 }
 
@@ -2498,41 +2473,19 @@ export async function deleteCastMember(id: string): Promise<ActionResult> {
     id = idParsed.value
     const admin = createAdminClient()
 
-    const { data: cast, error: castError } = await admin
-      .from('show_cast')
-      .select('image_url')
-      .eq('id', id)
-      .single()
-    if (castError || !cast) {
-      return {
-        success: false,
-        error: castError?.message ?? 'Cast member not found',
-      }
-    }
-
-    // R2 only; a Supabase original is never deleted (MEDIA-07).
-    const mediaDeletion = stageR2DeletionForUrl(
-      (await getWorkerEnv()).MEDIA,
-      cast.image_url,
-      getPublicMediaOrigin()
+    // The row is deleted only while its image is still the one read (compare-and-swap); the
+    // portrait goes only if no other member, show or setting still uses it. R2 only; a
+    // Supabase original is never deleted (MEDIA-07).
+    const result = await removeMediaCore(
+      {
+        db: admin,
+        media: (await getWorkerEnv()).MEDIA as unknown as DeletableBucket,
+        mediaOrigin: getPublicMediaOrigin(),
+      },
+      { kind: 'delete-row', table: 'show_cast', id, column: 'image_url', notFound: 'Cast member not found' },
+      '[deleteCastMember]'
     )
-
-    const { error } = await admin.from('show_cast').delete().eq('id', id)
-
-    if (error) {
-      const restored = await mediaDeletion?.rollback()
-      return {
-        success: false,
-        error:
-          restored === false
-            ? 'Could not delete cast member'
-            : error.message,
-      }
-    }
-
-    if (mediaDeletion && !(await mediaDeletion.commit())) {
-      console.error('[deleteCastMember] media cleanup failed')
-    }
+    if (!result.success) return { success: false, error: result.error }
 
     await logAudit({
       adminUserId: user.id,

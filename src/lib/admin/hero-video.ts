@@ -4,8 +4,19 @@
 // and the audio track, then keeps the Phase 01.1 order: write the target, strict audit row, and only
 // then commit the deletion of the previous R2 object. An audit failure restores the previous value and
 // deletes the new object. A previous Supabase Storage URL is never deleted.
+// Deferred items 21-23: slot writes are compare-and-swap on the value read before them, a key
+// live in any scope is refused before finalize, and the staged deletion of the previous object
+// is bound (in production) to stageR2Deletion, whose commit re-reads every reference.
 // No next/*, server-only or '@/' imports: node --test loads this file.
+import {
+  MEDIA_SAVE_CONFLICT,
+  readMediaReferenceUrls,
+  referencedKeySet,
+  type ReferenceDb,
+} from '../../server/media-references.ts'
 import { isFaststart, moovBytes } from '../../server/mp4-boxes.ts'
+import { deleteIfUnreferenced } from '../../server/r2-delete.ts'
+import { originalMediaKey } from '../../server/r2-keys.ts'
 import { HERO_VIDEO_MAX_BYTES, HERO_VIDEO_TOO_LARGE } from './media-guards.ts'
 import { parseHeroVariant, parseId } from './schemas.ts'
 import type { HeroVariant } from './schemas.ts'
@@ -72,9 +83,12 @@ export type HeroVideoPorts = {
   /** R2 range read of the first `maxBytes` bytes; null when the object is gone. */
   readHead(key: string, maxBytes: number): Promise<Uint8Array | null>
   media: {
-    /** R2 delete; may throw. */
+    /** R2 delete; may throw. Only for the fresh upload, which was never live. */
     delete(keys: string[]): Promise<void>
-    /** Stage the deletion of previous R2 objects: nothing is deleted before commit(). */
+    /**
+     * Stage the deletion of previous R2 objects: nothing is deleted before commit(), and
+     * commit() must keep any key still referenced anywhere (production: stageR2Deletion).
+     */
     stageDeletion(keys: string[]): Promise<StagedDeletion>
   }
   hasAudioTrack(bytes: Uint8Array): boolean
@@ -89,7 +103,39 @@ type HeroResult<T = unknown> = CoreResult<T> & { mediaCleanupFailed?: boolean }
 
 type Slot = {
   read(db: AdminDb): Promise<{ error: string } | { error: null; url: string | null; type: HeroType }>
-  write(db: AdminDb, url: string | null, type: HeroType): Promise<string | null>
+  /** Compare-and-swap: only while the url column still holds `expected`; MEDIA_SAVE_CONFLICT otherwise. */
+  write(db: AdminDb, url: string | null, type: HeroType, expected: string | null): Promise<string | null>
+}
+
+/**
+ * Update one row only while `column` still holds `expected` (IS NULL for null). 0 rows:
+ * another save landed since our read (deferred item 23).
+ */
+async function casUpdate(
+  db: AdminDb,
+  table: 'app_config' | 'shows',
+  id: string | number,
+  patch: Record<string, unknown>,
+  column: string,
+  expected: string | null
+): Promise<string | null> {
+  // Columns newer than database.types (preloader, mobile hero) are typed as one known column.
+  const c = column as 'hero_video_url'
+  const q = db
+    .from(table as 'shows')
+    .update(patch as never)
+    .eq('id', id as string)
+  const { data, error } = await (expected === null ? q.is(c, null) : q.eq(c, expected)).select('id')
+  if (error) return error.message
+  return Array.isArray(data) && data.length > 0 ? null : MEDIA_SAVE_CONFLICT
+}
+
+function referenceGuard(ports: HeroVideoPorts) {
+  return {
+    readReferences: () => readMediaReferenceUrls(ports.db as unknown as ReferenceDb),
+    mediaOrigin: ports.mediaOrigin,
+    label: '[hero-video]',
+  }
 }
 
 function heroSlot(variant: HeroVariant): Slot {
@@ -104,13 +150,15 @@ function heroSlot(variant: HeroVariant): Slot {
         type: (row[HERO_TYPE_COLUMN[variant]] ?? null) as HeroType,
       }
     },
-    async write(db, url, type) {
-      const { error } = await db
-        .from('app_config')
-        .update({ [HERO_URL_COLUMN[variant]]: url, [HERO_TYPE_COLUMN[variant]]: type } as never)
-        .eq('id', 1)
-      return error ? error.message : null
-    },
+    write: (db, url, type, expected) =>
+      casUpdate(
+        db,
+        'app_config',
+        1,
+        { [HERO_URL_COLUMN[variant]]: url, [HERO_TYPE_COLUMN[variant]]: type },
+        HERO_URL_COLUMN[variant],
+        expected
+      ),
   }
 }
 
@@ -124,13 +172,8 @@ function preloaderSlot(): Slot {
       const row = data as unknown as Record<string, string | null>
       return { error: null, url: row.preloader_video_url ?? null, type: row.preloader_video_url ? 'mp4' : null }
     },
-    async write(db, url) {
-      const { error } = await db
-        .from('app_config')
-        .update({ preloader_video_url: url } as never)
-        .eq('id', 1)
-      return error ? error.message : null
-    },
+    write: (db, url, _type, expected) =>
+      casUpdate(db, 'app_config', 1, { preloader_video_url: url }, 'preloader_video_url', expected),
   }
 }
 
@@ -146,13 +189,15 @@ function showSlot(showId: string, variant: HeroVariant): Slot {
         type: (row[HERO_TYPE_COLUMN[variant]] ?? null) as HeroType,
       }
     },
-    async write(db, url, type) {
-      const { error } = await db
-        .from('shows')
-        .update({ [HERO_URL_COLUMN[variant]]: url, [HERO_TYPE_COLUMN[variant]]: type } as never)
-        .eq('id', showId)
-      return error ? error.message : null
-    },
+    write: (db, url, type, expected) =>
+      casUpdate(
+        db,
+        'shows',
+        showId,
+        { [HERO_URL_COLUMN[variant]]: url, [HERO_TYPE_COLUMN[variant]]: type },
+        HERO_URL_COLUMN[variant],
+        expected
+      ),
   }
 }
 
@@ -226,7 +271,9 @@ async function applyVideoChange<T>(
   const staged = slot && doomed.length > 0 ? await ports.media.stageDeletion(doomed) : null
 
   if (slot) {
-    const configError = await slot.write(ports.db, input.newUrl, input.newType)
+    // Compare-and-swap on the value read above: a save that landed meanwhile wins, the staged
+    // deletion of the old (still live) object is rolled back, and only the fresh upload goes.
+    const configError = await slot.write(ports.db, input.newUrl, input.newType, previousUrl)
     if (configError) {
       const restored = await staged?.rollback()
       return withCleanup({
@@ -243,14 +290,19 @@ async function applyVideoChange<T>(
   })
   if (auditResult.error) {
     let restoreError: string | null = null
-    if (slot) restoreError = await slot.write(ports.db, previousUrl, previousType)
+    if (slot) restoreError = await slot.write(ports.db, previousUrl, previousType, input.newUrl)
     const rolledBack = await staged?.rollback()
     let error = `Could not write the audit record; the ${input.noun} was not changed.`
     if (restoreError) {
       error += ` Restoring the previous ${input.setting} setting also failed: ${restoreError}.`
     }
     if (rolledBack === false) error += ' Restoring the previous media also failed.'
-    return withCleanup({ success: false, error, wrote: slot !== null })
+    const result: HeroResult<T> = { success: false, error, wrote: slot !== null }
+    if (!slot || !newKey) return withCleanup(result)
+    // The new url was live for a moment, and stays live if the restore failed: guarded.
+    const removal = await deleteIfUnreferenced(ports.media, [newKey], referenceGuard(ports))
+    if (!removal.ok) result.mediaCleanupFailed = true
+    return result
   }
 
   const committed = await staged?.commit()
@@ -347,6 +399,13 @@ export async function saveVideoCore(
     if (current.error === null && ports.storagePathFromUrl(current.url) === key) {
       return fail(VIDEO_KEY_IS_LIVE)
     }
+  }
+  // Deferred item 22: the same file may be live in another scope (the homepage hero also set
+  // as a show video). Same rule across every scope; a failed read refuses (nothing deleted).
+  const everywhere = await readMediaReferenceUrls(ports.db as unknown as ReferenceDb)
+  if (everywhere.error !== null) return fail(everywhere.error)
+  if (referencedKeySet(everywhere.urls, ports.mediaOrigin).has(originalMediaKey(key) ?? key)) {
+    return fail(VIDEO_KEY_IS_LIVE)
   }
 
   const fin = await ports.finalize({ kind, slot: finalizeSlot, showId, userId: deps.adminUserId, key })

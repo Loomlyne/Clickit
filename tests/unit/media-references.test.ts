@@ -47,9 +47,11 @@ test('a key is matched in every url form: origin, ?v=, Supabase public url, vari
 
 test('urls inside text are found; non-media strings and other paths are not', () => {
   assert.deepEqual(referencedKeysOf(`See ${ORIGIN}/${KEY}, and more.`, ORIGIN), [KEY])
-  for (const s of ['', 'poster', 'https://x.com/a', `${ORIGIN}/other/${KEY}`, `${ORIGIN}/${KEY}/../x`, 'https://i.ytimg.com/vi/abc/hq720.jpg']) {
+  for (const s of ['', 'poster', 'https://x.com/a', `${ORIGIN}/other/${KEY}`, `${ORIGIN}/%2e%2e/${KEY}x//y`, 'https://i.ytimg.com/vi/abc/hq720.jpg']) {
     assert.deepEqual(referencedKeysOf(s, ORIGIN), [], s)
   }
+  // A url with dot segments is resolved the way a browser fetches it: it references that file.
+  assert.deepEqual(referencedKeysOf(`${ORIGIN}/${KEY}/../x.webp`, ORIGIN), [`show-artwork/shows/${SHOW}/x.webp`])
 })
 
 function world(extra: Record<string, unknown[]> = {}) {

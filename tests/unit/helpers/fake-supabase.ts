@@ -269,7 +269,8 @@ export function createFakeSupabase(initial: Tables = {}) {
         }
       }
 
-      const rows = tableRows(this.table)
+      // A read of a table that does not exist yet must not create it (snapshots compare tables).
+      const rows = this.op === 'select' ? (tables[this.table] ?? []) : tableRows(this.table)
       const hit = (r: Row) => this.filters.every((f) => matches(r, f))
 
       if (this.op === 'select') {

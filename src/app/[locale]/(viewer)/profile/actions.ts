@@ -6,8 +6,10 @@ import { finalizeImageUploadCore, type ImageUploadPorts } from '@/lib/admin/imag
 import { getPublicMediaOrigin } from '@/lib/supabase-media'
 import { requireSignedInUser } from '@/server/auth-guards'
 import { getWorkerEnv } from '@/server/cloudflare'
+import { MEDIA_SAVE_CONFLICT, readMediaReferenceUrls, type ReferenceDb } from '@/server/media-references'
 import { liveKeysForUrl, r2KeysForUrl } from '@/server/r2-keys'
 import { finalizeUploadedObject, type FinalizeBucket } from '@/server/upload-finalize'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 export async function updateProfile(data: { display_name: string }) {
@@ -54,12 +56,19 @@ export async function finalizeAvatarUpload(
     const bucket = (await getWorkerEnv()).MEDIA as unknown as FinalizeBucket
     const mediaOrigin = getPublicMediaOrigin()
 
-    const writeAvatar = async (url: string | null) => {
-      const { error } = await supabase
+    // Compare-and-swap (deferred item 23): only while avatar_url still holds what was read
+    // (two tabs saving at once); 0 rows is a conflict and nothing that was live is deleted.
+    const writeAvatar = async (url: string | null, expected: string | null) => {
+      const q = supabase
         .from('profiles')
         .update({ avatar_url: url, updated_at: new Date().toISOString() })
         .eq('id', userId)
-      return error ? error.message : null
+      const { data, error } = await (expected === null
+        ? q.is('avatar_url', null)
+        : q.eq('avatar_url', expected)
+      ).select('id')
+      if (error) return error.message
+      return Array.isArray(data) && data.length > 0 ? null : MEDIA_SAVE_CONFLICT
     }
 
     const ports: ImageUploadPorts = {
@@ -92,14 +101,18 @@ export async function finalizeAvatarUpload(
           if (error || !data) return { url: null, error: error?.message ?? 'Could not load profile' }
           return { url: data.avatar_url ?? null, error: null }
         },
-        write: (_target, url) => writeAvatar(url),
-        restore: (_target, previous) => writeAvatar(previous),
+        write: (_target, url, expected) => writeAvatar(url, expected),
+        restore: (_target, previous, expected) => writeAvatar(previous, expected),
       },
       media: { delete: (keys) => bucket.delete(keys) },
       audit: null,
       mediaOrigin,
       previousR2Keys: (url) => r2KeysForUrl(url, mediaOrigin),
       liveKeys: (url) => liveKeysForUrl(url, mediaOrigin),
+      // Read-only, service client: an avatar file may also be used by a show or the site, and
+      // only the service client sees every row. Nothing is written with it; created lazily so
+      // a failure counts as an unreadable reference (fail closed: nothing deleted).
+      references: async () => readMediaReferenceUrls(createAdminClient() as unknown as ReferenceDb),
     }
 
     const result = await finalizeImageUploadCore(ports, {

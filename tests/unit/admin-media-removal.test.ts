@@ -237,5 +237,7 @@ test('source scan: the remove actions go through removeMediaCore; no unguarded R
   assert.match(src, /stageDeletion: async \(keys\) => stageR2Deletion\(/)
   // The cron's R2 mirror delete is guarded too.
   const cron = readFileSync('src/app/api/cron/cleanup-media/route.ts', 'utf8')
-  assert.ok(/stageR2Deletion\([\s\S]*?readReferences/.test(cron), 'cron R2 delete must pass a guard')
+  assert.ok(cron.includes('readReferences: () => readMediaReferenceUrls('), 'cron must build a reference guard')
+  assert.match(cron, /stageR2Deletion\([^;]*?,\s*guard\s*\)/, 'cron R2 delete must pass the guard')
+  assert.ok(cron.includes('findLiveReferences('), 'cron orphans are re-checked against every reference')
 })

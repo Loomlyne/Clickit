@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { cronAuthOk } from '@/server/cron-auth'
 import { getWorkerEnv } from '@/server/cloudflare'
-import { stageR2Deletion } from '@/server/r2-delete'
+import { stageR2Deletion, type MediaDeleteGuard } from '@/server/r2-delete'
+import { findLiveReferences, readMediaReferenceUrls, type ReferenceDb } from '@/server/media-references'
+import { getPublicMediaOrigin } from '@/lib/supabase-media'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { supabaseCleanupEnabled } from '@/server/scheduled'
 
@@ -231,11 +233,33 @@ async function runCleanup() {
   let videoDeleted = 0
   const errors: string[] = []
 
+  // Step 1 only looked at shows and cast. A file can also be live in the site settings,
+  // another table or a profile (deferred item 22), so every orphan is re-checked against
+  // every reference right before deletion; a failed read deletes nothing.
+  const guard: MediaDeleteGuard = {
+    readReferences: () => readMediaReferenceUrls(admin as unknown as ReferenceDb),
+    mediaOrigin: getPublicMediaOrigin(),
+    label: '[cron/cleanup-media]',
+  }
+
   async function deleteOrphans(
     label: 'artwork' | 'video',
     bucket: typeof SHOW_ARTWORK_BUCKET | typeof SITE_ASSETS_BUCKET,
-    paths: string[]
+    candidates: string[]
   ) {
+    if (candidates.length === 0) return 0
+
+    const refs = await findLiveReferences(
+      candidates.map((path) => `${bucket}/${path}`),
+      guard.readReferences,
+      guard.mediaOrigin
+    )
+    if (refs.error !== null) {
+      errors.push(`${label}: could not read media references; nothing deleted`)
+      return 0
+    }
+    const live = new Set(refs.live)
+    const paths = candidates.filter((path) => !live.has(`${bucket}/${path}`))
     if (paths.length === 0) return 0
 
     // Supabase original first, then its R2 mirror and variants by key (the MEDIA binding;
@@ -249,7 +273,8 @@ async function runCleanup() {
 
     const r2 = stageR2Deletion(
       (await getWorkerEnv()).MEDIA,
-      paths.map((path) => `${bucket}/${path}`)
+      paths.map((path) => `${bucket}/${path}`),
+      guard
     )
     if (!(await r2.commit())) {
       errors.push(`${label}: R2 mirror delete failed`)

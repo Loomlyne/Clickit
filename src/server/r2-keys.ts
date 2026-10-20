@@ -7,6 +7,18 @@ import { VARIANT_WIDTHS } from './upload-kinds.ts'
 
 const KEY_RE = /^(?:show-artwork|site-assets|avatars)\/[A-Za-z0-9/_.-]+$/
 
+const VARIANT_PREFIX_RE = /^_v\/\d+\/(?:webp|avif)\/(.+)$/
+
+/**
+ * The original media key a path stands for: the key itself, or for a derived variant
+ * (`_v/<w>/<webp|avif>/<key>`) the key it was made from. null when it is not one of ours.
+ */
+export function originalMediaKey(path: string): string | null {
+  const key = VARIANT_PREFIX_RE.exec(path)?.[1] ?? path
+  if (!KEY_RE.test(key) || key.includes('..') || key.includes('//')) return null
+  return key
+}
+
 /** The R2 key for a url on `origin`, or null. Query string and fragment are ignored. */
 export function r2KeyFromUrl(url: string | null | undefined, origin: string | null): string | null {
   if (!url || !origin) return null
