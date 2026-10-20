@@ -18,6 +18,7 @@ import {
 } from '@/lib/admin/show-writes'
 import {
   categoryOrderSchema,
+  commitImportSchema,
   episodeSchema,
   formatZodError,
   parseHeroVariant,
@@ -45,6 +46,24 @@ import {
   deleteEpisodePermanentlyCore,
   reorderEpisodeCore,
 } from '@/lib/admin/episode-lifecycle'
+import {
+  commitImportCore,
+  previewPlaylistPageCore,
+  type ImportData,
+  type PreviewPage,
+  type YouTubeCoreResult,
+} from '@/lib/admin/youtube-import'
+import {
+  verifyMessage,
+  verifyVideoCore,
+  type DuplicateParams,
+  type VerifyOptions,
+  type VerifyOutcome,
+  type YouTubeMeta,
+} from '@/lib/admin/youtube-verify'
+import type { AdminDb } from '@/lib/admin/ports'
+import type { YouTubeErrorCode } from '@/lib/youtube-errors'
+import { getServerYouTubeClient } from '@/server/youtube-service'
 import {
   planShowScheduleCore,
   applyShowScheduleCore,
@@ -195,6 +214,45 @@ const adminEnv: AdminActionEnv = {
   createDb: createAdminClient,
   audit: logAuditStrict,
   logError: (label, err) => console.error(label, err),
+}
+
+// TODO(phase-5): swap this for requireAdmin() (admins table + TOTP); every YouTube action uses only this function
+const requireAdminForYouTube = (): Promise<{ id: string }> => assertAdmin()
+
+const youtubeAdminEnv: AdminActionEnv = { ...adminEnv, assertAdmin: requireAdminForYouTube }
+
+/** A YouTube refusal the UI translates with YOUTUBE_ERROR_MESSAGE_KEYS. */
+type YouTubeRefusal = { code: YouTubeErrorCode; params?: DuplicateParams }
+
+/** Phase 6 action result: data on success, data.code (and params) on a refusal. */
+export type YouTubeActionResult<T> =
+  | { success: true; data: T; error?: undefined; wrote?: boolean }
+  | { success: false; error: string; data?: YouTubeRefusal; wrote?: boolean }
+
+/** Moves a core's top-level YouTube code into data.code for the UI. */
+function toYouTubeResult<T>(r: YouTubeCoreResult<T>, fallbackError: string): YouTubeActionResult<T> {
+  if (r.success) return { success: true, data: r.data as T, wrote: r.wrote }
+  return {
+    success: false,
+    error: r.error ?? fallbackError,
+    wrote: r.wrote,
+    ...(r.code ? { data: { code: r.code } } : {}),
+  }
+}
+
+/**
+ * The server video check handed to the episode cores (YT-03). The Vault key is
+ * read only when a link actually needs checking; a missing key is passed as a
+ * null client, so the core answers key_missing (fail closed).
+ */
+function serverVideoVerifier(db: AdminDb, excludeEpisodeId?: string) {
+  return async (raw: string, opts: VerifyOptions): Promise<VerifyOutcome> => {
+    const yt = await getServerYouTubeClient()
+    return verifyVideoCore(db, 'missing' in yt ? null : yt.client, raw, {
+      ...opts,
+      excludeEpisodeId: opts.excludeEpisodeId ?? excludeEpisodeId,
+    })
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -832,7 +890,12 @@ export async function createEpisode(
     (ctx) =>
       createEpisodeCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        {
+          audit: ctx.audit,
+          adminUserId: ctx.adminUserId,
+          fillArabic,
+          verifyVideo: serverVideoVerifier(ctx.db),
+        },
         data
       ),
     {
@@ -855,7 +918,12 @@ export async function updateEpisode(
     (ctx) =>
       updateEpisodeCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        {
+          audit: ctx.audit,
+          adminUserId: ctx.adminUserId,
+          fillArabic,
+          verifyVideo: serverVideoVerifier(ctx.db, id),
+        },
         id,
         data
       ),
@@ -958,6 +1026,118 @@ export async function reorderEpisode(
       },
     }
   )
+}
+
+// ---------------------------------------------------------------------------
+// YouTube import and single-link fetch (Phase 6)
+// ---------------------------------------------------------------------------
+
+export type { PreviewPage, PreviewRow, ImportData } from '@/lib/admin/youtube-import'
+export type { YouTubeMeta } from '@/lib/admin/youtube-verify'
+
+/**
+ * Read one preview page of a playlist (at most 4 pages of 50). Writes nothing.
+ * The client sends the link or the playlist id and page token; the core
+ * re-parses everything.
+ */
+export async function previewPlaylistPage(input: {
+  showId: string
+  url?: string
+  playlistId?: string
+  pageToken?: string
+  page: number
+}): Promise<YouTubeActionResult<PreviewPage>> {
+  try {
+    await requireAdminForYouTube()
+    const yt = await getServerYouTubeClient()
+    if ('missing' in yt) {
+      return { success: false, error: 'The YouTube key is not set.', data: { code: 'key_missing' } }
+    }
+    const result = await previewPlaylistPageCore(createAdminClient(), yt.client, input)
+    return toYouTubeResult(result, 'Failed to read the playlist')
+  } catch (err) {
+    // The error only: never the input link (D-20, T-06-51).
+    console.error('[admin/actions] playlist preview failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to read the playlist',
+    }
+  }
+}
+
+/**
+ * Import the ticked videos as draft episodes. The server re-fetches every id
+ * from YouTube and refuses the whole import if anything changed since the preview.
+ */
+export async function commitImport(input: {
+  showId: string
+  playlistId: string
+  videoIds: string[]
+  target: z.input<typeof commitImportSchema>['target']
+}): Promise<YouTubeActionResult<ImportData>> {
+  return runAdminAction(
+    youtubeAdminEnv,
+    async (ctx): Promise<YouTubeActionResult<ImportData>> => {
+      const yt = await getServerYouTubeClient()
+      if ('missing' in yt) {
+        return {
+          success: false,
+          wrote: false,
+          error: 'The YouTube key is not set.',
+          data: { code: 'key_missing' },
+        }
+      }
+      const result = await commitImportCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, youtube: yt.client, now: new Date() },
+        input
+      )
+      return toYouTubeResult(result, 'Import failed')
+    },
+    {
+      fallbackError: 'Import failed',
+      revalidate: (r) => {
+        revalidateShowPage(r?.success ? r : undefined, input?.showId)
+        updateTag('episodes')
+        updateTag('shows')
+      },
+    }
+  )
+}
+
+/**
+ * Check one video link and return its YouTube metadata (title, description,
+ * channel, thumbnail, length). Writes nothing. Replaces GET /api/youtube-meta.
+ * Shorts pass forShort: true (no duplicate check against episodes).
+ */
+export async function fetchYouTubeMeta(
+  url: string,
+  opts?: { forShort?: boolean }
+): Promise<YouTubeActionResult<YouTubeMeta>> {
+  try {
+    await requireAdminForYouTube()
+    const yt = await getServerYouTubeClient()
+    const outcome = await verifyVideoCore(
+      createAdminClient(),
+      'missing' in yt ? null : yt.client,
+      url,
+      { checkDuplicate: !opts?.forShort }
+    )
+    if (outcome.ok) return { success: true, data: outcome.meta }
+    return {
+      success: false,
+      error: verifyMessage(outcome),
+      data: outcome.params
+        ? { code: outcome.code, params: outcome.params }
+        : { code: outcome.code },
+    }
+  } catch (err) {
+    console.error('[admin/actions] youtube meta fetch failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to check the video',
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
