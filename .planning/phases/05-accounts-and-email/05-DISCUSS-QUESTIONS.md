@@ -104,7 +104,7 @@ Example: the sign-in code email (Arabic version shown too).
 - **A (recommended).** Black header with the logo, white body, yellow button, black text. Reads well in every mail app, including phones in dark mode.
 - **B.** Fully black like the site, yellow code and button.
 
-If the Phase 4 design canvas signs an email look first, the canvas wins and this question is skipped. Changes if not A: plan 05-08.
+**Same question as Phase 4 Q7**, where the Phase 4 session recommends B (fully dark). Please answer once for both phases. Why A here: Gmail and Outlook on phones recolour dark emails in dark mode unevenly, while a white body with a black header stays readable everywhere. Either way: table layout, 600px, system font in mail apps (LBC cannot load there), logo as a hosted image. Changes if not A: plan 05-08.
 
 ### Q13. Where the admin copy of a support message goes
 Example: a viewer writes "Episode 4 won't play".
