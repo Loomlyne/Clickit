@@ -18,7 +18,7 @@ Requirements: SAFE-01..05. Vercel keeps serving; no live write happens in this p
 6. 14 existing migration files contain `drop`/`truncate`/`delete` (mostly `drop policy if exists` before a re-create). `supabase/config.toml` points `db.seed` at `./seed.sql`, which does not exist.
 7. `gate:local` = lint + unit tests + `next build` (build includes the TypeScript check).
 8. Admin check: `private.is_admin()` is created in `20260724115941_restrict_public_episode_access.sql`, which drops `public.is_admin()`. Whether live has it is unverified.
-9. A read-only path to live exists: the Supabase CLI on this Mac is logged in and sees project `lajguozmtissnnfccmej` (Clickit Story, ap-southeast-1, ACTIVE_HEALTHY). The Supabase Management API has a read-only SQL endpoint that runs as a read-only database role. Not used yet.
+9. A read-only path to live exists: the Supabase CLI on this Mac is logged in and sees project `lajguozmtissnnfccmej` (Clickit Story, ap-southeast-1, ACTIVE_HEALTHY). The Supabase Management API has a read-only SQL endpoint that runs as a read-only database role. Used for the audit (see Q6).
 10. SAFE-05: `dig NS clickitstory.ae` → `jen.ns.cloudflare.com`, `brett.ns.cloudflare.com` only. ignat/nataly are gone; SAFE-05 closes by the NS move with this dig as evidence. No question.
 
 ## Questions (one decision each, recommended option first)
@@ -51,16 +51,14 @@ This needs a GitHub ruleset on `main` (a repo setting: one numbered step for you
 
 ### Q5. What happens to the fake-data migrations?
 
-The files stay with their versions (deleting a file that live already applied breaks `db push`); their bodies become no-ops. Live rows are not touched in this phase.
+The files stay with their versions (deleting a file that live already applied breaks `db push`); their bodies become no-ops. Live rows are not touched in this phase. Live today: 0 fake shorts, 0 fake cast rows, 3 shows with picsum posters (audit section 4).
 - **A (recommended):** Fake shows, shorts and cast move to `supabase/seed.sql` (runs only on a local `supabase db reset`, never on live). The `app_config` row insert stays in the migration as "insert if missing". The legal/FAQ migration (real copy) is left as is. Example: a fresh local stack still gets 15 demo shows; live can never get them again from a migration.
 - B: Fake data is removed from the repo entirely; local stacks start empty except `app_config`.
 - C: Also neutralise the legal/FAQ migration (real copy then lives only in the live DB and admin UI).
 
-### Q6. How is the live audit read (SAFE-04)?
+### Q6. (closed) How is the live audit read?
 
-- **A (recommended):** This session runs the audit SELECTs itself through the Supabase Management API **read-only** SQL endpoint (read-only database role, cannot write), using the CLI login already on this Mac. Plan and backups are read from the same API (GET only). Output is saved to `01-LIVE-AUDIT.md`. Example: `select version from supabase_migrations.schema_migrations order by 1` → compared to the 58 files.
-- B: This session writes the SQL file; the controller or you run it in the Supabase dashboard SQL editor and paste the results back.
-- C: You check plan and backups in the dashboard (one numbered step); the SQL part goes as in A.
+Done 2026-10-20 13:18 CET after Koss said "get it to work": SELECT-only via `supabase db query --linked` (CLI login on the Mac). Result in `01-LIVE-AUDIT.md`: live history matches the 58 files exactly; RLS uses `private.is_admin()`; no backups listed and PITR off. Plan tier still needs one [OWNER] dashboard look.
 
 ## Not asked (decided by the plan, within the rules)
 
