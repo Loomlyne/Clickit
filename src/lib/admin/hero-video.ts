@@ -44,6 +44,7 @@ export const VIDEO_NOT_FASTSTART =
   'Video is not fast-start. Export it with fast start (moov at the beginning) and upload again.'
 export const VIDEO_NO_AUDIO = 'This MP4 has no audio track. Re-export with audio enabled (AAC) and upload again.'
 export const MEDIA_HOST_NOT_READY = 'Media host is not ready'
+export const VIDEO_KEY_IS_LIVE = 'This file is already the live video; upload a new file instead.'
 
 type HeroType = 'mp4' | 'youtube' | null
 type StagedDeletion = { commit(): Promise<boolean>; rollback(): Promise<boolean> }
@@ -310,6 +311,23 @@ export async function saveVideoCore(
 
   // Before anything is touched: a url we cannot serve must never reach the database.
   if (!ports.mediaOrigin) return fail(MEDIA_HOST_NOT_READY)
+
+  // Phase 01.1 (PR #23 review): never touch the file that is already live. A re-sent live
+  // key would otherwise be deleted by a refusal below or by a failed write or audit.
+  // Checked before finalize, which deletes what it refuses. A read error is left to the
+  // normal flow (it fails before any write).
+  const liveSlots: Slot[] =
+    target === 'preloader'
+      ? [preloaderSlot()]
+      : showId !== null
+        ? [showSlot(showId, 'desktop'), showSlot(showId, 'mobile')]
+        : [heroSlot('desktop'), heroSlot('mobile')]
+  for (const live of liveSlots) {
+    const current = await live.read(ports.db)
+    if (current.error === null && ports.storagePathFromUrl(current.url) === key) {
+      return fail(VIDEO_KEY_IS_LIVE)
+    }
+  }
 
   const fin = await ports.finalize({ kind, slot: finalizeSlot, showId, userId: deps.adminUserId, key })
   // Finalize already removed what it could prove to be ours; nothing was written.

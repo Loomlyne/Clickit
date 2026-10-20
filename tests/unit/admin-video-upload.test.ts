@@ -79,7 +79,8 @@ test('not fast-start: exact message, object deleted, no db call, no audit', asyn
   assert.ok(!w.log.includes('update'))
   assert.deepEqual(w.fake.snapshot(), before)
   assert.equal(w.fake.auditRows().length, 0)
-  assert.equal(w.fake.calls.length, 0)
+  // Only the live-key read (01.1) runs; nothing is written.
+  assert.deepEqual(w.fake.calls.filter((c) => c.op !== 'select'), [])
 })
 
 test('fast-start cannot be proven (no moov or mdat in the head): refused like not fast-start', async () => {
@@ -105,7 +106,8 @@ test('size over 50 MB (head): 01.1 message, object deleted, nothing read or writ
   assert.equal(r.error, 'Video must be under 50MB')
   assert.deepEqual(w.calls.delete, [[NEW_KEY]])
   assert.equal(w.calls.readHead.length, 0)
-  assert.equal(w.fake.calls.length, 0)
+  // Only the live-key read (01.1) runs; nothing is written.
+  assert.deepEqual(w.fake.calls.filter((c) => c.op !== 'select'), [])
 })
 
 test('size exactly 50 MB is accepted; a preloader over 20 MB is refused with the 20MB message', async () => {
@@ -135,7 +137,8 @@ test('range read returns nothing: refused and the object removed', async () => {
   assert.equal(r.success, false)
   assert.equal(r.error, 'Could not verify uploaded video')
   assert.deepEqual(w.calls.delete, [[NEW_KEY]])
-  assert.equal(w.fake.calls.length, 0)
+  // Only the live-key read (01.1) runs; nothing is written.
+  assert.deepEqual(w.fake.calls.filter((c) => c.op !== 'select'), [])
 })
 
 test('hero without audio is refused (01.1 message); preloader and show do not need audio', async () => {
@@ -191,7 +194,8 @@ test('a key that is not the shape for the target is refused and nothing is delet
   })
   assert.equal(other.error, 'Invalid upload key')
   assert.deepEqual(w.calls.delete, [])
-  assert.equal(w.fake.calls.length, 0)
+  // Only the live-key read (01.1) runs; nothing is written.
+  assert.deepEqual(w.fake.calls.filter((c) => c.op !== 'select'), [])
 })
 
 test('invalid target, key and variant touch nothing', async () => {
@@ -338,11 +342,46 @@ test('show that does not exist: refused, new object deleted', async () => {
   assert.equal(w.fake.auditRows().length, 0)
 })
 
-test('same key as the stored one is never staged for deletion', async () => {
-  const w = videoWorld({ heroUrl: `${ORIGIN}/${NEW_KEY}` })
-  const r = await saveVideoCore(w.ports, w.deps, { key: NEW_KEY, target: 'hero-desktop' })
-  assert.equal(r.success, true)
+// Phase 01.1 review (PR #23, 974922f): a key that is already live is refused before
+// finalize, so no refusal, failed write or failed audit can delete the live file.
+const LIVE_MESSAGE = 'This file is already the live video; upload a new file instead.'
+function assertUntouched(w: ReturnType<typeof videoWorld>) {
+  assert.deepEqual(w.calls.finalize, [])
+  assert.deepEqual(w.calls.delete, [])
   assert.deepEqual(w.calls.stage, [])
+  assert.ok(!w.log.includes('update'))
+  assert.equal(w.fake.auditRows().length, 0)
+}
+
+test('hero: the live key (either variant) is refused and never touched', async () => {
+  const w = videoWorld({ heroUrl: `${ORIGIN}/${NEW_KEY}?v=1` })
+  const r = await saveVideoCore(w.ports, w.deps, { key: NEW_KEY, target: 'hero-desktop' })
+  assert.deepEqual(r, { success: false, error: LIVE_MESSAGE, wrote: false })
+  assertUntouched(w)
+  assert.equal(appConfig(w).hero_video_url, `${ORIGIN}/${NEW_KEY}?v=1`)
+})
+
+test('preloader: the live key is refused and never touched', async () => {
+  const w = videoWorld({ preloaderUrl: `${ORIGIN}/${NEW_PRELOADER_KEY}` })
+  const r = await saveVideoCore(w.ports, w.deps, { key: NEW_PRELOADER_KEY, target: 'preloader' })
+  assert.deepEqual(r, { success: false, error: LIVE_MESSAGE, wrote: false })
+  assertUntouched(w)
+})
+
+test('show (commit true and commit false): the live key is refused and never touched', async () => {
+  for (const commit of [true, false]) {
+    const w = videoWorld({ showUrl: `${ORIGIN}/${NEW_SHOW_KEY}` })
+    const r = await saveVideoCore(w.ports, w.deps, {
+      key: NEW_SHOW_KEY,
+      target: 'show',
+      showId: SHOW_ID,
+      variant: 'desktop',
+      commit,
+    })
+    assert.deepEqual(r, { success: false, error: LIVE_MESSAGE, wrote: false })
+    assertUntouched(w)
+    assert.equal(showRow(w).hero_video_url, `${ORIGIN}/${NEW_SHOW_KEY}`)
+  }
 })
 
 // ---- source scan of the three finalize actions (plan 02-16, task 2) ----
