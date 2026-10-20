@@ -123,6 +123,7 @@ export function createFakeSupabase(initial: Tables = {}) {
     private wantCount = false
     private orderBy: { col: string; asc: boolean } | null = null
     private max: number | null = null
+    private offset = 0
     private mode: 'many' | 'single' | 'maybe' = 'many'
 
     private table: string
@@ -189,6 +190,12 @@ export function createFakeSupabase(initial: Tables = {}) {
       this.max = n
       return this
     }
+    /** PostgREST range: inclusive row offsets, applied after order (count stays the full match). */
+    range(from: number, to: number) {
+      this.offset = from
+      this.max = to - from + 1
+      return this
+    }
     single() {
       this.mode = 'single'
       return this
@@ -218,7 +225,7 @@ export function createFakeSupabase(initial: Tables = {}) {
           return (x > y ? 1 : -1) * (asc ? 1 : -1)
         })
       }
-      if (this.max != null) out = out.slice(0, this.max)
+      if (this.max != null) out = out.slice(this.offset, this.offset + this.max)
       out = clone(out)
       if (this.mode === 'single') {
         if (out.length !== 1)

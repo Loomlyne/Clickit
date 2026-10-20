@@ -1,6 +1,8 @@
 /* Shared fake world for the video finalize core tests (plan 02-16). Test-only. */
 import { keyMatchesKind } from '../../../src/server/upload-kinds.ts'
 import type { HeroVideoPorts } from '../../../src/lib/admin/hero-video.ts'
+import { readMediaReferenceUrls, type ReferenceDb } from '../../../src/server/media-references.ts'
+import { stageR2Deletion } from '../../../src/server/r2-delete.ts'
 import { createFakeSupabase } from './fake-supabase.ts'
 
 export const MB = 1024 * 1024
@@ -53,6 +55,10 @@ export type WorldOpts = {
   preloaderUrl?: string | null
   showUrl?: string | null
   showMobileUrl?: string | null
+  /** Stage previous-object deletions through the production guarded stageR2Deletion (re-reads every reference at commit). */
+  realStage?: boolean
+  /** Runs once, right before the first update of app_config or shows: another admin saving first. */
+  beforeWrite?: (tables: Record<string, Array<Record<string, unknown>>>) => void
 }
 
 export function videoWorld(opts: WorldOpts = {}) {
@@ -88,6 +94,7 @@ export function videoWorld(opts: WorldOpts = {}) {
     commit: 0,
     rollback: 0,
   }
+  let beforeWrite = opts.beforeWrite
   const db = {
     from: (t: string) => {
       const b = fake.client.from(t)
@@ -95,6 +102,10 @@ export function videoWorld(opts: WorldOpts = {}) {
         const orig = b.update.bind(b)
         b.update = (p: unknown) => {
           log.push('update')
+          if (beforeWrite) {
+            beforeWrite(fake.tables)
+            beforeWrite = undefined
+          }
           return orig(p)
         }
       }
@@ -135,6 +146,25 @@ export function videoWorld(opts: WorldOpts = {}) {
       stageDeletion: async (keys) => {
         log.push('stage')
         calls.stage.push(keys)
+        if (opts.realStage) {
+          const staged = stageR2Deletion({ delete: (k) => ports.media.delete(Array.isArray(k) ? k : [k]) }, keys, {
+            readReferences: () => readMediaReferenceUrls(fake.client as ReferenceDb),
+            mediaOrigin: ORIGIN,
+            label: '[video-world]',
+          })
+          return {
+            commit: async () => {
+              log.push('commit')
+              calls.commit += 1
+              return staged.commit()
+            },
+            rollback: async () => {
+              log.push('rollback')
+              calls.rollback += 1
+              return staged.rollback()
+            },
+          }
+        }
         return {
           commit: async () => {
             log.push('commit')

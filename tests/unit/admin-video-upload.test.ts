@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { saveVideoCore } from '../../src/lib/admin/hero-video.ts'
+import { removeHeroVideoCore, saveVideoCore, setHeroVideoUrlCore } from '../../src/lib/admin/hero-video.ts'
+import { MEDIA_SAVE_CONFLICT } from '../../src/server/media-references.ts'
 import {
   MB,
   NEW_KEY,
@@ -429,6 +430,128 @@ test('show: a different key in the other slot does not stop the replaced key goi
   })
   assert.equal(r.success, true)
   assert.deepEqual(w.calls.stage, [[OLD_KEY]])
+})
+
+// ---- deferred items 21-23: cross-scope references, guarded deletes, compare-and-swap ----
+
+const quiet = async <T>(fn: () => Promise<T>): Promise<T> => {
+  const err = console.error
+  const warn = console.warn
+  console.error = () => {}
+  console.warn = () => {}
+  try {
+    return await fn()
+  } finally {
+    console.error = err
+    console.warn = warn
+  }
+}
+const deletedKeys = (w: ReturnType<typeof videoWorld>) => w.calls.delete.flat()
+
+test('cross-scope share kept on replace: the old homepage hero video is also a show hero video', async () => {
+  const w = videoWorld({ realStage: true, showUrl: `${OLD_URL}?v=2` })
+  const r = await quiet(() => saveVideoCore(w.ports, w.deps, { key: NEW_KEY, target: 'hero-desktop' }))
+  assert.equal(r.success, true)
+  assert.equal(r.mediaCleanupFailed, undefined)
+  assert.equal(appConfig(w).hero_video_url, `${ORIGIN}/${NEW_KEY}`)
+  assert.ok(!deletedKeys(w).includes(OLD_KEY), 'the show still plays the old file')
+})
+
+test('guarded replace with no other reference deletes the old key', async () => {
+  const w = videoWorld({ realStage: true })
+  const r = await saveVideoCore(w.ports, w.deps, { key: NEW_KEY, target: 'hero-desktop' })
+  assert.equal(r.success, true)
+  assert.ok(deletedKeys(w).includes(OLD_KEY))
+})
+
+test('cross-scope share kept on remove: the hero video is also the preloader', async () => {
+  const w = videoWorld({ realStage: true, preloaderUrl: OLD_URL })
+  const r = await quiet(() => removeHeroVideoCore(w.ports, w.deps, { variant: 'desktop' }))
+  assert.equal(r.success, true)
+  assert.equal(appConfig(w).hero_video_url, null)
+  assert.ok(!deletedKeys(w).includes(OLD_KEY))
+})
+
+test('remove: a failed reference read at commit deletes nothing and flags the cleanup', async () => {
+  const w = videoWorld({ realStage: true })
+  // Reads: target slot and sibling (app_config); then the commit-time reference read (shows first fails).
+  w.fake.failOn({ table: 'shows', op: 'select', nth: 1 })
+  const r = await quiet(() => removeHeroVideoCore(w.ports, w.deps, { variant: 'desktop' }))
+  assert.equal(r.success, true)
+  assert.equal(r.mediaCleanupFailed, true)
+  assert.deepEqual(w.calls.delete, [])
+})
+
+test('a key live in ANOTHER scope is refused before finalize (a refusal would delete it)', async () => {
+  // NEW_KEY (a hero desktop key) was pasted as a show hero video; re-sending it for the hero must not touch it.
+  const w = videoWorld({ showUrl: `${ORIGIN}/${NEW_KEY}`, headSize: 60 * MB })
+  const r = await saveVideoCore(w.ports, w.deps, { key: NEW_KEY, target: 'hero-desktop' })
+  assert.deepEqual(r, { success: false, error: LIVE_MESSAGE, wrote: false })
+  assert.deepEqual(w.calls.finalize, [])
+  assert.deepEqual(w.calls.delete, [])
+  assert.equal(showRow(w).hero_video_url, `${ORIGIN}/${NEW_KEY}`)
+})
+
+test('the cross-scope reference read fails before finalize: refused, nothing finalized or deleted', async () => {
+  const w = videoWorld()
+  w.fake.failOn({ table: 'profiles', op: 'select', nth: 1 })
+  const r = await saveVideoCore(w.ports, w.deps, { key: NEW_KEY, target: 'hero-desktop' })
+  assert.equal(r.success, false)
+  assert.equal(r.wrote, false)
+  assert.deepEqual(w.calls.finalize, [])
+  assert.deepEqual(w.calls.delete, [])
+  assert.equal(appConfig(w).hero_video_url, OLD_URL)
+})
+
+test('CAS conflict on save: another admin saved first; their value stays, the live key is not deleted, the fresh upload is', async () => {
+  const theirs = `${ORIGIN}/site-assets/hero/video-1700000005555-cccccccc.mp4`
+  const w = videoWorld({
+    beforeWrite: (t) => {
+      t.app_config![0]!.hero_video_url = theirs
+    },
+  })
+  const r = await saveVideoCore(w.ports, w.deps, { key: NEW_KEY, target: 'hero-desktop' })
+  assert.deepEqual(r, { success: false, error: MEDIA_SAVE_CONFLICT, wrote: false })
+  assert.equal(appConfig(w).hero_video_url, theirs)
+  assert.deepEqual(w.calls.delete, [[NEW_KEY]])
+  assert.equal(w.calls.commit, 0)
+  assert.equal(w.fake.auditRows().length, 0)
+})
+
+test('CAS conflict on remove and on a YouTube url: nothing changes, nothing is deleted', async () => {
+  for (const run of [
+    (w: ReturnType<typeof videoWorld>) => removeHeroVideoCore(w.ports, w.deps, { variant: 'desktop' }),
+    (w: ReturnType<typeof videoWorld>) =>
+      setHeroVideoUrlCore(w.ports, w.deps, { canonicalUrl: 'https://www.youtube.com/watch?v=abcdefghijk', variant: 'desktop' }),
+  ]) {
+    const theirs = `${ORIGIN}/site-assets/hero/video-1700000005555-cccccccc.mp4`
+    const w = videoWorld({ beforeWrite: (t) => void (t.app_config![0]!.hero_video_url = theirs) })
+    const r = await run(w)
+    assert.equal(r.success, false)
+    assert.equal(r.error, MEDIA_SAVE_CONFLICT)
+    assert.equal(appConfig(w).hero_video_url, theirs)
+    assert.deepEqual(w.calls.delete, [])
+    assert.equal(w.calls.commit, 0)
+  }
+})
+
+test('CAS conflict on a show video save (commit true)', async () => {
+  const w = videoWorld({ showUrl: OLD_URL, beforeWrite: (t) => void (t.shows![0]!.hero_video_url = null) })
+  const r = await saveVideoCore(w.ports, w.deps, { key: NEW_SHOW_KEY, target: 'show', showId: SHOW_ID, variant: 'desktop' })
+  assert.equal(r.error, MEDIA_SAVE_CONFLICT)
+  assert.equal(showRow(w).hero_video_url, null)
+  assert.deepEqual(w.calls.delete, [[NEW_SHOW_KEY]])
+})
+
+test('audit failure with a failed restore: the new video is KEPT because the row still plays it', async () => {
+  const w = videoWorld()
+  w.fake.failOn({ table: 'admin_audit_log', op: 'insert', nth: 1 })
+  w.fake.failOn({ table: 'app_config', op: 'update', nth: 2 })
+  const r = await quiet(() => saveVideoCore(w.ports, w.deps, { key: NEW_KEY, target: 'hero-desktop' }))
+  assert.equal(r.success, false)
+  assert.match(r.error!, /Restoring the previous hero setting also failed/)
+  assert.equal(appConfig(w).hero_video_url, `${ORIGIN}/${NEW_KEY}`)
+  assert.deepEqual(w.calls.delete, [])
 })
 
 // ---- source scan of the three finalize actions (plan 02-16, task 2) ----

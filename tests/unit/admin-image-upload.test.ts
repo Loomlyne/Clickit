@@ -7,6 +7,7 @@ import {
   type ImageUploadPorts,
   type LiveScope,
 } from '../../src/lib/admin/image-upload.ts'
+import { MEDIA_SAVE_CONFLICT } from '../../src/server/media-references.ts'
 
 const ORIGIN = 'https://media.test'
 const SHOW = '3f2504e0-4f89-41d3-9a0c-0305e82c3301'
@@ -35,6 +36,12 @@ type Opts = {
   /** Other live urls in the scope besides the target's current value. */
   live?: Array<string | null>
   liveError?: string
+  /** Live urls in OTHER scopes (site OG image, another show, a profile...). */
+  elsewhere?: string[]
+  /** The cross-scope reference read fails: 'always', or only once the target was written. */
+  referencesError?: 'always' | 'after-write'
+  /** Another admin saved this value into the target between our read and our write. */
+  concurrent?: string | null
 }
 
 function setup(opts: Opts = {}) {
@@ -46,6 +53,7 @@ function setup(opts: Opts = {}) {
   const liveScopes: LiveScope[] = []
   let value: string | null = 'previous' in opts ? (opts.previous ?? null) : OLD_R2_URL
   let deleteCalls = 0
+  let written = false
 
   const ports: ImageUploadPorts = {
     finalize: async (input) => {
@@ -65,16 +73,21 @@ function setup(opts: Opts = {}) {
         log.push('read')
         return opts.readError ? { error: opts.readError, url: null } : { error: null, url: value }
       },
-      write: async (target, url) => {
+      write: async (target, url, expected) => {
         log.push('write')
         if (opts.writeError) return opts.writeError
+        if ('concurrent' in opts) value = opts.concurrent ?? null
+        // Compare-and-swap, as the real port: only while the column still holds what we read.
+        if (value !== expected) return MEDIA_SAVE_CONFLICT
         writes.push({ target, url })
         value = url
+        written = true
         return null
       },
-      restore: async (target, previous) => {
+      restore: async (target, previous, expected) => {
         log.push('restore')
         if (opts.restoreError) return opts.restoreError
+        if (value !== expected) return MEDIA_SAVE_CONFLICT
         writes.push({ target, url: previous })
         value = previous
         return null
@@ -98,6 +111,14 @@ function setup(opts: Opts = {}) {
           return { error: opts.auditError ?? null }
         },
     mediaOrigin: 'origin' in opts ? (opts.origin ?? null) : ORIGIN,
+    // Every live url in every scope, read fresh each time (the target's value included).
+    references: async () => {
+      if (opts.referencesError === 'always' || (opts.referencesError === 'after-write' && written)) {
+        return { urls: [], error: 'refs down' }
+      }
+      const urls = [value, ...(opts.live ?? []), ...(opts.elsewhere ?? [])].filter((u): u is string => !!u)
+      return { urls, error: null }
+    },
     previousR2Keys: (url) => {
       if (!url || !url.startsWith(`${ORIGIN}/`)) return []
       const k = url.slice(ORIGIN.length + 1).split('?')[0]!
@@ -294,12 +315,15 @@ test('strict audit failure: previous value restored, new key and variants delete
   assert.deepEqual(w.log, ['live', 'finalize', 'read', 'write', 'audit', 'restore', 'delete'])
 })
 
-test('audit failure and restore failure: both reported, new object still removed', async () => {
+test('audit failure and restore failure: both reported, the new object is KEPT because the row still shows it', async () => {
+  // Deferred item 21: before, the new object was deleted here while the column still held
+  // its url (a broken live image). The cleanup now re-reads every reference first.
   const w = setup({ auditError: 'audit insert failed', restoreError: 'restore denied' })
   const res = await finalizeImageUploadCore(w.ports, input())
   assert.equal(res.success, false)
   assert.match(res.error ?? '', /restore denied/)
-  assert.deepEqual(w.deletes, [[NEW_KEY, NEW_V]])
+  assert.equal(w.current(), `${ORIGIN}/${NEW_KEY}`)
+  assert.deepEqual(w.deletes, [])
 })
 
 test('cleanup of the previous R2 key fails: ok result with mediaCleanupFailed', async () => {
@@ -429,6 +453,69 @@ test('avatar: the scope is the user\'s own value, so the replaced avatar is dele
   })
   assert.equal(res.success, true)
   assert.deepEqual(w.deletes, [[oldAvatar, `_v/640/webp/${oldAvatar}`]])
+})
+
+// ---- deferred items 21-23: cross-scope references and compare-and-swap writes ----
+
+test('cross-scope share kept on replace: the old poster is also the site OG image', async () => {
+  for (const other of [OLD_R2_URL, `${OLD_R2_URL}?v=9`, `https://proj.supabase.co/storage/v1/object/public/${OLD_KEY}`]) {
+    const w = setup({ elsewhere: [other] })
+    const res = await finalizeImageUploadCore(w.ports, input())
+    assert.equal(res.success, true)
+    assert.equal(w.current(), `${ORIGIN}/${NEW_KEY}`)
+    assert.deepEqual(w.deletes, [], other)
+  }
+})
+
+test('variant keys of a still-referenced original are kept (a variant url stored elsewhere)', async () => {
+  const w = setup({ elsewhere: [`${ORIGIN}/_v/1280/webp/${OLD_KEY}`] })
+  const res = await finalizeImageUploadCore(w.ports, input())
+  assert.equal(res.success, true)
+  assert.deepEqual(w.deletes, [])
+})
+
+test('reference read fails after the write: the image is saved, nothing is deleted, cleanup flagged', async () => {
+  const w = setup({ referencesError: 'after-write' })
+  const res = await finalizeImageUploadCore(w.ports, input())
+  assert.equal(res.success, true)
+  assert.equal(res.mediaCleanupFailed, true)
+  assert.equal(w.current(), `${ORIGIN}/${NEW_KEY}`)
+  assert.deepEqual(w.deletes, [])
+})
+
+test('a key live in ANOTHER scope is refused before finalize (its refusal would delete it)', async () => {
+  for (const live of [`${ORIGIN}/${NEW_KEY}`, `${ORIGIN}/_v/640/webp/${NEW_KEY}`]) {
+    const w = setup({ elsewhere: [live], finalizeOk: false })
+    const res = await finalizeImageUploadCore(w.ports, input())
+    assert.deepEqual(res, { success: false, error: LIVE_MESSAGE, wrote: false })
+    assertUntouched(w, OLD_R2_URL)
+  }
+})
+
+test('the cross-scope reference read fails before finalize: refused, nothing finalized or deleted', async () => {
+  const w = setup({ referencesError: 'always' })
+  const res = await finalizeImageUploadCore(w.ports, input())
+  assert.deepEqual(res, { success: false, error: 'refs down', wrote: false })
+  assertUntouched(w, OLD_R2_URL)
+})
+
+test('CAS conflict: another admin saved first; their value stays, the live key is not deleted, only the fresh upload goes', async () => {
+  const theirs = `${ORIGIN}/show-artwork/shows/${SHOW}/poster-1770000000000-99999999.webp`
+  const w = setup({ concurrent: theirs })
+  const res = await finalizeImageUploadCore(w.ports, input())
+  assert.deepEqual(res, { success: false, error: MEDIA_SAVE_CONFLICT, wrote: false })
+  assert.equal(w.current(), theirs)
+  assert.deepEqual(w.writes, [])
+  assert.deepEqual(w.deletes, [[NEW_KEY, NEW_V]])
+  assert.equal(w.audits.length, 0)
+})
+
+test('CAS conflict when the column was empty and someone filled it: no overwrite', async () => {
+  const w = setup({ previous: null, concurrent: OLD_R2_URL })
+  const res = await finalizeImageUploadCore(w.ports, input())
+  assert.equal(res.error, MEDIA_SAVE_CONFLICT)
+  assert.equal(w.current(), OLD_R2_URL)
+  assert.deepEqual(w.deletes, [[NEW_KEY, NEW_V]])
 })
 
 test('image-upload.ts stays a pure core: no next/, server-only or @/ imports', () => {

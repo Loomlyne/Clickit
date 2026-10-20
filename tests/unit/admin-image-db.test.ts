@@ -3,6 +3,7 @@ import test from 'node:test'
 import { finalizeImageUploadCore, type ImageUploadPorts } from '../../src/lib/admin/image-upload.ts'
 import { adminImageDb } from '../../src/lib/admin/image-db.ts'
 import { liveKeysForUrl } from '../../src/server/r2-keys.ts'
+import { MEDIA_SAVE_CONFLICT, readMediaReferenceUrls, type ReferenceDb } from '../../src/server/media-references.ts'
 import { createFakeSupabase } from './helpers/fake-supabase.ts'
 
 const ORIGIN = 'https://media.test'
@@ -50,6 +51,7 @@ function ports(fake: ReturnType<typeof createFakeSupabase>, auditError?: string)
     media: { delete: async (k) => void deleted.push(k) },
     audit: async (e) => (auditError ? { error: auditError } : fake.auditWriter(e)),
     mediaOrigin: ORIGIN,
+    references: () => readMediaReferenceUrls(fake.client as ReferenceDb),
     previousR2Keys: (u) => (u?.startsWith(`${ORIGIN}/`) ? [u.slice(ORIGIN.length + 1)] : []),
     liveKeys: (u) => liveKeysForUrl(u, ORIGIN),
   }
@@ -270,4 +272,105 @@ test('a cast image replaced while another member of the show uses it: kept', asy
   })
   assert.equal(res.success, true)
   assert.deepEqual((p as unknown as { deleted: string[][] }).deleted, [])
+})
+
+// ---- deferred items 22-23: cross-scope references and compare-and-swap writes ----
+
+test('a poster replaced while the site OG image still uses it (another scope): the old key is kept', async () => {
+  const t = tables()
+  t.app_config[0]!.og_image_url = `${ORIGIN}/${OLD_KEY}`
+  const fake = createFakeSupabase(t)
+  const p = ports(fake)
+  const res = await finalizeImageUploadCore(p, {
+    kind: 'artwork',
+    slot: 'poster',
+    showId: SHOW,
+    key: NEW_KEY,
+    variantKeys: [],
+    userId: 'admin-1',
+    target: { type: 'show-artwork', showId: SHOW, column: 'poster_url' },
+    live: { type: 'show-artwork', showId: SHOW, columns: ['poster_url'] },
+  })
+  assert.equal(res.success, true)
+  assert.equal(fake.tables.shows![0]!.poster_url, `${ORIGIN}/${NEW_KEY}`)
+  assert.deepEqual((p as unknown as { deleted: string[][] }).deleted, [])
+})
+
+test('with no other reference anywhere, the replaced poster is deleted (real db port)', async () => {
+  const fake = createFakeSupabase(tables())
+  const p = ports(fake)
+  const res = await finalizeImageUploadCore(p, {
+    kind: 'artwork',
+    slot: 'poster',
+    showId: SHOW,
+    key: NEW_KEY,
+    variantKeys: [],
+    userId: 'admin-1',
+    target: { type: 'show-artwork', showId: SHOW, column: 'poster_url' },
+    live: { type: 'show-artwork', showId: SHOW, columns: ['poster_url'] },
+  })
+  assert.equal(res.success, true)
+  assert.deepEqual((p as unknown as { deleted: string[][] }).deleted, [[OLD_KEY]])
+})
+
+test('write is compare-and-swap: only while the column still holds the value read before', async () => {
+  const fake = createFakeSupabase(tables())
+  const db = adminImageDb(fake.client as never)
+  const poster = { type: 'show-artwork', showId: SHOW, column: 'poster_url' } as const
+  assert.equal(await db.write(poster, 'x', 'not-what-is-there'), MEDIA_SAVE_CONFLICT)
+  assert.equal(fake.tables.shows![0]!.poster_url, `${ORIGIN}/${OLD_KEY}`)
+  assert.equal(await db.write(poster, 'x', `${ORIGIN}/${OLD_KEY}`), null)
+  assert.equal(fake.tables.shows![0]!.poster_url, 'x')
+  // restore is a CAS on the value we wrote
+  assert.equal(await db.restore(poster, 'back', 'someone-else'), MEDIA_SAVE_CONFLICT)
+  assert.equal(await db.restore(poster, `${ORIGIN}/${OLD_KEY}`, 'x'), null)
+  assert.equal(fake.tables.shows![0]!.poster_url, `${ORIGIN}/${OLD_KEY}`)
+})
+
+test('CAS on an empty column uses IS NULL; app_config and cast targets are CAS too', async () => {
+  const fake = createFakeSupabase(tables())
+  const db = adminImageDb(fake.client as never)
+  const card = { type: 'show-artwork', showId: OTHER_SHOW, column: 'card_image_url' } as const
+  assert.equal(await db.write(card, 'c', 'was-something'), MEDIA_SAVE_CONFLICT)
+  assert.equal(await db.write(card, 'c', null), null)
+  assert.equal(fake.tables.shows![1]!.card_image_url, 'c')
+  const og = { type: 'app-config', column: 'og_image_url' } as const
+  assert.equal(await db.write(og, 'o', 'stale'), MEDIA_SAVE_CONFLICT)
+  assert.equal(fake.tables.app_config![0]!.og_image_url, 'og-old')
+  assert.equal(await db.write(og, 'o', 'og-old'), null)
+  const cast = { type: 'cast', castId: CAST2, showId: SHOW } as const
+  assert.equal(await db.write(cast, 'k', null), MEDIA_SAVE_CONFLICT)
+  assert.equal(await db.write(cast, 'k', `${ORIGIN}/show-artwork/shows/${SHOW}/cast/1750000000000-12345678.png`), null)
+  assert.equal(fake.tables.show_cast![1]!.image_url, 'k')
+})
+
+test('a concurrent save between read and write: conflict error, other value kept, nothing previously live deleted', async () => {
+  const fake = createFakeSupabase(tables())
+  const p = ports(fake)
+  const theirs = `${ORIGIN}/show-artwork/shows/${SHOW}/poster-1770000000000-99999999.webp`
+  // The other admin's save lands right after our read of the current value.
+  const realDb = p.db
+  p.db = {
+    ...realDb,
+    readCurrent: async (t) => {
+      const r = await realDb.readCurrent(t)
+      fake.tables.shows![0]!.poster_url = theirs
+      return r
+    },
+  }
+  const res = await finalizeImageUploadCore(p, {
+    kind: 'artwork',
+    slot: 'poster',
+    showId: SHOW,
+    key: NEW_KEY,
+    variantKeys: [],
+    userId: 'admin-1',
+    target: { type: 'show-artwork', showId: SHOW, column: 'poster_url' },
+    live: { type: 'show-artwork', showId: SHOW, columns: ['poster_url'] },
+  })
+  assert.equal(res.success, false)
+  assert.equal(res.error, MEDIA_SAVE_CONFLICT)
+  assert.equal(fake.tables.shows![0]!.poster_url, theirs)
+  assert.deepEqual((p as unknown as { deleted: string[][] }).deleted, [[NEW_KEY]])
+  assert.equal(fake.auditRows().length, 0)
 })
