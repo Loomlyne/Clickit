@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { finalizeImageUploadCore, type ImageUploadPorts } from '../../src/lib/admin/image-upload.ts'
 import { adminImageDb } from '../../src/lib/admin/image-db.ts'
+import { liveKeysForUrl } from '../../src/server/r2-keys.ts'
 import { createFakeSupabase } from './helpers/fake-supabase.ts'
 
 const ORIGIN = 'https://media.test'
@@ -50,7 +51,7 @@ function ports(fake: ReturnType<typeof createFakeSupabase>, auditError?: string)
     audit: async (e) => (auditError ? { error: auditError } : fake.auditWriter(e)),
     mediaOrigin: ORIGIN,
     previousR2Keys: (u) => (u?.startsWith(`${ORIGIN}/`) ? [u.slice(ORIGIN.length + 1)] : []),
-    liveKeys: (u) => (u?.startsWith(`${ORIGIN}/`) ? [u.slice(ORIGIN.length + 1)] : []),
+    liveKeys: (u) => liveKeysForUrl(u, ORIGIN),
   }
   return Object.assign(p, { deleted })
 }

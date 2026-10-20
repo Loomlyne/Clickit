@@ -182,8 +182,17 @@ export async function finalizeImageUploadCore(
     }
   }
 
-  // Committed. Only now may the previous object go, and only if it is one of ours in R2.
-  const doomed = ports.previousR2Keys(previousUrl).filter((k) => !newKeys.includes(k))
+  // Committed. Only now may the previous object go, only if it is one of ours in R2, and
+  // only if no other live value in the scope still uses it. The scope read above holds the
+  // target's own value once; every other entry is another reference. If the target changed
+  // since that read, its old value is not found and every entry counts (keep on doubt).
+  const others = [...live.urls]
+  const own = others.indexOf(previousUrl)
+  if (own >= 0) others.splice(own, 1)
+  const stillLive = new Set(others.flatMap((url) => ports.liveKeys(url)))
+  const doomed = ports
+    .previousR2Keys(previousUrl)
+    .filter((k) => !newKeys.includes(k) && !stillLive.has(k))
   const cleaned = await deleteQuietly(ports, doomed)
   const out: FinalizeImageResult = { success: true, data: newUrl, wrote: target !== null }
   if (!cleaned) out.mediaCleanupFailed = true

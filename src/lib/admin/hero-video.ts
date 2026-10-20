@@ -114,6 +114,8 @@ function heroSlot(variant: HeroVariant): Slot {
   }
 }
 
+const otherVariant = (variant: HeroVariant): HeroVariant => (variant === 'desktop' ? 'mobile' : 'desktop')
+
 function preloaderSlot(): Slot {
   return {
     async read(db) {
@@ -157,6 +159,11 @@ function showSlot(showId: string, variant: HeroVariant): Slot {
 type TailInput = {
   /** null: nothing in the database changes (a form holds the url until Save); the upload is still audited. */
   slot: Slot | null
+  /**
+   * The other slots of the same scope (the other hero or show variant). Desktop and mobile
+   * may hold the same url, so a previous key one of them still uses is never deleted.
+   */
+  siblings: Slot[]
   /** Wording of the failure messages: "the hero video was not changed". */
   noun: string
   setting: string
@@ -205,7 +212,17 @@ async function applyVideoChange<T>(
   }
   const previousPath = ports.storagePathFromUrl(previousUrl)
   // Only R2 objects of ours: a Supabase Storage url yields no keys and is never deleted.
-  const doomed = ports.previousR2Keys(previousUrl).filter((k) => k !== newKey)
+  let doomed = ports.previousR2Keys(previousUrl).filter((k) => k !== newKey)
+  // Nor one a sibling slot still uses; a failed sibling read keeps everything (keep on doubt).
+  for (const sibling of slot && doomed.length > 0 ? input.siblings : []) {
+    const other = await sibling.read(ports.db)
+    if (other.error !== null) {
+      doomed = []
+      break
+    }
+    const used = new Set(ports.previousR2Keys(other.url))
+    doomed = doomed.filter((k) => !used.has(k))
+  }
   const staged = slot && doomed.length > 0 ? await ports.media.stageDeletion(doomed) : null
 
   if (slot) {
@@ -271,6 +288,7 @@ export async function saveVideoCore(
   if (typeof key !== 'string' || key.length === 0 || key.length > 300) return fail('Invalid upload path')
 
   let slot: Slot | null
+  let siblings: Slot[] = []
   let kind: VideoFinalizeKind
   let finalizeSlot: string | null
   let showId: string | null = null
@@ -283,6 +301,7 @@ export async function saveVideoCore(
   if (target === 'hero-desktop' || target === 'hero-mobile') {
     const variant: HeroVariant = target === 'hero-mobile' ? 'mobile' : 'desktop'
     slot = heroSlot(variant)
+    siblings = [heroSlot(otherVariant(variant))]
     kind = 'hero-video'
     finalizeSlot = variant
     needsAudio = true
@@ -301,6 +320,7 @@ export async function saveVideoCore(
     const variant: HeroVariant = input.variant
     showId = id.value
     slot = input.commit === false ? null : showSlot(id.value, variant)
+    siblings = [showSlot(id.value, otherVariant(variant))]
     kind = 'show-video'
     finalizeSlot = variant
     noun = 'show video'
@@ -368,6 +388,7 @@ export async function saveVideoCore(
     deps,
     {
       slot,
+      siblings,
       noun,
       setting,
       newUrl,
@@ -413,6 +434,7 @@ export async function setHeroVideoUrlCore(
     deps,
     {
       slot: heroSlot(variant),
+      siblings: [heroSlot(otherVariant(variant))],
       noun: 'hero video',
       setting: 'hero',
       newUrl: input.canonicalUrl,
@@ -444,6 +466,7 @@ export async function removeHeroVideoCore(
     deps,
     {
       slot: heroSlot(variant),
+      siblings: [heroSlot(otherVariant(variant))],
       noun: 'hero video',
       setting: 'hero',
       newUrl: null,
