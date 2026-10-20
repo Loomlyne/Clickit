@@ -396,7 +396,7 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                       : '---'}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-2">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button

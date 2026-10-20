@@ -620,7 +620,7 @@ export function CategoriesManager({
                         {category.showCount}
                       </TableCell>
                       <TableCell>
-                        <div className="flex min-w-[168px] items-center justify-end gap-1">
+                        <div className="flex min-w-[168px] items-center justify-end gap-2">
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button

@@ -199,7 +199,7 @@ export function EpisodesTable({
                 </TableCell>
                 <TableCell className="pt-4">
                   <div className="flex items-center justify-end gap-2">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button

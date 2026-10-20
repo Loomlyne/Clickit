@@ -159,7 +159,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
                     <span className="line-clamp-2">{faq.answer}</span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-2">
                       <Button
                         size="icon"
                         variant="ghost"

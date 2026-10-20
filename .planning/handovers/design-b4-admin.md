@@ -31,6 +31,12 @@ Gate re-run: tsc 0, lint 0 errors/19 warnings, unit 369/369, build exit 0 (place
 Behaviour-adjacent layout changes to know about: Add short stays visible during selection; Create show moved to the page header; row delete buttons are now destructive-variant with an aria-label; inbox section headings and show-form section headings changed level (h2); archive `adminConsole` eyebrow dropped; `getBrandAccent` fallback `#6073FF` -> `#A1A1A1`.
 Not from this PR: `admin.seasonForm.addSeason` i18n key missing in en and ar (season-tabs.tsx:94).
 
+## After merging main cfbc8fb (#18, #20, #21)
+
+- Clean merge, no conflicts. #21 made `ui/checkbox` 20px by default and `ui/tabs` triggers `min-h-11`; admin keeps its signed rule (checkbox 20px visible + 44px hit area; tabs 36px visible + 44px hit area), so `admin.css` is still the single place for it. `ui/button.tsx` unchanged.
+- Hit areas must not overlap: a 36px control with a 4px-inset hit area needs 8px between neighbours. Row action groups (shows, shorts, episodes, categories, FAQ, legal) moved from `gap-1` to `gap-2`; genre colour swatches 32 -> 36px with `gap-2` and a hit area; "Default" swatch reset and the hero-media mode toggle got 36px height and a vertical-only hit area.
+- Gate re-run after merge: tsc 0, lint 0 errors/17 warnings, unit 377/377, build exit 0 (placeholder public env).
+
 ## NOT verified
 
 - No render of the real admin app (no local Supabase, no admin session). `admin.css` selectors (`data-slot`, `data-size`, `data-state`) were checked by reading the shared components, not by looking at the running page. The picture used the same Tailwind classes but not `admin.css`.

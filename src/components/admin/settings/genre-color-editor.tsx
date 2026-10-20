@@ -103,14 +103,14 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
               <span className="text-sm font-medium text-[var(--text)]">
                 {genre}
               </span>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 {PRESETS.map((p) => (
                   <button
                     key={p.value}
                     type="button"
                     title={p.label}
                     onClick={() => setColor(genre, p.value)}
-                    className={`relative size-8 rounded-full ring-2 ring-offset-2 ring-offset-black transition-all ${
+                    className={`relative size-9 rounded-full ring-2 ring-offset-2 ring-offset-black transition-all after:absolute after:-inset-1 after:content-[''] ${
                       active === p.value
                         ? 'ring-white'
                         : 'ring-transparent hover:ring-white/30'
@@ -122,7 +122,7 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
                   type="button"
                   title={t('clearOverride')}
                   onClick={() => setColor(genre, undefined)}
-                  className={`ms-1 rounded-full px-2 py-0.5 text-[11px] tracking-wider uppercase transition-colors ${
+                  className={`relative ms-1 min-h-9 rounded-full px-3 text-[11px] tracking-wider uppercase transition-colors after:absolute after:inset-x-0 after:-inset-y-1 after:content-[''] ${
                     active
                       ? 'bg-[var(--bg-3)] text-[var(--text)] hover:bg-[var(--bg-3)]'
                       : 'text-[var(--text-mute)]'

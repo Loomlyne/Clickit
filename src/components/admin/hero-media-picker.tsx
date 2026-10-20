@@ -237,14 +237,14 @@ export function HeroMediaPicker({
             {aspectBadge}
           </span>
         </div>
-        <div className="flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[var(--bg-2)] p-0.5">
+        <div className="flex items-center gap-1 rounded-full border border-[var(--line)] bg-[var(--bg-2)] p-0.5">
           {modes.map(({ id, label: ml, icon: Icon }) => (
             <button
               key={id}
               type="button"
               onClick={() => setMode(id)}
               className={cn(
-                'flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
+                "relative flex min-h-9 items-center gap-1 rounded-full px-3 text-xs font-medium transition-colors after:absolute after:inset-x-0 after:-inset-y-1 after:content-['']",
                 mode === id
                   ? 'bg-white text-black'
                   : 'text-muted-foreground hover:text-foreground'
