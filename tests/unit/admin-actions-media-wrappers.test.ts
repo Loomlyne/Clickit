@@ -8,52 +8,28 @@ import {
   setHeroVideoUrlCore,
   type HeroVideoPorts,
 } from '../../src/lib/admin/hero-video.ts'
-import { createFakeSupabase } from './helpers/fake-supabase.ts'
+import { NEW_KEY, videoWorld } from './helpers/video-world.ts'
 
 const MB = 1024 * 1024
-const NEW_PATH = 'hero/video-2000.mp4'
-const OLD_URL = 'https://cdn.test/site-assets/hero/video-1000.mp4?v=1'
+const NEW_PATH = NEW_KEY
 
 function world(opts: { infoSize?: number } = {}) {
-  const fake = createFakeSupabase({
-    app_config: [
-      {
-        id: 1,
-        hero_video_url: OLD_URL,
-        hero_video_type: 'mp4',
-        hero_video_mobile_url: null,
-        hero_video_mobile_type: null,
-      },
-    ],
-  })
+  const w = videoWorld({ headSize: opts.infoSize ?? 10 * MB })
   const touched = { ports: 0 }
-  const ports: HeroVideoPorts = {
-    db: fake.client,
-    storage: {
-      info: async () => ((touched.ports += 1), { data: { size: opts.infoSize ?? 10 * MB }, error: null }),
-      download: async () => (
-        (touched.ports += 1),
-        {
-          data: { size: 10 * MB, arrayBuffer: async () => new ArrayBuffer(0) } as unknown as Blob,
-          error: null,
-        }
-      ),
-      remove: async () => ((touched.ports += 1), { error: null }),
-      publicUrl: (p) => `https://cdn.test/site-assets/${p}`,
-    },
-    media: {
-      mirrorUpload: async () => void (touched.ports += 1),
-      cleanup: async () => void (touched.ports += 1),
-      stageDeletion: async () => ({
-        commit: async () => true,
-        rollback: async () => true,
-      }),
-    },
-    hasAudioTrack: () => true,
-    storagePathFromUrl: (u) => (u ? u.split('/site-assets/')[1]!.split('?')[0]! : null),
-    now: () => 1,
+  // count every R2 port call so the not-admin test can prove none was made
+  const p = w.ports
+  const wrap = <A extends unknown[], R>(fn: (...a: A) => R) => (...a: A): R => {
+    touched.ports += 1
+    return fn(...a)
   }
-  return { fake, ports, touched }
+  const ports: HeroVideoPorts = {
+    ...p,
+    finalize: wrap(p.finalize),
+    head: wrap(p.head),
+    readHead: wrap(p.readHead),
+    media: { delete: wrap(p.media.delete), stageDeletion: wrap(p.media.stageDeletion) },
+  }
+  return { fake: w.fake, ports, touched }
 }
 
 function env(f: ReturnType<typeof createFakeSupabase>, admin = true): AdminActionEnv {

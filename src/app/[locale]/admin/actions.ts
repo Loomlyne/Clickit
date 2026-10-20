@@ -66,7 +66,7 @@ import {
 import { mp4BytesHasAudioTrack } from '@/lib/mp4-audio'
 import { getPublicMediaOrigin } from '@/lib/supabase-media'
 import { getWorkerEnv } from '@/server/cloudflare'
-import { r2KeysForUrl } from '@/server/r2-keys'
+import { r2KeyFromUrl, r2KeysForUrl } from '@/server/r2-keys'
 import { finalizeUploadedObject, type FinalizeBucket } from '@/server/upload-finalize'
 import {
   assertPublicMediaWriteReady,
@@ -1208,31 +1208,58 @@ export async function uploadArtwork(
 // Hero Video Management
 // ---------------------------------------------------------------------------
 
-function heroPorts(admin: ReturnType<typeof createAdminClient>): HeroVideoPorts {
-  const bucket = admin.storage.from('site-assets')
+/**
+ * R2-backed ports for the video core (plan 02-16): the app Worker's MEDIA binding for
+ * head, a 4 MiB range read and delete. Nothing here reads a whole video, and nothing
+ * deletes a Supabase Storage original: only keys behind our own media origin qualify.
+ */
+async function videoPorts(db: AdminDb): Promise<HeroVideoPorts> {
+  const env = await getWorkerEnv()
+  const bucket = env.MEDIA as unknown as FinalizeBucket
+  const mediaOrigin = getPublicMediaOrigin()
   return {
-    db: admin,
-    storage: {
-      info: (path) => bucket.info(path),
-      download: (path) => bucket.download(path),
-      remove: (paths) => bucket.remove(paths),
-      publicUrl: (path) => bucket.getPublicUrl(path).data.publicUrl,
+    db,
+    mediaOrigin,
+    finalize: async (input) => {
+      const r = await finalizeUploadedObject({
+        kind: input.kind,
+        slot: input.slot,
+        showId: input.showId,
+        userId: input.userId,
+        key: input.key,
+        variantKeys: [],
+        bucket,
+      })
+      if (r.ok) return { ok: true, key: r.key }
+      return { ok: false, error: r.error, ...(r.cleanupFailed ? { cleanupFailed: true as const } : {}) }
+    },
+    head: async (key) => {
+      const head = await bucket.head(key)
+      return head ? { size: head.size } : null
+    },
+    readHead: async (key, maxBytes) => {
+      const object = await bucket.get(key, { range: { offset: 0, length: maxBytes } })
+      return object ? new Uint8Array(await object.arrayBuffer()) : null
     },
     media: {
-      mirrorUpload: (path, blob) =>
-        mirrorUploadedPublicMedia(admin, {
-          bucket: 'site-assets',
-          key: path,
-          body: blob,
-          contentType: 'video/mp4',
-          cacheControl: '31536000',
-        }),
-      cleanup: (paths) => cleanupMirroredPublicMedia(admin, 'site-assets', paths, '[hero]'),
-      stageDeletion: (paths) => stageMirroredPublicMediaDeletion(admin, 'site-assets', paths),
+      delete: (keys) => bucket.delete(keys),
+      // Nothing is deleted before commit, so rollback has nothing to restore.
+      stageDeletion: async (keys) => ({
+        commit: async () => {
+          try {
+            await bucket.delete(keys)
+            return true
+          } catch (err) {
+            console.error('[video] R2 delete failed', err)
+            return false
+          }
+        },
+        rollback: async () => true,
+      }),
     },
     hasAudioTrack: mp4BytesHasAudioTrack,
-    storagePathFromUrl: (url) => getPublicStoragePath(url, 'site-assets'),
-    now: Date.now,
+    previousR2Keys: (url) => r2KeysForUrl(url, mediaOrigin),
+    storagePathFromUrl: (url) => r2KeyFromUrl(url, mediaOrigin) ?? getPublicStoragePath(url, 'site-assets'),
   }
 }
 
@@ -1285,7 +1312,7 @@ export async function saveHeroVideoUpload(
     adminEnv,
     async (ctx) => {
       const r = await saveHeroVideoCore(
-        heroPorts(ctx.db),
+        await videoPorts(ctx.db),
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
         { path, variant }
       )
@@ -1332,7 +1359,7 @@ export async function setHeroVideoUrl(
     adminEnv,
     async (ctx) => {
       const r = await setHeroVideoUrlCore(
-        heroPorts(ctx.db),
+        await videoPorts(ctx.db),
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
         { canonicalUrl, variant }
       )
@@ -1356,7 +1383,7 @@ export async function removeHeroVideo(
     adminEnv,
     async (ctx) => {
       const r = await removeHeroVideoCore(
-        heroPorts(ctx.db),
+        await videoPorts(ctx.db),
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
         { variant }
       )
