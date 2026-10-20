@@ -13,6 +13,11 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { mapAuthError } from '@/lib/auth-errors'
 import { signUpAction } from '@/app/[locale]/(viewer)/auth/actions'
+import {
+  TurnstileField,
+  useTurnstileToken,
+} from '@/components/security/turnstile-field'
+import { isCaptchaFailure } from '@/lib/turnstile-widget'
 
 const signupSchema = z
   .object({
@@ -36,6 +41,9 @@ export function SignupForm() {
   const [serverError, setServerError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  // Turnstile (PLAT-05): single-use token, submit disabled until one exists.
+  const captcha = useTurnstileToken()
+  const { needsToken, awaitingToken } = captcha
 
   const {
     register,
@@ -64,13 +72,25 @@ export function SignupForm() {
   ].filter(Boolean).length
 
   async function onSubmit(data: SignupFormData) {
+    if (awaitingToken) return
     setServerError(null)
+    captcha.setFailed(false)
 
-    // BotID-gated Server Action sets the auth cookies server-side.
-    const result = await signUpAction(data.email, data.password, data.name)
+    // The Server Action sets the auth cookies server-side and hands the
+    // Turnstile token to Supabase as captchaToken.
+    const result = await signUpAction(
+      data.email,
+      data.password,
+      data.name,
+      captcha.token ?? undefined
+    )
 
     if (!result.ok) {
-      setServerError(mapAuthError(result.error))
+      // The token is single-use: a fresh one is needed after any failure.
+      const refused = isCaptchaFailure(result.error)
+      captcha.consume(refused)
+      // With the widget drawn, a captcha refusal shows under it (signed).
+      setServerError(needsToken && refused ? null : mapAuthError(result.error))
       return
     }
 
@@ -223,9 +243,16 @@ export function SignupForm() {
         </p>
       )}
 
+      <TurnstileField
+        key={captcha.widgetKey}
+        form="sign-up"
+        onToken={captcha.setToken}
+        failed={captcha.failed}
+      />
+
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isSubmitting || awaitingToken}
         className="bg-primary text-primary-foreground w-full rounded-full px-7 py-3 text-sm font-semibold transition-colors hover:bg-[#7082ff] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSubmitting ? t('signUpButton') + '…' : t('signUpButton')}

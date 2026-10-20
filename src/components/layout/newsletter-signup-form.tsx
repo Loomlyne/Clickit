@@ -10,6 +10,11 @@ import {
   newsletterSignupSchema,
   type NewsletterSignupInput,
 } from '@/lib/contact'
+import {
+  TurnstileField,
+  useTurnstileToken,
+} from '@/components/security/turnstile-field'
+import { isCaptchaFailure } from '@/lib/turnstile-widget'
 
 type NewsletterSignupFormProps = {
   source: string
@@ -30,6 +35,10 @@ export function NewsletterSignupForm({
 }: NewsletterSignupFormProps) {
   const t = useTranslations('newsletter')
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  // Turnstile (PLAT-05): interaction-only, single-use token, submit disabled
+  // until one exists.
+  const captcha = useTurnstileToken()
+  const { needsToken, awaitingToken } = captcha
   const {
     register,
     handleSubmit,
@@ -47,7 +56,12 @@ export function NewsletterSignupForm({
   })
 
   async function onSubmit(data: NewsletterSignupInput) {
-    const result = await subscribeToNewsletter(data)
+    if (awaitingToken) return
+    captcha.setFailed(false)
+    const result = await subscribeToNewsletter(data, captcha.token ?? undefined)
+    // The token is single-use: whatever the outcome, a fresh one is needed.
+    const refused = !result.ok && isCaptchaFailure(result.message)
+    captcha.consume(refused)
 
     if (!result.ok) {
       if (result.code === 'validation' && result.fieldErrors?.email?.[0]) {
@@ -55,7 +69,10 @@ export function NewsletterSignupForm({
         return
       }
 
-      setStatusMessage(result.message || t('errSubscribe'))
+      // With the widget drawn, a captcha refusal shows under it (signed).
+      setStatusMessage(
+        needsToken && refused ? null : result.message || t('errSubscribe')
+      )
       return
     }
 
@@ -110,7 +127,7 @@ export function NewsletterSignupForm({
         {compact && (
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || awaitingToken}
             className="flex min-h-11 min-w-11 items-center justify-center px-2 py-3 text-[var(--text-dim)] transition-colors hover:text-[var(--accent)] disabled:opacity-60"
             aria-label={buttonLabel || t('submitAria')}
           >
@@ -132,12 +149,18 @@ export function NewsletterSignupForm({
       {!compact && (
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || awaitingToken}
           className="bg-primary text-primary-foreground inline-flex min-h-11 items-center justify-center rounded-full px-5 py-3 text-sm font-medium transition-colors hover:bg-white disabled:opacity-60"
         >
           {buttonLabel || t('defaultButton')}
         </button>
       )}
+      <TurnstileField
+        key={captcha.widgetKey}
+        form="newsletter"
+        onToken={captcha.setToken}
+        failed={captcha.failed}
+      />
       {errors.email?.message && (
         <p className="text-brand-red-safe text-xs">{t('invalidEmail')}</p>
       )}

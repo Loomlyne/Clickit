@@ -13,6 +13,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  TurnstileField,
+  useTurnstileToken,
+} from '@/components/security/turnstile-field'
+import { isCaptchaFailure } from '@/lib/turnstile-widget'
 
 const contactSchema = z.object({
   name: z.string().min(2, 'nameMin'),
@@ -31,6 +36,9 @@ export function ContactForm() {
   const [submitState, setSubmitState] = useState<'idle' | 'saved_email_failed'>(
     'idle'
   )
+  // Turnstile (PLAT-05): single-use token, submit disabled until one exists.
+  const captcha = useTurnstileToken()
+  const { needsToken, awaitingToken } = captcha
   const {
     register,
     handleSubmit,
@@ -54,7 +62,12 @@ export function ContactForm() {
   const termsValue = watch('terms')
 
   async function onSubmit(data: ContactFormData) {
-    const result = await submitSupportMessage(data)
+    if (awaitingToken) return
+    captcha.setFailed(false)
+    const result = await submitSupportMessage(data, captcha.token ?? undefined)
+    // The token is single-use: whatever the outcome, a fresh one is needed.
+    const refused = !result.ok && isCaptchaFailure(result.message)
+    captcha.consume(refused)
 
     if (!result.ok) {
       if (result.code === 'validation' && result.fieldErrors) {
@@ -66,7 +79,10 @@ export function ContactForm() {
         return
       }
 
-      toast.error(result.message || tErrors('networkError'))
+      // With the widget drawn, a captcha refusal shows under it (signed).
+      if (!(needsToken && refused)) {
+        toast.error(result.message || tErrors('networkError'))
+      }
       return
     }
 
@@ -201,7 +217,18 @@ export function ContactForm() {
         </p>
       )}
 
-      <Button type="submit" disabled={isSubmitting} className="w-full">
+      <TurnstileField
+        key={captcha.widgetKey}
+        form="contact"
+        onToken={captcha.setToken}
+        failed={captcha.failed}
+      />
+
+      <Button
+        type="submit"
+        disabled={isSubmitting || awaitingToken}
+        className="w-full"
+      >
         {isSubmitting ? t('submitButton') + '…' : t('submitButton')}
       </Button>
     </form>

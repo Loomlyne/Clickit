@@ -14,6 +14,11 @@ import { createClient } from '@/lib/supabase/client'
 import { mapAuthError } from '@/lib/auth-errors'
 import { getSafeAuthNextPath } from '@/lib/auth-navigation'
 import { signInAction } from '@/app/[locale]/(viewer)/auth/actions'
+import {
+  TurnstileField,
+  useTurnstileToken,
+} from '@/components/security/turnstile-field'
+import { isCaptchaFailure } from '@/lib/turnstile-widget'
 
 const loginSchema = z.object({
   email: z.string().email('emailInvalid'),
@@ -37,6 +42,10 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [mode, setMode] = useState<'login' | 'forgot'>('login')
   const [resetSent, setResetSent] = useState(false)
+  // Turnstile (PLAT-05): the token is single-use, so every submit consumes it
+  // and the widget is remounted. Submit stays disabled until a token exists.
+  const captcha = useTurnstileToken()
+  const { needsToken, awaitingToken } = captcha
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -47,12 +56,24 @@ export function LoginForm() {
   })
 
   async function onLogin(data: LoginFormData) {
+    if (awaitingToken) return
     setServerError(null)
+    captcha.setFailed(false)
 
-    const result = await signInAction(data.email, data.password)
+    const result = await signInAction(
+      data.email,
+      data.password,
+      captcha.token ?? undefined
+    )
 
     if (!result.ok) {
-      setServerError(mapAuthError(result.error))
+      captcha.consume(isCaptchaFailure(result.error))
+      // With the widget drawn, a captcha refusal shows under it (signed), not twice.
+      setServerError(
+        needsToken && isCaptchaFailure(result.error)
+          ? null
+          : mapAuthError(result.error)
+      )
       return
     }
 
@@ -68,15 +89,24 @@ export function LoginForm() {
   }
 
   async function onForgot(data: ForgotFormData) {
+    if (awaitingToken) return
     setServerError(null)
+    captcha.setFailed(false)
     const supabase = createClient()
 
     const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
       redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+      captchaToken: captcha.token ?? undefined,
     })
+    // The token is single-use: whatever the outcome, a fresh one is needed.
+    captcha.consume(Boolean(error) && isCaptchaFailure(error?.message))
 
     if (error) {
-      setServerError(mapAuthError(error.message))
+      setServerError(
+        needsToken && isCaptchaFailure(error.message)
+          ? null
+          : mapAuthError(error.message)
+      )
       return
     }
 
@@ -92,6 +122,7 @@ export function LoginForm() {
             setMode('login')
             setServerError(null)
             setResetSent(false)
+            captcha.clear()
           }}
           className="flex min-h-11 items-center gap-1.5 text-sm text-white/50 transition-colors hover:text-white/80"
         >
@@ -136,9 +167,16 @@ export function LoginForm() {
               )}
             </div>
 
+            <TurnstileField
+              key={captcha.widgetKey}
+              form="reset"
+              onToken={captcha.setToken}
+              failed={captcha.failed}
+            />
+
             <button
               type="submit"
-              disabled={forgotForm.formState.isSubmitting}
+              disabled={forgotForm.formState.isSubmitting || awaitingToken}
               className="bg-primary text-primary-foreground w-full rounded-full px-7 py-3 text-sm font-semibold transition-colors hover:bg-[#7082ff] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {forgotForm.formState.isSubmitting
@@ -189,6 +227,7 @@ export function LoginForm() {
             onClick={() => {
               setMode('forgot')
               setServerError(null)
+              captcha.clear()
             }}
             className="inline-flex min-h-11 items-center text-xs text-white/40 transition-colors hover:text-white/70"
           >
@@ -224,9 +263,16 @@ export function LoginForm() {
         )}
       </div>
 
+      <TurnstileField
+        key={captcha.widgetKey}
+        form="sign-in"
+        onToken={captcha.setToken}
+        failed={captcha.failed}
+      />
+
       <button
         type="submit"
-        disabled={loginForm.formState.isSubmitting}
+        disabled={loginForm.formState.isSubmitting || awaitingToken}
         className="bg-primary text-primary-foreground w-full rounded-full px-7 py-3 text-sm font-semibold transition-colors hover:bg-[#7082ff] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loginForm.formState.isSubmitting
