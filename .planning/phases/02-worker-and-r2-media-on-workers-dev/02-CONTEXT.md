@@ -58,7 +58,7 @@ File layout under `src/server/*`, variant key naming, exact widths and quality, 
 </decisions>
 
 <proposed_roadmap_changes>
-## Proposed ROADMAP / REQUIREMENTS edits (for Koss to sign; NOT applied)
+## Proposed ROADMAP / REQUIREMENTS edits (all nine SIGNED by Koss 2026-10-20, see 02-ROADMAP-EDITS.md)
 
 One path: Phase 2 proves the Worker and R2 media on workers.dev → Phase 3 moves the zone, media domain and www, rewrites the DB URLs, holds the proof window, then deletes Vercel.
 

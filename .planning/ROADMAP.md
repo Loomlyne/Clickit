@@ -2,7 +2,7 @@
 
 ## Overview
 
-The live app at www.clickitstory.ae cannot deploy on Vercel, so no code reaches production until a Cloudflare Worker serves the domain. The order is risk-first. First come the changes that can ship while Vercel still serves: migration safety, CI, the DNS zone and the Resend mail domain. Next, the Worker and the R2 media path are proved on workers.dev. Then the straight cutover happens. After the cutover come design (signed before any customer-facing screen is built), accounts and email, YouTube import and the player, product completeness with search and Arabic RTL, and finally hardening and the owner-gated contract cleanup once the proof window ends. Supabase stays the system of record throughout, and the live database is never wiped.
+The live app at www.clickitstory.ae cannot deploy on Vercel, so no code reaches production until a Cloudflare Worker serves the domain. The order is risk-first. First come the changes that can ship while Vercel still serves: migration safety and CI. Next, the Worker and the R2 media path are proved on workers.dev, and every image is copied to R2. Then the cutover happens: the DNS zone and Resend mail domain, the media domain, www, the database URL rewrite, the proof window, and finally the Vercel project is deleted. After the cutover come design (signed before any customer-facing screen is built), accounts and email, YouTube import and the player, product completeness with search and Arabic RTL, and finally hardening and the owner-gated contract cleanup once the proof window ends. Supabase stays the system of record throughout, and the live database is never wiped.
 
 **Owner-gated convention:** a step marked **[OWNER]** is done by Koss himself, as one numbered step, and the work waits for him. Such steps are never autonomous. They cover DNS and registrar changes, secrets and key rotation, live database writes and deletes, the Vercel and Cloudflare dashboards, Supabase dashboard settings, emails to real people, any pricing or plan change, and every Ship.
 
@@ -14,30 +14,29 @@ The live app at www.clickitstory.ae cannot deploy on Vercel, so no code reaches 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Safe Ground** - Migrations can't harm live, CI gates every PR, clickitstory.ae zone on Cloudflare with Resend DNS (all of it ships while Vercel still serves)
+- [ ] **Phase 1: Safe Ground** - Migrations can't harm live, CI gates every PR, the stray nameservers are explained (all of it ships while Vercel still serves)
 - [ ] **Phase 1.1: Admin Actions Hardening (INSERTED)** - Every admin server action validates input, scopes ids, audits destructive writes and fails whole or not at all
-- [ ] **Phase 2: Worker and R2 Media on workers.dev** - The full app runs on Cloudflare Workers with gates, cache, crons, Turnstile, analytics and direct-to-R2 uploads, proved on workers.dev
-- [ ] **Phase 3: Production Cutover** - www and the apex are served by the Worker, media URLs are rewritten to R2, and rollback stays open through the proof window
+- [ ] **Phase 2: Worker and R2 Media on workers.dev** - The full app runs on Cloudflare Workers with gates, cache, crons (off until cutover), Turnstile, analytics and direct-to-R2 uploads, every image copied to R2 optimized, Vercel code removed, proved on workers.dev
+- [ ] **Phase 3: Production Cutover** - Zone and Resend DNS on Cloudflare, www and the apex served by the Worker, media URLs rewritten to R2, rollback open through the proof window, then the Vercel project deleted
 - [ ] **Phase 4: Design System Truth** - Tokens, DESIGN.md and a Claude Design canvas match the live look and are signed by Koss before any new screen is built
 - [ ] **Phase 5: Accounts and Email** - Sign-up wall, email-code sign-in, two TOTP admins, branded auth and app emails through Resend and a queue
 - [ ] **Phase 6: YouTube Import and Player** - A whole season imports from one playlist link, and the player resumes each episode and follows YouTube's embed rules
 - [ ] **Phase 7: Product Completeness, Search and Arabic** - Every shown control works, search covers EN+AR, and the full viewer UI is correct in Arabic RTL
-- [ ] **Phase 8: Hardening and Contract Cleanup** - E2E coverage, dead code and Vercel gone, CSP tightened, Supabase Storage emptied after the proof window
+- [ ] **Phase 8: Hardening and Contract Cleanup** - E2E coverage, dead code gone, no Vercel trace left, CSP tightened, Supabase Storage emptied after the proof window
 
 ## Phase Details
 
 ### Phase 1: Safe Ground
-**Goal**: Nothing pushed to main can damage the live database, every PR is gated, and clickitstory.ae is a zone in the ClickitStory Cloudflare account that Resend can send from. No downtime, and Vercel keeps serving.
+**Goal**: Nothing pushed to main can damage the live database, every PR is gated, and the owner of the stray Cloudflare nameservers is known before any NS change. No downtime, and Vercel keeps serving. (The zone move and Resend DNS moved to Phase 3, signed by Koss 2026-10-20.)
 **Depends on**: Nothing (first phase)
-**Requirements**: SAFE-01, SAFE-02, SAFE-03, SAFE-04, SAFE-05, DNS-01, MAIL-02
+**Requirements**: SAFE-01, SAFE-02, SAFE-03, SAFE-04, SAFE-05
 **Success Criteria** (what must be TRUE):
   1. A PR that adds `drop`/`truncate`/`delete` to a migration, or fails lint, typecheck, unit tests or the build, shows a red check and cannot merge. A clean PR shows green.
   2. The live migration history matches the files. The destructive first migration and the seed migrations are no-ops in place. A live push runs only after Koss approves a CI dry-run.
   3. A recorded read-only live audit exists. It covers applied migrations vs files, the `is_admin` source used by RLS, every media-URL column, and the Supabase plan and backups. The owner of the stray `ignat`/`nataly` nameservers is found or ruled out, and this happens before any NS change.
-  4. `dig NS clickitstory.ae` against every `.ae` registry server returns only the ClickitStory Cloudflare pair. www.clickitstory.ae stays up throughout the move.
-  5. Resend shows clickitstory.ae as verified, and a test send passes SPF, DKIM and DMARC.
-**Owner-gated**: [OWNER] Supabase plan/backup check in the dashboard; [OWNER] approve each live migration dry-run; [OWNER] add the zone and re-create the records DNS-only; [OWNER] change the NS at tasjeel.ae; [OWNER] add the domain in Resend (on his Pro account) and set the DNS records.
-**Research flag**: Find who owns the NS pair, the .ae NS-change procedure, and the CF-assigned pair.
+**Owner-gated**: [OWNER] Supabase plan/backup check in the dashboard; [OWNER] approve each live migration dry-run.
+**Note**: SAFE-01, SAFE-02 and SAFE-04 must close before Phase 3's live migrations; SAFE-05 must close before Phase 3's NS change. SAFE-03 (CI) does not block Phase 2.
+**Research flag**: Find who owns the NS pair.
 **Plans**: TBD
 
 ### Phase 1.1: Admin Actions Hardening (INSERTED)
@@ -73,17 +72,17 @@ Plans:
 **Overlap note**: Phase 2 criterion 4 (SVG sanitised or rejected) is met here by rejecting SVG.
 
 ### Phase 2: Worker and R2 Media on workers.dev
-**Goal**: The complete app runs on Cloudflare Workers (OpenNext, ClickitStory account, Next 16.3.8+) at its workers.dev URL with the same behaviour viewers and admins have today. Media uploads go straight to R2, so nothing blocks the cutover.
-**Depends on**: Phase 1
-**Requirements**: PLAT-01, PLAT-02, PLAT-03, PLAT-04, PLAT-05, PLAT-06, PLAT-07, PLAT-08, PLAT-09, MEDIA-01, MEDIA-04, MEDIA-05, MEDIA-06
+**Goal**: The complete app runs on Cloudflare Workers (OpenNext, ClickitStory account, Next 16.4.1+) at its workers.dev URL with the same behaviour viewers and admins have today. Every image and video is copied to R2, optimized, and served by the media Worker. Media uploads go straight to R2, and the Vercel code is gone, so nothing blocks the cutover.
+**Depends on**: Phase 1.1 (merged to main)
+**Requirements**: PLAT-01, PLAT-02, PLAT-03, PLAT-04, PLAT-05, PLAT-06, PLAT-07, PLAT-08, PLAT-09, PLAT-10, MEDIA-01, MEDIA-03, MEDIA-04, MEDIA-05, MEDIA-06
 **Success Criteria** (what must be TRUE):
   1. On workers.dev, these route checks pass: a signed-out visitor is sent to sign-in from every gated page, a non-admin is refused `/admin`, and coming-soon mode and locale routing behave as they do on the live site. The gate suite passes (the `proxy.ts` spike runs first; the fallback is edge `middleware.ts`).
-  2. An admin edit made on workers.dev is visible to a viewer within 10 seconds. The scheduled-publish and media-cleanup crons run from Cron Triggers when triggered (cleanup stays off for Supabase originals). Rate limits key on `CF-Connecting-IP`, fail closed, and compare the cron secret in constant time.
+  2. An admin edit made on workers.dev is visible to a viewer within 10 seconds. The scheduled-publish and media-cleanup crons run from Cron Triggers when triggered (cleanup stays off for Supabase originals); they are deployed switched off and turned on at the Phase 3 cutover. Rate limits key on `CF-Connecting-IP`, fail closed, and compare the cron secret in constant time.
   3. Sign-in, sign-up, contact and newsletter show Turnstile, and a request without a valid token is refused. Cloudflare Web Analytics records page views. BotID and the Vercel analytics and speed-insights packages are gone.
-  4. An admin uploads artwork, an avatar and a site asset, and each goes from the browser straight to R2 and displays from `media.clickitstory.ae`. An SVG carrying a script is sanitised or rejected. Images resize on the free tier and fall back to the original at the cap, never to a broken image. Hero videos play as fast-start MP4 on Safari, Chrome and mobile.
-  5. CPU per page is measured on Workers Free and recorded. A merge to main deploys only after the CI gates pass and Koss approves the production environment.
-**Owner-gated**: [OWNER] create the R2, D1 and Queue resources and the media custom domain in the ClickitStory account (never the default wrangler login); [OWNER] set the Worker secrets and the Turnstile keys; [OWNER] enable Supabase CAPTCHA; [OWNER] add the GitHub Environment with Koss as the required reviewer; [OWNER] if pages fail on Free, decide on Workers Paid ($5/mo); [OWNER] decide on Image Transformations (free tier only); [OWNER] UAT on workers.dev.
-**Research flag**: `proxy.ts` under OpenNext 1.20.x; R2/D1 cache and purge interplay; `unstable_cache` through the D1 tag cache; R2 CORS syntax; presign headers; image loader zone settings.
+  4. An admin uploads artwork, an avatar and a site asset, and each goes from the browser straight to R2 and displays from the R2 media origin (the media Worker on workers.dev now; `media.clickitstory.ae` after Phase 3). An SVG upload is rejected. Every existing Supabase Storage object is in R2 with matching checksums and optimized WebP/AVIF copies; a missing copy falls back to the original, never to a broken image. Hero videos play as fast-start MP4 on Safari, Chrome and mobile.
+  5. CPU per page is measured on Workers Free and recorded. Deploys run with local wrangler from the control session after `npm run gate:local` passes and Koss says Ship; `wrangler whoami` shows the ClickitStory account first. No Vercel artefact remains in the repo.
+**Owner-gated**: [OWNER] create the R2 and D1 resources in the ClickitStory account (never the default wrangler login); [OWNER] set the Worker secrets and the Turnstile keys; [OWNER] run the media copy; [OWNER] if pages fail on Free, decide on Workers Paid ($5/mo); [OWNER] UAT on workers.dev. (Media custom domain and Supabase CAPTCHA moved to Phase 3; Queue to Phase 5; no GitHub Environment; Image Transformations not used. Signed by Koss 2026-10-20.)
+**Research flag**: done (02-RESEARCH.md, 2026-10-20).
 **Plans**: 22 plans (11 waves; run one plan at a time, never two builds at once). Proposed roadmap/requirement edits 1-9 are in 02-CONTEXT.md, not applied until Koss signs them (plan 02-05).
 
 Plans:
@@ -112,15 +111,17 @@ Plans:
 **UI hint**: yes
 
 ### Phase 3: Production Cutover
-**Goal**: Viewers at www.clickitstory.ae and the apex are served by the Worker. Every media URL in the database points at R2, the old Vercel deployment can no longer write to live data, and rollback stays possible until the proof window ends.
+**Goal**: clickitstory.ae is a zone in the ClickitStory Cloudflare account that Resend can send from. Viewers at www.clickitstory.ae and the apex are served by the Worker. Every media URL in the database points at R2, the old Vercel deployment can no longer write to live data, rollback stays possible until the proof window ends, and then the Vercel project is deleted.
 **Depends on**: Phase 2
-**Requirements**: DNS-02, DNS-03, DNS-04, MEDIA-02, MEDIA-03
+**Requirements**: DNS-01, MAIL-02, DNS-02, DNS-03, DNS-04, MEDIA-02, MEDIA-08, PLAT-11
 **Success Criteria** (what must be TRUE):
+  0. Before the flip: `dig NS clickitstory.ae` against every `.ae` registry server returns only the ClickitStory Cloudflare pair, www stays up throughout the move, and Resend shows clickitstory.ae verified with a test send passing SPF, DKIM and DMARC.
   1. Opening https://www.clickitstory.ae and the apex returns `server: cloudflare` with real HTML. A real account can sign in and play an episode on the live domain.
   2. The Vercel crons were off before the flip, and no Vercel cron runs against live Supabase afterwards. The service-role key in use is the newly rotated one.
-  3. All 86 Supabase Storage objects exist in R2 with matching checksums. A backup/mapping table exists. A DB-wide search finds zero old-host media URLs, and every image and video on the live site loads from `media.clickitstory.ae`.
+  3. Every object copied in Phase 2 still matches its checksum (re-run for any delta). A backup/mapping table exists. A DB-wide search finds zero old-host media URLs, and every image and video on the live site loads from `media.clickitstory.ae`.
   4. A written rollback path to Vercel exists and stays usable until Koss closes the proof window.
-**Owner-gated**: [OWNER] run the expand migrations on live after a dry-run; [OWNER] switch off the Vercel crons and env in the Vercel dashboard; [OWNER] attach the Worker custom domain to www and the apex; [OWNER] run the media copy script and approve the live URL rewrite; [OWNER] rotate the Supabase service-role key; [OWNER] Ship.
+  5. After Koss closes the proof window, the Vercel project and its domain are deleted, last, and the live site keeps working.
+**Owner-gated**: [OWNER] add the zone and re-create the records DNS-only; [OWNER] change the NS at tasjeel.ae (after SAFE-05); [OWNER] add the domain in Resend (on his Pro account) and set the DNS records; [OWNER] attach media.clickitstory.ae; [OWNER] run the expand migrations on live after a dry-run; [OWNER] switch off the Vercel crons and env in the Vercel dashboard; [OWNER] enable Supabase CAPTCHA; [OWNER] switch on the Worker crons; [OWNER] attach the Worker custom domain to www and the apex; [OWNER] approve the live URL rewrite; [OWNER] rotate the Supabase service-role key; [OWNER] close the proof window; [OWNER] delete the Vercel project and domain (last); [OWNER] Ship.
 **Plans**: TBD
 
 ### Phase 4: Design System Truth
@@ -182,13 +183,13 @@ Plans:
 ### Phase 8: Hardening and Contract Cleanup
 **Goal**: The core journeys are protected by end-to-end tests, the codebase carries no dead code and no trace of Vercel, the CSP is tight, and after the proof window the old storage and the old host are gone.
 **Depends on**: Phase 7, plus the end of the Phase 3 proof window
-**Requirements**: QA-01, QA-02, QA-03, QA-04, PLAT-10, MEDIA-07
+**Requirements**: QA-01, QA-02, QA-03, QA-04, MEDIA-07
 **Success Criteria** (what must be TRUE):
   1. CI runs end-to-end tests for sign-in (password and code), browse, watch with resume, and admin playlist import, and they pass against a build of main.
   2. The repo has no unrendered components, unused queries, duplicate files, starter SVGs or stale Playwright specs. It also has no Vercel artefact: no `vercel.json`, `@vercel/*`, `botid`, `VERCEL_*` fallbacks, `.vercelignore` or `check-cron.sh`. CLAUDE.md, AGENTS.md, MEMORY.md and .hermes.md describe Cloudflare + Supabase.
   3. The live CSP has no wildcard image source, no `supabase.co`, `picsum` or `unsplash` hosts, and no script `unsafe-inline` where it can be avoided. The site still renders and plays.
-  4. After Koss approves, Supabase Storage is empty and the Vercel project is deleted. The live site keeps working, with every media URL on R2.
-**Owner-gated**: [OWNER] close the proof window; [OWNER] approve the contract migrations (drop `admin_user_id` and `youtube_api_key`); [OWNER] empty Supabase Storage; [OWNER] delete the Vercel project and domain; [OWNER] Ship.
+  4. After Koss approves, Supabase Storage is empty. The live site keeps working, with every media URL on R2.
+**Owner-gated**: [OWNER] close the proof window; [OWNER] approve the contract migrations (drop `admin_user_id` and `youtube_api_key`); [OWNER] empty Supabase Storage; [OWNER] Ship.
 **Plans**: TBD
 
 ## Progress
@@ -200,7 +201,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 |-------|----------------|--------|-----------|
 | 1. Safe Ground | 0/TBD | Not started | - |
 | 1.1. Admin Actions Hardening (INSERTED) | 0/13 | Not started | - |
-| 2. Worker and R2 Media on workers.dev | 0/22 | Planned (awaiting plan gate) | - |
+| 2. Worker and R2 Media on workers.dev | 0/22 | Planned (plan gate signed 2026-10-20) | - |
 | 3. Production Cutover | 0/TBD | Not started | - |
 | 4. Design System Truth | 0/TBD | Not started | - |
 | 5. Accounts and Email | 0/TBD | Not started | - |

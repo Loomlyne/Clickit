@@ -26,13 +26,14 @@
 - [ ] **PLAT-01**: The app builds and runs on Cloudflare Workers (OpenNext) in the ClickitStory account, on Next 16.3.8+
 - [ ] **PLAT-02**: Route gates work on Workers: signed-out viewer is sent to sign-in from every gated page; non-admin is refused /admin; coming-soon mode and locale routing behave as today
 - [ ] **PLAT-03**: An admin edit is visible to viewers within 10 seconds (R2 incremental cache + D1 tag cache + revalidation queue)
-- [ ] **PLAT-04**: Scheduled episode publishing and media cleanup run from Cloudflare Cron Triggers
+- [ ] **PLAT-04**: Scheduled episode publishing and media cleanup run from Cloudflare Cron Triggers (built in Phase 2 and deployed switched off; switched on at the Phase 3 cutover after the Vercel crons are off)
 - [ ] **PLAT-05**: Sign-in, sign-up, contact and newsletter forms are protected by Turnstile; BotID is gone
 - [ ] **PLAT-06**: Page views are measured by Cloudflare Web Analytics; Vercel analytics and speed insights are gone
 - [ ] **PLAT-07**: Rate limits use the real visitor IP (`CF-Connecting-IP`) and fail closed; cron secret compared in constant time
-- [ ] **PLAT-08**: Pushing to main deploys to Cloudflare only after the CI gates pass and Koss approves the production environment
+- [ ] **PLAT-08**: Deploys to Cloudflare run with local wrangler from the control session after `npm run gate:local` passes and Koss says Ship; `wrangler whoami` shows the ClickitStory account first. No deploy token in GitHub
 - [ ] **PLAT-09**: Starts on Workers Free; CPU per page is measured on workers.dev and Workers Paid is proposed to Koss only if pages fail
-- [ ] **PLAT-10**: Every Vercel artefact is removed (vercel.json, @vercel/*, botid, VERCEL_* fallbacks, .vercelignore, check-cron.sh, CSP hosts) and the Vercel project is deleted after the proof window
+- [ ] **PLAT-10**: Every Vercel artefact is removed from the repo (vercel.json, @vercel/*, botid, VERCEL_* fallbacks, .vercelignore, check-cron.sh, CSP hosts)
+- [ ] **PLAT-11**: The Vercel project and its domain are deleted, last, after Koss closes the proof window
 
 ### DNS and cutover (DNS)
 
@@ -45,8 +46,9 @@
 
 - [ ] **MEDIA-01**: Admin uploads artwork, avatars and site assets straight from the browser to R2; no upload passes through a server action body
 - [ ] **MEDIA-02**: Every stored photo and video is served from media.clickitstory.ae; the database holds only R2 URLs
-- [ ] **MEDIA-03**: The 86 existing Supabase Storage objects are copied to R2 with checksums, DB URLs rewritten with a backup table, zero old-host URLs remain
-- [ ] **MEDIA-04**: Images are resized by Cloudflare's free tier (never paid overage); at the cap the original image shows, never a broken one
+- [ ] **MEDIA-03**: Every Supabase Storage object in the reviewed manifest is copied to R2 with checksums, plus optimized WebP/AVIF copies
+- [ ] **MEDIA-08**: Database media URLs are rewritten to R2 with a backup table (live DB, Koss's approval); zero old-host URLs remain
+- [ ] **MEDIA-04**: Images are pre-optimized when copied or uploaded (WebP/AVIF copies plus the original) and served from R2. No paid image feature. If a copy is missing, the original shows, never a broken image
 - [ ] **MEDIA-05**: Hero background videos are compressed fast-start MP4s on R2 and play on Safari, Chrome and mobile
 - [ ] **MEDIA-06**: Uploaded SVGs cannot run script (sanitised properly or rejected)
 - [ ] **MEDIA-07**: Supabase Storage is emptied only after Koss approves, following the proof window
@@ -159,18 +161,20 @@
 | PLAT-07 | Phase 2 | Pending |
 | PLAT-08 | Phase 2 | Pending |
 | PLAT-09 | Phase 2 | Pending |
-| PLAT-10 | Phase 8 | Pending |
-| DNS-01 | Phase 1 | Pending |
+| PLAT-10 | Phase 2 | Pending |
+| PLAT-11 | Phase 3 | Pending |
+| DNS-01 | Phase 3 | Pending |
 | DNS-02 | Phase 3 | Pending |
 | DNS-03 | Phase 3 | Pending |
 | DNS-04 | Phase 3 | Pending |
 | MEDIA-01 | Phase 2 | Pending |
 | MEDIA-02 | Phase 3 | Pending |
-| MEDIA-03 | Phase 3 | Pending |
+| MEDIA-03 | Phase 2 | Pending |
 | MEDIA-04 | Phase 2 | Pending |
 | MEDIA-05 | Phase 2 | Pending |
 | MEDIA-06 | Phase 2 | Pending |
 | MEDIA-07 | Phase 8 | Pending |
+| MEDIA-08 | Phase 3 | Pending |
 | AUTH-01 | Phase 5 | Pending |
 | AUTH-02 | Phase 5 | Pending |
 | AUTH-03 | Phase 5 | Pending |
@@ -180,7 +184,7 @@
 | AUTH-07 | Phase 5 | Pending |
 | AUTH-08 | Phase 5 | Pending |
 | MAIL-01 | Phase 5 | Pending |
-| MAIL-02 | Phase 1 | Pending |
+| MAIL-02 | Phase 3 | Pending |
 | MAIL-03 | Phase 5 | Pending |
 | MAIL-04 | Phase 5 | Pending |
 | MAIL-05 | Phase 5 | Pending |
@@ -215,10 +219,10 @@
 | QA-04 | Phase 8 | Pending |
 
 **Coverage:**
-- v1 requirements: 73 total
-- Mapped to phases: 73
+- v1 requirements: 75 total
+- Mapped to phases: 75
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-10-04*
-*Last updated: 2026-10-04 after roadmap creation*
+*Last updated: 2026-10-20 after Koss signed Phase 2 roadmap edits 1-9 (PLAT-10/11 and MEDIA-03/08 split, DNS-01 and MAIL-02 to Phase 3)*
