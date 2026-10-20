@@ -116,8 +116,21 @@ Plans:
   3. The Claude Design canvas shows foundations, viewer screens (including the OTP sign-in, the RTL treatment and an RMF-compliant player), admin screens (playlist import preview, inbox) and the email templates. Koss has signed it.
   4. A signed-out visitor or a non-admin viewer opening `/design-system` is refused.
 **Owner-gated**: [OWNER] sign the canvas (it blocks UI build in Phases 5-7); [OWNER] Ship.
-**Plans**: TBD
+**Plans**: 11 plans (5 waves). Plans name the pending owner answers (Q1-Q8) they depend on; owner-visible plans open with a 04-GATE.md checkpoint.
 **UI hint**: yes
+
+Plans:
+- [ ] 04-01-PLAN.md — W1: sync main; named radius/shadow/status + exact-value tokens in globals.css; design-truth.ts; cn() twMerge names; pin tests
+- [ ] 04-02-PLAN.md — W1: ESLint rule clickit/no-raw-design-values (warn) + fixtures + baseline inventory
+- [ ] 04-03-PLAN.md — W1: one brand map (D-04) in brand-colors.ts; six consumers; parity test
+- [ ] 04-04-PLAN.md — W2: [gate Q5] admin-only /admin/design-system page, sidebar entry, EN+AR copy, access pins
+- [ ] 04-05-PLAN.md — W2: [gate Q3] D-03 snaps (select, toaster, /portfolio CTA) + D-01 literals
+- [ ] 04-06-PLAN.md — W2: DESIGN.md truth + parity test; DS-01/DS-04 and roadmap wording; 04-P6-ADDENDUM.md
+- [ ] 04-07-PLAN.md — W2: [gate Q6-Q8, orchestrator] Claude Design canvas spike + Foundations + Viewer boards
+- [ ] 04-08-PLAN.md — W3: [orchestrator] Admin + Email boards; [OWNER] four group signatures (D-08)
+- [ ] 04-09-PLAN.md — W3: sync main; codemod 1/3 (UI primitives, chrome, viewer cards)
+- [ ] 04-10-PLAN.md — W4: codemod 2/3 (watch, landing, lib gradients, viewer routes, skeletons)
+- [ ] 04-11-PLAN.md — W5: codemod 3/3 (admin), rule to error, banned-literal tests, full gate
 
 ### Phase 5: Accounts and Email
 **Goal**: Only signed-in viewers get past the landing and legal pages. Viewers can join or sign in with a 6-digit email code or a password. Both admins work under their own TOTP-protected accounts, and every auth and app email arrives branded from `Clickit Story <no-reply@clickitstory.ae>`, once, in the viewer's language.
@@ -185,7 +198,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | 1.1. Admin Actions Hardening (INSERTED) | 13/13 | UAT passed, PR open | - |
 | 2. Worker and R2 Media on workers.dev | 0/TBD | Not started | - |
 | 3. Production Cutover | 0/TBD | Not started | - |
-| 4. Design System Truth | 0/TBD | Not started | - |
+| 4. Design System Truth | 0/11 | Planned | - |
 | 5. Accounts and Email | 0/TBD | Not started | - |
 | 6. YouTube Import and Player | 0/TBD | Not started | - |
 | 7. Product Completeness, Search and Arabic | 0/TBD | Not started | - |
