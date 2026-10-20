@@ -29,7 +29,7 @@ Records in the Cloudflare zone at 11:40 UTC:
 | Name | Type | Value | Proxy | State |
 |---|---|---|---|---|
 | `www` | CNAME | `ba211fb55cf67415.vercel-dns-017.com` | **proxied (orange)** | wrong: must be DNS only, see 5a |
-| `@` (apex) | — | — | — | **missing**: `https://clickitstory.ae` fails for everyone, see 5b |
+| `@` (apex) | AAAA | `100::` | proxied | placeholder for the redirect rule (11:52 UTC), see 5b |
 | `media` | Worker custom domain | `clickit-media` | managed | **live since 11:46:28 UTC** |
 
 Records that existed at Tasjeel before the move (public DNS, 10:29 UTC): apex
@@ -130,3 +130,7 @@ with the records above, and can take up to ~24 h to settle (Cloudflare NS TTL
   host" answer catch up within their negative-cache time.
 - 11:47 `www` (still proxied) answers 200 through the Cloudflare edge: the edge
   certificate is issued. Apex still has no record.
+- 11:52 Apex `AAAA @ 100::` proxied added; redirect rules "root to WWW" and
+  "HTTP to HTTPS" (templates) deployed. 11:54 checks: `https://clickitstory.ae/en`
+  → 301 `https://www.clickitstory.ae/en` (path and query kept) → 200; `http://`
+  → 301 to `https://`; `www` 200; `media` 200. No Vercel record added.
