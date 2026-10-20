@@ -189,7 +189,7 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
               className="mt-1 rounded-full"
               onClick={addRow}
             >
-              <Plus className="mr-1.5 size-3.5" />
+              <Plus className="me-1.5 size-3.5" />
               Add social link
             </Button>
           )}
@@ -281,17 +281,19 @@ function SocialIconUpload({
         <button
           type="button"
           onClick={onRemove}
-          className="group relative flex size-9 items-center justify-center overflow-hidden rounded-[8px] border border-[var(--line)] bg-black/30 after:absolute after:-inset-1 after:content-['']"
+          className="group relative flex size-9 items-center justify-center rounded-[8px] border border-[var(--line)] bg-black/30 after:absolute after:-inset-1 after:content-['']"
           title="Remove icon"
         >
-          <Image
-            src={stripStorageCacheBust(currentUrl) ?? currentUrl}
-            alt="icon"
-            width={24}
-            height={24}
-            unoptimized
-            className="size-6 object-contain transition-opacity group-hover:opacity-20"
-          />
+          <span className="flex size-full items-center justify-center overflow-hidden rounded-[8px]">
+            <Image
+              src={stripStorageCacheBust(currentUrl) ?? currentUrl}
+              alt="icon"
+              width={24}
+              height={24}
+              unoptimized
+              className="size-6 object-contain transition-opacity group-hover:opacity-20"
+            />
+          </span>
           <Trash2 className="text-brand-red-safe absolute size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
         </button>
       ) : (

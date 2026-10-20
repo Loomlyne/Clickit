@@ -221,12 +221,12 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
         heading={tShows('emptyHeading')}
         body={tShows('emptyBody')}
         action={
-          <Link href="/admin/shows/new">
-            <Button>
+          <Button asChild>
+            <Link href="/admin/shows/new">
               <Plus className="me-1.5 size-4" />
               {tDash('createShow')}
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         }
       />
     )
@@ -477,17 +477,18 @@ export function ShowsTable({ shows, categoriesByShowId }: ShowsTableProps) {
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Link href={`/admin/shows/${show.id}/edit`}>
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label={tShows('editShowAria', {
-                                title: show.title,
-                              })}
-                            >
+                          <Button
+                            asChild
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={tShows('editShowAria', {
+                              title: show.title,
+                            })}
+                          >
+                            <Link href={`/admin/shows/${show.id}/edit`}>
                               <Pencil className="size-4" />
-                            </Button>
-                          </Link>
+                            </Link>
+                          </Button>
                         </TooltipTrigger>
                         <TooltipContent>{tShows('editShow')}</TooltipContent>
                       </Tooltip>

@@ -40,7 +40,7 @@ export function AdminProfileCard({
       </div>
       <Link
         href="/profile"
-        className="relative inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--line)] px-3.5 text-[13px] text-[var(--text-dim)] transition-colors after:absolute after:inset-x-0 after:-inset-y-1 after:content-[''] hover:bg-[var(--bg-2)] hover:text-[var(--text)]"
+        className="relative inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--line)] px-3.5 text-[13px] text-[var(--text-dim)] transition-colors after:absolute after:inset-x-0 after:-inset-y-1 after:content-[''] hover:bg-[var(--bg-2)] hover:text-[var(--text)] max-md:h-11"
       >
         <Settings className="size-3.5" />
         {tNav('profile')}

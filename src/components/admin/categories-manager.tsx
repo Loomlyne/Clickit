@@ -252,10 +252,12 @@ function CategoryEditor({
 
       <div
         className={cn(
-          'mt-5 rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-4 transition-[border-left-color]',
-          draft.color && 'border-l-[3px]'
+          'mt-5 rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-4 transition-[border-inline-start-color]',
+          draft.color && 'border-s-[3px]'
         )}
-        style={draft.color ? { borderLeftColor: draft.color } : undefined}
+        style={
+          draft.color ? { borderInlineStartColor: draft.color } : undefined
+        }
       >
         <ColorPicker
           value={draft.color}
@@ -522,7 +524,7 @@ export function CategoriesManager({
                   {tCat('colColor')}
                 </TableHead>
                 <TableHead className="w-32">{tCat('colAssigned')}</TableHead>
-                <TableHead className="w-52 text-right">
+                <TableHead className="w-52 text-end">
                   {tCat('colActions')}
                 </TableHead>
               </TableRow>

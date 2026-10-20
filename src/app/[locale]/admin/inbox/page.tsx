@@ -75,7 +75,7 @@ export default async function AdminInboxPage() {
                 <TableHead className="hidden md:table-cell">
                   {t('colEmail')}
                 </TableHead>
-                <TableHead className="text-right">{t('colActions')}</TableHead>
+                <TableHead className="text-end">{t('colActions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -100,7 +100,7 @@ export default async function AdminInboxPage() {
                   <TableCell className="text-muted-foreground hidden md:table-cell">
                     {message.email}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-end">
                     <Button asChild variant="outline" size="sm">
                       <Link href={`/admin/inbox/${message.id}`}>
                         <MailOpen className="size-4" />

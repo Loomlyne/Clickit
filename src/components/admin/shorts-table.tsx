@@ -302,7 +302,7 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                   <TableHead className="w-20 text-center">
                     {t('colFeatured')}
                   </TableHead>
-                  <TableHead className="w-36 text-right">
+                  <TableHead className="w-36 text-end">
                     {t('colActions')}
                   </TableHead>
                 </TableRow>
@@ -381,7 +381,7 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                         />
                       </Button>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <div className="flex items-center justify-end gap-2">
                         <Tooltip>
                           <TooltipTrigger asChild>

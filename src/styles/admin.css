@@ -59,7 +59,9 @@ body:has(.admin-root) [data-slot='button'][data-variant='ghost'] {
   backdrop-filter: none;
 }
 body:has(.admin-root)
-  [data-slot='button'][data-variant='ghost']:not([class*='text-brand']):not([class*='text-[var']):not([class*='text-destructive']) {
+  [data-slot='button'][data-variant='ghost']:not([class*='text-brand']):not(
+    [class*='text-[var']
+  ):not([class*='text-destructive']):not([class*='hover:text-']) {
   color: var(--text-dim);
 }
 body:has(.admin-root)
@@ -67,7 +69,11 @@ body:has(.admin-root)
   background: var(--bg-3);
 }
 body:has(.admin-root)
-  [data-slot='button'][data-variant='ghost']:hover:not(:disabled):not([class*='hover:text-']):not([class*='text-brand']):not([class*='text-[var']):not([class*='text-destructive']) {
+  [data-slot='button'][data-variant='ghost']:hover:not(:disabled):not(
+    [class*='hover:text-']
+  ):not([class*='text-brand']):not([class*='text-[var']):not(
+    [class*='text-destructive']
+  ) {
   color: var(--text);
 }
 body:has(.admin-root) [data-slot='button'][data-variant='destructive'] {
@@ -84,7 +90,9 @@ body:has(.admin-root)
   background: var(--uis-primary-hover);
 }
 body:has(.admin-root)
-  [data-slot='button'][data-variant='outline']:hover:not(:disabled):not([class*='hover:bg-[var']) {
+  [data-slot='button'][data-variant='outline']:hover:not(:disabled):not(
+    [class*='hover:bg-[var']
+  ) {
   background: var(--bg-2);
 }
 
@@ -173,4 +181,9 @@ body:has(.admin-root) [data-slot='tabs-trigger'][data-state='active'] {
   background: var(--primary);
   border-color: var(--primary);
   color: var(--primary-foreground);
+}
+@media (max-width: 767px) {
+  body:has(.admin-root) [data-slot='tabs-trigger'] {
+    min-height: 44px;
+  }
 }

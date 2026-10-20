@@ -157,7 +157,7 @@ export function ScheduleEpisodesButton({ showId }: { showId: string }) {
               variant="ghost"
               onClick={cancelSchedule}
               disabled={saving || loading}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-[var(--text-dim)] hover:text-[var(--text)]"
             >
               {t('unscheduleButton')}
             </Button>

@@ -37,6 +37,12 @@ Not from this PR: `admin.seasonForm.addSeason` i18n key missing in en and ar (se
 - Hit areas must not overlap: a 36px control with a 4px-inset hit area needs 8px between neighbours. Row action groups (shows, shorts, episodes, categories, FAQ, legal) moved from `gap-1` to `gap-2`; genre colour swatches 32 -> 36px with `gap-2` and a hit area; "Default" swatch reset and the hero-media mode toggle got 36px height and a vertical-only hit area.
 - Gate re-run after merge: tsc 0, lint 0 errors/17 warnings, unit 377/377, build exit 0 (placeholder public env).
 
+## Second review round (local `reviewer`, Opus) - fixed
+
+Hero URL inputs now have a real focus ring (the earlier claim was wrong until this commit); phone targets raised to 44px (tabs, profile link, secret-field replace and eye, hero overlay buttons, which also show on focus-within); footer icon button no longer clips its hit area; season tabs wrap with `gap-2` so hit areas do not overlap; cast clear button moved off the avatar and the delete button has an aria-label; Unschedule keeps its hover colour; remaining `<a><button>` pairs in shows-table use `Button asChild`; RTL: `text-end`, `me-*`, `start-*`, `end-*`, `border-s`.
+Gate re-run: tsc 0, lint 0 errors/17 warnings, unit 377/377, build exit 0 (placeholder public env).
+Left alone: `src/lib/category-chip.ts` is now unused (delete in a cleanup); switch knobs keep `left-0.5` (pre-existing).
+
 ## NOT verified
 
 - No render of the real admin app (no local Supabase, no admin session). `admin.css` selectors (`data-slot`, `data-size`, `data-state`) were checked by reading the shared components, not by looking at the running page. The picture used the same Tailwind classes but not `admin.css`.

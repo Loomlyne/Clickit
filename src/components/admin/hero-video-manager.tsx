@@ -370,7 +370,7 @@ function HeroVariantPanel({
             placeholder="https://www.youtube.com/watch?v=..."
             value={youtubeInput}
             onChange={(e) => setYoutubeInput(e.target.value)}
-            className="placeholder:text-muted-foreground w-full rounded-lg border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2 text-sm text-[var(--text)] focus:border-[var(--line-2)] focus:outline-none"
+            className="placeholder:text-muted-foreground w-full rounded-lg border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2 text-sm text-[var(--text)] focus:outline-none focus-visible:border-[var(--ring)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)]/40"
           />
           <Button
             onClick={handleYoutubeSave}

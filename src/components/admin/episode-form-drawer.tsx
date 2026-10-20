@@ -368,7 +368,7 @@ export function EpisodeFormDrawer({
                       {...form.register('duration', { valueAsNumber: true })}
                       className="pe-10"
                     />
-                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
+                    <span className="text-muted-foreground absolute end-3 top-1/2 -translate-y-1/2 text-xs">
                       {t('durationUnit')}
                     </span>
                   </div>

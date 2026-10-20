@@ -128,7 +128,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
               onClick={openNew}
               className="mt-1"
             >
-              <Plus className="mr-1.5 size-3.5" />
+              <Plus className="me-1.5 size-3.5" />
               {t('faqAddFirst')}
             </Button>
           </div>
@@ -141,7 +141,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
                 <TableHead className="hidden md:table-cell">
                   {t('faqColAnswerPreview')}
                 </TableHead>
-                <TableHead className="w-[88px] text-right">
+                <TableHead className="w-[88px] text-end">
                   {t('faqColActions')}
                 </TableHead>
               </TableRow>
@@ -158,7 +158,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
                   <TableCell className="hidden max-w-[320px] text-xs text-[var(--text-mute)] md:table-cell">
                     <span className="line-clamp-2">{faq.answer}</span>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-end">
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         size="icon"
@@ -299,7 +299,7 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
                 saving || !draft?.question.trim() || !draft?.answer.trim()
               }
             >
-              {saving ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+              {saving ? <Loader2 className="me-2 size-4 animate-spin" /> : null}
               {draft?.id ? t('faqSaveChanges') : t('faqCreate')}
             </Button>
           </DialogFooter>

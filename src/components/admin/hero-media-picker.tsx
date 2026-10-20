@@ -292,7 +292,7 @@ export function HeroMediaPicker({
             {mediaPreview}
             {/* Source badge */}
             {contentType && (
-              <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-medium text-[var(--text-dim)] backdrop-blur-sm">
+              <span className="absolute start-2 bottom-2 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-medium text-[var(--text-dim)] backdrop-blur-sm">
                 {contentType === 'mp4'
                   ? 'MP4'
                   : contentType === 'youtube'
@@ -301,12 +301,12 @@ export function HeroMediaPicker({
               </span>
             )}
             {/* Hover actions */}
-            <div className="absolute inset-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/70 to-black/30 opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="absolute inset-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/70 to-black/30 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
               {mode !== 'youtube' && (
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-black transition-transform hover:scale-105"
+                  className="min-h-11 rounded-full bg-white px-4 text-xs font-medium text-black transition-transform hover:scale-105"
                 >
                   {t('replaceButton')}
                 </button>
@@ -314,7 +314,7 @@ export function HeroMediaPicker({
               <button
                 type="button"
                 onClick={handleRemove}
-                className="flex items-center gap-1 rounded-full bg-[var(--bg-3)] px-3 py-1.5 text-xs font-medium text-[var(--text)] backdrop-blur-sm transition-colors hover:bg-white/25"
+                className="flex min-h-11 items-center gap-1 rounded-full bg-[var(--bg-3)] px-4 text-xs font-medium text-[var(--text)] backdrop-blur-sm transition-colors hover:bg-white/25"
               >
                 <Trash2 className="size-3.5" />
                 {t('clearButton')}
@@ -351,7 +351,7 @@ export function HeroMediaPicker({
             placeholder="https://www.youtube.com/watch?v=..."
             value={youtubeInput}
             onChange={(e) => setYoutubeInput(e.target.value)}
-            className="placeholder:text-muted-foreground flex-1 rounded-lg border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2.5 text-sm text-[var(--text)] focus:border-[var(--line-2)] focus:outline-none"
+            className="placeholder:text-muted-foreground flex-1 rounded-lg border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2.5 text-sm text-[var(--text)] focus:outline-none focus-visible:border-[var(--ring)] focus-visible:ring-[3px] focus-visible:ring-[var(--ring)]/40"
           />
           <Button
             type="button"

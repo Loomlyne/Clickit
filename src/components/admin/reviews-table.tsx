@@ -212,7 +212,7 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
                   <TableHead className="hidden sm:table-cell">
                     {t('colDate')}
                   </TableHead>
-                  <TableHead className="w-16 text-right">
+                  <TableHead className="w-16 text-end">
                     {t('colActions')}
                   </TableHead>
                 </TableRow>
@@ -270,7 +270,7 @@ export function ReviewsTable({ reviews, loadError = null }: ReviewsTableProps) {
                         }
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <Button
                         variant="destructive"
                         size="icon"

@@ -159,7 +159,7 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
               onClick={openNew}
               className="mt-1"
             >
-              <Plus className="mr-1.5 size-3.5" />
+              <Plus className="me-1.5 size-3.5" />
               {t('legalAddFirst')}
             </Button>
           </div>
@@ -174,7 +174,7 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                 <TableHead className="hidden md:table-cell">
                   {t('legalColUpdated')}
                 </TableHead>
-                <TableHead className="w-[88px] text-right">
+                <TableHead className="w-[88px] text-end">
                   {t('legalColActions')}
                 </TableHead>
               </TableRow>
@@ -191,7 +191,7 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                   <TableCell className="hidden text-xs text-[var(--text-mute)] md:table-cell">
                     {formatDate(page.updated_at)}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-end">
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         size="icon"
@@ -341,7 +341,7 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
               onClick={onSave}
               disabled={saving || !draft?.title || !draft?.slug}
             >
-              {saving ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+              {saving ? <Loader2 className="me-2 size-4 animate-spin" /> : null}
               {draft?.id ? t('legalSaveChanges') : t('legalCreate')}
             </Button>
           </SheetFooter>
