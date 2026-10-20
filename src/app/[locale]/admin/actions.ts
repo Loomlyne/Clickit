@@ -16,11 +16,35 @@ import {
   reorderShowCore,
   updateShowCore,
 } from '@/lib/admin/show-writes'
-import { categoryOrderSchema, formatZodError, parseId } from '@/lib/admin/schemas'
+import {
+  categoryOrderSchema,
+  episodeSchema,
+  formatZodError,
+  parseId,
+  seasonSchema,
+} from '@/lib/admin/schemas'
+import {
+  createSeasonCore,
+  updateSeasonCore,
+  deleteSeasonCore,
+  createEpisodeCore,
+  updateEpisodeCore,
+} from '@/lib/admin/season-episode-writes'
+import {
+  archiveEpisodeCore,
+  restoreEpisodeCore,
+  deleteEpisodePermanentlyCore,
+  reorderEpisodeCore,
+} from '@/lib/admin/episode-lifecycle'
+import {
+  planShowScheduleCore,
+  applyShowScheduleCore,
+  unscheduleShowCore,
+  type PlannedEpisodeSlot,
+} from '@/lib/admin/show-schedule'
 import { generateSlug } from '@/lib/slug'
-import { fillArabic, translateToArabic, translateBatchToArabic } from '@/lib/translate'
+import { fillArabic, translateBatchToArabic } from '@/lib/translate'
 import { mp4BytesHasAudioTrack } from '@/lib/mp4-audio'
-import { nextBroadcastSlots } from '@/lib/scheduling'
 import {
   assertPublicMediaWriteReady,
   mirrorPublicMediaObject,
@@ -256,29 +280,6 @@ function bumpCatalogCache() {
   updateTag('shows')
   updateTag('categories')
 }
-
-const seasonSchema = z.object({
-  show_id: z.string().uuid(),
-  title: z.string().min(1, 'Title is required'),
-  title_ar: z.string().optional().nullable(),
-  season_number: z.number().int().positive(),
-})
-
-const episodeSchema = z.object({
-  show_id: z.string().uuid(),
-  season_id: z.string().uuid(),
-  title: z.string().min(1, 'Title is required'),
-  title_ar: z.string().optional().nullable(),
-  description: z.string().min(1, 'Description is required'),
-  description_ar: z.string().optional().nullable(),
-  episode_number: z.number().int().positive(),
-  youtube_video_id: z.string().optional().nullable(),
-  duration: z.number().int().positive().optional().nullable(),
-  status: z.enum(['draft', 'coming-soon', 'published']),
-  // Scheduled publish time (UTC ISO). Only meaningful for coming-soon episodes;
-  // the form sends null otherwise.
-  publish_at: z.string().datetime({ offset: true }).optional().nullable(),
-})
 
 // ---------------------------------------------------------------------------
 // Show Actions
@@ -732,130 +733,89 @@ export async function reorderCategories(
 // Season Actions
 // ---------------------------------------------------------------------------
 
+type ShowScoped = { data?: { showId?: string } }
+
+/**
+ * Revalidate a show's admin page. The show id comes from the core result (the
+ * stored row); the client value is only a fallback when the core threw, and it
+ * is only used when it is a valid UUID. Returns whether a page was revalidated.
+ */
+function revalidateShowPage(
+  result: ShowScoped | undefined,
+  clientShowId?: unknown
+): boolean {
+  const parsed = parseId(result?.data?.showId ?? clientShowId, 'show')
+  if (!parsed.ok) return false
+  revalidatePath(`/admin/shows/${parsed.value}`)
+  return true
+}
+
 export async function createSeason(
   data: z.input<typeof seasonSchema>
 ): Promise<ActionResult> {
-  try {
-    await assertAdmin()
-    const parsed = seasonSchema.parse(data)
-    const admin = createAdminClient()
-
-    // Auto-fill blank Arabic title from English (DeepL).
-    parsed.title_ar = await fillArabic(parsed.title, parsed.title_ar)
-
-    const { data: season, error } = await admin
-      .from('seasons')
-      .insert(parsed)
-      .select()
-      .single()
-
-    if (error) return { success: false, error: error.message }
-
-    // Update show season_count
-    const { count } = await admin
-      .from('seasons')
-      .select('*', { count: 'exact', head: true })
-      .eq('show_id', parsed.show_id)
-
-    await admin
-      .from('shows')
-      .update({ season_count: count ?? 0 })
-      .eq('id', parsed.show_id)
-
-    revalidatePath(`/admin/shows/${parsed.show_id}`)
-    updateTag('shows')
-    return { success: true, data: season }
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to create season',
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      createSeasonCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        data
+      ),
+    {
+      fallbackError: 'Failed to create season',
+      revalidate: (result) => {
+        if (!revalidateShowPage(result, data?.show_id)) bumpCatalogCache()
+        updateTag('shows')
+      },
     }
-  }
+  )
 }
 
 export async function updateSeason(
   id: string,
   data: Partial<z.input<typeof seasonSchema>>
 ): Promise<ActionResult> {
-  try {
-    await assertAdmin()
-    const admin = createAdminClient()
-
-    // Auto-fill blank Arabic title from English when the title is being set.
-    if (data.title && !(data.title_ar ?? '').trim()) {
-      data.title_ar = await translateToArabic(data.title)
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      updateSeasonCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        id,
+        data
+      ),
+    {
+      fallbackError: 'Failed to update season',
+      revalidate: (result) => {
+        if (!revalidateShowPage(result, data?.show_id)) bumpCatalogCache()
+        updateTag('shows')
+      },
     }
-
-    const { data: season, error } = await admin
-      .from('seasons')
-      .update(data)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) return { success: false, error: error.message }
-
-    if (season) {
-      revalidatePath(`/admin/shows/${season.show_id}`)
-      updateTag('shows')
-    }
-    return { success: true, data: season }
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to update season',
-    }
-  }
+  )
 }
 
 export async function deleteSeason(
   id: string,
   showId: string
 ): Promise<ActionResult> {
-  try {
-    await assertAdmin()
-    const admin = createAdminClient()
-
-    // Delete season — CASCADE deletes episodes
-    const { error } = await admin.from('seasons').delete().eq('id', id)
-
-    if (error) return { success: false, error: error.message }
-
-    // Update show season_count
-    const { count } = await admin
-      .from('seasons')
-      .select('*', { count: 'exact', head: true })
-      .eq('show_id', showId)
-
-    await admin
-      .from('shows')
-      .update({ season_count: count ?? 0 })
-      .eq('id', showId)
-
-    // Update show episode_count
-    const { count: epCount } = await admin
-      .from('episodes')
-      .select('*', { count: 'exact', head: true })
-      .eq('show_id', showId)
-
-    await admin
-      .from('shows')
-      .update({ episode_count: epCount ?? 0 })
-      .eq('id', showId)
-
-    revalidatePath(`/admin/shows/${showId}`)
-    updateTag('shows')
-    updateTag('episodes')
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to delete season',
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      deleteSeasonCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        id,
+        showId
+      ),
+    {
+      fallbackError: 'Failed to delete season',
+      revalidate: (result) => {
+        if (!revalidateShowPage(result, showId)) bumpCatalogCache()
+        updateTag('shows')
+        updateTag('episodes')
+      },
     }
-  }
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -865,485 +825,144 @@ export async function deleteSeason(
 export async function createEpisode(
   data: z.input<typeof episodeSchema>
 ): Promise<ActionResult> {
-  try {
-    await assertAdmin()
-    const parsed = episodeSchema.parse(data)
-    const admin = createAdminClient()
-
-    // Auto-fill blank Arabic fields from their English source (DeepL).
-    parsed.title_ar = await fillArabic(parsed.title, parsed.title_ar)
-    parsed.description_ar = await fillArabic(parsed.description, parsed.description_ar)
-
-    // If an archived episode occupies this number, bump it out of the way
-    const { data: archivedConflict } = await admin
-      .from('episodes')
-      .select('id')
-      .eq('season_id', parsed.season_id)
-      .eq('episode_number', parsed.episode_number)
-      .eq('archived', true)
-      .maybeSingle()
-
-    if (archivedConflict) {
-      // Find the max episode_number in this season across all episodes
-      const { data: maxRow } = await admin
-        .from('episodes')
-        .select('episode_number')
-        .eq('season_id', parsed.season_id)
-        .order('episode_number', { ascending: false })
-        .limit(1)
-        .single()
-
-      await admin
-        .from('episodes')
-        .update({ episode_number: (maxRow?.episode_number ?? 0) + 1 })
-        .eq('id', archivedConflict.id)
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      createEpisodeCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        data
+      ),
+    {
+      fallbackError: 'Failed to create episode',
+      revalidate: (result) => {
+        revalidateShowPage(result, data?.show_id)
+        bumpCatalogCache()
+        updateTag('episodes')
+      },
     }
-
-    // Pre-check: reject if a non-archived episode already occupies this number
-    const { data: visibleConflict } = await admin
-      .from('episodes')
-      .select('id')
-      .eq('season_id', parsed.season_id)
-      .eq('episode_number', parsed.episode_number)
-      .eq('archived', false)
-      .maybeSingle()
-
-    if (visibleConflict) {
-      return {
-        success: false,
-        error: `Episode number ${parsed.episode_number} already exists in this season. Choose a different number.`,
-      }
-    }
-
-    const { data: episode, error } = await admin
-      .from('episodes')
-      .insert(parsed)
-      .select()
-      .single()
-
-    if (error) {
-      if (error.code === '23505') {
-        return {
-          success: false,
-          error: `Episode number ${parsed.episode_number} already exists in this season. Choose a different number.`,
-        }
-      }
-      return { success: false, error: error.message }
-    }
-
-    // Update season episode_count
-    const { count: seasonEpCount } = await admin
-      .from('episodes')
-      .select('*', { count: 'exact', head: true })
-      .eq('season_id', parsed.season_id)
-
-    await admin
-      .from('seasons')
-      .update({ episode_count: seasonEpCount ?? 0 })
-      .eq('id', parsed.season_id)
-
-    // Update show episode_count
-    const { count: showEpCount } = await admin
-      .from('episodes')
-      .select('*', { count: 'exact', head: true })
-      .eq('show_id', parsed.show_id)
-
-    await admin
-      .from('shows')
-      .update({ episode_count: showEpCount ?? 0 })
-      .eq('id', parsed.show_id)
-
-    revalidatePath(`/admin/shows/${parsed.show_id}`)
-    updateTag('episodes')
-    return { success: true, data: episode }
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to create episode',
-    }
-  }
+  )
 }
 
 export async function updateEpisode(
   id: string,
   data: Partial<z.input<typeof episodeSchema>>
 ): Promise<ActionResult> {
-  try {
-    await assertAdmin()
-    const admin = createAdminClient()
-
-    // Auto-fill blank Arabic fields from English when those fields are being set.
-    if (data.title && !(data.title_ar ?? '').trim()) {
-      data.title_ar = await translateToArabic(data.title)
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      updateEpisodeCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        id,
+        data
+      ),
+    {
+      fallbackError: 'Failed to update episode',
+      revalidate: (result) => {
+        if (!revalidateShowPage(result, data?.show_id)) bumpCatalogCache()
+        updateTag('episodes')
+      },
     }
-    if (data.description && !(data.description_ar ?? '').trim()) {
-      data.description_ar = await translateToArabic(data.description)
-    }
-
-    // Pre-check: if episode_number is changing, ensure no collision in the same season
-    if (data.episode_number !== undefined) {
-      const { data: current } = await admin
-        .from('episodes')
-        .select('season_id')
-        .eq('id', id)
-        .single()
-
-      if (current) {
-        const { data: existing } = await admin
-          .from('episodes')
-          .select('id')
-          .eq('season_id', current.season_id)
-          .eq('episode_number', data.episode_number)
-          .neq('id', id)
-          .maybeSingle()
-
-        if (existing) {
-          return {
-            success: false,
-            error: `Episode number ${data.episode_number} already exists in this season. Choose a different number.`,
-          }
-        }
-      }
-    }
-
-    const { data: episode, error } = await admin
-      .from('episodes')
-      .update(data)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) {
-      if (error.code === '23505') {
-        return {
-          success: false,
-          error:
-            'This episode number already exists in this season. Choose a different number.',
-        }
-      }
-      return { success: false, error: error.message }
-    }
-
-    if (episode) {
-      revalidatePath(`/admin/shows/${episode.show_id}`)
-      updateTag('episodes')
-    }
-    return { success: true, data: episode }
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to update episode',
-    }
-  }
+  )
 }
 
 export async function archiveEpisode(
   id: string,
   showId: string
 ): Promise<ActionResult> {
-  try {
-    await assertAdmin()
-    const admin = createAdminClient()
-
-    const { error } = await admin
-      .from('episodes')
-      .update({ archived: true })
-      .eq('id', id)
-
-    if (error) return { success: false, error: error.message }
-
-    // Update show episode_count (count non-archived episodes)
-    const { count } = await admin
-      .from('episodes')
-      .select('*', { count: 'exact', head: true })
-      .eq('show_id', showId)
-      .eq('archived', false)
-
-    await admin
-      .from('shows')
-      .update({ episode_count: count ?? 0 })
-      .eq('id', showId)
-
-    revalidatePath(`/admin/shows/${showId}`)
-    updateTag('episodes')
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to archive episode',
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      archiveEpisodeCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        id,
+        showId
+      ),
+    {
+      fallbackError: 'Failed to archive episode',
+      revalidate: (result) => {
+        revalidateShowPage(result, showId)
+        bumpCatalogCache()
+        updateTag('episodes')
+      },
     }
-  }
+  )
 }
 
 export async function restoreEpisode(id: string): Promise<ActionResult> {
-  try {
-    const user = await assertAdmin()
-    const admin = createAdminClient()
-
-    const { data: ep, error: fetchError } = await admin
-      .from('episodes')
-      .select('id, show_id, title')
-      .eq('id', id)
-      .single()
-
-    if (fetchError || !ep) return { success: false, error: 'Episode not found' }
-
-    // Restoring just flips archived. The unique (season_id, episode_number)
-    // constraint covers archived rows too, so the episode's number is already
-    // free table-wide — un-archiving can never collide.
-    const { error } = await admin
-      .from('episodes')
-      .update({ archived: false })
-      .eq('id', id)
-
-    if (error) return { success: false, error: error.message }
-
-    // Recompute the show's episode_count (non-archived only).
-    const { count } = await admin
-      .from('episodes')
-      .select('*', { count: 'exact', head: true })
-      .eq('show_id', ep.show_id)
-      .eq('archived', false)
-
-    await admin
-      .from('shows')
-      .update({ episode_count: count ?? 0 })
-      .eq('id', ep.show_id)
-
-    await logAudit({
-      adminUserId: user.id,
-      action: 'restore',
-      entity: 'episode',
-      entityId: id,
-      diff: { id, title: ep.title },
-    })
-
-    revalidatePath('/admin/archive')
-    revalidatePath(`/admin/shows/${ep.show_id}`)
-    bumpCatalogCache()
-    updateTag('episodes')
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to restore episode',
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      restoreEpisodeCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        id
+      ),
+    {
+      fallbackError: 'Failed to restore episode',
+      revalidate: (result) => {
+        revalidatePath('/admin/archive')
+        revalidateShowPage(result)
+        bumpCatalogCache()
+        updateTag('episodes')
+      },
     }
-  }
+  )
 }
 
 export async function deleteEpisodePermanently(
   id: string
 ): Promise<ActionResult> {
-  try {
-    const user = await assertAdmin()
-    const admin = createAdminClient()
-
-    const { data: ep } = await admin
-      .from('episodes')
-      .select('title, show_id')
-      .eq('id', id)
-      .single()
-
-    // CASCADE handles watch progress / likes tied to the episode.
-    const { error } = await admin.from('episodes').delete().eq('id', id)
-    if (error) return { success: false, error: error.message }
-
-    if (ep?.show_id) {
-      const { count } = await admin
-        .from('episodes')
-        .select('*', { count: 'exact', head: true })
-        .eq('show_id', ep.show_id)
-        .eq('archived', false)
-      await admin
-        .from('shows')
-        .update({ episode_count: count ?? 0 })
-        .eq('id', ep.show_id)
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      deleteEpisodePermanentlyCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        id
+      ),
+    {
+      fallbackError: 'Failed to delete episode',
+      revalidate: (result) => {
+        revalidatePath('/admin/archive')
+        revalidateShowPage(result)
+        bumpCatalogCache()
+        updateTag('episodes')
+      },
     }
-
-    await logAudit({
-      adminUserId: user.id,
-      action: 'delete',
-      entity: 'episode',
-      entityId: id,
-      diff: { id, title: ep?.title },
-    })
-
-    revalidatePath('/admin/archive')
-    bumpCatalogCache()
-    updateTag('episodes')
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to delete episode',
-    }
-  }
+  )
 }
 
 export async function reorderEpisode(
   episodeId: string,
   direction: 'up' | 'down'
 ): Promise<ActionResult> {
-  try {
-    await assertAdmin()
-    const admin = createAdminClient()
-
-    // Get current episode
-    const { data: current, error: fetchError } = await admin
-      .from('episodes')
-      .select('id, episode_number, season_id, show_id')
-      .eq('id', episodeId)
-      .single()
-
-    if (fetchError || !current) {
-      return { success: false, error: 'Episode not found' }
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      reorderEpisodeCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        episodeId,
+        direction
+      ),
+    {
+      fallbackError: 'Failed to reorder episode',
+      revalidate: (result) => {
+        if (!revalidateShowPage(result)) bumpCatalogCache()
+        updateTag('episodes')
+      },
     }
-
-    // Find adjacent episode
-    const adjacentNumber =
-      direction === 'up'
-        ? current.episode_number - 1
-        : current.episode_number + 1
-
-    const { data: adjacent, error: adjError } = await admin
-      .from('episodes')
-      .select('id, episode_number')
-      .eq('season_id', current.season_id)
-      .eq('episode_number', adjacentNumber)
-      .single()
-
-    if (adjError || !adjacent) {
-      return { success: false, error: 'No adjacent episode to swap with' }
-    }
-
-    // Three-step swap to avoid unique constraint violation
-    // Step 1: Set current episode_number to temporary value (-1)
-    await admin
-      .from('episodes')
-      .update({ episode_number: -1 })
-      .eq('id', current.id)
-
-    // Step 2: Set adjacent to current's number
-    await admin
-      .from('episodes')
-      .update({ episode_number: current.episode_number })
-      .eq('id', adjacent.id)
-
-    // Step 3: Set current to adjacent's number
-    await admin
-      .from('episodes')
-      .update({ episode_number: adjacent.episode_number })
-      .eq('id', current.id)
-
-    revalidatePath(`/admin/shows/${current.show_id}`)
-    updateTag('episodes')
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to reorder episode',
-    }
-  }
+  )
 }
 
 // ---------------------------------------------------------------------------
 // Bulk episode scheduling
 // ---------------------------------------------------------------------------
 
-export type PlannedEpisodeSlot = {
-  episodeId: string
-  seasonNumber: number
-  episodeNumber: number
-  title: string
-  /** UTC ISO instant the episode goes live. */
-  publishAt: string
-  /** False when the episode has no YouTube id — it would air with no video. */
-  hasVideo: boolean
-}
-
-/**
- * Work out which episodes a bulk schedule would touch, and when each would air.
- *
- * Shared by the preview dialog and by applyShowSchedule so the two can never
- * disagree about ordering or eligibility. Slots are always recomputed against
- * the current clock rather than trusted from the client, which also means an
- * episode can never be scheduled into the past.
- *
- * Eligible = not archived and not already published. Published episodes are
- * live; re-flowing them would pull them back off the site.
- */
-async function planShowSchedule(
-  showId: string
-): Promise<
-  | { ok: false; error: string }
-  | { ok: true; plan: PlannedEpisodeSlot[] }
-> {
-  const admin = createAdminClient()
-
-  const { data: show, error: showError } = await admin
-    .from('shows')
-    .select('broadcast_day, broadcast_time')
-    .eq('id', showId)
-    .single()
-
-  if (showError || !show) return { ok: false, error: 'Show not found' }
-
-  const days = show.broadcast_day ?? []
-  if (days.length === 0 || !show.broadcast_time) {
-    return {
-      ok: false,
-      error:
-        'Set the broadcast days and time on this show before scheduling episodes.',
-    }
-  }
-
-  const [{ data: episodes, error: epError }, { data: seasons }] =
-    await Promise.all([
-      admin
-        .from('episodes')
-        .select('id, title, episode_number, season_id, youtube_video_id')
-        .eq('show_id', showId)
-        .eq('archived', false)
-        .neq('status', 'published'),
-      admin.from('seasons').select('id, season_number').eq('show_id', showId),
-    ])
-
-  if (epError) return { ok: false, error: epError.message }
-
-  const seasonNumberById = new Map(
-    (seasons ?? []).map((s) => [s.id, s.season_number])
-  )
-
-  // Air in story order: season first, then episode number within it.
-  const ordered = (episodes ?? []).slice().sort((a, b) => {
-    const seasonDelta =
-      (seasonNumberById.get(a.season_id) ?? 0) -
-      (seasonNumberById.get(b.season_id) ?? 0)
-    return seasonDelta !== 0
-      ? seasonDelta
-      : a.episode_number - b.episode_number
-  })
-
-  const slots = nextBroadcastSlots(days, show.broadcast_time, ordered.length)
-
-  return {
-    ok: true,
-    plan: ordered.slice(0, slots.length).map((ep, i) => ({
-      episodeId: ep.id,
-      seasonNumber: seasonNumberById.get(ep.season_id) ?? 0,
-      episodeNumber: ep.episode_number,
-      title: ep.title,
-      publishAt: slots[i],
-      hasVideo: Boolean(ep.youtube_video_id),
-    })),
-  }
-}
+export type { PlannedEpisodeSlot } from '@/lib/admin/show-schedule'
 
 /**
  * Preview a bulk schedule without writing anything. Drives the confirmation
@@ -1354,7 +973,13 @@ export async function previewShowSchedule(
 ): Promise<ActionResult<PlannedEpisodeSlot[]>> {
   try {
     await assertAdmin()
-    const result = await planShowSchedule(showId)
+    const parsed = parseId(showId, 'show')
+    if (!parsed.ok) return { success: false, error: parsed.error }
+    const result = await planShowScheduleCore(
+      createAdminClient(),
+      parsed.value,
+      new Date()
+    )
     if (!result.ok) return { success: false, error: result.error }
     return { success: true, data: result.plan }
   } catch (err) {
@@ -1373,92 +998,50 @@ export async function previewShowSchedule(
  */
 export async function applyShowSchedule(
   showId: string
-): Promise<ActionResult<{ scheduled: number }>> {
-  try {
-    const user = await assertAdmin()
-    const result = await planShowSchedule(showId)
-    if (!result.ok) return { success: false, error: result.error }
-    if (result.plan.length === 0) {
-      return { success: false, error: 'No unpublished episodes to schedule.' }
-    }
-
-    const admin = createAdminClient()
-    for (const slot of result.plan) {
-      const { error } = await admin
-        .from('episodes')
-        .update({ status: 'coming-soon', publish_at: slot.publishAt })
-        .eq('id', slot.episodeId)
-      if (error) return { success: false, error: error.message }
-    }
-
-    await logAudit({
-      adminUserId: user.id,
-      action: 'update',
-      entity: 'show',
-      entityId: showId,
-      diff: {
-        scheduled: result.plan.length,
-        firstAirs: result.plan[0]?.publishAt,
-        lastAirs: result.plan[result.plan.length - 1]?.publishAt,
+): Promise<ActionResult<{ scheduled?: number }>> {
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      applyShowScheduleCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, now: new Date() },
+        showId
+      ),
+    {
+      fallbackError: 'Failed to schedule episodes',
+      revalidate: (result) => {
+        revalidateShowPage(result, showId)
+        updateTag('episodes')
+        updateTag('shows')
       },
-    })
-
-    revalidatePath(`/admin/shows/${showId}`)
-    updateTag('episodes')
-    updateTag('shows')
-    return { success: true, data: { scheduled: result.plan.length } }
-  } catch (err) {
-    console.error('[admin/actions] schedule apply failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to schedule episodes',
     }
-  }
+  )
 }
 
 /**
- * Undo a bulk schedule. Only touches episodes still waiting to air — anything
- * already published stays published, since pulling live episodes offline is
- * never what "cancel the schedule" is meant to do.
+ * Undo a bulk schedule. Only reverts the slots the scheduler wrote and nobody
+ * changed since; anything already published stays published.
  */
 export async function unscheduleShowEpisodes(
   showId: string
-): Promise<ActionResult<{ cleared: number }>> {
-  try {
-    const user = await assertAdmin()
-    const admin = createAdminClient()
-
-    const { data: cleared, error } = await admin
-      .from('episodes')
-      .update({ status: 'draft', publish_at: null })
-      .eq('show_id', showId)
-      .eq('archived', false)
-      .eq('status', 'coming-soon')
-      .not('publish_at', 'is', null)
-      .select('id')
-
-    if (error) return { success: false, error: error.message }
-
-    await logAudit({
-      adminUserId: user.id,
-      action: 'update',
-      entity: 'show',
-      entityId: showId,
-      diff: { unscheduled: cleared?.length ?? 0 },
-    })
-
-    revalidatePath(`/admin/shows/${showId}`)
-    updateTag('episodes')
-    updateTag('shows')
-    return { success: true, data: { cleared: cleared?.length ?? 0 } }
-  } catch (err) {
-    console.error('[admin/actions] unschedule failed', err)
-    return {
-      success: false,
-      error:
-        err instanceof Error ? err.message : 'Failed to unschedule episodes',
+): Promise<ActionResult<{ cleared?: number }>> {
+  return runAdminAction(
+    adminEnv,
+    (ctx) =>
+      unscheduleShowCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, now: new Date() },
+        showId
+      ),
+    {
+      fallbackError: 'Failed to unschedule episodes',
+      revalidate: (result) => {
+        revalidateShowPage(result, showId)
+        updateTag('episodes')
+        updateTag('shows')
+      },
     }
-  }
+  )
 }
 
 // ---------------------------------------------------------------------------
