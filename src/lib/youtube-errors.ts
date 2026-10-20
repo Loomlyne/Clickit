@@ -1,6 +1,7 @@
 // Typed YouTube error codes shared by the import sheet, the single-link add,
 // the Test key action and the daily re-check. Pure and safe to import from
 // client code: no server or framework imports, no path-alias imports.
+import type { YouTubeStatus } from '../server/youtube/status'
 
 export type YouTubeErrorCode =
   | 'not_a_playlist_link'
@@ -63,4 +64,22 @@ export const YOUTUBE_ERROR_MESSAGE_KEYS: Record<YouTubeErrorCode, string> = {
   api_not_allowed: 'keyRejected',
   quota: 'quota',
   network: 'network',
+}
+
+/** The error shown for a video that cannot play; null when it can. */
+export function statusToVideoError(status: YouTubeStatus): YouTubeErrorCode | null {
+  switch (status) {
+    case 'ok':
+      return null
+    case 'removed':
+      return 'video_not_found'
+    case 'private':
+      return 'video_private'
+    case 'not_embeddable':
+      return 'video_not_embeddable'
+    case 'blocked_ae':
+      return 'video_blocked_uae'
+    case 'not_ready':
+      return 'video_not_ready'
+  }
 }
