@@ -240,3 +240,29 @@ export function contrastRatio(a: string, b: string): number {
   const [hi, lo] = la >= lb ? [la, lb] : [lb, la]
   return (hi + 0.05) / (lo + 0.05)
 }
+
+/**
+ * Compare-ready spelling of a computed CSS value. The browser returns custom
+ * properties as the production stylesheet spells them, and the build minifier
+ * rewrites rgba() as #rrggbbaa and drops spaces after commas. Embedded hex colours
+ * become rgba()/#RRGGBB like normalizeCssValue, and list commas get one space.
+ * Two spellings of the same value give the same string; empty stays empty.
+ */
+export function canonicalCssValue(value: string): string {
+  let v = value.trim().replace(/\s+/g, ' ')
+  if (v === '') return ''
+  v = v.replace(/#[0-9a-f]{8}\b|#[0-9a-f]{6}\b|#[0-9a-f]{3,4}\b/gi, (hex) => normalizeCssValue(hex))
+  return normalizeCssValue(v).replace(/\s*,\s*/g, ', ')
+}
+
+/**
+ * Signed value of a pinned token with `var(--other)` references followed to the
+ * final value: the browser resolves those before returning a custom property.
+ */
+export function resolveSignedValue(name: string, depth = 0): string | undefined {
+  const raw = SIGNED_TOKENS[name]
+  if (raw === undefined) return undefined
+  const ref = /^var\((--[a-z0-9-]+)\)$/.exec(raw)
+  if (ref && depth < 5) return resolveSignedValue(ref[1], depth + 1)
+  return raw
+}
