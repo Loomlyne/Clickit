@@ -30,6 +30,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { ImportPlaylistTable } from '@/components/admin/import-playlist-table'
+import { ScheduleEpisodesButton } from '@/components/admin/schedule-episodes-button'
 import { YouTubeStatusChip } from '@/components/admin/youtube-status-chip'
 import { commitImport, previewPlaylistPage } from '@/app/[locale]/admin/actions'
 import {
@@ -168,8 +169,9 @@ export function ImportPlaylistSheet({
   const [importing, setImporting] = useState(false)
   const [importFailure, setImportFailure] = useState<ImportFailure | null>(null)
   const [result, setResult] = useState<ImportResult | null>(null)
-  // Keeps the imported ids for the scheduler (Task 3) after the sheet resets.
-  const [, setImportedIds] = useState<string[]>([])
+  // The imported ids outlive the sheet's reset: the scheduler opens limited to them.
+  const [importedIds, setImportedIds] = useState<string[]>([])
+  const [scheduleOpen, setScheduleOpen] = useState(false)
 
   // A new read supersedes an in-flight one; a stale loop stops at its next await.
   const runRef = useRef(0)
@@ -279,8 +281,8 @@ export function ImportPlaylistSheet({
     if (!result) return
     setImportedIds(result.episodeIds)
     resetAll()
-    router.refresh()
     setOpen(false)
+    setScheduleOpen(true)
   }
 
   /** Reads page by page (at most IMPORT_MAX_ITEMS videos); a refusal stops the loop. */
@@ -418,373 +420,393 @@ export function ImportPlaylistSheet({
   const linkDisabled = importing || (readSpec?.disableLink ?? false)
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetTrigger asChild>
-        <Button
-          variant={trigger === 'outline' ? 'outline' : 'default'}
-          className={BUTTON_CLASS}
+    <>
+      <Sheet open={open} onOpenChange={handleOpenChange}>
+        <SheetTrigger asChild>
+          <Button
+            variant={trigger === 'outline' ? 'outline' : 'default'}
+            className={BUTTON_CLASS}
+          >
+            <ListVideo className="size-4" aria-hidden />
+            {t('openButton')}
+          </Button>
+        </SheetTrigger>
+        <SheetContent
+          side={locale === 'ar' ? 'left' : 'right'}
+          showCloseButton={false}
+          className="flex w-full flex-col gap-0 p-0 sm:max-w-[640px]"
         >
-          <ListVideo className="size-4" aria-hidden />
-          {t('openButton')}
-        </Button>
-      </SheetTrigger>
-      <SheetContent
-        side={locale === 'ar' ? 'left' : 'right'}
-        showCloseButton={false}
-        className="flex w-full flex-col gap-0 p-0 sm:max-w-[640px]"
-      >
-        <div className="shrink-0 border-b border-[var(--line)] px-6 pt-6 pb-4">
-          <div className="flex items-start justify-between gap-4">
-            <SheetTitle className="text-[20px] leading-tight font-bold">
-              {t('title')}
-            </SheetTitle>
-            <button
-              type="button"
-              onClick={() => handleOpenChange(false)}
-              disabled={importing}
-              aria-label={tCommon('close')}
-              className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--line)] bg-white/[0.04] text-[var(--text-dim)] hover:text-[var(--text)] disabled:pointer-events-none disabled:opacity-50"
-            >
-              <XIcon className="size-4" aria-hidden />
-            </button>
-          </div>
-          <SheetDescription className="mt-1 text-sm text-[var(--text-mute)]">
-            {t('description')}
-          </SheetDescription>
-        </div>
-
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
-          {result ? (
-            <div className="flex flex-col items-center gap-4 px-6 py-12 text-center">
-              <div className="border-brand-green-safe/35 bg-brand-green-safe/8 flex size-11 items-center justify-center rounded-full border">
-                <Check className="text-brand-green-safe size-5" aria-hidden />
-              </div>
-              <h3
-                ref={successRef}
-                tabIndex={-1}
-                className="text-[20px] leading-tight font-bold outline-none"
+          <div className="shrink-0 border-b border-[var(--line)] px-6 pt-6 pb-4">
+            <div className="flex items-start justify-between gap-4">
+              <SheetTitle className="text-[20px] leading-tight font-bold">
+                {t('title')}
+              </SheetTitle>
+              <button
+                type="button"
+                onClick={() => handleOpenChange(false)}
+                disabled={importing}
+                aria-label={tCommon('close')}
+                className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--line)] bg-white/[0.04] text-[var(--text-dim)] hover:text-[var(--text)] disabled:pointer-events-none disabled:opacity-50"
               >
-                {t('successHeading', { count: result.episodeIds.length })}
-              </h3>
-              <p className="max-w-md text-sm text-[var(--text-dim)]">
-                {t.rich('successBody', {
-                  season: result.seasonTitle,
-                  bdi: (chunks) => <bdi>{chunks}</bdi>,
-                })}
-              </p>
-              {result.needsEnglishCount > 0 ? (
-                <div className="flex items-center gap-2">
-                  <YouTubeStatusChip tone="warn">
-                    {tStatus('needsEnglishTitle')}
-                  </YouTubeStatusChip>
-                  <span className="text-sm text-[var(--text-dim)]">
-                    {t('successNeedsEnglish', {
-                      count: result.needsEnglishCount,
-                    })}
-                  </span>
-                </div>
-              ) : null}
+                <XIcon className="size-4" aria-hidden />
+              </button>
             </div>
-          ) : (
-            <>
-              <div>
-                <Label htmlFor={linkId} className={LABEL_CLASS}>
-                  {t('linkLabel')}
-                </Label>
-                <Input
-                  id={linkId}
-                  type="url"
-                  inputMode="url"
-                  dir="ltr"
-                  className="text-sm"
-                  autoFocus
-                  value={link}
-                  disabled={linkDisabled}
-                  placeholder={t('linkPlaceholder')}
-                  aria-invalid={linkError ? true : undefined}
-                  onChange={(e) =>
-                    handleLink(
-                      e.target.value,
-                      (e.nativeEvent as InputEvent).inputType ===
-                        'insertFromPaste'
-                    )
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      handleLink(link, true)
-                    }
-                  }}
-                />
-                {linkError ? (
-                  <p role="alert" className="text-brand-red-safe mt-2 text-sm">
-                    {tErr(YOUTUBE_ERROR_MESSAGE_KEYS[linkError])}
-                  </p>
+            <SheetDescription className="mt-1 text-sm text-[var(--text-mute)]">
+              {t('description')}
+            </SheetDescription>
+          </div>
+
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
+            {result ? (
+              <div className="flex flex-col items-center gap-4 px-6 py-12 text-center">
+                <div className="border-brand-green-safe/35 bg-brand-green-safe/8 flex size-11 items-center justify-center rounded-full border">
+                  <Check className="text-brand-green-safe size-5" aria-hidden />
+                </div>
+                <h3
+                  ref={successRef}
+                  tabIndex={-1}
+                  className="text-[20px] leading-tight font-bold outline-none"
+                >
+                  {t('successHeading', { count: result.episodeIds.length })}
+                </h3>
+                <p className="max-w-md text-sm text-[var(--text-dim)]">
+                  {t.rich('successBody', {
+                    season: result.seasonTitle,
+                    bdi: (chunks) => <bdi>{chunks}</bdi>,
+                  })}
+                </p>
+                {result.needsEnglishCount > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <YouTubeStatusChip tone="warn">
+                      {tStatus('needsEnglishTitle')}
+                    </YouTubeStatusChip>
+                    <span className="text-sm text-[var(--text-dim)]">
+                      {t('successNeedsEnglish', {
+                        count: result.needsEnglishCount,
+                      })}
+                    </span>
+                  </div>
                 ) : null}
               </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
+            ) : (
+              <>
                 <div>
-                  <Label htmlFor={targetId} className={LABEL_CLASS}>
-                    {t('targetLabel')}
+                  <Label htmlFor={linkId} className={LABEL_CLASS}>
+                    {t('linkLabel')}
                   </Label>
-                  <Select
-                    value={targetValue}
-                    onValueChange={setTargetValue}
-                    disabled={importing}
-                  >
-                    <SelectTrigger id={targetId} className="w-full text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={NEW_SEASON}>
-                        {t('targetNewSeason', { number: nextSeasonNumber })}
-                      </SelectItem>
-                      {seasons.map((season) => (
-                        <SelectItem key={season.id} value={season.id}>
-                          {t.markup('targetExistingSeason', {
-                            number: season.seasonNumber,
-                            title: season.title,
-                            bdi: (chunks) => isolate(chunks),
-                          })}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {existingSeason ? (
-                  <p className="flex min-h-11 items-center self-end text-sm text-[var(--text-dim)]">
-                    {existingSeason.lastEpisodeNumber > 0
-                      ? t('appendNote', {
-                          last: existingSeason.lastEpisodeNumber,
-                        })
-                      : t('appendNoteEmpty', { first: 1 })}
-                  </p>
-                ) : (
-                  <div>
-                    <Label htmlFor={titleId} className={LABEL_CLASS}>
-                      {t('seasonTitleLabel')}
-                    </Label>
-                    <Input
-                      id={titleId}
-                      className="text-sm"
-                      dir="auto"
-                      maxLength={TITLE_MAX}
-                      required
-                      value={seasonTitle}
-                      disabled={importing}
-                      placeholder={t('seasonTitlePlaceholder')}
-                      aria-invalid={
-                        rows.length > 0 && seasonTitle.trim() === ''
-                          ? true
-                          : undefined
+                  <Input
+                    id={linkId}
+                    type="url"
+                    inputMode="url"
+                    dir="ltr"
+                    className="text-sm"
+                    autoFocus
+                    value={link}
+                    disabled={linkDisabled}
+                    placeholder={t('linkPlaceholder')}
+                    aria-invalid={linkError ? true : undefined}
+                    onChange={(e) =>
+                      handleLink(
+                        e.target.value,
+                        (e.nativeEvent as InputEvent).inputType ===
+                          'insertFromPaste'
+                      )
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleLink(link, true)
                       }
-                      onChange={(e) => {
-                        titleEditedRef.current = true
-                        setSeasonTitle(e.target.value)
-                      }}
-                    />
-                    {rows.length > 0 && seasonTitle.trim() === '' ? (
-                      <p className="text-brand-red-safe mt-2 text-sm">
-                        {t('seasonTitleRequired')}
-                      </p>
-                    ) : null}
-                  </div>
-                )}
-              </div>
-
-              {readError && readSpec?.panel === 'banner' ? (
-                <SheetBanner
-                  action={
-                    readSpec.action === 'settings' ? (
-                      <Button
-                        variant="outline"
-                        asChild
-                        className="min-h-11 w-full px-6 py-2 text-sm font-bold sm:w-auto"
-                      >
-                        <Link href="/admin/settings?tab=advanced">
-                          {tErr('openSettings')}
-                        </Link>
-                      </Button>
-                    ) : readSpec.action === 'retry' ? (
-                      <Button
-                        variant="outline"
-                        className="min-h-11 w-full px-6 py-2 text-sm font-bold sm:w-auto"
-                        onClick={retry}
-                      >
-                        {tErr('retry')}
-                      </Button>
-                    ) : null
-                  }
-                >
-                  {bannerText(readError)}
-                </SheetBanner>
-              ) : null}
-
-              {importFailure ? (
-                <SheetBanner>
-                  {importFailure.code === 'quota'
-                    ? tErr('quota', { time: quotaTime })
-                    : tErr('importFailed', {
-                        reason: sentence(importFailure.reason),
-                      })}
-                </SheetBanner>
-              ) : null}
-
-              {!showTable && !emptyPlaylist && !readError ? (
-                <div className="rounded-[12px] border border-dashed border-[var(--line-2)] px-6 py-12 text-center text-sm text-[var(--text-mute)]">
-                  {t('emptyBeforeLink')}
-                </div>
-              ) : null}
-
-              {emptyPlaylist && readError ? (
-                <div className="rounded-[12px] border border-dashed border-[var(--line-2)] px-6 py-12 text-center text-sm text-[var(--text-mute)]">
-                  {bannerText(readError)}
-                </div>
-              ) : null}
-
-              {allAlready ? (
-                <div className="rounded-[12px] border border-[var(--line-2)] px-4 py-3">
-                  <p className="text-sm font-bold">{t('allAlreadyHeading')}</p>
-                  <p className="text-sm text-[var(--text-dim)]">
-                    {t('allAlreadyBody')}
-                  </p>
-                </div>
-              ) : null}
-
-              {noneImportable ? (
-                <div className="border-brand-orange-safe/35 bg-brand-orange-safe/8 rounded-[12px] border px-4 py-3 text-sm">
-                  {t('noneImportable')}
-                </div>
-              ) : null}
-
-              {showTable ? (
-                <>
-                  <div
-                    aria-live="polite"
-                    aria-busy={reading}
-                    className="flex flex-col gap-2"
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      {summary.ready > 0 ? (
-                        <YouTubeStatusChip tone="ok">
-                          {t('summaryReady', { count: summary.ready })}
-                        </YouTubeStatusChip>
-                      ) : null}
-                      {summary.cantPlay > 0 ? (
-                        <YouTubeStatusChip tone="bad">
-                          {t('summaryCantPlay', { count: summary.cantPlay })}
-                        </YouTubeStatusChip>
-                      ) : null}
-                      {summary.already > 0 ? (
-                        <YouTubeStatusChip tone="neutral">
-                          {t('summaryAlready', { count: summary.already })}
-                        </YouTubeStatusChip>
-                      ) : null}
-                      <span className="ms-auto text-sm text-[var(--text-mute)]">
-                        {reading ? (
-                          <span className="flex items-center gap-2">
-                            <Loader2
-                              className="size-4 animate-spin motion-reduce:animate-none"
-                              aria-hidden
-                            />
-                            {t('reading', { page: pagesRead + 1 })}
-                          </span>
-                        ) : (
-                          t('readMeta', {
-                            videos: rows.length,
-                            pages: pagesRead,
-                          })
-                        )}
-                      </span>
-                    </div>
-                    {summary.tickedCount > 0 ? (
-                      <p className="text-sm text-[var(--text-dim)]">
-                        {t('numberingNote', {
-                          count: summary.tickedCount,
-                          first: summary.firstNumber,
-                          last: summary.lastNumber,
-                          season: existingSeason
-                            ? existingSeason.seasonNumber
-                            : nextSeasonNumber,
-                        })}
-                      </p>
-                    ) : null}
-                  </div>
-                  {capped ? (
-                    <p className="text-sm text-[var(--text-mute)]">
-                      {t('capNote', { max: IMPORT_MAX_ITEMS })}
+                    }}
+                  />
+                  {linkError ? (
+                    <p
+                      role="alert"
+                      className="text-brand-red-safe mt-2 text-sm"
+                    >
+                      {tErr(YOUTUBE_ERROR_MESSAGE_KEYS[linkError])}
                     </p>
                   ) : null}
-                  <ImportPlaylistTable
-                    rows={rows}
-                    ticked={ticked}
-                    onToggle={toggle}
-                    onToggleAllReady={toggleAllReady}
-                    skeletonRows={reading ? (rows.length ? 2 : 6) : 0}
-                    disabled={importing}
-                    locale={locale}
-                  />
-                </>
-              ) : null}
-            </>
-          )}
-        </div>
+                </div>
 
-        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-[var(--line)] bg-[var(--bg-1)] px-6 py-4">
-          {result ? (
-            <>
-              <Button
-                variant="outline"
-                className={BUTTON_CLASS}
-                onClick={() => handleOpenChange(false)}
-              >
-                {t('done')}
-              </Button>
-              <Button className={BUTTON_CLASS} onClick={scheduleImported}>
-                <CalendarClock className="size-4" aria-hidden />
-                {t('scheduleButton', { count: result.episodeIds.length })}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="ghost"
-                className="min-h-11 border-transparent bg-transparent px-6 py-2 text-sm font-bold text-[var(--text-dim)] hover:bg-white/[0.04] hover:text-[var(--text)]"
-                disabled={importing}
-                onClick={() => handleOpenChange(false)}
-              >
-                {tCommon('cancel')}
-              </Button>
-              {allAlready ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor={targetId} className={LABEL_CLASS}>
+                      {t('targetLabel')}
+                    </Label>
+                    <Select
+                      value={targetValue}
+                      onValueChange={setTargetValue}
+                      disabled={importing}
+                    >
+                      <SelectTrigger id={targetId} className="w-full text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NEW_SEASON}>
+                          {t('targetNewSeason', { number: nextSeasonNumber })}
+                        </SelectItem>
+                        {seasons.map((season) => (
+                          <SelectItem key={season.id} value={season.id}>
+                            {t.markup('targetExistingSeason', {
+                              number: season.seasonNumber,
+                              title: season.title,
+                              bdi: (chunks) => isolate(chunks),
+                            })}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {existingSeason ? (
+                    <p className="flex min-h-11 items-center self-end text-sm text-[var(--text-dim)]">
+                      {existingSeason.lastEpisodeNumber > 0
+                        ? t('appendNote', {
+                            last: existingSeason.lastEpisodeNumber,
+                          })
+                        : t('appendNoteEmpty', { first: 1 })}
+                    </p>
+                  ) : (
+                    <div>
+                      <Label htmlFor={titleId} className={LABEL_CLASS}>
+                        {t('seasonTitleLabel')}
+                      </Label>
+                      <Input
+                        id={titleId}
+                        className="text-sm"
+                        dir="auto"
+                        maxLength={TITLE_MAX}
+                        required
+                        value={seasonTitle}
+                        disabled={importing}
+                        placeholder={t('seasonTitlePlaceholder')}
+                        aria-invalid={
+                          rows.length > 0 && seasonTitle.trim() === ''
+                            ? true
+                            : undefined
+                        }
+                        onChange={(e) => {
+                          titleEditedRef.current = true
+                          setSeasonTitle(e.target.value)
+                        }}
+                      />
+                      {rows.length > 0 && seasonTitle.trim() === '' ? (
+                        <p className="text-brand-red-safe mt-2 text-sm">
+                          {t('seasonTitleRequired')}
+                        </p>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+
+                {readError && readSpec?.panel === 'banner' ? (
+                  <SheetBanner
+                    action={
+                      readSpec.action === 'settings' ? (
+                        <Button
+                          variant="outline"
+                          asChild
+                          className="min-h-11 w-full px-6 py-2 text-sm font-bold sm:w-auto"
+                        >
+                          <Link href="/admin/settings?tab=advanced">
+                            {tErr('openSettings')}
+                          </Link>
+                        </Button>
+                      ) : readSpec.action === 'retry' ? (
+                        <Button
+                          variant="outline"
+                          className="min-h-11 w-full px-6 py-2 text-sm font-bold sm:w-auto"
+                          onClick={retry}
+                        >
+                          {tErr('retry')}
+                        </Button>
+                      ) : null
+                    }
+                  >
+                    {bannerText(readError)}
+                  </SheetBanner>
+                ) : null}
+
+                {importFailure ? (
+                  <SheetBanner>
+                    {importFailure.code === 'quota'
+                      ? tErr('quota', { time: quotaTime })
+                      : tErr('importFailed', {
+                          reason: sentence(importFailure.reason),
+                        })}
+                  </SheetBanner>
+                ) : null}
+
+                {!showTable && !emptyPlaylist && !readError ? (
+                  <div className="rounded-[12px] border border-dashed border-[var(--line-2)] px-6 py-12 text-center text-sm text-[var(--text-mute)]">
+                    {t('emptyBeforeLink')}
+                  </div>
+                ) : null}
+
+                {emptyPlaylist && readError ? (
+                  <div className="rounded-[12px] border border-dashed border-[var(--line-2)] px-6 py-12 text-center text-sm text-[var(--text-mute)]">
+                    {bannerText(readError)}
+                  </div>
+                ) : null}
+
+                {allAlready ? (
+                  <div className="rounded-[12px] border border-[var(--line-2)] px-4 py-3">
+                    <p className="text-sm font-bold">
+                      {t('allAlreadyHeading')}
+                    </p>
+                    <p className="text-sm text-[var(--text-dim)]">
+                      {t('allAlreadyBody')}
+                    </p>
+                  </div>
+                ) : null}
+
+                {noneImportable ? (
+                  <div className="border-brand-orange-safe/35 bg-brand-orange-safe/8 rounded-[12px] border px-4 py-3 text-sm">
+                    {t('noneImportable')}
+                  </div>
+                ) : null}
+
+                {showTable ? (
+                  <>
+                    <div
+                      aria-live="polite"
+                      aria-busy={reading}
+                      className="flex flex-col gap-2"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        {summary.ready > 0 ? (
+                          <YouTubeStatusChip tone="ok">
+                            {t('summaryReady', { count: summary.ready })}
+                          </YouTubeStatusChip>
+                        ) : null}
+                        {summary.cantPlay > 0 ? (
+                          <YouTubeStatusChip tone="bad">
+                            {t('summaryCantPlay', { count: summary.cantPlay })}
+                          </YouTubeStatusChip>
+                        ) : null}
+                        {summary.already > 0 ? (
+                          <YouTubeStatusChip tone="neutral">
+                            {t('summaryAlready', { count: summary.already })}
+                          </YouTubeStatusChip>
+                        ) : null}
+                        <span className="ms-auto text-sm text-[var(--text-mute)]">
+                          {reading ? (
+                            <span className="flex items-center gap-2">
+                              <Loader2
+                                className="size-4 animate-spin motion-reduce:animate-none"
+                                aria-hidden
+                              />
+                              {t('reading', { page: pagesRead + 1 })}
+                            </span>
+                          ) : (
+                            t('readMeta', {
+                              videos: rows.length,
+                              pages: pagesRead,
+                            })
+                          )}
+                        </span>
+                      </div>
+                      {summary.tickedCount > 0 ? (
+                        <p className="text-sm text-[var(--text-dim)]">
+                          {t('numberingNote', {
+                            count: summary.tickedCount,
+                            first: summary.firstNumber,
+                            last: summary.lastNumber,
+                            season: existingSeason
+                              ? existingSeason.seasonNumber
+                              : nextSeasonNumber,
+                          })}
+                        </p>
+                      ) : null}
+                    </div>
+                    {capped ? (
+                      <p className="text-sm text-[var(--text-mute)]">
+                        {t('capNote', { max: IMPORT_MAX_ITEMS })}
+                      </p>
+                    ) : null}
+                    <ImportPlaylistTable
+                      rows={rows}
+                      ticked={ticked}
+                      onToggle={toggle}
+                      onToggleAllReady={toggleAllReady}
+                      skeletonRows={reading ? (rows.length ? 2 : 6) : 0}
+                      disabled={importing}
+                      locale={locale}
+                    />
+                  </>
+                ) : null}
+              </>
+            )}
+          </div>
+
+          <div className="flex shrink-0 items-center justify-between gap-3 border-t border-[var(--line)] bg-[var(--bg-1)] px-6 py-4">
+            {result ? (
+              <>
                 <Button
                   variant="outline"
                   className={BUTTON_CLASS}
                   onClick={() => handleOpenChange(false)}
                 >
-                  {tCommon('close')}
+                  {t('done')}
                 </Button>
-              ) : (
+                <Button className={BUTTON_CLASS} onClick={scheduleImported}>
+                  <CalendarClock className="size-4" aria-hidden />
+                  {t('scheduleButton', { count: result.episodeIds.length })}
+                </Button>
+              </>
+            ) : (
+              <>
                 <Button
-                  className={BUTTON_CLASS}
-                  disabled={!importable}
-                  onClick={runImport}
+                  variant="ghost"
+                  className="min-h-11 border-transparent bg-transparent px-6 py-2 text-sm font-bold text-[var(--text-dim)] hover:bg-white/[0.04] hover:text-[var(--text)]"
+                  disabled={importing}
+                  onClick={() => handleOpenChange(false)}
                 >
-                  {importing ? (
-                    <Loader2
-                      className="size-4 animate-spin motion-reduce:animate-none"
-                      aria-hidden
-                    />
-                  ) : null}
-                  {importing
-                    ? t('importing')
-                    : t('importButton', { count: summary.tickedCount })}
+                  {tCommon('cancel')}
                 </Button>
-              )}
-            </>
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
+                {allAlready ? (
+                  <Button
+                    variant="outline"
+                    className={BUTTON_CLASS}
+                    onClick={() => handleOpenChange(false)}
+                  >
+                    {tCommon('close')}
+                  </Button>
+                ) : (
+                  <Button
+                    className={BUTTON_CLASS}
+                    disabled={!importable}
+                    onClick={runImport}
+                  >
+                    {importing ? (
+                      <Loader2
+                        className="size-4 animate-spin motion-reduce:animate-none"
+                        aria-hidden
+                      />
+                    ) : null}
+                    {importing
+                      ? t('importing')
+                      : t('importButton', { count: summary.tickedCount })}
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+      {importedIds.length > 0 ? (
+        <ScheduleEpisodesButton
+          showId={showId}
+          open={scheduleOpen}
+          onOpenChange={(next) => {
+            setScheduleOpen(next)
+            // The scheduled drafts show their new dates on the page.
+            if (!next) router.refresh()
+          }}
+          episodeIds={importedIds}
+          hideTrigger
+        />
+      ) : null}
+    </>
   )
 }
