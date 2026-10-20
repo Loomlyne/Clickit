@@ -78,6 +78,7 @@ _planning*
 .vercel/.cron-secret
 .gstack/
 .env*
+!.env.example
 CLAUDE.local.md
 
 # wrangler

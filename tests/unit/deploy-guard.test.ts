@@ -524,7 +524,7 @@ test('checkMediaDeploy refuses non-empty cron triggers at top level or in the en
     reasonsOf(checkMediaDeploy(mediaInput({ wranglerConfig: { ...mediaConfig, triggers: { crons: ['* * * * *'] } } }))),
     /crons/,
   )
-  const envCron = structuredClone(mediaConfig) as Record<string, any>
+  const envCron = structuredClone(mediaConfig) as unknown as { env: Record<string, Record<string, unknown>> }
   envCron.env['supabase-only'].triggers = { crons: ['* * * * *'] }
   assert.equal(checkMediaDeploy(mediaInput({ wranglerConfig: envCron, env: 'supabase-only' })).ok, false)
 })

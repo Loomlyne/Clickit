@@ -202,7 +202,9 @@ function main(argv) {
     console.error('usage: build-target.mjs --target preview|workersdev [--media-flag off|verified ...]')
     return 1
   }
-  if (!existsSync(envFile)) {
+  // The preview target may run without its gitignored file (gate:local in a
+  // clean clone): public values then come from the shell env, if any.
+  if (!existsSync(envFile) && target !== 'preview') {
     console.error(`refused: env file for target ${target} not found (${envFile})`)
     return 1
   }
@@ -213,7 +215,12 @@ function main(argv) {
 
   let buildEnv
   try {
-    const fileEnv = parseEnvFile(readFileSync(envFile, 'utf8'))
+    const fileEnv = existsSync(envFile) ? parseEnvFile(readFileSync(envFile, 'utf8')) : {}
+    if (target === 'preview') {
+      for (const [name, value] of Object.entries(process.env)) {
+        if (name.startsWith('NEXT_PUBLIC_') && value !== undefined && !(name in fileEnv)) fileEnv[name] = value
+      }
+    }
     const mediaFlag = readOption(argv, '--media-flag') ?? 'off'
     const options = { mediaFlag, mediaOrigin: readOption(argv, '--media-origin') }
     if (target === 'workersdev' && mediaFlag === 'verified') {
@@ -228,7 +235,10 @@ function main(argv) {
     return 1
   }
 
-  const minimal = { PATH: process.env.PATH ?? '', HOME: CLICKIT_HOME, WRANGLER_SEND_METRICS: 'false' }
+  const minimal = { HOME: CLICKIT_HOME, WRANGLER_SEND_METRICS: 'false' }
+  for (const name of ['PATH', 'TMPDIR', 'LANG', 'TERM']) {
+    if (process.env[name]) minimal[name] = process.env[name]
+  }
   const res = spawnSync('npx', ['opennextjs-cloudflare', 'build'], {
     env: { ...minimal, ...buildEnv },
     stdio: 'inherit',
