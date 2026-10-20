@@ -2,7 +2,7 @@
 phase: 04
 slug: design-system-truth
 status: approved
-revision: 2
+revision: 3
 shadcn_initialized: true
 preset: "shadcn new-york, baseColor neutral, cssVariables; every token overridden by UI System (ui.config.json → src/styles/globals.css, 2026-10-20)"
 created: 2026-10-20
@@ -159,8 +159,7 @@ Shows keep the 5-value `brand_color` enum (blue, purple, green, red, orange). De
 | `--primary-foreground` #090909 on `--primary` #ffcc00 | 13.2:1 |
 | brand-green-safe / red-safe / orange-safe on `--bg-1` | 10.6 / 8.4 / 10.9:1 |
 | `--destructive` #ff3b30 on `--bg-1` | 5.4:1 |
-| Email: #F4F4F4, #CCCCCC, #A1A1A1 on card #101010 | 17.3 / 11.8 / 7.4:1 |
-| Email: #090909 on #ffcc00 button | 13.2:1 |
+| Email (two schemes) | see §5 revision 3 |
 
 The page computes the first four rows live (pure WCAG function over the computed token values) and prints the ratio on the text swatches (`contrastLabel`). A ratio below 4.5 shows the "bad" chip.
 
@@ -263,7 +262,7 @@ These are the only intended visible changes in the app. Exact before and after:
 
 | # | File | Before | After | What the viewer sees |
 |---|------|--------|-------|----------------------|
-| 1 | `src/components/ui/select.tsx` `SelectContent` | `rounded-[12px] border border-white/10 bg-[#11151d]/98 shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl` | `rounded-card border border-white/10 bg-[var(--bg-1)] shadow-popover backdrop-blur-xl` | Season dropdown menu goes from blue-black #11151d (98%) to the neutral card #101010. Radius and shadow are identical in px |
+| 1 | `src/components/ui/select.tsx` `SelectContent` | `rounded-[12px] border border-white/10 bg-[#11151d]/98 shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl` | `rounded-card border border-white/10 bg-[var(--bg-1)]/98 shadow-popover backdrop-blur-xl` | Season dropdown menu goes from blue-black #11151d (98%) to the neutral card #101010 (98%, revision 3). Radius and shadow are identical in px |
 | 2 | `src/app/[locale]/layout.tsx` Sonner `classNames.toast` | `border border-white/10 bg-[#10131a] text-foreground shadow-[0_24px_80px_rgba(0,0,0,0.45)]` | `border border-white/10 bg-[var(--bg-1)] text-foreground shadow-popover` | Toast goes from #10131a to #101010; shadow alpha 0.45 → 0.42 (open item 1) |
 | 3 | `src/components/landing/landing-hero-animations.tsx` "Browse shows" link (line 53) | `shadow-[0_16px_40px_rgba(96,115,255,0.28)] transition-colors hover:bg-[#7082ff]` | `shadow-cta-glow transition-colors hover:bg-[var(--uis-primary-hover)]` | Indigo hover and indigo glow become darker yellow #D7AD16 on hover and a soft yellow glow `0 16px 40px rgba(255,204,0,0.18)`. The glow is on at rest too (it was already on at rest in indigo) |
 
@@ -394,7 +393,7 @@ Focal points (one per board): V1a the email field; V1b the six code boxes; V2 th
 
 ### Group 4 — Email
 
-Contract in §5. One board per template, each with an EN frame and an AR (RTL) frame at 600, plus one 375 phone render of E1 and E6.
+Contract in §5 (revision 3). One board per template, each reproduced from Phase 5's signed email picture with a LIGHT and a DARK (prefers-color-scheme) frame, EN and AR (RTL). If Phase 5's picture is not signed yet, this group waits.
 
 | ID | Board | Notes |
 |----|-------|-------|
@@ -413,54 +412,28 @@ Contract in §5. One board per template, each with an EN frame and an AR (RTL) f
 
 ---
 
-## 5. Email template contract (D-07)
+## 5. Email template contract (revision 3: Q7 answered C)
 
-Dark, table-based, inline styles, 600px max. Every value below is final for the boards; copy is placeholder.
+**Koss answered Q7 = C (2026-10-20, via the controller; = Phase 5 Q12):** emails follow the reader's system colour scheme: **LIGHT by default**, **DARK via `@media (prefers-color-scheme: dark)`**. Phase 5 owns the templates, their copy and their signed picture (`origin/claude/phase-05-accounts-and-email-61ece8:.planning/phases/05-accounts-and-email/mockups/05-mockups.html`, `.m-light` / `.m-dark`). The earlier dark-only contract is withdrawn.
 
-**Structure**
-- Document: `<meta name="color-scheme" content="dark">` and `<meta name="supported-color-schemes" content="dark">`; `lang` and `dir` set on `<html>` and on the content table (`dir="rtl"` for Arabic).
-- Outer `<table role="presentation" width="100%" bgcolor="#090909">` with `style="background:#090909"`. Inner `<table role="presentation" width="600" style="width:100%;max-width:600px">`. Padding on phones: 16px sides.
-- Hidden preheader (`display:none;max-height:0;overflow:hidden`), ≤90 characters.
-- **Header:** logo as a hosted image on `media.clickitstory.ae` (`width="136"`, `alt="Clickit Story"`, `style="display:block;border:0"`), 24px above and below. Alt text is `#CCCCCC` so the header is legible with images off.
-- **Card:** `bgcolor="#101010"`, `border:1px solid #232323` (solid equivalent of `--line` over `--bg-1`; rgba is not reliable in mail), `border-radius:12px` (clients that ignore it show square corners), padding **32px**.
-- **Footer** below the card: 16px gap; centred, 12px, `#A1A1A1`; contains `{legalFooter}` (placeholder; text from Phase 5 / Koss) and, on marketing-type mails (E5, E6), the unsubscribe link.
+**What Phase 4 supplies:** email-safe tokens for both schemes as literal hex (mail clients cannot read CSS variables or blend rgba) in one module `src/lib/email-tokens.ts` (`EMAIL_TOKENS`, allowlisted in the lint rule, pinned by `tests/unit/email-tokens.test.ts`), and the DESIGN.md email section. Phase 5 may refine values when it signs its picture; changes go through that module and its test.
 
-**Colours (final):** page `#090909`; card `#101010`; code box and quoted-message box `#191919`; heading and code `#F4F4F4`; body `#CCCCCC`; hints and footer `#A1A1A1`; button background `#ffcc00`, ink `#090909`; links in body `#ffcc00` underlined (never colour alone). All ratios above.
+| Token | Light | Dark |
+|-------|-------|------|
+| Page / body | body `#ffffff` | page and body `#090909` |
+| Header | `#090909`, logo and header text `#F4F4F4` | `#090909` with header divider `#1d1d1d` (solid of rgba(255,255,255,.08) over #090909) |
+| Heading | `#111111` | `#F4F4F4` |
+| Text | `#333333` | `#CCCCCC` |
+| Code box | bg `#f6f6f6`, border `#e5e5e5`, text `#090909` | bg `#191919`, border `#2A2A2A`, text `#ffcc00` |
+| Button | `#ffcc00`, ink `#090909`, radius 999px | same |
+| Footer text | `#777777` | `#A1A1A1` |
+| Divider | `#eeeeee` | `#1d1d1d` |
 
-**Type (system sans; the one place the app scale is not used, because LBC cannot load in mail):**
+Contrast (computed): light heading 18.9:1, text 12.6:1, button ink 13.2:1, **footer #777777 on #ffffff 4.48:1 (just under 4.5:1; flagged for Phase 5)**; dark heading 18.1:1, text 12.4:1, footer 7.7:1, code text #ffcc00 on #191919 11.6:1.
 
-| Role | Size | Weight | Line height | Use |
-|------|------|--------|-------------|-----|
-| Heading | 24px | 700 | 1.25 | Email title |
-| Body | 16px | 400 | 1.5 | Paragraphs, button label (700) |
-| Code | 32px | 700 | 1.2 | 6-digit code, `letter-spacing:0.3em`, `dir="ltr"` |
-| Small | 12px | 400 | 1.5 | Hints, footer, legal, row meta |
+**Rules kept from the earlier contract:** table-based, inline styles; system sans stack (LBC cannot load in mail); logo hosted on `media.clickitstory.ae`; one primary action per email; plain-URL fallback under the button; no web fonts, no tracking pixels; sender line, expiry, legal footer and Arabic copy are Phase 5 / Koss placeholders.
 
-Font stack: `-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif`; Arabic frames add `Tahoma` before `Arial`.
-
-**Button (bulletproof):** `<table role="presentation"><tr><td bgcolor="#ffcc00" style="border-radius:999px"><a href style="display:inline-block;padding:14px 28px;font-size:16px;font-weight:700;line-height:20px;color:#090909;text-decoration:none;border-radius:999px">`. Height 48px (≥44px). Outlook shows a square button, which is acceptable. One primary button per email.
-
-**Rules**
-- Exactly one primary action per email (digest rows use text links).
-- A plain-text URL fallback line sits under every button in 12px `#A1A1A1`.
-- Images: only the logo and digest thumbnails (`media.clickitstory.ae`, `width`/`height` attributes set, `alt` = show title). With images blocked the layout still reads.
-- Code block: `#191919`, 8px radius, 16px vertical padding, centred, `dir="ltr"` also in Arabic emails. Digits are Western (what the viewer types; Arabic-Indic input is accepted by the app, open item 11).
-- No tracking pixels, no web fonts, no `rgba()` colours, no CSS classes required for layout (inline styles carry everything; a `<style>` block may add a `max-width` media query for phones).
-- Arabic frames: `dir="rtl"`, text `text-align:right`, button and logo aligned to the right, `bdi` around names.
-
-**Placeholder copy (boards only; Phase 5 and Koss own the final text)**
-
-| Board | Subject | Heading | Body |
-|-------|---------|---------|------|
-| E1 | `{subject}` Your Clickit Story sign-in code | Your sign-in code | Enter this code on Clickit Story. It works for `{minutes}` minutes. |
-| E2 | Confirm your email | Confirm your email | Confirm your email address to finish creating your account. |
-| E3 | Reset your password | Reset your password | Use the button to choose a new password. If you did not ask for this, you can ignore this email. |
-| E4 | Confirm your new email | Confirm your new email | Confirm that `{newEmail}` is the address for your account. |
-| E5 | Welcome | Welcome to Clickit Story | `{welcomeLine}` |
-| E6 | New episodes | New on your list | `{count}` new episodes are ready to watch. |
-| E7 | We got your message | We got your message | We received your message and will reply by email. |
-
-Arabic drafts for E1 only (Koss reviews): heading `رمز تسجيل الدخول`, body `أدخل هذا الرمز في Clickit Story. يعمل لمدة {minutes} دقيقة.`, hint `إذا لم تطلب هذا الرمز، يمكنك تجاهل هذه الرسالة.` Other Arabic text is written in Phase 5.
+**Canvas (Group 4):** the Email boards reproduce Phase 5's signed picture in both schemes (not a redesign). If that picture is not yet signed, the Email group waits.
 
 ---
 
@@ -572,7 +545,7 @@ Choices CONTEXT.md did not settle, picked to keep the live look and Phase 6 comp
 10. **"Show a sample toast" button on a read-only page.** It writes nothing; it exists so snap 2 can be seen without causing a real toast elsewhere. Remove it if a button on a read-only page is unwanted.
 11. **Code input and email digits.** The 6 code boxes stay left-to-right inside Arabic pages (digits read left to right) and emails show Western digits; the app accepts Arabic-Indic digits when typed. Phase 7 (AR-01..03) still owns the digit system for the rest of the UI.
 12. **`select-item` check indicator uses `right-2`** (not logical) and is not changed here (invisible bug in Arabic: indicator on the wrong side). Phase 7 RTL pass owns it.
-13. **Email differs from the Q7 picture** (still unsigned): width 600 (picture 480, per D-07), card padding 32px (28), heading 24px (22), body 16px (15), code 32px (34), footer and hints 12px (12 and 11). All sizes rounded to a 4-size email scale; look and colours are the picture's.
+13. **Email look answered (revision 3):** Q7 = C (Koss, 2026-10-20): light by default, dark via prefers-color-scheme; Phase 5 owns the picture; Phase 4 supplies `src/lib/email-tokens.ts`. Light footer #777777 is 4.48:1 on white (flagged for Phase 5).
 14. **Email legal footer, expiry, sender line, Arabic text** are placeholders; nothing is invented. `Clickit Story <no-reply@clickitstory.ae>` is the roadmap's sender and is not drawn on boards.
 15. **Canvas boards that are new design** (no signed picture): F0–F5, V1, V4, A4, E0–E7. V2 redraws the live pages as shipped. V3, A1–A3 are Phase 6's signed pictures, unchanged.
 16. **Phase 6 spec is not edited.** It keeps `rounded-[12px]` etc.; the executor writes the named utilities (same pixels). If Phase 6 merges first, its bracket classes are converted in this phase's token clean-up.

@@ -116,24 +116,24 @@ Plans:
   3. The Claude Design canvas shows foundations, viewer screens (including the OTP sign-in, the RTL treatment and an RMF-compliant player), admin screens (playlist import preview, inbox) and the email templates. Koss has signed it.
   4. A signed-out visitor or a non-admin viewer opening `/design-system` is refused.
 **Owner-gated**: [OWNER] sign the canvas (it blocks UI build in Phases 5-7); [OWNER] Ship.
-**Plans**: 14 plans (9 waves). Owner-visible and codemod plans open with a 04-GATE.md answer check (stop on any B); every wave closes with a heavy-locked gate:local.
+**Plans**: 14 plans (10 waves). Owner-visible and codemod plans open with a 04-GATE.md answer check (stop on any B; Q7 must read C); 04-09 and 04-13 carry the codemod answer check and 04-10 to 04-12 inherit it through depends_on. Same-wave plans run one after another in this one branch. Every wave closes with a heavy-locked gate:local.
 **UI hint**: yes
 
 Plans:
-- [ ] 04-01-PLAN.md — W1: merge main; named radius/shadow/status + exact-value tokens; design-truth.ts; cn() twMerge names; pin tests
-- [ ] 04-02-PLAN.md — W1: ESLint rule clickit/no-raw-design-values (warn) + fixtures + baseline inventory
-- [ ] 04-03-PLAN.md — W2: one brand map (D-04) in brand-colors.ts; consumers; parity test; gate (W1-W2)
-- [ ] 04-04-PLAN.md — W3: [Q1/Q2/Q5] admin-only /admin/design-system page, sidebar link, EN+AR copy, access pins
-- [ ] 04-05-PLAN.md — W3: [Q1/Q3] D-03 snaps (select, toaster, /portfolio CTA) + D-01 literals
-- [ ] 04-07-PLAN.md — W3: [Q1/Q2/Q6-Q9, orchestrator] canvas spike + Foundations + Viewer boards
-- [ ] 04-06-PLAN.md — W4: [Q1/Q2/Q4/Q5/Q7] DESIGN.md + parity test; DS-01/DS-04 + roadmap wording; 04-P6-ADDENDUM.md; gate (W3)
-- [ ] 04-08-PLAN.md — W4: [orchestrator] canvas Admin + Email boards
-- [ ] 04-09-PLAN.md — W5: [Q1/Q2] merge main; codemod 1/5 (UI primitives, chrome); gate (W4-W5)
-- [ ] 04-10-PLAN.md — W6: codemod 2/5 (show cards, home, browse, series)
-- [ ] 04-11-PLAN.md — W6: codemod 3/5 (watch, shorts, landing, support, coming-soon, lib gradients)
-- [ ] 04-12-PLAN.md — W7: codemod 4/5 (viewer routes, loading skeletons); gate (W6-W7)
-- [ ] 04-13-PLAN.md — W8: [Q1/Q2/Q3] codemod 5/5 (admin + admin.css), rule to error, banned-literal tests, ledger; gate
-- [ ] 04-14-PLAN.md — W9: [OWNER, orchestrator] four canvas group signatures (D-08); final gate
+- [ ] 04-01-PLAN.md — W1: [Q1/Q2/Q3] merge main; named radius/shadow/status + exact-value tokens; design-truth.ts; email-tokens.ts (Q7 = C); cn(); pin tests
+- [ ] 04-02-PLAN.md — W2: ESLint rule clickit/no-raw-design-values (warn) + fixtures + baseline inventory
+- [ ] 04-03-PLAN.md — W3: [Q4] one brand map (D-04); consumers; parity test; gate (W1-W3)
+- [ ] 04-04-PLAN.md — W4: [Q1/Q2/Q5] admin-only /admin/design-system page, sidebar link, EN+AR copy, access pins
+- [ ] 04-05-PLAN.md — W4: [Q1/Q3] D-03 snaps (select at /98, toaster, /portfolio CTA) + D-01 literals
+- [ ] 04-07-PLAN.md — W4: [Q1/Q2/Q6/Q8, Q7=C, Q9=yes; orchestrator] canvas spike + Foundations + Viewer boards
+- [ ] 04-06-PLAN.md — W5: [Q1/Q2/Q4/Q5, Q7=C] DESIGN.md (+ two-scheme email tokens) + parity test; wording; 04-P6-ADDENDUM.md; gate (W4)
+- [ ] 04-08-PLAN.md — W5: [orchestrator] canvas Admin boards + Email boards from Phase 5's signed picture (both schemes)
+- [ ] 04-09-PLAN.md — W6: [Q1/Q2] merge main; codemod 1/5 (UI primitives, chrome); gate (W5-W6)
+- [ ] 04-10-PLAN.md — W7: codemod 2/5 (show cards, home, browse, series)
+- [ ] 04-11-PLAN.md — W7: codemod 3/5 (watch, shorts, landing, support, coming-soon, lib gradients)
+- [ ] 04-12-PLAN.md — W8: codemod 4/5 (viewer routes, loading skeletons); gate (W7-W8)
+- [ ] 04-13-PLAN.md — W9: [Q1/Q2/Q3] codemod 5/5 (admin + admin.css), rule to error, banned-literal tests, ledger; gate
+- [ ] 04-14-PLAN.md — W10: [orchestrator] reviewer pass on board legends, [OWNER] four signatures (D-08); final gate
 
 ### Phase 5: Accounts and Email
 **Goal**: Only signed-in viewers get past the landing and legal pages. Viewers can join or sign in with a 6-digit email code or a password. Both admins work under their own TOTP-protected accounts, and every auth and app email arrives branded from `Clickit Story <no-reply@clickitstory.ae>`, once, in the viewer's language.

@@ -48,7 +48,8 @@ Filled by the planner per task (`<automated>` in each PLAN). Requirement → che
 | DS-02 | One brand map: `@theme --color-brand-*` == `BRAND_COLOR_HEX`; no second hex map | unit | design-tokens test | ❌ W0 | ⬜ pending |
 | DS-02 | `cn()` merges named radius/shadow utilities | unit | design-tokens test | ❌ W0 | ⬜ pending |
 | DS-02 | Bracket → named utility resolves to the same px (codemod table) | unit | design-tokens test | ❌ W0 | ⬜ pending |
-| DS-03 | `04-GATE.md` has four dated group signature lines | grep | `grep -c "Signed:" .planning/phases/04-design-system-truth/04-GATE.md` = 4 | ❌ W0 | ⬜ pending |
+| DS-02 | Email-safe tokens (light + dark, literal hex) pinned in `src/lib/email-tokens.ts` | unit | design-tokens test | ❌ W0 | ⬜ pending |
+| DS-03 | `04-GATE.md` has four dated group signature lines | grep | `grep -cE '^- (Foundations\|Viewer\|Admin\|Email) — Koss, [0-9]{4}-[0-9]{2}-[0-9]{2}' .planning/phases/04-design-system-truth/04-GATE.md` = 4 | ❌ W0 | ⬜ pending |
 | DS-04 | Page under `src/app/[locale]/admin/`; no top-level `design-system` route; admin layout redirect intact | unit (static pin) | design-tokens test | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
