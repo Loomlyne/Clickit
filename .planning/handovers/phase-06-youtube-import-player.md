@@ -30,7 +30,7 @@ Supabase Vault through service-role functions; no Worker secret, no plaintext co
 ## Plan-gate decisions as implemented
 
 - G1 = B: `ENDED_MODE = 'bar'` (`src/lib/watch/ended-state.ts`); YouTube's end screen stays; up-next strip in the control bar (8 s ring, Play now, Cancel/Esc → "Finished"); reduced motion → no ring, no auto-advance; last episode → "You've finished {show}". `'card'` kept only as the alternative constant.
-- G2: the daily re-check refreshes status, length, checked-at and clears old player reports; never titles or descriptions; never unpublishes.
+- G2: the daily re-check refreshes status, length, checked-at and clears old player reports; never unpublishes. CHANGED by Koss 2026-10-20 (PR #27 review item 7): refresh unless edited. It also refreshes episode title/title_ar/description/description_ar and short title/channel_name/thumbnail_url from YouTube, skipping any field whose `*_edited` flag is true (set by admin saves, never cleared). The first check of a row writes no text and only flags fields that differ from YouTube. Migration 1 gained the flags, `shorts.youtube_checked_at` and `record_short_checks`; the local DB check should re-apply it and run one re-check on seeded rows.
 - G3: renumber puts live episodes 1..N, archived N+1..N+K.
 - G4: two migrations (expand here, contract in its own PR).
 - G5: duplicate video ids auto-cleared by the controller, newest `updated_at` keeps the id (06-21).

@@ -19,7 +19,7 @@ All G items signed except the G6 key-field pictures.
 
 **G1. End of episode — signed B.** Shipped default `ENDED_MODE = 'bar'`: the ended video and YouTube's own end screen stay visible; the bar under the video becomes the "Up next" strip (8 s countdown, Play now, Cancel). Cancel → "Finished" + Next episode; reduced motion → no countdown; last episode → "You've finished {show}". The card (`'card'`) stays only as an alternative constant. Pictures: `mockups/06-g1-b.png`, `06-g1-b-states.png` (`06-g1-a.png` = not chosen).
 
-**G2. Daily check scope — signed (recommended).** Refreshes YouTube status, length and check time and clears old player reports. Never changes titles or descriptions, never unpublishes.
+**G2. Daily check scope — signed (recommended); CHANGED by Koss 2026-10-20 (PR #27 review item 7): refresh unless edited.** Refreshes YouTube status, length and check time and clears old player reports. ~~Never changes titles or descriptions.~~ It now also refreshes the YouTube text (episode title, Arabic title, description, Arabic description; short title, channel name and picture), but skips any field an admin changed on Clickit. Empty YouTube text never empties a field, and the first check of a row only marks fields that already differ from YouTube as edited. Never unpublishes.
 
 **G3. Renumber — signed (recommended).** Live episodes 1..N, archived after them.
 
