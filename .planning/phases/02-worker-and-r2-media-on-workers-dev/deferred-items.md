@@ -43,3 +43,9 @@ Found during plan 02-19 (out of scope; not fixed).
 18. **`deleteShowPermanently` and `deleteCastMember` no longer delete Supabase originals** (MEDIA-07). A show or cast portrait that still points at a Supabase Storage URL leaves that object behind. The post-approval Supabase emptying step covers it.
 19. **`sharp` is still installed in `node_modules` as an optional dependency of `next` and a dependency of `miniflare`** (via `wrangler`). That is Next's own image optimizer, unused with the custom loader, and it is not in the Worker bundle (`grep sharp .open-next/server-functions/default/handler.mjs` finds nothing).
 20. **RESOLVED with item 1.** `/en/admin/shows` has no page (the list is `/en/admin`); signed out it is gated (307 to `/en/auth?next=/admin/shows`, same as live), signed in it now 404s instead of 500.
+
+## After the shared-key fix (9bf2faf)
+
+21. **Remove/clear actions do not apply the shared-reference rule.** `deleteMediaForUrl` / `stageShowMedia` in `src/server/r2-delete.ts` delete the R2 key even when another live value in the same scope still uses it (e.g. the same file as poster and card, or hero desktop and mobile). Replace (finalize) paths are protected since 9bf2faf; remove paths are not. Fix before Phase 2 UAT ends.
+22. **Cross-scope sharing is not protected.** A file used in two scopes (a show poster also set as the site OG image) is deleted when one scope replaces it. Rare; same fix family as 21.
+23. **Concurrent saves** by two admins can still race between the live read and the delete (images and video).

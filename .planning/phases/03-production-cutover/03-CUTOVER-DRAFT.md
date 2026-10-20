@@ -8,7 +8,7 @@ Sources: ROADMAP Phase 3, `02-RUNBOOK.md` Part B (P3-1..P3-13), job D's `workers
 - Public DNS for `clickitstory.ae` has two records only: apex `A 216.198.79.1` (Vercel) and `www CNAME ba211fb55cf67415.vercel-dns-017.com` (Vercel). No MX, SPF, DKIM, DMARC, CAA, DNSSEC. NS at the registry: `ns3/ns4.tasjeel.ae` plus a lame Cloudflare pair `ignat`/`nataly` (same pair as `invios.online`). Details: `workers/media/DNS-PLAN.md`.
 - Koss has no Vercel access. The frozen Vercel deployment keeps running with its own env (old Supabase keys, `CRON_SECRET`) and its two crons. Nobody can switch them off or redeploy. Vercel calls its crons on the production deployment internally, so no DNS change ever stops them.
 - Rendering does not need any DB rewrite: `src/lib/supabase-media.ts` (`toPublicR2MediaUrl`) maps Supabase Storage URLs to the media host at render time, in the frozen build and in the Worker.
-- Job D may move the zone to the ClickitStory account **before** Phase 3 (its steps c-f). If so, P3-1..P3-5 are already done and only need their checks.
+- **Update (main, 2026-10-20): job D already moved the zone.** `workers/media/wrangler.jsonc` on main says the `clickitstory.ae` zone is Active in the ClickitStory account since 2026-10-20, and `media.clickitstory.ae` is a custom domain of `clickit-media` (production runs `--env supabase-only`). So P3-2, P3-3 and P3-5 are done; P3-1 (stray NS pair) and P3-4 (records/SSL checks) only need their read-back checks, and P3-4b (Resend) remains. Production media is served by that Worker today: any media Worker deploy is a production change (02-RUNBOOK Step 28 stop).
 
 ## 1. Critical finding: the frozen Vercel cleanup cron and the URL rewrite
 
