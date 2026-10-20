@@ -4,6 +4,7 @@ import sharp from 'sharp'
 
 import {
   QUALITY,
+  displayWidth,
   VARIANT_SPEC_VERSION,
   VARIANT_WIDTHS as SCRIPT_WIDTHS,
   encodeVariant,
@@ -140,4 +141,17 @@ test('02-08 variant key layout and widths cannot drift from the media Worker', (
       )
     }
   }
+})
+
+test('02-08 displayWidth swaps axes for EXIF orientation 5-8 and planVariants honours a spec version override', () => {
+  assert.equal(displayWidth({ width: 2000, height: 1000, orientation: 6 }), 1000)
+  assert.equal(displayWidth({ width: 2000, height: 1000, orientation: 1 }), 2000)
+  assert.equal(displayWidth({ width: 2000, height: 1000 }), 2000)
+  assert.equal(displayWidth({}), null)
+  const plan = planVariants(
+    { contentType: 'image/jpeg', width: 2000, pages: 1 },
+    'a/b.jpg',
+    { specVersion: 'v2' }
+  )
+  assert.ok(plan.variants.every((v: { spec: string }) => v.spec.startsWith('v2;')))
 })

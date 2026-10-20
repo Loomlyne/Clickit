@@ -25,16 +25,28 @@ export function variantKey(width, format, bucketKey) {
   return `_v/${width}/${format}/${bucketKey}`
 }
 
-export function variantSpec(width, format) {
-  return `${VARIANT_SPEC_VERSION};w=${width};fmt=${format};q=${QUALITY[format]}`
+export function variantSpec(width, format, specVersion = VARIANT_SPEC_VERSION) {
+  return `${specVersion};w=${width};fmt=${format};q=${QUALITY[format]}`
+}
+
+/**
+ * Width as displayed after EXIF auto-orientation (orientation 5-8 swaps the
+ * stored axes). Variants are sized on this, matching .rotate() in encodeVariant.
+ * @param {{ width?: number, height?: number, orientation?: number }} metadata sharp metadata
+ */
+export function displayWidth(metadata) {
+  const swapped = Number(metadata?.orientation) >= 5
+  const width = swapped ? metadata?.height : metadata?.width
+  return Number.isInteger(width) && width > 0 ? width : null
 }
 
 /**
  * @param {{ contentType: string | null, width: number | null, pages?: number | null }} meta
  * @param {string} bucketKey `<bucket>/<key>`
+ * @param {{ specVersion?: string }} [options]
  * @returns {{ variants: Array<{ width: number, format: 'avif' | 'webp', key: string, spec: string, contentType: string }>, skipReason: string | null }}
  */
-export function planVariants(meta, bucketKey) {
+export function planVariants(meta, bucketKey, options = {}) {
   const contentType = String(meta?.contentType ?? '').split(';')[0].trim().toLowerCase()
   if (contentType.startsWith('video/')) return skip('video: no variants')
   if (contentType === 'image/svg+xml') return skip('svg: never decoded, no variants')
@@ -55,7 +67,7 @@ export function planVariants(meta, bucketKey) {
         width,
         format,
         key: variantKey(width, format, bucketKey),
-        spec: variantSpec(width, format),
+        spec: variantSpec(width, format, options.specVersion),
         contentType: MIME[format],
       })
     }
