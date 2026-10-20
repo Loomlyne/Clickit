@@ -95,7 +95,7 @@ export function Navbar({
         'transition-[transform,background-color,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform',
         hidden ? '-translate-y-full' : 'translate-y-0',
         isMinimal &&
-          'border-[var(--line)] bg-[rgba(10,10,10,0.96)] backdrop-blur-[18px]',
+          'border-[var(--line)] bg-[var(--scrim-nav)] backdrop-blur-[18px]',
         !isMinimal &&
           isLanding &&
           !scrolled &&
@@ -103,11 +103,11 @@ export function Navbar({
         !isMinimal &&
           isLanding &&
           scrolled &&
-          'border-[var(--line)] bg-[rgba(10,10,10,0.96)]',
+          'border-[var(--line)] bg-[var(--scrim-nav)]',
         !isMinimal &&
           !isLanding &&
-          'border-[var(--line)] bg-[linear-gradient(180deg,rgba(10,10,10,0.95),rgba(10,10,10,0.65))]',
-        !isMinimal && !isLanding && scrolled && 'bg-[rgba(10,10,10,0.96)]'
+          'border-[var(--line)] bg-[image:var(--gradient-nav-fade)]',
+        !isMinimal && !isLanding && scrolled && 'bg-[var(--scrim-nav)]'
       )}
       style={{
         WebkitBackdropFilter:
@@ -154,8 +154,8 @@ export function Navbar({
           const inner = (
             <>
               <span className="relative flex size-2 shrink-0" aria-hidden>
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" />
-                <span className="relative inline-flex size-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-live-dot opacity-75 motion-reduce:animate-none" />
+                <span className="relative inline-flex size-2 rounded-full bg-live-dot shadow-live-dot" />
               </span>
               {liveLabel}
             </>
@@ -188,8 +188,8 @@ export function Navbar({
             const inner = (
               <>
                 <span className="relative flex size-2 shrink-0" aria-hidden>
-                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" />
-                  <span className="relative inline-flex size-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-live-dot opacity-75 motion-reduce:animate-none" />
+                  <span className="relative inline-flex size-2 rounded-full bg-live-dot shadow-live-dot" />
                 </span>
                 {liveLabel}
               </>
