@@ -104,10 +104,10 @@
 
 ### Design system (DS)
 
-- [ ] **DS-01**: DESIGN.md and /design-system describe the live look (LBC, #ffcc00, #0a0a0a surfaces, 8px base radius)
+- [ ] **DS-01**: DESIGN.md and /admin/design-system describe the live look (LBC, #ffcc00, #090909 surfaces, 8px field/base radius, pill controls)
 - [ ] **DS-02**: All colours, radii and shadows come from tokens; no hard-coded hex or indigo leftovers; one brand-colour map
 - [ ] **DS-03**: A Claude Design design-system project shows foundations, viewer screens, admin screens and email templates, signed by Koss before the screens are built
-- [ ] **DS-04**: /design-system is admin-only
+- [ ] **DS-04**: /admin/design-system is admin-only
 
 ### Quality (QA)
 

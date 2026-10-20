@@ -107,14 +107,14 @@ Plans:
 **Plans**: TBD
 
 ### Phase 4: Design System Truth
-**Goal**: One signed design truth (LBC, #ffcc00, #0a0a0a, 8px radius) exists in tokens, docs and a Claude Design canvas before any new viewer, admin or email screen is coded.
+**Goal**: One signed design truth (LBC, #ffcc00, #090909, 8px field/base radius, pill controls) exists in tokens, docs and a Claude Design canvas before any new viewer, admin or email screen is coded.
 **Depends on**: Phase 3 (the design work itself can start in parallel with Phases 2-3; code ships after the cutover)
 **Requirements**: DS-01, DS-02, DS-03, DS-04
 **Success Criteria** (what must be TRUE):
-  1. DESIGN.md and `/design-system` show the live look: LBC, #ffcc00 accent, #0a0a0a surfaces and an 8px base radius. No indigo-era values remain.
+  1. DESIGN.md and `/admin/design-system` show the live look: LBC, #ffcc00 accent, #090909 surfaces, an 8px field/base radius and pill controls. No indigo-era values remain.
   2. A search of `src/` finds no hard-coded hex colours or arbitrary radii outside the token files, and one brand-colour map serves the whole app. The live site looks unchanged.
   3. The Claude Design canvas shows foundations, viewer screens (including the OTP sign-in, the RTL treatment and an RMF-compliant player), admin screens (playlist import preview, inbox) and the email templates. Koss has signed it.
-  4. A signed-out visitor or a non-admin viewer opening `/design-system` is refused.
+  4. A signed-out visitor or a non-admin viewer opening `/admin/design-system` is refused.
 **Owner-gated**: [OWNER] sign the canvas (it blocks UI build in Phases 5-7); [OWNER] Ship.
 **Plans**: 14 plans (10 waves). Owner-visible and codemod plans open with a 04-GATE.md answer check (stop on any B; Q7 must read C); 04-09 and 04-13 carry the codemod answer check and 04-10 to 04-12 inherit it through depends_on. Same-wave plans run one after another in this one branch. Every wave closes with a heavy-locked gate:local.
 **UI hint**: yes
