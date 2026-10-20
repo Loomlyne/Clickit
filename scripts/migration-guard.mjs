@@ -64,23 +64,23 @@ export const PATTERNS = [
 export const PHASE1_NEUTRALISATION = {
   'supabase/migrations/20260401000000_create_schema.sql': {
     from: '6155411336273554b90dc4ac784a011520815879',
-    to: null,
+    to: 'c87bf539d731d8a42bd7058fb2725273bbb356f3',
   },
   'supabase/migrations/20260401000003_seed_data.sql': {
     from: '8d09bdfd3edea72a8a6a37a7016cab248fdae71d',
-    to: null,
+    to: 'e6f0cd77d26e56c720059fd02e43412d7c292bc3',
   },
   'supabase/migrations/20260425000001_seed_example_shorts.sql': {
     from: 'd3ce94e3fe5520f2341953f586cc17e3db734e3a',
-    to: null,
+    to: '0fcbc891c664fcc1fed44a866e6b48cfe0a5b7f4',
   },
   'supabase/migrations/20260506115421_seed_fake_show_cast.sql': {
     from: '79cac51acb7b1b7caec86e76d54f5e0c77923f68',
-    to: null,
+    to: '01af38c04c45402dfa7a191ae35f83af3e2b3245',
   },
   'supabase/migrations/20260506120139_add_fake_cast_images.sql': {
     from: '37be8e857084ae1243570657ce46276edcd185b0',
-    to: null,
+    to: '8477b0d4ec5502ca0b454a473e828a260ba5b025',
   },
 }
 
