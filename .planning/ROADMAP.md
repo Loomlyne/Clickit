@@ -65,7 +65,7 @@ Plans:
 - [x] 01.1-06-PLAN.md — W2: show writes core (category sync, archive-first delete, reorder)
 - [x] 01.1-07-PLAN.md — W2: season and episode create/update/delete core
 - [x] 01.1-08-PLAN.md — W2: episode archive/restore/delete/reorder core
-- [ ] 01.1-09-PLAN.md — W2: bulk schedule and unschedule core
+- [x] 01.1-09-PLAN.md — W2: bulk schedule and unschedule core
 - [ ] 01.1-10-PLAN.md — W3: wire shows, categories, toggleFeatured into actions.ts
 - [ ] 01.1-11-PLAN.md — W4: wire seasons, episodes, scheduling into actions.ts
 - [ ] 01.1-12-PLAN.md — W5: hero video, SVG, ticker, remaining id validation in actions.ts
@@ -175,7 +175,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Safe Ground | 0/TBD | Not started | - |
-| 1.1. Admin Actions Hardening (INSERTED) | 8/13 | In Progress|  |
+| 1.1. Admin Actions Hardening (INSERTED) | 9/13 | In Progress|  |
 | 2. Worker and R2 Media on workers.dev | 0/TBD | Not started | - |
 | 3. Production Cutover | 0/TBD | Not started | - |
 | 4. Design System Truth | 0/TBD | Not started | - |
