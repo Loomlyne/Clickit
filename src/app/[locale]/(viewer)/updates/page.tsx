@@ -31,7 +31,7 @@ export default async function UpdatesPage({
 
   return (
     <div className="px-4 pt-8 pb-16 sm:px-6 md:px-12">
-      <div className="mx-auto max-w-3xl rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-6 sm:p-10">
+      <div className="mx-auto max-w-3xl rounded-card border border-[var(--line)] bg-[var(--bg-1)] p-6 sm:p-10">
         <PageEyebrow>{t('eyebrow')}</PageEyebrow>
         <PageTitle size="card">{t('heading')}</PageTitle>
         <p className="mt-4 max-w-2xl text-[16px] leading-7 text-[var(--text-dim)]">
