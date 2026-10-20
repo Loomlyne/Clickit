@@ -44,3 +44,23 @@ test('episodes table: moved row highlight and live region', () => {
 test('episodes table: edit of an untranslated row opens with the title focused', () => {
   assert.match(episodesTable, /initialFocus=/)
 })
+
+test('renumber dialog: own close button on the logical end, 44px, no primitive close', () => {
+  const src = read('src/components/admin/renumber-season-dialog.tsx')
+  assert.equal(count(src, /showCloseButton=\{false\}/g), 1)
+  assert.ok(count(src, /end-4/g) >= 1)
+  assert.ok(count(src, /size-11/g) >= 1)
+})
+
+test('renumber dialog: one renumberSeason call and an alert for a refusal', () => {
+  const src = read('src/components/admin/renumber-season-dialog.tsx')
+  assert.equal(count(src, /renumberSeason\(/g), 1)
+  assert.match(src, /role="alert"/)
+})
+
+test('season tabs: renumber hint, dialog and the empty-state import entry', () => {
+  const src = read('src/components/admin/season-tabs.tsx')
+  assert.ok(count(src, /ImportPlaylistSheet/g) >= 2)
+  assert.ok(count(src, /gapsHint/g) >= 1)
+  assert.ok(count(src, /RenumberSeasonDialog/g) >= 2)
+})
