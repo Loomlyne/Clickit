@@ -1,13 +1,29 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { Loader2, Sparkles } from 'lucide-react'
 import { getVideoDuration } from '@/lib/youtube'
+import {
+  fetchYouTubeMeta,
+  type YouTubeMeta,
+} from '@/app/[locale]/admin/actions'
+import {
+  YOUTUBE_ERROR_MESSAGE_KEYS,
+  type YouTubeErrorCode,
+} from '@/lib/youtube-errors'
+import { formatQuotaReset, nextQuotaReset } from '@/lib/youtube-quota'
+import { isolate } from '@/lib/i18n-format'
+import {
+  DESCRIPTION_MAX,
+  TITLE_MAX,
+  dominantScript,
+  needsEnglishTitle,
+} from '@/server/youtube/script'
 
 import {
   Sheet,
@@ -20,6 +36,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { YouTubeUrlInput } from '@/components/admin/youtube-url-input'
+import { YouTubeStatusChip } from '@/components/admin/youtube-status-chip'
 import type { Database } from '@/lib/database.types'
 import { dubaiLocalToUtcIso, utcIsoToDubaiLocal } from '@/lib/scheduling'
 
@@ -94,9 +111,42 @@ interface EpisodeFormDrawerProps {
   seasonId: string
   showDefaults: ShowDefaults
   nextEpisodeNumber: number
+  /** A refused link comes back as data.youtubeError (06-13). */
   onSave: (
     data: EpisodeFormData
-  ) => Promise<{ success: boolean; error?: string }>
+  ) => Promise<{ success: boolean; error?: string; data?: unknown }>
+  /** Opens with the cursor in this field (06-18 "Needs English title" mark). */
+  initialFocus?: 'title'
+}
+
+type DynamicTranslator = {
+  (key: string, values?: Record<string, string | number>): string
+  markup(
+    key: string,
+    values: Record<string, string | number | ((chunks: string) => string)>
+  ): string
+}
+
+type DuplicateParams = { show: string; season: number; episode: number }
+
+/** Cap by code points so a surrogate pair is never split. */
+function cap(text: string, max: number): string {
+  return Array.from(text.trim()).slice(0, max).join('')
+}
+
+/** The refusal a save came back with, when the server refused the video. */
+function readYouTubeError(
+  data: unknown
+): { code: YouTubeErrorCode; params?: DuplicateParams } | null {
+  if (typeof data !== 'object' || data === null) return null
+  const refusal = (data as { youtubeError?: unknown }).youtubeError
+  if (typeof refusal !== 'object' || refusal === null) return null
+  const code = (refusal as { code?: unknown }).code
+  if (typeof code !== 'string' || !(code in YOUTUBE_ERROR_MESSAGE_KEYS)) {
+    return null
+  }
+  const params = (refusal as { params?: DuplicateParams }).params
+  return { code: code as YouTubeErrorCode, params }
 }
 
 export function EpisodeFormDrawer({
@@ -108,9 +158,13 @@ export function EpisodeFormDrawer({
   showDefaults,
   nextEpisodeNumber,
   onSave,
+  initialFocus,
 }: EpisodeFormDrawerProps) {
   const isEdit = !!episode
+  const locale = useLocale()
   const t = useTranslations('admin.episodeForm')
+  const tYtErrors = useTranslations('admin.youtubeErrors')
+  const tYtStatus = useTranslations('admin.youtubeStatus')
   const tCommon = useTranslations('common')
   const tErrors = useTranslations('errors')
 
@@ -151,8 +205,41 @@ export function EpisodeFormDrawer({
     },
   })
 
+  // The plain-words refusal under the link field (null: nothing to show).
+  const [linkError, setLinkError] = useState<string | null>(null)
+  const urlFieldRef = useRef<HTMLDivElement>(null)
+
+  // Words come from i18n keys and the code only; nothing from the server is shown raw.
+  function refusalText(code: YouTubeErrorCode, params?: DuplicateParams) {
+    // The key comes from a table, so the typed translator is widened here.
+    const tYt = tYtErrors as unknown as DynamicTranslator
+    const key = YOUTUBE_ERROR_MESSAGE_KEYS[code]
+    if (code === 'video_duplicate' && params) {
+      return tYt.markup(key, {
+        show: params.show,
+        season: params.season,
+        episode: params.episode,
+        bdi: (chunks) => isolate(chunks),
+      })
+    }
+    return tYt(key, {
+      time: formatQuotaReset(nextQuotaReset(new Date()), locale),
+    })
+  }
+
+  function showLinkRefusal(code: YouTubeErrorCode, params?: DuplicateParams) {
+    setLinkError(refusalText(code, params))
+  }
+
+  function focusLinkField() {
+    const field = urlFieldRef.current
+    field?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    field?.querySelector('input')?.focus()
+  }
+
   useEffect(() => {
     if (open) {
+      setLinkError(null)
       if (episode) {
         form.reset({
           title: episode.title,
@@ -230,9 +317,18 @@ export function EpisodeFormDrawer({
     if (result.success) {
       toast.success(isEdit ? t('episodeUpdated') : t('episodeCreated'))
       onOpenChange(false)
-    } else {
-      toast.error(result.error || tCommon('error'))
+      return
     }
+    const refusal = readYouTubeError(result.data)
+    if (refusal) {
+      // The server re-checked the video on save and refused it: say why under
+      // the link field, take the cursor there, and keep every other field.
+      showLinkRefusal(refusal.code, refusal.params)
+      focusLinkField()
+      toast.error(t('notSavedToast'))
+      return
+    }
+    toast.error(result.error || tCommon('error'))
   }
 
   void showId
@@ -240,12 +336,24 @@ export function EpisodeFormDrawer({
 
   const errors = form.formState.errors
   const currentStatus = form.watch('status')
+  const watchedTitle = form.watch('title')
+  const watchedTitleAr = form.watch('title_ar')
+  const titleNeedsEnglish = needsEnglishTitle({
+    title: watchedTitle ?? '',
+    title_ar: watchedTitleAr || null,
+  })
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
         className="flex w-full flex-col p-0 sm:max-w-xl"
+        onOpenAutoFocus={(event) => {
+          if (initialFocus === 'title') {
+            event.preventDefault()
+            form.setFocus('title')
+          }
+        }}
       >
         <SheetHeader className="border-border shrink-0 border-b px-6 pt-6 pb-4">
           <SheetTitle className="text-lg">
@@ -283,6 +391,16 @@ export function EpisodeFormDrawer({
                       placeholder={t('episodeTitlePlaceholder')}
                     />
                   </Field>
+                  {titleNeedsEnglish && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <YouTubeStatusChip tone="warn">
+                        {tYtStatus('needsEnglishTitle')}
+                      </YouTubeStatusChip>
+                      <span className="text-[11px] text-[var(--text-mute)]">
+                        {t('needsEnglishTitleHint')}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <Field
                   label={t('episodeNumberLabel')}
@@ -378,48 +496,70 @@ export function EpisodeFormDrawer({
 
             <Section title={t('sectionContent')}>
               <Field label={t('youtubeUrlLabel')}>
-                <Controller
-                  name="youtube_video_id"
-                  control={form.control}
-                  render={({ field }) => (
-                    <YouTubeUrlInput
-                      value={field.value ?? ''}
-                      onChange={(videoId) => field.onChange(videoId ?? '')}
-                    />
-                  )}
-                />
+                <div ref={urlFieldRef}>
+                  <Controller
+                    name="youtube_video_id"
+                    control={form.control}
+                    render={({ field }) => (
+                      <YouTubeUrlInput
+                        value={field.value ?? ''}
+                        onChange={(videoId) => {
+                          setLinkError(null)
+                          field.onChange(videoId ?? '')
+                        }}
+                        error={linkError ?? undefined}
+                      />
+                    )}
+                  />
+                </div>
                 {watchedVideoId && watchedVideoId.length === 11 && (
                   <YouTubeFetchButton
                     videoId={watchedVideoId}
                     isEdit={isEdit}
+                    excludeEpisodeId={episode?.id}
+                    onRefused={showLinkRefusal}
                     onFetched={(meta) => {
+                      setLinkError(null)
                       // Only fill fields that are currently empty, never overwrite
-                      // what the admin has already typed.
-                      if (!form.getValues('title') && meta.title) {
-                        form.setValue('title', meta.title, {
-                          shouldDirty: true,
-                        })
+                      // what the admin has already typed. Arabic text goes to the
+                      // Arabic fields, nothing is translated (D-04).
+                      const title = cap(meta.title, TITLE_MAX)
+                      if (title) {
+                        if (dominantScript(title) === 'ar') {
+                          if (!form.getValues('title_ar')) {
+                            form.setValue('title_ar', title, {
+                              shouldDirty: true,
+                            })
+                          }
+                          if (!form.getValues('title')) {
+                            form.setValue('title', title, {
+                              shouldDirty: true,
+                            })
+                          }
+                        } else if (!form.getValues('title')) {
+                          form.setValue('title', title, { shouldDirty: true })
+                        }
                       }
-                      if (!form.getValues('description') && meta.description) {
-                        // YouTube descriptions are long; cap at 1000 chars to keep
-                        // our DB row sane and the UI clean.
-                        form.setValue(
-                          'description',
-                          meta.description.slice(0, 1000),
-                          { shouldDirty: true }
-                        )
+                      const description = cap(meta.description, DESCRIPTION_MAX)
+                      if (description) {
+                        const field =
+                          dominantScript(description) === 'ar'
+                            ? 'description_ar'
+                            : 'description'
+                        if (!form.getValues(field)) {
+                          form.setValue(field, description, {
+                            shouldDirty: true,
+                          })
+                        }
                       }
                       if (
                         !form.getValues('duration') &&
-                        meta.durationSeconds > 0
+                        meta.durationMinutes &&
+                        meta.durationMinutes > 0
                       ) {
-                        form.setValue(
-                          'duration',
-                          Math.round(meta.durationSeconds / 60),
-                          {
-                            shouldDirty: true,
-                          }
-                        )
+                        form.setValue('duration', meta.durationMinutes, {
+                          shouldDirty: true,
+                        })
                       }
                     }}
                   />
@@ -476,28 +616,24 @@ export function EpisodeFormDrawer({
 }
 
 /**
- * Small button below the YouTube URL field. When clicked, calls
- * /api/youtube-meta to fetch title / description / duration from the
- * YouTube Data API and passes them back to the parent form.
- *
- * Admin-only endpoint on the server side. If no API key is configured
- * (503 response) the button shows an actionable toast pointing to settings.
+ * Button below the YouTube URL field. Asks the server (fetchYouTubeMeta, admin
+ * only, key stays on the server) to check the video and fetch its title,
+ * description and length, and hands them back to the parent form. A refused
+ * video is explained in plain words under the link field by the parent.
  */
-type YouTubeMeta = {
-  title: string
-  description: string
-  durationSeconds: number
-  thumbnail: string | null
-}
-
 function YouTubeFetchButton({
   videoId,
   isEdit,
+  excludeEpisodeId,
   onFetched,
+  onRefused,
 }: {
   videoId: string
   isEdit: boolean
+  /** The episode being edited: its own video is not a duplicate. */
+  excludeEpisodeId?: string
   onFetched: (meta: YouTubeMeta) => void
+  onRefused: (code: YouTubeErrorCode, params?: DuplicateParams) => void
 }) {
   const [loading, setLoading] = useState(false)
   const t = useTranslations('admin.episodeForm')
@@ -506,43 +642,40 @@ function YouTubeFetchButton({
     setLoading(true)
     try {
       const url = `https://www.youtube.com/watch?v=${videoId}`
-      const res = await fetch(
-        `/api/youtube-meta?url=${encodeURIComponent(url)}`
-      )
-      if (res.status === 503) {
-        toast.error(t('toastNoYoutubeKey'), {
-          description: t('toastNoYoutubeKeyDescription'),
-        })
+      const res = await fetchYouTubeMeta(url, { excludeEpisodeId })
+      if (!res.success) {
+        if (res.data?.code) {
+          onRefused(res.data.code, res.data.params)
+        } else {
+          toast.error(t('toastFetchFailed'))
+        }
         return
       }
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        toast.error(body.error ?? t('toastFetchFailed'))
-        return
-      }
-      const meta: YouTubeMeta = await res.json()
-      onFetched(meta)
+      onFetched(res.data)
       toast.success(
         isEdit ? t('toastFetchSuccess') : t('toastFetchDurationSuccess')
       )
+    } catch {
+      toast.error(t('toastFetchFailed'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
+      className="mt-2 min-h-11 px-6 py-2 text-sm font-bold"
       onClick={onClick}
       disabled={loading}
-      className="relative mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-xs font-medium text-[var(--text-dim)] transition-colors after:absolute after:inset-x-0 after:-inset-y-1 after:content-[''] hover:border-[var(--text-mute)] hover:text-[var(--text)] disabled:opacity-50 max-md:min-h-11"
     >
       {loading ? (
-        <Loader2 className="size-3 animate-spin" />
+        <Loader2 className="size-4 animate-spin" />
       ) : (
-        <Sparkles className="size-3" />
+        <Sparkles className="size-4" />
       )}
       {isEdit ? t('fetchYoutubeMetadata') : t('fetchYoutubeDuration')}
-    </button>
+    </Button>
   )
 }

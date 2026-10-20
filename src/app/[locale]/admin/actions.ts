@@ -1138,7 +1138,7 @@ export async function commitImport(input: {
  */
 export async function fetchYouTubeMeta(
   url: string,
-  opts?: { forShort?: boolean }
+  opts?: { forShort?: boolean; excludeEpisodeId?: string }
 ): Promise<YouTubeActionResult<YouTubeMeta>> {
   try {
     await requireAdminForYouTube()
@@ -1147,7 +1147,12 @@ export async function fetchYouTubeMeta(
       createAdminClient(),
       'missing' in yt ? null : yt.client,
       url,
-      { checkDuplicate: !opts?.forShort }
+      {
+        checkDuplicate: !opts?.forShort,
+        // The edit form passes the episode's own id so its own video is not a duplicate.
+        excludeEpisodeId:
+          typeof opts?.excludeEpisodeId === 'string' ? opts.excludeEpisodeId : undefined,
+      }
     )
     if (outcome.ok) return { success: true, data: outcome.meta }
     return {
