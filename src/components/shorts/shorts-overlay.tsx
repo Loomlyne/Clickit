@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import type { ViewShort } from '@/lib/queries'
+import { markProgrammaticScroll } from '@/lib/nav-scroll'
 
 interface ShortsOverlayProps {
   shorts: ViewShort[]
@@ -99,6 +100,8 @@ export function ShortsOverlay({
       body.style.position = prevBodyPosition
       body.style.top = prevBodyTop
       body.style.width = prevBodyWidth
+      // Back to where the page was; not a user scroll, so the navbar stays put.
+      markProgrammaticScroll()
       window.scrollTo(0, scrollY)
     }
   }, [])

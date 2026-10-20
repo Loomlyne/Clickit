@@ -7,19 +7,39 @@ export const NAV_TOP_ZONE_Y = 80
 /** Smallest per-frame movement that counts as a direction change. */
 export const NAV_DIRECTION_DELTA = 4
 
+/** How long after markProgrammaticScroll() scroll samples are not the user's. */
+export const PROGRAMMATIC_SCROLL_MS = 200
+
+let programmaticUntil = 0
+
+/**
+ * Call right before a scroll the user did not make (scroll restore, the shorts
+ * overlay unlocking the body). For the next few frames the navbar only moves
+ * its reference point and keeps its hidden/shown state.
+ */
+export function markProgrammaticScroll(now: number = performance.now()) {
+  programmaticUntil = now + PROGRAMMATIC_SCROLL_MS
+}
+
+export function isProgrammaticScroll(now: number = performance.now()) {
+  return now < programmaticUntil
+}
+
 export type NavHideInput = {
   y: number
   lastY: number
   hidden: boolean
   isLanding: boolean
   viewportHeight: number
+  /** True while a markProgrammaticScroll() window is open. */
+  programmatic?: boolean
 }
 
 /**
  * Next hidden state for one scroll sample: hide going down, show going up.
- * A jump of a full viewport or more inside one frame is programmatic (back /
- * forward restore, the shorts overlay unlocking the body, anchor jumps), not
- * a user scroll, so it leaves the navbar as it was.
+ * Programmatic scrolls (marked ones, and any jump of a full viewport or more
+ * inside one frame, e.g. anchor jumps) are not the user's, so they leave the
+ * navbar as it was.
  */
 export function nextNavHidden({
   y,
@@ -27,9 +47,11 @@ export function nextNavHidden({
   hidden,
   isLanding,
   viewportHeight,
+  programmatic = false,
 }: NavHideInput): boolean {
   if (isLanding) return false
   if (y < NAV_TOP_ZONE_Y) return false
+  if (programmatic) return hidden
   const delta = y - lastY
   if (Math.abs(delta) >= viewportHeight) return hidden
   if (delta > NAV_DIRECTION_DELTA) return true

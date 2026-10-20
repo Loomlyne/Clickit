@@ -11,6 +11,7 @@ import { liveNavHref, liveNavIsExternal } from './nav-links'
 import { pickLocalized, type Locale } from '@/lib/locale'
 import {
   NAV_SCROLLED_Y,
+  isProgrammaticScroll,
   nextNavHidden,
   subscribeNavScroll,
 } from '@/lib/nav-scroll'
@@ -49,6 +50,7 @@ export function Navbar({
   useEffect(() => {
     const unsubscribe = subscribeNavScroll(window, (y) => {
       const lastY = lastScrollY.current
+      const programmatic = isProgrammaticScroll()
       lastScrollY.current = y
       setScrolled(y > NAV_SCROLLED_Y)
       setHidden((hidden) =>
@@ -58,6 +60,7 @@ export function Navbar({
           hidden,
           isLanding,
           viewportHeight: window.innerHeight,
+          programmatic,
         })
       )
     })

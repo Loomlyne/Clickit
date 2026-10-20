@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { nextNavHidden, subscribeNavScroll } from '../../src/lib/nav-scroll.ts'
+import {
+  PROGRAMMATIC_SCROLL_MS,
+  isProgrammaticScroll,
+  markProgrammaticScroll,
+  nextNavHidden,
+  subscribeNavScroll,
+} from '../../src/lib/nav-scroll.ts'
 
 const base = { hidden: false, isLanding: false, viewportHeight: 800 }
 
@@ -28,6 +34,22 @@ test('nav: a programmatic jump of a viewport or more keeps the current state', (
     nextNavHidden({ ...base, hidden: true, lastY: 3000, y: 1200 }),
     true
   )
+})
+
+test('nav: a marked programmatic scroll smaller than a viewport keeps the state', () => {
+  // Closing a short: body unlocks at scrollY 0, then scrollTo(0, 495).
+  assert.equal(
+    nextNavHidden({ ...base, lastY: 0, y: 495, programmatic: true }),
+    false
+  )
+  assert.equal(nextNavHidden({ ...base, lastY: 0, y: 495 }), true)
+})
+
+test('nav: the programmatic mark lasts a short window only', () => {
+  markProgrammaticScroll(1000)
+  assert.equal(isProgrammaticScroll(1000), true)
+  assert.equal(isProgrammaticScroll(1000 + PROGRAMMATIC_SCROLL_MS - 1), true)
+  assert.equal(isProgrammaticScroll(1000 + PROGRAMMATIC_SCROLL_MS), false)
 })
 
 test('nav: tiny movements change nothing', () => {

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import { usePathname } from '@/i18n/navigation'
+import { markProgrammaticScroll } from '@/lib/nav-scroll'
 
 const STORAGE_PREFIX = 'cit:viewer-scroll:'
 
@@ -66,11 +67,14 @@ export function ViewerScrollPersistence() {
 
     const applyScroll = () => {
       // Clamp at apply time, after two frames, so the restored page has height.
+      // Not a user scroll, so the navbar keeps its state.
+      markProgrammaticScroll()
       window.scrollTo(0, clampScrollY(payload.y))
 
       if (payload.episodeId) {
         requestAnimationFrame(() => {
           const el = document.getElementById(`episode-${payload.episodeId}`)
+          if (el) markProgrammaticScroll()
           el?.scrollIntoView({ block: 'nearest', behavior: 'auto' })
         })
       }
