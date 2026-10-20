@@ -7,9 +7,10 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { ArrowLeft } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { mapAuthError } from '@/lib/auth-errors'
 import { getSafeAuthNextPath } from '@/lib/auth-navigation'
@@ -19,10 +20,15 @@ import {
   useTurnstileToken,
 } from '@/components/security/turnstile-field'
 import { isCaptchaFailure } from '@/lib/turnstile-widget'
+import { AuthAlert } from './auth-alert'
+import { PasswordField } from './password-field'
+import { errorParams } from './password-rules'
 
+// Sign-in only checks "not empty": accounts created before the 8-character
+// minimum must still get in. The server is the judge of the credentials.
 const loginSchema = z.object({
   email: z.string().email('emailInvalid'),
-  password: z.string().min(6, 'passwordMin'),
+  password: z.string().min(1, 'passwordRequired'),
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
@@ -39,7 +45,6 @@ export function LoginForm() {
   const locale = useLocale()
   const searchParams = useSearchParams()
   const [serverError, setServerError] = useState<string | null>(null)
-  const [showPassword, setShowPassword] = useState(false)
   const [mode, setMode] = useState<'login' | 'forgot'>('login')
   const [resetSent, setResetSent] = useState(false)
   // Turnstile (PLAT-05): the token is single-use, so every submit consumes it
@@ -54,6 +59,9 @@ export function LoginForm() {
   const forgotForm = useForm<ForgotFormData>({
     resolver: zodResolver(forgotSchema),
   })
+
+  const fieldError = (key?: string) =>
+    key ? tErrors(key as never, errorParams(key) as never) : undefined
 
   async function onLogin(data: LoginFormData) {
     if (awaitingToken) return
@@ -115,7 +123,7 @@ export function LoginForm() {
 
   if (mode === 'forgot') {
     return (
-      <div className="space-y-3 md:space-y-4">
+      <div className="flex flex-col gap-4">
         <button
           type="button"
           onClick={() => {
@@ -124,45 +132,50 @@ export function LoginForm() {
             setResetSent(false)
             captcha.clear()
           }}
-          className="flex min-h-11 items-center gap-1.5 text-sm text-white/50 transition-colors hover:text-white/80"
+          className="flex min-h-11 items-center gap-1.5 self-start text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]"
         >
-          <ArrowLeft className="size-3.5 rtl:scale-x-[-1]" />
+          <ArrowLeft className="size-3.5 rtl:scale-x-[-1]" aria-hidden />
           {t('backToSignIn')}
         </button>
 
         {resetSent ? (
-          <div className="rounded-full border border-[#50A258]/25 bg-[#50A258]/10 px-4 py-4 text-sm text-green-300">
+          <AuthAlert variant="success">
             <p className="font-medium">{t('resetEmailSent')}</p>
-            <p className="mt-1 text-white/52">{t('resetEmailDescription')}</p>
-          </div>
+            <p className="mt-1 text-[var(--text-dim)]">
+              {t('resetEmailDescription')}
+            </p>
+          </AuthAlert>
         ) : (
           <form
             onSubmit={forgotForm.handleSubmit(onForgot)}
-            className="space-y-3 md:space-y-4"
+            className="flex flex-col gap-4"
+            method="post"
+            noValidate
           >
             {serverError && (
-              <div className="rounded-full border border-[#DB3F34]/25 bg-[#DB3F34]/10 px-4 py-3 text-sm text-red-300">
-                <div className="flex items-start gap-2.5">
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>{serverError}</span>
-                </div>
-              </div>
+              <AuthAlert variant="error">{serverError}</AuthAlert>
             )}
 
-            <p className="text-sm text-white/52">{t('resetDescription')}</p>
+            <p className="text-sm text-[var(--text-dim)]">
+              {t('resetDescription')}
+            </p>
 
             <div>
               <Label htmlFor="forgot-email">{t('email')}</Label>
               <Input
                 id="forgot-email"
                 type="email"
+                autoComplete="email"
                 placeholder={t('emailPlaceholder')}
                 className="mt-1.5"
+                aria-invalid={
+                  forgotForm.formState.errors.email ? true : undefined
+                }
                 {...forgotForm.register('email')}
               />
               {forgotForm.formState.errors.email && (
-                <p className="text-brand-red-safe mt-1 text-xs">
-                  {tErrors(forgotForm.formState.errors.email.message as never)}
+                <p className="mt-1 text-[13px] text-[var(--color-brand-red-safe)]">
+                  {fieldError(forgotForm.formState.errors.email.message)}
                 </p>
               )}
             </div>
@@ -174,15 +187,15 @@ export function LoginForm() {
               failed={captcha.failed}
             />
 
-            <button
+            <Button
               type="submit"
+              className="w-full"
               disabled={forgotForm.formState.isSubmitting || awaitingToken}
-              className="bg-primary text-primary-foreground w-full rounded-full px-7 py-3 text-sm font-semibold transition-colors hover:bg-[#7082ff] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {forgotForm.formState.isSubmitting
                 ? t('resetButton') + '…'
                 : t('resetButton')}
-            </button>
+            </Button>
           </form>
         )}
       </div>
@@ -192,36 +205,40 @@ export function LoginForm() {
   return (
     <form
       onSubmit={loginForm.handleSubmit(onLogin)}
-      className="space-y-3 md:space-y-4"
+      className="flex flex-col gap-4"
+      method="post"
+      noValidate
     >
-      {serverError && (
-        <div className="rounded-full border border-[#DB3F34]/25 bg-[#DB3F34]/10 px-4 py-3 text-sm text-red-300">
-          <div className="flex items-start gap-2.5">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{serverError}</span>
-          </div>
-        </div>
-      )}
+      {serverError && <AuthAlert variant="error">{serverError}</AuthAlert>}
 
       <div>
         <Label htmlFor="login-email">{t('email')}</Label>
         <Input
           id="login-email"
           type="email"
+          autoComplete="email"
           placeholder={t('emailPlaceholder')}
           className="mt-1.5"
+          aria-invalid={loginForm.formState.errors.email ? true : undefined}
           {...loginForm.register('email')}
         />
         {loginForm.formState.errors.email && (
-          <p className="text-brand-red-safe mt-1 text-xs">
-            {tErrors(loginForm.formState.errors.email.message as never)}
+          <p className="mt-1 text-[13px] text-[var(--color-brand-red-safe)]">
+            {fieldError(loginForm.formState.errors.email.message)}
           </p>
         )}
       </div>
 
       <div>
-        <div className="flex items-center justify-between">
-          <Label htmlFor="login-password">{t('password')}</Label>
+        <PasswordField
+          id="login-password"
+          label={t('password')}
+          autoComplete="current-password"
+          placeholder="••••••••"
+          error={fieldError(loginForm.formState.errors.password?.message)}
+          {...loginForm.register('password')}
+        />
+        <div className="flex justify-end">
           <button
             type="button"
             onClick={() => {
@@ -229,38 +246,11 @@ export function LoginForm() {
               setServerError(null)
               captcha.clear()
             }}
-            className="inline-flex min-h-11 items-center text-xs text-white/40 transition-colors hover:text-white/70"
+            className="inline-flex min-h-11 items-center text-[13px] text-[var(--text-dim)] underline underline-offset-[3px] transition-colors hover:text-[var(--text)]"
           >
             {t('forgotPassword')}
           </button>
         </div>
-        <div className="relative mt-1.5">
-          <Input
-            id="login-password"
-            type={showPassword ? 'text' : 'password'}
-            placeholder="••••••••"
-            className="pe-10"
-            {...loginForm.register('password')}
-          />
-          <button
-            type="button"
-            tabIndex={-1}
-            onClick={() => setShowPassword(!showPassword)}
-            aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-            className="absolute top-1/2 end-3 -translate-y-1/2 text-white/40 transition-colors hover:text-white/70"
-          >
-            {showPassword ? (
-              <EyeOff className="size-4" />
-            ) : (
-              <Eye className="size-4" />
-            )}
-          </button>
-        </div>
-        {loginForm.formState.errors.password && (
-          <p className="text-brand-red-safe mt-1 text-xs">
-            {tErrors(loginForm.formState.errors.password.message as never)}
-          </p>
-        )}
       </div>
 
       <TurnstileField
@@ -270,15 +260,15 @@ export function LoginForm() {
         failed={captcha.failed}
       />
 
-      <button
+      <Button
         type="submit"
+        className="w-full"
         disabled={loginForm.formState.isSubmitting || awaitingToken}
-        className="bg-primary text-primary-foreground w-full rounded-full px-7 py-3 text-sm font-semibold transition-colors hover:bg-[#7082ff] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loginForm.formState.isSubmitting
           ? t('signInButton') + '…'
           : t('signInButton')}
-      </button>
+      </Button>
     </form>
   )
 }

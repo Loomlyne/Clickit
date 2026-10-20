@@ -22,7 +22,7 @@ test('sniffImageMime recognises formats', () => {
   assert.equal(sniffImageMime(PNG), 'image/png')
   assert.equal(sniffImageMime(JPEG), 'image/jpeg')
   assert.equal(sniffImageMime(WEBP), 'image/webp')
-  assert.equal(sniffImageMime(AVIF), 'image/avif')
+  assert.equal(sniffImageMime(AVIF), null)
   assert.equal(sniffImageMime(ICO), 'image/x-icon')
   assert.equal(sniffImageMime(enc('<?xml version="1.0"?><svg/>')), 'image/svg+xml')
   assert.equal(sniffImageMime(enc('  \n<svg/>')), 'image/svg+xml')
@@ -46,7 +46,7 @@ test('mismatched bytes are refused', () => {
 })
 
 test('allowed raster types pass', () => {
-  assert.deepEqual(checkImageUpload({ declaredMime: 'image/avif', bytes: AVIF, allow: SITE_IMAGE_MIME_EXT }), { ok: true, mime: 'image/avif', ext: 'avif' })
+  assert.deepEqual(checkImageUpload({ declaredMime: 'image/webp', bytes: WEBP, allow: SITE_IMAGE_MIME_EXT }), { ok: true, mime: 'image/webp', ext: 'webp' })
   assert.deepEqual(checkImageUpload({ declaredMime: 'image/x-icon', bytes: ICO, allow: SITE_IMAGE_MIME_EXT }), { ok: true, mime: 'image/x-icon', ext: 'ico' })
   for (const allow of [SITE_IMAGE_MIME_EXT, SOCIAL_ICON_MIME_EXT]) {
     const r = checkImageUpload({ declaredMime: 'image/jpeg', bytes: JPEG, allow })
@@ -56,6 +56,15 @@ test('allowed raster types pass', () => {
   const alias = checkImageUpload({ declaredMime: 'image/vnd.microsoft.icon', bytes: ICO, allow: SITE_IMAGE_MIME_EXT })
   assert.equal(alias.ok, true)
   if (alias.ok) assert.equal(alias.ext, 'ico')
+})
+
+test('AVIF is refused (site-assets bucket does not allow image/avif)', () => {
+  for (const allow of [SITE_IMAGE_MIME_EXT, SOCIAL_ICON_MIME_EXT]) {
+    assert.equal(allow['image/avif'], undefined)
+    const r = checkImageUpload({ declaredMime: 'image/avif', bytes: AVIF, allow })
+    assert.deepEqual(r, { ok: false, error: 'Unsupported image type.' })
+  }
+  assert.equal(SVG_REJECTED_MESSAGE.includes('AVIF'), false)
 })
 
 test('ICO is not allowed for social icons', () => {

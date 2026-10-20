@@ -24,10 +24,11 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 
 ## Current Position
 
-Phase: 01.1 (admin-actions-hardening-inserted) — EXECUTING
+Phase: 01.1 (admin-actions-hardening-inserted) — UAT PASSED, awaiting PR review and Ship
 Plan: 13 of 13
-Status: Ready to execute
-Last activity: 2026-10-20
+Status: UAT passed (Koss, 2026-10-20; step 14 upload-audit gap to backlog) — merged origin/main cfbc8fb for landing
+Last activity: 2026-10-20 - Completed quick task 261020-ej8 on main: Apply UI System ui.config.json tokens to Clickit
+Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main merged in 2026-10-20
 
 Progress: [█████████░] 92%
 
@@ -127,7 +128,19 @@ None yet.
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| *(none)* | | | |
+| admin audit | uploadSiteImage / uploadSocialIcon write no audit row (favicon, OG, social icon uploads); found in 1.1 UAT step 14, not one of the 21 findings | open | 2026-10-20 (1.1 UAT) |
+| i18n | `admin.seasonForm.addSeason` missing in en.json (raw key on Add Season button) | open | 2026-10-20 (1.1 UAT) |
+| i18n | `siteTitleHint` "Shown in <title> ..." fails ICU parsing (INVALID_MESSAGE on Settings) | open | 2026-10-20 (1.1 UAT) |
+| routing | /en/admin/shows (no index route) returns 500 "No intl context found" instead of 404 | open | 2026-10-20 (1.1 UAT) |
+| local dev | CSP connect-src allows only https://*.supabase.co, so browser uploads to a local Supabase (127.0.0.1:55321) fail | open | 2026-10-20 (1.1 UAT) |
+| admin atomicity | reorderCategories and reorderShort are not atomic (multi-row renumber without compensation) | open | 2026-10-20 (PR #23 review) |
+| admin validation | youtube_video_id, image_url and expires_at are not validated in the shorts/cast actions | open | 2026-10-20 (PR #23 review) |
+| admin media | uploadArtwork and uploadCastImage do not sniff image bytes (declared type only) | open | 2026-10-20 (PR #23 review) |
+| admin perf | fillArabic has no cache (repeat translations of unchanged text) | open | 2026-10-20 (PR #23 review) |
+| admin errors | raw Supabase error messages reach the admin UI; map them to plain messages | open | 2026-10-20 (PR #23 review) |
+| admin tests | no export-level test that every server action calls assertAdmin (only per-action scans) | open | 2026-10-20 (PR #23 review) |
+| admin design | app-level compensation instead of DB transactions (D-05): revisit with an RPC per multi-step write | open | 2026-10-20 (PR #23 review) |
+| admin deletes | shorts, reviews, FAQs and legal pages still hard-delete with no archive-first rule (shorts already has an `archived` column); only the audit snapshot keeps the content | open | 2026-10-20 (PR #23 fix verification L4) |
 
 ## Session Continuity
 

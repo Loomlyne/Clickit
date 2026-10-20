@@ -68,6 +68,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SeriesDetailPage({ params }: Props) {
   const { slug } = await params
+  const supabase = await createClient()
+  // The auth check does not need the show, so it starts in the first wave
+  // instead of waiting behind the slug lookup.
+  const userPromise = supabase.auth.getUser()
+  // Started early and awaited later: mark as handled so a failure surfaces at
+  // the await (error boundary) instead of as an unhandled rejection.
+  userPromise.catch(() => {})
   const [dbShow, locale, isMobile] = await Promise.all([
     getShowBySlug(slug),
     getLocale(),
@@ -77,7 +84,6 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   const show = mapShow(dbShow, locale)
 
-  const supabase = await createClient()
   const [
     seasons,
     allEpisodes,
@@ -95,7 +101,7 @@ export default async function SeriesDetailPage({ params }: Props) {
       .select('*')
       .eq('show_id', dbShow.id)
       .order('sort_order'),
-    supabase.auth.getUser(),
+    userPromise,
     getShowsByGenre(dbShow.genre, dbShow.id, locale),
     getTranslations('show'),
   ])
@@ -131,25 +137,35 @@ export default async function SeriesDetailPage({ params }: Props) {
   const allEpisodeIds = Object.values(viewEpisodesBySeason)
     .flat()
     .map((e) => e.id)
-  const [inWatchlist, isLiked, episodesProgressMap] = user
+  // "More Like This" fallback (only when this show is alone in its genre) is
+  // public data, so it runs in the same wave as the user-specific reads.
+  const hasGenreMatches = moreLikeThis.length > 0
+  const relatedShowsPromise = hasGenreMatches
+    ? Promise.resolve(moreLikeThis)
+    : getOtherStreamingShows(dbShow.id, locale)
+  relatedShowsPromise.catch(() => {})
+  const [inWatchlist, isLiked, episodesProgressMap, profileRow] = user
     ? await Promise.all([
         getShowWatchlistState(user.id, dbShow.id),
         getShowLikeState(user.id, dbShow.id),
         getEpisodesProgress(user.id, allEpisodeIds),
+        supabase
+          .from('profiles')
+          .select('display_name')
+          .eq('id', user.id)
+          .maybeSingle(),
       ])
     : [
         false,
         false,
         {} as Record<string, { progressPercent: number; completed: boolean }>,
+        null,
       ]
 
   // "More Like This" rail: prefer same-genre shows; if this show is the only
   // one in its genre, fall back to other streaming shows so the rail still
   // appears (under a generic heading instead of "More {genre} shows").
-  const hasGenreMatches = moreLikeThis.length > 0
-  const relatedShows = hasGenreMatches
-    ? moreLikeThis
-    : await getOtherStreamingShows(dbShow.id, locale)
+  const relatedShows = await relatedShowsPromise
   const relatedHeading = hasGenreMatches
     ? t('moreLikeThisHeading', { genre: show.genre })
     : t('moreShowsHeading')
@@ -211,11 +227,11 @@ export default async function SeriesDetailPage({ params }: Props) {
                       {c.name.slice(0, 2).toUpperCase()}
                     </div>
                   )}
-                  <div className="truncate text-[13px] font-medium">
+                  <div className="truncate text-[14px] font-medium">
                     {c.name}
                   </div>
                   {c.role && (
-                    <div className="mono truncate text-[10px] text-[var(--text-mute)]">
+                    <div className="mono truncate text-[var(--text-mute)]">
                       {c.role}
                     </div>
                   )}
@@ -230,18 +246,16 @@ export default async function SeriesDetailPage({ params }: Props) {
         <div className="mx-auto max-w-7xl">
           {viewSeasons.length === 0 ? (
             <div className="py-16">
-              <p className="text-[11px] font-normal tracking-[0.28em] text-white/38 uppercase">
-                {t('seasonsLabel')}
-              </p>
-              <h2 className="font-display mt-2 text-3xl font-semibold text-white">
+              <p className="label">{t('seasonsLabel')}</p>
+              <h2 className="font-display mt-2 text-3xl font-semibold text-[var(--text)]">
                 {t('emptyEpisodesHeading')}
               </h2>
-              <p className="mt-2 text-white/50">
+              <p className="mt-2 text-[var(--text-dim)]">
                 {t('emptyEpisodesDescription')}
               </p>
               <Link
                 href="/watch"
-                className="mt-4 inline-flex items-center text-sm text-white/60 transition-colors hover:text-white"
+                className="mt-2 inline-flex min-h-11 items-center text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]"
               >
                 {t('comingSoonEyebrow')} &rarr;
               </Link>
@@ -261,7 +275,15 @@ export default async function SeriesDetailPage({ params }: Props) {
       {/* Reviews */}
       <div className="mt-12 px-6 md:px-12">
         <div className="mx-auto max-w-7xl">
-          <ReviewComposer showId={dbShow.id} userId={user?.id ?? null} />
+          <ReviewComposer
+            showId={dbShow.id}
+            userId={user?.id ?? null}
+            userName={
+              profileRow?.data?.display_name ||
+              user?.email?.split('@')[0] ||
+              null
+            }
+          />
         </div>
       </div>
 

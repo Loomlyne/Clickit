@@ -36,17 +36,13 @@ export function ContentRail({
             {title}
           </h2>
         </div>
-        {seeAllHref ? (
+        {seeAllHref && (
           <Link
             className="mono inline-flex min-h-11 shrink-0 items-center gap-1.5"
             href={seeAllHref}
           >
             {t('viewAll')} <ArrowRight className="size-3 rtl:scale-x-[-1]" />
           </Link>
-        ) : (
-          <span className="mono inline-flex min-h-11 shrink-0 items-center gap-1.5 text-[var(--text-mute)]">
-            {t('viewAll')} <ArrowRight className="size-3 rtl:scale-x-[-1]" />
-          </span>
         )}
       </div>
 

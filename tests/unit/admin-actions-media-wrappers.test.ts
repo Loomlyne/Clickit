@@ -165,3 +165,55 @@ test('source scan: removed code is gone', () => {
   assert.ok(!src.includes('translateBatchToArabic('))
   assert.ok(!src.includes('function isHeroVideoUploadPath'))
 })
+
+test('source scan: setHeroVideoUrl checks admin (runner) before it validates the URL', () => {
+  const b = bodyOf('setHeroVideoUrl')
+  const runner = b.indexOf('runAdminAction(')
+  assert.ok(runner >= 0)
+  assert.ok(b.indexOf('validateYouTubeUrl(') > runner, 'validation must run inside the runner')
+  assert.ok(b.indexOf('URL is required') > runner, 'empty check must run inside the runner')
+})
+
+test('source scan: preloader and show video saves prove size server-side through their cores', () => {
+  // Phase 2 (02-16/02-19): the old Supabase create*/save*VideoUpload actions are gone; the
+  // finalize actions prove size from the R2 object (head) inside saveVideoCore.
+  for (const name of ['finalizePreloaderVideoUpload', 'finalizeShowVideoUpload']) {
+    const b = bodyOf(name)
+    assert.ok(b.includes('runAdminAction('), `${name} lacks runAdminAction(`)
+    assert.ok(b.includes('saveVideoCore('), `${name} lacks saveVideoCore(`)
+  }
+  for (const gone of ['savePreloaderVideoUpload', 'saveShowVideoUpload', 'createPreloaderVideoUpload', 'createShowVideoUpload']) {
+    assert.ok(!src.includes(`export async function ${gone}(`), `${gone} must stay removed`)
+  }
+  const core = readFileSync('src/lib/admin/hero-video.ts', 'utf8')
+  assert.ok(core.includes('await ports.head(key)'), 'saveVideoCore must read the size from R2')
+  assert.ok(core.includes('if (size > maxBytes) return refuseAndRemove(tooLarge)'))
+})
+
+test('source scan: SITE_IMAGE_COLUMN lookups use own keys only', () => {
+  assert.ok(!src.includes('in SITE_IMAGE_COLUMN'))
+  assert.ok(src.includes('Object.prototype.hasOwnProperty.call(SITE_IMAGE_COLUMN, kind)'))
+  assert.ok(bodyOf('removeSiteImage').includes('isSiteImageKind('))
+  // finalizeSiteImageUpload takes the kind through a closed z.enum, never a raw lookup.
+  assert.ok(bodyOf('finalizeSiteImageUpload').includes('finalizeSiteImageSchema.safeParse('))
+  assert.match(src, /const finalizeSiteImageSchema = finalizeKeySchema\.extend\(\{\s*kind: z\.enum\(/)
+})
+
+test('source scan: legal page, FAQ, review and short deletes are audited through deleteRowAuditedCore', () => {
+  for (const [name, spec] of [
+    ['deleteLegalPage', 'ROW_DELETE.legalPage'],
+    ['deleteFaq', 'ROW_DELETE.faq'],
+    ['deleteReview', 'ROW_DELETE.review'],
+    ['deleteShort', 'ROW_DELETE.short'],
+  ] as const) {
+    const b = bodyOf(name)
+    assert.ok(b.includes('runAdminAction('), `${name} lacks runAdminAction(`)
+    assert.ok(b.includes(`deleteRowAuditedCore(`) && b.includes(spec), `${name} lacks its audited core`)
+    assert.ok(!b.includes('logAudit('), `${name} still uses the swallowing logAudit`)
+  }
+})
+
+test('accept attributes no longer offer AVIF', () => {
+  for (const f of ['src/components/admin/settings/branding-tab.tsx', 'src/components/admin/settings/footer-editor.tsx'])
+    assert.ok(!readFileSync(f, 'utf8').includes('image/avif'), `${f} still accepts AVIF`)
+})

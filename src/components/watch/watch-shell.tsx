@@ -221,7 +221,6 @@ export function WatchShell({
   return (
     <div
       className="fixed inset-0 h-dvh min-h-svh overflow-hidden bg-black"
-      data-lenis-prevent
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       onPointerMove={resetTimer}
       onPointerDown={resetTimer}
@@ -267,13 +266,13 @@ export function WatchShell({
 
       {/* Auto-hide chrome, top overlay strip */}
       <div
-        className={`fixed top-0 right-0 left-0 z-20 flex items-center justify-between border-b border-white/10 bg-zinc-950/90 px-4 [padding-top:max(1rem,env(safe-area-inset-top))] pb-8 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.65)] backdrop-blur-md transition-opacity duration-200 ease-in-out ${chromeClass}`}
+        className={`fixed top-0 right-0 left-0 z-20 flex items-center justify-between border-b border-[var(--line)] bg-[var(--bg-0)]/90 px-4 [padding-top:max(1rem,env(safe-area-inset-top))] pb-8 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.65)] backdrop-blur-md transition-opacity duration-200 ease-in-out ${chromeClass}`}
         inert={isIdle}
       >
         {/* Left: back to show */}
         <Link
           href={`/series/${show.slug}`}
-          className="flex items-center gap-1.5 text-sm text-white/70 transition-colors duration-150 hover:text-white"
+          className="flex min-h-11 items-center gap-1.5 text-sm text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
           aria-label={t('backToShow', { title: show.title })}
           tabIndex={isIdle ? -1 : 0}
         >
@@ -283,10 +282,10 @@ export function WatchShell({
 
         {/* Center: episode title + S/E badge */}
         <div className="flex flex-col items-center gap-0.5">
-          <span className="text-sm leading-none font-medium text-white">
+          <span className="text-sm leading-none font-medium text-[var(--text)]">
             {currentEpisode.title}
           </span>
-          <span className="font-mono text-xs leading-none text-white/50">
+          <span className="font-mono text-xs leading-none text-[var(--text-mute)]">
             <Tr
               k="seasonEpisodeShort"
               values={{
@@ -298,10 +297,10 @@ export function WatchShell({
         </div>
 
         {/* Right: action buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center">
           <button
             onClick={toggleWatchlist}
-            className="flex size-8 items-center justify-center text-white/70 transition-colors duration-150 hover:text-white"
+            className="flex size-11 items-center justify-center text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
             aria-label={
               isInList ? t('removeFromWatchlist') : t('addToWatchlist')
             }
@@ -309,23 +308,23 @@ export function WatchShell({
             tabIndex={isIdle ? -1 : 0}
           >
             <Bookmark
-              className={`size-5 ${isInList ? 'fill-white text-white' : ''}`}
+              className={`size-5 ${isInList ? 'fill-[var(--primary)] text-[var(--primary)]' : ''}`}
             />
           </button>
           <button
             onClick={toggleLike}
-            className="flex size-8 items-center justify-center text-white/70 transition-colors duration-150 hover:text-white"
+            className="flex size-11 items-center justify-center text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
             aria-label={isShowLiked ? t('unlikeShow') : t('likeShow')}
             aria-pressed={isShowLiked}
             tabIndex={isIdle ? -1 : 0}
           >
             <Heart
-              className={`size-5 ${isShowLiked ? 'fill-pink-400 text-pink-400' : ''}`}
+              className={`size-5 ${isShowLiked ? 'fill-[var(--primary)] text-[var(--primary)]' : ''}`}
             />
           </button>
           <button
             onClick={handleShare}
-            className="flex size-8 items-center justify-center text-white/70 transition-colors duration-150 hover:text-white"
+            className="flex size-11 items-center justify-center text-[var(--text-dim)] transition-colors duration-150 hover:text-[var(--text)]"
             aria-label={t('shareEpisode')}
             tabIndex={isIdle ? -1 : 0}
           >
@@ -338,11 +337,11 @@ export function WatchShell({
       {currentPrevEpisode && (
         <button
           onClick={() => handleEpisodeSwitch(currentPrevEpisode)}
-          className={`fixed top-1/2 left-3 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-[10px] bg-black/40 backdrop-blur-sm transition-opacity duration-200 ease-in-out ${chromeClass}`}
+          className={`fixed start-3 top-1/2 z-20 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-opacity duration-200 ease-in-out ${chromeClass}`}
           aria-label={t('previousEpisode')}
           tabIndex={isIdle ? -1 : 0}
         >
-          <ChevronLeft className="size-5 text-white" />
+          <ChevronLeft className="size-5 text-white rtl:rotate-180" />
         </button>
       )}
 
@@ -350,11 +349,11 @@ export function WatchShell({
       {currentNextEpisode && (
         <button
           onClick={() => handleEpisodeSwitch(currentNextEpisode)}
-          className={`fixed top-1/2 right-3 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-[10px] bg-black/40 backdrop-blur-sm transition-opacity duration-200 ease-in-out ${chromeClass}`}
+          className={`fixed end-3 top-1/2 z-20 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-opacity duration-200 ease-in-out ${chromeClass}`}
           aria-label={t('nextEpisode')}
           tabIndex={isIdle ? -1 : 0}
         >
-          <ChevronRight className="size-5 text-white" />
+          <ChevronRight className="size-5 text-white rtl:rotate-180" />
         </button>
       )}
 

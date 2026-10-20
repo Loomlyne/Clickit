@@ -122,12 +122,15 @@ export function ContactForm() {
         <Label htmlFor="name">{t('nameLabel')}</Label>
         <Input
           id="name"
+          autoComplete="name"
+          aria-invalid={errors.name ? true : undefined}
+          aria-describedby={errors.name ? 'name-error' : undefined}
           placeholder={t('namePlaceholder')}
           className="mt-1.5"
           {...register('name')}
         />
         {errors.name && (
-          <p className="text-brand-red-safe mt-1 text-xs">
+          <p id="name-error" className="text-brand-red-safe mt-1 text-xs">
             {tErrors(errors.name.message as never)}
           </p>
         )}
@@ -138,12 +141,15 @@ export function ContactForm() {
         <Input
           id="email"
           type="email"
+          autoComplete="email"
+          aria-invalid={errors.email ? true : undefined}
+          aria-describedby={errors.email ? 'email-error' : undefined}
           placeholder={t('emailPlaceholder')}
           className="mt-1.5"
           {...register('email')}
         />
         {errors.email && (
-          <p className="text-brand-red-safe mt-1 text-xs">
+          <p id="email-error" className="text-brand-red-safe mt-1 text-xs">
             {tErrors(errors.email.message as never)}
           </p>
         )}
@@ -154,6 +160,7 @@ export function ContactForm() {
         <Input
           id="phone"
           type="tel"
+          autoComplete="tel"
           placeholder={t('phonePlaceholder')}
           className="mt-1.5"
           {...register('phone')}
@@ -164,12 +171,14 @@ export function ContactForm() {
         <Label htmlFor="subject">{t('subjectLabel')}</Label>
         <Input
           id="subject"
+          aria-invalid={errors.subject ? true : undefined}
+          aria-describedby={errors.subject ? 'subject-error' : undefined}
           placeholder={t('subjectPlaceholder')}
-          className="mt-1.5 rounded-[10px]"
+          className="mt-1.5"
           {...register('subject')}
         />
         {errors.subject && (
-          <p className="text-brand-red-safe mt-1 text-xs">
+          <p id="subject-error" className="text-brand-red-safe mt-1 text-xs">
             {tErrors(errors.subject.message as never)}
           </p>
         )}
@@ -181,41 +190,47 @@ export function ContactForm() {
           id="message"
           placeholder={t('messagePlaceholder')}
           rows={5}
-          className="mt-1.5 rounded-[10px]"
+          aria-invalid={errors.message ? true : undefined}
+          aria-describedby={errors.message ? 'message-error' : undefined}
+          className="mt-1.5"
           {...register('message')}
         />
         {errors.message && (
-          <p className="text-brand-red-safe mt-1 text-xs">
+          <p id="message-error" className="text-brand-red-safe mt-1 text-xs">
             {tErrors(errors.message.message as never)}
           </p>
         )}
       </div>
 
-      <div className="flex items-start justify-start gap-2">
+      <div className="flex min-h-11 items-center gap-3">
         <Checkbox
           id="terms"
-          className="size-[23px]"
+          className="size-5 rounded-md sm:size-5"
           checked={termsValue}
+          aria-invalid={errors.terms ? true : undefined}
+          aria-describedby={errors.terms ? 'terms-error' : undefined}
           onCheckedChange={(checked) => setValue('terms', checked === true)}
         />
         <Label
           htmlFor="terms"
-          className="text-muted-foreground text-sm leading-relaxed"
+          className="text-muted-foreground min-h-11 flex-1 cursor-pointer text-sm leading-snug"
         >
           {t('termsAccept')}
         </Label>
       </div>
       {errors.terms && (
-        <p className="text-brand-red-safe text-xs">
+        <p id="terms-error" className="text-brand-red-safe text-xs">
           {tErrors(errors.terms.message as never)}
         </p>
       )}
 
-      {submitState === 'saved_email_failed' && (
-        <p className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
-          {t('savedEmailFailedInline')}
-        </p>
-      )}
+      <div role="status">
+        {submitState === 'saved_email_failed' && (
+          <p className="border-brand-orange-safe/35 bg-brand-orange-safe/10 rounded-[12px] border px-3.5 py-3 text-sm leading-snug text-[var(--text)]">
+            {t('savedEmailFailedInline')}
+          </p>
+        )}
+      </div>
 
       <TurnstileField
         key={captcha.widgetKey}

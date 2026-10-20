@@ -152,6 +152,8 @@ export async function restoreEpisodeCore(
   const { row, error } = await readEpisode(db, pid.value)
   if (error) return { success: false, error }
   if (!row) return { success: false, error: 'Episode not found.' }
+  // Restoring an active episode is a no-op: refuse it, no write and no audit row.
+  if (row.archived !== true) return { success: false, error: 'Episode is not archived.', wrote: false }
 
   // The unique (season_id, episode_number) constraint covers archived rows too,
   // so un-archiving can never collide.

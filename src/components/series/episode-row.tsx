@@ -34,7 +34,7 @@ export function EpisodeRow({
   const isDraft = episode.status === 'draft'
   const isDimmed = !isLive
   const isCurrentEpisode = currentEpisodeId === episode.id
-  const brandColorHex = BRAND_COLOR_HEX[showBrandColor] ?? '#2C3569'
+  const brandColorHex = BRAND_COLOR_HEX[showBrandColor] ?? BRAND_COLOR_HEX['brand-blue']
   const thumbnailUrl = episode.youtubeId
     ? `https://img.youtube.com/vi/${episode.youtubeId}/hqdefault.jpg`
     : undefined
@@ -44,7 +44,7 @@ export function EpisodeRow({
       {/* Thumbnail area — wider: 160px mobile, 180px md+ */}
       <div
         className={cn(
-          'relative aspect-video w-[120px] flex-shrink-0 overflow-hidden rounded-[14px] sm:w-[160px] md:w-[180px]',
+          'relative aspect-video w-[120px] flex-shrink-0 overflow-hidden rounded-[11px] sm:w-[160px] md:w-[180px]',
           isDimmed && 'opacity-45'
         )}
       >
@@ -80,14 +80,20 @@ export function EpisodeRow({
         {/* Coming Soon overlay: clock icon */}
         {isComingSoon && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <Clock className="size-6 text-white/70" aria-hidden="true" />
+            <Clock
+              className="size-6 text-[var(--text-dim)]"
+              aria-hidden="true"
+            />
           </div>
         )}
 
         {/* Draft overlay: eye-off icon */}
         {isDraft && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <EyeOff className="size-6 text-white/70" aria-hidden="true" />
+            <EyeOff
+              className="size-6 text-[var(--text-dim)]"
+              aria-hidden="true"
+            />
           </div>
         )}
       </div>
@@ -98,7 +104,7 @@ export function EpisodeRow({
         <div className="flex items-center gap-3">
           <span
             className="font-display flex-shrink-0 text-[28px] leading-none text-[var(--text-dim)]"
-            style={{ color: isCurrentEpisode ? brandColorHex : undefined }}
+            style={{ color: isCurrentEpisode ? 'var(--primary)' : undefined }}
           >
             {episode.episodeNumber}
           </span>
@@ -139,7 +145,7 @@ export function EpisodeRow({
         {/* Resume progress indicator */}
         {isCompleted && (
           <div className="mt-2">
-            <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] text-white/50">
+            <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] text-[var(--text-mute)]">
               {t('completedBadge')}
             </span>
           </div>
@@ -164,10 +170,7 @@ export function EpisodeRow({
       <div
         id={`episode-${episode.id}`}
         aria-current="true"
-        className="group flex cursor-default items-start gap-4 rounded-[10px] border border-[var(--line)] bg-[var(--bg-1)] p-4"
-        style={{
-          borderInlineStart: `3px solid ${brandColorHex}`,
-        }}
+        className="group flex cursor-default items-start gap-4 rounded-[12px] border border-[var(--uis-line-strong)] bg-[var(--bg-2)] p-4"
       >
         {rowContent}
       </div>
@@ -180,7 +183,7 @@ export function EpisodeRow({
         <Link
           id={`episode-${episode.id}`}
           href={`/watch/${episode.id}`}
-          className="group focus-visible:ring-ring flex cursor-pointer items-start gap-4 rounded-[10px] border border-transparent p-4 transition-colors duration-200 hover:border-[var(--line)] hover:bg-[var(--bg-1)] focus-visible:ring-2 focus-visible:outline-none"
+          className="group focus-visible:ring-ring flex cursor-pointer items-start gap-4 rounded-[12px] border border-transparent p-4 transition-colors duration-200 hover:border-[var(--line)] hover:bg-[var(--bg-1)] focus-visible:ring-2 focus-visible:outline-none"
         >
           {rowContent}
         </Link>
@@ -191,7 +194,7 @@ export function EpisodeRow({
   return (
     <div
       aria-disabled="true"
-      className="flex cursor-default items-start gap-4 rounded-[10px] p-4"
+      className="flex cursor-default items-start gap-4 rounded-[12px] p-4"
     >
       {rowContent}
     </div>

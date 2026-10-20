@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import type { ViewShort } from '@/lib/queries'
+import { markProgrammaticScroll } from '@/lib/nav-scroll'
 
 interface ShortsOverlayProps {
   shorts: ViewShort[]
@@ -99,6 +100,8 @@ export function ShortsOverlay({
       body.style.position = prevBodyPosition
       body.style.top = prevBodyTop
       body.style.width = prevBodyWidth
+      // Back to where the page was; not a user scroll, so the navbar stays put.
+      markProgrammaticScroll()
       window.scrollTo(0, scrollY)
     }
   }, [])
@@ -120,7 +123,6 @@ export function ShortsOverlay({
   const shell = (
     <div
       className="fixed inset-0 z-[600] flex items-center justify-center"
-      data-lenis-prevent
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
@@ -163,7 +165,7 @@ export function ShortsOverlay({
       {/* Top bar */}
       <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-6 pt-[max(env(safe-area-inset-top),16px)] pb-4">
         <div className="flex items-center gap-3">
-          <span className="mono rounded-sm bg-[var(--primary)] px-2 py-0.5 text-[10px] text-[var(--primary-foreground)]">
+          <span className="mono rounded-sm bg-[var(--primary)] px-2 py-0.5 text-[var(--primary-foreground)]">
             SHORTS
           </span>
           <span className="mono text-[var(--text-dim)]">
@@ -172,7 +174,7 @@ export function ShortsOverlay({
         </div>
         <button
           onClick={onClose}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line-2)] text-[var(--text)] transition-colors hover:bg-white/10"
+          className="flex size-11 items-center justify-center rounded-full border border-[var(--line-2)] text-[var(--text)] transition-colors hover:bg-white/10"
           aria-label={tCommon('close')}
         >
           <svg
@@ -266,16 +268,13 @@ export function ShortsOverlay({
                     .replace(/[^a-z]/g, '')
                     .slice(0, 14)}
               </span>
-              <button className="pointer-events-auto rounded-full bg-white px-2 py-1 text-[10px] font-medium text-black">
-                Follow
-              </button>
             </div>
             <div className="mb-1 font-[family-name:var(--font-display)] text-[16px] leading-tight text-white drop-shadow-lg">
               {current.title}
             </div>
             {current.genre && (
               <div className="mt-1.5 flex items-center gap-2">
-                <span className="mono text-[10px] text-white/50">
+                <span className="mono text-[var(--text-mute)]">
                   {current.genre}
                 </span>
               </div>
@@ -351,7 +350,7 @@ export function ShortsOverlay({
       )}
 
       {/* Hint — adapts to viewport */}
-      <div className="mono absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-white/30">
+      <div className="mono absolute bottom-4 left-1/2 -translate-x-1/2 text-[var(--text-mute)]">
         <span className="lg:hidden">{t('shortsMobileHint')}</span>
         <span className="hidden lg:inline">{t('shortsDesktopHint')}</span>
       </div>

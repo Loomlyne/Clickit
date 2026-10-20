@@ -58,7 +58,7 @@ export function UploadStatus({
       : uploadProgressLine(kind, progress.variantCount)
   return (
     <div
-      className={`cs-upload-zone flex flex-col items-center gap-2 rounded-lg border border-dashed bg-white/[0.02] p-4 ${className}`}
+      className={`cs-upload-zone flex flex-col items-center gap-2 rounded-lg border border-dashed bg-[var(--bg-2)] p-4 ${className}`}
     >
       <style>{STYLES}</style>
       <div className="flex w-full justify-between gap-3 text-xs text-[var(--text-dim)]">

@@ -102,9 +102,8 @@
     "resetButton": "إعادة تعيين كلمة المرور",
     "resetSuccess": "تم تحديث كلمة المرور بنجاح!",
     "accountCreated": "تم إنشاء الحساب! أهلاً بك في كلِك إت ستوري.",
-    "termsAccept": "أوافق على شروط الخدمة وسياسة الخصوصية",
+    "termsAccept": "أوافق على <terms>شروط الخدمة</terms> و<privacy>سياسة الخصوصية</privacy>",
     "showPassword": "إظهار كلمة المرور",
-    "hidePassword": "إخفاء كلمة المرور",
     "callbackError": "تعذّر التحقق من هويتك",
     "googleSSOComingSoon": "تسجيل الدخول عبر جوجل قريباً",
     "appleSSOComingSoon": "تسجيل الدخول عبر آبل قريباً",
@@ -120,8 +119,7 @@
     "strengthWeak": "ضعيفة",
     "strengthGood": "جيدة",
     "strengthStrong": "قوية",
-    "strengthLabel": "القوة · {level}",
-    "passwordStrengthAria": "قوة كلمة المرور"
+    "strengthLabel": "القوة · {level}"
   },
   "home": {
     "heroHeadline": "كل قصة تنقر.",
@@ -191,6 +189,9 @@
     "genreLabel": "النوع",
     "yearLabel": "السنة",
     "episodeCountLabel": "{count, plural, one {حلقة #} other {# حلقة}}",
+    "seasonCountLabel": "{count, plural, one {موسم واحد} two {موسمان} few {# مواسم} many {# موسمًا} other {# موسم}}",
+    "imdbLabel": "IMDb",
+    "citRatingLabel": "تقييم كليك إت",
     "runtimeLabel": "المدة",
     "ratingLabel": "التقييم",
     "broadcastLabel": "البث",
@@ -383,6 +384,7 @@
     "savedEmailFailedInline": "تم حفظ الرسالة. التنبيه عبر البريد غير مفعّل حالياً."
   },
   "newsletter": {
+    "emailLabel": "البريد الإلكتروني",
     "placeholder": "بريدك الإلكتروني",
     "submitAria": "إرسال الاشتراك في النشرة",
     "defaultButton": "اشترِك للحصول على التحديثات",
@@ -397,6 +399,7 @@
     "studioPresents": "Spacelight Studios تُقدّم",
     "heroDescription": "قناة منسّقة يدوياً للثقافة الحضرية والطعام والتصميم والسفر. بلا إعلانات ولا خوارزميات — فقط البرامج التي يحبها المحررون، من مبدعين لم تسمع بهم من قبل.",
     "heroCta": "شاهد الآن",
+    "heroSecondaryCta": "تصفح البرامج",
     "heroBackgroundTitle": "فيديو خلفية الواجهة",
     "portfolioHeading": "كل لحظة تحمل قصة",
     "whyEyebrow": "003 · لماذا كلِك إت",
@@ -602,6 +605,9 @@
       "moveDown": "نقل لأسفل",
       "moveUpAria": "نقل {title} لأعلى",
       "moveDownAria": "نقل {title} لأسفل",
+      "featuredRemoveAria": "إزالة {title} من المميز",
+      "featuredMarkAria": "تعيين {title} كمميز",
+      "editAria": "تعديل {title}",
       "expiryNever": "بدون انتهاء",
       "expiryExpired": "منتهية"
     },

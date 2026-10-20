@@ -33,11 +33,17 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Success Criteria** (what must be TRUE):
   1. A PR that adds `drop`/`truncate`/`delete` to a migration, or fails lint, typecheck, unit tests or the build, shows a red check and cannot merge. A clean PR shows green.
   2. The live migration history matches the files. The destructive first migration and the seed migrations are no-ops in place. A live push runs only after Koss approves a CI dry-run.
-  3. A recorded read-only live audit exists. It covers applied migrations vs files, the `is_admin` source used by RLS, every media-URL column, and the Supabase plan and backups. The owner of the stray `ignat`/`nataly` nameservers is found or ruled out, and this happens before any NS change.
+  3. A recorded read-only live audit exists. It covers applied migrations vs files, the `is_admin` source used by RLS, every media-URL column, and the Supabase plan and backups. The owner of the stray `ignat`/`nataly` nameservers is found or ruled out (closed 2026-10-20 by the NS move: registry lists only jen/brett; ignat/nataly serve the same zone — `01-LIVE-AUDIT.md` §6).
 **Owner-gated**: [OWNER] Supabase plan/backup check in the dashboard; [OWNER] approve each live migration dry-run.
 **Note**: SAFE-01, SAFE-02 and SAFE-04 must close before Phase 3's live migrations; SAFE-05 must close before Phase 3's NS change. SAFE-03 (CI) does not block Phase 2.
 **Research flag**: Find who owns the NS pair.
-**Plans**: TBD
+**Plans**: 4 plans (3 waves)
+
+Plans:
+- [x] 01-01-PLAN.md — W1: migration guard script (scanner, applied-file rule, blob-SHA allow-list) + fixture tests + typecheck/guard scripts
+- [x] 01-02-PLAN.md — W2: PR gate workflow (gate + migration-guard) and hand-started dry-run → approved apply workflow + text tests
+- [x] 01-03-PLAN.md — W2: neutralise DROP block and seed migrations, seed.sql + seeding on, scratch-DB proof, allow-list SHAs pinned
+- [x] 01-04-PLAN.md — W3: controller runbook (environments, secrets, ruleset, backup, first dry-run), full gate, hand-over, PR
 
 ### Phase 1.1: Admin Actions Hardening (INSERTED)
 **Goal**: Every admin server action in `src/app/[locale]/admin/actions.ts` validates its input with a schema, scopes ids to their parent, leaves an audit row for each destructive or renumbering write, and fails whole or not at all. Source: two read-only agent audits of all 66 actions (50 confirmed findings: 2 high, 19 medium, 29 low); see `.planning/research/ADMIN-ACTIONS-AUDIT-DRAFT.md`.
@@ -68,7 +74,7 @@ Plans:
 - [x] 01.1-10-PLAN.md — W3: wire shows, categories, toggleFeatured into actions.ts
 - [x] 01.1-11-PLAN.md — W4: wire seasons, episodes, scheduling into actions.ts
 - [x] 01.1-12-PLAN.md — W5: hero video, SVG, ticker, remaining id validation in actions.ts
-- [ ] 01.1-13-PLAN.md — W6: gate, 21-finding coverage, [OWNER] UAT on a local stack
+- [x] 01.1-13-PLAN.md — W6: gate, 21-finding coverage, [OWNER] UAT on a local stack
 **Overlap note**: Phase 2 criterion 4 (SVG sanitised or rejected) is met here by rejecting SVG.
 
 ### Phase 2: Worker and R2 Media on workers.dev
@@ -200,7 +206,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Safe Ground | 0/TBD | Not started | - |
-| 1.1. Admin Actions Hardening (INSERTED) | 12/13 | In Progress|  |
+| 1.1. Admin Actions Hardening (INSERTED) | 13/13 | UAT passed, PR open | - |
 | 2. Worker and R2 Media on workers.dev | 18/22 | In Progress|  |
 | 3. Production Cutover | 0/TBD | Not started | - |
 | 4. Design System Truth | 0/TBD | Not started | - |

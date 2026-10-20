@@ -6,7 +6,11 @@ import { SeasonTabs } from '@/components/admin/season-tabs'
 import { EditShowButton } from '@/components/admin/edit-show-button'
 import { ScheduleEpisodesButton } from '@/components/admin/schedule-episodes-button'
 import { CastEditor } from '@/components/admin/cast-editor'
-import { AdminBackLink, AdminPanel } from '@/components/admin/admin-shell'
+import {
+  AdminBackLink,
+  AdminPageHeader,
+  AdminPanel,
+} from '@/components/admin/admin-shell'
 import type { Database } from '@/lib/database.types'
 
 type Episode = Database['public']['Tables']['episodes']['Row']
@@ -86,20 +90,18 @@ export default async function ShowDetailPage({
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0 space-y-1.5">
-          <AdminBackLink href="/admin">{tDash('allShows')}</AdminBackLink>
-          <h1 className="text-foreground truncate text-xl font-semibold tracking-tight sm:text-2xl">
-            {show.title}
-          </h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <ScheduleEpisodesButton showId={id} />
-          <EditShowButton show={show} />
-        </div>
-      </div>
+      <AdminPageHeader
+        title={show.title}
+        crumb={<AdminBackLink href="/admin">{tDash('allShows')}</AdminBackLink>}
+        action={
+          <>
+            <ScheduleEpisodesButton showId={id} />
+            <EditShowButton show={show} />
+          </>
+        }
+      />
 
-      <AdminPanel className="border-[#2e2e2e] bg-[#171717] p-5 md:p-6">
+      <AdminPanel>
         <CastEditor showId={id} cast={castMembers} />
       </AdminPanel>
 

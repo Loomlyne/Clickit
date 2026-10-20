@@ -169,7 +169,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
 
       {/* Add form */}
       {formOpen && (
-        <div className="mb-4 space-y-3 rounded-lg border border-white/8 bg-white/[0.02] p-4">
+        <div className="mb-4 space-y-3 rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-start">
             <div className="flex justify-center md:block">
               <div className="relative">
@@ -178,9 +178,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
                   onClick={() => inputRef.current?.click()}
                   className="group relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--line-2)] transition-all hover:border-[var(--text-mute)]"
                   style={{
-                    background: imagePreview
-                      ? undefined
-                      : 'linear-gradient(135deg, rgba(96,115,255,0.85), rgba(46,57,121,0.92))',
+                    background: imagePreview ? undefined : 'var(--bg-3)',
                   }}
                 >
                   {imagePreview ? (
@@ -192,15 +190,15 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
                       className="object-cover"
                     />
                   ) : (
-                    <span className="text-2xl font-semibold text-white">
+                    <span className="text-2xl font-semibold text-[var(--text)]">
                       {name.trim().slice(0, 1).toUpperCase() || '?'}
                     </span>
                   )}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
                     {adding ? (
-                      <Loader2 className="size-5 animate-spin text-white" />
+                      <Loader2 className="size-5 animate-spin text-[var(--text)]" />
                     ) : (
-                      <Camera className="size-5 text-white" />
+                      <Camera className="size-5 text-[var(--text)]" />
                     )}
                   </div>
                 </button>
@@ -208,7 +206,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
                   <button
                     type="button"
                     onClick={clearImage}
-                    className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white transition-colors hover:bg-black"
+                    className="absolute -end-5 -top-5 flex size-9 items-center justify-center rounded-full bg-black/70 text-[var(--text)] transition-colors after:absolute after:-inset-1 after:content-[''] hover:bg-black max-md:size-11"
                     aria-label={t('removeImageAria')}
                   >
                     <X className="size-3.5" />
@@ -274,7 +272,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
           {cast.map((c) => (
             <div
               key={c.id}
-              className="group relative rounded-lg border border-white/8 bg-white/[0.02] p-3 text-center"
+              className="group relative rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-3 text-center"
             >
               {/* Avatar */}
               {c.image_url ? (
@@ -294,15 +292,16 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
               )}
               <div className="truncate text-sm font-medium">{c.name}</div>
               {c.role && (
-                <div className="mono truncate text-[10px] text-[var(--text-mute)]">
+                <div className="mono truncate text-[11px] text-[var(--text-mute)]">
                   {c.role}
                 </div>
               )}
               {/* Delete button */}
               <button
-                className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-red-400 opacity-60 transition-opacity group-hover:opacity-100 hover:text-red-300"
+                className="text-brand-red-safe hover:text-brand-red-safe absolute end-1.5 top-1.5 flex size-9 items-center justify-center rounded-full bg-black/50 opacity-60 transition-opacity group-hover:opacity-100 after:absolute after:-inset-1 after:content-[''] max-md:size-11"
                 onClick={() => handleDelete(c.id)}
                 disabled={deletingId === c.id}
+                aria-label={`${tCommon('delete')}: ${c.name}`}
               >
                 {deletingId === c.id ? (
                   <Loader2 className="size-3 animate-spin" />
@@ -315,7 +314,7 @@ export function CastEditor({ showId, cast: initialCast }: CastEditorProps) {
         </div>
       ) : (
         !formOpen && (
-          <div className="text-muted-foreground rounded-lg border border-dashed border-white/12 py-8 text-center text-sm">
+          <div className="text-muted-foreground rounded-lg border border-dashed border-[var(--line-2)] py-8 text-center text-sm">
             {t('empty')}
           </div>
         )

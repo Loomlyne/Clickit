@@ -44,7 +44,7 @@ const ep = (eid: string, num: number, archived = false): Row => ({
 
 type Fake = ReturnType<typeof world>
 
-function world(withRpc = true) {
+function world(withRpc = true, archiveAll = false) {
   const f = createFakeSupabase({
     shows: [
       {
@@ -59,7 +59,7 @@ function world(withRpc = true) {
     seasons: [
       { id: SE1, show_id: S1, title: 'Season 1', title_ar: 'الموسم 1', season_number: 1, episode_count: 2 },
     ],
-    episodes: [ep(E1, 1), ep(E2, 2), ep(E3, 3, true)],
+    episodes: [ep(E1, 1, archiveAll), ep(E2, 2, archiveAll), ep(E3, 3, true)],
   })
   if (withRpc) f.registerRpc('reorder_episode', emulateReorderEpisode)
   return f
@@ -88,7 +88,7 @@ const fill = async (en: string | null | undefined, ar: string | null | undefined
 const writes = (f: Fake) => f.calls.filter((c) => c.op !== 'select' && c.op !== 'rpc')
 
 test('deleteSeason path with a forced delete failure: pending and failed rows, revalidated once', async () => {
-  const f = world()
+  const f = world(true, true)
   f.failOn({ table: 'seasons', op: 'delete', nth: 1 })
   const spy = revalSpy()
   const res = await runAdminAction(
@@ -104,7 +104,7 @@ test('deleteSeason path with a forced delete failure: pending and failed rows, r
 })
 
 test('deleteSeason path with a counts failure after the delete: truthful error, still revalidated', async () => {
-  const f = world()
+  const f = world(true, true)
   f.failOn({ table: 'shows', op: 'update', nth: 1 })
   const spy = revalSpy()
   const res = await runAdminAction(
@@ -259,7 +259,6 @@ function bodyOf(name: string): string {
 const CORES: Array<[string, string]> = [
   ['createSeason', 'createSeasonCore'],
   ['updateSeason', 'updateSeasonCore'],
-  ['deleteSeason', 'deleteSeasonCore'],
   ['createEpisode', 'createEpisodeCore'],
   ['updateEpisode', 'updateEpisodeCore'],
   ['archiveEpisode', 'archiveEpisodeCore'],
@@ -276,6 +275,10 @@ for (const [name, core] of CORES) {
     assert.ok(body.includes(`${core}(`), `${name} lacks ${core}(`)
   })
 }
+
+test('source scan: deleteSeason is not an exported server action', () => {
+  assert.equal(src.includes('export async function deleteSeason('), false)
+})
 
 test('source scan: previewShowSchedule uses planShowScheduleCore', () => {
   assert.ok(bodyOf('previewShowSchedule').includes('planShowScheduleCore('))

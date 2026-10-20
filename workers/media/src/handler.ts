@@ -124,16 +124,13 @@ export function guessContentType(key: string) {
 }
 
 /**
- * `?v=` (admin cache-bust) or a served variant is immutable; otherwise a
- * stored Cache-Control wins, else one hour.
+ * `?v=` (admin cache-bust) or a served variant is immutable; otherwise one
+ * hour. Stored R2 cacheControl is ignored on purpose: the app has written
+ * invalid values (a bare '31536000'), so the policy is decided here.
  */
-export function cacheControlFor(
-  url: URL,
-  variantServed = false,
-  stored?: string | null
-) {
+export function cacheControlFor(url: URL, variantServed = false) {
   if (variantServed || url.searchParams.has('v')) return VERSIONED_CACHE_CONTROL
-  return stored || UNVERSIONED_CACHE_CONTROL
+  return UNVERSIONED_CACHE_CONTROL
 }
 
 /** The requested variant width when `?w=` is an allowed width, else null. */
@@ -216,10 +213,34 @@ function r2ContentRange(object: MediaObject) {
     offset = object.size - length
   } else {
     offset = range.offset ?? 0
-    length = range.length ?? object.size - offset
+    length = Math.min(range.length ?? object.size - offset, object.size - offset)
   }
   if (length <= 0) return null
   return { offset, length, header: `bytes ${offset}-${offset + length - 1}/${object.size}` }
+}
+
+function stripWeak(tag: string) {
+  return tag.trim().replace(/^W\//, '')
+}
+
+/** True when If-Match / If-Unmodified-Since really fail for this object. */
+export function failsWritePrecondition(headers: Headers, object: MediaObject) {
+  const ifMatch = headers.get('if-match')
+  if (ifMatch !== null) {
+    const tags = ifMatch.split(',').map(stripWeak)
+    const current = stripWeak(object.httpEtag)
+    if (!tags.includes('*') && !tags.includes(current)) return true
+  }
+
+  const ifUnmodifiedSince = headers.get('if-unmodified-since')
+  if (ifUnmodifiedSince !== null) {
+    const since = Date.parse(ifUnmodifiedSince)
+    // Compare at HTTP-date (whole second) precision.
+    const uploaded = Math.floor(object.uploaded.getTime() / 1000) * 1000
+    if (!Number.isNaN(since) && uploaded > since) return true
+  }
+
+  return false
 }
 
 async function fromR2(
@@ -243,10 +264,7 @@ async function fromR2(
     object.httpMetadata?.contentType || guessContentType(objectKey)
   headers.set('Content-Type', contentType)
   if (isSvg(contentType)) headers.set('Content-Disposition', 'inline')
-  headers.set(
-    'Cache-Control',
-    cacheControlFor(url, variant, object.httpMetadata?.cacheControl)
-  )
+  headers.set('Cache-Control', cacheControlFor(url, variant))
   headers.set('ETag', object.httpEtag)
   headers.set('Last-Modified', object.uploaded.toUTCString())
   headers.set('Accept-Ranges', 'bytes')
@@ -257,16 +275,12 @@ async function fromR2(
     return new Response(null, { status: 200, headers })
   }
 
-  // `onlyIf` failed: R2 returns metadata without a body. 304 for the
-  // cache validators, 412 when If-Match / If-Unmodified-Since failed.
+  // `onlyIf` failed: R2 returns metadata without a body.
   if (!object.body) {
-    const h = request.headers
-    const notModified =
-      h.has('if-none-match') ||
-      (h.has('if-modified-since') &&
-        !h.has('if-match') &&
-        !h.has('if-unmodified-since'))
-    return new Response(null, { status: notModified ? 304 : 412, headers })
+    return new Response(null, {
+      status: failsWritePrecondition(request.headers, object) ? 412 : 304,
+      headers,
+    })
   }
 
   const range = request.headers.has('range') ? r2ContentRange(object) : null
@@ -288,7 +302,10 @@ async function fromSupabase(
   fetchImpl: MediaFetch
 ): Promise<Response> {
   const origin = new URL(env.SUPABASE_URL)
-  const target = `${origin.origin}/storage/v1/object/public/${encodeURIComponent(path.bucket)}/${encodeKey(path.key)}${url.search}`
+  // Only the cache-busting `v` reaches the origin (and the edge cache key).
+  const version = url.searchParams.get('v')
+  const search = version === null ? '' : `?v=${encodeURIComponent(version)}`
+  const target = `${origin.origin}/storage/v1/object/public/${encodeURIComponent(path.bucket)}/${encodeKey(path.key)}${search}`
 
   const forward = new Headers()
   for (const name of ['range', 'if-none-match', 'if-modified-since']) {
@@ -302,7 +319,18 @@ async function fromSupabase(
       method: request.method,
       headers: forward,
       redirect: 'manual',
-      cf: { cacheEverything: true, cacheTtl: 86400 },
+      cf: {
+        cacheEverything: true,
+        // Supabase answers a missing object with 400. -1 = never store.
+        cacheTtlByStatus: {
+          '200-299': 86400,
+          '300-399': -1,
+          '400': 60,
+          '401-403': -1,
+          '404': 60,
+          '405-599': -1,
+        },
+      },
     })
   } catch {
     return errorResponse(502)
@@ -317,7 +345,10 @@ async function fromSupabase(
   }
 
   const headers = securityHeaders(new Headers())
+  // The runtime decodes a compressed body, so its encoded length would be wrong.
+  const encoded = upstream.headers.has('content-encoding')
   for (const name of PASSTHROUGH_HEADERS) {
+    if (encoded && name === 'content-length') continue
     const value = upstream.headers.get(name)
     if (value) headers.set(name, value)
   }

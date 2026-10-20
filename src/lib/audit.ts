@@ -37,6 +37,8 @@ export type AuditEntity =
   | 'app_config'
   | 'storage'
   | 'feature_flags'
+  | 'legal_page'
+  | 'faq'
 
 export interface AuditArgs {
   adminUserId: string

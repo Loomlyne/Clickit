@@ -104,16 +104,20 @@ export function compensationAuditDiff(
 type AuditedDeleteInput = {
   audit: AuditWriter
   adminUserId: string
-  action: 'delete'
+  action: Parameters<AuditWriter>[0]['action']
   entity: Parameters<AuditWriter>[0]['entity']
   entityId: string | null
   context: Record<string, unknown>
   steps: WriteStep[]
+  /** Overrides for non-delete writes (uploads) so the messages stay truthful. */
+  messages?: { pendingFailed?: string; terminalFailed?: (attemptId: string) => string }
 }
 
 export type AuditedDeleteResult = {
   ok: boolean
   wrote: boolean
+  /** Every step ran; only the closing audit row may have failed. */
+  committed?: boolean
   attemptId?: string
   error?: string
 }
@@ -144,7 +148,7 @@ export async function runAuditedDelete(
       ok: false,
       wrote: false,
       attemptId,
-      error: 'Could not write the audit record; nothing was deleted.',
+      error: input.messages?.pendingFailed ?? 'Could not write the audit record; nothing was deleted.',
     }
   }
 
@@ -174,9 +178,12 @@ export async function runAuditedDelete(
     return {
       ok: false,
       wrote: true,
+      committed: true,
       attemptId,
-      error: `The item was deleted, but the closing audit row could not be written. The pending audit row remains (attempt_id ${attemptId}).`,
+      error:
+        input.messages?.terminalFailed?.(attemptId) ??
+        `The item was deleted, but the closing audit row could not be written. The pending audit row remains (attempt_id ${attemptId}).`,
     }
   }
-  return { ok: true, wrote: true, attemptId }
+  return { ok: true, wrote: true, committed: true, attemptId }
 }

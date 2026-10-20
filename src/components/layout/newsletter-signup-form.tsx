@@ -1,11 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
+import { CheckIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import { subscribeToNewsletter } from '@/app/actions/contact'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   newsletterSignupSchema,
   type NewsletterSignupInput,
@@ -35,6 +38,8 @@ export function NewsletterSignupForm({
 }: NewsletterSignupFormProps) {
   const t = useTranslations('newsletter')
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  const [statusOk, setStatusOk] = useState(false)
+  const errorId = useId()
   // Turnstile (PLAT-05): interaction-only, single-use token, submit disabled
   // until one exists.
   const captcha = useTurnstileToken()
@@ -57,6 +62,8 @@ export function NewsletterSignupForm({
 
   async function onSubmit(data: NewsletterSignupInput) {
     if (awaitingToken) return
+    setStatusMessage(null)
+    setStatusOk(false)
     captcha.setFailed(false)
     const result = await subscribeToNewsletter(data, captcha.token ?? undefined)
     // The token is single-use: whatever the outcome, a fresh one is needed.
@@ -69,6 +76,7 @@ export function NewsletterSignupForm({
         return
       }
 
+      setStatusOk(false)
       // With the widget drawn, a captcha refusal shows under it (signed).
       setStatusMessage(
         needsToken && refused ? null : result.message || t('errSubscribe')
@@ -76,6 +84,7 @@ export function NewsletterSignupForm({
       return
     }
 
+    setStatusOk(true)
     if (result.status === 'sent') {
       setStatusMessage(t('statusSent'))
     } else if (result.status === 'updated_preferences') {
@@ -94,6 +103,29 @@ export function NewsletterSignupForm({
     })
   }
 
+  const emailField = compact ? (
+    <input
+      type="email"
+      autoComplete="email"
+      aria-label={t('emailLabel')}
+      aria-invalid={errors.email ? true : undefined}
+      aria-describedby={errors.email ? errorId : undefined}
+      placeholder={t('placeholder')}
+      className="flex-1 bg-transparent py-3 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-mute)]"
+      {...register('email')}
+    />
+  ) : (
+    <Input
+      type="email"
+      autoComplete="email"
+      aria-label={t('emailLabel')}
+      aria-invalid={errors.email ? true : undefined}
+      aria-describedby={errors.email ? errorId : undefined}
+      placeholder={t('placeholder')}
+      {...register('email')}
+    />
+  )
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-2.5">
       <input type="hidden" value={source} {...register('source')} />
@@ -107,24 +139,9 @@ export function NewsletterSignupForm({
         value={interestTitle || ''}
         {...register('interestTitle')}
       />
-      <div
-        className={
-          compact
-            ? 'flex items-center border-b border-[var(--line-2)]'
-            : 'space-y-3'
-        }
-      >
-        <input
-          type="email"
-          placeholder={t('placeholder')}
-          className={
-            compact
-              ? 'flex-1 bg-transparent py-3 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-mute)]'
-              : 'min-h-11 w-full rounded-lg border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-mute)]'
-          }
-          {...register('email')}
-        />
-        {compact && (
+      {compact ? (
+        <div className="flex items-center border-b border-[var(--line-2)]">
+          {emailField}
           <button
             type="submit"
             disabled={isSubmitting || awaitingToken}
@@ -144,16 +161,14 @@ export function NewsletterSignupForm({
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
           </button>
-        )}
-      </div>
-      {!compact && (
-        <button
-          type="submit"
-          disabled={isSubmitting || awaitingToken}
-          className="bg-primary text-primary-foreground inline-flex min-h-11 items-center justify-center rounded-full px-5 py-3 text-sm font-medium transition-colors hover:bg-white disabled:opacity-60"
-        >
-          {buttonLabel || t('defaultButton')}
-        </button>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+          {emailField}
+          <Button type="submit" disabled={isSubmitting || awaitingToken}>
+            {buttonLabel || t('defaultButton')}
+          </Button>
+        </div>
       )}
       <TurnstileField
         key={captcha.widgetKey}
@@ -162,11 +177,23 @@ export function NewsletterSignupForm({
         failed={captcha.failed}
       />
       {errors.email?.message && (
-        <p className="text-brand-red-safe text-xs">{t('invalidEmail')}</p>
+        <p id={errorId} role="alert" className="text-brand-red-safe text-xs">
+          {t('invalidEmail')}
+        </p>
       )}
-      {statusMessage && (
-        <p className="text-sm text-[var(--text-dim)]">{statusMessage}</p>
-      )}
+      <div role="status">
+        {statusMessage && (
+          <p className="flex items-center gap-2 text-sm text-[var(--text-dim)]">
+            {statusOk && (
+              <CheckIcon
+                aria-hidden
+                className="size-4 shrink-0 text-[var(--primary)]"
+              />
+            )}
+            {statusMessage}
+          </p>
+        )}
+      </div>
     </form>
   )
 }

@@ -45,7 +45,9 @@ export function ArtworkUploadZone({
 }: ArtworkUploadZoneProps) {
   const [progress, setProgress] = useState<UploadProgress | null>(null)
   const resolvedCurrentUrl = stripStorageCacheBust(currentUrl) ?? currentUrl
-  const [previewUrl, setPreviewUrl] = useState<string | null>(resolvedCurrentUrl)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    resolvedCurrentUrl
+  )
   const inputRef = useRef<HTMLInputElement>(null)
   const t = useTranslations('admin.artwork')
   const tSettings = useTranslations('admin.settings')
@@ -118,7 +120,7 @@ export function ArtworkUploadZone({
     return (
       <div className="space-y-2">
         <p className="text-sm font-medium">{label}</p>
-        <div className="relative overflow-hidden rounded-lg border border-white/8 bg-white/[0.02]">
+        <div className="relative overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--bg-2)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={previewUrl}
@@ -169,7 +171,7 @@ export function ArtworkUploadZone({
   return (
     <div className="space-y-2">
       <p className="text-sm font-medium">{label}</p>
-      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 bg-white/[0.02] p-6 transition-colors hover:border-white/20">
+      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] p-6 transition-colors hover:border-[var(--text-mute)]">
         <Upload className="text-muted-foreground size-6" />
         <p className="text-muted-foreground text-sm">{t('clickToUpload')}</p>
         <p className="text-muted-foreground text-xs">{aspectHint}</p>

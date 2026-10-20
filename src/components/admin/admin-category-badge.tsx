@@ -1,7 +1,6 @@
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { categoryChipStyle } from '@/lib/category-chip'
 
+// Category colour is data, so it shows as a dot; the chip itself stays neutral.
 export function AdminCategoryBadge({
   name,
   color,
@@ -11,21 +10,20 @@ export function AdminCategoryBadge({
   color?: string | null
   className?: string
 }) {
-  if (!color) {
-    return (
-      <Badge variant="secondary" className={className}>
-        {name}
-      </Badge>
-    )
-  }
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium',
+        'inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--bg-2)] px-2.5 py-0.5 text-[12px] text-[var(--text-dim)]',
         className
       )}
-      style={categoryChipStyle(color)}
     >
+      {color ? (
+        <span
+          className="size-2 shrink-0 rounded-full"
+          style={{ background: color }}
+          aria-hidden
+        />
+      ) : null}
       {name}
     </span>
   )

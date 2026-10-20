@@ -4,6 +4,7 @@ import { redirect } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getWatchlistShows } from '@/lib/queries'
+import { Button } from '@/components/ui/button'
 import { PortraitShowCard } from '@/components/shows/portrait-show-card'
 import type { Locale } from '@/lib/locale'
 
@@ -74,12 +75,9 @@ export default async function MyListPage() {
             <p className="mt-3 text-[14px] text-[var(--text-dim)]">
               {t('emptyDescription')}
             </p>
-            <Link
-              href="/watch"
-              className="mono mt-6 inline-block rounded-full border border-[var(--line-2)] bg-transparent px-6 py-3 text-[12px] text-[var(--text-dim)] transition-colors hover:border-[var(--accent-yellow)] hover:text-[var(--text)]"
-            >
-              {tCommon('browseShows')}
-            </Link>
+            <Button variant="outline" className="mt-6" asChild>
+              <Link href="/watch">{tCommon('browseShows')}</Link>
+            </Button>
           </div>
         </div>
       )}

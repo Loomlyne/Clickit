@@ -305,6 +305,17 @@ test('restore: malformed id is refused', async () => {
   assert.equal(r.error, 'Invalid episode id.')
 })
 
+test('restore: an active episode is refused, no write, no audit row', async () => {
+  const f = world()
+  const before = f.snapshot()
+  const r = await restoreEpisodeCore(db(f), deps(f), E1)
+  assert.equal(r.success, false)
+  assert.equal(r.wrote, false)
+  assert.equal(r.error, 'Episode is not archived.')
+  assert.deepEqual(f.snapshot(), before)
+  assert.equal(auditFor(f, E1).length, 0)
+})
+
 test('restore: success recomputes the season count too and audits', async () => {
   const f = world()
   const r = await restoreEpisodeCore(db(f), deps(f), E2)

@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { PASSWORD_MIN } from '@/components/auth/password-rules'
 import { readCaptchaToken } from '@/server/form-guard'
 
 /**
@@ -61,6 +62,13 @@ export async function signUpAction(
   turnstileToken?: string | FormData
 ): Promise<AuthResult> {
   const captchaToken = readCaptchaToken(turnstileToken)
+
+  // Same minimum as the form, enforced here too so a direct call to the
+  // Server Action cannot create a shorter password. The client maps the
+  // 'passwordMin' key to the localized errors.passwordMin message.
+  if (typeof password !== 'string' || password.length < PASSWORD_MIN) {
+    return { ok: false, error: 'passwordMin' }
+  }
 
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signUp({

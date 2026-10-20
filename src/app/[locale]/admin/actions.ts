@@ -29,10 +29,10 @@ import {
 import {
   createSeasonCore,
   updateSeasonCore,
-  deleteSeasonCore,
   createEpisodeCore,
   updateEpisodeCore,
 } from '@/lib/admin/season-episode-writes'
+import { ROW_DELETE, deleteRowAuditedCore } from '@/lib/admin/row-deletes'
 import {
   archiveEpisodeCore,
   restoreEpisodeCore,
@@ -691,29 +691,8 @@ export async function updateSeason(
   )
 }
 
-export async function deleteSeason(
-  id: string,
-  showId: string
-): Promise<ActionResult> {
-  return runAdminAction(
-    adminEnv,
-    (ctx) =>
-      deleteSeasonCore(
-        ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
-        id,
-        showId
-      ),
-    {
-      fallbackError: 'Failed to delete season',
-      revalidate: (result) => {
-        if (!revalidateShowPage(result, showId)) bumpCatalogCache()
-        updateTag('shows')
-        updateTag('episodes')
-      },
-    }
-  )
-}
+// deleteSeason is not exported: no admin screen deletes a season, and an exported
+// server action is callable by any admin client. deleteSeasonCore stays archive-first.
 
 // ---------------------------------------------------------------------------
 // Episode Actions
@@ -1026,29 +1005,31 @@ export async function setHeroVideoUrl(
   youtubeUrl: string,
   variant: HeroVariant = 'desktop'
 ): Promise<ActionResult> {
-  const trimmed = youtubeUrl.trim()
-  if (!trimmed) return { success: false, error: 'URL is required' }
-
-  // SECURITY: validate hostname is a real YouTube domain before storage.
-  // The extractYouTubeId regex alone matches the literal substring `youtu.be/`
-  // anywhere in the URL, which would let an admin save `https://attacker.com/youtu.be/xxxxxxxxxxx`
-  // and have every viewer load an attacker iframe. validateYouTubeUrl parses with
-  // new URL() and enforces an allowlist of YouTube hostnames.
-  const videoId = validateYouTubeUrl(trimmed)
-  if (!videoId) {
-    return {
-      success: false,
-      error:
-        'Invalid YouTube URL. Must be a youtube.com or youtu.be link with a valid video ID.',
-    }
-  }
-
-  // Store canonical form so viewers always get a predictable embed URL.
-  const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`
-
+  // The runner checks admin first; validation runs inside it so a non-admin
+  // learns nothing about what a valid URL looks like.
   return runAdminAction(
     adminEnv,
     async (ctx) => {
+      const trimmed = typeof youtubeUrl === 'string' ? youtubeUrl.trim() : ''
+      if (!trimmed) return { success: false, error: 'URL is required', wrote: false }
+
+      // SECURITY: validate hostname is a real YouTube domain before storage.
+      // The extractYouTubeId regex alone matches the literal substring `youtu.be/`
+      // anywhere in the URL, which would let an admin save `https://attacker.com/youtu.be/xxxxxxxxxxx`
+      // and have every viewer load an attacker iframe. validateYouTubeUrl parses with
+      // new URL() and enforces an allowlist of YouTube hostnames.
+      const videoId = validateYouTubeUrl(trimmed)
+      if (!videoId) {
+        return {
+          success: false,
+          error:
+            'Invalid YouTube URL. Must be a youtube.com or youtu.be link with a valid video ID.',
+          wrote: false,
+        }
+      }
+
+      // Store canonical form so viewers always get a predictable embed URL.
+      const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`
       const r = await setHeroVideoUrlCore(
         await videoPorts(ctx.db),
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
@@ -1856,11 +1837,18 @@ const SITE_IMAGE_COLUMN = {
 
 type SiteImageKind = keyof typeof SITE_IMAGE_COLUMN
 
+// Own keys only: `in` would accept inherited names such as 'toString' or '__proto__'.
+// (Object.hasOwn semantics; tsconfig lib predates ES2022, so the prototype form is used.)
+function isSiteImageKind(kind: unknown): kind is SiteImageKind {
+  return typeof kind === 'string' && Object.prototype.hasOwnProperty.call(SITE_IMAGE_COLUMN, kind)
+}
+
 export async function removeSiteImage(
   kind: SiteImageKind
 ): Promise<ActionResult> {
   try {
     await assertAdmin()
+    if (!isSiteImageKind(kind)) return { success: false, error: 'Invalid kind' }
     const admin = createAdminClient()
     const column = SITE_IMAGE_COLUMN[kind]
     const { data: previousConfig, error: previousConfigError } = await admin
@@ -2123,34 +2111,17 @@ export async function reorderShort(
 }
 
 export async function deleteShort(id: string): Promise<ActionResult> {
-  try {
-    const user = await assertAdmin()
-    const idParsed = parseId(id, 'short')
-    if (!idParsed.ok) return { success: false, error: idParsed.error }
-    id = idParsed.value
-    const admin = createAdminClient()
-
-    const { error } = await admin.from('shorts').delete().eq('id', id)
-
-    if (error) return { success: false, error: error.message }
-
-    await logAudit({
-      adminUserId: user.id,
-      action: 'delete',
-      entity: 'short',
-      entityId: id,
-    })
-
-    revalidatePath('/admin/shorts')
-    updateTag('shorts')
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/shorts] delete failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to delete short',
+  return runAdminAction(
+    adminEnv,
+    (ctx) => deleteRowAuditedCore(ctx.db, { audit: ctx.audit, adminUserId: ctx.adminUserId }, ROW_DELETE.short, id),
+    {
+      fallbackError: 'Failed to delete short',
+      revalidate: () => {
+        revalidatePath('/admin/shorts')
+        updateTag('shorts')
+      },
     }
-  }
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -2158,33 +2129,16 @@ export async function deleteShort(id: string): Promise<ActionResult> {
 // ---------------------------------------------------------------------------
 
 export async function deleteReview(id: string): Promise<ActionResult> {
-  try {
-    const user = await assertAdmin()
-    const idParsed = parseId(id, 'review')
-    if (!idParsed.ok) return { success: false, error: idParsed.error }
-    id = idParsed.value
-    const admin = createAdminClient()
-
-    const { error } = await admin.from('reviews').delete().eq('id', id)
-
-    if (error) return { success: false, error: error.message }
-
-    await logAudit({
-      adminUserId: user.id,
-      action: 'delete',
-      entity: 'review',
-      entityId: id,
-    })
-
-    revalidatePath('/admin/reviews')
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/reviews] delete failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to delete review',
+  return runAdminAction(
+    adminEnv,
+    (ctx) => deleteRowAuditedCore(ctx.db, { audit: ctx.audit, adminUserId: ctx.adminUserId }, ROW_DELETE.review, id),
+    {
+      fallbackError: 'Failed to delete review',
+      revalidate: () => {
+        revalidatePath('/admin/reviews')
+      },
     }
-  }
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -2674,27 +2628,11 @@ export async function upsertLegalPage(
 }
 
 export async function deleteLegalPage(id: string): Promise<ActionResult> {
-  try {
-    await assertAdmin()
-    const idParsed = parseId(id, 'legal page')
-    if (!idParsed.ok) return { success: false, error: idParsed.error }
-    id = idParsed.value
-    const supabase = await createClient()
-    const { error } = await supabase
-      .from('legal_pages')
-      .delete()
-      .eq('id', id)
-    if (error) return { success: false, error: error.message }
-    bumpLegalCache()
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/legal] delete failed', err)
-    return {
-      success: false,
-      error:
-        err instanceof Error ? err.message : 'Failed to delete legal page',
-    }
-  }
+  return runAdminAction(
+    adminEnv,
+    (ctx) => deleteRowAuditedCore(ctx.db, { audit: ctx.audit, adminUserId: ctx.adminUserId }, ROW_DELETE.legalPage, id),
+    { fallbackError: 'Failed to delete legal page', revalidate: () => bumpLegalCache() }
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -2772,21 +2710,9 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
 }
 
 export async function deleteFaq(id: string): Promise<ActionResult> {
-  try {
-    await assertAdmin()
-    const idParsed = parseId(id, 'FAQ')
-    if (!idParsed.ok) return { success: false, error: idParsed.error }
-    id = idParsed.value
-    const supabase = await createClient()
-    const { error } = await supabase.from('faqs').delete().eq('id', id)
-    if (error) return { success: false, error: error.message }
-    bumpFaqCache()
-    return { success: true }
-  } catch (err) {
-    console.error('[admin/faq] delete failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to delete FAQ',
-    }
-  }
+  return runAdminAction(
+    adminEnv,
+    (ctx) => deleteRowAuditedCore(ctx.db, { audit: ctx.audit, adminUserId: ctx.adminUserId }, ROW_DELETE.faq, id),
+    { fallbackError: 'Failed to delete FAQ', revalidate: () => bumpFaqCache() }
+  )
 }

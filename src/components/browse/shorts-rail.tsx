@@ -4,7 +4,6 @@
 import { useState, useRef } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
-import { ArrowRight } from 'lucide-react'
 import type { ViewShort } from '@/lib/queries'
 import { DragScroll } from '@/components/primitives/drag-scroll'
 import { ShortsOverlay } from '@/components/shorts/shorts-overlay'
@@ -52,57 +51,46 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
               {t('shortClickHeading')}
             </h2>
           </div>
-          <button className="mono inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 hover:text-[var(--text)]">
-            {t('viewAll')} <ArrowRight className="size-3" />
-          </button>
         </div>
 
-        <DragScroll className="scrollbar-hide flex gap-5 overflow-x-auto pb-3">
+        <DragScroll className="scrollbar-hide -mx-1 flex gap-5 overflow-x-auto px-1 pt-1 pb-3">
           {shorts.map((s, i) => (
-            <div
+            <button
+              type="button"
               key={s.id}
               onClick={() => setOverlayIdx(i)}
               onMouseEnter={() => prefetchShort(s.youtubeVideoId)}
               onTouchStart={() => prefetchShort(s.youtubeVideoId)}
-              className="group relative shrink-0 cursor-pointer overflow-hidden rounded-[10px] bg-[var(--bg-2)]"
+              className="group focus-visible:ring-ring relative block shrink-0 cursor-pointer overflow-hidden rounded-[11px] bg-[var(--bg-2)] text-start focus-visible:ring-2 focus-visible:outline-none"
               style={{ width: 180, aspectRatio: '9/16' }}
             >
               {getThumbnailUrl(s) ? (
                 <Image
                   src={getThumbnailUrl(s)}
-                  alt={s.title}
+                  alt=""
                   fill
                   sizes="180px"
                   className="object-cover"
                 />
               ) : (
-                <div className="h-full w-full bg-[var(--bg-2)]" />
+                <span className="block h-full w-full bg-[var(--bg-2)]" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent from-[50%] to-[rgba(0,0,0,0.9)]" />
+              <span className="absolute inset-0 bg-gradient-to-b from-transparent from-[50%] to-[rgba(0,0,0,0.9)]" />
               {/* SHORT badge */}
-              <div
-                className="absolute top-2.5 left-2.5 rounded-full px-1.5 py-[3px]"
-                style={{
-                  fontFamily: 'var(--font-app)',
-                  fontSize: 9,
-                  letterSpacing: '0.14em',
-                  background: 'var(--accent)',
-                  color: 'var(--accent-fg)',
-                }}
-              >
+              <span className="absolute start-2.5 top-2.5 rounded-full bg-[var(--uis-primary-soft)] px-2.5 py-[3px] text-[11px] tracking-[0.08em] text-[var(--primary)]">
                 {t('shortBadge')}
-              </div>
+              </span>
               {/* Bottom info */}
-              <div className="absolute right-3 bottom-3 left-3">
-                <div className="font-display mb-1 text-[16px] leading-[1.15]">
+              <span className="absolute inset-x-3 bottom-3 block">
+                <span className="font-display mb-1 block text-[16px] leading-[1.15]">
                   {s.title}
-                </div>
-                <div className="mono" style={{ fontSize: 9 }}>
+                </span>
+                <span className="mono block">
                   {s.channelName || s.genre || t('shortFallback')}
                   {s.durationSeconds ? ` · ${s.durationSeconds}s` : ''}
-                </div>
-              </div>
-            </div>
+                </span>
+              </span>
+            </button>
           ))}
         </DragScroll>
       </section>

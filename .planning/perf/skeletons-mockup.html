@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clickit loading skeletons — before / after</title>
+<style>
+  /* Real UI System tokens, copied from src/styles/globals.css (2026-10-20) */
+  :root {
+    --bg-0:#090909; --bg-1:#101010; --bg-2:#191919; --bg-3:#2A2A2A; --bg-4:#424242;
+    --line:rgba(255,255,255,0.08); --line-2:rgba(255,255,255,0.14);
+    --text:#F4F4F4; --text-dim:#CCCCCC; --text-mute:#A1A1A1; --primary:#ffcc00;
+    --uis-primary-soft:#312915;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg-0); color:var(--text); font:14px/1.45 -apple-system, "Helvetica Neue", Arial, sans-serif; padding:40px; width:1600px; }
+  h1 { font-size:30px; font-weight:700; margin-bottom:6px; }
+  .sub { color:var(--text-dim); font-size:16px; margin-bottom:28px; max-width:1200px; }
+  .legend { display:flex; gap:24px; margin-bottom:32px; color:var(--text-mute); font-size:13px; }
+  .legend b { color:var(--text); }
+  .row { display:grid; grid-template-columns: 180px 1fr 1fr; gap:24px; margin-bottom:36px; align-items:start; }
+  .row h2 { font-size:20px; line-height:1.2; }
+  .row h2 small { display:block; color:var(--text-mute); font-size:13px; font-weight:400; margin-top:6px; }
+  .col-h { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-mute); margin-bottom:8px; }
+  .col-h.after { color:var(--primary); }
+  .frame { border:1px solid var(--line-2); border-radius:16px; overflow:hidden; background:var(--bg-0); position:relative; }
+  .note { color:var(--text-dim); font-size:13px; margin-top:8px; }
+  .note li { margin-left:16px; }
+
+  /* ---------- BEFORE: today's skeletons (white alpha, Tailwind pulse) ---------- */
+  .old { background:rgba(255,255,255,0.06); }
+  .old-strong { background:rgba(255,255,255,0.10); }
+
+  /* ---------- AFTER: proposed bone + shimmer from tokens only ---------- */
+  .bone { background:linear-gradient(90deg, var(--bg-2) 0%, var(--bg-3) 50%, var(--bg-2) 100%); background-size:200% 100%; }
+  .bone.still { background:var(--bg-2); }
+  .panel { background:var(--bg-1); border:1px solid var(--line); }
+
+  .tag { position:absolute; top:10px; right:10px; font-size:11px; letter-spacing:.08em; padding:3px 9px; border-radius:999px; background:var(--uis-primary-soft); color:var(--primary); }
+  .tag.grey { background:var(--bg-3); color:var(--text-mute); }
+  .flex { display:flex; } .gap { gap:20px; } .col { display:flex; flex-direction:column; }
+</style>
+</head>
+<body>
+  <h1>Loading skeletons — now vs proposed</h1>
+  <p class="sub">What a viewer sees for the split second before a page's data arrives. Proposed: same shapes as the real page (no jump when content lands), only UI System surface tokens (<code>--bg-1</code> panels, <code>--bg-2</code> bones, a soft <code>--bg-2 → --bg-3</code> shimmer), shimmer turns off for reduce-motion, mirrors for Arabic.</p>
+  <div class="legend"><span><b>Now</b> = today's <code>loading.tsx</code> files</span><span><b>Proposed</b> = new shared <code>Skeleton</code> bones</span><span>Shimmer: 1.6s sweep · static when the OS asks for less motion</span></div>
+
+  <!-- 1. HOME / WATCH HUB ROWS -->
+  <div class="row">
+    <h2>1 · Home rows<small>/watch hub (and /browse, which forwards here) · desktop 1440</small></h2>
+    <div>
+      <div class="col-h">Now</div>
+      <div class="frame" style="height:440px">
+        <div class="old" style="height:250px; background:linear-gradient(180deg, rgba(255,255,255,0.07), transparent)"></div>
+        <div style="padding:20px 24px">
+          <div class="old" style="height:16px;width:120px;border-radius:4px;background:rgba(255,255,255,0.10);margin-bottom:12px"></div>
+          <div class="flex" style="gap:12px">
+            <div class="old" style="width:96px;height:134px;border-radius:12px"></div>
+            <div class="old" style="width:96px;height:134px;border-radius:12px"></div>
+            <div class="old" style="width:96px;height:134px;border-radius:12px"></div>
+            <div class="old" style="width:96px;height:134px;border-radius:12px"></div>
+            <div class="old" style="width:96px;height:134px;border-radius:12px"></div>
+          </div>
+        </div>
+        <span class="tag grey">portrait cards, real cards are 16:9</span>
+      </div>
+      <ul class="note"><li>Rows show tall portrait posters; the real rows are wide 16:9 cards, so the page jumps when it loads.</li><li>No hero text block, no shorts row.</li></ul>
+    </div>
+    <div>
+      <div class="col-h after">Proposed</div>
+      <div class="frame" style="height:440px">
+        <div style="position:relative;height:250px;background:var(--bg-1)">
+          <div style="position:absolute;left:24px;bottom:22px;width:300px">
+            <div class="bone" style="height:40px;width:260px;border-radius:8px;margin-bottom:10px"></div>
+            <div class="bone" style="height:11px;width:180px;border-radius:999px;margin-bottom:10px"></div>
+            <div class="bone" style="height:12px;width:300px;border-radius:999px;margin-bottom:6px"></div>
+            <div class="bone" style="height:12px;width:220px;border-radius:999px;margin-bottom:14px"></div>
+            <div class="flex" style="gap:8px"><div class="bone" style="height:44px;width:120px;border-radius:999px"></div><div class="bone" style="height:44px;width:110px;border-radius:999px"></div></div>
+          </div>
+        </div>
+        <div style="padding:16px 24px 0">
+          <div class="bone" style="height:20px;width:150px;border-radius:6px;margin-bottom:12px"></div>
+          <div class="flex" style="gap:10px;margin-bottom:16px">
+            <div class="bone" style="width:54px;height:96px;border-radius:11px"></div><div class="bone" style="width:54px;height:96px;border-radius:11px"></div><div class="bone" style="width:54px;height:96px;border-radius:11px"></div><div class="bone" style="width:54px;height:96px;border-radius:11px"></div><div class="bone" style="width:54px;height:96px;border-radius:11px"></div><div class="bone" style="width:54px;height:96px;border-radius:11px"></div>
+          </div>
+          <div class="bone" style="height:20px;width:180px;border-radius:6px;margin-bottom:12px"></div>
+          <div class="flex" style="gap:10px">
+            <div class="bone" style="width:150px;height:84px;border-radius:12px"></div><div class="bone" style="width:150px;height:84px;border-radius:12px"></div><div class="bone" style="width:150px;height:84px;border-radius:12px"></div><div class="bone" style="width:150px;height:84px;border-radius:12px"></div>
+          </div>
+        </div>
+        <span class="tag">matches hero + shorts 9:16 + 16:9 rails</span>
+      </div>
+      <ul class="note"><li>Hero gets its bottom-left title, meta, synopsis and two 44px pill buttons.</li><li>Shorts row 9:16 (180px), program rows 16:9 (340px, 12px radius) — same sizes as the real cards.</li></ul>
+    </div>
+  </div>
+
+  <!-- 2. BROWSE GRID (mobile) -->
+  <div class="row">
+    <h2>2 · Browse grid<small>/watch rows on a phone (375) and /my-list grid · Arabic shown on the right</small></h2>
+    <div>
+      <div class="col-h">Now</div>
+      <div class="flex gap">
+        <div class="frame" style="width:250px;height:470px;padding:14px">
+          <div class="old" style="height:150px;margin:-14px -14px 14px;background:linear-gradient(180deg, rgba(255,255,255,0.07), transparent)"></div>
+          <div class="old-strong" style="height:14px;width:100px;border-radius:4px;margin-bottom:10px"></div>
+          <div class="flex" style="gap:8px;overflow:hidden">
+            <div class="old" style="min-width:72px;height:100px;border-radius:12px"></div><div class="old" style="min-width:72px;height:100px;border-radius:12px"></div><div class="old" style="min-width:72px;height:100px;border-radius:12px"></div>
+          </div>
+          <div class="old-strong" style="height:14px;width:100px;border-radius:4px;margin:16px 0 10px"></div>
+          <div class="flex" style="gap:8px;overflow:hidden">
+            <div class="old" style="min-width:72px;height:100px;border-radius:12px"></div><div class="old" style="min-width:72px;height:100px;border-radius:12px"></div><div class="old" style="min-width:72px;height:100px;border-radius:12px"></div>
+          </div>
+        </div>
+        <div class="frame" style="width:250px;height:470px;padding:14px">
+          <div class="old" style="height:10px;width:60px;border-radius:999px;margin:20px auto 10px"></div>
+          <div class="old" style="height:26px;width:150px;border-radius:12px;margin:0 auto 8px"></div>
+          <div class="old" style="height:12px;width:100px;border-radius:8px;margin:0 auto 22px"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div><div class="old" style="aspect-ratio:2/3;border-radius:12px"></div><div class="old" style="height:10px;width:70%;border-radius:6px;margin-top:6px"></div></div>
+            <div><div class="old" style="aspect-ratio:2/3;border-radius:12px"></div><div class="old" style="height:10px;width:70%;border-radius:6px;margin-top:6px"></div></div>
+            <div><div class="old" style="aspect-ratio:2/3;border-radius:12px"></div><div class="old" style="height:10px;width:70%;border-radius:6px;margin-top:6px"></div></div>
+            <div><div class="old" style="aspect-ratio:2/3;border-radius:12px"></div><div class="old" style="height:10px;width:70%;border-radius:6px;margin-top:6px"></div></div>
+          </div>
+        </div>
+      </div>
+      <ul class="note"><li>Phone rows are drawn as a sideways strip, but on a phone the real rows stack one full-width card per line.</li></ul>
+    </div>
+    <div>
+      <div class="col-h after">Proposed</div>
+      <div class="flex gap">
+        <div class="frame" style="width:250px;height:470px;padding:14px 16px">
+          <div style="height:150px;margin:-14px -16px 14px;background:var(--bg-1);position:relative">
+            <div style="position:absolute;left:16px;bottom:14px"><div class="bone" style="height:24px;width:150px;border-radius:6px;margin-bottom:8px"></div><div class="bone" style="height:10px;width:110px;border-radius:999px;margin-bottom:10px"></div><div class="flex" style="gap:6px"><div class="bone" style="height:44px;width:80px;border-radius:999px"></div><div class="bone" style="height:44px;width:70px;border-radius:999px"></div></div></div>
+          </div>
+          <div class="bone" style="height:16px;width:110px;border-radius:6px;margin-bottom:10px"></div>
+          <div class="bone" style="aspect-ratio:16/9;border-radius:12px;margin-bottom:10px"></div>
+          <div class="bone" style="aspect-ratio:16/9;border-radius:12px;margin-bottom:10px"></div>
+          <div class="bone" style="aspect-ratio:16/9;border-radius:12px;height:40px"></div>
+        </div>
+        <div class="frame" dir="rtl" style="width:250px;height:470px;padding:14px">
+          <div class="bone" style="height:10px;width:60px;border-radius:999px;margin:20px 0 10px"></div>
+          <div class="bone" style="height:26px;width:150px;border-radius:8px;margin:0 0 8px"></div>
+          <div class="bone" style="height:12px;width:100px;border-radius:999px;margin:0 0 22px"></div>
+          <div class="bone" style="height:14px;width:90px;border-radius:6px;margin-bottom:10px"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div><div class="bone" style="aspect-ratio:2/3;border-radius:12px"></div><div class="bone" style="height:10px;width:70%;border-radius:999px;margin-top:6px"></div></div>
+            <div><div class="bone" style="aspect-ratio:2/3;border-radius:12px"></div><div class="bone" style="height:10px;width:70%;border-radius:999px;margin-top:6px"></div></div>
+            <div><div class="bone" style="aspect-ratio:2/3;border-radius:12px"></div><div class="bone" style="height:10px;width:70%;border-radius:999px;margin-top:6px"></div></div>
+            <div><div class="bone" style="aspect-ratio:2/3;border-radius:12px"></div><div class="bone" style="height:10px;width:70%;border-radius:999px;margin-top:6px"></div></div>
+          </div>
+          <span class="tag" style="right:auto;left:10px">/ar · lines start on the right</span>
+        </div>
+      </div>
+      <ul class="note"><li>Phone: full-width 16:9 cards stacked, like the real rows. My List keeps its 2:3 grid, now in tokens, and its header starts at the edge like the real page (today it is centred, so it jumps).</li><li>Arabic: text lines and the row title anchor to the right edge.</li></ul>
+    </div>
+  </div>
+
+  <!-- 3. SERIES PAGE -->
+  <div class="row">
+    <h2>3 · Series page<small>/series/[slug] hero + episode list · desktop</small></h2>
+    <div>
+      <div class="col-h">Now</div>
+      <div class="frame" style="height:420px">
+        <div style="height:220px;background:var(--bg-2);position:relative"><div class="old" style="position:absolute;inset:0"></div>
+          <div style="position:absolute;left:24px;bottom:18px;width:320px">
+            <div class="old-strong" style="height:10px;width:60px;border-radius:999px;margin-bottom:10px"></div>
+            <div class="old-strong" style="height:30px;width:240px;border-radius:8px;margin-bottom:6px"></div>
+            <div class="old" style="height:22px;width:160px;border-radius:8px;margin-bottom:10px"></div>
+            <div class="flex" style="gap:8px"><div class="old-strong" style="height:36px;width:100px;border-radius:999px"></div><div class="old" style="height:36px;width:36px;border-radius:999px"></div><div class="old" style="height:36px;width:36px;border-radius:999px"></div></div>
+          </div>
+        </div>
+        <div style="padding:16px 24px">
+          <div class="flex" style="gap:8px;margin-bottom:12px"><div class="old" style="height:28px;width:80px;border-radius:999px"></div><div class="old" style="height:28px;width:80px;border-radius:999px"></div></div>
+          <div class="flex" style="gap:12px;padding:8px;border:1px solid rgba(255,255,255,0.05);border-radius:12px;margin-bottom:8px"><div class="old" style="width:110px;height:62px;border-radius:8px"></div><div style="flex:1"><div class="old" style="height:10px;width:30%;border-radius:4px;margin-bottom:6px"></div><div class="old-strong" style="height:14px;width:60%;border-radius:6px;margin-bottom:6px"></div><div class="old" style="height:9px;width:90%;border-radius:4px"></div></div></div>
+          <div class="flex" style="gap:12px;padding:8px;border:1px solid rgba(255,255,255,0.05);border-radius:12px"><div class="old" style="width:110px;height:62px;border-radius:8px"></div><div style="flex:1"><div class="old" style="height:10px;width:30%;border-radius:4px;margin-bottom:6px"></div><div class="old-strong" style="height:14px;width:60%;border-radius:6px;margin-bottom:6px"></div><div class="old" style="height:9px;width:90%;border-radius:4px"></div></div></div>
+        </div>
+        <span class="tag grey">shape close, colours off-token</span>
+      </div>
+      <ul class="note"><li>Closest to the real page already; uses raw white alpha instead of tokens and pulses even with reduce-motion on.</li></ul>
+    </div>
+    <div>
+      <div class="col-h after">Proposed</div>
+      <div class="frame" style="height:420px">
+        <div style="height:220px;background:var(--bg-1);position:relative">
+          <div style="position:absolute;left:24px;bottom:18px;width:340px">
+            <div class="bone" style="height:11px;width:70px;border-radius:999px;margin-bottom:10px"></div>
+            <div class="bone" style="height:36px;width:260px;border-radius:8px;margin-bottom:10px"></div>
+            <div class="bone" style="height:11px;width:330px;border-radius:999px;margin-bottom:6px"></div>
+            <div class="bone" style="height:11px;width:250px;border-radius:999px;margin-bottom:12px"></div>
+            <div class="flex" style="gap:8px"><div class="bone" style="height:44px;width:130px;border-radius:999px"></div><div class="bone" style="height:44px;width:44px;border-radius:999px"></div><div class="bone" style="height:44px;width:44px;border-radius:999px"></div></div>
+          </div>
+        </div>
+        <div style="padding:16px 24px">
+          <div class="flex" style="gap:8px;margin-bottom:12px"><div class="bone" style="height:36px;width:96px;border-radius:999px"></div><div class="bone still" style="height:36px;width:96px;border-radius:999px"></div></div>
+          <div class="flex panel" style="gap:12px;padding:10px;border-radius:12px;margin-bottom:8px;align-items:center"><div class="bone" style="width:110px;height:62px;border-radius:11px"></div><div class="bone" style="width:26px;height:26px;border-radius:6px"></div><div style="flex:1"><div class="bone" style="height:14px;width:55%;border-radius:6px;margin-bottom:8px"></div><div class="bone" style="height:10px;width:85%;border-radius:999px"></div></div></div>
+          <div class="flex panel" style="gap:12px;padding:10px;border-radius:12px;align-items:center"><div class="bone" style="width:110px;height:62px;border-radius:11px"></div><div class="bone" style="width:26px;height:26px;border-radius:6px"></div><div style="flex:1"><div class="bone" style="height:14px;width:55%;border-radius:6px;margin-bottom:8px"></div><div class="bone" style="height:10px;width:85%;border-radius:999px"></div></div></div>
+        </div>
+        <span class="tag">tokens · 44px CTAs · episode number slot</span>
+      </div>
+      <ul class="note"><li>Episode rows on <code>--bg-1</code> panels with the big episode number slot the real rows have.</li></ul>
+    </div>
+  </div>
+
+  <!-- 4. WATCH PAGE -->
+  <div class="row">
+    <h2>4 · Watch page<small>/watch/[episodeId] · full-screen player + episode tray</small></h2>
+    <div>
+      <div class="col-h">Now</div>
+      <div class="frame" style="height:330px;background:#000;display:flex;flex-direction:column">
+        <div style="flex:1;background:var(--bg-2)"></div>
+        <div style="height:96px;border-top:1px solid var(--line);background:var(--bg-0);padding:12px;display:flex;gap:10px">
+          <div class="old" style="width:44px;height:66px;border-radius:8px"></div>
+          <div style="flex:1"><div class="old" style="height:9px;width:70px;border-radius:4px;margin-bottom:8px"></div><div class="old-strong" style="height:14px;width:60%;border-radius:4px;margin-bottom:8px"></div><div class="old" style="height:9px;width:90%;border-radius:4px"></div></div>
+        </div>
+        <span class="tag grey">whole player area pulses grey</span>
+      </div>
+      <ul class="note"><li>The full player area flashes grey, then turns black when the YouTube player mounts — a visible flicker.</li><li>No top bar (back, title, save) where the real one sits.</li></ul>
+    </div>
+    <div>
+      <div class="col-h after">Proposed</div>
+      <div class="frame" style="height:330px;background:#000;display:flex;flex-direction:column">
+        <div style="height:52px;border-bottom:1px solid var(--line);background:rgba(9,9,9,0.9);display:flex;align-items:center;justify-content:space-between;padding:0 14px">
+          <div class="bone" style="width:70px;height:14px;border-radius:999px"></div>
+          <div class="col" style="align-items:center;gap:5px"><div class="bone" style="width:140px;height:12px;border-radius:999px"></div><div class="bone" style="width:80px;height:9px;border-radius:999px"></div></div>
+          <div class="flex" style="gap:10px"><div class="bone" style="width:22px;height:22px;border-radius:999px"></div><div class="bone" style="width:22px;height:22px;border-radius:999px"></div><div class="bone" style="width:22px;height:22px;border-radius:999px"></div></div>
+        </div>
+        <div style="flex:1;background:#000;display:flex;align-items:center;justify-content:center">
+          <div style="width:64px;height:64px;border-radius:999px;border:1px solid var(--line-2);background:var(--bg-1);display:flex;align-items:center;justify-content:center"><div style="width:0;height:0;border-left:18px solid var(--bg-4);border-top:11px solid transparent;border-bottom:11px solid transparent;margin-left:5px"></div></div>
+        </div>
+        <div style="height:96px;border-top:1px solid var(--line);background:var(--bg-0);padding:12px;display:flex;gap:10px;align-items:center">
+          <div class="bone" style="width:44px;height:66px;border-radius:11px"></div>
+          <div style="flex:1"><div class="bone" style="height:10px;width:70px;border-radius:999px;margin-bottom:8px"></div><div class="bone" style="height:14px;width:60%;border-radius:6px;margin-bottom:8px"></div><div class="bone" style="height:10px;width:90%;border-radius:999px"></div></div>
+          <div class="bone" style="width:20px;height:20px;border-radius:6px"></div>
+        </div>
+        <span class="tag">player stays black · real top bar</span>
+      </div>
+      <ul class="note"><li>Player area stays black (no flash) with a quiet play mark; top bar and tray bones sit where the real controls appear.</li></ul>
+    </div>
+  </div>
+</body>
+</html>

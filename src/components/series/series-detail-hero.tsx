@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import { motion, AnimatePresence, MotionConfig } from 'motion/react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Play } from 'lucide-react'
 
 import { WatchlistToggleButton } from '@/components/watchlist/watchlist-toggle-button'
 import { LikeButton } from '@/components/likes/like-button'
@@ -69,13 +69,16 @@ export function SeriesDetailHero({
             transition={{ duration: 0.3, ease: CINEMA_EASE }}
             className="fixed top-24 right-4 left-4 z-40 mx-auto flex max-w-7xl items-center justify-between rounded-full border border-[var(--line)] bg-[var(--bg-1)] px-5 py-3"
           >
-            <span className="font-semibold text-white">{show.title}</span>
+            <span className="font-semibold text-[var(--text)]">
+              {show.title}
+            </span>
             {firstEpisodeId && (
               <Link
                 href={`/watch/${firstEpisodeId}`}
-                className="bg-primary text-primary-foreground inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-xs font-semibold transition-colors hover:bg-white"
+                className="bg-primary text-primary-foreground inline-flex min-h-11 items-center gap-1.5 rounded-full px-5 text-[13.5px] font-semibold transition-colors hover:bg-white"
               >
-                &#9654; {t('watchNow')}
+                <Play className="size-4 fill-current" aria-hidden />
+                {t('watchNow')}
               </Link>
             )}
           </motion.div>
@@ -121,7 +124,7 @@ export function SeriesDetailHero({
 
           {/* Description */}
           <motion.p
-            className="mb-6 line-clamp-3 max-w-xl text-base leading-relaxed text-white/70 md:text-lg"
+            className="mb-6 line-clamp-3 max-w-xl text-base leading-relaxed text-[var(--text-dim)] md:text-lg"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: CINEMA_EASE, delay: 0.55 }}
@@ -131,7 +134,7 @@ export function SeriesDetailHero({
 
           {/* Metadata row */}
           <motion.div
-            className="mb-7 flex flex-wrap items-center gap-4 text-sm text-white/50"
+            className="mb-7 flex flex-wrap items-center gap-4 text-sm text-[var(--text-mute)]"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: CINEMA_EASE, delay: 0.65 }}
@@ -172,14 +175,14 @@ export function SeriesDetailHero({
                   href={`/watch/${firstEpisodeId}`}
                   className="bg-primary text-primary-foreground inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-semibold transition-colors hover:bg-white"
                 >
-                  &#9654;{' '}
+                  <Play className="size-4 fill-current" aria-hidden />
                   {firstEpisodeLabel
                     ? t('watchLabel', { label: firstEpisodeLabel })
                     : t('watchNow')}
                 </Link>
               </motion.div>
             ) : (
-              <span className="inline-flex cursor-not-allowed items-center rounded-full bg-white/10 px-7 py-3 text-sm font-medium text-white/50">
+              <span className="inline-flex min-h-11 cursor-not-allowed items-center rounded-full bg-white/10 px-7 text-sm font-medium text-[var(--text-mute)]">
                 {t('comingSoonBadge')}
               </span>
             )}
@@ -204,7 +207,7 @@ export function SeriesDetailHero({
           <motion.div
             animate={{ y: [0, 8, 0] }}
             transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            className="flex flex-col items-center gap-1 text-white/30"
+            className="flex flex-col items-center gap-1 text-[var(--text-mute)]"
           >
             <ChevronDown className="h-5 w-5" />
           </motion.div>
