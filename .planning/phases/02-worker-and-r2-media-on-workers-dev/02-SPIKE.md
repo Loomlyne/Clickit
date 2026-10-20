@@ -35,4 +35,4 @@ Checked 2026-10-20 by work session C (Cloudflare move).
 
 Note: react and react-dom now list `github.com/react/react` as repository (older releases said `facebook/react`); worth a look in step 6.
 
-Koss's answer: _pending (no npm install has run)._
+Koss's answer (controller's question form, 2026-10-20, relayed by the Clickit controller): "Approve as listed". Controller instruction: pin exact versions in package.json and commit the lockfile. No npm install ran before this answer.
