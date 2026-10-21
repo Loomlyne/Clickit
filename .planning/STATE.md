@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-21T14:35:03.657Z"
+last_updated: "2026-10-21T14:39:40.293Z"
 last_activity: 2026-10-21
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 123
-  completed_plans: 80
+  completed_plans: 81
   percent: 33
 ---
 
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 05 (accounts-and-email) — EXECUTING
-Plan: 10 of 42 (05-12 done; 05-10 and 05-11 still open)
+Plan: 11 of 42 (05-10 and 05-12 done; 05-11 still open)
 Status: Ready to execute
 Last activity: 2026-10-21
 Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
 
-Progress: [███████░░░] 67%
+Progress: [███████░░░] 68%
 
 ## Performance Metrics
 
@@ -88,6 +88,7 @@ Progress: [███████░░░] 67%
 | Phase 05 P08 | 25min | 2 tasks | 4 files |
 | Phase 05 P09 | 8min | 2 tasks | 7 files |
 | Phase 05 P12 | 35min | 3 tasks | 13 files |
+| Phase 05 P10 | 25min | 2 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -136,6 +137,7 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-09: M1a = supabase/migrations/20261021142458_phase5_m1a_accounts.sql; admins created empty; backfills pause set_updated_at (if present) so updated_at versions do not move
 - [Phase 05]: 05-09: db-proof.sh runs supabase/tests/pre_*.sql once just before the first _phase5_ migration
 - [Phase 05]: 05-12: CodeField emits normalised value and clears/refocuses when error changes; password eye is right-0 inside a dir=ltr box (pinned by password-field.test.ts); auth.hidePassword added (Arabic wording for Koss to confirm); formatCountdown re-exports formatClock; ui/switch hand-written on radix-ui
+- [Phase 05]: 05-10: auth templates are sentinels swapped for Go actions after render, locale branch wraps whole documents; production and local sets differ only in the logo URL; MAIL-01/AUTH-02/AUTH-04 stay Pending until 05-35/05-38
 
 ### Pending Todos
 
@@ -175,8 +177,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-21T14:35:03.650Z
-Stopped at: Completed 05-12-PLAN.md
+Last session: 2026-10-21T14:39:36.338Z
+Stopped at: Completed 05-10-PLAN.md
 Phase 2 last session: 2026-10-20T10:45:11.285Z
 Phase 2 stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above is the controller's)
 Resume file: None
