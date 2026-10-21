@@ -28,6 +28,7 @@ import {
 } from '@/lib/youtube-errors'
 import { formatQuotaReset, nextQuotaReset } from '@/lib/youtube-quota'
 import { useRowVersions } from '@/components/admin/row-version'
+import { NULL_UPDATED_AT } from '@/lib/admin/version-chain'
 import { extractYouTubeId } from '@/lib/youtube'
 import type { Database } from '@/lib/database.types'
 
@@ -206,7 +207,7 @@ export function ShortFormDrawer({
       expires_at: expiresAt,
     }
     const expected = editingShort
-      ? versions.expected(editingShort.id, editingShort.updated_at ?? '')
+      ? versions.expected(editingShort.id, editingShort.updated_at ?? NULL_UPDATED_AT)
       : ''
     const result = editingShort
       ? await updateShort(editingShort.id, actionData, expected)

@@ -137,7 +137,7 @@ type ActionResult<T = unknown> = {
  */
 type VersionedResult<T = unknown> = ActionResult<T> & { updatedAt?: string }
 
-const withUpdatedAt = <R extends { success: boolean }>(r: R, version: RowVersion): R & { updatedAt?: string } =>
+const withUpdatedAt = <R extends { success: boolean }>(r: R, version: { next: string | null }): R & { updatedAt?: string } =>
   r.success && version.next ? { ...r, updatedAt: version.next } : r
 
 export type {
@@ -2440,7 +2440,8 @@ export async function updateShort(
     const idParsed = parseId(id, 'short')
     if (!idParsed.ok) return { success: false, error: idParsed.error }
     id = idParsed.value
-    const version = rowVersion(expectedUpdatedAt)
+    // shorts.updated_at is nullable: the drawer sends NULL_UPDATED_AT for a NULL row (re-review item 5).
+    const version = rowVersion(expectedUpdatedAt, { nullable: true })
     if (!version.ok) return { success: false, error: version.error }
     const parsed = shortSchema.parse(data)
     const admin = createAdminClient()
