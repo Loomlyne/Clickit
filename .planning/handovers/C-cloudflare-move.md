@@ -89,11 +89,13 @@ Item 12 (Koss 2026-10-21, question form):
 | 33 | Workers plan decision (priced question) | Koss | DUE: Task 4 early stop triggered |
 | 34 | approve the measurement sign-ins (before 31-32) | Koss | open |
 | 02-22 | gate, coverage, UAT (below), teardown | C + Koss (UAT) | open |
+| P3-8b | R2 upload sweep (uploads never finalised, Koss Option B): weekly `cleanup-media` dry run, then `R2_UPLOAD_SWEEP_DELETE` "off" → "on" | Koss's word, controller deploys with `--allow-upload-sweep-delete` | built 2026-10-21, ships "off" (dry run); flip after P3-8 and one read dry-run report (runbook P3-8b) |
 
 Notes:
 - Cron placeholder (controller, 2026-10-20): PR #27 (Phase 6) adds `/api/cron/youtube-recheck`, which needs a daily Worker cron trigger. Whichever of Phase 2 / Phase 6 lands second wires it: one entry in `src/server/cron-schedule.ts` (cron map) plus the trigger in `wrangler.jsonc` `triggers.crons` at the Phase 3 cutover (crons stay `[]` until then). Phase 2 does not edit Phase 6 files.
 - PRs #27 (Phase 6) and #28 (Phase 4) landed on main (6d748ff, 9225d04) and are merged into this branch (f767ae7, 2026-10-21).
-- Phase 6 hand-offs to Phase 2: (b) the `youtube-recheck` route uses `cronAuthOk` and (c) `30 1 * * *` is in `CRON_ROUTES` (2026-10-21; `triggers.crons` stays `[]` until P3-8, which now lists all three). Still open, not asked yet: (a) `src/server/youtube/rate-limit.ts` onto `decideRateLimit` (TODO(phase-2) in that file); `src/server/youtube/bearer.ts` is now unused by the route (kept with its test).
+- Phase 6 hand-offs to Phase 2: (b) the `youtube-recheck` route uses `cronAuthOk` and (c) `30 1 * * *` is in `CRON_ROUTES` (2026-10-21; `triggers.crons` stays `[]` until P3-8, which now lists all three). (a) done 2026-10-21 (Koss: go): `src/server/youtube/rate-limit.ts` now runs on `decideRateLimit` with the shared store, same keys and limits, fail closed (the four admin YouTube limits were fail open before); TODO removed. `src/server/youtube/bearer.ts` is now unused by the route (kept with its test).
+- Uploads never finalised (Koss chose Option B, 2026-10-21): swept by the weekly `cleanup-media` cron, after the rate_limits prune and before the Supabase sweep, fail-soft, reported as `r2UploadSweep` in every response. Minted upload keys only, older than 24 h (object `uploaded` and the key's mint time), no live reference (a failed reference read deletes nothing); variants go with their original, `_v/` variants of copied Supabase objects are never touched. Dry run unless `R2_UPLOAD_SWEEP_DELETE` is exactly "on"; deletes through `deleteIfUnreferenced` (references re-read right before). Runbook P3-8b.
 - Open decisions: pr-gate.yml triggers vs rule 4 (Phase 1 file); Phase 3 Q1-Q4 in `03-CUTOVER-DRAFT.md`.
 
 ## Pending Koss signatures (copy)
