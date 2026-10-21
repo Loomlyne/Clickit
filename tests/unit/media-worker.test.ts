@@ -762,10 +762,13 @@ test('02-03 ?v= gives one-year immutable cache', async () => {
   assert.equal(response.headers.get('cache-control'), 'public, max-age=31536000, immutable')
 })
 
-test('02-03 cacheControlFor rule', () => {
-  assert.equal(cacheControlFor(new URL(`${BASE}/a/b`), false), 'public, max-age=3600')
-  assert.equal(cacheControlFor(new URL(`${BASE}/a/b?v=1`), false), VERSIONED_CACHE_CONTROL)
-  assert.equal(cacheControlFor(new URL(`${BASE}/a/b`), true), VERSIONED_CACHE_CONTROL)
+test('02-03 cacheControlFor rule: only a ?v= stamp is immutable, a variant alone is not', () => {
+  assert.equal(cacheControlFor(new URL(`${BASE}/a/b`)), 'public, max-age=3600')
+  assert.equal(cacheControlFor(new URL(`${BASE}/a/b?v=1`)), VERSIONED_CACHE_CONTROL)
+  assert.equal(cacheControlFor(new URL(`${BASE}/a/b?w=1280`)), UNVERSIONED_CACHE_CONTROL)
+  assert.equal(cacheControlFor(new URL(`${BASE}/a/b?w=1280&v=1`)), VERSIONED_CACHE_CONTROL)
+  // An empty stamp is no version.
+  assert.equal(cacheControlFor(new URL(`${BASE}/a/b?v=`)), UNVERSIONED_CACHE_CONTROL)
 })
 
 test('02-03 Range bytes=0-1023 on a 5000-byte object is 206 with Content-Range', async () => {
@@ -846,7 +849,7 @@ test('02-03 variantCandidates orders avif, webp, original and honours q=0', () =
   assert.deepEqual(variantCandidates('show-artwork/a.jpg', 999, 'image/avif'), ['show-artwork/a.jpg'])
 })
 
-test('02-03 ?w=1280 with avif+webp Accept serves the avif variant, Vary Accept, immutable', async () => {
+test('02-03 ?w=1280 with avif+webp Accept serves the avif variant, Vary Accept, one hour without ?v=', async () => {
   const { bucket } = fakeR2(VARIANT_STORE())
   const response = await call(
     '/show-artwork/a.jpg?w=1280',
@@ -857,8 +860,21 @@ test('02-03 ?w=1280 with avif+webp Accept serves the avif variant, Vary Accept, 
   assert.equal(response.headers.get('content-type'), 'image/avif')
   assert.equal(response.headers.get('etag'), '"va"')
   assert.equal(response.headers.get('vary'), 'Accept')
-  assert.equal(response.headers.get('cache-control'), 'public, max-age=31536000, immutable')
+  // A variant can be re-made under the same key, so without a stamp it is not immutable.
+  assert.equal(response.headers.get('cache-control'), 'public, max-age=3600')
   assert.equal((await response.arrayBuffer()).byteLength, 30)
+})
+
+test('02-03 ?w=1280&v= serves the variant with the one-year immutable cache', async () => {
+  const { bucket } = fakeR2(VARIANT_STORE())
+  const response = await call(
+    '/show-artwork/a.jpg?w=1280&v=1780693451111',
+    { headers: { accept: 'image/avif,image/webp,image/*' } },
+    bucket
+  )
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get('content-type'), 'image/avif')
+  assert.equal(response.headers.get('cache-control'), 'public, max-age=31536000, immutable')
 })
 
 test('02-03 ?w=1280 with webp-only Accept serves the webp variant', async () => {
