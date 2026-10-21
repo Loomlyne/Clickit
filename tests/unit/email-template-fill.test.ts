@@ -523,8 +523,8 @@ test('condition 1: hostile support_admin name', async () => {
     assert.ok(!/<(?!\/?div>)/.test(inner), `${locale}: no tag inside the preheader but the padding div`)
 
     if (locale === 'ar') {
-      assert.match(html, /<html[^>]*lang="ar"[^>]*dir="rtl"/)
-      assert.match(html, /<table[^>]*lang="ar"[^>]*dir="rtl"/)
+      assert.match(html, /<html(?=[^>]*\slang="ar")(?=[^>]*\sdir="rtl")[^>]*>/)
+      assert.match(html, /<table(?=[^>]*\slang="ar")(?=[^>]*\sdir="rtl")[^>]*>/)
     }
     assert.ok(out.text.includes(HOSTILE), `${locale}: text has the name as given`)
     for (const entity of ['&amp;', '&lt;', '&quot;']) {

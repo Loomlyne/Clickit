@@ -83,10 +83,10 @@ test('every kind x locale renders subject, html and text; AR is rtl; text has no
       assert.ok(!/<[a-z/][^>]*>/i.test(out.text), `${kind} ${locale}: text has no tags`)
       assert.ok(!out.html.includes('__clk_') && !out.text.includes('__clk_') && !out.subject.includes('__clk_'))
       if (locale === 'ar') {
-        assert.match(out.html, /<html[^>]*lang="ar"[^>]*dir="rtl"/)
-        assert.match(out.html, /<table[^>]*lang="ar"[^>]*dir="rtl"/)
+        assert.match(out.html, /<html(?=[^>]*\slang="ar")(?=[^>]*\sdir="rtl")[^>]*>/)
+        assert.match(out.html, /<table(?=[^>]*\slang="ar")(?=[^>]*\sdir="rtl")[^>]*>/)
       } else {
-        assert.match(out.html, /<html[^>]*lang="en"[^>]*dir="ltr"/)
+        assert.match(out.html, /<html(?=[^>]*\slang="en")(?=[^>]*\sdir="ltr")[^>]*>/)
       }
     }
   }
