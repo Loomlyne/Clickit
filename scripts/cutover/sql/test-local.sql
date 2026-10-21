@@ -44,16 +44,16 @@ declare
   v_hits text;
 begin
   if (select count(*) from public.shows) = 0 then
-    raise exception 'local stack has no shows rows: run supabase db reset --local first';
+    raise exception 'local stack is missing seed rows (no shows rows): seed the fixture rows with migration up --local / the seed script; never db reset the shared stack';
   end if;
   if (select count(*) from public.shows) < 2 then
-    raise exception 'local stack has fewer than 2 shows rows: run supabase db reset --local first';
+    raise exception 'local stack is missing seed rows (fewer than 2 shows rows): seed the fixture rows with migration up --local / the seed script; never db reset the shared stack';
   end if;
   if not exists (select 1 from public.app_config where id = 1) then
-    raise exception 'local stack has no app_config row 1: run supabase db reset --local first';
+    raise exception 'local stack is missing seed rows (no app_config row 1): seed the fixture rows with migration up --local / the seed script; never db reset the shared stack';
   end if;
   if not exists (select 1 from public.show_cast) then
-    raise exception 'local stack has no show_cast rows: run supabase db reset --local first';
+    raise exception 'local stack is missing seed rows (no show_cast rows): seed the fixture rows with migration up --local / the seed script; never db reset the shared stack';
   end if;
   execute format('select string_agg(format(''%%s.%%s.%%s=%%s'', table_schema, table_name, column_name, hits), '','' order by table_schema, table_name, column_name) from (%s
 ) s', v_scan) into v_hits;
@@ -130,6 +130,22 @@ alter table public.shows enable trigger set_updated_at;
 alter table public.profiles enable trigger set_updated_at;
 alter table public.shorts enable trigger shorts_updated_at;
 
+-- 3c. One extra, harmless trigger on a driver table (a BEFORE UPDATE that
+--     changes nothing, as a later phase may add, e.g. Phase 5's
+--     profiles_protect_system_columns): preflight must list it (not stop), and
+--     it must keep firing during the rewrite and the reverse (they pause only
+--     the four named updated_at triggers, never ALL or USER). Each fire adds a
+--     row to the temp table noop_fires. Rolled back with everything else.
+create temp table noop_fires (fired_at timestamptz not null default clock_timestamp());
+create function public.test_local_noop() returns trigger
+language plpgsql as $fn$
+begin
+  insert into noop_fires default values;
+  return new;
+end $fn$;
+create trigger test_local_noop before update on public.shows
+  for each row execute function public.test_local_noop();
+
 -- the four updated_at triggers, enabled ('O'): the count must stay 4 after
 -- every rewrite and reverse (they re-enable what they paused)
 create temp view trg_on as
@@ -164,6 +180,7 @@ declare
   v_verdict text;
   v_trg_ok bigint;
   v_trg_stop bigint;
+  v_trg_listed text;
   v_nr_cols text;
   v_nr_total bigint;
   v_rewritable bigint;
@@ -177,11 +194,22 @@ begin
   if v_verdict is distinct from 'ok' then
     raise exception 'test-local: preflight role verdict = %, expected ok', v_verdict;
   end if;
-  execute format('select count(*) filter (where verdict like ''ok%%''), count(*) filter (where verdict not like ''ok%%'') from (%s
-) s', v_trg) into v_trg_ok, v_trg_stop;
+  execute format('select count(*) filter (where verdict like ''ok%%''), count(*) filter (where verdict like ''stop%%''),
+                         string_agg(format(''%%s.%%s=%%s'', table_name, trigger_name, function_name), '','' order by table_name, trigger_name) filter (where verdict like ''listed:%%'') from (%s
+) s', v_trg) into v_trg_ok, v_trg_stop, v_trg_listed;
   if v_trg_ok <> 4 or v_trg_stop <> 0 then
     raise exception 'test-local: preflight triggers ok % stop %, expected 4 and 0', v_trg_ok, v_trg_stop;
   end if;
+  -- the planted no-op must be listed; other triggers on the shared stack
+  -- (e.g. Phase 5's profiles_protect_system_columns) are allowed and printed;
+  -- none of the four updated_at triggers may appear as "listed"
+  if v_trg_listed is null or v_trg_listed !~ '(^|,)shows\.test_local_noop=test_local_noop\(\)(,|$)' then
+    raise exception 'test-local: preflight did not list shows.test_local_noop (listed: %)', v_trg_listed;
+  end if;
+  if v_trg_listed ~ '(^|,)(app_config\.set_updated_at|shows\.set_updated_at|profiles\.set_updated_at|shorts\.shorts_updated_at)=' then
+    raise exception 'test-local: an updated_at trigger was listed as an other trigger: %', v_trg_listed;
+  end if;
+  raise notice 'test-local: other trigger listed, not a stop (%)', v_trg_listed;
   execute format('select string_agg(format(''%%s.%%s=%%s'', table_name, column_name, not_rewritable), '','' order by table_name, column_name) filter (where not_rewritable > 0),
                          sum(not_rewritable), sum(rewritable) from (%s
 ) s', v_nr) into v_nr_cols, v_nr_total, v_rewritable;
@@ -196,7 +224,7 @@ begin
   if v_od_hits is not null then
     raise exception 'test-local: preflight outside-driver hits %, expected none', v_od_hits;
   end if;
-  raise notice 'test-local: preflight ok (role ok, 4 updated_at triggers, not rewritable shows.card_image_url=1 and shows.logo_url=1, rewritable 9, outside-driver 0)';
+  raise notice 'test-local: preflight ok (role ok, 4 updated_at triggers, other triggers listed incl. test_local_noop, not rewritable shows.card_image_url=1 and shows.logo_url=1, rewritable 9, outside-driver 0)';
 end $preflight$;
 
 -- 6. Rewrite (run 1).
@@ -218,6 +246,8 @@ declare
     'thumbnail_url'];
   v_diff bigint;
   v_stamp bigint;
+  v_fires bigint;
+  v_shows bigint;
 begin
   select count(*) into v_cnt from private.media_url_rewrite_backup where run_id = v_run;
   if v_cnt <> 9 then
@@ -289,6 +319,18 @@ begin
     raise exception 'test-local: % of the 4 updated_at triggers enabled after the rewrite', (select n from trg_on);
   end if;
   raise notice 'test-local: updated_at unchanged after rewrite (only the media columns differ from the snapshot; 4 triggers enabled again)';
+
+  -- the other trigger kept firing: one fire per shows value the rewrite wrote
+  select count(*) into v_fires from noop_fires;
+  select count(*) into v_shows from private.media_url_rewrite_backup where run_id = v_run and table_name = 'shows';
+  if v_shows = 0 or v_fires <> v_shows then
+    raise exception 'test-local: test_local_noop fired % time(s) during the rewrite, expected % (shows values rewritten)', v_fires, v_shows;
+  end if;
+  if not exists (select 1 from pg_trigger where tgrelid = 'public.shows'::regclass and tgname = 'test_local_noop' and tgenabled = 'O') then
+    raise exception 'test-local: test_local_noop is not enabled after the rewrite';
+  end if;
+  perform set_config('test.noop_after_rewrite', v_fires::text, true);
+  raise notice 'test-local: other trigger fired during the rewrite (% fires = % shows values rewritten)', v_fires, v_shows;
 end $after_rewrite$;
 
 \ir scan-old-hosts.sql
@@ -304,6 +346,8 @@ declare
   v_diff bigint;
   v_open bigint;
   v_rows bigint;
+  v_fires bigint;
+  v_shows bigint;
 begin
   select count(*) into v_rows from snap;
   select count(*) into v_diff
@@ -320,6 +364,14 @@ begin
     raise exception 'test-local: % of the 4 updated_at triggers enabled after the reverse', (select n from trg_on);
   end if;
   raise notice 'test-local: reverse ok (% snapshot rows byte-identical incl. updated_at, every backup row restored)', v_rows;
+
+  -- the other trigger fired again during the reverse, once per shows value restored
+  select count(*) into v_fires from noop_fires;
+  select count(*) into v_shows from private.media_url_rewrite_backup where run_id = v_run and table_name = 'shows';
+  if v_fires <> current_setting('test.noop_after_rewrite')::bigint + v_shows then
+    raise exception 'test-local: test_local_noop count % after the reverse, expected % + %', v_fires, current_setting('test.noop_after_rewrite'), v_shows;
+  end if;
+  raise notice 'test-local: other trigger fired during the reverse (count % -> %)', current_setting('test.noop_after_rewrite'), v_fires;
 end $after_reverse$;
 
 -- 8. Run 2: reverse through the "single open run" path (setting cleared), and
@@ -425,7 +477,7 @@ begin
   if (select n from trg_on) <> 4 then
     raise exception 'test-local: % of the 4 updated_at triggers enabled after the refused rewrite', (select n from trg_on);
   end if;
-  raise notice 'test-local: concurrent edit refused ok (rewrite mismatch on shows.poster_url, nothing written)';
+  raise notice 'test-local: concurrent edit refused ok (rewrite mismatch on shows.poster_url, nothing written, trigger pause rolled back with the error)';
 end $concurrent$;
 
 rollback to savepoint concurrent_edit;
@@ -470,7 +522,10 @@ begin
      or (select s.hero_url from public.shows s join fx on s.id = fx.show_a) <> 'https://media.clickitstory.ae/show-artwork/fx/hero.webp?v=11' then
     raise exception 'test-local: strict refusal restored a value';
   end if;
-  raise notice 'test-local: strict reverse refused ok (1 changed value listed, nothing restored)';
+  if (select n from trg_on) <> 4 then
+    raise exception 'test-local: % of the 4 updated_at triggers enabled after the refused strict reverse (the pause was not rolled back)', (select n from trg_on);
+  end if;
+  raise notice 'test-local: strict reverse refused ok (1 changed value listed, nothing restored, trigger pause rolled back with the error)';
 end $strict$;
 
 \ir reverse-media-urls-partial.sql

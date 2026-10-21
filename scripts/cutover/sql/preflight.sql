@@ -13,11 +13,18 @@
 --      needs the owner); RLS bypass (rolsuper, rolbypassrls or owner of the
 --      backup table, which has RLS on and no policy). Any false => verdict
 --      "stop: role cannot run the rewrite".
---   1c. [triggers] every user trigger on the driver tables. Expected exactly
---      the four updated_at triggers, enabled ('O'): app_config.set_updated_at,
+--   1c. [triggers] every user trigger on the driver tables, with its
+--      function. The four updated_at triggers app_config.set_updated_at,
 --      shows.set_updated_at, profiles.set_updated_at, shorts.shorts_updated_at
---      (show_cast has none). Any other trigger would fire on the rewrite, a
---      disabled one would be switched on by it => "stop: plan revision".
+--      (show_cast has none) must exist and be enabled ('O'): the rewrite and
+--      the reverse pause only these four and raise if one is missing or off
+--      (a disabled one would otherwise be switched on). Missing or not
+--      enabled => "stop: ...". Every other trigger (e.g. Phase 5's
+--      profiles_protect_system_columns) is NOT a stop: it is listed by name
+--      and function with verdict "listed: ..." because it fires on the
+--      rewrite and the reverse as on any admin edit. The controller reads
+--      each listed trigger against the driver columns before Step 49; one
+--      that would block or alter a media column is a stop (plan revision).
 --   2. the server version (local proof ran on PostgreSQL 17.x).
 --   3. per D-09 driver column: values on an old media host (old_host), values
 --      the rewrite would change (rewritable) and old-host values the rewrite
@@ -65,19 +72,30 @@ from r;
 -- [role:end]
 
 -- [triggers:begin]
-select c.relname::text as table_name, g.tgname::text as trigger_name, g.tgenabled::text as enabled,
-  case when (c.relname::text, g.tgname::text) in (values
-      ('app_config', 'set_updated_at'),
-      ('shows', 'set_updated_at'),
-      ('profiles', 'set_updated_at'),
-      ('shorts', 'shorts_updated_at'))
-    and g.tgenabled = 'O'
-    then 'ok (paused inside the rewrite and the reverse)' else 'stop: plan revision' end as verdict
-from pg_trigger g
-join pg_class c on c.oid = g.tgrelid
-join pg_namespace n on n.oid = c.relnamespace
-where n.nspname = 'public' and not g.tgisinternal
-  and c.relname in ('app_config', 'shows', 'show_cast', 'profiles', 'shorts')
+with expected(tbl, trg) as (values
+    ('app_config', 'set_updated_at'),
+    ('shows', 'set_updated_at'),
+    ('profiles', 'set_updated_at'),
+    ('shorts', 'shorts_updated_at')),
+found as (
+  select c.relname::text as tbl, g.tgname::text as trg, g.tgenabled::text as enabled,
+    g.tgfoid::regprocedure::text as function_name
+  from pg_trigger g
+  join pg_class c on c.oid = g.tgrelid
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public' and not g.tgisinternal
+    and c.relname in ('app_config', 'shows', 'show_cast', 'profiles', 'shorts')
+)
+select coalesce(f.tbl, e.tbl) as table_name, coalesce(f.trg, e.trg) as trigger_name,
+  f.enabled, f.function_name,
+  case
+    when e.trg is null then 'listed: other trigger, read it against the driver columns before Step 49'
+    when f.trg is null then 'stop: updated_at trigger missing'
+    when f.enabled = 'O' then 'ok (paused inside the rewrite and the reverse)'
+    else 'stop: updated_at trigger not enabled'
+  end as verdict
+from expected e
+full join found f on f.tbl = e.tbl and f.trg = e.trg
 order by 1, 2;
 -- [triggers:end]
 

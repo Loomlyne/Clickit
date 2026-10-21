@@ -290,7 +290,8 @@ test('test-local.sql: one transaction that ends in rollback, every ops file incl
   for (const name of REQUIRED_OPS) assert.ok(sql.includes(`\\ir ${name}`), `test-local.sql does not run ${name}`)
   assert.ok(sql.includes('\\ir migration_media_url_rewrite_backup.sql'))
   assert.ok(sql.includes("raise notice 'test-local: PASS'"))
-  assert.ok(sql.includes("'local stack has no shows rows: run supabase db reset --local first'"))
+  assert.ok(sql.includes("'local stack is missing seed rows (no shows rows): seed the fixture rows with migration up --local / the seed script; never db reset the shared stack'"))
+  assert.doesNotMatch(sql, /run supabase db reset/, 'never tell anyone to reset the shared stack')
 })
 
 // PR #31 review findings 1, 2, 6, 7 (2026-10-21).
@@ -357,6 +358,17 @@ test('preflight: role privileges on private and the driver tables, trigger list,
   for (const [t, g] of UPDATED_AT_TRIGGERS) assert.ok(sql.includes(`('${t}', '${g}')`), `preflight trigger ${t}.${g}`)
 })
 
+test('preflight triggers: the four updated_at triggers must exist and be enabled; any other trigger is listed, not a stop', () => {
+  const sql = ops('preflight.sql')
+  const block = sql.match(/-- \[triggers:begin\]([\s\S]+)-- \[triggers:end\]/)?.[1] ?? ''
+  assert.match(block, /full join found f on f\.tbl = e\.tbl and f\.trg = e\.trg/, 'a missing updated_at trigger still shows as a row')
+  assert.match(block, /tgfoid::regprocedure::text as function_name/, 'other triggers are listed with their function')
+  assert.match(block, /when e\.trg is null then 'listed: other trigger, read it against the driver columns before Step 49'/)
+  assert.match(block, /'stop: updated_at trigger missing'/)
+  assert.match(block, /'stop: updated_at trigger not enabled'/)
+  assert.doesNotMatch(block, /'stop: plan revision'/, 'an extra trigger is no longer a stop by itself')
+})
+
 test('report and check-backup-table count skipped rows; report lists them with the reason', () => {
   assert.match(ops('report.sql'), /count\(b\.reverse_skipped_at\) as skipped/)
   assert.match(ops('report.sql'), /reverse_skip_reason/)
@@ -371,6 +383,37 @@ test('test-local.sql: updated_at drift, concurrent edit, strict refusal and part
   assert.ok(sql.includes("raise notice 'test-local: strict reverse refused ok"))
   assert.ok(sql.includes("raise notice 'test-local: partial reverse ok"))
   assert.match(sql, /^savepoint concurrent_edit;$/m)
+  assert.match(sql, /create trigger test_local_noop before update on public\.shows/)
+  assert.ok(sql.includes("raise notice 'test-local: other trigger listed"))
+  // the other-trigger list must CONTAIN the planted no-op (extra triggers from
+  // other branches on the shared stack are allowed), never an updated_at one
+  assert.ok(sql.includes(String.raw`v_trg_listed !~ '(^|,)shows\.test_local_noop=test_local_noop\(\)(,|$)'`))
+  assert.ok(sql.includes(String.raw`v_trg_listed ~ '(^|,)(app_config\.set_updated_at|shows\.set_updated_at|profiles\.set_updated_at|shorts\.shorts_updated_at)='`))
+  assert.doesNotMatch(sql, /v_trg_listed is distinct from/, 'no exact-equality on the other-trigger list')
   assert.match(sql, /^rollback to savepoint concurrent_edit;$/m)
   assert.ok(sql.indexOf("raise notice 'test-local: PASS'") > sql.indexOf("raise notice 'test-local: partial reverse ok"), 'PASS comes last')
+})
+
+test('no script under scripts/cutover/sql disables ALL or USER triggers (only the four named updated_at triggers are paused)', () => {
+  for (const name of readdirSync(SQL_DIR)) {
+    const text = read(SQL_DIR, name)
+    assert.doesNotMatch(text, /disable\s+trigger\s+(all|user)\b/i, `${name} disables all/user triggers`)
+    assert.doesNotMatch(text, /session_replication_role/i, `${name} touches session_replication_role`)
+  }
+  for (const [name, tag] of [['rewrite-media-urls.sql', 'rewrite'], ['reverse-media-urls.sql', 'reverse'], ['reverse-media-urls-partial.sql', 'reverse']] as const) {
+    const block = doBlock(ops(name), tag) ?? ''
+    // the pause list is the only VALUES list of trigger names in the block, and it holds exactly the four
+    const pairs = [...block.matchAll(/\('(\w+)', '(\w+_updated_at|set_updated_at)'\)/g)].map((m) => `${m[1]}.${m[2]}`)
+    assert.deepEqual([...new Set(pairs)].sort(), UPDATED_AT_TRIGGERS.map(([t, g]) => `${t}.${g}`).sort(), `${name}: pause list`)
+    assert.equal([...block.matchAll(/disable trigger/g)].length, 1, `${name}: one disable statement (inside the loop over the four)`)
+  }
+})
+
+test('test-local.sql: a counting trigger proves other triggers still fire during the rewrite and the reverse', () => {
+  const sql = ops('test-local.sql')
+  assert.match(sql, /create temp table noop_fires/)
+  assert.match(sql, /insert into noop_fires default values;/)
+  assert.ok(sql.includes("raise notice 'test-local: other trigger fired during the rewrite"))
+  assert.ok(sql.includes("raise notice 'test-local: other trigger fired during the reverse"))
+  assert.ok(sql.includes('the pause was not rolled back'))
 })
