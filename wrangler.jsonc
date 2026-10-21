@@ -42,6 +42,15 @@
     "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }],
+  // Workers Cache per entrypoint only (phase 02.1, D-03e, D-66): the default
+  // fetch entrypoint (gateway) has it off; the throwaway SpikeProbe entrypoint
+  // (custom-worker.ts) has it on. No top-level cache block. Worker-type
+  // exports coexist with "migrations" (only durable-object exports conflict).
+  // Plan 02.1-06 replaces SpikeProbe with the real cached entrypoint.
+  "exports": {
+    "default": { "type": "worker", "cache": { "enabled": false } },
+    "SpikeProbe": { "type": "worker", "cache": { "enabled": true } }
+  },
   "vars": {
     "CLOUDFLARE_ACCOUNT_ID": "e329b099b6e4272fc0915a99832e47fe",
     "CLOUDFLARE_R2_BUCKET": "clickit-media",
@@ -53,6 +62,9 @@
     // run: it only reports what it would delete. Real deletes only for exactly "on", and
     // only on Koss's word after he has read a dry-run report (02-RUNBOOK.md). The deploy
     // guard refuses "on" unless the deploy passes --allow-upload-sweep-delete.
-    "R2_UPLOAD_SWEEP_DELETE": "off"
+    "R2_UPLOAD_SWEEP_DELETE": "off",
+    // Phase 02.1 spike probes (/spike-probe/* and the SpikeProbe entrypoint)
+    // answer only when this is exactly "on". Plan 02.1-06 removes it.
+    "CLICKIT_SPIKE": "on"
   }
 }

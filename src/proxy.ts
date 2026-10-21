@@ -118,6 +118,15 @@ function stripLocale(pathname: string): { locale: string; pathWithoutLocale: str
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Phase 02.1 spike probes (throwaway, removed in plan 02.1-06): the same
+  // session refresh and config read a real fill's proxy pays, then no i18n
+  // routing and no gates.
+  if (pathname === '/spike-probe' || pathname.startsWith('/spike-probe/')) {
+    const { response } = await updateSession(request)
+    await getAppConfig()
+    return response
+  }
+
   // /api/* is locale-agnostic and bypasses i18n entirely. We still run the
   // Supabase session refresh so API routes have valid auth cookies.
   if (pathname.startsWith('/api/')) {

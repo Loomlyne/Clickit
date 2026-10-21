@@ -281,6 +281,15 @@ function main(argv) {
   for (const name of ['PATH', 'TMPDIR', 'LANG', 'TERM']) {
     if (process.env[name]) minimal[name] = process.env[name]
   }
+  // Phase 02.1 spike (plan 01, removed in plan 06): a local preview build may
+  // turn OpenNext cache interception off for the RSC diff comparison. Only
+  // the exact value "off" passes, only for the preview target. The compiled
+  // open-next.config.mjs is evaluated again inside the Worker, so the preview
+  // must also run with `--var CLICKIT_SPIKE_INTERCEPTION:off`.
+  if (target === 'preview' && process.env.CLICKIT_SPIKE_INTERCEPTION === 'off') {
+    minimal.CLICKIT_SPIKE_INTERCEPTION = 'off'
+    console.log('spike: cache interception off for this preview build')
+  }
   const res = spawnSync('npx', ['opennextjs-cloudflare', 'build'], {
     env: { ...minimal, ...buildEnv },
     stdio: 'inherit',
