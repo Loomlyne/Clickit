@@ -220,12 +220,12 @@ Exactly what changes:
 Expected: the progress bar completes, the new poster shows in the admin within 10 seconds, and it loads from `clickit-media.<SUB>.workers.dev`. The controller then reads back, read-only by id: the show row (only `poster_url` and `updated_at` differ from the values recorded at Step 31) and `admin_audit_log` rows created after the trigger time (exactly one). The show stays a draft, invisible to viewers.
 Then wait.
 
-**Step 33 [KOSS] - Workers plan decision (only if the CPU report fails)**
+**Step 33 [KOSS] - Workers plan decision (only if the CPU report fails)** — **DECIDED 2026-10-21: "Stay Free, do the rebuild".** The signed-out pass of 02-21 failed on every route (02-CPU-REPORT.md); the caching rebuild is its own PR after #29. Steps 34 onward wait until it lands.
 Only when `02-CPU-REPORT.md` shows a core route over the Free limits (p95 CPU over 10 ms, or 50 subrequests, or Error 1102). The controller brings the table and the price (Workers Paid, $5 per month, per Cloudflare's pricing page on the day).
 Expected: Koss answers "stay on Free" or "approve Workers Paid". Nothing is enabled before his answer.
 Then wait.
 
-**Step 34 [KOSS] - approve the measurement sign-ins (runs during plan 02-21, before Steps 31-32)**
+**Step 34 [KOSS] - approve the measurement sign-ins (runs during plan 02-21, before Steps 31-32)** — **waits for the caching rebuild to land (2026-10-21).**
 Trigger word: "approve measurement sign-ins". Plan 02-21 signs in once as an admin and once as a viewer through `scripts/cf/make-session-cookie.mjs` in Koss's terminal. Each sign-in writes to live Supabase Auth: a row in auth.sessions and auth.users.last_sign_in_at (and a refresh token). Nothing else is written; the measurement itself is GET-only.
 Expected: Koss writes the trigger word; the two cookie files are created by him (plan 02-21 Task 2).
 Then wait.
@@ -236,6 +236,7 @@ Then wait.
 
 Do not run any step in Part B during Phase 2. Each becomes a numbered step in the Phase 3 runbook with its own commands and expected output. Order matters.
 
+- **P3-pre-cpu (Phase 3, not now, cutover gate, Koss 2026-10-21)** After the caching rebuild lands and is deployed to workers.dev, re-run the 02-21 measurement: every public route must be under 10 ms CPU (Workers Free, p95 of warm requests, no `exceededCpu`). The cutover does not start until this passes.
 - **P3-pre-max-rows (Phase 3, not now, pre-cutover check, read-only)** Confirm the live Supabase PostgREST `max_rows` is at least 1000: supabase.com dashboard, project `lajguozmtissnnfccmej`, Settings, API, Max rows. Koss reads it, or a session reads it through a read-only path. No change is needed; Phase 6's `readAllPages` relies on pages of up to 1000 rows. If it shows less than 1000, stop and tell the controller (added 2026-10-21 at the controller's request). **Done 2026-10-21: Koss read Max rows = 1000 (passes).**
 - **P3-1 (Phase 3, not now)** Resolve the stray Cloudflare NS pair `ignat`/`nataly` (SAFE-05, Phase 1 item): find the owning account or rule it out. Must close before P3-3.
 - **P3-2 (Phase 3, not now)** Add the zone `clickitstory.ae` to the ClickitStory account (Free plan) and re-create every current record DNS-only first (Vercel records and Resend records unchanged), compared line by line with the live zone at tasjeel.
