@@ -161,6 +161,29 @@ export function referencedKeySet(urls: readonly string[], mediaOrigin: string | 
 }
 
 /**
+ * Referenced storage paths per bucket (`show-artwork` -> `shows/<id>/hero-1.webp`), in every
+ * url form referencedKeysOf knows: a Supabase public url, our media origin,
+ * media.clickitstory.ae, a workers.dev media host. The cleanup cron's first pass uses it:
+ * after the media-url rewrite rows hold media-host urls, which a Supabase-only parser would
+ * miss, so their objects would look like orphans (PR #31 review 5).
+ */
+export function referencedPathsByBucket(
+  urls: ReadonlyArray<string | null | undefined>,
+  mediaOrigin: string | null
+): Map<string, Set<string>> {
+  const out = new Map<string, Set<string>>()
+  const present = urls.filter((url): url is string => typeof url === 'string' && url !== '')
+  for (const key of referencedKeySet(present, mediaOrigin)) {
+    const slash = key.indexOf('/')
+    const bucket = key.slice(0, slash)
+    const paths = out.get(bucket) ?? new Set<string>()
+    paths.add(key.slice(slash + 1))
+    out.set(bucket, paths)
+  }
+  return out
+}
+
+/**
  * Which of `keys` (originals or variants) are live right now. A key is live when its
  * original is referenced anywhere. A failed read returns every key as live, with the error.
  */

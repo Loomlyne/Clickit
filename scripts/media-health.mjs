@@ -16,6 +16,8 @@
  * --site          site origin to crawl (default https://www.clickitstory.ae)
  * --page          page path to crawl; repeatable (replaces the default pages)
  * --timeout       per-request timeout in seconds (default 30; raise for --verify-bytes)
+ * --expect-source r2|supabase  fail any media URL whose x-media-source header differs
+ *                 (default: not checked)
  * --json          print the result as JSON
  */
 
@@ -84,11 +86,25 @@ export function supabaseOriginalUrl(raw) {
   return `${SUPABASE_ORIGIN}/storage/v1/object/public${url.pathname}`
 }
 
-function parseArgs(argv) {
+/**
+ * Verdict on the x-media-source header of one result. Without an expectation it
+ * never fails (default behaviour unchanged).
+ * @param {{ source?: string|null }} result
+ * @param {'r2'|'supabase'|null|undefined} expected
+ */
+export function sourceVerdict(result, expected) {
+  if (!expected) return { ok: true, reason: null }
+  const actual = result.source ?? null
+  if (actual === expected) return { ok: true, reason: null }
+  return { ok: false, reason: `x-media-source ${actual ?? 'missing'}, expected ${expected}` }
+}
+
+export function parseArgs(argv) {
   const options = {
     site: DEFAULT_SITE,
     pages: [],
     mediaOrigin: null,
+    expectSource: null,
     verifyBytes: false,
     json: false,
     timeoutMs: DEFAULT_TIMEOUT_MS,
@@ -98,7 +114,11 @@ function parseArgs(argv) {
     if (arg === '--site') options.site = argv[++index]
     else if (arg === '--page') options.pages.push(argv[++index])
     else if (arg === '--media-origin') options.mediaOrigin = argv[++index]
-    else if (arg === '--verify-bytes') options.verifyBytes = true
+    else if (arg === '--expect-source') {
+      const value = argv[++index]
+      if (value !== 'r2' && value !== 'supabase') throw new Error('--expect-source must be r2|supabase')
+      options.expectSource = value
+    } else if (arg === '--verify-bytes') options.verifyBytes = true
     else if (arg === '--json') options.json = true
     else if (arg === '--timeout') options.timeoutMs = Number(argv[++index]) * 1000
     else throw new Error(`Unknown argument: ${arg}`)
@@ -137,7 +157,7 @@ async function checkUrl(raw, options) {
       result.contentType = response.headers.get('content-type')
       result.source = response.headers.get('x-media-source')
       result.ok = response.status === 200
-      return result
+      return applySourceVerdict(result, options)
     }
 
     const [served, original] = await Promise.all([
@@ -157,6 +177,15 @@ async function checkUrl(raw, options) {
     result.ok = served.status === 200 && result.bytesMatch
   } catch (error) {
     result.error = error instanceof Error ? error.message : String(error)
+  }
+  return applySourceVerdict(result, options)
+}
+
+function applySourceVerdict(result, options) {
+  const verdict = sourceVerdict(result, options.expectSource)
+  if (!verdict.ok) {
+    result.ok = false
+    result.reason = verdict.reason
   }
   return result
 }
@@ -233,7 +262,7 @@ async function main() {
             ? ' bytes=match'
             : ' bytes=MISMATCH'
       console.log(
-        `${result.ok ? 'ok  ' : 'FAIL'} ${result.status} ${result.source ?? '-'}${bytes} ${result.checked}${result.error ? ` (${result.error})` : ''}`
+        `${result.ok ? 'ok  ' : 'FAIL'} ${result.status} ${result.source ?? '-'}${bytes} ${result.checked}${result.error ? ` (${result.error})` : ''}${result.reason ? ` (${result.reason})` : ''}`
       )
     }
     console.log(

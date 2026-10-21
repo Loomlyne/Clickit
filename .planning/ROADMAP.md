@@ -131,7 +131,22 @@ Plans:
   4. A written rollback path to Vercel exists and stays usable until Koss closes the proof window.
   5. After Koss closes the proof window, the Vercel project and its domain are deleted, last, and the live site keeps working.
 **Owner-gated**: [OWNER] add the zone and re-create the records DNS-only; [OWNER] change the NS at tasjeel.ae (after SAFE-05); [OWNER] add the domain in Resend (on his Pro account) and set the DNS records; [OWNER] attach media.clickitstory.ae; [OWNER] run the expand migrations on live after a dry-run; [OWNER] switch off the Vercel crons and env in the Vercel dashboard; [OWNER] enable Supabase CAPTCHA; [OWNER] switch on the Worker crons; [OWNER] attach the Worker custom domain to www and the apex; [OWNER] approve the live URL rewrite; [OWNER] rotate the Supabase service-role key; [OWNER] close the proof window; [OWNER] delete the Vercel project and domain (last); [OWNER] Ship.
-**Plans**: TBD
+**Plans**: 13 plans (13 serial waves; code W1-W6 in the work worktree, ops W7-W13 by the controller and Koss after Ship)
+
+Plans:
+- [x] 03-01-PLAN.md — W1: entry gate (Phase 2 on main, r2:media + verify-media-host on main; STOP halts), publish refresh on every run (three Phase 2 crons kept, amended D-12/G8), env.production in wrangler.jsonc + drift test
+- [x] 03-02-PLAN.md — W2: production build target, checkProductionDeploy, D-18 target switch, media r2 env guard, cf:deploy:production
+- [x] 03-03-PLAN.md — W3: dns-check (registry + jen/brett + SOA in every phase, explicit --with-resend flags) and rollback.mjs (Keychain token, proxied toggle only)
+- [x] 03-04-PLAN.md — W4: x-clickit-runtime header, proof-check, keys-check (legacy 401 / captcha probe), media-health --expect-source, parse-auth-results
+- [x] 03-05-PLAN.md — W5: backup-table migration, rewrite/scan/report/reverse SQL, with-heavy-lock.sh, local rolled-back test, lint test
+- [x] 03-06-PLAN.md — W6: 03-RUNBOOK.md Steps 1-56, 03-GATES.md (branch B wording), gate:local, hand-over, PR
+- [ ] 03-07-PLAN.md — W7 [ops]: DNS-01 proof, Resend + MAIL-02, [BLOCKING] backup-table migration via workflow (Steps 0a P3-pre-cpu, 0b P3-pre-migration, 1-12)
+- [ ] 03-08-PLAN.md — W8 [ops]: r2:media re-sync, media Worker R2-first, verify on media.clickitstory.ae (Steps 13-17)
+- [ ] 03-09-PLAN.md — W9 [ops]: new Supabase keys on the Worker, production env file, Turnstile/CORS, DNS token, zone settings (Steps 18-24)
+- [ ] 03-10-PLAN.md — W10 [ops]: production deploy (route inert), Vercel crons off, pre-flip proofs, fail-open, G-DNS, the flip, UAT, cron (Steps 25-35)
+- [ ] 03-11-PLAN.md — W11 [ops]: proof window daily checks, rollback on D-04 triggers, Koss closes the window (Steps 36-39)
+- [ ] 03-12-PLAN.md — W12 [ops]: legacy keys off, CAPTCHA on, G-REWRITE media-URL rewrite with read-back (Steps 40-52)
+- [ ] 03-13-PLAN.md — W13 [ops]: retarget www in place, Vercel deletion or branch B, signed rewording applied, final evidence (Steps 53-56)
 
 ### Phase 4: Design System Truth
 **Goal**: One signed design truth (LBC, #ffcc00, #090909, 8px field/base radius, pill controls) exists in tokens, docs and a Claude Design canvas before any new viewer, admin or email screen is coded.
@@ -258,7 +273,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | 1. Safe Ground | 0/TBD | Not started | - |
 | 1.1. Admin Actions Hardening (INSERTED) | 13/13 | UAT passed, PR open | - |
 | 2. Worker and R2 Media on workers.dev | 18/22 | In Progress|  |
-| 3. Production Cutover | 0/TBD | Not started | - |
+| 3. Production Cutover | 6/13 | In Progress|  |
 | 4. Design System Truth | 14/14 | UAT pending (PR) |  |
 | 5. Accounts and Email | 0/TBD | Not started | - |
 | 6. YouTube Import and Player | 0/25 | Planned | - |

@@ -102,3 +102,47 @@ test('check-gates dev-route probe fails when the route answers anything but 404 
     globalThis.fetch = saved
   }
 })
+
+async function localeRootLines(table: Record<string, { status: number; location?: string }>) {
+  const saved = globalThis.fetch
+  globalThis.fetch = (async (url: string) => {
+    const hit = table[new URL(url).pathname]
+    if (!hit) return new Response(null, { status: 404 })
+    return new Response(null, { status: hit.status, headers: hit.location ? { location: hit.location } : {} })
+  }) as unknown as typeof fetch
+  try {
+    const lines: string[] = []
+    await gates.run({ base: 'https://clickit.x.workers.dev' }, (l: string) => lines.push(l))
+    return lines
+  } finally {
+    globalThis.fetch = saved
+  }
+}
+
+test('check-gates locale root: 308 to /<loc>/portfolio plus 200 at portfolio passes', async () => {
+  const lines = await localeRootLines({
+    '/en': { status: 308, location: '/en/portfolio' },
+    '/ar': { status: 308, location: 'https://clickit.x.workers.dev/ar/portfolio' },
+    '/en/portfolio': { status: 200 },
+    '/ar/portfolio': { status: 200 },
+  })
+  for (const l of ['en', 'ar']) {
+    assert.ok(lines.includes(`PASS GET /${l} redirects to /${l}/portfolio (status 308, to /${l}/portfolio)`), lines.join('\n'))
+    assert.ok(lines.includes(`PASS GET /${l}/portfolio answers 200 (status 200)`), lines.join('\n'))
+  }
+})
+
+test('check-gates locale root: 200 at /<loc> fails (the proxy must redirect)', async () => {
+  const lines = await localeRootLines({ '/en': { status: 200 }, '/en/portfolio': { status: 200 } })
+  assert.ok(lines.some((l) => l.startsWith('FAIL GET /en redirects to /en/portfolio')))
+})
+
+test('check-gates locale root: 308 to somewhere else fails', async () => {
+  const lines = await localeRootLines({ '/en': { status: 308, location: '/en/browse' }, '/en/portfolio': { status: 200 } })
+  assert.ok(lines.some((l) => l.startsWith('FAIL GET /en redirects to /en/portfolio')))
+})
+
+test('check-gates locale root: portfolio not 200 fails', async () => {
+  const lines = await localeRootLines({ '/en': { status: 308, location: '/en/portfolio' }, '/en/portfolio': { status: 500 } })
+  assert.ok(lines.some((l) => l.startsWith('FAIL GET /en/portfolio answers 200')))
+})

@@ -1,5 +1,7 @@
 # Phase 3 cutover plan with rollback (DRAFT v2, input for `/gsd-discuss-phase 3`)
 
+> **Superseded 2026-10-21** by the signed 03-CONTEXT.md (D-01..D-19 and amendments A-1..A-5) and plans 03-01..03-13. Kept as the discuss input; do not run anything from it.
+
 Status: draft by work session C, 2026-10-20. v2 applies the independent review (Sonnet `reviewer`, verdict "sound with fixes", 13 findings F1-F13, listed in section 6). Not signed. Nothing here runs before Phase 2 UAT passes and Koss signs Phase 3 discuss and plan.
 Sources: ROADMAP Phase 3, `02-RUNBOOK.md` Part B (P3-1..P3-13), job D's `workers/media/DNS-PLAN.md`, code on `origin/main` and on this branch.
 
