@@ -20,6 +20,12 @@ const read = (dir: string, name: string) => readFileSync(join(dir, name), 'utf8'
 const ops = (name: string) => read(SQL_DIR, name)
 const migration = () => read(MIG_DIR, backupMigrations[0])
 const stripComments = (sql: string) => sql.replace(/--[^\n]*/g, '')
+const stripStrings = (sql: string) => sql.replace(/'(?:[^']|'')*'/g, "''")
+/** The DO block of a file, from `do $tag$` to the closing `end $tag$;`. */
+const doBlock = (sql: string, tag: string) => {
+  const m = sql.match(new RegExp(`^do \\$${tag}\\$[\\s\\S]*?^end \\$${tag}\\$;`, 'm'))
+  return m ? m[0] : null
+}
 
 const SCAN_PATTERN = String.raw`supabase\.co/storage/v1/|clickit-media(-r2)?\.[a-z0-9-]+\.workers\.dev`
 const SUPABASE_RX = String.raw`https://lajguozmtissnnfccmej\.supabase\.co/storage/v1/object/public/(show-artwork|site-assets|avatars)/`
@@ -55,6 +61,15 @@ const REQUIRED_OPS = [
   'scan-old-hosts.sql',
   'report.sql',
   'reverse-media-urls.sql',
+  'reverse-media-urls-partial.sql',
+]
+
+/** The four updated_at triggers on the driver tables (show_cast has none). */
+const UPDATED_AT_TRIGGERS: Array<[string, string]> = [
+  ['app_config', 'set_updated_at'],
+  ['shows', 'set_updated_at'],
+  ['profiles', 'set_updated_at'],
+  ['shorts', 'shorts_updated_at'],
 ]
 
 /** Every ('table','column',...) tuple in a VALUES driver list. */
@@ -206,7 +221,7 @@ test('preflight: role and version reads, all driver columns, not-rewritable coun
   assert.match(sql, /-- \[not-rewritable:begin\][\s\S]+-- \[not-rewritable:end\]/)
   assert.match(sql, /-- \[outside-driver:begin\][\s\S]+-- \[outside-driver:end\]/)
   assert.match(sql, /'admin_audit_log'/)
-  assert.doesNotMatch(stripComments(sql), /\binsert\b|\bupdate\b|^do\b/im, 'read-only')
+  assert.doesNotMatch(stripStrings(stripComments(sql)), /\binsert\b|\bupdate\b|^do\b/im, 'read-only')
 })
 
 test('preflight and rewrite use the same host regexes and replacement', () => {
@@ -276,4 +291,86 @@ test('test-local.sql: one transaction that ends in rollback, every ops file incl
   assert.ok(sql.includes('\\ir migration_media_url_rewrite_backup.sql'))
   assert.ok(sql.includes("raise notice 'test-local: PASS'"))
   assert.ok(sql.includes("'local stack has no shows rows: run supabase db reset --local first'"))
+})
+
+// PR #31 review findings 1, 2, 6, 7 (2026-10-21).
+
+test('migration: backup rows can be marked skipped by a partial reverse', () => {
+  const sql = migration()
+  assert.match(sql, /^\s+reverse_skipped_at timestamptz,$/m)
+  assert.match(sql, /^\s+reverse_skip_reason text,?$/m)
+})
+
+test('reverse: strict file and partial file share one DO block and differ only in the mode they set', () => {
+  const strict = ops('reverse-media-urls.sql')
+  const partial = ops('reverse-media-urls-partial.sql')
+  assert.match(strict, /^select set_config\('clickit\.reverse_mode', 'strict', false\)/m)
+  assert.match(partial, /^select set_config\('clickit\.reverse_mode', 'partial', false\)/m)
+  const a = doBlock(strict, 'reverse')
+  const b = doBlock(partial, 'reverse')
+  assert.ok(a, 'reverse-media-urls.sql has a do $reverse$ block')
+  assert.equal(b, a, 'the partial file must carry the same DO block as reverse-media-urls.sql')
+  for (const sql of [strict, partial]) {
+    assert.equal([...stripComments(sql).matchAll(/^do \$/gm)].length, 1, 'one atomic DO block')
+    assert.doesNotMatch(stripComments(sql), /\binsert\b/i)
+  }
+})
+
+test('reverse: strict refuses and lists every changed value; partial restores the rest and marks the skipped rows', () => {
+  const block = doBlock(ops('reverse-media-urls.sql'), 'reverse') ?? ''
+  assert.match(block, /coalesce\(nullif\(current_setting\('clickit\.reverse_mode', true\), ''\), 'strict'\)/)
+  assert.match(block, /raise exception 'reverse: clickit\.reverse_mode must be strict or partial/)
+  assert.match(block, /raise exception 'reverse \(strict\): % value\(s\) changed since the rewrite, nothing restored/)
+  assert.match(block, /'row missing'/)
+  assert.match(block, /'value changed since the rewrite'/)
+  assert.match(block, /set reverse_skipped_at = now\(\), reverse_skip_reason = v_reason/)
+  assert.match(block, /set restored_at = now\(\), reverse_skipped_at = null, reverse_skip_reason = null/)
+  assert.match(block, /raise notice 'reverse \(%\): run_id % restored % value\(s\), skipped %/)
+  assert.doesNotMatch(block, /v_one <> 1 then\s+raise exception/, 'no all-or-nothing raise on the first changed row')
+})
+
+test('rewrite and reverse pause exactly the four updated_at triggers inside their own transaction', () => {
+  for (const [name, tag] of [['rewrite-media-urls.sql', 'rewrite'], ['reverse-media-urls.sql', 'reverse']] as const) {
+    const block = doBlock(ops(name), tag) ?? ''
+    for (const [t, g] of UPDATED_AT_TRIGGERS) {
+      assert.ok(block.includes(`('${t}', '${g}')`), `${name}: trigger ${t}.${g} not in the pause list`)
+    }
+    assert.match(block, /tgenabled = 'O'/, `${name}: checks each trigger is enabled before pausing it`)
+    assert.match(block, /'alter table public\.%I disable trigger %I'/, `${name}: disable`)
+    assert.match(block, /'alter table public\.%I enable trigger %I'/, `${name}: re-enable`)
+    assert.ok(block.indexOf('disable trigger') < block.lastIndexOf('enable trigger'), `${name}: re-enabled after the writes`)
+    assert.match(block, /set_config\('lock_timeout', '10s', true\)/, `${name}: bounded lock wait`)
+    assert.doesNotMatch(block, /session_replication_role/, `${name}: no session_replication_role`)
+  }
+})
+
+test('preflight: role privileges on private and the driver tables, trigger list, each with a verdict', () => {
+  const sql = ops('preflight.sql')
+  assert.match(sql, /-- \[role:begin\][\s\S]+-- \[role:end\]/)
+  assert.match(sql, /-- \[triggers:begin\][\s\S]+-- \[triggers:end\]/)
+  assert.match(sql, /has_schema_privilege\(current_user, n\.oid, 'USAGE'\)/)
+  for (const priv of ['SELECT', 'INSERT', 'UPDATE']) {
+    assert.ok(sql.includes(`has_table_privilege(current_user, to_regclass('private.media_url_rewrite_backup'), '${priv}')`), `backup ${priv}`)
+  }
+  assert.match(sql, /pg_has_role\(current_user, c\.relowner, 'USAGE'\)/)
+  assert.match(sql, /'stop: role cannot run the rewrite'/)
+  for (const [t, g] of UPDATED_AT_TRIGGERS) assert.ok(sql.includes(`('${t}', '${g}')`), `preflight trigger ${t}.${g}`)
+})
+
+test('report and check-backup-table count skipped rows; report lists them with the reason', () => {
+  assert.match(ops('report.sql'), /count\(b\.reverse_skipped_at\) as skipped/)
+  assert.match(ops('report.sql'), /reverse_skip_reason/)
+  assert.match(ops('check-backup-table.sql'), /count\(\*\) filter \(where reverse_skipped_at is not null\) as skipped_rows/)
+})
+
+test('test-local.sql: updated_at drift, concurrent edit, strict refusal and partial reverse are asserted', () => {
+  const sql = ops('test-local.sql')
+  assert.match(sql, /updated_at = '2001-02-03 04:05:06\+00'/)
+  assert.ok(sql.includes("raise notice 'test-local: updated_at unchanged after rewrite"))
+  assert.ok(sql.includes("raise notice 'test-local: concurrent edit refused ok"))
+  assert.ok(sql.includes("raise notice 'test-local: strict reverse refused ok"))
+  assert.ok(sql.includes("raise notice 'test-local: partial reverse ok"))
+  assert.match(sql, /^savepoint concurrent_edit;$/m)
+  assert.match(sql, /^rollback to savepoint concurrent_edit;$/m)
+  assert.ok(sql.indexOf("raise notice 'test-local: PASS'") > sql.indexOf("raise notice 'test-local: partial reverse ok"), 'PASS comes last')
 })

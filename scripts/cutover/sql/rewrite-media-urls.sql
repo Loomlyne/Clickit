@@ -7,11 +7,24 @@
 -- check-backup-table.sql shows the backup table. INSERT and UPDATE only.
 --
 -- One DO block = one atomic statement: any error rolls back every column.
--- For each driver column it
+-- First it pauses the four updated_at triggers (app_config, shows, profiles:
+-- set_updated_at; shorts: shorts_updated_at) with alter table ... disable
+-- trigger, the pattern of migration 20261021120000, so updated_at keeps its
+-- value: only the media columns change. The pause lives inside this
+-- transaction only (enabled again before the block ends; any error rolls the
+-- pause back with everything else), needs the role to own the tables
+-- (preflight.sql [role]) and takes a SHARE ROW EXCLUSIVE lock on the four
+-- tables until commit: reads go on, admin writes wait for the few seconds the
+-- block runs (lock_timeout 10s: a lock held longer by someone else makes the
+-- rewrite raise and write nothing). Each trigger must exist and be enabled;
+-- otherwise the block raises (preflight.sql [triggers] shows it first).
+-- Then for each driver column it
 --   1. copies every value whose rewritten form differs into
 --      private.media_url_rewrite_backup (whole old and new value as jsonb),
 --   2. updates only rows still at the backed-up old value (no lost admin edit),
---   3. raises if the backed-up count differs from the updated count.
+--   3. raises if the backed-up count differs from the updated count (a row
+--      changed between the read in 1 and the update in 2, e.g. a concurrent
+--      edit on show_cast, which is not locked: nothing is written).
 -- jsonb columns: a global replace over the jsonb text, only where a JSON
 -- string starts with the old prefix; the leaf count must be unchanged and the
 -- app_config_footer_content_shape check constraint re-validates the document.
@@ -31,6 +44,7 @@ declare
     'https://clickit-media-r2\.clickitstory\.workers\.dev/(show-artwork|site-assets|avatars)/'];
   v_repl text := 'https://media.clickitstory.ae/\1/';
   c record;
+  g record;
   v_new text;
   v_cnt bigint;
   v_upd bigint;
@@ -43,6 +57,24 @@ begin
   end if;
 
   perform set_config('clickit.rewrite_run_id', v_run::text, true);
+  perform set_config('lock_timeout', '10s', true);
+
+  -- Pause the updated_at triggers for this transaction only.
+  for g in select * from (values
+      ('app_config', 'set_updated_at'),
+      ('shows', 'set_updated_at'),
+      ('profiles', 'set_updated_at'),
+      ('shorts', 'shorts_updated_at')) as v(tbl, trg)
+  loop
+    if not exists (
+      select 1 from pg_trigger t
+      where t.tgrelid = to_regclass(format('public.%I', g.tbl)) and t.tgname = g.trg
+        and not t.tgisinternal and t.tgenabled = 'O'
+    ) then
+      raise exception 'trigger public.%.% missing or not enabled: stop, plan revision', g.tbl, g.trg;
+    end if;
+    execute format('alter table public.%I disable trigger %I', g.tbl, g.trg);
+  end loop;
 
   for c in select * from (values
       ('app_config', 'hero_video_url', 'text'),
@@ -117,6 +149,15 @@ begin
     raise notice '%.%: % row(s)', c.tbl, c.col, v_cnt;
     v_total := v_total + v_cnt;
     v_summary := v_summary || format('%s.%s=%s ', c.tbl, c.col, v_cnt);
+  end loop;
+
+  for g in select * from (values
+      ('app_config', 'set_updated_at'),
+      ('shows', 'set_updated_at'),
+      ('profiles', 'set_updated_at'),
+      ('shorts', 'shorts_updated_at')) as v(tbl, trg)
+  loop
+    execute format('alter table public.%I enable trigger %I', g.tbl, g.trg);
   end loop;
 
   raise notice 'rewrite summary: run_id % total % value(s): %', v_run, v_total, rtrim(v_summary);

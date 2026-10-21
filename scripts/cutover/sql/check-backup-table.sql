@@ -2,6 +2,7 @@
 -- the backup-table migration on live (runbook Step 12) and again before the
 -- rewrite. Expect: table_exists true, rls_on true, anon and authenticated
 -- cannot select, api_role_grants 0. The row count is 0 before the first run.
+-- skipped_rows counts values a partial reverse left as an admin changed them.
 
 select
   to_regclass('private.media_url_rewrite_backup') is not null as table_exists,
@@ -17,5 +18,6 @@ select
 
 select count(*) as backup_rows,
   count(*) filter (where restored_at is null) as open_rows,
+  count(*) filter (where reverse_skipped_at is not null) as skipped_rows,
   count(distinct run_id) as runs
 from private.media_url_rewrite_backup;

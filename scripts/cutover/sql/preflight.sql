@@ -1,8 +1,23 @@
 -- MEDIA-08 preflight (read-only). Run on live by the controller before
--- rewrite-media-urls.sql (runbook Step 47). Four reads:
+-- rewrite-media-urls.sql (runbook Step 47). Six reads:
 --
 --   1. the login role: can it write under RLS (rolsuper or rolbypassrls, or
 --      it owns the tables)?
+--   1b. [role] what the rewrite and the reverse need from the current role,
+--      one row with a verdict: USAGE on schema private; SELECT, INSERT and
+--      UPDATE on private.media_url_rewrite_backup (the rewrite inserts and
+--      reads it, the reverse sets restored_at / reverse_skipped_at); SELECT
+--      and UPDATE on every driver table; ownership of every driver table (the
+--      rewrite and the reverse pause the updated_at triggers with
+--      alter table ... disable trigger inside their own transaction, which
+--      needs the owner); RLS bypass (rolsuper, rolbypassrls or owner of the
+--      backup table, which has RLS on and no policy). Any false => verdict
+--      "stop: role cannot run the rewrite".
+--   1c. [triggers] every user trigger on the driver tables. Expected exactly
+--      the four updated_at triggers, enabled ('O'): app_config.set_updated_at,
+--      shows.set_updated_at, profiles.set_updated_at, shorts.shorts_updated_at
+--      (show_cast has none). Any other trigger would fire on the rewrite, a
+--      disabled one would be switched on by it => "stop: plan revision".
 --   2. the server version (local proof ran on PostgreSQL 17.x).
 --   3. per D-09 driver column: values on an old media host (old_host), values
 --      the rewrite would change (rewritable) and old-host values the rewrite
@@ -22,6 +37,49 @@
 -- The [marker] comments let scripts/cutover/sql/test-local.sql run each block.
 
 select current_user, rolsuper, rolbypassrls from pg_roles where rolname = current_user;
+
+-- [role:begin]
+with drv(tbl) as (values ('app_config'), ('shows'), ('show_cast'), ('profiles'), ('shorts')),
+r as (
+  select
+    current_user::text as login_role,
+    (select has_schema_privilege(current_user, n.oid, 'USAGE') from pg_namespace n where n.nspname = 'private') as private_usage,
+    has_table_privilege(current_user, to_regclass('private.media_url_rewrite_backup'), 'SELECT') as backup_select,
+    has_table_privilege(current_user, to_regclass('private.media_url_rewrite_backup'), 'INSERT') as backup_insert,
+    has_table_privilege(current_user, to_regclass('private.media_url_rewrite_backup'), 'UPDATE') as backup_update,
+    (select rolsuper or rolbypassrls from pg_roles where rolname = current_user)
+      or coalesce((select pg_has_role(current_user, c.relowner, 'USAGE') from pg_class c
+                   where c.oid = to_regclass('private.media_url_rewrite_backup')), false) as backup_rls_bypass,
+    (select bool_and(coalesce(has_table_privilege(current_user, to_regclass(format('public.%I', d.tbl)), 'SELECT'), false)
+                 and coalesce(has_table_privilege(current_user, to_regclass(format('public.%I', d.tbl)), 'UPDATE'), false))
+       from drv d) as driver_select_update,
+    (select bool_and(coalesce((select pg_has_role(current_user, c.relowner, 'USAGE') from pg_class c
+                               where c.oid = to_regclass(format('public.%I', d.tbl))), false))
+       from drv d) as driver_owner
+)
+select r.*,
+  case when coalesce(r.private_usage and r.backup_select and r.backup_insert and r.backup_update
+                     and r.backup_rls_bypass and r.driver_select_update and r.driver_owner, false)
+    then 'ok' else 'stop: role cannot run the rewrite' end as verdict
+from r;
+-- [role:end]
+
+-- [triggers:begin]
+select c.relname::text as table_name, g.tgname::text as trigger_name, g.tgenabled::text as enabled,
+  case when (c.relname::text, g.tgname::text) in (values
+      ('app_config', 'set_updated_at'),
+      ('shows', 'set_updated_at'),
+      ('profiles', 'set_updated_at'),
+      ('shorts', 'shorts_updated_at'))
+    and g.tgenabled = 'O'
+    then 'ok (paused inside the rewrite and the reverse)' else 'stop: plan revision' end as verdict
+from pg_trigger g
+join pg_class c on c.oid = g.tgrelid
+join pg_namespace n on n.oid = c.relnamespace
+where n.nspname = 'public' and not g.tgisinternal
+  and c.relname in ('app_config', 'shows', 'show_cast', 'profiles', 'shorts')
+order by 1, 2;
+-- [triggers:end]
 
 select version();
 
