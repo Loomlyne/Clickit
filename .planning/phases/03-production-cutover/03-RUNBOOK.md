@@ -397,3 +397,250 @@ Command: either Koss reads Workers & Pages, clickit, Logs in the dashboard, or t
 Expected: Worker log lines `cron: /api/cron/publish-scheduled status 200` and `cron: /api/cron/youtube-recheck status 200`; no `exceededCpu` on either cron invocation (Workers Free allows 10 ms CPU per cron invocation; Step 0a measured page requests, so this is the first cron CPU proof). Log `publish-scheduled status 200`, `youtube-recheck status 200` and `cron exceededCpu: none`. youtube-recheck answering 503 `key_missing` (Step 0b found no key) is logged as `youtube-recheck key_missing reported to Koss`, not a rollback trigger. An `exceededCpu` goes to Koss with the Workers Paid price question, not decided here. `proof-check worker: ALL PASS`. Then copy this plan's log into `.planning/phases/03-production-cutover/03-FLIP-LOG.md` and commit it alone as a planning note.
 Rollback: none (read-only). A failing publish cron (not 200) is brought to Koss the same morning.
 Then wait.
+
+---
+
+## Part G: Proof window (D-03, D-04, D-16, D-17; Pitfalls 3-5)
+
+Log: `/Users/koss/.clickit-checks/p3-ops/03-PROOF-WINDOW.md` (outside the repo; committed only when the window closes).
+
+**G-ROLLBACK: from Step 32 until Step 39 is recorded, nothing that breaks the Vercel path runs: no legacy-key switch-off, no CAPTCHA, no media-URL rewrite, no Vercel deletion, no www record retarget, no workers.dev deploy of `clickit` (the guard refuses it after Step 26 unless `--override-production-reason` names a reason Koss gave), and no Worker admin media edits until the first Monday 04:00 UTC after the flip has passed (Pitfall 4).**
+
+**Step 36 [CONTROL] - daily check (same order every day, one line per day)**
+Command:
+1. `node scripts/cutover/proof-check.mjs --expect worker --site-path /en/portfolio`
+2. `node scripts/cf/check-gates.mjs --base https://www.clickitstory.ae`
+3. `npm run media:health -- --expect-source r2`
+4. `node scripts/cutover/dns-check.mjs --phase post-flip --with-resend --resend-mx <host from Step 4> --dkim-file /Users/koss/.clickit-checks/p3-dkim.txt`
+5. Worker requests and errors for the past UTC day against the 100,000/day Free limit: Koss reads Workers & Pages, clickit, Metrics (or the controller runs the GraphQL `workersInvocationsAdaptive` query from research Pattern 9 if a token that can read analytics exists; none is created for it).
+6. The cron lines of the night (Step 35 method: dashboard Logs read by Koss, or the HOME-pinned tail window with whoami first): publish-scheduled and youtube-recheck status 200, no `exceededCpu`.
+7. `node scripts/cutover/proof-check.mjs --expect vercel --vercel-ip 216.198.79.1 --site-path /en/portfolio` read for its `rollback:` line only (the Vercel certificate notAfter; the `site` line fails after the flip by design).
+Expected: one line per day, `<date> <UTC time> / <Dubai time>: proof ok, gates ok, media r2 ok, dns ok, requests <n>/100000, errors <e>, cron ok, vercel cert <notAfter> GREEN` (or `... RED: <what>`). After the first Monday 04:00 UTC inside the window, also the line `Monday cleanup passed` (the 04:00 run ended status 200 with no `exceededCpu`). Red on two days in a row triggers Step 37 under D-04; anything else red goes to Koss the same day.
+Rollback: none (read-only).
+Then wait.
+
+**Step 37 [CONTROL] - rollback (pre-approved by Koss for the proof window only, D-04)**
+Trigger: pre-approved only for: www or apex down or answering 5xx for 10 minutes; sign-in broken; playback broken. Anything else waits for Koss's word "roll back".
+Command:
+1. `node scripts/cutover/rollback.mjs --execute` (one PATCH `{ proxied: false }` on the www record, then a read-back). Branch B (D-16, no token): Koss himself sets www back to DNS only in the Cloudflare dashboard.
+2. `node scripts/cutover/dns-check.mjs --phase rollback --with-resend --resend-mx <host from Step 4> --dkim-file /Users/koss/.clickit-checks/p3-dkim.txt`
+3. `node scripts/cutover/proof-check.mjs --expect vercel --site-path /en/portfolio`
+Then tell Koss at once (what triggered it, the time, the outputs). The route stays deployed (resolvers holding Cloudflare addresses for up to 300 s still reach the Worker).
+Expected: rollback read-back proxied false (exit 0); `dns-check rollback: ALL PASS`; `proof-check vercel: ALL PASS`. Log the trigger and these lines. If no trigger occurs during the window, the log says `no rollback needed` at the close.
+Rollback: a re-flip is Step 32 again, only on Koss's word, after Step 38.
+Then wait.
+
+**Step 38 [CONTROL] - after any rollback: re-sync before a re-flip (Pitfall 3)**
+Command or Where: re-run Steps 13-15 (Koss's terminal, `r2:media --refresh`, review, `--execute` twice, all under the lock) so fixed keys changed on Vercel during the rollback are fresh in R2, then Step 17's verify. A re-flip is Step 31 then Step 32 on Koss's word "flip www".
+Expected: the Step 15 and Step 17 Expected lines again (0 failures).
+Rollback: none (copies only).
+Then wait.
+
+**Step 36a [CONTROL] - P3-8b read: the first Monday 04:00 UTC R2 upload sweep dry run (A-4, G10)**
+Command or Where: read-only. Never call the cleanup route by hand (the same request also prunes live `rate_limits` rows). Either Koss reads Workers & Pages, clickit, Logs, filter `r2 upload sweep`, or the controller runs `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 whoami` and then, detached, `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 tail clickit --format pretty > /Users/koss/.clickit-checks/p3-ops/p3-sweep-tail.log` from 03:55 to 04:10 UTC on that Monday, stopped by its own PID.
+Expected: one line `[cron/cleanup-media] r2 upload sweep` with `mode: 'dry-run'`, `examined`, `truncated: false`, `candidates`, `candidateKeys`, `error: null`, and no `exceededCpu` on the 04:00 invocation. The line and the keys go to Koss. Log `P3-8b dry run: candidates <n>, keys <list>`. Stop and tell Koss if `error` is set, `truncated` is true, the invocation shows `exceededCpu`, or a key is not an upload he recognises as abandoned.
+Rollback: none (read-only).
+Then wait.
+
+**Step 39 [KOSS] - close the proof window**
+Trigger: Koss writes "close proof window" (or "extend N days", never past the close-by date).
+Precondition: at least 7 `GREEN` daily lines from Step 36, the `Monday cleanup passed` line, and today on or before the close-by date written at Step 31 (never after 2026-12-15).
+Where: chat or the question form.
+Expected: his words recorded with the time; G-ROLLBACK is lifted; the media freeze is lifted (if not already after the Monday run). Log `close proof window <time>` (or `extend <N> days`). Then copy this plan's log into `.planning/phases/03-production-cutover/03-PROOF-WINDOW.md` and commit it alone as a planning note.
+Rollback: none (a decision).
+Then wait.
+
+---
+
+## Part H: Close (D-02, D-09, D-10, D-11, D-13, D-17, D-19; G-ROLLBACK lifted only by Step 39)
+
+Log: `/Users/koss/.clickit-checks/p3-ops/03-CLOSE-LOG.md`. From Step 41 a DNS rollback to Vercel would serve a site with no database; any rollback after Step 41 first re-activates the legacy keys (Step 42 rollback).
+
+**Step 40 [CONTROL] - baseline before the legacy keys go off**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); 03-DNS-MAIL-LOG records `backup table: OK`.
+Command:
+1. `node scripts/cutover/keys-check.mjs --expect legacy-on --legacy-ip 216.198.79.1`
+2. `node scripts/cutover/keys-check.mjs --captcha-probe off`
+3. Confirm the legacy-key consumer inventory in 03-GATES.md section 3 with Koss: his own `.env.local` and any operator shell that runs the listed scripts move to the `sb_secret_…` value (and the publishable key) before Step 41.
+Expected: `PASS keys legacy-on: legacy 200, publishable 200` and `keys-check legacy-on: ALL PASS`; `keys-check captcha-probe off: ALL PASS` (400 "Invalid login credentials"); Koss's "inventory done". Log the lines.
+Rollback: none (read-only).
+Then wait.
+
+**Step 41 [KOSS] - deactivate the legacy API keys**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); Step 40 recorded.
+Where: supabase.com, project lajguozmtissnnfccmej, Settings, API Keys, tab "Legacy API keys", Deactivate (anon and service_role go together; reversible). The JWT secret is NOT rotated (it would sign every viewer out).
+Expected: the tab shows the legacy keys deactivated; report the time.
+Rollback: Re-activate legacy keys on the same tab (only on Koss's word).
+Then wait.
+
+**Step 42 [CONTROL] - prove the old deployment lost the database**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); Step 41 reported.
+Command:
+1. `node scripts/cutover/keys-check.mjs --expect legacy-off --legacy-ip 216.198.79.1`
+2. `node scripts/cutover/proof-check.mjs --expect worker --site-path /en/portfolio`
+3. `node scripts/cf/check-gates.mjs --base https://www.clickitstory.ae`
+Expected: `PASS keys legacy-off: legacy 401, publishable 200` and `keys-check legacy-off: ALL PASS` (the judge requires exactly 401; if Supabase answers 403 the run FAILs with that status: that is a finding for Koss, recorded with the body, and the judge needs a reviewed one-line change, never a manual pass); `proof-check worker: ALL PASS`; check-gates `ALL PASS`. Log `keys-check legacy-off: PASS` only on ALL PASS.
+Rollback: Koss re-activates the legacy keys (Step 41 tab).
+Then wait.
+
+**Step 43 [KOSS] - UAT after the switch-off (research A4)**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); Step 42 passed.
+Where (Hermes): reload https://www.clickitstory.ae/en while signed in as a viewer: still signed in; sign out, sign in as admin, open /en/admin and the audit page: rows shown.
+Expected: both pass. Log `still signed in: yes` and `audit page: rows shown`.
+Rollback: a failure is a finding for Koss; re-activating the legacy keys is his word.
+Then wait.
+
+**Step 44 [KOSS] - Supabase CAPTCHA on (D-13)**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); Step 43 passed.
+Where: supabase.com, project lajguozmtissnnfccmej, Authentication, Bot and Abuse Protection (called Attack Protection in some dashboard versions): Enable CAPTCHA protection, provider Cloudflare Turnstile, paste the Turnstile widget's secret key into the field, Save. From now on any script or tool that signs in with a password and no captcha token (e.g. the 02-21 measurement sign-ins) is refused.
+Expected: the setting saved; report the time.
+Rollback: switch CAPTCHA off on the same page.
+Then wait.
+
+**Step 45 [CONTROL + KOSS] - CAPTCHA proof**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); Step 44 reported.
+Command (controller): `node scripts/cutover/keys-check.mjs --captcha-probe on`
+Where (Koss, Hermes): sign out on www, then sign in through the widget.
+Expected: `PASS captcha probe on: status 400, body ...captcha...` and `keys-check captcha-probe on: ALL PASS`; Koss signs in normally. Log `captcha-probe on: PASS` and `sign-in with widget: ok`.
+Rollback: Koss switches CAPTCHA off (Step 44 page).
+Then wait.
+
+**Step 46 [KOSS] - route failure mode back to the default (D-17)**
+Precondition: Step 39 recorded (G-ROLLBACK lifted).
+Where: dash.cloudflare.com, zone clickitstory.ae, Workers Routes, `www.clickitstory.ae/*`, Edit, request limit failure mode: Fail closed (the default), Save.
+Expected: the route shows Fail closed. Log `failure mode: default`.
+Rollback: Fail open again (only on Koss's word).
+Then wait.
+
+**Step 47 [CONTROL] - G-REWRITE 1: preflight (read-only)**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); Step 42 logged `keys-check legacy-off: PASS` (D-09: the rewrite runs only after the old keys are off).
+Command: `supabase db query --linked --project-ref lajguozmtissnnfccmej -f scripts/cutover/sql/preflight.sql`
+Expected: the login role can update (`rolbypassrls` or `rolsuper` true, open item A5); `version()` PostgreSQL 17.x; per driver column `old_host`, `rewritable` and `not_rewritable` counts with `verdict` ok on every row (not_rewritable 0: no render/image or object/sign paths, no other bucket, no other clickit-media or clickit-media-r2 subdomain, no URL inside prose); the outside-driver scan returns zero rows. Any `stop: plan revision` row: stop; the rewrite needs a plan revision. Log the counts.
+Rollback: none (read-only).
+Then wait.
+
+**Step 48 [CONTROL] - G-REWRITE 2: local dumps**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); Step 47 verdicts ok.
+Command:
+```bash
+TS=$(date -u +%Y%m%dT%H%M%SZ)
+supabase db dump --linked -f /Users/koss/.clickit-backups/live-$TS-pre-rewrite-schema.sql
+supabase db dump --linked --data-only -f /Users/koss/.clickit-backups/live-$TS-pre-rewrite-data.sql
+test -s /Users/koss/.clickit-backups/live-$TS-pre-rewrite-schema.sql && test -s /Users/koss/.clickit-backups/live-$TS-pre-rewrite-data.sql && echo dumps-ok
+```
+Expected: `dumps-ok`; log both file names (outside every repo).
+Rollback: none (read-only on live).
+Then wait.
+
+**Step 49 [KOSS] - G-REWRITE 3: the word**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); Steps 47 and 48 recorded.
+Where: chat or the question form. Trigger: Koss writes "rewrite media urls".
+Expected: the words recorded with the time. Log `rewrite media urls <time>`.
+Rollback: none (a decision).
+Then wait.
+
+**Step 50 [CONTROL] - G-REWRITE 4: the rewrite (one atomic DO block)**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); Step 49 recorded.
+Command: `supabase db query --linked --project-ref lajguozmtissnnfccmej -f scripts/cutover/sql/rewrite-media-urls.sql`
+Expected: per driver column a notice `<table>.<column>: <n> row(s)` and the summary `rewrite summary: run_id <uuid> total <n> value(s): ...`; no exception (any exception means nothing was written). If the CLI does not print notices (Management API path), read the run id with `supabase db query --linked --project-ref lajguozmtissnnfccmej "select run_id, count(*), min(created_at) from private.media_url_rewrite_backup group by 1 order by 3 desc"`. Log `run_id <uuid>` and the per-column counts. The `set_updated_at` triggers set `updated_at` on the rewritten rows (expected).
+Rollback: Step 52 (reverse), only on Koss's word.
+Then wait.
+
+**Step 51 [CONTROL] - G-REWRITE 5: read-back**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); Step 50 recorded.
+Command:
+1. `supabase db query --linked --project-ref lajguozmtissnnfccmej -f scripts/cutover/sql/scan-old-hosts.sql`
+2. `supabase db query --linked --project-ref lajguozmtissnnfccmej -f scripts/cutover/sql/report.sql`
+3. `npm run media:health -- --expect-source r2`
+4. `node scripts/cutover/proof-check.mjs --expect worker --site-path /en/portfolio`
+Expected: scan returns zero rows; report: backed-up rows per column equal the Step 50 notices and `restored` 0, the picsum posters listed by id and slug (D-10, left as they are), `audit_rows_with_old_host` counted (D-19, not rewritten); media:health all ok via r2; `proof-check worker: ALL PASS`. Log `scan-old-hosts: 0 rows`, the report lines and `media:health ... r2 ok`. Then copy this plan's log into `.planning/phases/03-production-cutover/03-CLOSE-LOG.md` and commit it alone as a planning note (after Step 52a if Koss chose it).
+Rollback: Step 52.
+Then wait.
+
+**Step 52 [CONTROL] - reverse (only on Koss's word)**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); Koss writes "reverse rewrite".
+Command: `supabase db query --linked --project-ref lajguozmtissnnfccmej -f scripts/cutover/sql/reverse-media-urls.sql` (with one open run nothing needs setting; to choose a run, the same session first runs `select set_config('clickit.rewrite_run_id', '<run id>', false);`), then `scan-old-hosts.sql` and `report.sql` as in Step 51.
+Expected: notice `reverse: run_id <uuid> restored <n> value(s)`; the scan shows the old hosts again; the report shows every row of that run restored (`restored` equal to `backed_up`). `updated_at` is not restored (trigger). Log the lines.
+Rollback: the rewrite again (Step 50) on Koss's word "rewrite media urls".
+Then wait.
+
+**Step 52a [KOSS + CONTROL] - P3-8b switch: the R2 upload sweep deletes (optional for closing Phase 3, A-4, G10)**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); Step 36a read; Step 51 passed; Koss writes "sweep deletes on". Without those words: log `P3-8b switch: kept dry run` and skip.
+Command or Where: on a branch, set `"R2_UPLOAD_SWEEP_DELETE": "on"` (exactly `on`) in `wrangler.jsonc` in the top-level `vars` AND in `env.production.vars` (the drift test needs both); PR, review, Koss's Ship. Then Steps 25-26 again from `main` with `--allow-upload-sweep-delete` added to both `cf:deploy:production` calls (the Step 25 dry run and the Step 26 deploy). Never `cf:deploy:workersdev` (it would drop the www route and the crons, D-18), and never the dashboard var (it skips the guard and the next deploy overwrites it).
+Expected: the guard's loud warning about the sweep, then `deploy-guard ok` and `deployed production: ...`; the next Monday run logs `mode: 'delete'`, `deleted` at most `candidates`, `error: null`. Log `P3-8b switch: on`.
+Rollback: set `"off"` in both places, PR, Ship, and redeploy production through Steps 25-26 (no flag needed).
+Then wait.
+
+---
+
+## Part I: Vercel removal (PLAT-11, Pitfall 8)
+
+Log: `/Users/koss/.clickit-checks/p3-ops/03-FINAL-PROOF.md`.
+
+**Step 53 [KOSS] - retarget www in place**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); 03-CLOSE-LOG records `keys-check legacy-off: PASS`, `captcha-probe on: PASS` and `scan-old-hosts: 0 rows`.
+Trigger: Koss writes "retarget www".
+Where: dash.cloudflare.com, zone clickitstory.ae, DNS, Records, `www`, Edit: Target `clickitstory.ae` (same CNAME type, Proxied), Save. One in-place edit of the same record, so www never has a gap.
+Expected: www shows CNAME `clickitstory.ae`, Proxied. Report the time. From here `rollback.mjs` refuses (the record no longer points at Vercel): a DNS rollback to Vercel is gone, as intended.
+Rollback: Edit the record's target back to the Vercel CNAME value from Step 1 (Proxied), only on Koss's word.
+Then wait.
+
+**Step 54 [CONTROL] - G-DNS final**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); Step 53 reported.
+Command:
+1. `node scripts/cutover/dns-check.mjs --phase final --with-resend --resend-mx <host from Step 4> --dkim-file /Users/koss/.clickit-checks/p3-dkim.txt`
+2. `node scripts/cutover/proof-check.mjs --expect worker --site-path /en/portfolio`
+3. `node scripts/cf/check-gates.mjs --base https://www.clickitstory.ae`
+Expected: `dns-check final: ALL PASS` (no vercel target in any checked record, www proxied); `proof-check worker: ALL PASS`; check-gates `ALL PASS`. Any FAIL: Koss edits the record back (Step 53 rollback) and stop. Log the lines.
+Rollback: Step 53 rollback.
+Then wait.
+
+**Step 55 [KOSS] - the Vercel project (last)**
+Precondition: Step 39 recorded (G-ROLLBACK lifted); Step 54 ALL PASS.
+Where: branch A (the owner account can sign in): vercel.com, project clickit, Settings, remove the domains first if Vercel asks, then Delete Project; report the confirmation text. Branch B (no access): the signed fallback wording in 03-GATES.md section 2 applies; 03-13 applies it to ROADMAP and REQUIREMENTS.
+Expected: branch A: log `Vercel project deleted` with the text and time; branch B: log `branch B applied`.
+Rollback: none (deletion is final; that is why it is last).
+Then wait.
+
+**Step 56 [CONTROL] - final read and phase close note**
+Command:
+1. `node scripts/cutover/dns-check.mjs --phase ns`
+2. `node scripts/cutover/dns-check.mjs --phase final --with-resend --resend-mx <host from Step 4> --dkim-file /Users/koss/.clickit-checks/p3-dkim.txt`
+3. `node scripts/cutover/proof-check.mjs --expect worker --site-path /en/portfolio`
+4. `node scripts/cf/check-gates.mjs --base https://www.clickitstory.ae`
+5. `npm run media:health -- --expect-source r2`
+6. `supabase db query --linked --project-ref lajguozmtissnnfccmej -f scripts/cutover/sql/scan-old-hosts.sql`
+7. `node scripts/cutover/keys-check.mjs --expect legacy-off --legacy-ip 216.198.79.1` (if the Vercel project is deleted the legacy bundle is gone: record "legacy bundle gone (project deleted)" instead)
+8. `node scripts/cutover/parse-auth-results.mjs < /Users/koss/.clickit-checks/p3-auth-results.txt` (MAIL-02 evidence kept)
+Expected: every line PASS (scan zero rows); the evidence table per requirement (DNS-01, MAIL-02, DNS-02, DNS-03, DNS-04, MEDIA-02, MEDIA-08, PLAT-11) with three lists `## Verified`, `## Not verified`, `## Failed`, then the phase close note. Copy the log into `.planning/phases/03-production-cutover/03-FINAL-PROOF.md` and commit it alone as a planning note.
+Rollback: none (read-only).
+Then wait.
+
+---
+
+## Rollback by step
+
+| Step | Rollback |
+|---|---|
+| 0a-2 | none (read-only) |
+| 3-9 | Koss deletes the four Resend/DMARC records and the Resend domain |
+| 10-12 | nothing applied before Step 11; the new empty table stays (no drop path) |
+| 13-15 | none needed (R2 copies only, nothing deleted) |
+| 16-17 | `npm run cf:deploy:media -- --env supabase-only` (whoami first) |
+| 18 | delete the `clickit-worker` secret key |
+| 19 | Koss puts the legacy service_role value back with the Step 19 `secret put` command |
+| 20-24 | undo the dashboard change on Koss's word; delete the DNS token and its Keychain item |
+| 25 | none (nothing deployed) |
+| 26 | route inert while grey; on Koss's word the Step 26 deployments list and rollback commands |
+| 27 | Enable Cron Jobs on Vercel (Koss's word) |
+| 30 | Fail closed again |
+| 32-36 | Step 37 (www back to DNS only), then Step 38 before any re-flip |
+| 41-42 | Koss re-activates the legacy keys |
+| 44-45 | Koss switches CAPTCHA off |
+| 46 | Fail open again (Koss's word) |
+| 50-51 | Step 52 reverse on "reverse rewrite" |
+| 52a | `"off"` in both vars, PR, Ship, Steps 25-26 again |
+| 53-54 | Koss edits the www target back to the Vercel CNAME |
+| 55 | none (final) |
+
+**Who decides (D-04):** during the proof window the controller rolls back on its own only on the three pre-approved triggers (www or apex down or 5xx for 10 minutes, sign-in broken, playback broken) and reports at once; every other rollback, every re-flip and every step after Step 39 waits for Koss's word.
