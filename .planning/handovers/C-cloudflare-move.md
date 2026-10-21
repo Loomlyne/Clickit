@@ -58,9 +58,9 @@ CI: Phase 1's `pr-gate.yml` / `apply-live-migrations.yml` (on main) replace the 
 |------|------|-------|-------|
 | 1-12, 13-18, 20, 21 | login, subdomain, R2, buckets, CORS, D1, env file, Turnstile widget, first deploy, secrets | Koss / controller | done (2026-10-20) |
 | 19 | Google key | — | removed (Workers AI) |
-| 22 | Web Analytics site | Koss | controller to confirm |
+| 22 | Web Analytics site | Koss | optional, skipped unless Koss asks |
 | 23 | Supabase redirect allow-list for `https://clickit.clickitstory.workers.dev/**` | Koss (dashboard) | open |
-| 24 | secret names read-back | Koss | controller to confirm; delete a stray GOOGLE_TRANSLATE_API_KEY if listed |
+| 24 | secret names read-back | controller | done (2026-10-21 12:3x CET): CRON_SECRET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY, TURNSTILE_SECRET_KEY; no Google key |
 | Task 4 (02-10) | wrangler tail + CPU sample on /en, /ar, /en/auth | C (session), after Step 23 | open |
 | 25-27 | copy credentials, dry-run, execute copy (reads Supabase Storage, writes R2) | Koss | open (R2 already holds a verified copy from #24; re-sync only with `npm run r2:media -- --refresh` then `--execute`) |
 | 28 | deploy media Worker (`--env r2` flips production media: stop first) | controller, Koss's word | open |
