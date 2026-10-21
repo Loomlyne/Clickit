@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-21T14:07:49.300Z"
+last_updated: "2026-10-21T14:18:08.853Z"
 last_activity: 2026-10-21
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 123
-  completed_plans: 76
+  completed_plans: 77
   percent: 33
 ---
 
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 05 (accounts-and-email) — EXECUTING
-Plan: 7 of 42
+Plan: 8 of 42
 Status: Ready to execute
 Last activity: 2026-10-21
 Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
 
-Progress: [██████░░░░] 63%
+Progress: [██████░░░░] 64%
 
 ## Performance Metrics
 
@@ -84,6 +84,7 @@ Progress: [██████░░░░] 63%
 | Phase 05 P04 | 15min | 2 tasks | 4 files |
 | Phase 05 P05 | 2min | 2 tasks | 3 files |
 | Phase 05 P06 | 12min | 2 tasks | 3 files |
+| Phase 05 P07 | 14min | 4 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,8 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-04: confirm links must carry an expiry; link signatures must be canonical base64url; Mailer results carry only classification, never bodies or addresses
 - [Phase 05]: 05-05: four episodes_view catalog reads use server-only createCatalogClient (service role, null + [] without key); AUTH-08 stays Pending until M3 revoke
 - [Phase 05]: 05-06: Phase 5 message keys added once for all UI plans (signInToWatch/showChip absent, G4 B); EN/AR parity test with PHASE5_KEYS list; 0 pre-existing gaps; requirements stay Pending (copy only)
+- [Phase 05]: 05-07: react-email 6.11.0 and @react-email/render 2.1.0 installed (planned 6.11.3/2.1.1 are under 14 days old); bump allowed from 2026-10-30
+- [Phase 05]: 05-07: spike says pre-render (cold batch 29-41 ms vs 10 ms Free CPU, warm mean ~4.3 ms, gzip 266.56 KiB); controller to revise 05-11/05-19
 
 ### Pending Todos
 
@@ -165,7 +168,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-21T14:07:45.094Z
+Last session: 2026-10-21T14:18:04.259Z
 Stopped at: Completed 05-03-PLAN.md
 Phase 2 last session: 2026-10-20T10:45:11.285Z
 Phase 2 stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above is the controller's)
