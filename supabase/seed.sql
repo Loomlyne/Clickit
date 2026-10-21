@@ -10,6 +10,12 @@
 -- NEVER run against live. Neither GitHub workflow passes the
 -- include-seed flag. The guard below refuses to run if public.shows
 -- already has rows.
+--
+-- Episode video ids are unique (Phase 6 adds a unique index on
+-- episodes.youtube_video_id). Episodes 1-3 of the first show's first
+-- season keep the three real sample videos; every other episode
+-- has a placeholder id (seedEp00001…), which YouTube reports as
+-- "video not found", so the local player shows its error card there.
 -- ============================================================
 
 do $$
@@ -63,8 +69,8 @@ BEGIN
     (show_last_call, season_id, 1, 'Late Night in Abu Dhabi', 'Street interviews after midnight in the capital city.', 25, 'published', 'dQw4w9WgXcQ'),
     (show_last_call, season_id, 2, 'The Corniche Confessions', 'People share their deepest thoughts along the waterfront.', 22, 'published', 'jNQXAC9IVRw'),
     (show_last_call, season_id, 3, 'Desert Voices', 'Stories from travellers passing through the Al Dhafra region.', 28, 'published', '9bZkp7q19f0'),
-    (show_last_call, season_id, 4, 'Market After Dark', 'Exploring the vibrant night markets of Abu Dhabi.', 24, 'published', 'dQw4w9WgXcQ'),
-    (show_last_call, season_id, 5, 'Island Nights', 'Late-night adventures on Yas Island with locals and tourists.', 26, 'published', 'jNQXAC9IVRw');
+    (show_last_call, season_id, 4, 'Market After Dark', 'Exploring the vibrant night markets of Abu Dhabi.', 24, 'published', 'seedEp00001'),
+    (show_last_call, season_id, 5, 'Island Nights', 'Late-night adventures on Yas Island with locals and tourists.', 26, 'published', 'seedEp00002');
 
   -- Season 2 (5 episodes)
   INSERT INTO public.seasons (show_id, season_number, title, episode_count)
@@ -72,9 +78,9 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_last_call, season_id, 1, 'Return to the Streets', 'Season two kicks off with a fresh round of street encounters.', 25, 'published', '9bZkp7q19f0'),
-    (show_last_call, season_id, 2, 'Festival Frenzy', 'Capturing the energy of Abu Dhabi festival season.', 23, 'published', 'dQw4w9WgXcQ'),
-    (show_last_call, season_id, 3, 'The Last Bus Home', 'Stories from the final bus routes of the evening.', 27, 'published', 'jNQXAC9IVRw'),
+    (show_last_call, season_id, 1, 'Return to the Streets', 'Season two kicks off with a fresh round of street encounters.', 25, 'published', 'seedEp00003'),
+    (show_last_call, season_id, 2, 'Festival Frenzy', 'Capturing the energy of Abu Dhabi festival season.', 23, 'published', 'seedEp00004'),
+    (show_last_call, season_id, 3, 'The Last Bus Home', 'Stories from the final bus routes of the evening.', 27, 'published', 'seedEp00005'),
     (show_last_call, season_id, 4, 'Midnight Majlis', 'A special gathering under the stars with surprise guests.', 30, 'coming-soon', NULL),
     (show_last_call, season_id, 5, 'Season Finale: One More Call', 'The most memorable moments from season two.', 35, 'draft', NULL);
 
@@ -93,11 +99,11 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_review_doc, season_id, 1, 'The Forgotten Oasis', 'An ancient oasis reveals centuries of hidden history.', 42, 'published', '9bZkp7q19f0'),
-    (show_review_doc, season_id, 2, 'Pearl Divers of the Gulf', 'Following the last generation of traditional pearl divers.', 38, 'published', 'dQw4w9WgXcQ'),
-    (show_review_doc, season_id, 3, 'Silk Roads Reimagined', 'Tracing modern trade routes that echo the ancient Silk Road.', 45, 'published', 'jNQXAC9IVRw'),
-    (show_review_doc, season_id, 4, 'Guardians of the Mangroves', 'Conservation efforts saving Abu Dhabi''s coastal ecosystems.', 40, 'published', '9bZkp7q19f0'),
-    (show_review_doc, season_id, 5, 'Voices of the Desert', 'Bedouin communities share their stories of adaptation.', 44, 'published', 'dQw4w9WgXcQ'),
+    (show_review_doc, season_id, 1, 'The Forgotten Oasis', 'An ancient oasis reveals centuries of hidden history.', 42, 'published', 'seedEp00006'),
+    (show_review_doc, season_id, 2, 'Pearl Divers of the Gulf', 'Following the last generation of traditional pearl divers.', 38, 'published', 'seedEp00007'),
+    (show_review_doc, season_id, 3, 'Silk Roads Reimagined', 'Tracing modern trade routes that echo the ancient Silk Road.', 45, 'published', 'seedEp00008'),
+    (show_review_doc, season_id, 4, 'Guardians of the Mangroves', 'Conservation efforts saving Abu Dhabi''s coastal ecosystems.', 40, 'published', 'seedEp00009'),
+    (show_review_doc, season_id, 5, 'Voices of the Desert', 'Bedouin communities share their stories of adaptation.', 44, 'published', 'seedEp00010'),
     (show_review_doc, season_id, 6, 'The Future Heritage', 'How the UAE preserves its past while building the future.', 42, 'coming-soon', NULL);
 
   -- ============================================================
@@ -115,10 +121,10 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_doctor_care, season_id, 1, 'Heart Health 101', 'Understanding cardiovascular health with leading cardiologists.', 45, 'published', 'jNQXAC9IVRw'),
-    (show_doctor_care, season_id, 2, 'Sleep Science', 'Why quality sleep is the foundation of good health.', 40, 'published', '9bZkp7q19f0'),
-    (show_doctor_care, season_id, 3, 'Nutrition Myths Debunked', 'Separating fact from fiction in everyday nutrition.', 42, 'published', 'dQw4w9WgXcQ'),
-    (show_doctor_care, season_id, 4, 'Mental Wellness in the Gulf', 'Breaking stigma around mental health in the region.', 50, 'published', 'jNQXAC9IVRw');
+    (show_doctor_care, season_id, 1, 'Heart Health 101', 'Understanding cardiovascular health with leading cardiologists.', 45, 'published', 'seedEp00011'),
+    (show_doctor_care, season_id, 2, 'Sleep Science', 'Why quality sleep is the foundation of good health.', 40, 'published', 'seedEp00012'),
+    (show_doctor_care, season_id, 3, 'Nutrition Myths Debunked', 'Separating fact from fiction in everyday nutrition.', 42, 'published', 'seedEp00013'),
+    (show_doctor_care, season_id, 4, 'Mental Wellness in the Gulf', 'Breaking stigma around mental health in the region.', 50, 'published', 'seedEp00014');
 
   -- Season 2 (4 episodes)
   INSERT INTO public.seasons (show_id, season_number, title, episode_count)
@@ -126,8 +132,8 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_doctor_care, season_id, 1, 'Children''s Health Guide', 'A comprehensive look at paediatric wellness.', 44, 'published', '9bZkp7q19f0'),
-    (show_doctor_care, season_id, 2, 'Fitness for Every Age', 'Exercise plans tailored for different life stages.', 38, 'published', 'dQw4w9WgXcQ'),
+    (show_doctor_care, season_id, 1, 'Children''s Health Guide', 'A comprehensive look at paediatric wellness.', 44, 'published', 'seedEp00015'),
+    (show_doctor_care, season_id, 2, 'Fitness for Every Age', 'Exercise plans tailored for different life stages.', 38, 'published', 'seedEp00016'),
     (show_doctor_care, season_id, 3, 'The Hydration Episode', 'Why staying hydrated matters more in desert climates.', 35, 'coming-soon', NULL),
     (show_doctor_care, season_id, 4, 'Preventive Medicine', 'Early detection and screening programmes in the UAE.', 48, 'draft', NULL);
 
@@ -146,11 +152,11 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_saturn_podcast, season_id, 1, 'The AI Revolution', 'How artificial intelligence is reshaping life in the Gulf.', 25, 'published', 'jNQXAC9IVRw'),
-    (show_saturn_podcast, season_id, 2, 'Space Dreams', 'The UAE''s ambitious plans for Mars and beyond.', 28, 'published', '9bZkp7q19f0'),
-    (show_saturn_podcast, season_id, 3, 'Crypto Culture', 'Cryptocurrency adoption in the Middle East tech scene.', 24, 'published', 'dQw4w9WgXcQ'),
-    (show_saturn_podcast, season_id, 4, 'Green Tech Pioneers', 'Startups building sustainable technology solutions.', 26, 'published', 'jNQXAC9IVRw'),
-    (show_saturn_podcast, season_id, 5, 'Robotics in Daily Life', 'How robots are entering homes and workplaces across the UAE.', 22, 'published', '9bZkp7q19f0');
+    (show_saturn_podcast, season_id, 1, 'The AI Revolution', 'How artificial intelligence is reshaping life in the Gulf.', 25, 'published', 'seedEp00017'),
+    (show_saturn_podcast, season_id, 2, 'Space Dreams', 'The UAE''s ambitious plans for Mars and beyond.', 28, 'published', 'seedEp00018'),
+    (show_saturn_podcast, season_id, 3, 'Crypto Culture', 'Cryptocurrency adoption in the Middle East tech scene.', 24, 'published', 'seedEp00019'),
+    (show_saturn_podcast, season_id, 4, 'Green Tech Pioneers', 'Startups building sustainable technology solutions.', 26, 'published', 'seedEp00020'),
+    (show_saturn_podcast, season_id, 5, 'Robotics in Daily Life', 'How robots are entering homes and workplaces across the UAE.', 22, 'published', 'seedEp00021');
 
   -- Season 2 (5 episodes)
   INSERT INTO public.seasons (show_id, season_number, title, episode_count)
@@ -158,10 +164,10 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_saturn_podcast, season_id, 1, 'Metaverse Realities', 'Exploring virtual worlds being built in the region.', 25, 'published', 'dQw4w9WgXcQ'),
-    (show_saturn_podcast, season_id, 2, 'Quantum Computing 101', 'A beginner-friendly deep dive into quantum technology.', 30, 'published', 'jNQXAC9IVRw'),
-    (show_saturn_podcast, season_id, 3, 'Digital Health Frontiers', 'Wearables, telemedicine, and the future of healthcare tech.', 27, 'published', '9bZkp7q19f0'),
-    (show_saturn_podcast, season_id, 4, 'Cybersecurity Essentials', 'Protecting yourself in an increasingly connected world.', 24, 'published', 'dQw4w9WgXcQ'),
+    (show_saturn_podcast, season_id, 1, 'Metaverse Realities', 'Exploring virtual worlds being built in the region.', 25, 'published', 'seedEp00022'),
+    (show_saturn_podcast, season_id, 2, 'Quantum Computing 101', 'A beginner-friendly deep dive into quantum technology.', 30, 'published', 'seedEp00023'),
+    (show_saturn_podcast, season_id, 3, 'Digital Health Frontiers', 'Wearables, telemedicine, and the future of healthcare tech.', 27, 'published', 'seedEp00024'),
+    (show_saturn_podcast, season_id, 4, 'Cybersecurity Essentials', 'Protecting yourself in an increasingly connected world.', 24, 'published', 'seedEp00025'),
     (show_saturn_podcast, season_id, 5, 'The Drone Economy', 'Commercial drone applications transforming industries.', 26, 'coming-soon', NULL);
 
   -- Season 3 (5 episodes)
@@ -170,9 +176,9 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_saturn_podcast, season_id, 1, 'Neural Interfaces', 'Brain-computer interfaces and what they mean for humanity.', 28, 'published', 'jNQXAC9IVRw'),
-    (show_saturn_podcast, season_id, 2, 'Fusion Energy Update', 'The latest breakthroughs in nuclear fusion research.', 25, 'published', '9bZkp7q19f0'),
-    (show_saturn_podcast, season_id, 3, 'Smart Cities of 2030', 'How UAE cities are becoming fully connected ecosystems.', 30, 'published', 'dQw4w9WgXcQ'),
+    (show_saturn_podcast, season_id, 1, 'Neural Interfaces', 'Brain-computer interfaces and what they mean for humanity.', 28, 'published', 'seedEp00026'),
+    (show_saturn_podcast, season_id, 2, 'Fusion Energy Update', 'The latest breakthroughs in nuclear fusion research.', 25, 'published', 'seedEp00027'),
+    (show_saturn_podcast, season_id, 3, 'Smart Cities of 2030', 'How UAE cities are becoming fully connected ecosystems.', 30, 'published', 'seedEp00028'),
     (show_saturn_podcast, season_id, 4, 'Biotech Breakthroughs', 'Gene editing and personalised medicine in the Gulf.', 27, 'coming-soon', NULL),
     (show_saturn_podcast, season_id, 5, 'The Singularity Debate', 'Will machines ever surpass human intelligence?', 32, 'draft', NULL);
 
@@ -210,9 +216,9 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_kids_area, season_id, 1, 'Talent Spotlight', 'The first round of young performers takes the stage.', 35, 'published', 'dQw4w9WgXcQ'),
-    (show_kids_area, season_id, 2, 'Dance and Dream', 'Young dancers share their passion and stories.', 35, 'published', 'jNQXAC9IVRw'),
-    (show_kids_area, season_id, 3, 'Comedy Kids', 'Aspiring young comedians try their best material.', 30, 'published', '9bZkp7q19f0'),
+    (show_kids_area, season_id, 1, 'Talent Spotlight', 'The first round of young performers takes the stage.', 35, 'published', 'seedEp00029'),
+    (show_kids_area, season_id, 2, 'Dance and Dream', 'Young dancers share their passion and stories.', 35, 'published', 'seedEp00030'),
+    (show_kids_area, season_id, 3, 'Comedy Kids', 'Aspiring young comedians try their best material.', 30, 'published', 'seedEp00031'),
     (show_kids_area, season_id, 4, 'Grand Finale', 'The best performers return for a spectacular finale.', 40, 'coming-soon', NULL);
 
   -- ============================================================
@@ -229,9 +235,9 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_infocus, season_id, 1, 'The Director''s Vision', 'A celebrated UAE filmmaker shares the story behind their latest work.', 80, 'published', '9bZkp7q19f0'),
-    (show_infocus, season_id, 2, 'On Set in Abu Dhabi', 'An exclusive look at a major production filming in the capital.', 75, 'published', 'dQw4w9WgXcQ'),
-    (show_infocus, season_id, 3, 'The Art of Screenwriting', 'Arab screenwriters discuss storytelling for the big screen.', 70, 'published', 'jNQXAC9IVRw'),
+    (show_infocus, season_id, 1, 'The Director''s Vision', 'A celebrated UAE filmmaker shares the story behind their latest work.', 80, 'published', 'seedEp00032'),
+    (show_infocus, season_id, 2, 'On Set in Abu Dhabi', 'An exclusive look at a major production filming in the capital.', 75, 'published', 'seedEp00033'),
+    (show_infocus, season_id, 3, 'The Art of Screenwriting', 'Arab screenwriters discuss storytelling for the big screen.', 70, 'published', 'seedEp00034'),
     (show_infocus, season_id, 4, 'Festival Circuit', 'Following a film from production to international festival premiere.', 80, 'coming-soon', NULL);
 
   -- ============================================================
@@ -248,20 +254,20 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_breakfast_daily, season_id, 1, 'Welcome to the Morning', 'The premiere episode sets the tone for daily inspiration.', 60, 'published', 'jNQXAC9IVRw'),
-    (show_breakfast_daily, season_id, 2, 'Local Heroes', 'Spotlighting everyday people making a difference in the UAE.', 55, 'published', '9bZkp7q19f0'),
-    (show_breakfast_daily, season_id, 3, 'Kitchen Takeover', 'A chef prepares a live breakfast while sharing life stories.', 60, 'published', 'dQw4w9WgXcQ'),
-    (show_breakfast_daily, season_id, 4, 'Wellness Wednesday', 'Tips for mental and physical health to kickstart your week.', 50, 'published', 'jNQXAC9IVRw'),
-    (show_breakfast_daily, season_id, 5, 'Weekend Preview', 'The best events and activities happening across the UAE.', 45, 'published', '9bZkp7q19f0');
+    (show_breakfast_daily, season_id, 1, 'Welcome to the Morning', 'The premiere episode sets the tone for daily inspiration.', 60, 'published', 'seedEp00035'),
+    (show_breakfast_daily, season_id, 2, 'Local Heroes', 'Spotlighting everyday people making a difference in the UAE.', 55, 'published', 'seedEp00036'),
+    (show_breakfast_daily, season_id, 3, 'Kitchen Takeover', 'A chef prepares a live breakfast while sharing life stories.', 60, 'published', 'seedEp00037'),
+    (show_breakfast_daily, season_id, 4, 'Wellness Wednesday', 'Tips for mental and physical health to kickstart your week.', 50, 'published', 'seedEp00038'),
+    (show_breakfast_daily, season_id, 5, 'Weekend Preview', 'The best events and activities happening across the UAE.', 45, 'published', 'seedEp00039');
 
   INSERT INTO public.seasons (show_id, season_number, title, episode_count)
   VALUES (show_breakfast_daily, 2, 'Season 2', 5)
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_breakfast_daily, season_id, 1, 'New Season, New Energy', 'Season two opens with an exciting new studio reveal.', 60, 'published', 'dQw4w9WgXcQ'),
-    (show_breakfast_daily, season_id, 2, 'Street Food Stories', 'Discovering hidden culinary gems across Abu Dhabi.', 55, 'published', 'jNQXAC9IVRw'),
-    (show_breakfast_daily, season_id, 3, 'Back to School Special', 'Parents and educators discuss the new academic year.', 50, 'published', '9bZkp7q19f0'),
+    (show_breakfast_daily, season_id, 1, 'New Season, New Energy', 'Season two opens with an exciting new studio reveal.', 60, 'published', 'seedEp00040'),
+    (show_breakfast_daily, season_id, 2, 'Street Food Stories', 'Discovering hidden culinary gems across Abu Dhabi.', 55, 'published', 'seedEp00041'),
+    (show_breakfast_daily, season_id, 3, 'Back to School Special', 'Parents and educators discuss the new academic year.', 50, 'published', 'seedEp00042'),
     (show_breakfast_daily, season_id, 4, 'Festival Season Guide', 'A complete guide to the UAE''s upcoming festivals.', 55, 'coming-soon', NULL),
     (show_breakfast_daily, season_id, 5, 'Year in Review', 'Looking back at the best moments from both seasons.', 60, 'draft', NULL);
 
@@ -279,9 +285,9 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_meta_talk, season_id, 1, 'Welcome to the Metaverse', 'An introduction to virtual worlds and their real-world impact.', 25, 'published', '9bZkp7q19f0'),
-    (show_meta_talk, season_id, 2, 'VR in Education', 'How virtual reality is transforming classrooms across the Gulf.', 28, 'published', 'dQw4w9WgXcQ'),
-    (show_meta_talk, season_id, 3, 'The Creator Economy', 'Artists and designers building careers in virtual spaces.', 25, 'published', 'jNQXAC9IVRw'),
+    (show_meta_talk, season_id, 1, 'Welcome to the Metaverse', 'An introduction to virtual worlds and their real-world impact.', 25, 'published', 'seedEp00043'),
+    (show_meta_talk, season_id, 2, 'VR in Education', 'How virtual reality is transforming classrooms across the Gulf.', 28, 'published', 'seedEp00044'),
+    (show_meta_talk, season_id, 3, 'The Creator Economy', 'Artists and designers building careers in virtual spaces.', 25, 'published', 'seedEp00045'),
     (show_meta_talk, season_id, 4, 'Digital Twins and Smart Cities', 'How digital replicas are shaping urban planning in the UAE.', 30, 'coming-soon', NULL);
 
   -- ============================================================
@@ -298,10 +304,10 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_360, season_id, 1, 'The Calligrapher', 'A master calligrapher blends ancient Arabic script with modern art.', 55, 'published', 'dQw4w9WgXcQ'),
-    (show_360, season_id, 2, 'Fashion Forward', 'Emirati fashion designers making waves on the global stage.', 50, 'published', 'jNQXAC9IVRw'),
-    (show_360, season_id, 3, 'Sound of the Gulf', 'Musicians fusing traditional Gulf melodies with contemporary beats.', 55, 'published', '9bZkp7q19f0'),
-    (show_360, season_id, 4, 'Architecture Reimagined', 'Architects designing the UAE''s most iconic new buildings.', 50, 'published', 'dQw4w9WgXcQ'),
+    (show_360, season_id, 1, 'The Calligrapher', 'A master calligrapher blends ancient Arabic script with modern art.', 55, 'published', 'seedEp00046'),
+    (show_360, season_id, 2, 'Fashion Forward', 'Emirati fashion designers making waves on the global stage.', 50, 'published', 'seedEp00047'),
+    (show_360, season_id, 3, 'Sound of the Gulf', 'Musicians fusing traditional Gulf melodies with contemporary beats.', 55, 'published', 'seedEp00048'),
+    (show_360, season_id, 4, 'Architecture Reimagined', 'Architects designing the UAE''s most iconic new buildings.', 50, 'published', 'seedEp00049'),
     (show_360, season_id, 5, 'The Storytellers', 'Writers and poets shaping the narrative of modern Arab identity.', 55, 'coming-soon', NULL);
 
   -- ============================================================
@@ -318,18 +324,18 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_music_hub, season_id, 1, 'Audition Day', 'Hopeful musicians arrive for the first round of auditions.', 50, 'published', 'jNQXAC9IVRw'),
-    (show_music_hub, season_id, 2, 'Battle Rounds', 'Contestants go head-to-head in musical duels.', 50, 'published', '9bZkp7q19f0'),
-    (show_music_hub, season_id, 3, 'Live Shows Begin', 'The top performers take the live stage for the first time.', 55, 'published', 'dQw4w9WgXcQ'),
-    (show_music_hub, season_id, 4, 'Season 1 Finale', 'The grand finale crowns the first Music Hub champion.', 60, 'published', 'jNQXAC9IVRw');
+    (show_music_hub, season_id, 1, 'Audition Day', 'Hopeful musicians arrive for the first round of auditions.', 50, 'published', 'seedEp00050'),
+    (show_music_hub, season_id, 2, 'Battle Rounds', 'Contestants go head-to-head in musical duels.', 50, 'published', 'seedEp00051'),
+    (show_music_hub, season_id, 3, 'Live Shows Begin', 'The top performers take the live stage for the first time.', 55, 'published', 'seedEp00052'),
+    (show_music_hub, season_id, 4, 'Season 1 Finale', 'The grand finale crowns the first Music Hub champion.', 60, 'published', 'seedEp00053');
 
   INSERT INTO public.seasons (show_id, season_number, title, episode_count)
   VALUES (show_music_hub, 2, 'Season 2', 4)
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_music_hub, season_id, 1, 'Fresh Voices', 'A new wave of talent arrives for season two auditions.', 50, 'published', '9bZkp7q19f0'),
-    (show_music_hub, season_id, 2, 'Genre Mashup', 'Contestants mix musical genres in creative performances.', 50, 'published', 'dQw4w9WgXcQ'),
+    (show_music_hub, season_id, 1, 'Fresh Voices', 'A new wave of talent arrives for season two auditions.', 50, 'published', 'seedEp00054'),
+    (show_music_hub, season_id, 2, 'Genre Mashup', 'Contestants mix musical genres in creative performances.', 50, 'published', 'seedEp00055'),
     (show_music_hub, season_id, 3, 'Duets Night', 'Performers pair up for unforgettable duet performances.', 55, 'coming-soon', NULL),
     (show_music_hub, season_id, 4, 'Champion Returns', 'Season one''s champion returns as a guest mentor.', 60, 'draft', NULL);
 
@@ -347,10 +353,10 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_laugh_or_leave, season_id, 1, 'Open Mic Night', 'The first batch of comedians face the audience.', 15, 'published', 'dQw4w9WgXcQ'),
-    (show_laugh_or_leave, season_id, 2, 'Roast Battle', 'Comedians roast each other in hilarious head-to-head matchups.', 15, 'published', 'jNQXAC9IVRw'),
-    (show_laugh_or_leave, season_id, 3, 'Improv Chaos', 'Contestants perform improv comedy with audience suggestions.', 15, 'published', '9bZkp7q19f0'),
-    (show_laugh_or_leave, season_id, 4, 'Character Comedy', 'Performers bring original characters to life on stage.', 15, 'published', 'dQw4w9WgXcQ'),
+    (show_laugh_or_leave, season_id, 1, 'Open Mic Night', 'The first batch of comedians face the audience.', 15, 'published', 'seedEp00056'),
+    (show_laugh_or_leave, season_id, 2, 'Roast Battle', 'Comedians roast each other in hilarious head-to-head matchups.', 15, 'published', 'seedEp00057'),
+    (show_laugh_or_leave, season_id, 3, 'Improv Chaos', 'Contestants perform improv comedy with audience suggestions.', 15, 'published', 'seedEp00058'),
+    (show_laugh_or_leave, season_id, 4, 'Character Comedy', 'Performers bring original characters to life on stage.', 15, 'published', 'seedEp00059'),
     (show_laugh_or_leave, season_id, 5, 'The Last Laugh', 'The funniest performers compete in the grand finale.', 20, 'coming-soon', NULL);
 
   -- ============================================================
@@ -367,9 +373,9 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_island_cooke, season_id, 1, 'Zanzibar Spice Trail', 'Exploring the spice markets and coastal cuisine of Zanzibar.', 50, 'published', '9bZkp7q19f0'),
-    (show_island_cooke, season_id, 2, 'Bahrain Pearl Feast', 'Traditional Bahraini dishes meet modern culinary techniques.', 45, 'published', 'dQw4w9WgXcQ'),
-    (show_island_cooke, season_id, 3, 'Sri Lankan Flavours', 'A journey through Sri Lanka''s vibrant food culture.', 50, 'published', 'jNQXAC9IVRw'),
+    (show_island_cooke, season_id, 1, 'Zanzibar Spice Trail', 'Exploring the spice markets and coastal cuisine of Zanzibar.', 50, 'published', 'seedEp00060'),
+    (show_island_cooke, season_id, 2, 'Bahrain Pearl Feast', 'Traditional Bahraini dishes meet modern culinary techniques.', 45, 'published', 'seedEp00061'),
+    (show_island_cooke, season_id, 3, 'Sri Lankan Flavours', 'A journey through Sri Lanka''s vibrant food culture.', 50, 'published', 'seedEp00062'),
     (show_island_cooke, season_id, 4, 'Yas Island Special', 'Cooking a feast using ingredients sourced entirely from Abu Dhabi.', 55, 'coming-soon', NULL);
 
   -- ============================================================
@@ -386,9 +392,9 @@ BEGIN
   RETURNING id INTO season_id;
 
   INSERT INTO public.episodes (show_id, season_id, episode_number, title, description, duration, status, youtube_video_id) VALUES
-    (show_60_questions, season_id, 1, 'The First Challenge', 'Four contestants face off in the inaugural episode.', 80, 'published', 'jNQXAC9IVRw'),
-    (show_60_questions, season_id, 2, 'University Special', 'Students from UAE universities compete for bragging rights.', 80, 'published', '9bZkp7q19f0'),
-    (show_60_questions, season_id, 3, 'Celebrity Edition', 'Local celebrities take on the 60-question challenge.', 80, 'published', 'dQw4w9WgXcQ'),
+    (show_60_questions, season_id, 1, 'The First Challenge', 'Four contestants face off in the inaugural episode.', 80, 'published', 'seedEp00063'),
+    (show_60_questions, season_id, 2, 'University Special', 'Students from UAE universities compete for bragging rights.', 80, 'published', 'seedEp00064'),
+    (show_60_questions, season_id, 3, 'Celebrity Edition', 'Local celebrities take on the 60-question challenge.', 80, 'published', 'seedEp00065'),
     (show_60_questions, season_id, 4, 'Champions Showdown', 'Previous winners return for the ultimate challenge.', 80, 'coming-soon', NULL);
 
   -- ============================================================

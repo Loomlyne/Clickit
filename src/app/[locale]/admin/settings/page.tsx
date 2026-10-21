@@ -1,5 +1,8 @@
 import { getTranslations } from 'next-intl/server'
-import { getAppConfigWithVersion, getYouTubeApiKey } from '@/lib/config'
+import { getAppConfigWithVersion } from '@/lib/config'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { readLastKeyTestCore } from '@/lib/admin/youtube-key-status'
+import { readYouTubeKeyMeta } from '@/server/youtube-key'
 import { getLegalPages, getFaqs } from '@/app/[locale]/admin/actions'
 import { SettingsTabs } from '@/components/admin/settings/settings-tabs'
 import { AdminPageHeader } from '@/components/admin/admin-shell'
@@ -13,20 +16,23 @@ import { AdminPageHeader } from '@/components/admin/admin-shell'
  * so a stale page can never overwrite another admin's save. Server-action saves
  * still refresh the page via updateTag('site-config') + revalidatePath('/', 'layout').
  *
- * The YouTube API key is read only through the server-side helper. The client
- * receives an availability boolean, never the credential.
+ * YouTube key (G6): the page reads only whether a key is stored, its last 4
+ * characters and the last Test key result. The key itself never leaves the
+ * server; it is saved through the saveYouTubeApiKey Server Action.
  */
 export default async function AdminSettingsPage() {
-  const [{ config, updatedAt }, t, legalPages, faqs, youtubeApiKey] =
+  const [{ config, updatedAt }, t, legalPages, faqs, keyMeta, lastTest] =
     await Promise.all([
       getAppConfigWithVersion(),
       getTranslations('admin.settings'),
       getLegalPages(),
       getFaqs(),
-      getYouTubeApiKey(),
+      readYouTubeKeyMeta(),
+      readLastKeyTestCore(createAdminClient()),
     ])
 
-  const hasYouTubeKey = Boolean(youtubeApiKey)
+  // Only these three fields cross to the client.
+  const youtubeKey = { hasKey: keyMeta.hasKey, last4: keyMeta.last4, lastTest }
 
   return (
     <div className="space-y-6">
@@ -35,7 +41,7 @@ export default async function AdminSettingsPage() {
       <SettingsTabs
         config={config}
         updatedAt={updatedAt}
-        hasYouTubeKey={hasYouTubeKey}
+        youtubeKey={youtubeKey}
         legalPages={legalPages}
         faqs={faqs}
       />

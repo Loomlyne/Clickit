@@ -1,0 +1,244 @@
+{
+  "_source": "documented shape, not recorded",
+  "_requestedIds": [
+    "okPublic001",
+    "okUnlisted1",
+    "privateVid1",
+    "processing1",
+    "premiere001",
+    "noEmbed0001",
+    "blockedAE01",
+    "allowedNoAE",
+    "arabicTitle",
+    "removedVid1"
+  ],
+  "kind": "youtube#videoListResponse",
+  "pageInfo": {
+    "totalResults": 9,
+    "resultsPerPage": 9
+  },
+  "items": [
+    {
+      "kind": "youtube#video",
+      "id": "okPublic001",
+      "snippet": {
+        "title": "Title okPublic001",
+        "description": "Description",
+        "channelTitle": "Clickit Story",
+        "liveBroadcastContent": "none",
+        "thumbnails": {
+          "high": {
+            "url": "https://i.ytimg.com/vi/okPublic001/hqdefault.jpg"
+          }
+        }
+      },
+      "contentDetails": {
+        "duration": "PT12M34S"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "embeddable": true
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "id": "okUnlisted1",
+      "snippet": {
+        "title": "Title okUnlisted1",
+        "description": "Description",
+        "channelTitle": "Clickit Story",
+        "liveBroadcastContent": "none",
+        "thumbnails": {
+          "high": {
+            "url": "https://i.ytimg.com/vi/okUnlisted1/hqdefault.jpg"
+          }
+        }
+      },
+      "contentDetails": {
+        "duration": "PT12M34S"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "unlisted",
+        "embeddable": true
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "id": "privateVid1",
+      "snippet": {
+        "title": "Title privateVid1",
+        "description": "Description",
+        "channelTitle": "Clickit Story",
+        "liveBroadcastContent": "none",
+        "thumbnails": {
+          "high": {
+            "url": "https://i.ytimg.com/vi/privateVid1/hqdefault.jpg"
+          }
+        }
+      },
+      "contentDetails": {
+        "duration": "PT12M34S"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "private",
+        "embeddable": true
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "id": "processing1",
+      "snippet": {
+        "title": "Title processing1",
+        "description": "Description",
+        "channelTitle": "Clickit Story",
+        "liveBroadcastContent": "none",
+        "thumbnails": {
+          "high": {
+            "url": "https://i.ytimg.com/vi/processing1/hqdefault.jpg"
+          }
+        }
+      },
+      "contentDetails": {
+        "duration": "PT0S"
+      },
+      "status": {
+        "uploadStatus": "uploaded",
+        "privacyStatus": "public",
+        "embeddable": true
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "id": "premiere001",
+      "snippet": {
+        "title": "Title premiere001",
+        "description": "Description",
+        "channelTitle": "Clickit Story",
+        "liveBroadcastContent": "upcoming",
+        "thumbnails": {
+          "high": {
+            "url": "https://i.ytimg.com/vi/premiere001/hqdefault.jpg"
+          }
+        }
+      },
+      "contentDetails": {
+        "duration": "PT0S"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "embeddable": true
+      },
+      "liveStreamingDetails": {
+        "scheduledStartTime": "2026-11-01T16:00:00Z"
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "id": "noEmbed0001",
+      "snippet": {
+        "title": "Title noEmbed0001",
+        "description": "Description",
+        "channelTitle": "Clickit Story",
+        "liveBroadcastContent": "none",
+        "thumbnails": {
+          "high": {
+            "url": "https://i.ytimg.com/vi/noEmbed0001/hqdefault.jpg"
+          }
+        }
+      },
+      "contentDetails": {
+        "duration": "PT12M34S"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "embeddable": false
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "id": "blockedAE01",
+      "snippet": {
+        "title": "Title blockedAE01",
+        "description": "Description",
+        "channelTitle": "Clickit Story",
+        "liveBroadcastContent": "none",
+        "thumbnails": {
+          "high": {
+            "url": "https://i.ytimg.com/vi/blockedAE01/hqdefault.jpg"
+          }
+        }
+      },
+      "contentDetails": {
+        "duration": "PT12M34S",
+        "regionRestriction": {
+          "blocked": [
+            "AE",
+            "SA"
+          ]
+        }
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "embeddable": true
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "id": "allowedNoAE",
+      "snippet": {
+        "title": "Title allowedNoAE",
+        "description": "Description",
+        "channelTitle": "Clickit Story",
+        "liveBroadcastContent": "none",
+        "thumbnails": {
+          "high": {
+            "url": "https://i.ytimg.com/vi/allowedNoAE/hqdefault.jpg"
+          }
+        }
+      },
+      "contentDetails": {
+        "duration": "PT12M34S",
+        "regionRestriction": {
+          "allowed": [
+            "US",
+            "GB"
+          ]
+        }
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "embeddable": true
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "id": "arabicTitle",
+      "snippet": {
+        "title": "الحلقة الأولى: بداية الرحلة",
+        "description": "Description",
+        "channelTitle": "Clickit Story",
+        "liveBroadcastContent": "none",
+        "thumbnails": {
+          "high": {
+            "url": "https://i.ytimg.com/vi/arabicTitle/hqdefault.jpg"
+          }
+        }
+      },
+      "contentDetails": {
+        "duration": "PT12M34S"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "embeddable": true
+      }
+    }
+  ]
+}

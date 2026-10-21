@@ -9,7 +9,7 @@ interface ProfileHistoryRowProps {
 }
 
 export async function ProfileHistoryRow({ item }: ProfileHistoryRowProps) {
-  const brandHex = BRAND_COLOR_HEX[item.showBrandColor] ?? '#2C3569'
+  const brandHex = BRAND_COLOR_HEX[item.showBrandColor] ?? BRAND_COLOR_HEX['brand-blue']
   const progressPercent =
     item.durationSeconds > 0
       ? Math.min(

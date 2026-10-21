@@ -324,7 +324,7 @@ export function ShortsTable({ shorts }: ShortsTableProps) {
                       />
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
-                      <div className="relative h-11 w-8 overflow-hidden rounded-[6px] bg-[var(--bg-3)]">
+                      <div className="relative h-11 w-8 overflow-hidden rounded-md bg-[var(--bg-3)]">
                         <Image
                           src={thumbnailSrc(s)}
                           alt={s.title}

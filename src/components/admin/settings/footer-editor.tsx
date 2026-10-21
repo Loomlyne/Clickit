@@ -303,10 +303,10 @@ function SocialIconUpload({
         <button
           type="button"
           onClick={onRemove}
-          className="group relative flex size-9 items-center justify-center rounded-[8px] border border-[var(--line)] bg-black/30 after:absolute after:-inset-1 after:content-['']"
+          className="group relative flex size-9 items-center justify-center rounded-field border border-[var(--line)] bg-black/30 after:absolute after:-inset-1 after:content-['']"
           title="Remove icon"
         >
-          <span className="flex size-full items-center justify-center overflow-hidden rounded-[8px]">
+          <span className="flex size-full items-center justify-center overflow-hidden rounded-field">
             <Image
               src={stripStorageCacheBust(currentUrl) ?? currentUrl}
               alt="icon"
@@ -320,7 +320,7 @@ function SocialIconUpload({
         </button>
       ) : (
         <label
-          className="relative flex size-9 cursor-pointer items-center justify-center rounded-[8px] border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] text-[var(--text-mute)] transition-colors after:absolute after:-inset-1 after:content-[''] hover:border-[var(--text-mute)] hover:text-[var(--text-dim)]"
+          className="relative flex size-9 cursor-pointer items-center justify-center rounded-field border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] text-[var(--text-mute)] transition-colors after:absolute after:-inset-1 after:content-[''] hover:border-[var(--text-mute)] hover:text-[var(--text-dim)]"
           title="Upload icon"
         >
           {busy ? (

@@ -7,8 +7,8 @@ import localFont from 'next/font/local'
 
 import '@/styles/globals.css'
 import { CfWebAnalytics } from '@/components/analytics/cf-web-analytics'
-import { Toaster } from 'sonner'
 import { MotionConfig } from 'motion/react'
+import { RouteScopedToaster } from '@/components/route-scoped-toaster'
 import { getAppConfig } from '@/lib/config'
 import { siteUrl } from '@/lib/site-url'
 import { dirFor, pickLocalized } from '@/lib/locale'
@@ -143,19 +143,10 @@ export default async function LocaleLayout({
               {children}
             </main>
           </MotionConfig>
+          {/* No Toaster on /watch/* (UI-SPEC 3.1): nothing over the player.
+              Inside the provider so next-intl's usePathname has its locale. */}
+          <RouteScopedToaster />
         </NextIntlClientProvider>
-        <Toaster
-          theme="dark"
-          toastOptions={{
-            classNames: {
-              toast:
-                'border border-white/10 bg-[#10131a] text-foreground shadow-[0_24px_80px_rgba(0,0,0,0.45)]',
-              description: 'text-muted-foreground',
-              actionButton: 'bg-primary text-primary-foreground',
-              cancelButton: 'bg-secondary text-secondary-foreground',
-            },
-          }}
-        />
         <CfWebAnalytics token={process.env.NEXT_PUBLIC_CF_BEACON_TOKEN} />
 
         {googleAnalyticsId && (

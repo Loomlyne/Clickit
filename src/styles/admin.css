@@ -313,7 +313,7 @@ body:has(.admin-root) [data-slot='checkbox'] {
   position: relative;
   width: 20px;
   height: 20px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   border-color: var(--line-2);
   background: var(--bg-2);
 }
@@ -364,7 +364,7 @@ body:has(.admin-root) [data-slot='table-row'][data-state='selected'] {
 
 /* ── Fields: 8px radius, token fills ── */
 body:has(.admin-root) [data-slot='select-trigger'] {
-  border-radius: 8px;
+  border-radius: var(--uis-r-field);
   border-color: var(--line);
   background: var(--bg-2);
 }
@@ -381,7 +381,7 @@ body:has(.admin-root) [data-slot='select-content'] {
   border-color: var(--line-2);
 }
 body:has(.admin-root) [data-slot='textarea'] {
-  border-radius: 8px;
+  border-radius: var(--uis-r-field);
 }
 
 /* ── Tabs: active tab is the primary pill, 36px with a 44px hit area ── */

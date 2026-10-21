@@ -6,10 +6,10 @@ import { cn } from '@/lib/utils'
 
 // UI System roles: card 12px, hairline border, --bg-1 surface. No inset glow.
 export const adminPanelClass =
-  'rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)]'
+  'rounded-card border border-[var(--line)] bg-[var(--bg-1)]'
 
 export const adminTableShellClass =
-  'overflow-hidden rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)]'
+  'overflow-hidden rounded-card border border-[var(--line)] bg-[var(--bg-1)]'
 
 export function AdminPanel({
   children,

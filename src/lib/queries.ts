@@ -2,6 +2,8 @@ import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createPublicClient } from '@/lib/supabase/public'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { toYouTubeStatusMap, type StoredNonOkStatus } from '@/lib/watch/status-map'
 import type { Database } from '@/lib/database.types'
 import { DEFAULT_LOCALE, localizedField, pickLocalized, type Locale } from '@/lib/locale'
 import { isEpisodeLive } from '@/lib/scheduling'
@@ -998,7 +1000,17 @@ export async function getRecentlyWatched(userId: string): Promise<RecentlyWatche
 export async function getEpisodesProgress(
   userId: string,
   episodeIds: string[]
-): Promise<Record<string, { progressPercent: number; completed: boolean }>> {
+): Promise<
+  Record<
+    string,
+    {
+      progressPercent: number
+      completed: boolean
+      progressSeconds: number
+      durationSeconds: number
+    }
+  >
+> {
   if (episodeIds.length === 0) return {}
   const supabase = await createClient()
   const { data } = await supabase
@@ -1009,15 +1021,55 @@ export async function getEpisodesProgress(
 
   if (!data) return {}
 
-  const result: Record<string, { progressPercent: number; completed: boolean }> = {}
+  const result: Record<
+    string,
+    {
+      progressPercent: number
+      completed: boolean
+      progressSeconds: number
+      durationSeconds: number
+    }
+  > = {}
   for (const row of data) {
     const dur = row.duration_seconds || 1
     result[row.episode_id] = {
       progressPercent: Math.min(Math.round((row.progress_seconds / dur) * 100), 100),
       completed: row.completed,
+      progressSeconds: row.progress_seconds,
+      durationSeconds: row.duration_seconds ?? 0,
     }
   }
   return result
+}
+
+/**
+ * Stored YouTube status of the given episodes, non-ok only (checker W1).
+ * Server-only admin read: the status columns are not readable by anon or
+ * authenticated, so the watch page asks here for ids it is already showing.
+ * Returns status codes only. On a lookup error it returns {} so the player
+ * tries anyway and the error-card path still applies.
+ */
+export async function getEpisodeYouTubeStatuses(
+  episodeIds: string[]
+): Promise<Record<string, StoredNonOkStatus>> {
+  if (episodeIds.length === 0) return {}
+  try {
+    const admin = createAdminClient()
+    const { data, error } = await admin
+      .from('episodes')
+      .select('id, youtube_status')
+      .in('id', episodeIds)
+      .not('youtube_status', 'is', null)
+      .neq('youtube_status', 'ok')
+    if (error || !data) {
+      console.error('[queries] youtube status lookup failed', error?.message)
+      return {}
+    }
+    return toYouTubeStatusMap(data)
+  } catch (err) {
+    console.error('[queries] youtube status lookup failed', err)
+    return {}
+  }
 }
 
 export async function getShowWatchlistState(userId: string, showId: string): Promise<boolean> {

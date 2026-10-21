@@ -17,6 +17,8 @@ import { EpisodesTable } from '@/components/admin/episodes-table'
 import { SeasonFormDrawer } from '@/components/admin/season-form-drawer'
 import { EpisodeFormDrawer } from '@/components/admin/episode-form-drawer'
 import { EmptyState } from '@/components/admin/empty-state'
+import { ImportPlaylistSheet } from '@/components/admin/import-playlist-sheet'
+import { RenumberSeasonDialog } from '@/components/admin/renumber-season-dialog'
 import { AdminPanel } from '@/components/admin/admin-shell'
 import {
   createSeason,
@@ -25,6 +27,8 @@ import {
 } from '@/app/[locale]/admin/actions'
 import type { Database } from '@/lib/database.types'
 import { useRowVersions } from '@/components/admin/row-version'
+import { formatNumberList } from '@/lib/i18n-format'
+import { planRenumber } from '@/lib/admin/renumber-plan'
 
 type Season = Database['public']['Tables']['seasons']['Row']
 type Episode = Database['public']['Tables']['episodes']['Row']
@@ -61,6 +65,7 @@ export function SeasonTabs({
   const tSeason = useTranslations('admin.seasonForm')
   const tEpisode = useTranslations('admin.episodeForm')
   const t = useTranslations('admin.seasonTabs')
+  const tTable = useTranslations('admin.episodesTable')
   const [seasonDrawerOpen, setSeasonDrawerOpen] = useState(false)
   const [editSeason, setEditSeason] = useState<Season | null>(null)
   // A season save lands only while the row still holds the updated_at it was opened with (item 8).
@@ -92,10 +97,21 @@ export function SeasonTabs({
           heading={t('emptyHeading')}
           body={t('empty')}
           action={
-            <Button onClick={handleAddSeason}>
-              <Plus className="me-1.5 size-4" />
-              {tSeason('addSeason')}
-            </Button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button
+                className="min-h-11 px-6 py-2 text-sm font-bold"
+                onClick={handleAddSeason}
+              >
+                <Plus className="me-1.5 size-4" />
+                {tSeason('addSeason')}
+              </Button>
+              <ImportPlaylistSheet
+                showId={showId}
+                seasons={[]}
+                nextSeasonNumber={1}
+                trigger="outline"
+              />
+            </div>
           }
         />
         <SeasonFormDrawer
@@ -144,6 +160,7 @@ export function SeasonTabs({
         {seasons.map((season) => {
           const seasonEpisodes = episodesBySeason[season.id] ?? []
           const title = getSeasonTitle(season, isArabic)
+          const renumberPlan = planRenumber(seasonEpisodes)
           return (
             <TabsContent key={season.id} value={season.id}>
               <AdminPanel className="space-y-4 p-4 md:p-5">
@@ -165,14 +182,29 @@ export function SeasonTabs({
                     )}
                     <p className="text-muted-foreground mt-3 text-sm">
                       {t('episodeCount', { count: seasonEpisodes.length })}
+                      {renumberPlan.needed && (
+                        <span className="ms-2 text-[11px] text-[var(--text-mute)]">
+                          {tTable('gapsHint', {
+                            numbers: formatNumberList(
+                              renumberPlan.numbers,
+                              locale
+                            ),
+                          })}
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <RenumberSeasonDialog
+                      showId={showId}
+                      seasonId={season.id}
+                      episodes={seasonEpisodes}
+                    />
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
                           variant="outline"
-                          size="sm"
+                          className="min-h-11 px-6 py-2 text-sm font-bold"
                           onClick={() => handleEditSeason(season)}
                           aria-label={t('editSeasonAria', {
                             title: season.title,
@@ -185,7 +217,7 @@ export function SeasonTabs({
                       <TooltipContent>{t('editSeasonTooltip')}</TooltipContent>
                     </Tooltip>
                     <Button
-                      size="sm"
+                      className="min-h-11 px-6 py-2 text-sm font-bold"
                       onClick={() => handleAddEpisode(season.id)}
                     >
                       <Plus className="size-4" />

@@ -20,6 +20,7 @@ import {
 } from '@/lib/admin/show-writes'
 import {
   categoryOrderSchema,
+  commitImportSchema,
   episodeSchema,
   formatZodError,
   parseDirection,
@@ -39,7 +40,36 @@ import {
   restoreEpisodeCore,
   deleteEpisodePermanentlyCore,
   reorderEpisodeCore,
+  renumberSeasonCore,
 } from '@/lib/admin/episode-lifecycle'
+import {
+  commitImportCore,
+  previewPlaylistPageCore,
+  type ImportData,
+  type PreviewPage,
+  type YouTubeCoreResult,
+} from '@/lib/admin/youtube-import'
+import {
+  verifyMessage,
+  verifyVideoCore,
+  type DuplicateParams,
+  type VerifyOptions,
+  type VerifyOutcome,
+  type YouTubeMeta,
+} from '@/lib/admin/youtube-verify'
+import type { YouTubeErrorCode } from '@/lib/youtube-errors'
+import { getServerYouTubeClient } from '@/server/youtube-service'
+import { withinYouTubeActionLimit } from '@/server/youtube/rate-limit'
+import { checkShortVideoCore, type ShortVideoCheck } from '@/lib/admin/short-video'
+import {
+  SHORT_TEXT_FIELDS,
+  flagsOnCreate,
+  flagsOnUpdate,
+  shortTextFromYouTube,
+} from '@/lib/admin/youtube-text-edits'
+import { saveYouTubeApiKeyCore, type SaveKeyResult } from '@/lib/admin/youtube-key-save'
+import { testYouTubeKeyCore, type KeyTestResult } from '@/lib/admin/youtube-key-status'
+import { nextQuotaReset } from '@/lib/youtube-quota'
 import {
   planShowScheduleCore,
   applyShowScheduleCore,
@@ -144,6 +174,55 @@ const adminEnv: AdminActionEnv = {
   createDb: createAdminClient,
   audit: logAuditStrict,
   logError: (label, err) => console.error(label, err),
+}
+
+// TODO(phase-5): swap this for requireAdmin() (admins table + TOTP at /{locale}/auth/mfa; accepts both admins, so Nejib can import); every YouTube action uses only this function
+const requireAdminForYouTube = (): Promise<{ id: string }> => assertAdmin()
+
+const youtubeAdminEnv: AdminActionEnv = { ...adminEnv, assertAdmin: requireAdminForYouTube }
+
+/** A YouTube refusal the UI translates with YOUTUBE_ERROR_MESSAGE_KEYS. */
+type YouTubeRefusal = { code: YouTubeErrorCode; params?: DuplicateParams }
+
+/** Phase 6 action result: data on success, data.code (and params) on a refusal. */
+export type YouTubeActionResult<T> =
+  | { success: true; data: T; error?: undefined; wrote?: boolean }
+  | { success: false; error: string; data?: YouTubeRefusal; wrote?: boolean }
+
+/** The refusal when an admin made too many YouTube calls in the window. */
+function rateLimitedRefusal(): { success: false; wrote: false; error: string; data: { code: 'rate_limited' } } {
+  return {
+    success: false,
+    wrote: false,
+    error: verifyMessage({ ok: false, code: 'rate_limited' }),
+    data: { code: 'rate_limited' },
+  }
+}
+
+/** Moves a core's top-level YouTube code into data.code for the UI. */
+function toYouTubeResult<T>(r: YouTubeCoreResult<T>, fallbackError: string): YouTubeActionResult<T> {
+  if (r.success) return { success: true, data: r.data as T, wrote: r.wrote }
+  return {
+    success: false,
+    error: r.error ?? fallbackError,
+    wrote: r.wrote,
+    ...(r.code ? { data: { code: r.code } } : {}),
+  }
+}
+
+/**
+ * The server video check handed to the episode cores (YT-03). The Vault key is
+ * read only when a link actually needs checking; a missing key is passed as a
+ * null client, so the core answers key_missing (fail closed).
+ */
+function serverVideoVerifier(db: AdminDb, excludeEpisodeId?: string) {
+  return async (raw: string, opts: VerifyOptions): Promise<VerifyOutcome> => {
+    const yt = await getServerYouTubeClient()
+    return verifyVideoCore(db, 'missing' in yt ? null : yt.client, raw, {
+      ...opts,
+      excludeEpisodeId: opts.excludeEpisodeId ?? excludeEpisodeId,
+    })
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -773,7 +852,12 @@ export async function createEpisode(
       const arabic = createArabicFiller(ctx.adminUserId)
       const result = await createEpisodeCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
+        {
+          audit: ctx.audit,
+          adminUserId: ctx.adminUserId,
+          fillArabic: arabic.fill,
+          verifyVideo: serverVideoVerifier(ctx.db),
+        },
         data
       )
       return withArabicMissing(result, arabic.missing())
@@ -801,7 +885,12 @@ export async function updateEpisode(
       // Checked against the drawer's updated_at before any AI call (review item 8, PR #29).
       const result = await updateEpisodeCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
+        {
+          audit: ctx.audit,
+          adminUserId: ctx.adminUserId,
+          fillArabic: arabic.fill,
+          verifyVideo: serverVideoVerifier(ctx.db, id),
+        },
         id,
         data,
         expectedUpdatedAt
@@ -909,27 +998,282 @@ export async function reorderEpisode(
   )
 }
 
+/**
+ * Renumber a season's episodes 1 to N in their current order (one SQL call,
+ * all or nothing). Archived episodes keep their place in the order.
+ */
+export async function renumberSeason(
+  showId: string,
+  seasonId: string
+): Promise<ActionResult<{ showId?: string; map?: unknown }>> {
+  return runAdminAction(youtubeAdminEnv,
+    (ctx) =>
+      renumberSeasonCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        showId,
+        seasonId
+      ),
+    {
+      fallbackError: 'Failed to renumber episodes',
+      revalidate: (r) => {
+        if (!revalidateShowPage(r, showId)) bumpCatalogCache()
+        updateTag('episodes')
+      },
+    }
+  )
+}
+
+// ---------------------------------------------------------------------------
+// YouTube import and single-link fetch (Phase 6)
+// ---------------------------------------------------------------------------
+
+export type { PreviewPage, PreviewRow, ImportData } from '@/lib/admin/youtube-import'
+export type { YouTubeMeta } from '@/lib/admin/youtube-verify'
+
+/**
+ * Read one preview page of a playlist (at most 4 pages of 50). Writes nothing.
+ * The client sends the link or the playlist id and page token; the core
+ * re-parses everything.
+ */
+export async function previewPlaylistPage(input: {
+  showId: string
+  url?: string
+  playlistId?: string
+  pageToken?: string
+  page: number
+}): Promise<YouTubeActionResult<PreviewPage>> {
+  try {
+    const admin = await requireAdminForYouTube()
+    const db = createAdminClient()
+    // Per-admin limit before any key read or YouTube call (quota guard).
+    if (!(await withinYouTubeActionLimit(db, 'preview', admin.id))) return rateLimitedRefusal()
+    const yt = await getServerYouTubeClient()
+    if ('missing' in yt) {
+      return { success: false, error: 'The YouTube key is not set.', data: { code: 'key_missing' } }
+    }
+    const result = await previewPlaylistPageCore(db, yt.client, input)
+    return toYouTubeResult(result, 'Failed to read the playlist')
+  } catch (err) {
+    // The error only: never the input link (D-20, T-06-51).
+    console.error('[admin/actions] playlist preview failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to read the playlist',
+    }
+  }
+}
+
+/**
+ * Import the ticked videos as draft episodes. The server re-fetches every id
+ * from YouTube and refuses the whole import if anything changed since the preview.
+ */
+export async function commitImport(input: {
+  showId: string
+  playlistId: string
+  videoIds: string[]
+  target: z.input<typeof commitImportSchema>['target']
+}): Promise<YouTubeActionResult<ImportData>> {
+  return runAdminAction(youtubeAdminEnv,
+    async (ctx): Promise<YouTubeActionResult<ImportData>> => {
+      // Per-admin limit before any key read or YouTube call (quota guard).
+      if (!(await withinYouTubeActionLimit(ctx.db, 'import', ctx.adminUserId))) {
+        return rateLimitedRefusal()
+      }
+      const yt = await getServerYouTubeClient()
+      if ('missing' in yt) {
+        return {
+          success: false,
+          wrote: false,
+          error: 'The YouTube key is not set.',
+          data: { code: 'key_missing' },
+        }
+      }
+      const result = await commitImportCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, youtube: yt.client, now: new Date() },
+        input
+      )
+      return toYouTubeResult(result, 'Import failed')
+    },
+    {
+      fallbackError: 'Import failed',
+      revalidate: (r) => {
+        revalidateShowPage(r?.success ? r : undefined, input?.showId)
+        updateTag('episodes')
+        updateTag('shows')
+      },
+    }
+  )
+}
+
+/**
+ * Check one video link and return its YouTube metadata (title, description,
+ * channel, thumbnail, length). Writes nothing. Replaced the old key-reading GET route.
+ * Shorts pass forShort: true (no duplicate check against episodes).
+ */
+export async function fetchYouTubeMeta(
+  url: string,
+  opts?: { forShort?: boolean; excludeEpisodeId?: string }
+): Promise<YouTubeActionResult<YouTubeMeta>> {
+  try {
+    const admin = await requireAdminForYouTube()
+    const db = createAdminClient()
+    // Per-admin limit before any key read or YouTube call (quota guard).
+    if (!(await withinYouTubeActionLimit(db, 'meta', admin.id))) return rateLimitedRefusal()
+    const yt = await getServerYouTubeClient()
+    const outcome = await verifyVideoCore(
+      db,
+      'missing' in yt ? null : yt.client,
+      url,
+      {
+        checkDuplicate: !opts?.forShort,
+        // The edit form passes the episode's own id so its own video is not a duplicate.
+        excludeEpisodeId:
+          typeof opts?.excludeEpisodeId === 'string' ? opts.excludeEpisodeId : undefined,
+      }
+    )
+    if (outcome.ok) return { success: true, data: outcome.meta }
+    return {
+      success: false,
+      error: verifyMessage(outcome),
+      data: outcome.params
+        ? { code: outcome.code, params: outcome.params }
+        : { code: outcome.code },
+    }
+  } catch (err) {
+    console.error('[admin/actions] youtube meta fetch failed', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to check the video',
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// YouTube API key in Admin › Settings (Phase 6, G6: editable, stored in Vault)
+// ---------------------------------------------------------------------------
+
+export type { SaveKeyCode } from '@/lib/admin/youtube-key-save'
+export type { KeyTestReason } from '@/lib/admin/youtube-key-status'
+
+/** Test key result for the settings block: the outcome, when, and the quota reset time. */
+export type KeyTestData = KeyTestResult & {
+  auditError?: string
+  at: string
+  resetAt: string | null
+}
+
+/**
+ * Save the YouTube key into Supabase Vault. The core checks the format before
+ * any database call, rate limits, and audits the last 4 characters only. The
+ * result carries hasKey and last4, never the key; the next request reads it.
+ */
+export async function saveYouTubeApiKey(
+  raw: string
+): Promise<SaveKeyResult | { success: false; error: string }> {
+  return runAdminAction(youtubeAdminEnv,
+    (ctx) =>
+      saveYouTubeApiKeyCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, now: new Date() },
+        raw
+      ),
+    {
+      fallbackError: 'The key was not saved.',
+      revalidate: () => revalidatePath('/[locale]/admin/settings', 'page'),
+    }
+  )
+}
+
+/**
+ * One 1-unit YouTube call with the stored key, recorded as an audit row. The
+ * key is read from Vault on this request, so a key saved a moment ago is used.
+ */
+export async function testYouTubeKey(): Promise<
+  | { success: true; wrote: true; data: KeyTestData }
+  | { success: false; error: string; data?: { code: 'rate_limited' } }
+> {
+  return runAdminAction(youtubeAdminEnv,
+    async (
+      ctx
+    ): Promise<
+      | { success: true; wrote: true; data: KeyTestData }
+      | ReturnType<typeof rateLimitedRefusal>
+    > => {
+      // Per-admin limit before any key read or YouTube call (quota guard).
+      if (!(await withinYouTubeActionLimit(ctx.db, 'keyTest', ctx.adminUserId))) {
+        return rateLimitedRefusal()
+      }
+      const yt = await getServerYouTubeClient()
+      const r = await testYouTubeKeyCore(
+        ctx.db,
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        'missing' in yt ? null : yt.client
+      )
+      const now = new Date()
+      return {
+        success: true as const,
+        wrote: true as const,
+        data: {
+          ...r,
+          at: now.toISOString(),
+          resetAt:
+            r.ok === false && r.reason === 'quota' ? nextQuotaReset(now).toISOString() : null,
+        },
+      }
+    },
+    { fallbackError: 'Key test failed', revalidate: () => {} }
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Bulk episode scheduling
 // ---------------------------------------------------------------------------
 
 export type { PlannedEpisodeSlot } from '@/lib/admin/show-schedule'
 
+/** The import selects at most this many episodes (IMPORT_MAX_ITEMS). */
+const MAX_SCHEDULE_SELECTION = 200
+
+/**
+ * Shape check for an optional episode selection from the client. Each id is
+ * parsed by planShowScheduleCore; this only refuses non-arrays and oversize lists.
+ */
+function parseEpisodeSelection(
+  raw: unknown
+): { ok: true; value: string[] | undefined } | { ok: false; error: string } {
+  if (raw === undefined) return { ok: true, value: undefined }
+  if (
+    !Array.isArray(raw) ||
+    raw.length === 0 ||
+    raw.length > MAX_SCHEDULE_SELECTION ||
+    !raw.every((v) => typeof v === 'string')
+  ) {
+    return { ok: false, error: 'Some selected episodes cannot be scheduled.' }
+  }
+  return { ok: true, value: raw as string[] }
+}
+
 /**
  * Preview a bulk schedule without writing anything. Drives the confirmation
  * dialog so the admin sees every generated air date before committing.
  */
 export async function previewShowSchedule(
-  showId: string
+  showId: string,
+  episodeIds?: string[]
 ): Promise<ActionResult<PlannedEpisodeSlot[]>> {
   try {
     await assertAdmin()
     const parsed = parseId(showId, 'show')
     if (!parsed.ok) return { success: false, error: parsed.error }
+    const selection = parseEpisodeSelection(episodeIds)
+    if (!selection.ok) return { success: false, error: selection.error }
     const result = await planShowScheduleCore(
       createAdminClient(),
       parsed.value,
-      new Date()
+      new Date(),
+      selection.value
     )
     if (!result.ok) return { success: false, error: result.error }
     return { success: true, data: result.plan }
@@ -948,16 +1292,24 @@ export async function previewShowSchedule(
  * minute (see lib/scheduling.isEpisodeLive and the publish-scheduled cron).
  */
 export async function applyShowSchedule(
-  showId: string
+  showId: string,
+  episodeIds?: string[]
 ): Promise<ActionResult<{ scheduled?: number }>> {
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      applyShowScheduleCore(
-        ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, now: new Date() },
-        showId
-      ),
+    async (ctx) => {
+      const deps = { audit: ctx.audit, adminUserId: ctx.adminUserId, now: new Date() }
+      if (episodeIds === undefined) return applyShowScheduleCore(ctx.db, deps, showId)
+      // A chosen subset (the import success state, D-07): plan it here and hand
+      // the plan over; the core's slot-conflict and changed-row checks still run.
+      const parsed = parseId(showId, 'show')
+      if (!parsed.ok) return { success: false, error: parsed.error, wrote: false }
+      const selection = parseEpisodeSelection(episodeIds)
+      if (!selection.ok) return { success: false, error: selection.error, wrote: false }
+      const plan = await planShowScheduleCore(ctx.db, parsed.value, deps.now, selection.value)
+      if (!plan.ok) return { success: false, error: plan.error, wrote: false }
+      return applyShowScheduleCore(ctx.db, { ...deps, planOverride: plan.plan }, parsed.value)
+    },
     {
       fallbackError: 'Failed to schedule episodes',
       revalidate: (result) => {
@@ -1416,8 +1768,6 @@ const integrationsSchema = z.object({
       (v) => v === null || v === '' || /^[0-9]{6,20}$/.test(v),
       'Invalid Meta Pixel ID'
     ),
-  /** Omit to leave the stored key unchanged; null clears it. */
-  youtube_api_key: z.string().trim().max(100).nullable().optional(),
 })
 
 const featureFlagsSchema = z.object({
@@ -1827,9 +2177,6 @@ export async function updateIntegrations(
       google_analytics_id: parsed.google_analytics_id?.trim() || null,
       meta_pixel_id: parsed.meta_pixel_id?.trim() || null,
     }
-    if (parsed.youtube_api_key !== undefined) {
-      cleaned.youtube_api_key = parsed.youtube_api_key?.trim() || null
-    }
     const { error } = await saveConfigSection(cleaned, version.value)
     if (error) return { success: false, error }
     // Log which integration keys were touched without leaking the secret values.
@@ -2014,6 +2361,17 @@ const shortSchema = z.object({
   expires_at: z.string().optional().nullable(),
 })
 
+/** The stored YouTube client, or null when no key is saved (key_missing). */
+async function serverYouTubeClientOrNull() {
+  const yt = await getServerYouTubeClient()
+  return 'missing' in yt ? null : yt.client
+}
+
+/** A refused short link, in the episode save's shape (data.youtubeError.code). */
+function shortVideoRefusal(check: Extract<ShortVideoCheck, { ok: false }>): ActionResult {
+  return { success: false, error: check.error, data: { youtubeError: { code: check.code } } }
+}
+
 export async function createShort(
   data: z.input<typeof shortSchema>
 ): Promise<ActionResult> {
@@ -2021,6 +2379,18 @@ export async function createShort(
     const user = await assertAdmin()
     const parsed = shortSchema.parse(data)
     const admin = createAdminClient()
+
+    // Server video check before any write (same rules as an episode save).
+    const video = await checkShortVideoCore(admin, serverYouTubeClientOrNull, parsed.youtube_video_id)
+    if (!video.ok) return shortVideoRefusal(video)
+    parsed.youtube_video_id = video.videoId
+    // Review item 7: a field that differs from the verified video's text is
+    // "edited on Clickit"; the daily check keeps it.
+    const edited = flagsOnCreate(
+      SHORT_TEXT_FIELDS,
+      parsed,
+      video.meta ? shortTextFromYouTube(video.meta) : null
+    )
 
     const { data: lastShort } = await admin
       .from('shorts')
@@ -2031,7 +2401,7 @@ export async function createShort(
 
     const { data: short, error } = await admin
       .from('shorts')
-      .insert({ ...parsed, sort_order: (lastShort?.sort_order ?? -1) + 1 })
+      .insert({ ...parsed, ...edited, sort_order: (lastShort?.sort_order ?? -1) + 1 })
       .select()
       .single()
 
@@ -2075,7 +2445,43 @@ export async function updateShort(
     const parsed = shortSchema.parse(data)
     const admin = createAdminClient()
 
-    const { error, row } = await updateIfUnchanged(admin, 'shorts', id, parsed, version.value, '*')
+    const { data: current, error: readError } = await admin
+      .from('shorts')
+      .select('youtube_video_id, title, channel_name, title_edited, channel_name_edited, updated_at')
+      .eq('id', id)
+      .maybeSingle()
+    if (readError) return { success: false, error: readError.message }
+    if (!current) return { success: false, error: 'Short not found.' }
+    // A stale drawer stops here, before the YouTube call; the write below is CAS too.
+    if (current.updated_at !== version.value.expected) return { success: false, error: SAVE_CONFLICT }
+
+    // Server video check before the write; the stored video is not re-checked.
+    const video = await checkShortVideoCore(
+      admin,
+      serverYouTubeClientOrNull,
+      parsed.youtube_video_id,
+      current.youtube_video_id
+    )
+    if (!video.ok) return shortVideoRefusal(video)
+    parsed.youtube_video_id = video.videoId
+    // Review item 7: a changed title or channel gets its edited flag in the
+    // same UPDATE; a flag is never cleared.
+    const edited = flagsOnUpdate(
+      SHORT_TEXT_FIELDS,
+      parsed,
+      current,
+      video.meta ? shortTextFromYouTube(video.meta) : null
+    )
+
+    // Lands only while the row still holds the drawer's updated_at (review item 8, PR #29).
+    const { error, row } = await updateIfUnchanged(
+      admin,
+      'shorts',
+      id,
+      { ...parsed, ...edited },
+      version.value,
+      '*'
+    )
     if (error || !row) return { success: false, error: error ?? 'Short not found.' }
     const short = row as unknown as Database['public']['Tables']['shorts']['Row']
 

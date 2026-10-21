@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-20T20:45:00.000Z"
+last_updated: "2026-10-20T22:23:18.983Z"
 last_activity: 2026-10-20
 progress:
   total_phases: 9
-  completed_phases: 0
-  total_plans: 13
-  completed_plans: 12
-  percent: 0
+  completed_phases: 2
+  total_plans: 31
+  completed_plans: 24
+  percent: 22
 ---
 
 # Project State
@@ -20,17 +20,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-04)
 
 **Core value:** A signed-in viewer opens a show and an episode from YouTube plays immediately, with progress remembered — and the admin can put a whole YouTube season on the platform from one playlist link.
-**Current focus:** Phase 01.1 — admin-actions-hardening-inserted
+**Current focus:** Phase 4 — Design System Truth
 
 ## Current Position
 
-Phase: 01.1 (admin-actions-hardening-inserted) — UAT PASSED, awaiting PR review and Ship
-Plan: 13 of 13
-Status: UAT passed (Koss, 2026-10-20; step 14 upload-audit gap to backlog) — merged origin/main cfbc8fb for landing
-Last activity: 2026-10-20 - Completed quick task 261020-ej8 on main: Apply UI System ui.config.json tokens to Clickit
-Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main merged in 2026-10-20
+Phase: 4 (Design System Truth) — EXECUTING
+Plan: 7 of 14
+Status: Ready to execute
+Last activity: 2026-10-20
+Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
 
-Progress: [█████████░] 92%
+Progress: [████████░░] 77%
 
 ## Performance Metrics
 
@@ -72,6 +72,12 @@ Progress: [█████████░] 92%
 | Phase 02 P17 | 215min | 2 tasks | 13 files |
 | Phase 02 P18 | 150min | 2 tasks | 8 files |
 | Phase 02 P19 | 55min | 2 tasks | 15 files |
+| Phase 04 P01 | 25min | 3 tasks | 7 files |
+| Phase 04 P02 | 12min | 2 tasks | 3 files |
+| Phase 04 P03 | 15min | 4 tasks | 8 files |
+| Phase 04 P04 | 15min | 3 tasks | 8 files |
+| Phase 04 P05 | 8min | 2 tasks | 6 files |
+| Phase 04 P06 | 5min | 4 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -105,6 +111,9 @@ Recent decisions affecting current work:
 - [Phase 02]: 02-18: every video upload (hero desktop/mobile, preloader, show drawer) goes browser -> requestMediaUpload -> XHR PUT (video/mp4, signed Content-Type) -> finalize*VideoUpload through uploadVideoDirect; the show drawer uses commit:false (upload then Save); signed texts verbatim (Upload an MP4 video., the not-fast-start sentence, Checking fast-start…, helper line MP4, fast-start, under 50MB); the signed not-fast-start sentence replaces the server's text on the client; stale 8 MB 'Supabase egress' warning left for Koss's wording (deferred item 13)
 - [Phase 02]: 02-19: no file under src/ imports sharp or @aws-sdk/* (guard test worker-request-paths in gate:local); old FormData and signed-upload actions and src/lib/r2-media* deleted; admin media deletion is R2-only (src/server/r2-delete.ts), no admin action or cron removes a Supabase original unless CLEANUP_SUPABASE_ORIGINALS=on; bodySizeLimit 2mb; sharp and S3 SDK are devDependencies; Worker preview serves all admin pages and a saved admin action with no stub; bundle 14,286 KiB raw / 2,936 KiB gzip
 - [Phase 02]: 02-04: security helpers are pure with injected I/O; cron auth and rate limiter refuse on every uncertain path; Turnstile reasons are fixed codes that never echo secret or token
+- [Phase 04-01]: Named shadows in @theme static (not self-referencing @theme inline); radius scale moved to @theme static with --radius-hairline; shadow-bar added for watch-shell
+- [Phase 04]: Phase 04-03: Q4=A, category colours stay free content; Desert Sand (brand-yellow) is genre/category default only, shows keep 5 brand values
+- [Phase 4]: Phase 4 Plan 04: admin design-system summary compares canonicalCssValue(live) with resolved signed values; fonts excluded from the count (next/font hashes the family)
 
 ### Pending Todos
 
@@ -144,6 +153,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-20T10:45:11.285Z
-Stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above still shows 01.1, controller owns it)
+Last session: 2026-10-20T22:23:18.977Z
+Stopped at: Completed 04-01-PLAN.md
+Phase 2 last session: 2026-10-20T10:45:11.285Z
+Phase 2 stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above is the controller's)
 Resume file: None

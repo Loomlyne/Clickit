@@ -7,6 +7,7 @@ import {
   updateEpisodeCore,
   updateSeasonCore,
 } from '../../src/lib/admin/season-episode-writes.ts'
+import type { VerifyOutcome } from '../../src/lib/admin/youtube-verify.ts'
 import { createFakeSupabase, type Row } from './helpers/fake-supabase.ts'
 
 const id = (p: string, n = 0) =>
@@ -384,4 +385,181 @@ test('updateEpisodeCore: a title-only edit keeps the existing Arabic title', asy
   assert.equal(res.success, true)
   assert.equal(d.fills.length, 0)
   assert.equal(row(f, 'episodes', E1)!.title_ar, 'حلقة 1')
+})
+
+// ---------------------------------------------------------------------------
+// YouTube verify on save (YT-03, 06-06)
+// ---------------------------------------------------------------------------
+
+type Verify = (raw: string, opts: { excludeEpisodeId?: string }) => Promise<VerifyOutcome>
+
+function verifier(answer: (raw: string) => VerifyOutcome) {
+  const calls: Array<[string, { excludeEpisodeId?: string }]> = []
+  const verifyVideo: Verify = async (raw, opts) => {
+    calls.push([raw, opts])
+    return answer(raw)
+  }
+  return { calls, verifyVideo }
+}
+
+const okMeta = (videoId: string): VerifyOutcome => ({
+  ok: true,
+  meta: {
+    videoId,
+    title: 'T',
+    description: 'D',
+    channelTitle: 'C',
+    thumbnailUrl: null,
+    durationSeconds: 600,
+    durationMinutes: 10,
+  },
+})
+
+test('createEpisodeCore: a verify refusal writes nothing and returns the typed code', async () => {
+  const f = world()
+  const before = f.snapshot()
+  const v = verifier(() => ({
+    ok: false,
+    code: 'video_duplicate',
+    params: { show: 'Show 2', season: 1, episode: 3 },
+  }))
+  const res = await createEpisodeCore(
+    f.client,
+    { ...deps(f), verifyVideo: v.verifyVideo },
+    newEp({ youtube_video_id: 'dupVideo001' })
+  )
+  assert.equal(res.success, false)
+  assert.equal(res.wrote, false)
+  assert.equal(res.error, 'This video is already on Clickit: Show 2 · Season 1 · Episode 3.')
+  assert.deepEqual(res.data, {
+    showId: S1,
+    youtubeError: { code: 'video_duplicate', params: { show: 'Show 2', season: 1, episode: 3 } },
+  })
+  assert.deepEqual(f.snapshot(), before)
+  assert.equal(dbOps(f, 'episodes', 'insert').length, 0)
+  assert.deepEqual(v.calls, [['dupVideo001', {}]])
+})
+
+test('createEpisodeCore: key missing blocks saving a new video link (fail closed)', async () => {
+  const f = world()
+  const v = verifier(() => ({ ok: false, code: 'key_missing' }))
+  const res = await createEpisodeCore(
+    f.client,
+    { ...deps(f), verifyVideo: v.verifyVideo },
+    newEp({ youtube_video_id: 'okVideo0001' })
+  )
+  assert.equal(res.success, false)
+  assert.equal(res.data?.youtubeError?.code, 'key_missing')
+  assert.equal(dbOps(f, 'episodes', 'insert').length, 0)
+})
+
+test('createEpisodeCore: a full URL is stored as the normalized 11-char id', async () => {
+  const f = world()
+  const v = verifier(() => okMeta('okVideo0001'))
+  const res = await createEpisodeCore(
+    f.client,
+    { ...deps(f), verifyVideo: v.verifyVideo },
+    newEp({ youtube_video_id: 'https://www.youtube.com/watch?v=okVideo0001&t=3' })
+  )
+  assert.equal(res.success, true, res.error)
+  const created = res.data!.episode as Row
+  assert.equal(row(f, 'episodes', created.id)!.youtube_video_id, 'okVideo0001')
+})
+
+test('createEpisodeCore: no video id means no verify call', async () => {
+  const f = world()
+  const v = verifier(() => okMeta('x'))
+  const res = await createEpisodeCore(f.client, { ...deps(f), verifyVideo: v.verifyVideo }, newEp())
+  assert.equal(res.success, true)
+  assert.equal(v.calls.length, 0)
+})
+
+test('createEpisodeCore: a verify that throws is returned as an error, nothing written', async () => {
+  const f = world()
+  const res = await createEpisodeCore(
+    f.client,
+    {
+      ...deps(f),
+      verifyVideo: async () => {
+        throw new Error('lookup failed')
+      },
+    },
+    newEp({ youtube_video_id: 'okVideo0001' })
+  )
+  assert.equal(res.success, false)
+  assert.equal(res.wrote, false)
+  assert.equal(res.error, 'lookup failed')
+  assert.equal(dbOps(f, 'episodes', 'insert').length, 0)
+})
+
+test('createEpisodeCore: a 23505 on the video index returns the duplicate message, not the number one', async () => {
+  const f = world()
+  // Race: another row takes the id after the verify said ok.
+  f.tables.episodes!.push(ep(id('e', 90), 90, true, SE2, S2))
+  f.tables.episodes!.at(-1)!.youtube_video_id = 'okVideo0001'
+  const res = await createEpisodeCore(
+    f.client,
+    { ...deps(f), verifyVideo: verifier(() => okMeta('okVideo0001')).verifyVideo },
+    newEp({ youtube_video_id: 'okVideo0001' })
+  )
+  assert.equal(res.success, false)
+  assert.equal(res.error, 'This video is already on Clickit.')
+  assert.equal(res.data?.youtubeError?.code, 'video_duplicate')
+})
+
+test('createEpisodeCore: without a verifyVideo dep the old path is unchanged', async () => {
+  const f = world()
+  const res = await createEpisodeCore(f.client, deps(f), newEp({ youtube_video_id: 'rawValue001' }))
+  assert.equal(res.success, true)
+  assert.equal(row(f, 'episodes', (res.data!.episode as Row).id)!.youtube_video_id, 'rawValue001')
+})
+
+test('updateEpisodeCore: verify runs only when the video id is present and changed', async () => {
+  const f = world()
+  f.tables.episodes!.find((e) => e.id === E1)!.youtube_video_id = 'storedVid01'
+  const v = verifier((raw) => okMeta(raw.slice(-11)))
+  const d = { ...deps(f), verifyVideo: v.verifyVideo }
+
+  // Each save chains on the updated_at the previous one wrote (item 8).
+  const at = () => row(f, 'episodes', E1)!.updated_at as string
+  await updateEpisodeCore(f.client, d, E1, { title: 'Only title' }, at())
+  await updateEpisodeCore(f.client, d, E1, { youtube_video_id: 'storedVid01' }, at())
+  await updateEpisodeCore(f.client, d, E1, { youtube_video_id: 'https://youtu.be/storedVid01' }, at())
+  assert.equal(v.calls.length, 0)
+  assert.equal(row(f, 'episodes', E1)!.youtube_video_id, 'storedVid01')
+
+  const res = await updateEpisodeCore(f.client, d, E1, { youtube_video_id: 'https://youtu.be/newVideo001' }, at())
+  assert.equal(res.success, true, res.error)
+  assert.deepEqual(v.calls, [['https://youtu.be/newVideo001', { excludeEpisodeId: E1 }]])
+  assert.equal(row(f, 'episodes', E1)!.youtube_video_id, 'newVideo001')
+})
+
+test('updateEpisodeCore: a verify refusal leaves the episode unchanged with the typed code', async () => {
+  const f = world()
+  const before = f.snapshot()
+  const v = verifier(() => ({ ok: false, code: 'video_private' }))
+  const res = await updateEpisodeCore(f.client, { ...deps(f), verifyVideo: v.verifyVideo }, E1, {
+    youtube_video_id: 'privVideo01',
+    title: 'Changed',
+  }, V0)
+  assert.equal(res.success, false)
+  assert.equal(res.wrote, false)
+  assert.deepEqual(res.data, { showId: S1, youtubeError: { code: 'video_private' } })
+  assert.deepEqual(f.snapshot(), before)
+})
+
+test('updateEpisodeCore: a 23505 on the video index returns the duplicate message', async () => {
+  const f = world()
+  f.tables.episodes!.find((e) => e.id === E2)!.youtube_video_id = 'takenVid001'
+  const res = await updateEpisodeCore(
+    f.client,
+    { ...deps(f), verifyVideo: verifier(() => okMeta('takenVid001')).verifyVideo },
+    E1,
+    { youtube_video_id: 'takenVid001' },
+    V0
+  )
+  assert.equal(res.success, false)
+  assert.equal(res.error, 'This video is already on Clickit.')
+  assert.equal(res.data?.youtubeError?.code, 'video_duplicate')
+  assert.equal(row(f, 'episodes', E1)!.youtube_video_id, null)
 })

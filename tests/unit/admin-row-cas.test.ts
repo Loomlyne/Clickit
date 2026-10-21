@@ -205,6 +205,10 @@ test('updateCategory, updateShort and upsertFaq (update branch) write through up
   }
   const faq = bodyOf('upsertFaq')
   assert.ok(faq.indexOf('rowVersion(expectedUpdatedAt)') < faq.indexOf('createArabicFiller('), 'FAQ version is checked before any AI call')
+  // Phase 6 merge: a stale short drawer is refused before the YouTube video check.
+  const short = bodyOf('updateShort')
+  const staleCheck = short.indexOf('current.updated_at !== version.value.expected')
+  assert.ok(staleCheck > -1 && staleCheck < short.indexOf('checkShortVideoCore('), 'short version is checked before the YouTube call')
 })
 
 test('updateSeason and updateEpisode pass the editor version to their cores and return it', () => {
