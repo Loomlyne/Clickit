@@ -26,7 +26,8 @@
     "cf:deploy:workersdev": "HOME=/Users/koss/.clickit-cloudflare node scripts/cf/deploy.mjs --target workersdev",
     "cf:deploy:media": "HOME=/Users/koss/.clickit-cloudflare node scripts/cf/deploy.mjs --target media",
     "cf-typegen": "HOME=/Users/koss/.clickit-cloudflare wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
-    "media:health": "node scripts/media-health.mjs"
+    "media:health": "node scripts/media-health.mjs",
+    "seed:local-admin": "node scripts/seed-local-admin.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
