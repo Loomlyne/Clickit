@@ -15,7 +15,7 @@
 | Typecheck | clean |
 | Migration guard | 1 file checked, 0 violations |
 | `next build` / `cf:build` | compiled, 57/57 static pages; `build stamp written: target preview, media flag off` |
-| Local SQL proof (03-05, re-run after the PR #31 review fixes) | `/Users/koss/.clickit-checks/p3-exec/p3-sql-test-pr31.log`: `test-local: PASS`, `exit=0` (one rolled-back transaction on the local stack; now also updated_at drift, concurrent edit, strict refusal and partial reverse). Not part of `gate:local` (it needs the heavy lock that `gate:local` already holds): the controller runs it before Ship, see "Controller pre-Ship step" below |
+| Local SQL proof (03-05, re-run after the PR #31 review fixes) | `/Users/koss/.clickit-checks/p3-exec/p3-sql-test-pr31-head2.log` (head dc59c27, after `db reset --local` of this branch): `test-local: PASS`, `exit=0` (one rolled-back transaction on the local stack; now also updated_at drift, concurrent edit, strict refusal and partial reverse). Not part of `gate:local` (it needs the heavy lock that `gate:local` already holds): the controller runs it before Ship, see "Controller pre-Ship step" below |
 | CI (`pr-gate.yml`) | runs on PR open and every push (Clickit exception) |
 
 ## What changed, per plan
@@ -61,7 +61,7 @@ exit=1
 `test-local.sh` needs Docker, `supabase_db_Clickit` and the heavy lock; `gate:local` already holds that lock, so the proof is not inside `gate:local`. Run once before Ship, after the clean-clone check, from the checked clone (or the main checkout after the merge):
 
 1. `perl -MPOSIX -e 'POSIX::setsid(); exec @ARGV' caffeinate -i -s -m scripts/cutover/sql/test-local.sh /Users/koss/.clickit-checks/p3-exec/p3-sql-test-preship.log`, then `until grep -q '^exit=' /Users/koss/.clickit-checks/p3-exec/p3-sql-test-preship.log; do sleep 5; done; grep -E 'before_backup_table|test-local: PASS|psql_status|after_rollback_backup_table|^exit=' /Users/koss/.clickit-checks/p3-exec/p3-sql-test-preship.log`.
-   Expected: `before_backup_table=[]`, `test-local: PASS`, `psql_status=0`, `after_rollback_backup_table=[]`, last line `exit=0`. A non-empty `before_backup_table` means an older backup table is on the local stack: `supabase db reset --local` under the lock, then run again. Any other exit: no Ship.
+   Expected: `test-local: PASS`, `psql_status=0`, `after_rollback_backup_table` equal to `before_backup_table`, last line `exit=0`. First re-apply this branch's migrations to the shared stack: `scripts/cutover/with-heavy-lock.sh /Users/koss/.clickit-checks/p3-exec/p3-db-reset.log -- supabase db reset --local` from the same checkout (another branch's migrations, e.g. Phase 5's `profiles_protect_system_columns` trigger, make the preflight trigger check fail by design). Any other exit: no Ship.
 - Live steps are in `03-RUNBOOK.md` and run only after Ship; Part 0 (Steps 0a P3-pre-cpu, 0b P3-pre-migration, 0c P3-pre-phase2) gates every live step.
 
 ## Open items for the controller
