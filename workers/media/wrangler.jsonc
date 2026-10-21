@@ -6,6 +6,9 @@
 // the app overwrote in Supabase but not in R2.
 //
 //   HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deploy -c workers/media/wrangler.jsonc --env supabase-only
+//
+// `--env r2-workersdev` deploys a separate Worker, clickit-media-r2, on workers.dev
+// only (no custom domain): the R2 test for the workers.dev app before the cutover.
 {
   "name": "clickit-media",
   "main": "src/index.ts",
@@ -35,6 +38,18 @@
     "r2": {
       "name": "clickit-media",
       "routes": [{ "pattern": "media.clickitstory.ae", "custom_domain": true }],
+      "vars": {
+        "SUPABASE_URL": "https://lajguozmtissnnfccmej.supabase.co"
+      },
+      "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "clickit-media" }]
+    },
+    // workers.dev-only R2-first test Worker (runbook Step 28, Koss 2026-10-21: option A).
+    // Its own name and NO custom domain: `routes` is inheritable in wrangler, so the
+    // explicit [] keeps media.clickitstory.ae off it. Production media stays Supabase-only.
+    "r2-workersdev": {
+      "name": "clickit-media-r2",
+      "workers_dev": true,
+      "routes": [],
       "vars": {
         "SUPABASE_URL": "https://lajguozmtissnnfccmej.supabase.co"
       },

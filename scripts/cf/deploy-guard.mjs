@@ -9,12 +9,17 @@ import { checkWhoamiOutput, checkEnv, CLICKIT_ACCOUNT_ID } from './wrangler-guar
 
 export const MEDIA_BINDING = 'MEDIA_BUCKET'
 export const MEDIA_BUCKET_NAME = 'clickit-media'
-// The R2 binding lives only in env `r2` (main, job D, 2026-10-20): the top level and
-// `supabase-only` serve Supabase originals, so a bare deploy can never flip to R2-first.
-export const MEDIA_ENVS = ['supabase-only', 'r2']
+// The R2 binding lives only in env `r2` (main, job D, 2026-10-20) and env `r2-workersdev`
+// (Step 28 option A, 2026-10-21): the top level and `supabase-only` serve Supabase
+// originals, so a bare deploy can never flip to R2-first. `r2-workersdev` is a separate
+// Worker (clickit-media-r2) with no custom domain, so it never touches media.clickitstory.ae.
+export const MEDIA_ENVS = ['supabase-only', 'r2', 'r2-workersdev']
+const R2_MEDIA_ENVS = new Set(['r2', 'r2-workersdev'])
+export const MEDIA_WORKERSDEV_ENV = 'r2-workersdev'
+export const MEDIA_WORKERSDEV_NAME = 'clickit-media-r2'
 
 const ALL_ZERO_ID = /^[0-]+$/
-const MEDIA_HOST = /^clickit-media\.[a-z0-9-]+\.workers\.dev$/
+const MEDIA_HOST = /^clickit-media(?:-r2)?\.[a-z0-9-]+\.workers\.dev$/
 const MEDIA_CUSTOM_HOST = 'media.clickitstory.ae'
 const BINDING_KEYS = [
   'kv_namespaces',
@@ -241,7 +246,7 @@ export function checkVerifyReport(report, manifest, options = {}) {
     reasons.push('verify report originals checked count does not equal the manifest object count')
   }
   if (!isAllowedMediaOrigin(report.origin)) {
-    reasons.push('verify report origin is not an https clickit-media.<sub>.workers.dev (or media.clickitstory.ae) origin')
+    reasons.push('verify report origin is not an https clickit-media[-r2].<sub>.workers.dev (or media.clickitstory.ae) origin')
   } else if (options.mediaOrigin && new URL(options.mediaOrigin).origin !== new URL(report.origin).origin) {
     reasons.push('verify report was made against a different media origin than the one being set')
   }
@@ -372,7 +377,7 @@ function bindingReasons(level, label, reasons, { expectR2 }) {
       reasons.push(`${label}: expected exactly one R2 binding ${MEDIA_BINDING} -> ${MEDIA_BUCKET_NAME}`)
     }
   } else if (r2.length > 0) {
-    reasons.push(`${label}: must have no R2 binding (only env r2 is R2-first)`)
+    reasons.push(`${label}: must have no R2 binding (only envs r2 and r2-workersdev are R2-first)`)
   }
   for (const key of BINDING_KEYS) {
     const value = level?.[key]
@@ -403,15 +408,16 @@ function varsReasons(vars, label, reasons) {
 
 /**
  * Media Worker (workers/media/wrangler.jsonc). Deploys env `supabase-only` (no R2
- * binding, Supabase originals) or env `r2` (exactly one MEDIA_BUCKET binding, R2
- * first). The top level must carry no R2 binding. Every env needs the
+ * binding, Supabase originals), env `r2` (exactly one MEDIA_BUCKET binding, R2
+ * first, production host) or env `r2-workersdev` (same binding, separate Worker
+ * clickit-media-r2, explicit empty routes, workers.dev only). The top level must carry no R2 binding. Every env needs the
  * SUPABASE_URL var. The env is always passed explicitly so wrangler never guesses.
  * @param {{
  *   whoami: string,
  *   processEnv: Record<string, string | undefined>,
  *   gitStatus: string,
  *   wranglerConfig: any,
- *   env: 'supabase-only' | 'r2' | undefined,
+ *   env: 'supabase-only' | 'r2' | 'r2-workersdev' | undefined,
  * }} input
  * @returns {{ ok: boolean, reasons: string[] }}
  */
@@ -422,7 +428,7 @@ export function checkMediaDeploy(input) {
 
   const config = input.wranglerConfig
   if (!MEDIA_ENVS.includes(input.env)) {
-    reasons.push('media deploy env must be passed explicitly: "supabase-only" or "r2"')
+    reasons.push('media deploy env must be passed explicitly: "supabase-only", "r2" or "r2-workersdev"')
   }
   if (!config || typeof config !== 'object') {
     reasons.push('workers/media/wrangler.jsonc could not be read')
@@ -443,7 +449,21 @@ export function checkMediaDeploy(input) {
     if (!envConfig) {
       reasons.push(`${envName} env is not defined in workers/media/wrangler.jsonc`)
     } else {
-      bindingReasons(envConfig, envName, reasons, { expectR2: envName === 'r2' })
+      bindingReasons(envConfig, envName, reasons, { expectR2: R2_MEDIA_ENVS.has(envName) })
+      if (envName === MEDIA_WORKERSDEV_ENV) {
+        // routes are inheritable in wrangler: without an explicit [] this env would take
+        // the top-level media.clickitstory.ae custom domain and flip production R2-first.
+        if (envConfig.name !== MEDIA_WORKERSDEV_NAME) {
+          reasons.push(`${envName}: name must be ${MEDIA_WORKERSDEV_NAME} (a separate Worker, never clickit-media)`)
+        }
+        if (!Array.isArray(envConfig.routes) || envConfig.routes.length !== 0) {
+          reasons.push(`${envName}: routes must be an explicit empty array (no custom domain)`)
+        }
+        if (envConfig.route !== undefined) reasons.push(`${envName}: route must not be set`)
+        if (envConfig.workers_dev !== true) reasons.push(`${envName}: workers_dev must be true`)
+      } else if (envConfig.name !== undefined && envConfig.name !== 'clickit-media') {
+        reasons.push(`${envName}: name must be clickit-media`)
+      }
       varsReasons(envConfig.vars, envName, reasons)
       if (envConfig.triggers !== undefined && !emptyCrons(envConfig.triggers)) {
         reasons.push(`${envName}: triggers.crons must be an empty array`)

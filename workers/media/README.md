@@ -36,4 +36,10 @@ account only:
 
     HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deploy -c workers/media/wrangler.jsonc --env supabase-only
 
+The R2-first test before the cutover uses a separate Worker, `clickit-media-r2`, on
+workers.dev only (env `r2-workersdev`: explicit `routes: []`, so it never takes
+`media.clickitstory.ae`; Phase 2 runbook Step 28, option A):
+
+    npm run cf:deploy:media -- --env r2-workersdev
+
 DNS and the R2 gate: see `DNS-PLAN.md`.

@@ -152,7 +152,7 @@ export function buildEnvFor(target, fileEnv, options = {}, processEnv = process.
 
   if (flag === 'verified') {
     if (!isAllowedMediaOrigin(options.mediaOrigin)) {
-      throw new Error('media origin must be an https clickit-media.<sub>.workers.dev origin')
+      throw new Error('media origin must be an https clickit-media[-r2].<sub>.workers.dev origin')
     }
     const res = checkVerifyReport(options.verifyReport, options.manifest ?? null, {
       mediaOrigin: options.mediaOrigin,

@@ -182,7 +182,7 @@ Then wait.
 | 26 | Koss, same terminal | nothing (reads Supabase Storage; `.tmp/` files) | no |
 | 26b | controller | nothing (reads the report) | no |
 | 27 | Koss, same terminal | R2 bucket `clickit-media` (adds and replaces copies; deletes nothing) | the controller's "dry-run reviewed, run step 27" |
-| 28 | controller | a Cloudflare Worker deploy | **yes, and a decision first (28a)** |
+| 28 | controller | a new Worker `clickit-media-r2` on workers.dev (option A) | **yes: "deploy media worker"**, after the option A PR is on main |
 | 29 | Koss or controller | nothing (GET/HEAD only; `.tmp/` file) | no |
 | 30 | controller | the `clickit` Worker on workers.dev | **yes: "flag on workers.dev"** |
 | 31 | Koss, in Hermes | a sign-in row in live Supabase Auth only | no (accepted cost of sign-in UAT) |
@@ -216,9 +216,9 @@ Expected: one line per object (`copied`, `skipped (identical)` or `remuxed`), th
 Note: from here until the cutover, any admin media edit on www (frozen Vercel) goes to Supabase only. A new upload is a new key and the media Worker falls back to Supabase for it; an overwrite of a fixed key (avatars, `settings/og.png`, the hero video) leaves R2 stale. So: no media edits on www until the cutover, or re-run Steps 26-27 just before it.
 Then wait.
 
-**Step 28a [KOSS] - decision: which media Worker serves R2 for the workers.dev test**
+**Step 28a [KOSS] - decision: which media Worker serves R2 for the workers.dev test** — **DECIDED 2026-10-21: A** (Koss in session C). Built on branch `phase-02-finish`: env `r2-workersdev` in `workers/media/wrangler.jsonc`, guard and origin checks in `scripts/cf/deploy-guard.mjs`. Step 28 runs only after that PR is on main.
 `--env r2` deploys the **production** media host (`media.clickitstory.ae`) R2-first, because `clickit-media` has that custom domain in every env. The gate in `workers/media/DNS-PLAN.md` §5d cannot pass while www is the frozen Vercel build (it has no R2 credentials and no `NEXT_PUBLIC_MEDIA_CUTOVER_READY=verified`), and `workers/media/wrangler.jsonc` says never deploy `--env r2` before it passes. Options:
-- **A (recommended): a separate workers.dev-only media Worker.** A small code PR adds env `r2-workersdev` (Worker name `clickit-media-r2`, no routes, `workers_dev: true`, R2 binding) and lets the deploy guard and the media-origin check accept it. Production media stays Supabase-only until Phase 3. Cost: one small PR and review before Step 28.
+- **A (chosen): a separate workers.dev-only media Worker.** Env `r2-workersdev` (Worker name `clickit-media-r2`, explicit `routes: []` because wrangler inherits the top-level custom domain otherwise, `workers_dev: true`, R2 binding); the deploy guard refuses it with any route, another name or no binding, and the media-origin check accepts `clickit-media-r2.<sub>.workers.dev`. Production media stays Supabase-only until Phase 3. Cost: one small PR and review before Step 28.
 - **B: `--env r2` on the production media host now,** with a written freeze on media edits on www until the cutover. No code. Breaks the §5d rule; rollback is `npm run cf:deploy:media -- --env supabase-only`.
 - **C: skip Steps 28-30 in Phase 2** and do them as part of the Phase 3 cutover. No R2 test on workers.dev before go-live.
 Expected: Koss picks A, B or C. Nothing is deployed before his answer.
@@ -227,7 +227,7 @@ Then wait.
 **Step 28 [CONTROL] - deploy the media Worker**
 Trigger: Koss writes "deploy media worker" after his 28a answer.
 Pre-check (every option): `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 whoami` shows only ClickitStory `e329b099b6e4272fc0915a99832e47fe`; `git status --short` clean; HEAD is on origin.
-- Option A (after its PR is on main): `npm run cf:deploy:media -- --env r2-workersdev` → URL `https://clickit-media-r2.clickitstory.workers.dev`. `<MEDIA_ORIGIN>` below = that URL.
+- Option A (after its PR is on main): `npm run cf:deploy:media -- --env r2-workersdev` → URL `https://clickit-media-r2.clickitstory.workers.dev`. `<MEDIA_ORIGIN>` below = that URL. Also check production is untouched: `curl -sI https://media.clickitstory.ae/site-assets/settings/favicon.png` still returns 200 and `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deployments list --name clickit-media` shows no new deployment.
 - Option B: `npm run cf:deploy:media -- --env r2` → `<MEDIA_ORIGIN>` = `https://clickit-media.clickitstory.workers.dev` (and `media.clickitstory.ae` now serves R2 first).
 Expected: `deploy-guard ok`, then the URL. `curl -sI <MEDIA_ORIGIN>/` returns 404 (no listing). Option B also: `curl -sI https://media.clickitstory.ae/site-assets/settings/favicon.png` returns 200 (the Worker sends no header naming its source; Step 29 is the proof).
 Then wait.
@@ -242,7 +242,8 @@ Trigger: Step 29 printed 0 failures AND Koss writes "flag on workers.dev".
 Pre-check: migration 20261021120000 is live and read back (done 2026-10-21 14:45 CET, run 39609825509); `git status --short` clean in the main checkout; the verify report from Step 29 is in its `.tmp/`.
 Command (main checkout): `npm run cf:deploy:workersdev -- --media-flag verified --media-origin <MEDIA_ORIGIN> --verify-report .tmp/r2-media-reports/verify-<timestamp>.json`
 Expected: the guard checks the verify report (same manifest, equal object count, 0 failures) before building; the build sets `NEXT_PUBLIC_MEDIA_CUTOVER_READY=verified` and `NEXT_PUBLIC_MEDIA_ORIGIN` for this target only. Images on `https://clickit.clickitstory.workers.dev/en` load from `<MEDIA_ORIGIN>`. No Vercel build ever gets this flag. Rollback: `npm run cf:deploy:workersdev -- --media-flag off`.
-Note: with Option A the guard's media-origin rule (`clickit-media.<sub>.workers.dev` or `media.clickitstory.ae`) must also accept `clickit-media-r2.<sub>.workers.dev`; that is part of A's PR.
+Note: the media-origin rule accepts `clickit-media[-r2].<sub>.workers.dev` or `media.clickitstory.ae` (option A, `phase-02-finish`).
+Note (Step 32 with option A): the draft show's new `poster_url` points at `clickit-media-r2.clickitstory.workers.dev`; the Phase 3 cutover's media-URL rewrite must include that host.
 Then wait.
 
 ### Approvals during UAT (plan 02-22)

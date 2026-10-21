@@ -81,7 +81,7 @@ Item 12 (Koss 2026-10-21, question form):
 | 24 | secret names read-back | controller | done (2026-10-21 12:3x CET): CRON_SECRET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY, TURNSTILE_SECRET_KEY; no Google key |
 | Task 4 (02-10) | wrangler tail + CPU sample on /en, /ar, /en/auth | C | done 2026-10-21 on d7b59d6: EARLY STOP, p95 CPU 940 / 117 / 386 ms (Free limit 10 ms); numbers in 02-SPIKE.md; Step 33 now due |
 | 25-27 | copy credentials, dry-run, execute copy (reads Supabase Storage, writes R2) | Koss (27 after the controller's "dry-run reviewed, run step 27") | prepared 2026-10-21 in the main checkout (runbook "Media copy, media Worker, flag on"); re-sync only with `npm run r2:media -- --refresh` then `--execute` |
-| 28 | deploy media Worker | controller, Koss's word | BLOCKED on decision 28a: `--env r2` flips production `media.clickitstory.ae` and the §5d gate cannot pass while www is frozen Vercel. Recommended A: small PR adding a workers.dev-only `clickit-media-r2` env; B: `--env r2` now with a www media-edit freeze; C: move 28-30 into the Phase 3 cutover |
+| 28 | deploy media Worker | controller, Koss's word | 28a DECIDED 2026-10-21: A (Koss in session C). Env `r2-workersdev` → separate Worker `clickit-media-r2`, workers.dev only, `routes: []`; built on `phase-02-finish` (guard + tests + wrangler dry run). Runs after that PR is on main: `npm run cf:deploy:media -- --env r2-workersdev` |
 | 29 | verify every object on the media host (read only) | Koss or controller | open, after 28 |
 | 30 | workers.dev build with media on R2 ("flag on workers.dev") | controller, Koss's word | open, after 29; migration pre-check already passed (run 39609825509) |
 | 31 | name the draft test show (read only) | Koss | open |
@@ -104,7 +104,6 @@ Notes:
 
 ## Pending Koss signatures (copy)
 
-- Decision 28a (runbook, 2026-10-21): which media Worker serves R2 for the workers.dev test. A (recommended) separate `clickit-media-r2` workers.dev-only env, small PR; B `--env r2` on production media now with a www media-edit freeze; C move Steps 28-30 into the Phase 3 cutover. Needs a picture-free plain question (no UI), one decision.
 - Arabic for: `turnstile.checkFailed` ("Security check failed. Please try again."), the 02-11 rate-limit and "temporarily unavailable" lines, the 02-17/02-18 upload texts (progress, Retry, refused, Safari note, "Saving…", "Upload an MP4 video.", not-fast-start sentence, "Checking fast-start…", "MP4, fast-start, under 50MB").
 - Arabic for the conflict line ("This item changed while you were saving. Reload and try again."), "Missing or invalid updated_at.", "Could not read every media reference".
 - Wording for the hero ">8 MB" warning that still mentions Supabase egress (deferred item 13).
