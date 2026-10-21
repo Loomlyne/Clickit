@@ -1,7 +1,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import {
   buildCronRequest,
+  runCron,
   supabaseCleanupEnabled,
   CRON_EXPRESSIONS_FOR_PHASE_3,
 } from '../../src/server/scheduled.ts'
@@ -76,4 +78,81 @@ test('supabaseCleanupEnabled keeps today behaviour (true) on an explicit node ru
 
 test('supabaseCleanupEnabled ignores VERCEL=1 on the workers runtime', () => {
   assert.equal(supabaseCleanupEnabled({ CLICKIT_RUNTIME: 'workers', VERCEL: '1' }), false)
+})
+
+// ------------------------------------------- runCron (review item 5: failures reject)
+
+function recorder() {
+  const lines: { level: 'log' | 'error'; text: string }[] = []
+  return {
+    lines,
+    log: (...a: unknown[]) => lines.push({ level: 'log', text: a.map(String).join(' ') }),
+    error: (...a: unknown[]) => lines.push({ level: 'error', text: a.map(String).join(' ') }),
+  }
+}
+
+test('runCron resolves and logs the status on an OK response, calling the route in-process', async () => {
+  const log = recorder()
+  const seen: Request[] = []
+  await runCron('0 1 * * *', 'secret-value', async (req) => {
+    seen.push(req)
+    return new Response(null, { status: 200 })
+  }, log)
+  assert.equal(seen.length, 1)
+  assert.equal(new URL(seen[0].url).pathname, '/api/cron/publish-scheduled')
+  assert.equal(seen[0].headers.get('authorization'), 'Bearer secret-value')
+  assert.equal(log.lines.length, 1)
+  assert.equal(log.lines[0].level, 'log')
+  assert.match(log.lines[0].text, /\/api\/cron\/publish-scheduled.*200/)
+})
+
+test('runCron rejects on a non-OK response and still logs it', async () => {
+  for (const status of [401, 500, 503]) {
+    const log = recorder()
+    await assert.rejects(
+      runCron('0 4 * * 1', 's', async () => new Response(null, { status }), log),
+      (err: Error) => err.message.includes(String(status)) && err.message.includes('/api/cron/cleanup-media'),
+    )
+    assert.equal(log.lines.length, 1)
+    assert.equal(log.lines[0].level, 'error')
+    assert.match(log.lines[0].text, new RegExp(String(status)))
+  }
+})
+
+test('runCron rejects when the route throws, logs the message and never the secret', async () => {
+  const log = recorder()
+  await assert.rejects(
+    runCron('0 1 * * *', 'secret-value', async () => {
+      throw new Error('boom')
+    }, log),
+    (err: Error) => err.message.includes('/api/cron/publish-scheduled') && !err.message.includes('secret-value'),
+  )
+  assert.equal(log.lines.length, 1)
+  assert.equal(log.lines[0].level, 'error')
+  assert.match(log.lines[0].text, /boom/)
+  assert.equal(log.lines.some((l) => l.text.includes('secret-value')), false)
+})
+
+test('runCron rejects (without calling anything) for an unknown cron or a missing secret', async () => {
+  for (const [cron, secret] of [['* * * * *', 's'], ['0 1 * * *', ''], ['0 1 * * *', undefined]] as const) {
+    const log = recorder()
+    let called = false
+    await assert.rejects(
+      runCron(cron, secret, async () => {
+        called = true
+        return new Response(null)
+      }, log),
+    )
+    assert.equal(called, false)
+    assert.equal(log.lines[0]?.level, 'error')
+  }
+})
+
+test('custom-worker scheduled() awaits runCron so a failure fails the cron invocation', () => {
+  const src = readFileSync('custom-worker.ts', 'utf8')
+  const body = src.slice(src.indexOf('async scheduled('))
+  assert.match(body, /await runCron\(event\.cron, env\.CRON_SECRET, \(request\) => handler\.fetch\(request, env, ctx\)\)/)
+  // No fire-and-forget: a waitUntil'd promise would hide the rejection from the cron status.
+  assert.equal(/waitUntil/.test(body), false)
+  assert.equal(/catch\s*\(/.test(body), false)
 })
