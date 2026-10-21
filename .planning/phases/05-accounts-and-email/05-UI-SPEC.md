@@ -344,7 +344,7 @@ Replace the toast-and-reset with a confirmation that stays: on success the form 
 
 ## 7. Emails (D-25..D-28, D-39; MAIL-01, MAIL-03..07)
 
-React Email source in `src/emails/**`; auth templates exported to `supabase/templates/*.html` with Go placeholders kept as literal text; app emails rendered in the queue consumer. Sender `Clickit Story <no-reply@clickitstory.ae>`. Locale per D-15: Go `{{ if eq .Data.locale "ar" }}...{{ else }}...{{ end }}` in auth templates, `profiles.locale` for app emails, page locale for support auto-reply and newsletter confirm.
+React Email source in `src/emails/**`; auth templates exported to `supabase/templates/*.html` with Go placeholders kept as literal text; app emails rendered in the queue consumer (superseded 2026-10-21: app emails are pre-rendered at build time into `src/generated/app-email-templates.json`; the consumer only fills escaped values, to stay under the Workers Free 10 ms CPU limit; controller decision A after Koss signed "stay on Workers Free"; see 05-11, 05-19). Sender `Clickit Story <no-reply@clickitstory.ae>`. Locale per D-15: Go `{{ if eq .Data.locale "ar" }}...{{ else }}...{{ end }}` in auth templates, `profiles.locale` for app emails, page locale for support auto-reply and newsletter confirm.
 
 ### 7.1 Shell and colours
 
