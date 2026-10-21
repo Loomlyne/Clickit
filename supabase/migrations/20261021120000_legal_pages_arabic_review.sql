@@ -11,6 +11,14 @@
 -- no existing value changes except ar_reviewed below. The browser roles lose read access to
 -- the two draft columns only (column grant below); every other column stays readable.
 
+-- One explicit transaction (PR #29 re-review item 3): the trigger is never left disabled and
+-- no half of the file lands alone, also when the file is run by hand with psql (autocommit).
+-- The Supabase CLI (db push / migration up) already sends each file as one implicit
+-- transaction; an explicit begin/commit inside it is honoured, so the file still applies as
+-- one unit. Only the CLI's own history row (supabase_migrations.schema_migrations) is then
+-- written just after this commit, in its own implicit transaction.
+begin;
+
 alter table public.legal_pages
   add column if not exists title_ar_draft text,
   add column if not exists content_ar_draft text,
@@ -43,3 +51,5 @@ update public.legal_pages
   where content_ar is not null and btrim(content_ar) <> '';
 
 alter table public.legal_pages enable trigger set_updated_at;
+
+commit;
