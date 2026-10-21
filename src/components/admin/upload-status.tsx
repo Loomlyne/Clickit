@@ -17,21 +17,24 @@ const STYLES = `
 @keyframes cs-upload-flow { from { background-position: 200% 0; } to { background-position: 0 0; } }
 @keyframes cs-upload-stripes { from { background-position: 0 0; } to { background-position: 22px 0; } }
 @keyframes cs-upload-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 204, 0, 0); }
-  50% { box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.08); }
+  0%, 100% { box-shadow: 0 0 0 0 rgb(var(--primary-rgb) / 0); }
+  50% { box-shadow: 0 0 0 4px rgb(var(--primary-rgb) / 0.08); }
 }
-.cs-upload-zone { border-color: rgba(255, 204, 0, 0.35); animation: cs-upload-pulse 1.6s ease-in-out infinite; }
+.cs-upload-zone { border-color: rgb(var(--primary-rgb) / 0.35); animation: cs-upload-pulse 1.6s ease-in-out infinite; }
 .cs-upload-fill {
+  /* The signed deep and light yellows, derived from --primary (90% with black, 60% with white). */
+  --upload-yellow-deep: color-mix(in srgb, var(--primary) 90%, black);
+  --upload-yellow-light: color-mix(in srgb, var(--primary) 60%, white);
   position: relative; overflow: hidden; height: 100%; border-radius: 999px;
-  background: linear-gradient(90deg, #e6b800, #ffcc00 40%, #ffe066 50%, #ffcc00 60%, #e6b800);
+  background: linear-gradient(90deg, var(--upload-yellow-deep), var(--primary) 40%, var(--upload-yellow-light) 50%, var(--primary) 60%, var(--upload-yellow-deep));
   background-size: 200% 100%;
   animation: cs-upload-flow 1.4s linear infinite;
-  box-shadow: 0 0 12px rgba(255, 204, 0, 0.45);
+  box-shadow: 0 0 12px rgb(var(--primary-rgb) / 0.45);
   transition: width 0.4s ease;
 }
 .cs-upload-fill::after {
   content: ""; position: absolute; inset: 0;
-  background: repeating-linear-gradient(45deg, rgba(10, 10, 10, 0.18) 0 8px, transparent 8px 16px);
+  background: repeating-linear-gradient(45deg, rgb(var(--ink-legacy-rgb) / 0.18) 0 8px, transparent 8px 16px);
   background-size: 22px 22px;
   animation: cs-upload-stripes 0.8s linear infinite;
 }
