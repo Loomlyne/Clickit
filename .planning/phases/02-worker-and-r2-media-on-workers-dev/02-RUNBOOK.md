@@ -92,6 +92,8 @@ Then wait.
 ### First workers.dev deploy (remote spike)
 
 > **Migration gate before ANY app-Worker deploy of the PR #29 code (Step 12 redeploys, Step 30, every later "deploy workers.dev"):** migration `supabase/migrations/20261021120000_legal_pages_arabic_review.sql` must already be live: applied through `apply-live-migrations.yml` (from main, after Koss's approval of the dry run) and read back read-only (`legal_pages` has `ar_reviewed`, `title_ar_draft`, `content_ar_draft`; anon cannot select the two draft columns). The public legal query selects `ar_reviewed`, so without the migration `/legal/*`, `/terms` and `/privacy` return 404. The controller checks this before it runs the deploy command; no migration read-back, no deploy.
+>
+> **Old code after the migration (controller, 2026-10-21):** after migration 20261021120000 is applied, legal-page saves on the old code (www / frozen Vercel) fail: its bare `.select()` returns the revoked draft columns. Keep the apply → new-deploy gap short, and make no legal edits on www in between.
 
 **Step 12 [CONTROL] - first deploy of the app Worker, media flag off**
 Trigger: Koss writes "deploy workers.dev" (the same word for every app-Worker deploy in Phase 2, including redeploys).
