@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { AwsClient } from 'aws4fetch'
-import { presignPut, R2_ENDPOINT_BUCKET } from '../../src/server/r2-presign.ts'
+import { presignPut, PRESIGN_EXPIRES_SECONDS, R2_ENDPOINT_BUCKET } from '../../src/server/r2-presign.ts'
 
 const ACCOUNT = 'e329b099b6e4272fc0915a99832e47fe'
 const creds = { accessKeyId: 'AKIAFAKEFAKEFAKE0000', secretAccessKey: 'fake-secret-never-real-0000000000000000000' }
@@ -12,6 +12,7 @@ test('presigned URL targets the account R2 endpoint and bucket path', async () =
     accountId: ACCOUNT,
     key: 'show-artwork/shows/s/poster-1.png',
     contentType: 'image/png',
+    contentLength: 1234,
     credentials: creds,
     AwsClientImpl: AwsClient,
     now,
@@ -25,36 +26,41 @@ test('presigned URL targets the account R2 endpoint and bucket path', async () =
   assert.deepEqual(r.headers, { 'Content-Type': 'image/png' })
 })
 
-test('query has expiry 300, signature, credential and content-type in signed headers', async () => {
+test('query has expiry 60, signature, credential, content-type and content-length in signed headers', async () => {
   const r = await presignPut({
     accountId: ACCOUNT,
     key: 'avatars/u/avatar-1.webp',
     contentType: 'image/webp',
+    contentLength: 1234,
     credentials: creds,
     AwsClientImpl: AwsClient,
     now,
   })
   const q = new URL(r.url).searchParams
-  assert.equal(q.get('X-Amz-Expires'), '300')
+  assert.equal(q.get('X-Amz-Expires'), '60')
+  assert.equal(PRESIGN_EXPIRES_SECONDS, 60)
   assert.equal(q.get('X-Amz-Algorithm'), 'AWS4-HMAC-SHA256')
   assert.match(q.get('X-Amz-Signature') ?? '', /^[0-9a-f]{64}$/)
   assert.ok(q.get('X-Amz-Credential')?.startsWith(`${creds.accessKeyId}/`))
   assert.ok(q.get('X-Amz-Credential')?.endsWith('/auto/s3/aws4_request'))
   const signed = (q.get('X-Amz-SignedHeaders') ?? '').split(';')
   assert.ok(signed.includes('content-type'), `signed headers: ${signed.join(';')}`)
+  assert.ok(signed.includes('content-length'), `signed headers: ${signed.join(';')}`)
   assert.ok(signed.includes('host'))
 })
 
-test('expiresAt is now plus 300 seconds', async () => {
+test('expiresAt is now plus 60 seconds', async () => {
   const r = await presignPut({
     accountId: ACCOUNT,
     key: 'a/b.png',
     contentType: 'image/png',
+    contentLength: 1234,
     credentials: creds,
     AwsClientImpl: AwsClient,
     now,
   })
-  assert.equal(r.expiresAt, now.getTime() + 300_000)
+  assert.equal(r.expiresAt, now.getTime() + 60_000)
+  assert.equal(r.contentLength, 1234)
 })
 
 test('a different content type produces a different signature', async () => {
@@ -65,6 +71,7 @@ test('a different content type produces a different signature', async () => {
           accountId: ACCOUNT,
           key: 'a/b.png',
           contentType,
+          contentLength: 1234,
           credentials: creds,
           AwsClientImpl: AwsClient,
           now,
@@ -79,6 +86,7 @@ test('the secret never appears in the URL or headers', async () => {
     accountId: ACCOUNT,
     key: 'a/b.png',
     contentType: 'image/png',
+    contentLength: 1234,
     credentials: creds,
     AwsClientImpl: AwsClient,
     now,
@@ -88,7 +96,7 @@ test('the secret never appears in the URL or headers', async () => {
 })
 
 test('fake signer: receives a PUT request with Content-Type and signQuery + allHeaders', async () => {
-  const seen: { method?: string; ct?: string | null; opts?: unknown; expires?: string | null } = {}
+  const seen: { method?: string; ct?: string | null; cl?: string | null; opts?: unknown; expires?: string | null } = {}
   class FakeAws {
     constructor(cfg: Record<string, unknown>) {
       seen.opts = { cfg }
@@ -96,22 +104,27 @@ test('fake signer: receives a PUT request with Content-Type and signQuery + allH
     async sign(req: Request, init: unknown) {
       seen.method = req.method
       seen.ct = req.headers.get('content-type')
+      seen.cl = req.headers.get('content-length')
       seen.expires = new URL(req.url).searchParams.get('X-Amz-Expires')
       seen.opts = { ...(seen.opts as object), init }
-      return new Request(req.url + '&X-Amz-Signature=deadbeef', { method: 'PUT' })
+      return new Request(req.url + '&X-Amz-SignedHeaders=content-length%3Bcontent-type%3Bhost&X-Amz-Signature=deadbeef', {
+        method: 'PUT',
+      })
     }
   }
   const r = await presignPut({
     accountId: ACCOUNT,
     key: 'k/x.png',
     contentType: 'image/png',
+    contentLength: 1234,
     credentials: creds,
     AwsClientImpl: FakeAws as never,
     now,
   })
   assert.equal(seen.method, 'PUT')
   assert.equal(seen.ct, 'image/png')
-  assert.equal(seen.expires, '300')
+  assert.equal(seen.cl, '1234')
+  assert.equal(seen.expires, '60')
   assert.deepEqual((seen.opts as { init: unknown }).init, { aws: { signQuery: true, allHeaders: true } })
   assert.deepEqual((seen.opts as { cfg: unknown }).cfg, {
     accessKeyId: creds.accessKeyId,
@@ -128,6 +141,7 @@ test('missing credentials throw an error naming the variable, not a value', asyn
       accountId: ACCOUNT,
       key: 'a/b.png',
       contentType: 'image/png',
+      contentLength: 1234,
       credentials: { accessKeyId: undefined, secretAccessKey: creds.secretAccessKey },
       AwsClientImpl: AwsClient,
       now,
@@ -139,6 +153,7 @@ test('missing credentials throw an error naming the variable, not a value', asyn
       accountId: ACCOUNT,
       key: 'a/b.png',
       contentType: 'image/png',
+      contentLength: 1234,
       credentials: { accessKeyId: creds.accessKeyId, secretAccessKey: '' },
       AwsClientImpl: AwsClient,
       now,
@@ -150,6 +165,7 @@ test('missing credentials throw an error naming the variable, not a value', asyn
       accountId: '',
       key: 'a/b.png',
       contentType: 'image/png',
+      contentLength: 1234,
       credentials: creds,
       AwsClientImpl: AwsClient,
       now,
@@ -165,6 +181,7 @@ test('keys that could escape the bucket path or carry a query are refused', asyn
         accountId: ACCOUNT,
         key,
         contentType: 'image/png',
+        contentLength: 1234,
         credentials: creds,
         AwsClientImpl: AwsClient,
         now,
@@ -181,10 +198,73 @@ test('an account id that is not 32 hex characters is refused (no host injection)
       accountId: 'evil.example.com/x',
       key: 'a/b.png',
       contentType: 'image/png',
+      contentLength: 1234,
       credentials: creds,
       AwsClientImpl: AwsClient,
       now,
     }),
     /CLOUDFLARE_ACCOUNT_ID/
   )
+})
+
+// ------------------------------------------- signed Content-Length (review item 2)
+
+test('a different declared size produces a different signature', async () => {
+  const sign = async (contentLength: number) =>
+    new URL(
+      (
+        await presignPut({
+          accountId: ACCOUNT,
+          key: 'a/b.png',
+          contentType: 'image/png',
+          contentLength,
+          credentials: creds,
+          AwsClientImpl: AwsClient,
+          now,
+        })
+      ).url
+    ).searchParams.get('X-Amz-Signature')
+  assert.notEqual(await sign(1000), await sign(1001))
+})
+
+test('a size that is not a positive integer is refused before signing', async () => {
+  for (const contentLength of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, undefined, '12']) {
+    await assert.rejects(
+      presignPut({
+        accountId: ACCOUNT,
+        key: 'a/b.png',
+        contentType: 'image/png',
+        contentLength: contentLength as never,
+        credentials: creds,
+        AwsClientImpl: AwsClient,
+        now,
+      }),
+      /content length/i,
+      String(contentLength)
+    )
+  }
+})
+
+test('a signer that leaves Content-Length (or Content-Type) unsigned is refused (fail closed)', async () => {
+  for (const signedHeaders of ['content-type%3Bhost', 'content-length%3Bhost', '']) {
+    class DroppingAws {
+      async sign(req: Request) {
+        const extra = signedHeaders ? `&X-Amz-SignedHeaders=${signedHeaders}` : ''
+        return new Request(`${req.url}${extra}&X-Amz-Signature=deadbeef`, { method: 'PUT' })
+      }
+    }
+    await assert.rejects(
+      presignPut({
+        accountId: ACCOUNT,
+        key: 'a/b.png',
+        contentType: 'image/png',
+        contentLength: 10,
+        credentials: creds,
+        AwsClientImpl: DroppingAws as never,
+        now,
+      }),
+      /not signed/i,
+      signedHeaders
+    )
+  }
 })

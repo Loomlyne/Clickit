@@ -6,15 +6,17 @@ const SECRET = 'a'.repeat(40)
 const KEY = 'show-artwork/shows/s/poster-1760000000000-abcdef12.png'
 const CT = 'image/png'
 const NOW = 1_760_000_000_000
+const SIZE = 4096
 
 async function ok(over: Record<string, unknown> = {}) {
-  const token = await mintShimToken(KEY, CT, SECRET, NOW)
+  const token = await mintShimToken(KEY, CT, SIZE, SECRET, NOW)
   return checkShimRequest({
     localDev: '1',
     host: '127.0.0.1:8787',
     token,
     key: KEY,
     contentType: CT,
+    contentLength: SIZE,
     secret: SECRET,
     now: NOW + 1000,
     ...over,
@@ -72,12 +74,12 @@ test('token for another key or content type gives 403', async () => {
 })
 
 test('token signed with another secret gives 403', async () => {
-  const token = await mintShimToken(KEY, CT, 'b'.repeat(40), NOW)
+  const token = await mintShimToken(KEY, CT, SIZE, 'b'.repeat(40), NOW)
   assert.deepEqual(await ok({ token }), { ok: false, status: 403 })
 })
 
 test('missing, malformed or tampered tokens give 403', async () => {
-  const good = await mintShimToken(KEY, CT, SECRET, NOW)
+  const good = await mintShimToken(KEY, CT, SIZE, SECRET, NOW)
   for (const token of [undefined, '', 'x', 'abc.def', `${NOW}.zz`, `${NOW}.${'0'.repeat(64)}`, good + '0', good.slice(0, -2)]) {
     assert.deepEqual(await ok({ token }), { ok: false, status: 403 }, String(token))
   }
@@ -86,5 +88,16 @@ test('missing, malformed or tampered tokens give 403', async () => {
 })
 
 test('mintShimToken refuses a short secret', async () => {
-  await assert.rejects(mintShimToken(KEY, CT, 'short', NOW))
+  await assert.rejects(mintShimToken(KEY, CT, SIZE, 'short', NOW))
+})
+
+test('token for another size gives 403 (the shim mirrors the signed Content-Length)', async () => {
+  assert.deepEqual(await ok({ contentLength: SIZE + 1 }), { ok: false, status: 403 })
+  assert.deepEqual(await ok({ contentLength: SIZE - 1 }), { ok: false, status: 403 })
+})
+
+test('mintShimToken refuses a size that is not a positive integer', async () => {
+  for (const size of [0, -1, 1.5, Number.NaN]) {
+    await assert.rejects(mintShimToken(KEY, CT, size, SECRET, NOW), String(size))
+  }
 })

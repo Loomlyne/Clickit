@@ -7,6 +7,7 @@ import {
   keyMatchesKind,
   isVariantKeyFor,
   VARIANT_WIDTHS,
+  planVariantUploads,
 } from '../../src/server/upload-kinds.ts'
 import { HERO_VIDEO_MAX_BYTES, SVG_REJECTED_MESSAGE } from '../../src/lib/admin/media-guards.ts'
 
@@ -267,5 +268,48 @@ test('variants are allowed for rasters except ICO, never for videos', () => {
 test('admin kinds require admin, avatar requires a signed-in user', () => {
   for (const k of Object.keys(UPLOAD_KINDS) as Array<keyof typeof UPLOAD_KINDS>) {
     assert.equal(UPLOAD_KINDS[k].actor, k === 'avatar' ? 'user' : 'admin', k)
+  }
+})
+
+// ------------------------------------------- declared variant sizes (review item 2)
+
+test('planVariantUploads keeps declared widths in VARIANT_WIDTHS order with their sizes', () => {
+  const res = planVariantUploads({
+    kind: 'artwork',
+    contentType: 'image/png',
+    capBytes: 10 * MB,
+    variants: [
+      { width: 1920, size: 300 },
+      { width: 640, size: 100 },
+    ],
+  })
+  assert.deepEqual(res, { ok: true, variants: [{ width: 640, size: 100 }, { width: 1920, size: 300 }] })
+})
+
+test('planVariantUploads gives no variants for ICO, videos or none requested', () => {
+  const v = [{ width: 640 as const, size: 10 }]
+  assert.deepEqual(planVariantUploads({ kind: 'site-image', contentType: 'image/x-icon', capBytes: MB, variants: v }), {
+    ok: true,
+    variants: [],
+  })
+  assert.deepEqual(planVariantUploads({ kind: 'hero-video', contentType: 'video/mp4', capBytes: MB, variants: v }), {
+    ok: true,
+    variants: [],
+  })
+  assert.deepEqual(planVariantUploads({ kind: 'artwork', contentType: 'image/png', capBytes: MB }), {
+    ok: true,
+    variants: [],
+  })
+})
+
+test('planVariantUploads refuses a duplicate width, a size over the cap and a bad size', () => {
+  const base = { kind: 'artwork' as const, contentType: 'image/png', capBytes: 1000 }
+  assert.equal(
+    planVariantUploads({ ...base, variants: [{ width: 640, size: 1 }, { width: 640, size: 2 }] }).ok,
+    false
+  )
+  assert.equal(planVariantUploads({ ...base, variants: [{ width: 640, size: 1001 }] }).ok, false)
+  for (const size of [0, -1, 1.5, Number.NaN]) {
+    assert.equal(planVariantUploads({ ...base, variants: [{ width: 640, size }] }).ok, false, String(size))
   }
 })

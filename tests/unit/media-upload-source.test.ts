@@ -40,3 +40,28 @@ test('the admin guard keeps assertAdmin logic: signed in, app_config row 1, admi
   assert.match(guards, /config\?\.admin_user_id !== user\.id/)
   assert.match(guards, /import 'server-only'/)
 })
+
+// ------------------------------------------- presign hardening (review item 2)
+
+test('requestMediaUpload rate-limits per signed-in user after the checks and before signing', () => {
+  const limitAt = action.indexOf('allowMediaPresign(')
+  assert.ok(limitAt > action.indexOf('checkUploadRequest({'), 'after the request checks')
+  assert.ok(limitAt < action.indexOf('mintUploadKey('), 'before a key is minted')
+  assert.ok(limitAt < action.indexOf('presignPut('), 'before signing')
+  assert.match(action, /allowMediaPresign\(\{\s*userId,/)
+  assert.match(action, /supabaseRateLimitStore\(createAdminClient\(\)\)/)
+})
+
+test('requestMediaUpload signs the declared size: the original with req.size, variants with their checked sizes', () => {
+  assert.match(action, /sign\(key, checked\.contentType, req\.size\)/)
+  assert.match(action, /planVariantUploads\(\{/)
+  assert.match(action, /contentLength,/)
+  assert.ok(!/variantWidths/.test(action), 'variantWidths is replaced by variants with sizes')
+})
+
+test('the shim token binds the size and the route compares it with Content-Length', () => {
+  assert.match(action, /mintShimToken\(objectKey, contentType, contentLength, secret\)/)
+  assert.match(route, /contentLength: length/)
+  assert.ok(route.indexOf("headers.get('content-length')") < route.indexOf('checkShimRequest('))
+  assert.match(route, /body\.byteLength !== length/)
+})
