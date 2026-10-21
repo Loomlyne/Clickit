@@ -65,8 +65,8 @@ test('pruneRateLimits never throws: an error or a throw comes back as { error }'
 test('cleanup-media cron prunes first, fail-soft, and reports it; no new cron trigger', () => {
   const route = readFileSync('src/app/api/cron/cleanup-media/route.ts', 'utf8')
   const run = route.slice(route.indexOf('async function runCleanup()'))
-  const prune = run.indexOf('pruneRateLimits(admin)')
-  assert.ok(prune !== -1, 'runCleanup calls pruneRateLimits(admin) with the service client')
+  const prune = run.indexOf('pruneRateLimits(admin, ')
+  assert.ok(prune !== -1, 'runCleanup calls pruneRateLimits(admin, …) with the service client')
   assert.ok(prune < run.indexOf('supabaseCleanupEnabled('), 'prune runs before the originals switch returns')
   assert.ok(prune < run.indexOf("from('shows')"), 'prune runs before the media sweep can fail')
   assert.match(run, /rateLimitsPruned/, 'the JSON reports the prune result')

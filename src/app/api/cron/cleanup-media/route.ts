@@ -6,6 +6,7 @@ import { findLiveReferences, readMediaReferenceUrls, type ReferenceDb } from '@/
 import { getPublicMediaOrigin } from '@/lib/supabase-media'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { supabaseCleanupEnabled } from '@/server/scheduled'
+import { pruneRateLimits } from '@/server/rate-limit-store'
 
 /**
  * Scheduled sweep: deletes hero media files in Supabase Storage that no show
@@ -26,6 +27,9 @@ import { supabaseCleanupEnabled } from '@/server/scheduled'
  *     files in other folders are never touched.
  *   - Requires the CRON_SECRET bearer header so the endpoint can't be called
  *     by anyone who guesses the URL.
+ *
+ * Also prunes rate_limits rows older than 24 h first (review item 9, PR #29): one
+ * DELETE, fail-soft, reported as `rateLimitsPruned`; a failed prune never stops the sweep.
  *
  * Invocation:
  *   The Worker scheduled handler sends `Authorization: Bearer ${CRON_SECRET}`.
@@ -90,6 +94,12 @@ async function runCleanup() {
   const startedAt = Date.now()
   const cutoff = new Date(startedAt - MIN_AGE_MS)
 
+  // --- Step 0: prune the rate-limit ledger (never throws) -------------------
+  const rateLimitsPruned = await pruneRateLimits(admin, startedAt)
+  if (rateLimitsPruned.error) {
+    console.error('[cron/cleanup-media] rate_limits prune failed', rateLimitsPruned.error)
+  }
+
   // --- Step 1: gather all URLs currently referenced by the DB --------------
   const [{ data: shows, error: showsError }, { data: cast, error: castError }] =
     await Promise.all([
@@ -106,6 +116,7 @@ async function runCleanup() {
       {
         error: 'Failed to load media references',
         details: showsError?.message ?? castError?.message,
+        rateLimitsPruned,
       },
       { status: 500 }
     )
@@ -225,7 +236,7 @@ async function runCleanup() {
       artworkOrphans: artworkOrphans.length,
       videoOrphans: videoOrphans.length,
     })
-    return NextResponse.json({ ok: true, skipped: 'supabase-originals', candidates })
+    return NextResponse.json({ ok: true, skipped: 'supabase-originals', candidates, rateLimitsPruned })
   }
 
   // --- Step 3: delete orphans ---------------------------------------------
@@ -302,6 +313,7 @@ async function runCleanup() {
     videoDeleted,
     durationMs,
     errors,
+    rateLimitsPruned,
   })
 
   return NextResponse.json({
@@ -315,5 +327,6 @@ async function runCleanup() {
     deleted: { artwork: artworkDeleted, videos: videoDeleted },
     durationMs,
     errors,
+    rateLimitsPruned,
   })
 }
