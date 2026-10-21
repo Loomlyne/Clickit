@@ -44,6 +44,27 @@ export type Database = {
         }
         Relationships: []
       }
+      admins: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          display_name: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          display_name: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          display_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_config: {
         Row: {
           admin_user_id: string | null
@@ -170,6 +191,33 @@ export type Database = {
         }
         Relationships: []
       }
+      digest_runs: {
+        Row: {
+          created_at: string | null
+          emails: number
+          id: string
+          status: string
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          created_at?: string | null
+          emails?: number
+          id?: string
+          status: string
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          created_at?: string | null
+          emails?: number
+          id?: string
+          status?: string
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       email_notifications: {
         Row: {
           created_at: string
@@ -194,6 +242,69 @@ export type Database = {
         }
         Relationships: []
       }
+      email_outbox: {
+        Row: {
+          attempts: number
+          created_at: string
+          first_attempt_at: string | null
+          id: string
+          idempotency_key: string
+          kind: string
+          last_error: string | null
+          lease_until: string | null
+          locale: string
+          next_attempt_at: string | null
+          payload: Json
+          provider_id: string | null
+          reply_to: string | null
+          sent_at: string | null
+          status: string
+          to_email: string | null
+          to_user: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          first_attempt_at?: string | null
+          id?: string
+          idempotency_key: string
+          kind: string
+          last_error?: string | null
+          lease_until?: string | null
+          locale?: string
+          next_attempt_at?: string | null
+          payload?: Json
+          provider_id?: string | null
+          reply_to?: string | null
+          sent_at?: string | null
+          status?: string
+          to_email?: string | null
+          to_user?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          first_attempt_at?: string | null
+          id?: string
+          idempotency_key?: string
+          kind?: string
+          last_error?: string | null
+          lease_until?: string | null
+          locale?: string
+          next_attempt_at?: string | null
+          payload?: Json
+          provider_id?: string | null
+          reply_to?: string | null
+          sent_at?: string | null
+          status?: string
+          to_email?: string | null
+          to_user?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       episodes: {
         Row: {
           archived: boolean
@@ -206,6 +317,7 @@ export type Database = {
           episode_number: number
           fts: unknown
           id: string
+          live_at: string | null
           player_error_at: string | null
           player_error_code: number | null
           publish_at: string | null
@@ -234,6 +346,7 @@ export type Database = {
           episode_number: number
           fts?: unknown
           id?: string
+          live_at?: string | null
           player_error_at?: string | null
           player_error_code?: number | null
           publish_at?: string | null
@@ -262,6 +375,7 @@ export type Database = {
           episode_number?: number
           fts?: unknown
           id?: string
+          live_at?: string | null
           player_error_at?: string | null
           player_error_code?: number | null
           publish_at?: string | null
@@ -409,10 +523,13 @@ export type Database = {
       }
       newsletter_subscribers: {
         Row: {
+          confirm_sent_at: string | null
+          confirmed_at: string | null
           created_at: string
           email: string
           id: string
           interests: Json
+          locale: string
           normalized_email: string
           notification_error: string | null
           notification_status: string
@@ -421,10 +538,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          confirm_sent_at?: string | null
+          confirmed_at?: string | null
           created_at?: string
           email: string
           id?: string
           interests?: Json
+          locale?: string
           normalized_email: string
           notification_error?: string | null
           notification_status?: string
@@ -433,10 +553,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          confirm_sent_at?: string | null
+          confirmed_at?: string | null
           created_at?: string
           email?: string
           id?: string
           interests?: Json
+          locale?: string
           normalized_email?: string
           notification_error?: string | null
           notification_status?: string
@@ -446,27 +569,78 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_sends: {
+        Row: {
+          episode_id: string
+          kind: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          episode_id: string
+          kind?: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          episode_id?: string
+          kind?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_sends_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_sends_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "episodes_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
           display_name: string | null
           id: string
+          locale: string | null
+          notify_new_episodes: boolean
+          onboarded_at: string | null
+          password_set_at: string | null
           updated_at: string
+          welcome_sent_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id: string
+          locale?: string | null
+          notify_new_episodes?: boolean
+          onboarded_at?: string | null
+          password_set_at?: string | null
           updated_at?: string
+          welcome_sent_at?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          locale?: string | null
+          notify_new_episodes?: boolean
+          onboarded_at?: string | null
+          password_set_at?: string | null
           updated_at?: string
+          welcome_sent_at?: string | null
         }
         Relationships: []
       }
@@ -1021,8 +1195,56 @@ export type Database = {
       }
     }
     Functions: {
+      am_i_admin: { Args: never; Returns: boolean }
+      build_digest: { Args: { p_now?: string }; Returns: string[] }
+      claim_outbox: {
+        Args: { p_ids: string[] }
+        Returns: {
+          attempts: number
+          first_attempt_at: string
+          id: string
+          idempotency_key: string
+          kind: string
+          locale: string
+          payload: Json
+          reply_to: string
+          to_address: string
+          to_user: string
+        }[]
+      }
+      claim_welcome: {
+        Args: { p_locale?: string; p_user: string }
+        Returns: string
+      }
+      enqueue_email: {
+        Args: {
+          p_admin_all?: boolean
+          p_key: string
+          p_kind: string
+          p_locale?: string
+          p_payload?: Json
+          p_reply_to?: string
+          p_to_email?: string
+          p_to_user?: string
+        }
+        Returns: {
+          id: string
+          outcome: string
+        }[]
+      }
+      finish_outbox: { Args: { p_results: Json }; Returns: number }
       get_youtube_key: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
+      list_admins: {
+        Args: never
+        Returns: {
+          display_name: string
+          email: string
+          has_totp: boolean
+          last_sign_in_at: string
+          user_id: string
+        }[]
+      }
       record_short_checks: { Args: { p_rows: Json }; Returns: number }
       record_youtube_checks: { Args: { p_rows: Json }; Returns: number }
       renumber_season: {
@@ -1034,6 +1256,7 @@ export type Database = {
         }[]
       }
       set_youtube_key: { Args: { p_key: string }; Returns: string }
+      sweep_outbox: { Args: { p_limit?: number }; Returns: string[] }
       youtube_key_meta: {
         Args: never
         Returns: {
