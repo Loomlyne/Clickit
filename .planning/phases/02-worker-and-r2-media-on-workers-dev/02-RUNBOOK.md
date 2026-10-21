@@ -12,7 +12,7 @@
 5. Nothing in Part A touches DNS, www.clickitstory.ae or the Vercel project. Part A writes only to the ClickitStory Cloudflare account, plus four owner-gated exceptions in live Supabase, each with its own step and trigger word: the redirect allow-list setting (Step 23, dashboard, no SQL), the sign-in rows that measurement and UAT sign-ins create in Supabase Auth (Steps 31 and 34), and the one approved draft-show write with its exact row list (Step 32). Steps 25-27 only read Supabase Storage.
 6. Free tier only. If any screen asks for a payment method or a paid plan, stop and report the screen; do not accept.
 
-`<WORKTREE>` below is the Phase 2 worktree path the controller gives at that step (the copy and CORS scripts exist only on the phase branch until Ship). The `<SUB>` below is the account's workers.dev subdomain found in Step 4 (not a secret). The app Worker is `https://clickit.<SUB>.workers.dev`; the media Worker is `https://clickit-media.<SUB>.workers.dev`.
+`<WORKTREE>` below is the main checkout `/Users/koss/Developer/Clickit` since #29 landed on main (6ebc802, 2026-10-21); before that it was the phase worktree. The `<SUB>` below is the account's workers.dev subdomain found in Step 4 (not a secret). The app Worker is `https://clickit.<SUB>.workers.dev`; the media Worker is `https://clickit-media.<SUB>.workers.dev`.
 
 ---
 
@@ -94,6 +94,14 @@ Then wait.
 > **Migration gate before ANY app-Worker deploy of the PR #29 code (Step 12 redeploys, Step 30, every later "deploy workers.dev"):** migration `supabase/migrations/20261021120000_legal_pages_arabic_review.sql` must already be live: applied through `apply-live-migrations.yml` (from main, after Koss's approval of the dry run) and read back read-only (`legal_pages` has `ar_reviewed`, `title_ar_draft`, `content_ar_draft`; anon cannot select the two draft columns). The public legal query selects `ar_reviewed`, so without the migration `/legal/*`, `/terms` and `/privacy` return 404. The controller checks this before it runs the deploy command; no migration read-back, no deploy.
 >
 > **Old code after the migration (controller, 2026-10-21):** after migration 20261021120000 is applied, legal-page saves on the old code (www / frozen Vercel) fail: its bare `.select()` returns the revoked draft columns. Keep the apply → new-deploy gap short, and make no legal edits on www in between.
+>
+> **Live state (controller, 2026-10-21):**
+> - PR #29 squash-merged on Koss's Ship: 6ebc802 (tree = b45b318), history 787ca3a; tags `backup/main-pre-pr29-20261021-1433`, `archive/phase-02-at-pr29`. Phase 2 stays In Progress.
+> - Fresh live dump before the migration: `/Users/koss/.clickit-backups/live-20261021T133420Z-*`.
+> - D-22 (Phase 6 duplicate YouTube ids): 18 older placeholder rows set `youtube_video_id = null`, 5 kept, 0 duplicate groups; logged in `/Users/koss/.clickit-backups/d22-before-*.json`.
+> - `apply-live-migrations.yml` run 39609825509 applied 20261020150526 and 20261021120000 on Koss's approval (about 14:4x CET). Read back 14:45: `legal_pages` has `ar_reviewed`, `title_ar_draft`, `content_ar_draft`; anon has no SELECT on the drafts; both rows `ar_reviewed = true`; `episodes` has the `youtube_*` columns and `episodes_youtube_video_id_key`; the 5 youtube functions exist; 0 duplicate groups; 39 episodes; www still 200. **The migration gate above is passed.**
+> - workers.dev runs main 787ca3a, version `7222dcee`, deployed 14:51 CET, media flag off. Signed-out smoke 14:52 all OK. Signed-in UAT by Koss in progress.
+> - Every deploy warns "DOQueueHandler not exported" although `custom-worker.ts` re-exports it; the "Clickit /en CPU" session is checking whether ISR revalidation works. Open until it reports.
 
 **Step 12 [CONTROL] - first deploy of the app Worker, media flag off**
 Trigger: Koss writes "deploy workers.dev" (the same word for every app-Worker deploy in Phase 2, including redeploys).
@@ -164,48 +172,77 @@ Command: `HOME=/Users/koss/.clickit-cloudflare npx wrangler secret list --name c
 Expected: names only: CRON_SECRET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY, TURNSTILE_SECRET_KEY. No values are shown.
 Then wait.
 
-### Media copy (reads Supabase Storage, writes R2 only; never deletes the source)
+### Media copy, media Worker, flag on (Steps 25-32, prepared 2026-10-21 14:5x CET)
 
-Steps 25-31 run in ONE terminal window that stays open. The values are read with `read -rs` so they never reach the screen, the shell history or a file.
+**Where things stand (controller, 2026-10-21):** the scripts are on `main` since #29 (6ebc802), so `<WORKTREE>` is now the main checkout `/Users/koss/Developer/Clickit`. Steps 26-29 must run there: `deploy.mjs` resolves `--verify-report` from the checkout it runs in, so the reports must sit in the main checkout's `.tmp/` (gitignored) for the controller's Step 30. `<SUB>` is `clickitstory`. R2 bucket `clickit-media` already holds a verified copy of the 86 objects from 2026-10-20 (#24); this run re-syncs it. Re-sync only with `r2:media` (never `r2:copy`, which overwrites the fast-start videos).
+
+| Step | Who | Writes | Needs Koss's word |
+|---|---|---|---|
+| 25 | Koss, his terminal | nothing | no (his own terminal) |
+| 26 | Koss, same terminal | nothing (reads Supabase Storage; `.tmp/` files) | no |
+| 26b | controller | nothing (reads the report) | no |
+| 27 | Koss, same terminal | R2 bucket `clickit-media` (adds and replaces copies; deletes nothing) | the controller's "dry-run reviewed, run step 27" |
+| 28 | controller | a Cloudflare Worker deploy | **yes, and a decision first (28a)** |
+| 29 | Koss or controller | nothing (GET/HEAD only; `.tmp/` file) | no |
+| 30 | controller | the `clickit` Worker on workers.dev | **yes: "flag on workers.dev"** |
+| 31 | Koss, in Hermes | a sign-in row in live Supabase Auth only | no (accepted cost of sign-in UAT) |
+| 32 | Koss, in Hermes | one live `shows` row + one audit row + new R2 objects | **yes: "approve one draft write"** |
+
+Steps 25-29 run in ONE terminal window that stays open. The values are read with `read -rs` so they never reach the screen, the shell history or a file.
 
 **Step 25 [KOSS] - load the copy credentials into this terminal only**
 Commands, one at a time, pasting each value at its silent prompt:
-`read -rs SUPABASE_SERVICE_ROLE_KEY && export SUPABASE_SERVICE_ROLE_KEY`
-`read -rs R2_ACCESS_KEY_ID && export R2_ACCESS_KEY_ID`
-`read -rs R2_SECRET_ACCESS_KEY && export R2_SECRET_ACCESS_KEY`
-`export NEXT_PUBLIC_SUPABASE_URL=https://lajguozmtissnnfccmej.supabase.co CLOUDFLARE_ACCOUNT_ID=e329b099b6e4272fc0915a99832e47fe CLOUDFLARE_R2_BUCKET=clickit-media`
+1. `cd /Users/koss/Developer/Clickit`
+2. `read -rs SUPABASE_SERVICE_ROLE_KEY && export SUPABASE_SERVICE_ROLE_KEY`
+3. `read -rs R2_ACCESS_KEY_ID && export R2_ACCESS_KEY_ID`
+4. `read -rs R2_SECRET_ACCESS_KEY && export R2_SECRET_ACCESS_KEY`
+5. `export NEXT_PUBLIC_SUPABASE_URL=https://lajguozmtissnnfccmej.supabase.co CLOUDFLARE_ACCOUNT_ID=e329b099b6e4272fc0915a99832e47fe CLOUDFLARE_R2_BUCKET=clickit-media`
 Check: `for v in SUPABASE_SERVICE_ROLE_KEY R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY NEXT_PUBLIC_SUPABASE_URL CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_R2_BUCKET; do [ -n "${(P)v}" ] && echo "$v set" || echo "$v MISSING"; done`
-Expected: six "set" lines, no values printed. (The R2 key needs the token values from Step 15; if that page is closed, create a second token with the same scope, then delete the old one.)
+Expected: six "set" lines, no values printed. The R2 key pair is the Step 15 token (the same pair stored as Worker secrets in Step 24); if it is no longer at hand, create a second token with the same scope (Object Read & Write, bucket `clickit-media` only), use it here, then delete the old one and re-run Step 24's `wrangler secret put` for both R2 names.
 Then wait.
 
 **Step 26 [KOSS] - build the manifest and dry-run report (no writes)**
-Command: `cd <WORKTREE> && npm run r2:media -- --refresh`
-Expected: "Wrote N objects to .tmp/r2-media-manifest.json" and "Dry-run report: .tmp/r2-media-reports/dry-run-<timestamp>.md" with per-type counts, planned variants and skipped types (SVG, ICO, GIF, video) with reasons. N is read now; it is not assumed to be 86. Send the controller the path of the .md report (it contains file names, sizes and hashes only).
-Then wait for the controller's review.
+Command (same terminal): `npm run r2:media -- --refresh`
+Expected: "Wrote N objects to .tmp/r2-media-manifest.json" and "Dry-run report: .tmp/r2-media-reports/dry-run-<timestamp>.md" with per-type counts, planned variants and skipped types (SVG, ICO, GIF, video) with reasons. N is read now; it may be more than 86 (uploads since 2026-10-20). Send the controller the path of the .md report (file names, sizes and hashes only).
+Then wait.
 
-**Step 27 [KOSS] - execute the copy**
+**Step 26b [CONTROL] - review the dry run**
+Read the .md report. Check: N against the live Storage object count (read-only); source buckets are only `show-artwork`, `site-assets`, `avatars`; every skipped type has a reason. Then write "dry-run reviewed, run step 27" (or stop and say what is wrong).
+
+**Step 27 [KOSS] - execute the copy (writes R2 only)**
 Trigger: the controller writes "dry-run reviewed, run step 27".
-Command (same terminal, still in `<WORKTREE>`): `npm run r2:media -- --execute`
-Expected: one line per object (`copied`, `skipped (identical)` or `remuxed`), then "Verified N originals, V variants" and "Checksum report: .tmp/r2-media-reports/copy-<timestamp>.json and .md". Zero failures. Re-running the same command must print only `skipped (identical)` lines.
+Command (same terminal): `npm run r2:media -- --execute`
+Expected: one line per object (`copied`, `skipped (identical)` or `remuxed`), then "Verified N originals, V variants" and "Checksum report: .tmp/r2-media-reports/copy-<timestamp>.json and .md". Zero failures. Re-running the same command prints only `skipped (identical)` lines. Send the controller the copy report path.
+Note: from here until the cutover, any admin media edit on www (frozen Vercel) goes to Supabase only. A new upload is a new key and the media Worker falls back to Supabase for it; an overwrite of a fixed key (avatars, `settings/og.png`, the hero video) leaves R2 stale. So: no media edits on www until the cutover, or re-run Steps 26-27 just before it.
+Then wait.
+
+**Step 28a [KOSS] - decision: which media Worker serves R2 for the workers.dev test**
+`--env r2` deploys the **production** media host (`media.clickitstory.ae`) R2-first, because `clickit-media` has that custom domain in every env. The gate in `workers/media/DNS-PLAN.md` §5d cannot pass while www is the frozen Vercel build (it has no R2 credentials and no `NEXT_PUBLIC_MEDIA_CUTOVER_READY=verified`), and `workers/media/wrangler.jsonc` says never deploy `--env r2` before it passes. Options:
+- **A (recommended): a separate workers.dev-only media Worker.** A small code PR adds env `r2-workersdev` (Worker name `clickit-media-r2`, no routes, `workers_dev: true`, R2 binding) and lets the deploy guard and the media-origin check accept it. Production media stays Supabase-only until Phase 3. Cost: one small PR and review before Step 28.
+- **B: `--env r2` on the production media host now,** with a written freeze on media edits on www until the cutover. No code. Breaks the §5d rule; rollback is `npm run cf:deploy:media -- --env supabase-only`.
+- **C: skip Steps 28-30 in Phase 2** and do them as part of the Phase 3 cutover. No R2 test on workers.dev before go-live.
+Expected: Koss picks A, B or C. Nothing is deployed before his answer.
 Then wait.
 
 **Step 28 [CONTROL] - deploy the media Worker**
-Trigger: Koss writes "deploy media worker".
-Command: `npm run cf:deploy:media -- --env r2`
-**Stop first (merge of main, 2026-10-20):** job D attached `media.clickitstory.ae` to `clickit-media` in every env, and the R2 binding exists only in env `r2`. So `--env r2` turns the **production** media host R2-first, not only workers.dev. Run it only after the R2 mirror gate in `workers/media/DNS-PLAN.md` §5d passes and Koss says so; until then the controller decides (options: deploy `--env supabase-only`, or a separate workers.dev-only Worker name for the Step 29 check). The guard refuses a missing env, an R2 binding outside env `r2`, and `--env ""`.
-Expected: guard ok, then the URL `https://clickit-media.<SUB>.workers.dev`. `curl -sI https://clickit-media.<SUB>.workers.dev/` returns 404 (no listing).
+Trigger: Koss writes "deploy media worker" after his 28a answer.
+Pre-check (every option): `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 whoami` shows only ClickitStory `e329b099b6e4272fc0915a99832e47fe`; `git status --short` clean; HEAD is on origin.
+- Option A (after its PR is on main): `npm run cf:deploy:media -- --env r2-workersdev` → URL `https://clickit-media-r2.clickitstory.workers.dev`. `<MEDIA_ORIGIN>` below = that URL.
+- Option B: `npm run cf:deploy:media -- --env r2` → `<MEDIA_ORIGIN>` = `https://clickit-media.clickitstory.workers.dev` (and `media.clickitstory.ae` now serves R2 first).
+Expected: `deploy-guard ok`, then the URL. `curl -sI <MEDIA_ORIGIN>/` returns 404 (no listing). Option B also: `curl -sI https://media.clickitstory.ae/site-assets/settings/favicon.png` returns 200 (the Worker sends no header naming its source; Step 29 is the proof).
 Then wait.
 
-**Step 29 [KOSS or CONTROL] - verify every object on the media host**
-Command (in `<WORKTREE>`): `node scripts/media/verify-media-host.mjs --origin https://clickit-media.<SUB>.workers.dev --report .tmp/r2-media-reports/copy-<timestamp>.json`
-Expected: "verify ok: N originals, V variants, 0 failures" and a file `.tmp/r2-media-reports/verify-<timestamp>.json`. Any failure: stop; the cutover flag stays off.
+**Step 29 [KOSS or CONTROL] - verify every object on the media host (read only)**
+Command (main checkout): `node scripts/media/verify-media-host.mjs --origin <MEDIA_ORIGIN> --report .tmp/r2-media-reports/copy-<timestamp>.json`
+Expected: "verify ok: N originals, V variants, 0 failures" and `.tmp/r2-media-reports/verify-<timestamp>.json`. Any failure: stop; the flag stays off.
 Then wait.
 
 **Step 30 [CONTROL] - workers.dev build with media on R2**
 Trigger: Step 29 printed 0 failures AND Koss writes "flag on workers.dev".
-Pre-check: migration 20261021120000 (legal pages Arabic review) is live and read back (migration gate above Step 12). Not live: stop, no deploy.
-Command: `npm run cf:deploy:workersdev -- --media-flag verified --media-origin https://clickit-media.<SUB>.workers.dev --verify-report .tmp/r2-media-reports/verify-<timestamp>.json`
-Expected: the guard checks the verify report (same manifest, object count equal, 0 failures) before building; the build sets `NEXT_PUBLIC_MEDIA_CUTOVER_READY=verified` and `NEXT_PUBLIC_MEDIA_ORIGIN` for this target only. Images on `https://clickit.<SUB>.workers.dev/en` load from `clickit-media.<SUB>.workers.dev`. No Vercel build ever gets this flag.
+Pre-check: migration 20261021120000 is live and read back (done 2026-10-21 14:45 CET, run 39609825509); `git status --short` clean in the main checkout; the verify report from Step 29 is in its `.tmp/`.
+Command (main checkout): `npm run cf:deploy:workersdev -- --media-flag verified --media-origin <MEDIA_ORIGIN> --verify-report .tmp/r2-media-reports/verify-<timestamp>.json`
+Expected: the guard checks the verify report (same manifest, equal object count, 0 failures) before building; the build sets `NEXT_PUBLIC_MEDIA_CUTOVER_READY=verified` and `NEXT_PUBLIC_MEDIA_ORIGIN` for this target only. Images on `https://clickit.clickitstory.workers.dev/en` load from `<MEDIA_ORIGIN>`. No Vercel build ever gets this flag. Rollback: `npm run cf:deploy:workersdev -- --media-flag off`.
+Note: with Option A the guard's media-origin rule (`clickit-media.<sub>.workers.dev` or `media.clickitstory.ae`) must also accept `clickit-media-r2.<sub>.workers.dev`; that is part of A's PR.
 Then wait.
 
 ### Approvals during UAT (plan 02-22)
