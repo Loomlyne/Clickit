@@ -1,5 +1,7 @@
 // Per-target OpenNext build (Pitfall 4). One build per target writes
 // .open-next/clickit-build-stamp.json; the deploy guard reads the stamp.
+// It also writes .open-next/clickit-gateway-config.json (public Supabase URL,
+// auth cookie name, JWKS URL; scripts/cf/gateway-config.mjs) for the gateway.
 // NEXT_PUBLIC_* values are inlined at build time, so the stamp stores sha256
 // hashes of them, never the values. This script never prints env values.
 //
@@ -23,6 +25,7 @@ import {
   findFoldedEnvFiles,
   isAllowedMediaOrigin,
 } from './deploy-guard.mjs'
+import { GATEWAY_CONFIG_PATH, gatewayConfigFromEnv } from './gateway-config.mjs'
 import { CLICKIT_HOME, checkEnv } from './wrangler-guard.mjs'
 
 export const PREVIEW_ENV_FILE = '.env.preview.local'
@@ -249,6 +252,7 @@ function main(argv) {
   }
 
   let buildEnv
+  let gatewayConfig
   try {
     const fileEnv = existsSync(envFile) ? parseEnvFile(readFileSync(envFile, 'utf8')) : {}
     if (target === 'preview') {
@@ -265,6 +269,9 @@ function main(argv) {
       options.manifest = loadManifestInfo(readOption(argv, '--manifest') ?? DEFAULT_MANIFEST_PATH)
     }
     buildEnv = buildEnvFor(target, fileEnv, options, process.env)
+    // Public values only (Supabase URL, cookie name, JWKS URL). Computed
+    // before the build so a missing URL refuses early, written after the stamp.
+    gatewayConfig = gatewayConfigFromEnv(buildEnv)
   } catch (error) {
     console.error(`refused: ${error.message}`)
     return 1
@@ -302,6 +309,8 @@ function main(argv) {
   mkdirSync(dirname(STAMP_PATH), { recursive: true })
   writeFileSync(STAMP_PATH, `${JSON.stringify(stamp, null, 2)}\n`)
   console.log(`build stamp written: target ${stamp.target}, media flag ${stamp.mediaFlag}`)
+  writeFileSync(GATEWAY_CONFIG_PATH, `${JSON.stringify(gatewayConfig, null, 2)}\n`)
+  console.log('gateway config written')
   return 0
 }
 
