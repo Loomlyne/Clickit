@@ -354,3 +354,35 @@ export function isVariantKeyFor(variantKey: string, key: string): boolean {
 export function variantKeyFor(key: string, width: VariantWidth): string {
   return `_v/${width}/webp/${key}`
 }
+
+export type VariantUpload = { width: VariantWidth; size: number }
+export type VariantPlan = { ok: true; variants: VariantUpload[] } | { ok: false; error: string }
+
+/**
+ * The WebP copies a request may get URLs for, each with the size the browser
+ * declared (signed as its Content-Length). Kinds without copies and ICO get
+ * none (requested widths are ignored, as before). A duplicate width, a size that
+ * is not a positive integer or over the original's cap refuses the request.
+ */
+export function planVariantUploads(input: {
+  kind: UploadKind
+  contentType: string
+  capBytes: number
+  variants?: ReadonlyArray<{ width: number; size: number }>
+}): VariantPlan {
+  const def = UPLOAD_KINDS[input.kind]
+  if (!def?.variants || normalizeContentType(input.contentType) === 'image/x-icon') return { ok: true, variants: [] }
+  const requested = input.variants ?? []
+  const out: VariantUpload[] = []
+  for (const width of VARIANT_WIDTHS) {
+    const matches = requested.filter((v) => v.width === width)
+    if (matches.length === 0) continue
+    if (matches.length > 1) return { ok: false, error: 'Invalid upload request' }
+    const size = matches[0].size
+    if (typeof size !== 'number' || !Number.isSafeInteger(size) || size <= 0 || size > input.capBytes) {
+      return { ok: false, error: 'Invalid upload request' }
+    }
+    out.push({ width, size })
+  }
+  return { ok: true, variants: out }
+}

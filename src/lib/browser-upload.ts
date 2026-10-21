@@ -3,8 +3,10 @@
 // Browser side of direct-to-R2 uploads (MEDIA-01, MEDIA-04, MEDIA-05).
 //
 // Images: check type + size -> read the image size -> make WebP copies (only if the
-//   browser really encodes WebP) -> requestMediaUpload -> PUT the original
-//   (XMLHttpRequest, progress) -> PUT the copies -> finalize*Upload.
+//   browser really encodes WebP) -> requestMediaUpload (declares every byte size)
+//   -> PUT the original (XMLHttpRequest, progress) and the copies at once ->
+//   finalize*Upload. The links sign each size as Content-Length and live 60 s,
+//   so every PUT starts right after the request.
 // Videos (uploadVideoDirect): check type + size -> requestMediaUpload (no copies) ->
 //   PUT the MP4 (same XHR progress code) -> finalize*VideoUpload. Nothing is decoded
 //   or transcoded in the browser; fast-start and audio are checked by finalize.
@@ -144,7 +146,11 @@ async function makeVariants(
   }
 }
 
-/** PUT with progress. The Content-Type header is exactly the signed one. */
+/**
+ * PUT with progress. The Content-Type header is exactly the signed one; the
+ * browser sets Content-Length from the Blob (scripts cannot), which must equal
+ * the signed size.
+ */
 function putWithProgress(
   url: string,
   contentType: string,
@@ -216,16 +222,29 @@ export async function uploadImageDirect(input: UploadImageInput): Promise<Upload
       size: file.size,
       filename: file.name,
       showId,
-      variantWidths: made.variants.map((v) => v.width),
+      variants: made.variants.map((v) => ({ width: v.width, size: v.blob.size })),
     })
     if (!res.success) {
-      const kindOf: UploadErrorKind = /not available/i.test(res.error) ? 'unavailable' : 'wrong-type'
+      const kindOf: UploadErrorKind = /not available|too many/i.test(res.error) ? 'unavailable' : 'wrong-type'
       return fail({ kind: kindOf, message: res.error })
     }
     target = res.data
   } catch {
     return fail({ kind: 'network', message: UPLOAD_MESSAGES.network })
   }
+
+  // The signed Content-Length is the size declared above; a changed file would get a 403.
+  if (file.size !== target.put.contentLength) return fail({ kind: 'network', message: UPLOAD_MESSAGES.network })
+
+  // Copies are optional: one that fails is simply not listed (the original always works).
+  // They start together with the original, so no link is used after its 60 s.
+  const copies = target.variants.map(async (variant) => {
+    const blob = made.variants.find((v) => v.width === variant.width)?.blob
+    if (!blob || blob.size !== variant.put.contentLength) return null
+    if (await putVariant(variant.put.url, variant.put.headers['Content-Type'], blob, signal)) return variant.key
+    console.warn('[browser-upload] a smaller copy did not upload; the original will be used for it')
+    return null
+  })
 
   try {
     await putWithProgress(
@@ -236,20 +255,10 @@ export async function uploadImageDirect(input: UploadImageInput): Promise<Upload
       signal
     )
   } catch {
+    await Promise.allSettled(copies)
     return fail({ kind: 'network', message: UPLOAD_MESSAGES.network })
   }
-
-  // Copies are optional: one that fails is simply not listed (the original always works).
-  const variantKeys: string[] = []
-  for (const variant of target.variants) {
-    const blob = made.variants.find((v) => v.width === variant.width)?.blob
-    if (!blob) continue
-    if (await putVariant(variant.put.url, variant.put.headers['Content-Type'], blob, signal)) {
-      variantKeys.push(variant.key)
-    } else {
-      console.warn('[browser-upload] a smaller copy did not upload; the original will be used for it')
-    }
-  }
+  const variantKeys = (await Promise.all(copies)).filter((key): key is string => key !== null)
 
   report(100, 'saving', variantCount)
   let result: FinalizeResult
@@ -321,10 +330,10 @@ export async function uploadVideoDirect(input: UploadVideoInput): Promise<Upload
       size: file.size,
       filename: file.name,
       showId,
-      variantWidths: [],
+      variants: [],
     })
     if (!res.success) {
-      const kindOf: UploadErrorKind = /not available/i.test(res.error) ? 'unavailable' : 'wrong-type'
+      const kindOf: UploadErrorKind = /not available|too many/i.test(res.error) ? 'unavailable' : 'wrong-type'
       return fail({ kind: kindOf, message: res.error })
     }
     target = res.data
@@ -332,6 +341,7 @@ export async function uploadVideoDirect(input: UploadVideoInput): Promise<Upload
     return fail({ kind: 'network', message: UPLOAD_MESSAGES.network })
   }
 
+  if (file.size !== target.put.contentLength) return fail({ kind: 'network', message: UPLOAD_MESSAGES.network })
   try {
     await putWithProgress(
       target.put.url,

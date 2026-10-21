@@ -3,7 +3,8 @@
 // preview the action hands out URLs to /api/dev/r2-put/<key> instead, and the
 // route writes through the MEDIA binding. The shim answers only when ALL hold:
 //   LOCAL_DEV === "1", Host is 127.0.0.1[:port], and an HMAC token bound to the
-//   key and content type is valid and younger than 300 s.
+//   key, content type and size (like the signed Content-Length of a real
+//   presigned PUT) is valid and younger than 300 s.
 // Anything else is 404 (hidden) or 403 (bad token). The secret is
 // LOCAL_UPLOAD_SHIM_SECRET from the gitignored .dev.vars; it is never a wrangler
 // secret or var. Pure: no imports; uses WebCrypto.
@@ -30,21 +31,26 @@ async function hmacKey(secret: string, usage: 'sign' | 'verify') {
   return crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, [usage])
 }
 
-function message(ts: string, key: string, contentType: string) {
-  return encoder.encode(`${ts}\n${key}\n${contentType}`)
+function message(ts: string, key: string, contentType: string, size: number) {
+  return encoder.encode(`${ts}\n${key}\n${contentType}\n${size}`)
 }
+
+const isSize = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isSafeInteger(value) && value > 0
 
 export async function mintShimToken(
   key: string,
   contentType: string,
+  size: number,
   secret: string,
   now: number = Date.now()
 ): Promise<string> {
   if (typeof secret !== 'string' || secret.length < SHIM_MIN_SECRET_LENGTH) {
     throw new Error('LOCAL_UPLOAD_SHIM_SECRET is missing or shorter than 32 characters')
   }
+  if (!isSize(size)) throw new Error('Invalid content length')
   const ts = String(Math.trunc(now))
-  const mac = await crypto.subtle.sign('HMAC', await hmacKey(secret, 'sign'), message(ts, key, contentType))
+  const mac = await crypto.subtle.sign('HMAC', await hmacKey(secret, 'sign'), message(ts, key, contentType, size))
   return `${ts}.${hex(mac)}`
 }
 
@@ -56,6 +62,8 @@ export async function checkShimRequest(input: {
   token: string | null | undefined
   key: string
   contentType: string
+  /** The request's Content-Length; must equal the size the token was minted for. */
+  contentLength: number
   secret: string | undefined
   now?: number
 }): Promise<ShimCheck> {
@@ -70,7 +78,7 @@ export async function checkShimRequest(input: {
   const dot = token.indexOf('.')
   const ts = dot > 0 ? token.slice(0, dot) : ''
   const mac = dot > 0 ? unhex(token.slice(dot + 1)) : null
-  if (!/^[0-9]{10,16}$/.test(ts) || !mac) return { ok: false, status: 403 }
+  if (!/^[0-9]{10,16}$/.test(ts) || !mac || !isSize(input.contentLength)) return { ok: false, status: 403 }
 
   const now = input.now ?? Date.now()
   const age = now - Number(ts)
@@ -81,7 +89,7 @@ export async function checkShimRequest(input: {
     'HMAC',
     await hmacKey(input.secret, 'verify'),
     mac,
-    message(ts, input.key, input.contentType)
+    message(ts, input.key, input.contentType, input.contentLength)
   )
   return valid ? { ok: true } : { ok: false, status: 403 }
 }

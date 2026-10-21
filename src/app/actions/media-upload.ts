@@ -4,25 +4,29 @@ import { AwsClient } from 'aws4fetch'
 import { headers } from 'next/headers'
 import { z } from 'zod'
 
+import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdminUser, requireSignedInUser } from '@/server/auth-guards'
 import { getWorkerEnv } from '@/server/cloudflare'
-import { mintShimToken } from '@/server/dev-upload-shim'
+import { mintShimToken, SHIM_TOKEN_TTL_MS } from '@/server/dev-upload-shim'
+import { allowMediaPresign } from '@/server/media-presign-limit'
 import { presignPut } from '@/server/r2-presign'
+import { supabaseRateLimitStore } from '@/server/rate-limit-store'
 import {
   MAX_VARIANT_URLS_PER_CALL,
   UPLOAD_KINDS,
-  VARIANT_WIDTHS,
   checkUploadRequest,
   mintUploadKey,
+  planVariantUploads,
   variantKeyFor,
   type UploadKind,
   type VariantWidth,
 } from '@/server/upload-kinds'
 
 // Direct-to-R2 upload requests (MEDIA-01). This action never receives file
-// bytes: it checks the session, the kind's allowlist and the declared size,
-// mints the key server-side and returns presigned PUT URLs (local signing, no
-// subrequest). The real gate is finalizeUploadedObject (HEAD, magic bytes,
+// bytes: it checks the session, the kind's allowlist and the declared sizes,
+// applies the per-user presign limit, mints the key server-side and returns
+// presigned PUT URLs (local signing, no subrequest) that sign each declared size
+// as Content-Length and expire in 60 s. The real gate is finalizeUploadedObject (HEAD, magic bytes,
 // delete on refusal), called by the per-kind finalize actions (plans 02-15/16).
 
 const KIND_VALUES = Object.keys(UPLOAD_KINDS) as [UploadKind, ...UploadKind[]]
@@ -34,8 +38,14 @@ const requestSchema = z.object({
   size: z.number().int().positive(),
   filename: z.string().max(200).optional(),
   showId: z.string().uuid().optional(),
-  variantWidths: z
-    .array(z.union([z.literal(640), z.literal(1280), z.literal(1920)]))
+  /** WebP copies the browser already made, with their exact byte sizes. */
+  variants: z
+    .array(
+      z.object({
+        width: z.union([z.literal(640), z.literal(1280), z.literal(1920)]),
+        size: z.number().int().positive(),
+      })
+    )
     .max(MAX_VARIANT_URLS_PER_CALL)
     .optional(),
 })
@@ -46,6 +56,8 @@ type PutTarget = {
   url: string
   method: 'PUT'
   headers: { 'Content-Type': string }
+  /** Signed size: the PUT body must be exactly this many bytes. */
+  contentLength: number
   expiresAt: number
 }
 
@@ -61,6 +73,8 @@ export type MediaUploadResult =
   | { success: false; error: string }
 
 const LOCAL_HOST_RE = /^127\.0\.0\.1(?::[0-9]{1,5})?$/
+const UNAVAILABLE = 'Uploads are not available right now'
+const RATE_LIMITED = 'Too many uploads in the last 10 minutes. Try again later.'
 
 export async function requestMediaUpload(input: MediaUploadInput): Promise<MediaUploadResult> {
   const parsed = requestSchema.safeParse(input)
@@ -85,8 +99,22 @@ export async function requestMediaUpload(input: MediaUploadInput): Promise<Media
   })
   if (!checked.ok) return { success: false, error: checked.error }
   if (def.needsShowId && !req.showId) return { success: false, error: 'Missing showId' }
+  const plan = planVariantUploads({
+    kind: req.kind,
+    contentType: checked.contentType,
+    capBytes: checked.capBytes,
+    variants: req.variants,
+  })
+  if (!plan.ok) return { success: false, error: plan.error }
 
-  // 3. Key minted server-side (filename is never used).
+  // 3. Per-user presign limit (rate_limits, fails closed).
+  const limit = await allowMediaPresign({
+    userId,
+    getStore: () => supabaseRateLimitStore(createAdminClient()),
+  })
+  if (!limit.allowed) return { success: false, error: limit.reason === 'limited' ? RATE_LIMITED : UNAVAILABLE }
+
+  // 4. Key minted server-side (filename is never used).
   let key: string
   try {
     key = mintUploadKey(req.kind, {
@@ -99,12 +127,7 @@ export async function requestMediaUpload(input: MediaUploadInput): Promise<Media
     return { success: false, error: 'Invalid upload request' }
   }
 
-  const widths: VariantWidth[] =
-    def.variants && checked.contentType !== 'image/x-icon'
-      ? VARIANT_WIDTHS.filter((w) => req.variantWidths?.includes(w))
-      : []
-
-  // 4. URLs.
+  // 5. URLs. Each signs its declared size (the original's was checked against the cap above).
   try {
     const env = await getWorkerEnv()
     const hasCredentials = Boolean(env.R2_ACCESS_KEY_ID) && Boolean(env.R2_SECRET_ACCESS_KEY)
@@ -116,39 +139,41 @@ export async function requestMediaUpload(input: MediaUploadInput): Promise<Media
       const host = (await headers()).get('host') ?? ''
       if (!LOCAL_HOST_RE.test(host)) return { success: false, error: 'Local upload shim needs host 127.0.0.1' }
       const secret = env.LOCAL_UPLOAD_SHIM_SECRET ?? ''
-      const shim = async (objectKey: string, contentType: string): Promise<PutTarget> => {
-        const token = await mintShimToken(objectKey, contentType, secret)
+      const shim = async (objectKey: string, contentType: string, contentLength: number): Promise<PutTarget> => {
+        const token = await mintShimToken(objectKey, contentType, contentLength, secret)
         return {
           url: `http://${host}/api/dev/r2-put/${objectKey}?t=${token}`,
           method: 'PUT',
           headers: { 'Content-Type': contentType },
-          expiresAt: Date.now() + 300_000,
+          contentLength,
+          expiresAt: Date.now() + SHIM_TOKEN_TTL_MS,
         }
       }
-      put = await shim(key, checked.contentType)
-      for (const width of widths) {
+      put = await shim(key, checked.contentType, req.size)
+      for (const { width, size } of plan.variants) {
         const variantKey = variantKeyFor(key, width)
-        variants.push({ width, key: variantKey, put: await shim(variantKey, 'image/webp') })
+        variants.push({ width, key: variantKey, put: await shim(variantKey, 'image/webp', size) })
       }
     } else {
-      const sign = (objectKey: string, contentType: string) =>
+      const sign = (objectKey: string, contentType: string, contentLength: number) =>
         presignPut({
           accountId: env.CLOUDFLARE_ACCOUNT_ID,
           key: objectKey,
           contentType,
+          contentLength,
           credentials: { accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY },
           AwsClientImpl: AwsClient,
         })
-      put = await sign(key, checked.contentType)
-      for (const width of widths) {
+      put = await sign(key, checked.contentType, req.size)
+      for (const { width, size } of plan.variants) {
         const variantKey = variantKeyFor(key, width)
-        variants.push({ width, key: variantKey, put: await sign(variantKey, 'image/webp') })
+        variants.push({ width, key: variantKey, put: await sign(variantKey, 'image/webp', size) })
       }
     }
     return { success: true, data: { key, contentType: checked.contentType, put, variants } }
   } catch (err) {
     // Messages name a missing variable, never a value.
     console.error('[requestMediaUpload] could not presign', err instanceof Error ? err.message : 'unknown error')
-    return { success: false, error: 'Uploads are not available right now' }
+    return { success: false, error: UNAVAILABLE }
   }
 }
