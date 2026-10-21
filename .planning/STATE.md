@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-21T13:52:34.365Z"
+last_updated: "2026-10-21T13:55:40.692Z"
 last_activity: 2026-10-21
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 123
-  completed_plans: 71
+  completed_plans: 72
   percent: 33
 ---
 
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 05 (accounts-and-email) — EXECUTING
-Plan: 2 of 42
+Plan: 3 of 42
 Status: Ready to execute
 Last activity: 2026-10-21
 Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
 
-Progress: [██████░░░░] 59%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
@@ -79,6 +79,7 @@ Progress: [██████░░░░] 59%
 | Phase 04 P05 | 8min | 2 tasks | 6 files |
 | Phase 04 P06 | 5min | 4 tasks | 6 files |
 | Phase 05 P01 | 25min | 2 tasks | 6 files |
+| Phase 05 P02 | 10min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -116,6 +117,7 @@ Recent decisions affecting current work:
 - [Phase 04]: Phase 04-03: Q4=A, category colours stay free content; Desert Sand (brand-yellow) is genre/category default only, shows keep 5 brand values
 - [Phase 4]: Phase 4 Plan 04: admin design-system summary compares canonicalCssValue(live) with resolved signed values; fonts excluded from the count (next/font hashes the family)
 - [Phase 05]: 05-01: db-proof.sh scratch bootstrap creates supabase_vault and mirrors default privileges; pre_*.sql fixtures run before supabase/pending
+- [Phase 05]: 05-02: isPublicPath is one exact list plus slash-bounded prefixes (fails closed, /about walled); normalizeCode returns at most 6 ASCII digits, shared client/server; AUTH_LINK_MINUTES=15, RESEND_WAIT_SECONDS=60
 
 ### Pending Todos
 
@@ -155,7 +157,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-21T13:52:30.614Z
+Last session: 2026-10-21T13:55:35.540Z
 Stopped at: Completed 04-01-PLAN.md
 Phase 2 last session: 2026-10-20T10:45:11.285Z
 Phase 2 stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above is the controller's)
