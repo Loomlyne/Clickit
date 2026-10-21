@@ -299,6 +299,26 @@ test('migration: additive draft columns + ar_reviewed, existing Arabic stays pub
   assert.ok(off !== -1 && off < upd && upd < on)
 })
 
+test('migration: one explicit transaction holds the trigger pause, the backfill and the re-enable', () => {
+  const sql = read(MIGRATION)
+  const code = sql
+    .split('\n')
+    .map((l) => l.replace(/--.*$/, '').trim())
+    .filter(Boolean)
+    .join('\n')
+  assert.equal((code.match(/^begin;$/gm) ?? []).length, 1, 'one begin;')
+  assert.equal((code.match(/^commit;$/gm) ?? []).length, 1, 'one commit;')
+  assert.ok(code.startsWith('begin;'), 'begin; is the first statement (psql runs the whole file atomically too)')
+  assert.ok(code.endsWith('commit;'), 'commit; is the last statement')
+  const begin = code.indexOf('begin;')
+  const off = code.indexOf('disable trigger set_updated_at')
+  const upd = code.indexOf('set ar_reviewed = true')
+  const on = code.indexOf('enable trigger set_updated_at')
+  const commit = code.indexOf('commit;')
+  assert.ok(begin < off && off < upd && upd < on && on < commit)
+  assert.ok(!/\brollback\b|\bsavepoint\b/i.test(code))
+})
+
 // ---- draft privacy (PR #29 re-review item 1) -----------------------------------
 // legal_pages had a table-wide SELECT grant for anon and authenticated, so the draft columns
 // were readable with the anon key. The migration swaps it for a column grant that leaves the
