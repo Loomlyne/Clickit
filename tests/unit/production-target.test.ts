@@ -4,6 +4,7 @@
 // are assembled at runtime.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import {
   PRODUCTION_CRONS,
@@ -20,9 +21,11 @@ import {
   PRODUCTION_ENV_FILE,
   PRODUCTION_SITE_URL,
   buildEnvFor,
+  checkProductionBuildArgs,
   classifySupabaseKey,
   makeStamp,
 } from '../../scripts/cf/build-target.mjs'
+import { LAST_DEPLOY_PATH, offlineFlagReasons } from '../../scripts/cf/deploy.mjs'
 import { CRON_EXPRESSIONS_FOR_PHASE_3 } from '../../src/server/scheduled.ts'
 
 const CLICKIT = 'e329b099b6e4272fc0915a99832e47fe'
@@ -502,3 +505,114 @@ test('checkMediaDeploy refuses any env name outside supabase-only, r2 and r2-wor
     assert.equal(checkMediaDeploy(mediaInput(env)).ok, false, JSON.stringify(env))
   }
 })
+
+// ------------------------------------------- Task 2: build args, deploy-only, offline, D-18 state
+
+test('checkProductionBuildArgs needs --media-flag verified and --verify-report <path>', () => {
+  assert.equal(checkProductionBuildArgs(['--target', 'production', '--media-flag', 'verified', '--verify-report', 'r.json']).ok, true)
+  assert.match(
+    checkProductionBuildArgs(['--target', 'production', '--media-flag', 'verified']).reasons.join(' | '),
+    /--verify-report/,
+  )
+  assert.match(checkProductionBuildArgs(['--target', 'production', '--verify-report', 'r.json']).reasons.join(' | '), /verified/)
+  assert.equal(checkProductionBuildArgs(['--target', 'production', '--media-flag', 'off', '--verify-report', 'r.json']).ok, false)
+  assert.equal(checkProductionBuildArgs(['--media-flag', 'verified', '--verify-report', '--manifest']).ok, false)
+})
+
+test('checkProductionBuildArgs refuses a --media-origin other than the production media host', () => {
+  const base = ['--target', 'production', '--media-flag', 'verified', '--verify-report', 'r.json']
+  assert.equal(checkProductionBuildArgs([...base, '--media-origin', 'https://media.clickitstory.ae']).ok, true)
+  assert.equal(checkProductionBuildArgs([...base, '--media-origin', 'https://clickit-media-r2.clickitstory.workers.dev']).ok, false)
+})
+
+test('checkProductionDeploy refuses a report whose sha256 differs from the stamp, or a stamp without one', () => {
+  assert.match(reasonsOf(checkProductionDeploy(prodInput({ verifyReportSha256: 'c'.repeat(64) }))), /sha256 differs/)
+  assert.match(reasonsOf(checkProductionDeploy(prodInput({ verifyReportSha256: null }))), /sha256 differs/)
+  assert.match(reasonsOf(checkProductionDeploy(prodInput({ stamp: prodStamp({ verifyReportSha256: undefined }) }))), /sha256 differs/)
+})
+
+test('checkProductionDeploy refuses a stamp whose gitSha differs from HEAD', () => {
+  const res = checkProductionDeploy(prodInput({ stamp: prodStamp({ gitSha: OTHER_SHA }) }))
+  assert.equal(res.ok, false)
+  assert.match(reasonsOf(res), /stamp commit differs from HEAD/)
+})
+
+test('offlineFlagReasons: --offline only together with --dry-run', () => {
+  assert.deepEqual(offlineFlagReasons(['--target', 'production', '--dry-run', '--offline']), [])
+  assert.deepEqual(offlineFlagReasons(['--target', 'production']), [])
+  assert.match(offlineFlagReasons(['--target', 'production', '--offline']).join(''), /only allowed together with --dry-run/)
+  assert.equal(offlineFlagReasons(['--target', 'workersdev', '--offline']).length, 1)
+})
+
+const deploySrc = readFileSync('scripts/cf/deploy.mjs', 'utf8')
+function fnBody(name: string) {
+  const start = deploySrc.indexOf(`function ${name}(`)
+  assert.ok(start >= 0, name)
+  const next = deploySrc.indexOf('\nfunction ', start + 1)
+  const nextExport = deploySrc.indexOf('\nexport function ', start + 1)
+  const ends = [next, nextExport].filter((i) => i > 0)
+  return deploySrc.slice(start, ends.length ? Math.min(...ends) : undefined)
+}
+
+test('deploy.mjs production path is deploy-only; the workers.dev path keeps its build', () => {
+  const prod = fnBody('deployProduction')
+  assert.equal(prod.includes('build-target'), false)
+  assert.equal(/opennextjs-cloudflare', 'build'/.test(prod), false)
+  assert.equal(/spawnSync\('node'/.test(prod), false)
+  assert.match(prod, /'opennextjs-cloudflare', 'deploy', '--env', 'production'/)
+  assert.match(prod, /verifyReportSha256/)
+  assert.match(prod, /deploy-only: using build stamp/)
+  const dev = fnBody('deployWorkersdev')
+  assert.match(dev, /scripts\/cf\/build-target\.mjs/)
+})
+
+test('deploy.mjs production passes --allow-upload-sweep-delete to the guard in deploy and dry run alike', () => {
+  const prod = fnBody('deployProduction')
+  assert.match(prod, /allowUploadSweepDelete: argv\.includes\('--allow-upload-sweep-delete'\)/)
+  // The flag is read once, before the dry-run branch, so both modes take it.
+  assert.ok(prod.indexOf('allowUploadSweepDelete') < prod.indexOf('if (dryRun) {\n    console.log'))
+  assert.match(prod, /warnUploadSweep\(wranglerConfig\?\.env\?\.production\?\.vars\)/)
+})
+
+test('deploy.mjs records the last deploy outside the repo and checks D-18 before the workers.dev build', () => {
+  assert.equal(LAST_DEPLOY_PATH, '/Users/koss/.clickit-cloudflare/clickit.last-deploy.json')
+  const prod = fnBody('deployProduction')
+  assert.match(prod, /writeLastDeploy\('production', git\.head\)/)
+  assert.ok(prod.indexOf('writeLastDeploy') > prod.indexOf("'--env', 'production'"), 'written only after the deploy ran')
+  const dev = fnBody('deployWorkersdev')
+  assert.ok(dev.indexOf('checkTargetSwitch') >= 0)
+  assert.ok(dev.indexOf('checkTargetSwitch') < dev.indexOf('build-target.mjs'), 'D-18 check runs before any build')
+  assert.match(dev, /--override-production-reason/)
+  assert.match(dev, /Reason: \$\{/)
+  assert.match(dev, /writeLastDeploy\('workersdev', git\.head\)/)
+  const record = fnBody('writeLastDeploy')
+  assert.match(record, /\{ target, gitSha, deployedAt: /)
+})
+
+test('deploy.mjs skips wrangler whoami when --offline is set and passes offline to every guard', () => {
+  for (const name of ['deployProduction', 'deployWorkersdev', 'deployMedia']) {
+    const body = fnBody(name)
+    assert.match(body, /const whoami = offline \? null : readWhoami\(\)/, name)
+    assert.match(body, /\n    offline,\n/, name)
+  }
+})
+
+test('build-target --target production without --verify-report refuses before any build', () => {
+  const res = spawnSync(process.execPath, ['scripts/cf/build-target.mjs', '--target', 'production', '--media-flag', 'verified'], {
+    encoding: 'utf8',
+    env: { PATH: process.env.PATH ?? '' },
+  })
+  assert.equal(res.status, 1)
+  assert.match(res.stderr, /^refused: .*--verify-report/m)
+})
+
+test('deploy.mjs --target production --offline without --dry-run is refused', () => {
+  const res = spawnSync(process.execPath, ['scripts/cf/deploy.mjs', '--target', 'production', '--offline', '--verify-report', 'x.json'], {
+    encoding: 'utf8',
+    env: { PATH: process.env.PATH ?? '' },
+  })
+  assert.equal(res.status, 1)
+  assert.match(res.stderr, /deploy-guard REFUSED:/)
+  assert.match(res.stderr, /only allowed together with --dry-run/)
+})
+

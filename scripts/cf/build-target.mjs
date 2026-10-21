@@ -9,6 +9,10 @@
 //   node scripts/cf/build-target.mjs --target workersdev --media-flag verified \
 //        --media-origin https://clickit-media.<SUB>.workers.dev \
 //        --verify-report .tmp/r2-media-reports/verify-<timestamp>.json
+//   node scripts/cf/build-target.mjs --target production --media-flag verified \
+//        --verify-report <report made against https://media.clickitstory.ae> [--manifest <path>]
+//   (production reads /Users/koss/.clickit-cloudflare/clickit.production.env; the stamp
+//   records the sha256 of the report file, and cf:deploy:production deploys only that build)
 
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -298,6 +302,34 @@ function sha256Buffer(text) {
   return createHash('sha256').update(text).digest('hex')
 }
 
+/** sha256 of a file's bytes (the verify report identity recorded in the production stamp). */
+export function fileSha256(path) {
+  return createHash('sha256').update(readFileSync(path)).digest('hex')
+}
+
+/**
+ * The production build needs both `--media-flag verified` and `--verify-report <path>`
+ * spelled out; `--media-origin`, when given, must be the production media host.
+ * @param {string[]} argv
+ * @returns {{ ok: boolean, reasons: string[] }}
+ */
+export function checkProductionBuildArgs(argv) {
+  const list = Array.isArray(argv) ? argv : []
+  const reasons = []
+  if (readOption(list, '--media-flag') !== 'verified') {
+    reasons.push('the production target needs --media-flag verified')
+  }
+  const report = readOption(list, '--verify-report')
+  if (!report || report.startsWith('--')) {
+    reasons.push('the production target needs --verify-report <path> (a report made against https://media.clickitstory.ae)')
+  }
+  const origin = readOption(list, '--media-origin')
+  if (origin !== undefined && origin !== PRODUCTION_MEDIA_ORIGIN) {
+    reasons.push(`--media-origin must be ${PRODUCTION_MEDIA_ORIGIN} for the production target`)
+  }
+  return { ok: reasons.length === 0, reasons }
+}
+
 function readOption(argv, name) {
   const i = argv.indexOf(name)
   return i >= 0 ? argv[i + 1] : undefined
@@ -314,10 +346,24 @@ function main(argv) {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
   process.chdir(root)
 
-  const envFile = target === 'preview' ? PREVIEW_ENV_FILE : target === 'workersdev' ? WORKERSDEV_ENV_FILE : null
+  const envFile =
+    target === 'preview'
+      ? PREVIEW_ENV_FILE
+      : target === 'workersdev'
+        ? WORKERSDEV_ENV_FILE
+        : target === 'production'
+          ? PRODUCTION_ENV_FILE
+          : null
   if (!envFile) {
-    console.error('usage: build-target.mjs --target preview|workersdev [--media-flag off|verified ...]')
+    console.error('usage: build-target.mjs --target preview|workersdev|production [--media-flag off|verified ...]')
     return 1
+  }
+  if (target === 'production') {
+    const args = checkProductionBuildArgs(argv)
+    if (!args.ok) {
+      for (const reason of args.reasons) console.error(`refused: ${reason}`)
+      return 1
+    }
   }
   // The preview target may run without its gitignored file (gate:local in a
   // clean clone): public values then come from the shell env, if any.
@@ -333,7 +379,8 @@ function main(argv) {
   }
   // A deployable build must not fold .env values into the bundle. The local
   // preview build is never deployed, so it keeps working with a dev .env.local.
-  if (target === 'workersdev') {
+  const deployable = target === 'workersdev' || target === 'production'
+  if (deployable) {
     const files = checkEnvFiles(findFoldedEnvFiles(root))
     if (!files.ok) {
       for (const reason of files.reasons) console.error(`refused: ${reason}`)
@@ -342,6 +389,7 @@ function main(argv) {
   }
 
   let buildEnv
+  let verifyReportSha256
   try {
     const fileEnv = existsSync(envFile) ? parseEnvFile(readFileSync(envFile, 'utf8')) : {}
     if (target === 'preview') {
@@ -351,11 +399,14 @@ function main(argv) {
     }
     const mediaFlag = readOption(argv, '--media-flag') ?? 'off'
     const options = { mediaFlag, mediaOrigin: readOption(argv, '--media-origin') }
-    if (target === 'workersdev' && mediaFlag === 'verified') {
+    if (target === 'production') options.mediaOrigin = options.mediaOrigin ?? PRODUCTION_MEDIA_ORIGIN
+    if (deployable && mediaFlag === 'verified') {
       const reportPath = readOption(argv, '--verify-report')
       if (!reportPath) throw new Error('--verify-report is required with --media-flag verified')
+      if (!existsSync(reportPath)) throw new Error('verify report file not found')
       options.verifyReport = JSON.parse(readFileSync(reportPath, 'utf8'))
       options.manifest = loadManifestInfo(readOption(argv, '--manifest') ?? DEFAULT_MANIFEST_PATH)
+      if (target === 'production') verifyReportSha256 = fileSha256(reportPath)
     }
     buildEnv = buildEnvFor(target, fileEnv, options, process.env)
   } catch (error) {
@@ -376,7 +427,7 @@ function main(argv) {
     return res.status ?? 1
   }
 
-  if (target === 'workersdev') {
+  if (deployable) {
     const text = existsSync(NEXT_ENV_MODULE_PATH) ? readFileSync(NEXT_ENV_MODULE_PATH, 'utf8') : null
     const folded = checkNextEnvModule(text)
     if (!folded.ok) {
@@ -391,6 +442,7 @@ function main(argv) {
     gitSha: git(['rev-parse', 'HEAD']),
     createdAt: new Date().toISOString(),
     env: buildEnv,
+    verifyReportSha256: target === 'production' ? verifyReportSha256 : undefined,
   })
   mkdirSync(dirname(STAMP_PATH), { recursive: true })
   writeFileSync(STAMP_PATH, `${JSON.stringify(stamp, null, 2)}\n`)
