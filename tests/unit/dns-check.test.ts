@@ -8,7 +8,7 @@ import {
   inCloudflareRange,
   hasNegativeProof,
   PHASES,
-  VERCEL_TARGET,
+  OLD_HOST_TARGET,
 } from '../../scripts/cutover/dns-check-core.mjs'
 import { run, parseArgs, USAGE } from '../../scripts/cutover/dns-check.mjs'
 
@@ -206,7 +206,7 @@ test('resend includes registry rules', () => {
   assert.equal(find(t, 'clickitstory.ae', 'AAAA')[0].kind, 'cloudflare-proxied')
   const www = find(t, 'www.clickitstory.ae', 'CNAME')[0]
   assert.equal(www.kind, 'exact')
-  assert.deepEqual(www.values, [VERCEL_TARGET])
+  assert.deepEqual(www.values, [OLD_HOST_TARGET])
   assert.equal(find(t, 'media.clickitstory.ae', 'A')[0].kind, 'cloudflare-proxied')
 })
 

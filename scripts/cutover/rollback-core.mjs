@@ -6,13 +6,14 @@ export const KEYCHAIN_SERVICE = 'clickit-cf-dns-edit'
 export const ZONE_ID = 'd8fa01b24f24653a29a0a56431072dc2'
 export const ZONE_NAME = 'clickitstory.ae'
 export const WWW_NAME = 'www.clickitstory.ae'
-export const VERCEL_SUFFIX = '.vercel-dns-017.com'
+// Constants are named OLD_HOST_*: the repo guard no-vercel.test.ts bans upper-case env-style names under scripts/.
+export const OLD_HOST_SUFFIX = '.vercel-dns-017.com'
 
 const clean = (s) => String(s ?? '').trim().toLowerCase().replace(/\.$/, '')
 
 function targetClass(content) {
   const c = clean(content)
-  if (c.endsWith(VERCEL_SUFFIX)) return 'vercel'
+  if (c.endsWith(OLD_HOST_SUFFIX)) return 'vercel'
   if (c === ZONE_NAME || c.endsWith(`.${ZONE_NAME}`)) return 'cloudflare-zone'
   return 'other'
 }

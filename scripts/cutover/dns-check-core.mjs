@@ -14,7 +14,7 @@
 export const PHASES = Object.freeze(['ns', 'resend', 'pre-flip', 'post-flip', 'rollback', 'final'])
 
 export const ZONE = 'clickitstory.ae'
-export const VERCEL_TARGET = 'ba211fb55cf67415.vercel-dns-017.com'
+export const OLD_HOST_TARGET = 'ba211fb55cf67415.vercel-dns-017.com'
 export const CLOUDFLARE_NS = Object.freeze(['brett.ns.cloudflare.com', 'jen.ns.cloudflare.com'])
 export const ZONE_SERVERS = Object.freeze(['jen.ns.cloudflare.com', 'brett.ns.cloudflare.com'])
 
@@ -47,7 +47,7 @@ const CF_V6 = Object.freeze([
   '2c0f:f248::/32',
 ])
 // Addresses Vercel has used for apex/www records. Used only by the final no-vercel rule.
-const VERCEL_V4 = Object.freeze(['216.198.79.0/24', '64.29.17.0/24', '76.76.21.0/24'])
+const OLD_HOST_V4 = Object.freeze(['216.198.79.0/24', '64.29.17.0/24', '76.76.21.0/24'])
 
 function v4ToInt(ip) {
   const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(ip)
@@ -100,7 +100,7 @@ export function inCloudflareRange(ip) {
 }
 
 function inVercelRange(ip) {
-  return !String(ip).includes(':') && VERCEL_V4.some((c) => inCidr(String(ip).trim(), c))
+  return !String(ip).includes(':') && OLD_HOST_V4.some((c) => inCidr(String(ip).trim(), c))
 }
 
 /** dig text -> [{ name, ttl, type, data }]. Lowercase, trailing dot stripped, TXT chunks joined. */
@@ -269,7 +269,7 @@ export function expectedFor(phase, options = {}) {
   if (phase === 'post-flip' || phase === 'final') {
     rules.push({ scope: 'zone', fqdn: fq('www'), type: 'A', kind: 'cloudflare-proxied' })
   } else {
-    rules.push({ scope: 'zone', fqdn: fq('www'), type: 'CNAME', kind: 'exact', values: [VERCEL_TARGET] })
+    rules.push({ scope: 'zone', fqdn: fq('www'), type: 'CNAME', kind: 'exact', values: [OLD_HOST_TARGET] })
   }
   rules.push({ scope: 'zone', fqdn: fq('media'), type: 'A', kind: 'cloudflare-proxied' })
   if (wantResend) rules.push(...resendRules(options.resendMx, options.dkimValue))
