@@ -27,8 +27,7 @@ export const ar: EmailMessages = {
     heading: 'إعادة تعيين كلمة المرور',
     body: 'اضغط الزر لاختيار كلمة مرور جديدة. الرابط صالح لمدة 15 دقيقة ويعمل من أي جهاز.',
     button: 'اختيار كلمة مرور جديدة',
-    fineprint:
-      'لم تطلب ذلك؟ تجاهل هذه الرسالة وستبقى كلمة مرورك كما هي.',
+    fineprint: 'لم تطلب ذلك؟ تجاهل هذه الرسالة وستبقى كلمة مرورك كما هي.',
   },
   e4: {
     subject: 'أكّد بريدك الجديد في Clickit Story',
@@ -93,8 +92,7 @@ export const ar: EmailMessages = {
     helpLink: 'clickitstory.ae/support',
     unsubscribe: 'إلغاء الاشتراك',
     manage: 'إدارة الرسائل من ملفك الشخصي',
-    digestReason:
-      'تصلك هذه الرسالة لأن برنامجاً في قائمتك أضاف حلقات جديدة.',
+    digestReason: 'تصلك هذه الرسالة لأن برنامجاً في قائمتك أضاف حلقات جديدة.',
     postalLine: POSTAL_LINE,
   },
   fallbackUrl: 'أو افتح:',

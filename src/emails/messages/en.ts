@@ -9,12 +9,12 @@ import { FOOTER_LINE_1, POSTAL_LINE } from '../brand.ts'
 
 export function fill(
   template: string,
-  values: Record<string, string | number> = {},
+  values: Record<string, string | number> = {}
 ): string {
   return template.replace(/\{(\w+)\}/g, (whole, key: string) =>
     Object.prototype.hasOwnProperty.call(values, key)
       ? String(values[key])
-      : whole,
+      : whole
   )
 }
 
@@ -103,8 +103,7 @@ export const en: EmailMessages = {
     heading: 'Reset your password',
     body: 'Press the button to choose a new password. The link works for 15 minutes and opens on any device.',
     button: 'Choose a new password',
-    fineprint:
-      "Didn't ask? Ignore this email; your password stays the same.",
+    fineprint: "Didn't ask? Ignore this email; your password stays the same.",
   },
   e4: {
     subject: 'Confirm your new Clickit Story email',
@@ -112,8 +111,7 @@ export const en: EmailMessages = {
     heading: 'Confirm your new email',
     body: 'You asked to change your Clickit Story email from {{ .Email }} to {{ .NewEmail }}. Press the button to confirm. We also sent a link to your other address; both must be confirmed.',
     button: 'Confirm new email',
-    fineprint:
-      "Didn't ask? Ignore this email and your address stays the same.",
+    fineprint: "Didn't ask? Ignore this email and your address stays the same.",
   },
   e5: {
     subject: 'Your Clickit Story security code: {{ .Token }}',
@@ -162,8 +160,7 @@ export const en: EmailMessages = {
     heading: 'Confirm your subscription',
     body: 'Press the button to confirm that you want news from Clickit Story by email. The link works for {days} days.',
     button: 'Confirm subscription',
-    fineprint:
-      "Didn't sign up? Ignore this email and you won't be subscribed.",
+    fineprint: "Didn't sign up? Ignore this email and you won't be subscribed.",
   },
   footer: {
     line1: FOOTER_LINE_1,

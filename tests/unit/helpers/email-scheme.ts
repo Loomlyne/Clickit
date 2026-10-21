@@ -70,17 +70,14 @@ function hasDecl(rule: string | undefined, name: string, decl: string): void {
   assert.ok(rule, `rule exists for ${name}`)
   const want = lc(`${decl} !important`)
   const parts = rule!.split(';').map((p) => p.trim())
-  assert.ok(
-    parts.includes(want),
-    `${name}: expected "${want}" in "${rule}"`,
-  )
+  assert.ok(parts.includes(want), `${name}: expected "${want}" in "${rule}"`)
 }
 
 function eachTag(
   html: string,
   cls: string,
   check: (tag: string) => void,
-  required = true,
+  required = true
 ): void {
   const tags = tagsWithClass(html, cls)
   if (required) assert.ok(tags.length > 0, `an element has class ${cls}`)
@@ -95,15 +92,21 @@ function eachTag(
  */
 export function assertSignedScheme(
   html: string,
-  require: { code?: boolean; button?: boolean } = {},
+  require: { code?: boolean; button?: boolean } = {}
 ): void {
   const L = SIGNED.light
   const D = SIGNED.dark
   const B = SIGNED.button
 
   assert.match(html, /<meta name="color-scheme" content="light dark"\/?>/)
-  assert.match(html, /<meta name="supported-color-schemes" content="light dark"\/?>/)
-  assert.ok(html.includes(':root{color-scheme:light dark}'), ':root color-scheme rule')
+  assert.match(
+    html,
+    /<meta name="supported-color-schemes" content="light dark"\/?>/
+  )
+  assert.ok(
+    html.includes(':root{color-scheme:light dark}'),
+    ':root color-scheme rule'
+  )
 
   // dark block, role by role
   const r = darkRules(html)
@@ -111,7 +114,11 @@ export function assertSignedScheme(
   hasDecl(r['cs-card'], 'cs-card', `background:${D.card}`)
   hasDecl(r['cs-card'], 'cs-card', `border:1px solid ${D.cardBorder}`)
   hasDecl(r['cs-header'], 'cs-header', `background:${D.header}`)
-  hasDecl(r['cs-header'], 'cs-header', `border-bottom:1px solid ${D.headerRule}`)
+  hasDecl(
+    r['cs-header'],
+    'cs-header',
+    `border-bottom:1px solid ${D.headerRule}`
+  )
   hasDecl(r['cs-heading'], 'cs-heading', `color:${D.heading}`)
   hasDecl(r['cs-text'], 'cs-text', `color:${D.body}`)
   hasDecl(r['cs-hint'], 'cs-hint', `color:${D.hint}`)
@@ -120,31 +127,58 @@ export function assertSignedScheme(
   hasDecl(r['cs-code'], 'cs-code', `color:${D.codeText}`)
   hasDecl(r['cs-rule'], 'cs-rule', `border-top:1px solid ${D.rule}`)
   hasDecl(r['cs-footer'], 'cs-footer', `color:${D.footer}`)
-  assert.notEqual(lc(D.card), lc(D.page), 'signed dark card is not the page colour')
-  assert.ok(!r['cs-card'].includes(lc(D.page)), 'dark card never takes the page value')
+  assert.notEqual(
+    lc(D.card),
+    lc(D.page),
+    'signed dark card is not the page colour'
+  )
+  assert.ok(
+    !r['cs-card'].includes(lc(D.page)),
+    'dark card never takes the page value'
+  )
 
   // light values inline, element by element
-  eachTag(html, 'cs-page', (t) => assert.ok(t.includes(lc(`background-color:${L.page}`)), `page: ${t}`))
-  eachTag(html, 'cs-card', (t) => assert.ok(t.includes(lc(`background-color:${L.card}`)), `card: ${t}`))
+  eachTag(html, 'cs-page', (t) =>
+    assert.ok(t.includes(lc(`background-color:${L.page}`)), `page: ${t}`)
+  )
+  eachTag(html, 'cs-card', (t) =>
+    assert.ok(t.includes(lc(`background-color:${L.card}`)), `card: ${t}`)
+  )
   eachTag(html, 'cs-header', (t) => {
     assert.ok(t.includes(lc(`bgcolor="${L.header}"`)), `header bgcolor: ${t}`)
     assert.ok(t.includes(lc(`background-color:${L.header}`)), `header bg: ${t}`)
   })
-  eachTag(html, 'cs-heading', (t) => assert.ok(t.includes(lc(`color:${L.heading}`)), `heading: ${t}`))
-  eachTag(html, 'cs-text', (t) => assert.ok(t.includes(lc(`color:${L.body}`)), `text: ${t}`))
-  eachTag(html, 'cs-hint', (t) => assert.ok(t.includes(lc(`color:${L.hint}`)), `hint: ${t}`), false)
+  eachTag(html, 'cs-heading', (t) =>
+    assert.ok(t.includes(lc(`color:${L.heading}`)), `heading: ${t}`)
+  )
+  eachTag(html, 'cs-text', (t) =>
+    assert.ok(t.includes(lc(`color:${L.body}`)), `text: ${t}`)
+  )
+  eachTag(
+    html,
+    'cs-hint',
+    (t) => assert.ok(t.includes(lc(`color:${L.hint}`)), `hint: ${t}`),
+    false
+  )
   eachTag(
     html,
     'cs-code',
     (t) => {
       assert.ok(t.includes(lc(`background-color:${L.codeBg}`)), `code bg: ${t}`)
-      assert.ok(t.includes(lc(`border:1px solid ${L.codeBorder}`)), `code border: ${t}`)
+      assert.ok(
+        t.includes(lc(`border:1px solid ${L.codeBorder}`)),
+        `code border: ${t}`
+      )
       assert.ok(t.includes(lc(`color:${L.codeText}`)), `code colour: ${t}`)
     },
-    require.code === true,
+    require.code === true
   )
-  eachTag(html, 'cs-rule', (t) => assert.ok(t.includes(lc(`border-top:1px solid ${L.rule}`)), `rule: ${t}`))
-  eachTag(html, 'cs-footer', (t) => assert.ok(t.includes(lc(`color:${L.footer}`)), `footer: ${t}`))
+  eachTag(html, 'cs-rule', (t) =>
+    assert.ok(t.includes(lc(`border-top:1px solid ${L.rule}`)), `rule: ${t}`)
+  )
+  eachTag(html, 'cs-footer', (t) =>
+    assert.ok(t.includes(lc(`color:${L.footer}`)), `footer: ${t}`)
+  )
 
   // button: solid bgcolor cell with inline ink, the same in both schemes
   const lower = lc(html)

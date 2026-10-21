@@ -26,9 +26,13 @@ import { en, fill } from '../../src/emails/messages/en.ts'
 import { ar } from '../../src/emails/messages/ar.ts'
 import { SIGNED, assertSignedScheme } from './helpers/email-scheme.ts'
 
-const URL_CONFIRM = 'https://www.clickitstory.ae/en/auth/confirm?token_hash=abc&type=signup'
+const URL_CONFIRM =
+  'https://www.clickitstory.ae/en/auth/confirm?token_hash=abc&type=signup'
 
-function sample(locale: 'en' | 'ar') {
+function sample(
+  locale: 'en' | 'ar',
+  quote = 'Line one <b>not bold</b>\nLine two'
+) {
   const m = locale === 'ar' ? ar : en
   return h(
     EmailShell,
@@ -38,8 +42,8 @@ function sample(locale: 'en' | 'ar') {
     h(EmailButton, { href: URL_CONFIRM, label: m.e2.button ?? '' }),
     h(FallbackUrl, { href: URL_CONFIRM, label: m.fallbackUrl }),
     h(CodeBlock, { code: '482917' }),
-    h(QuoteBox, null, 'Line one <b>not bold</b>\nLine two'),
-    h(EmailText, { small: true }, m.e2.fineprint),
+    h(QuoteBox, null, quote),
+    h(EmailText, { small: true }, m.e2.fineprint)
   )
 }
 
@@ -58,7 +62,7 @@ test('the role map equals the signed table, role by role (tokens are Phase 4)', 
       rule: EMAIL_COLORS.light.rule,
       footer: EMAIL_COLORS.light.footer,
     },
-    SIGNED.light,
+    SIGNED.light
   )
   assert.deepEqual(
     {
@@ -76,7 +80,7 @@ test('the role map equals the signed table, role by role (tokens are Phase 4)', 
       rule: EMAIL_COLORS.dark.rule,
       footer: EMAIL_COLORS.dark.footer,
     },
-    SIGNED.dark,
+    SIGNED.dark
   )
   assert.equal(EMAIL_COLORS.button.bg, SIGNED.button.bg)
   assert.equal(EMAIL_COLORS.button.ink, SIGNED.button.ink)
@@ -90,14 +94,24 @@ test('darkSchemeCss builds only the dark @media block from the dark roles', () =
   const css = darkSchemeCss()
   assert.ok(css.startsWith('@media (prefers-color-scheme: dark)'))
   assert.equal(css.match(/@media/g)?.length, 1)
-  assert.ok(css.includes(`.cs-card{background:${EMAIL_COLORS.dark.card} !important;border:1px solid ${EMAIL_COLORS.dark.cardBorder} !important}`))
-  assert.ok(css.includes(`.cs-header{background:${EMAIL_COLORS.dark.header} !important;border-bottom:1px solid ${EMAIL_COLORS.dark.headerRule} !important}`))
+  assert.ok(
+    css.includes(
+      `.cs-card{background:${EMAIL_COLORS.dark.card} !important;border:1px solid ${EMAIL_COLORS.dark.cardBorder} !important}`
+    )
+  )
+  assert.ok(
+    css.includes(
+      `.cs-header{background:${EMAIL_COLORS.dark.header} !important;border-bottom:1px solid ${EMAIL_COLORS.dark.headerRule} !important}`
+    )
+  )
 })
 
 test('EN render: meta tags, one dark style block, signed scheme role by role', async () => {
   const { html } = await renderEmail(sample('en'))
   assertSignedScheme(html, { code: true, button: true })
   assert.equal(html.match(/<style/g)?.length, 1)
+  assert.equal(html.match(/<title/g)?.length, 1, 'one title')
+  assert.ok(!html.includes('<!--'), 'no React comment placeholders')
   assert.match(html, /<html[^>]*lang="en"/)
   assert.match(html, /<html[^>]*dir="ltr"/)
 })
@@ -106,7 +120,7 @@ test('header plate, logo, button cell, fallback URL', async () => {
   const { html } = await renderEmail(sample('en'))
   assert.ok(
     html.includes(`bgcolor="${EMAIL_TOKENS.light.header}"`),
-    'header cell bgcolor',
+    'header cell bgcolor'
   )
   const img = /<img[^>]*>/.exec(html)?.[0] ?? ''
   assert.ok(img.includes(`src="${LOGO_URL}"`))
@@ -119,7 +133,9 @@ test('header plate, logo, button cell, fallback URL', async () => {
   assert.ok(btn, 'button link has inline ink')
   assert.ok(btn.includes(`href="${URL_CONFIRM.replace(/&/g, '&amp;')}"`))
   // the fallback line repeats the same href
-  const hrefs = aTags.filter((a) => a.includes(URL_CONFIRM.replace(/&/g, '&amp;')))
+  const hrefs = aTags.filter((a) =>
+    a.includes(URL_CONFIRM.replace(/&/g, '&amp;'))
+  )
   assert.ok(hrefs.length >= 2, 'button and fallback share the href')
 })
 
@@ -129,7 +145,10 @@ test('footer sits inside the card after a rule and carries line 1 and the suppor
   assert.ok(cardStart > 0)
   const ruleAt = html.indexOf('class="cs-rule')
   const footerAt = html.indexOf(FOOTER_LINE_1)
-  assert.ok(ruleAt > cardStart && footerAt > ruleAt, 'rule then footer, after the card opens')
+  assert.ok(
+    ruleAt > cardStart && footerAt > ruleAt,
+    'rule then footer, after the card opens'
+  )
   // the card's closing tag comes after the footer line
   const cardClose = html.indexOf('</table>', footerAt)
   assert.ok(cardClose > footerAt)
@@ -160,16 +179,29 @@ test('quote box escapes the visitor text and keeps line breaks', async () => {
 })
 
 test('plain text: no tags, code or url on its own line, ends with the -- footer', async () => {
-  const { text } = await renderEmail(sample('en'))
+  const { text } = await renderEmail(sample('en', 'Quoted line'))
   assert.ok(!/<[a-z/][^>]*>/i.test(text), 'no HTML tags')
   const lines = text.split('\n').map((l) => l.trim())
   assert.ok(lines.includes('482917'), 'code alone on a line')
-  assert.ok(lines.some((l) => l.includes(URL_CONFIRM)), 'url present')
+  assert.ok(lines.includes(URL_CONFIRM), 'url alone on its own line')
+  assert.equal(
+    lines.filter((l) => l.includes(URL_CONFIRM)).length,
+    1,
+    'url once (button is skipped in text)'
+  )
+  assert.ok(lines.includes('Confirm your email'), 'heading keeps its case')
+  assert.ok(
+    !text.includes(en.e2.preheader),
+    'preheader is not in the text part'
+  )
   const dashes = lines.lastIndexOf('--')
   assert.ok(dashes > 0, 'a -- line exists')
   assert.equal(lines[dashes - 1], '', 'blank line before --')
   assert.ok(lines[dashes + 1].startsWith(FOOTER_LINE_1))
-  assert.ok(text.trimEnd().includes('clickitstory.ae/support'))
+  assert.ok(
+    lines.includes('Help: clickitstory.ae/support'),
+    'support line, no duplicated href'
+  )
 })
 
 test('no <script, no rgba(, no #777777; only the logo image unless the caller adds one', async () => {
@@ -187,11 +219,18 @@ test('no <script, no rgba(, no #777777; only the logo image unless the caller ad
 test('the shell takes a caller logo url (Mailpit) and a caller image passes through', async () => {
   const local = logoUrlFor('http://localhost:3000')
   assert.equal(local, 'http://localhost:3000/brand/email-logo-white.png')
-  assert.equal(logoUrlFor('http://127.0.0.1:3000/'), 'http://127.0.0.1:3000/brand/email-logo-white.png')
+  assert.equal(
+    logoUrlFor('http://127.0.0.1:3000/'),
+    'http://127.0.0.1:3000/brand/email-logo-white.png'
+  )
   assert.equal(logoUrlFor('https://www.clickitstory.ae'), LOGO_URL)
   assert.equal(logoUrlFor('not a url'), LOGO_URL)
   const { html } = await renderEmail(
-    h(EmailShell, { locale: 'en', preheader: 'x', logoUrl: local }, h(EmailText, null, 'hi')),
+    h(
+      EmailShell,
+      { locale: 'en', preheader: 'x', logoUrl: local },
+      h(EmailText, null, 'hi')
+    )
   )
   assert.ok(html.includes(`src="${local}"`))
 })
@@ -200,9 +239,13 @@ test('footerExtra renders inside the footer', async () => {
   const { html, text } = await renderEmail(
     h(
       EmailShell,
-      { locale: 'en', preheader: 'x', footerExtra: h('span', null, POSTAL_LINE) },
-      h(EmailText, null, 'hi'),
-    ),
+      {
+        locale: 'en',
+        preheader: 'x',
+        footerExtra: h('span', null, POSTAL_LINE),
+      },
+      h(EmailText, null, 'hi')
+    )
   )
   assert.ok(html.indexOf(POSTAL_LINE) > html.indexOf(FOOTER_LINE_1))
   assert.ok(text.includes(POSTAL_LINE))
@@ -211,7 +254,7 @@ test('footerExtra renders inside the footer', async () => {
 test('user values are escaped and the style block holds only token constants', async () => {
   const evil = '<script>alert(1)</script>'
   const { html } = await renderEmail(
-    h(EmailShell, { locale: 'en', preheader: evil }, h(EmailText, null, evil)),
+    h(EmailShell, { locale: 'en', preheader: evil }, h(EmailText, null, evil))
   )
   assert.ok(!html.includes('<script'))
   assert.ok(html.includes('&lt;script&gt;'))
@@ -220,25 +263,41 @@ test('user values are escaped and the style block holds only token constants', a
 test('messages: footer line, postal line, E1-E10 present in both languages, same tokens', () => {
   assert.equal(
     FOOTER_LINE_1,
-    'Clickit Story · Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates',
+    'Clickit Story · Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates'
   )
   assert.equal(
     POSTAL_LINE,
-    'Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates',
+    'Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates'
   )
   for (const m of [en, ar]) {
     assert.equal(m.footer.line1, FOOTER_LINE_1)
     assert.equal(m.footer.postalLine, POSTAL_LINE)
   }
-  const keys = ['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8', 'e9', 'e10'] as const
-  const tokens = (s: string) => [...s.matchAll(/\{[^{}]+\}/g)].map((x) => x[0]).sort()
+  const keys = [
+    'e1',
+    'e2',
+    'e3',
+    'e4',
+    'e5',
+    'e6',
+    'e7',
+    'e8',
+    'e9',
+    'e10',
+  ] as const
+  const tokens = (s: string) =>
+    [...s.matchAll(/\{[^{}]+\}/g)].map((x) => x[0]).sort()
   for (const k of keys) {
-    assert.deepEqual(Object.keys(en[k]).sort(), Object.keys(ar[k]).sort(), `${k} keys`)
+    assert.deepEqual(
+      Object.keys(en[k]).sort(),
+      Object.keys(ar[k]).sort(),
+      `${k} keys`
+    )
     for (const f of Object.keys(en[k]) as (keyof (typeof en)[typeof k])[]) {
       assert.deepEqual(
         tokens(String(en[k][f])),
         tokens(String(ar[k][f])),
-        `${k}.${String(f)} placeholders`,
+        `${k}.${String(f)} placeholders`
       )
     }
   }
@@ -265,13 +324,19 @@ test('source guard: no hex colour under src/emails, no #777777 in emails or supa
   assert.ok(files.length >= 4)
   for (const f of files) {
     const src = readFileSync(f, 'utf8')
-    assert.ok(!/#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?\b/.test(src), `hex literal in ${f}`)
+    assert.ok(
+      !/#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?\b/.test(src),
+      `hex literal in ${f}`
+    )
     assert.ok(!src.toLowerCase().includes('#777777'), `#777777 in ${f}`)
   }
   const tpl = join(root, 'supabase/templates')
   if (existsSync(tpl)) {
     for (const f of walk(tpl)) {
-      assert.ok(!readFileSync(f, 'utf8').toLowerCase().includes('#777777'), `#777777 in ${f}`)
+      assert.ok(
+        !readFileSync(f, 'utf8').toLowerCase().includes('#777777'),
+        `#777777 in ${f}`
+      )
     }
   }
 })
