@@ -79,14 +79,14 @@ Item 12 (Koss 2026-10-21, question form):
 | 23 | Supabase redirect allow-list for `https://clickit.clickitstory.workers.dev/**` | Koss (dashboard) | done 2026-10-21: Redirect URLs exactly www/**, apex/**, workers.dev/**; 12 Vercel URLs removed; Site URL stays www |
 | P3-pre-max-rows | live PostgREST Max rows ≥ 1000 | Koss | done 2026-10-21: 1000 |
 | 24 | secret names read-back | controller | done (2026-10-21 12:3x CET): CRON_SECRET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY, TURNSTILE_SECRET_KEY; no Google key |
-| Task 4 (02-10) | wrangler tail + CPU sample on /en, /ar, /en/auth | C (session), after Step 23 | open |
+| Task 4 (02-10) | wrangler tail + CPU sample on /en, /ar, /en/auth | C | done 2026-10-21 on d7b59d6: EARLY STOP, p95 CPU 940 / 117 / 386 ms (Free limit 10 ms); numbers in 02-SPIKE.md; Step 33 now due |
 | 25-27 | copy credentials, dry-run, execute copy (reads Supabase Storage, writes R2) | Koss | open (R2 already holds a verified copy from #24; re-sync only with `npm run r2:media -- --refresh` then `--execute`) |
 | 28 | deploy media Worker (`--env r2` flips production media: stop first) | controller, Koss's word | open |
 | 29 | verify every object on the media host | Koss or controller | open |
 | 30 | workers.dev build with media on R2 ("flag on workers.dev") | controller, Koss's word | open |
 | 31 | name the draft test show (read only) | Koss | open |
 | 32 | approve the single live write of Phase 2 (draft show poster) | Koss | open |
-| 33 | Workers plan decision, only if the CPU report fails (priced question) | Koss | open / conditional |
+| 33 | Workers plan decision (priced question) | Koss | DUE: Task 4 early stop triggered |
 | 34 | approve the measurement sign-ins (before 31-32) | Koss | open |
 | 02-22 | gate, coverage, UAT (below), teardown | C + Koss (UAT) | open |
 

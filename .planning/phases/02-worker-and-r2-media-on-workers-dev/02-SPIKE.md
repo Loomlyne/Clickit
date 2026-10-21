@@ -150,3 +150,19 @@ Task 2 (job C):
 - `HOME=/Users/koss/.clickit-cloudflare node scripts/cf/wrangler-guard.mjs --remote`: `wrangler-guard ok remote`.
 - `node scripts/cf/deploy.mjs --target workersdev --dry-run` against the preview stamp from gate:local refused only for build-env reasons that belong to the preview target: stamp target preview; loopback URL, local Supabase URL and LOCAL_DEV in the preview build env; no `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. No refusal for account, D1 id, crons, clean tree or pushed HEAD. The workersdev build (`cf:deploy:workersdev`) reads `/Users/koss/.clickit-cloudflare/clickit.workersdev.env` instead, so these clear once Step 11/20 are done.
 - Commit for the control session to deploy at RUNBOOK Step 12: the phase-branch HEAD that carries this section (see `git log -1` on `origin/claude/phase-02-execute-19d86a`), with `npm run cf:deploy:workersdev -- --media-flag off`, after Koss's "deploy workers.dev".
+
+### Task 4: tail and early CPU sample (2026-10-21, 13:15–13:25 CET)
+
+Method: `wrangler-guard --remote` ok, then `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4.151.2 tail clickit --format json --ip self` (`--sampling-rate 1` is refused by wrangler 4.151.2: "must be between 0 and 1"; the default samples everything). 10 signed-out `GET`s each to `/en`, `/ar`, `/en/auth` on https://clickit.clickitstory.workers.dev, 2 s apart. Build measured: version `0c24ae10` = commit d7b59d6 (deployed 2026-10-20 23:29 CET, so the first request is the first of the sample, not a true post-deploy cold start). 30 sent, 24 answered 200; 6 curl attempts failed client-side (code 000, the Mac's network dropped) and never reached the Worker. One extra event (`/en/series/<slug>`) from the same egress was excluded. The JSONL was deleted after extraction.
+
+Field paths (tail JSON, top level of each event): CPU `cpuTime` (ms), wall `wallTime` (ms), outcome `outcome` (all `ok`), `executionModel` (`stateless`), `truncated`, `scriptVersion.id`, `eventTimestamp`, `event.request.{url,method,headers,cf.*}`, `event.response.status`, `logs[]`, `exceptions[]`. **No subrequest field** in tail events (subrequest counts need Workers Logs / the dashboard). `cf-connecting-ip` present in `event.request.headers`: **yes** (not in `cf.requestHeaderNames`). No IP is written here.
+
+| route | n | CPU p50 | CPU p95 | CPU max | first of sample | wall p50 | wall p95 |
+|-------|---|---------|---------|---------|-----------------|----------|----------|
+| /en | 7 | 507 ms | 940 ms | 950 ms | 950 ms | 1153 ms | 2175 ms |
+| /ar | 8 | 65 ms | 117 ms | 126 ms | 101 ms | 470 ms | 795 ms |
+| /en/auth | 9 | 107 ms | 386 ms | 529 ms | 171 ms | 614 ms | 1147 ms |
+
+Outcomes: every event `ok`, status 200, no `exceededCpu`, no Error 1102, no exceptions.
+
+**Early stop rule (D-02) triggered:** p95 CPU is far over the Free plan's 10 ms on all three routes (lowest p95 117 ms on `/ar`). Free has "some built-in flexibility" per isolate but terminates a Worker that "starts hitting the limit consistently" (Cloudflare limits page, last updated 2026-10-12); at these numbers real traffic on Free is expected to hit Error 1102. No code was changed to squeeze CPU (rule). Next: RUNBOOK Step 33, Koss's priced question. Prices read 2026-10-21 from developers.cloudflare.com/workers/platform/pricing (last updated 2026-10-02): Workers Paid minimum $5/month per account; Standard includes 10 million requests and 30 million CPU ms per month, then $0.30 per extra million requests and $0.02 per extra million CPU ms; Paid CPU limit per request 30 s default (5 min max), subrequests 10,000. Free: 10 ms CPU per invocation, 100,000 requests/day, 50 subrequests. Web Analytics: Step 22 optional, skipped.
