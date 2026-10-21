@@ -32,6 +32,42 @@ export function buildCronRequest(
   })
 }
 
+export type CronRouteFetch = (request: Request) => Promise<Response>
+export type CronLogger = { log(...args: unknown[]): void; error(...args: unknown[]): void }
+
+/**
+ * Run one cron: build the in-process request, call the route, log the outcome.
+ * Rejects on no route / no CRON_SECRET, a non-OK status or a throw, so the
+ * Worker's scheduled() promise fails and Cloudflare's cron status shows it.
+ * Logs and errors name the path and status, never the secret.
+ */
+export async function runCron(
+  cron: string,
+  secret: string | null | undefined,
+  fetchRoute: CronRouteFetch,
+  logger: CronLogger = console,
+): Promise<void> {
+  const request = buildCronRequest(cron, secret)
+  if (request === null) {
+    logger.error('cron: no route or no CRON_SECRET for', cron)
+    throw new Error(`cron: no route or no CRON_SECRET for ${cron}`)
+  }
+  const path = new URL(request.url).pathname
+  let response: Response
+  try {
+    response = await fetchRoute(request)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'unknown'
+    logger.error('cron: threw', path, message)
+    throw new Error(`cron: ${path} threw`)
+  }
+  if (!response.ok) {
+    logger.error('cron: failed', path, 'status', response.status)
+    throw new Error(`cron: ${path} failed with status ${response.status}`)
+  }
+  logger.log('cron:', path, 'status', response.status)
+}
+
 // Reads CLICKIT_RUNTIME and CLEANUP_SUPABASE_ORIGINALS.
 export type CleanupEnv = Readonly<Record<string, string | undefined>>
 
