@@ -26,6 +26,9 @@ const fileEnv = {
   NEXT_PUBLIC_CF_BEACON_TOKEN: '',
 }
 
+// What OpenNext writes to .open-next/cloudflare/next-env.mjs when no .env file exists.
+const EMPTY_NEXT_ENV = 'export const production = {};\nexport const development = {};\nexport const test = {};\n'
+
 const manifest = { manifestSha256: MANIFEST_SHA, manifestObjectCount: 86 }
 const goodReport = {
   manifestSha256: MANIFEST_SHA,
@@ -60,6 +63,8 @@ function deployInput(over: Record<string, unknown> = {}) {
     wranglerConfig: appConfig,
     verifyReport: null,
     manifest: null,
+    envFilesPresent: [],
+    nextEnvText: EMPTY_NEXT_ENV,
     ...over,
   }
 }
