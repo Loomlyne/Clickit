@@ -100,7 +100,7 @@ Then wait.
 > - Fresh live dump before the migration: `/Users/koss/.clickit-backups/live-20261021T133420Z-*`.
 > - D-22 (Phase 6 duplicate YouTube ids): 18 older placeholder rows set `youtube_video_id = null`, 5 kept, 0 duplicate groups; logged in `/Users/koss/.clickit-backups/d22-before-*.json`.
 > - `apply-live-migrations.yml` run 39609825509 applied 20261020150526 and 20261021120000 on Koss's approval (about 14:4x CET). Read back 14:45: `legal_pages` has `ar_reviewed`, `title_ar_draft`, `content_ar_draft`; anon has no SELECT on the drafts; both rows `ar_reviewed = true`; `episodes` has the `youtube_*` columns and `episodes_youtube_video_id_key`; the 5 youtube functions exist; 0 duplicate groups; 39 episodes; www still 200. **The migration gate above is passed.**
-> - workers.dev runs main 787ca3a, version `7222dcee`, deployed 14:51 CET, media flag off. Signed-out smoke 14:52 all OK. Signed-in UAT by Koss in progress.
+> - workers.dev runs main 787ca3a, version `7222dcee`, deployed 14:51 CET, media flag off. Signed-out smoke 14:52 all OK. Signed-in UAT by Koss on 7222dcee **passed** (2026-10-21, reported by the controller): Turnstile sign-in, admin settings with the existing admin login, `/ar/privacy`.
 > - Every deploy warns "DOQueueHandler not exported" although `custom-worker.ts` re-exports it; the "Clickit /en CPU" session is checking whether ISR revalidation works. Open until it reports.
 
 **Step 12 [CONTROL] - first deploy of the app Worker, media flag off**
