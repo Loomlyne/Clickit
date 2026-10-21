@@ -11,6 +11,7 @@ import {
   isMediaKeyReferenced,
   readMediaReferenceUrls,
   referencedKeysOf,
+  referencedPathsByBucket,
   type ReferenceDb,
 } from '../../src/server/media-references.ts'
 import { createFakeSupabase } from './helpers/fake-supabase.ts'
@@ -275,4 +276,69 @@ test('static: every finalize target column is in the reference list', () => {
 test('media-references.ts stays pure: no next/, server-only or @/ imports', () => {
   const src = readFileSync('src/server/media-references.ts', 'utf8')
   assert.ok(!/from\s+['"](next\/|server-only|@\/)/.test(src))
+})
+
+// ---- PR #31 review 5: the cleanup cron's first pass sees every url form ----
+
+const ARTWORK_PATH = `shows/${SHOW}/hero-1750000000000.webp`
+const VIDEO_PATH = `shows/${SHOW}/hero-desktop-1750000000000.mp4`
+
+// The cron's orphan rule (scanBucket): a scanned path is an orphan unless its bucket's set has it.
+const orphansOf = (referenced: Map<string, Set<string>>, bucket: string, scanned: string[]) =>
+  scanned.filter((path) => !(referenced.get(bucket) ?? new Set<string>()).has(path))
+
+test('referencedPathsByBucket: a media.clickitstory.ae url keeps its object (referenced, not deleted)', () => {
+  for (const origin of [null, ORIGIN, 'https://media.clickitstory.ae']) {
+    const refs = referencedPathsByBucket(
+      [`https://media.clickitstory.ae/show-artwork/${ARTWORK_PATH}?v=2`, `https://media.clickitstory.ae/site-assets/${VIDEO_PATH}`],
+      origin
+    )
+    assert.ok(refs.get('show-artwork')?.has(ARTWORK_PATH), String(origin))
+    assert.ok(refs.get('site-assets')?.has(VIDEO_PATH), String(origin))
+    assert.deepEqual(orphansOf(refs, 'show-artwork', [ARTWORK_PATH, `shows/${SHOW}/hero-1.webp`]), [`shows/${SHOW}/hero-1.webp`])
+    assert.deepEqual(orphansOf(refs, 'site-assets', [VIDEO_PATH]), [])
+  }
+})
+
+test('referencedPathsByBucket: Supabase public urls still count, per bucket, as before', () => {
+  const refs = referencedPathsByBucket(
+    [`${SUPA}show-artwork/${ARTWORK_PATH}`, `${SUPA}site-assets/${encodeURIComponent(VIDEO_PATH)}`, null, undefined, ''],
+    null
+  )
+  assert.deepEqual([...(refs.get('show-artwork') ?? [])], [ARTWORK_PATH])
+  assert.deepEqual([...(refs.get('site-assets') ?? [])], [VIDEO_PATH])
+  assert.deepEqual(orphansOf(refs, 'show-artwork', [ARTWORK_PATH]), [])
+  // A path in one bucket does not protect the same path in the other.
+  assert.deepEqual(orphansOf(refs, 'site-assets', [ARTWORK_PATH]), [ARTWORK_PATH])
+})
+
+test('referencedPathsByBucket: workers.dev media hosts and our origin count; foreign and unsafe urls do not', () => {
+  const refs = referencedPathsByBucket(
+    [
+      `https://clickit-media.clickitstory.workers.dev/show-artwork/${ARTWORK_PATH}`,
+      `https://clickit-media-r2.clickitstory.workers.dev/_v/640/webp/site-assets/${VIDEO_PATH}`,
+      `${ORIGIN}/avatars/u1/avatar-1.webp`,
+    ],
+    ORIGIN
+  )
+  assert.ok(refs.get('show-artwork')?.has(ARTWORK_PATH))
+  assert.ok(refs.get('site-assets')?.has(VIDEO_PATH))
+  assert.ok(refs.get('avatars')?.has('u1/avatar-1.webp'))
+  const none = referencedPathsByBucket(['https://i.ytimg.com/vi/abc/hq720.jpg', 'not a url', `${SUPA}other-bucket/x.webp`], ORIGIN)
+  assert.equal(none.size, 0)
+})
+
+test('cleanup-media step 1 uses referencedPathsByBucket, not a Supabase-only parser', () => {
+  const route = readFileSync('src/app/api/cron/cleanup-media/route.ts', 'utf8')
+  assert.equal(route.includes('extractStoragePath'), false)
+  assert.equal(route.includes('/storage/v1/object/public/'), false)
+  assert.match(route, /referencedPathsByBucket\(urls, getPublicMediaOrigin\(\)\)/)
+  assert.match(route, /referencedPaths\.get\(SHOW_ARTWORK_BUCKET\)/)
+  assert.match(route, /referencedPaths\.get\(SITE_ASSETS_BUCKET\)/)
+  // Every column the first pass selects goes into the url list.
+  const step1 = route.slice(route.indexOf('Step 1:'), route.indexOf('Step 2:'))
+  for (const column of ['hero_url', 'hero_image_mobile_url', 'poster_url', 'card_image_url', 'logo_url', 'hero_video_url', 'hero_video_mobile_url']) {
+    assert.ok(step1.includes(`show.${column},`) || step1.includes(`show.${column}\n`), column)
+  }
+  assert.ok(step1.includes('urls.push(member.image_url)'))
 })
