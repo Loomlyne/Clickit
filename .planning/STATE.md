@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-21T15:40:22.896Z"
+last_updated: "2026-10-21T15:44:41.498Z"
 last_activity: 2026-10-21
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 123
-  completed_plans: 86
+  completed_plans: 87
   percent: 33
 ---
 
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 05 (accounts-and-email) — EXECUTING
-Plan: 18 of 42 (waves 0-3 done; 05-13, 05-15 and 05-16 done; 05-38 next)
+Plan: 19 of 42 (waves 0-3 done; 05-13, 05-15, 05-16 and 05-38 done)
 Status: Ready to execute
 Last activity: 2026-10-21
 Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
 
-Progress: [███████░░░] 72%
+Progress: [███████░░░] 73%
 
 ## Performance Metrics
 
@@ -93,6 +93,7 @@ Progress: [███████░░░] 72%
 | Phase 05 P11 | 28min | 4 tasks | 19 files |
 | Phase 05 P15 | 4min | 2 tasks | 8 files |
 | Phase 05 P16 | 25min | 2 tasks | 7 files |
+| Phase 05 P38 | 20min | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -148,6 +149,7 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-13: src/lib/database.types.ts gets the scratch-DB types merged as additions only (223+/0-; live-only tables and __InternalSupabase kept); the live gen-types script is never run
 - [Phase 05]: 05-15: requireAdmin() in src/server/auth-guards.ts is the one admin gate (getClaims+getUser, admins row every call, aal2 TOTP <= 12 h, fail closed); assertAdmin and requireAdminForYouTube call it; navbar uses am_i_admin()
 - [Phase 05]: 05-16: enqueueEmail target { userId } | { adminAll: true } | { email } with optional locale en|ar; adminAll with zero admins returns queued with no ids and logs no_recipients; esbuild accepts the JSON template import, so no controller stop
+- [Phase 05]: 05-38: local GoTrue renders English for a user with no locale (eq on missing .Data.locale is false, A6); local From is Clickit Story <no-reply@clickitstory.ae> (A9); a new user's sign-in code mail uses the confirmation template, magic_link only for confirmed users; read the code from the user-select:all cell; MAIL-01/AUTH-02 stay Pending until 05-35
 
 ### Pending Todos
 
@@ -188,8 +190,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-21T15:40:22.889Z
-Stopped at: Completed 05-16-PLAN.md (email producer side); resume file .planning/phases/05-accounts-and-email/05-16-SUMMARY.md
+Last session: 2026-10-21T15:44:37.501Z
+Stopped at: Completed 05-38-PLAN.md (local-stack spike); resume file .planning/phases/05-accounts-and-email/05-38-SUMMARY.md
 Phase 2 last session: 2026-10-20T10:45:11.285Z
 Phase 2 stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above is the controller's)
 Resume file: None
