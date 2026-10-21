@@ -139,7 +139,7 @@ Plans:
 - [x] 03-03-PLAN.md — W3: dns-check (registry + jen/brett + SOA in every phase, explicit --with-resend flags) and rollback.mjs (Keychain token, proxied toggle only)
 - [x] 03-04-PLAN.md — W4: x-clickit-runtime header, proof-check, keys-check (legacy 401 / captcha probe), media-health --expect-source, parse-auth-results
 - [x] 03-05-PLAN.md — W5: backup-table migration, rewrite/scan/report/reverse SQL, with-heavy-lock.sh, local rolled-back test, lint test
-- [ ] 03-06-PLAN.md — W6: 03-RUNBOOK.md Steps 1-56, 03-GATES.md (branch B wording), gate:local, hand-over, PR
+- [x] 03-06-PLAN.md — W6: 03-RUNBOOK.md Steps 1-56, 03-GATES.md (branch B wording), gate:local, hand-over, PR
 - [ ] 03-07-PLAN.md — W7 [ops]: DNS-01 proof, Resend + MAIL-02, [BLOCKING] backup-table migration via workflow (Steps 0a P3-pre-cpu, 0b P3-pre-migration, 1-12)
 - [ ] 03-08-PLAN.md — W8 [ops]: r2:media re-sync, media Worker R2-first, verify on media.clickitstory.ae (Steps 13-17)
 - [ ] 03-09-PLAN.md — W9 [ops]: new Supabase keys on the Worker, production env file, Turnstile/CORS, DNS token, zone settings (Steps 18-24)
@@ -273,7 +273,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | 1. Safe Ground | 0/TBD | Not started | - |
 | 1.1. Admin Actions Hardening (INSERTED) | 13/13 | UAT passed, PR open | - |
 | 2. Worker and R2 Media on workers.dev | 18/22 | In Progress|  |
-| 3. Production Cutover | 5/13 | In Progress|  |
+| 3. Production Cutover | 6/13 | In Progress|  |
 | 4. Design System Truth | 14/14 | UAT pending (PR) |  |
 | 5. Accounts and Email | 0/TBD | Not started | - |
 | 6. YouTube Import and Player | 0/25 | Planned | - |
