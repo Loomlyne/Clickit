@@ -10,7 +10,7 @@ Run: 2026-10-21T14:06:48Z by the Phase 3 work session, read-only (git fetch, git
 6. Re-sync tool on main — PASS (2026-10-21T14:06:48Z). package.json "r2:media": "node scripts/migrate-supabase-media-to-r2.mjs" (handles --refresh and --execute); scripts/media/verify-media-host.mjs present.
 7. Amendments signed — PASS (2026-10-21T14:06:48Z). 03-PLAN-GATE.md "**SIGNED (amendments):**" line has "G8 yes" and "G10 yes".
 
-ENTRY: STOP
+First run result: STOP (superseded by the re-run below, G11)
 NEEDS KOSS: Phase 2 UAT (item 2) and the media verify report (item 3) are not on main; Phase 2 finish is PR #30, still open. Under G1 the code plans do not start. Decision asked of Koss through the controller: start the code plans now with items 2-3 moved to a pre-live gate, or wait for Phase 2 UAT.
 
 ## Re-run 2026-10-21T14:07:47Z (after G11, Koss 2026-10-21 ~15:10 CET)
