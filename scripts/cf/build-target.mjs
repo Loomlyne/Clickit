@@ -16,7 +16,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkVerifyReport, isAllowedMediaOrigin } from './deploy-guard.mjs'
-import { CLICKIT_HOME } from './wrangler-guard.mjs'
+import { CLICKIT_HOME, checkEnv } from './wrangler-guard.mjs'
 
 export const PREVIEW_ENV_FILE = '.env.preview.local'
 export const WORKERSDEV_ENV_FILE = `${CLICKIT_HOME}/clickit.workersdev.env`
@@ -225,8 +225,9 @@ function main(argv) {
     console.error(`refused: env file for target ${target} not found (${envFile})`)
     return 1
   }
-  if (process.env.CLOUDFLARE_API_TOKEN) {
-    console.error('refused: CLOUDFLARE_API_TOKEN is set')
+  const envCheck = checkEnv(process.env)
+  if (!envCheck.ok) {
+    console.error(envCheck.reason)
     return 1
   }
 

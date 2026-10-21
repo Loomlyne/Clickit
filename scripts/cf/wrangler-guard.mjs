@@ -1,6 +1,7 @@
 // Wrangler account guard (D-04, T-02-01). Every wrangler command in this repo
 // runs with HOME=/Users/koss/.clickit-cloudflare after this guard passes. It
-// refuses the default (Vamos) login, any other account, and API-token auth.
+// refuses the default (Vamos) login, any other account, API-token or API-key
+// auth and a redirected wrangler config (XDG_CONFIG_HOME, API base URL).
 //
 // Usage:
 //   node scripts/cf/wrangler-guard.mjs --local    # not-authenticated or ClickitStory only
@@ -44,19 +45,48 @@ export function checkWhoamiOutput(text, mode) {
   return { ok: false, reason: `refused: unknown mode ${String(mode)}` }
 }
 
+// Any of these lets wrangler authenticate (or read its config) somewhere other
+// than the pinned ClickitStory login under CLICKIT_HOME. CF_* are wrangler's
+// deprecated aliases, still honoured by wrangler 4.
+export const REFUSED_ENV_NAMES = [
+  'CLOUDFLARE_API_TOKEN',
+  'CF_API_TOKEN',
+  'CLOUDFLARE_API_KEY',
+  'CF_API_KEY',
+  'CLOUDFLARE_EMAIL',
+  'CF_EMAIL',
+  'CLOUDFLARE_API_BASE_URL',
+  'CF_API_BASE_URL',
+  'XDG_CONFIG_HOME',
+]
+const ACCOUNT_ENV_NAMES = ['CLOUDFLARE_ACCOUNT_ID', 'CF_ACCOUNT_ID']
+
 /**
+ * Names only in the reason, never a value.
  * @param {Record<string, string | undefined>} env
  * @returns {{ ok: boolean, reason: string }}
  */
 export function checkEnv(env) {
-  if (env.CLOUDFLARE_API_TOKEN) {
-    return { ok: false, reason: 'refused: CLOUDFLARE_API_TOKEN is set; use the pinned wrangler login only' }
+  const set = REFUSED_ENV_NAMES.filter((name) => env[name])
+  if (set.length > 0) {
+    return { ok: false, reason: `refused: ${set.join(', ')} set; use the pinned wrangler login only` }
   }
-  const acct = env.CLOUDFLARE_ACCOUNT_ID
-  if (acct && acct.toLowerCase() !== CLICKIT_ACCOUNT_ID) {
-    return { ok: false, reason: 'refused: CLOUDFLARE_ACCOUNT_ID is not the ClickitStory account' }
+  for (const name of ACCOUNT_ENV_NAMES) {
+    const acct = env[name]
+    if (acct && acct.toLowerCase() !== CLICKIT_ACCOUNT_ID) {
+      return { ok: false, reason: `refused: ${name} is not the ClickitStory account` }
+    }
   }
   return { ok: true, reason: 'env ok' }
+}
+
+/**
+ * The only env a wrangler child gets: PATH, the pinned HOME and metrics off.
+ * Nothing else from the parent shell (tokens, XDG paths, account ids) passes.
+ * @param {Record<string, string | undefined>} processEnv
+ */
+export function wranglerChildEnv(processEnv) {
+  return { PATH: processEnv.PATH ?? '', HOME: CLICKIT_HOME, WRANGLER_SEND_METRICS: 'false' }
 }
 
 function main(argv) {
@@ -71,7 +101,7 @@ function main(argv) {
     return 1
   }
   const res = spawnSync('npx', ['wrangler', 'whoami'], {
-    env: { ...process.env, HOME: CLICKIT_HOME },
+    env: wranglerChildEnv(process.env),
     encoding: 'utf8',
   })
   if (res.error) {

@@ -19,19 +19,15 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkDeploy, checkMediaDeploy, parseJsonc } from './deploy-guard.mjs'
 import { DEFAULT_MANIFEST_PATH, STAMP_PATH, loadManifestInfo } from './build-target.mjs'
-import { CLICKIT_HOME, checkEnv, checkWhoamiOutput } from './wrangler-guard.mjs'
+import { CLICKIT_HOME, checkEnv, checkWhoamiOutput, wranglerChildEnv } from './wrangler-guard.mjs'
 
 function readOption(argv, name) {
   const i = argv.lastIndexOf(name)
   return i >= 0 ? argv[i + 1] : undefined
 }
 
-function childEnv() {
-  return { PATH: process.env.PATH ?? '', HOME: CLICKIT_HOME, WRANGLER_SEND_METRICS: 'false' }
-}
-
 function run(command, args, options = {}) {
-  return spawnSync(command, args, { encoding: 'utf8', env: childEnv(), ...options })
+  return spawnSync(command, args, { encoding: 'utf8', env: wranglerChildEnv(process.env), ...options })
 }
 
 function readJson(path) {
