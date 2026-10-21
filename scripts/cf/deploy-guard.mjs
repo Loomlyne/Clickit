@@ -3,6 +3,8 @@
 // or git. Every function returns { ok, reasons } and collects ALL reasons.
 // Values of NEXT_PUBLIC_* are never read here; the stamp holds hashes only.
 
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { checkWhoamiOutput, checkEnv, CLICKIT_ACCOUNT_ID } from './wrangler-guard.mjs'
 
 export const MEDIA_BINDING = 'MEDIA_BUCKET'
@@ -98,6 +100,99 @@ export function parseJsonc(text) {
   return JSON.parse(result)
 }
 
+// ------------------------------------------------------------ .env folding
+// `opennextjs-cloudflare build` (compileEnvFiles) reads these files from the app
+// root for its three modes and writes their values into NEXT_ENV_MODULE_PATH;
+// the Worker's init.js copies them into process.env on every request. So any
+// value in them would ship inside the bundle. .dev.vars is not one of them: it
+// is read only by wrangler (getPlatformProxy, `wrangler dev`), never compiled.
+// Source: @opennextjs/cloudflare 1.20.12 dist/cli/utils/extract-project-env-vars.js
+// and dist/cli/build/open-next/compile-env-files.js (tests load both).
+export const FOLDED_ENV_FILES = [
+  '.env',
+  '.env.production',
+  '.env.local',
+  '.env.production.local',
+  '.env.development',
+  '.env.development.local',
+  '.env.test',
+  '.env.test.local',
+]
+export const NEXT_ENV_MODULE_PATH = '.open-next/cloudflare/next-env.mjs'
+
+/**
+ * Folded .env files present in `rootDir` (names only).
+ * @param {string} rootDir
+ * @returns {string[]}
+ */
+export function findFoldedEnvFiles(rootDir) {
+  return FOLDED_ENV_FILES.filter((name) => existsSync(join(rootDir, name)))
+}
+
+/**
+ * @param {string[]} present  names from findFoldedEnvFiles
+ * @returns {{ ok: boolean, reasons: string[] }}
+ */
+export function checkEnvFiles(present) {
+  const list = Array.isArray(present) ? present : []
+  if (list.length === 0) return { ok: true, reasons: [] }
+  return {
+    ok: false,
+    reasons: [
+      `.env file(s) in the repo root would be folded into the Worker bundle: ${list.join(', ')}; ` +
+        'move them out of the checkout (or remove them) and rebuild',
+    ],
+  }
+}
+
+const NEXT_ENV_LINE = /^export const ([A-Za-z_$][A-Za-z0-9_$]*) = (.*);$/
+
+/**
+ * The built next-env.mjs may only hold empty objects or empty-string values.
+ * A missing file is refused: compileEnvFiles always writes it, so its absence
+ * means the build did not run or OpenNext changed, and nothing proves the
+ * bundle is clean. Names in reasons, never values.
+ * @param {string | null | undefined} text
+ * @returns {{ ok: boolean, reasons: string[] }}
+ */
+export function checkNextEnvModule(text) {
+  if (typeof text !== 'string') {
+    return { ok: false, reasons: [`${NEXT_ENV_MODULE_PATH} is missing: cannot prove no .env value is in the bundle`] }
+  }
+  const reasons = []
+  let exportsSeen = 0
+  for (const raw of text.split('\n')) {
+    const line = raw.trim()
+    if (line === '') continue
+    const match = NEXT_ENV_LINE.exec(line)
+    if (!match) {
+      reasons.push(`${NEXT_ENV_MODULE_PATH} has a line that is not an OpenNext env export`)
+      continue
+    }
+    let value
+    try {
+      value = JSON.parse(match[2])
+    } catch {
+      reasons.push(`${NEXT_ENV_MODULE_PATH} export ${match[1]} is not a JSON object`)
+      continue
+    }
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      reasons.push(`${NEXT_ENV_MODULE_PATH} export ${match[1]} is not an object`)
+      continue
+    }
+    exportsSeen += 1
+    const filled = Object.keys(value).filter((name) => value[name] !== '')
+    if (filled.length > 0) {
+      reasons.push(
+        `${NEXT_ENV_MODULE_PATH} (${match[1]}) carries .env values for ${filled.join(', ')}: ` +
+          'remove the .env file(s) and rebuild'
+      )
+    }
+  }
+  if (exportsSeen === 0 && reasons.length === 0) reasons.push(`${NEXT_ENV_MODULE_PATH} has no env exports`)
+  return { ok: reasons.length === 0, reasons }
+}
+
 /** @param {unknown} origin */
 export function isAllowedMediaOrigin(origin) {
   let url
@@ -178,12 +273,16 @@ function emptyCrons(triggers) {
  *   wranglerConfig: any,
  *   verifyReport?: any,
  *   manifest?: any,
+ *   envFilesPresent: string[],
+ *   nextEnvText: string | null,
  * }} input
  * @returns {{ ok: boolean, reasons: string[] }}
  */
 export function checkDeploy(input) {
   const reasons = []
   accountReasons(input.whoami, input.processEnv, reasons)
+  reasons.push(...checkEnvFiles(input.envFilesPresent).reasons)
+  reasons.push(...checkNextEnvModule(input.nextEnvText).reasons)
 
   const stamp = input.stamp
   if (!stamp || typeof stamp !== 'object') {

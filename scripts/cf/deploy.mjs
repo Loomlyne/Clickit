@@ -11,13 +11,22 @@
 //   (clickit-media serves media.clickitstory.ae in every env, so either one changes production media)
 //   add --dry-run to run the guard only (no build, no deploy)
 //
-// Prints reasons and never any env value.
+// Prints reasons and never any env value. Refuses while a .env file that
+// OpenNext folds into the bundle exists in the root (before the build and again
+// before the upload) and when the built next-env.mjs carries any value.
 
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { checkDeploy, checkMediaDeploy, parseJsonc } from './deploy-guard.mjs'
+import {
+  NEXT_ENV_MODULE_PATH,
+  checkDeploy,
+  checkEnvFiles,
+  checkMediaDeploy,
+  findFoldedEnvFiles,
+  parseJsonc,
+} from './deploy-guard.mjs'
 import { DEFAULT_MANIFEST_PATH, STAMP_PATH, loadManifestInfo } from './build-target.mjs'
 import { CLICKIT_HOME, checkEnv, checkWhoamiOutput, wranglerChildEnv } from './wrangler-guard.mjs'
 
@@ -81,6 +90,7 @@ function deployWorkersdev(argv) {
     const who = checkWhoamiOutput(whoami, 'remote')
     if (!who.ok) pre.push(who.reason)
     if (git.status.trim() !== '') pre.push('working tree is dirty: commit or remove changes first')
+    pre.push(...checkEnvFiles(findFoldedEnvFiles(process.cwd())).reasons)
     if (pre.length > 0) return refuse(pre)
 
     const buildArgs = ['scripts/cf/build-target.mjs', '--target', 'workersdev', '--media-flag', mediaFlag]
@@ -117,6 +127,9 @@ function deployWorkersdev(argv) {
     wranglerConfig,
     verifyReport,
     manifest,
+    // Checked again right before the upload: a file added during the build counts too.
+    envFilesPresent: findFoldedEnvFiles(process.cwd()),
+    nextEnvText: existsSync(NEXT_ENV_MODULE_PATH) ? readFileSync(NEXT_ENV_MODULE_PATH, 'utf8') : null,
   })
   if (!result.ok) return refuse(result.reasons)
   if (dryRun) {

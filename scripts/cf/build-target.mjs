@@ -15,7 +15,14 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { checkVerifyReport, isAllowedMediaOrigin } from './deploy-guard.mjs'
+import {
+  NEXT_ENV_MODULE_PATH,
+  checkEnvFiles,
+  checkNextEnvModule,
+  checkVerifyReport,
+  findFoldedEnvFiles,
+  isAllowedMediaOrigin,
+} from './deploy-guard.mjs'
 import { CLICKIT_HOME, checkEnv } from './wrangler-guard.mjs'
 
 export const PREVIEW_ENV_FILE = '.env.preview.local'
@@ -230,6 +237,15 @@ function main(argv) {
     console.error(envCheck.reason)
     return 1
   }
+  // A deployable build must not fold .env values into the bundle. The local
+  // preview build is never deployed, so it keeps working with a dev .env.local.
+  if (target === 'workersdev') {
+    const files = checkEnvFiles(findFoldedEnvFiles(root))
+    if (!files.ok) {
+      for (const reason of files.reasons) console.error(`refused: ${reason}`)
+      return 1
+    }
+  }
 
   let buildEnv
   try {
@@ -264,6 +280,16 @@ function main(argv) {
   if (res.status !== 0) {
     console.error(`build failed (exit ${res.status})`)
     return res.status ?? 1
+  }
+
+  if (target === 'workersdev') {
+    const text = existsSync(NEXT_ENV_MODULE_PATH) ? readFileSync(NEXT_ENV_MODULE_PATH, 'utf8') : null
+    const folded = checkNextEnvModule(text)
+    if (!folded.ok) {
+      // No stamp: the deploy guard then refuses this build as well.
+      for (const reason of folded.reasons) console.error(`refused: ${reason}`)
+      return 1
+    }
   }
 
   const stamp = makeStamp({
