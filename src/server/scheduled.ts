@@ -10,9 +10,11 @@ import { CRON_ROUTES, cronPathFor } from './cron-schedule.ts'
 const SELF_ORIGIN = 'https://self.invalid'
 
 /**
- * The three UTC schedules, in code and docs only. wrangler.jsonc keeps
- * "triggers": {"crons": []} until the Phase 3 cutover (P3-8, after P3-6), so
- * nothing is scheduled on deploy. Phase 3 copies this list into wrangler.jsonc.
+ * The three UTC schedules. wrangler.jsonc env.production schedules all three from
+ * the production deploy (runbook Step 26); the top level (workers.dev) keeps
+ * "triggers": {"crons": []}, so nothing is scheduled there. cleanup-media on the
+ * Worker never deletes Supabase originals (no CLEANUP_SUPABASE_ORIGINALS) and runs
+ * the R2 upload sweep as a dry run while R2_UPLOAD_SWEEP_DELETE is "off" (P3-8b).
  */
 export const CRON_EXPRESSIONS_FOR_PHASE_3: readonly string[] = Object.freeze(
   Object.keys(CRON_ROUTES),

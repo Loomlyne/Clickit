@@ -16,6 +16,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
  * status change so search, admin views, and the Now Streaming / Coming Soon rail
  * placement stay correct. Daily is sufficient.
  *
+ * The cache refresh runs on every successful sweep because the frozen Vercel
+ * cron may publish the same rows first.
+ *
  * Schedule: daily 01:00 UTC (src/server/cron-schedule.ts). Auth: the Worker
  * scheduled handler sends `Authorization: Bearer ${CRON_SECRET}`.
  *   Local dev: curl -H "Authorization: Bearer $CRON_SECRET" \
@@ -72,12 +75,11 @@ export async function GET(req: Request) {
     }
 
     // --- Step 3: invalidate caches so rails + series pages refresh ----------
-    if (episodeIds.length > 0) {
-      updateTag('episodes')
-      updateTag('shows')
-      revalidatePath('/')
-      revalidatePath('/coming-soon')
-    }
+    // Runs on every successful sweep, also when nothing was published here.
+    updateTag('episodes')
+    updateTag('shows')
+    revalidatePath('/')
+    revalidatePath('/coming-soon')
 
     return NextResponse.json({
       ok: true,
