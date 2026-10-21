@@ -72,12 +72,37 @@
   .below { margin-top: 10px; height: 26px; border-radius: 6px; border: 1px dashed var(--line-2); color: var(--text-mute); font-size: 11.5px; display: flex; align-items: center; padding: 0 8px; }
   .arrow { color: var(--text-mute); font-size: 11px; margin: 2px 0; }
   ul.keys { color: var(--text-dim); margin: 6px 0 0; padding-inline-start: 18px; }
+  /* Flow picture */
+  .flow { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); align-items: stretch; }
+  .box { border: 1px solid var(--line-2); border-radius: 10px; padding: 10px; background: var(--bg-1); font-size: 12.5px; color: var(--text-dim); }
+  .box b { display: block; color: var(--text); font-size: 13px; margin-bottom: 4px; }
+  .box.cache { border-color: var(--primary); }
+  .box.cost { border-color: #ff6b6b55; }
+  .hdr { display: inline-block; margin-top: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 11px; padding: 2px 6px; border-radius: 6px; background: var(--bg-2); color: var(--primary); }
+  .cpu { display: inline-block; margin-top: 6px; font-size: 11px; color: var(--text-mute); }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Cached public pages: what visitors see change</h1>
   <p class="lead">To fit Workers Free (10 ms CPU per request), every public page is built once and served from cache, the same for every visitor. Anything personal (who is signed in, My List, likes, progress, Continue watching) is filled in by the browser right after the page appears, usually within 0.1–0.3 s. <b>Signed-out visitors see no change at all.</b> Three choices below. In each, option A is the recommended one. Colours, sizes and copy come from the product (globals.css, en.json, ar.json); the logo and photos are stand-ins.</p>
+
+
+  <!-- ===================== 0. FLOW ===================== -->
+  <h2 style="border-top:0;padding-top:4px">0 · Where the cache sits (prototype e49a219, already on the branch)</h2>
+  <p class="lead">One request, left to right. The yellow box is new. On a hit the request never reaches the two red boxes, which are where all the CPU goes. Every answer carries <code>x-clickit-cache</code> so a hit can be checked from outside.</p>
+  <div class="flow">
+    <div class="box"><b>1 · Visitor</b>GET /en/portfolio<br>phone or desktop<br>signed out (no <code>sb-</code> cookie)</div>
+    <div class="box cache"><b>2 · Worker entry: copy check</b>Allowed page? Signed out? Plain GET?<br>Key = build + phone/desktop + path<br>Look in the edge cache, then in R2<span class="hdr">x-clickit-cache: HIT-EDGE / HIT-R2</span><span class="cpu">~1-3 ms CPU (estimate)</span></div>
+    <div class="box cost"><b>3 · Proxy</b>locale, session, site config, coming-soon and sign-in gates<span class="cpu">~15-20 ms</span></div>
+    <div class="box cost"><b>4 · Next.js render</b>layout + page + Supabase reads<span class="cpu">35-100 ms warm, 300-950 ms on a fresh instance</span></div>
+    <div class="box cache"><b>5 · Store the copy</b>only 200 HTML or the 308, no sign-in cookie, locale matches the URL<span class="hdr">x-clickit-cache: MISS</span><span class="cpu">kept 120 s</span></div>
+  </div>
+  <p class="note">Hit: 1 → 2 → answer. Miss: 1 → 2 → 3 → 4 → 5 → answer. Signed in, sign-in page, watch pages, admin, any other query string: 1 → 3 → 4, no header (bypass), exactly as today.</p>
+  <div class="grid" style="margin-top:10px">
+    <div class="card"><h3>Phone / desktop split</h3><p class="note" style="margin:0">Each page is kept twice, once for phones and once for desktops, because the landing hero picks one video by device. The detection is the same one the page uses today, so visitors see no difference. It only doubles the stored copies.</p></div>
+    <div class="card"><h3>Admin edits <span class="tag">visible</span></h3><p class="note" style="margin:0">A change saved in Admin (text, ticker, shows, coming-soon switch) reaches signed-out visitors of these pages within <b>120 s</b> instead of at once. The plan replaces this with "within about 10 s" by reading the last-save time that OpenNext already keeps in D1.</p></div>
+  </div>
 
   <!-- ===================== 1. HEADER ===================== -->
   <h2>1 · Header while sign-in state loads (EN and AR)</h2>

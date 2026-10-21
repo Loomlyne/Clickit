@@ -265,3 +265,75 @@ GSD: this is phase-sized; `/gsd-phase` (insert a decimal phase after 2) then
 `/gsd-plan-phase`, so it gets discuss, plan and UAT gates. Jev: a small typed
 "cacheable / bypass" decision per request is plain code, so Jev adds nothing here. Automation:
 a post-deploy warm-up and CPU-sample agent (tail + measure-routes) that reports p95 per route.
+
+## Addendum for the controller (2026-10-21): prototype, remaining routes, risks
+
+### (1) What e49a219 does, in plain words (prototype; nothing merges or deploys before the signature)
+
+The Worker keeps a copy of six signed-out page types (/<locale> 308, /portfolio, /about,
+/support, /privacy, /terms, EN and AR) and answers from it before the proxy and Next.js
+run. The copy lives 120 s, in the edge cache, with R2 as backup. It is kept twice, once for
+phones and once for desktops, because the hero picks its video by device. That uses the same
+detection as today, so there is no visible difference. Visible effect: an admin edit takes up
+to 120 s to reach signed-out visitors of those pages. Every answer it touches carries
+`x-clickit-cache` (HIT-EDGE, HIT-R2, MISS); bypassed requests carry nothing.
+Picture: section 0 of `.planning/debug/cpu-public-cache-mockup.html`.
+
+### (2) Routes the prototype does not cover
+
+| Route | Today (02-CPU-REPORT ok-p50) | Signed out | Signed in | How it gets under 10 ms |
+|---|---|---|---|---|
+| /en/auth, /ar/auth | 42 / 48 ms | cacheable (public form; Turnstile runs in the browser) | proxy already sends signed-in visitors on; that redirect is cached per class | add to the list; key also on `?next=` but only when it passes `getSafeAuthNextPath` (other values render and are not stored) |
+| /series/<slug> | 61 / 74 ms | cacheable once the page stops reading the session and User-Agent | needs the hybrid: static show, list/like/progress from the browser | static/ISR + front cache, both classes |
+| /watch (home), /watch/<episode> | 93 ms / not measured | when sign-in skip is on: cacheable; when off: the gate 307 to /auth, cached per class | hybrid: static page, Continue watching / list / like / resume position from the browser (writes already are) | static/ISR + front cache, both classes |
+| /browse | 35 ms | it only redirects to /watch (keeps `?category=`), from inside a page render | same | move the redirect into the proxy (like d43fd90) and cache it; key on `category` |
+| /updates | 48 ms | not public: the gate sends signed-out visitors to /auth (307, cacheable per class) | prefill of the email moves to the browser; page cached for the signed-in class | front cache, signed-in class |
+
+Signed-in on Free: the limit is per request, not per visitor. A signed-in render costs the same
+40-150 ms, and Free started refusing requests after about 2 minutes of steady traffic. Viewers
+watching shows are the core use, and with sign-in skip off every watch page is signed-in. So
+signed-in pages must be cached too, and the hybrid (shared cached shell + personal data fetched by
+the browser straight from Supabase under RLS) is worth it: it is the only way the signed-in
+routes fit, and it costs no Worker CPU because those reads never touch the Worker. Without
+it, show, episode and watch-home requests from signed-in viewers stay at 40-150 ms and get 1102
+under load. Admin is the exception: it stays rendered, over 10 ms (2 users).
+
+### (3) Risks
+
+- **Stale content.** Prototype: up to 120 s after an admin save. Plan: freshness compares the
+  copy with the last revalidation OpenNext writes to D1 on every save (`updateTag` /
+  `revalidatePath`, already in the admin actions), read at most every 10 s per Worker
+  instance. Edits show within ~10 s, and the old copy is served while the new one renders.
+  Content with no save (scheduled publish at 01:00) relies on that cron's own revalidation:
+  check it during the build.
+- **Cache poisoning.** The key holds only build, class, device and path, plus allowlisted,
+  sanitised params (`next`, `category`). The Host cannot be spoofed, because Cloudflare routes by
+  host. Anything else in the request that changes the HTML would poison the copy. Known ones:
+  User-Agent (keyed by device), the NEXT_LOCALE cookie (only stored when it equals the URL locale),
+  Accept-Language (changes only the cookie, which is never stored). Router/action headers bypass.
+  The plan adds a test that renders one URL with varied headers (language, cookie, UA, forwarded
+  host, `next-url`) and requires identical text before a route is allowed into the cache. Only
+  200 HTML and 308/307 are stored; any Set-Cookie other than NEXT_LOCALE blocks storing.
+- **A signed-in user getting a signed-out copy.** The prototype bypasses on any `sb-` cookie,
+  which also covers the chunked `.0/.1` and the PKCE code-verifier cookies. The plan keys on that
+  class instead, so the signed-in copy never contains signed-out UI. Browsers and Cloudflare's
+  CDN never store the page: visitors keep `cache-control: private, no-store`. A forged `sb-`
+  cookie gets the signed-in shell, with no data (RLS).
+- **RTL / locale mixups.** The locale is in the path and the key; `lang`/`dir` come from the
+  `[locale]` segment. The prototype refuses to store a render whose cookie locale differs from
+  the URL. The plan moves every cookie-locale read to the URL locale and adds a store guard: the
+  body must contain `lang="ar" dir="rtl"` for /ar and `lang="en" dir="ltr"` for /en, or it is
+  not stored.
+- **R2 lifecycle rule (live step for Koss, after the first deploy with the cache).** Old builds
+  leave copies under `anon-html/`. One numbered step in his terminal:
+  1. `HOME=/Users/koss/.clickit-cloudflare npx -y wrangler@4.151.2 r2 bucket lifecycle add clickit-next-cache anon-html-expiry anon-html/ --expire-days 7`
+  Expected: the rule is listed by `... r2 bucket lifecycle list clickit-next-cache`. Seven days,
+  not one, so copies of the live build that nobody refreshed are not deleted every day.
+- **R2 and D1 cost on Free** (R2 pricing page, updated 2026-10-01: 10 GB, 1M Class A,
+  10M Class B per month; delete is free; D1 5M reads / 100k writes per day). A hit reads R2 only
+  when the edge cache misses; on workers.dev the edge cache may never hold, so every hit is
+  one Class B read. Workers Free caps requests at 100k/day, so at most ~3M Class B per month:
+  under 10M. Writes (Class A) happen once per miss. With the prototype's 120 s life, 24 keys x
+  720 refreshes/day is about 0.5M per month in the worst case, under 1M. With the plan's
+  save-based freshness, writes happen only after a deploy or a save. Storage is a few MB. D1: one
+  small read per Worker instance every 10 s.
