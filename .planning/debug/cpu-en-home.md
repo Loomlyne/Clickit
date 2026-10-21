@@ -138,3 +138,130 @@ still fails for /en/auth, show and episode pages and every signed-in page.
 4. Read `cpuTime` per event for /en, /ar, /en/portfolio, /ar/portfolio. Expected hits in low single
    ms. If every hit is `HIT-R2`, the Cache API is not active on workers.dev (expected; it is on a
    custom domain).
+
+## Cross-check with 02-CPU-REPORT.md (main 787ca3a)
+
+- Cause agrees: interleaved, /en ok-p50 42 ms and /ar 59 ms; the Task 4 gap was an order effect.
+  Independent check here: local workerd profile, fresh isolate, whichever route goes first pays
+  ~326 ms; warm /en/portfolio and /ar/portfolio both ~35 ms.
+- d43fd90 checked independently, read-only: local preview of the branch answers `/en` and `/ar`
+  with a 308 `location: /<locale>/portfolio` and an empty body (no layout render);
+  `tests/unit/locale-root-redirect.test.ts` pins the order (after the coming-soon gate, before
+  the auth gate).
+- Report adds: from ~2 min of steady traffic Free enforced the limit, 47/179 requests 503
+  (1102), every route fails, cheapest success 4 ms. Every page is private/no-store with no
+  `x-nextjs-cache`.
+
+## Plan: cached public pages on Workers Free (for Koss's signature; no code until signed)
+
+Koss, 2026-10-21 (via controller): "Stay Free, do the rebuild". Goal: every public route answers
+under 10 ms CPU, signed out and signed in.
+
+Status of code already on this branch: e49a219 (anonymous Worker cache in front of OpenNext,
+lazy OpenNext load) was built before the scope change. It stays as step 4's base; nothing new is
+written before the signature.
+
+### Why this shape
+
+- A render costs 35-100 ms warm, so the fix is to stop rendering per request.
+- OpenNext's own cache (ISR + `enableCacheInterception`) still runs the proxy first (next-intl,
+  Supabase session, `getAppConfig`), which alone is about 15-20 ms locally. So a Worker-level
+  front cache that answers before the proxy is needed too.
+- Client navigation fetches RSC payloads. For dynamic pages those depend on the router state
+  tree, which makes the key unbounded. For static pages the payload is per path. So pages must
+  become truly static (ISR), not just Worker-cached.
+
+### Reads that make public pages per-visitor today (map)
+
+| File | Reads | Moves to |
+|---|---|---|
+| `[locale]/(viewer)/layout.tsx` | `getClaims()` (cookie session) -> `initialUser`; NEXT_LOCALE cookie locale | no session read; locale from URL. Header `AuthSection` (already client) reads the session in the browser |
+| `[locale]/layout.tsx` `generateMetadata` | NEXT_LOCALE cookie locale | URL locale |
+| `components/layout/footer.tsx`, `landing/landing-faq.tsx`, `legal/legal-page-content.tsx`, privacy, terms, support, legal/[slug], coming-soon | NEXT_LOCALE cookie locale | URL locale (`next-intl` `getLocale` / params) |
+| `landing/landing-hero.tsx` | `auth.getUser()` (CTA href), User-Agent (`getIsMobile`) | CTA href decided in the browser (default `/auth`); hero video chosen in the browser (`<source media>` / matchMedia) |
+| `(viewer)/series/[slug]/page.tsx` | `getUser()`, watchlist, like, episode progress, profile row; User-Agent | public show data static; personal state from a browser hook (Supabase RLS); placeholders (picture 2) |
+| `(viewer)/watch/page.tsx` | `getUser()` -> personalised hero + `ContinueWatchingRail`; User-Agent | static hero; rail rendered in the browser for signed-in (picture 3) |
+| `(watch)/watch/[episodeId]/page.tsx` | `getUser()`, watchlist, like, progress map (resume) | static episode data; personal state + resume position from the browser before play starts |
+| `(viewer)/updates/page.tsx` | `getUser()` email to prefill the form | prefill in the browser |
+| `(viewer)/my-list`, `(viewer)/profile` | the signed-in user's data | static shell + browser fetch (signed-in key class only) |
+| `(viewer)/auth/page.tsx` | `getUser()` + admin check -> redirect a signed-in visitor | anonymous class cached; signed-in visitors keep going through the proxy (rare) |
+| `src/proxy.ts` | session refresh, `getAppConfig` flags, gates | unchanged logic; skips the Supabase client when no `sb-` cookie; its redirects (coming-soon, auth gate) are cached per class |
+
+Writes are already browser-side (progress `hooks/use-progress-tracker.ts`, watchlist, like), so
+they cost no Worker CPU. Server actions left: contact form, player error report (rare).
+
+### What changes (build order, each with tests)
+
+1. Locale from the URL everywhere (12 files). Small.
+2. Shared layout and header without a server session read: `AuthSection` resolves the session
+   in the browser (`getSession()` reads the cookie, no network) and shows the placeholder the
+   signature picks (picture 1).
+3. Personal data to browser hooks: show page, episode page (resume waits for the position),
+   watch home rail, updates prefill, my-list, profile (pictures 2 and 3). Hero and show-page
+   media variant chosen in the browser.
+4. Pages static: `generateStaticParams` for shows and legal slugs, on-demand ISR for episodes,
+   long `revalidate` fallback, existing `updateTag` / `revalidatePath` calls do the
+   invalidation (D1 tag cache already deployed). `enableCacheInterception: true` once the gate
+   tests pass with it on (research Pitfall 2).
+5. Worker front cache (extends e49a219): key = build + auth class (`sb-` cookie present or not)
+   + path + RSC kind (`rsc` / `next-router-segment-prefetch` value); stores 200, 308 and gate
+   307s; freshness = latest `revalidatedAt` in the D1 tag cache (read at most every 10 s per
+   isolate), so an admin save shows within ~10 s; stale-while-revalidate on a change.
+6. Post-deploy warm-up script for the controller (every public URL x locale x class, retries),
+   plus a tail-based CPU check that reuses `scripts/cf/measure-routes.mjs`.
+
+First task is a spike that settles the one technical unknown: Next 16 RSC and segment-prefetch
+responses for static pages must be the same for any router state. If they are not, stop and
+report before building the rest.
+
+### Expected CPU per route (Workers Free; estimates until measured)
+
+| Route | Today ok-p50 (02-CPU-REPORT) | After: cache hit | After: front-cache miss, ISR hit | After: full render (rare) |
+|---|---|---|---|---|
+| /en, /ar (308) | 42 / 59 ms | ~1-3 ms | proxy only ~10-20 ms | n/a |
+| /portfolio, /about, /support, /privacy, /terms, /legal/* | 38-73 ms | ~1-3 ms | ~10-20 ms | 40-100 ms warm |
+| /browse, /watch (home) | 35 / 93 ms | ~1-3 ms | ~10-20 ms | 40-180 ms |
+| /series/<slug> (en, ar) | 61 / 74 ms | ~1-3 ms | ~10-20 ms | 60-130 ms |
+| /watch/<episode> | not measured | ~1-3 ms | ~10-20 ms | ~60-150 ms |
+| /auth (signed out), /updates, /coming-soon | 42-48 ms | ~1-3 ms | ~10-20 ms | 40-70 ms |
+| /my-list, /profile (signed in) | not measured | ~1-3 ms | ~10-20 ms | 40-100 ms |
+| /admin/*, admin server actions | not measured | not cached | — | 50-300+ ms (stays over 10 ms) |
+| contact / player-error actions, /auth/callback, /api/*, crons | — | not cached | — | over 10 ms, rare |
+
+Hits should be the bulk of traffic. Misses happen once per path x class x RSC kind after a deploy
+(warm-up covers them) and after an admin save (stale copy served meanwhile).
+
+### Effort
+
+About 6-8 working days of session time: locale 0.5; header 0.5; personal data to the browser 2-3;
+static/ISR + interception 1-1.5; front cache extension + warm-up 1-1.5; tests, local preview
+measurement and Playwright 1. Lands as one PR to main (after #29, now merged).
+
+### Risks
+
+1. Admin pages stay dynamic and over 10 ms. Two admins working steadily can hit 1102 errors;
+   Free's tolerance is not documented. Only Workers Paid or an admin rewrite fixes that.
+2. Misses still cost 40-900 ms. First views after a deploy need the warm-up, and an unwarmed
+   page can answer 1102 once.
+3. RSC and segment-prefetch keys (the spike). If static payloads still vary by router state,
+   client navigation misses and goes over 10 ms.
+4. `enableCacheInterception` skips the proxy for ISR hits: gates must still hold. Gate tests run
+   with it on, and gate redirects are cached per auth class.
+5. Visible: placeholders for signed-in state (pictures 1-3), resume waits ~0.1-0.3 s, phone hero
+   may show its poster briefly, admin edits take ~10 s to appear.
+6. The cache never holds personal data: keys carry only build, class and path; the `sb-`
+   cookie only picks the class. A forged `sb-` cookie gets the signed-in shell with no data
+   (RLS).
+7. Free quotas: R2 class A/B and D1 reads stay far below free limits at today's traffic;
+   requests still count against 100k/day.
+
+### Pictures for the signature
+
+`.planning/debug/cpu-public-cache-mockup.html`: header (signed out, signed in, admin; EN and AR),
+show-page buttons and progress, Continue watching rail; before and after with options A/B.
+Recommended: 1A empty avatar circle, 2A grey placeholders, 3A placeholder row.
+
+GSD: this is phase-sized; `/gsd-phase` (insert a decimal phase after 2) then
+`/gsd-plan-phase`, so it gets discuss, plan and UAT gates. Jev: a small typed
+"cacheable / bypass" decision per request is plain code, so Jev adds nothing here. Automation:
+a post-deploy warm-up and CPU-sample agent (tail + measure-routes) that reports p95 per route.
