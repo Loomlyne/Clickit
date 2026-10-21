@@ -468,6 +468,48 @@ test('checkDeploy refuses LOCAL_DEV in wrangler vars', () => {
   assert.match(reasonsOf(res), /LOCAL_DEV/)
 })
 
+// R2_UPLOAD_SWEEP_DELETE: the weekly sweep deletes unfinalised R2 uploads only when it is
+// exactly "on", and the guard refuses to ship "on" unless the deploy names the flag.
+const sweepVars = (value: unknown) => ({ ...appConfig, vars: { ...appConfig.vars, R2_UPLOAD_SWEEP_DELETE: value } })
+
+test('checkDeploy passes R2_UPLOAD_SWEEP_DELETE "off" or absent', () => {
+  assert.equal(checkDeploy(deployInput({ wranglerConfig: sweepVars('off') })).ok, true)
+  assert.equal(checkDeploy(deployInput()).ok, true)
+})
+
+test('checkDeploy refuses R2_UPLOAD_SWEEP_DELETE "on" without --allow-upload-sweep-delete', () => {
+  const res = checkDeploy(deployInput({ wranglerConfig: sweepVars('on') }))
+  assert.equal(res.ok, false)
+  assert.match(reasonsOf(res), /R2_UPLOAD_SWEEP_DELETE/)
+  assert.match(reasonsOf(res), /--allow-upload-sweep-delete/)
+  assert.equal(checkDeploy(deployInput({ wranglerConfig: sweepVars('on'), allowUploadSweepDelete: false })).ok, false)
+  assert.equal(checkDeploy(deployInput({ wranglerConfig: sweepVars('on'), allowUploadSweepDelete: 'yes' })).ok, false)
+})
+
+test('checkDeploy passes R2_UPLOAD_SWEEP_DELETE "on" only with allowUploadSweepDelete true', () => {
+  assert.equal(checkDeploy(deployInput({ wranglerConfig: sweepVars('on'), allowUploadSweepDelete: true })).ok, true)
+})
+
+test('checkDeploy refuses any other R2_UPLOAD_SWEEP_DELETE value, even with the deploy flag', () => {
+  for (const value of ['ON', 'On', 'true', '1', '', ' on', 1, true]) {
+    const res = checkDeploy(deployInput({ wranglerConfig: sweepVars(value), allowUploadSweepDelete: true }))
+    assert.equal(res.ok, false, String(value))
+    assert.match(reasonsOf(res), /R2_UPLOAD_SWEEP_DELETE/)
+  }
+})
+
+test('checkDeploy passes the real wrangler.jsonc sweep flag (off)', () => {
+  const real = parseJsonc(readFileSync('wrangler.jsonc', 'utf8'))
+  assert.equal(real.vars.R2_UPLOAD_SWEEP_DELETE, 'off')
+  assert.equal(checkDeploy(deployInput({ wranglerConfig: { ...appConfig, vars: real.vars } })).ok, true)
+})
+
+test('deploy.mjs passes --allow-upload-sweep-delete to the guard and warns loudly when it ships "on"', () => {
+  const src = readFileSync('scripts/cf/deploy.mjs', 'utf8')
+  assert.match(src, /allowUploadSweepDelete: argv\.includes\('--allow-upload-sweep-delete'\)/)
+  assert.match(src, /R2_UPLOAD_SWEEP_DELETE/)
+})
+
 test('checkDeploy collects every reason, not only the first', () => {
   const res = checkDeploy(
     deployInput({
