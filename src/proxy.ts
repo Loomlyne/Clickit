@@ -1,4 +1,5 @@
 import createMiddleware from 'next-intl/middleware'
+import { localeRootTarget } from '@/server/locale-root'
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { routing } from '@/i18n/routing'
@@ -85,8 +86,8 @@ const handleI18nRouting = createMiddleware(routing)
  * from `fromResponse`. Without copying the cookies, the redirect drops the
  * refreshed sb-…-auth-token and silently logs the user out.
  */
-function redirectWithCookies(url: URL, fromResponse: NextResponse): NextResponse {
-  const redirect = NextResponse.redirect(url)
+function redirectWithCookies(url: URL, fromResponse: NextResponse, status = 307): NextResponse {
+  const redirect = NextResponse.redirect(url, status)
   fromResponse.cookies.getAll().forEach((cookie) => {
     redirect.cookies.set(cookie.name, cookie.value, cookie)
   })
@@ -188,6 +189,15 @@ export async function proxy(request: NextRequest) {
       url.search = ''
       return redirectWithCookies(url, intlResponse)
     }
+  }
+
+  // Locale root: a real 308 to the portfolio landing, before any render
+  // (plan 02-21 CPU work). The query string is kept.
+  const rootTarget = localeRootTarget(pathWithoutLocale, locale)
+  if (rootTarget) {
+    const url = request.nextUrl.clone()
+    url.pathname = rootTarget
+    return redirectWithCookies(url, intlResponse, 308)
   }
 
   // Step 5: Auth gate. Runs AFTER the coming-soon gate so coming-soon wins
