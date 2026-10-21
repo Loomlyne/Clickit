@@ -5,9 +5,9 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { INVALID_UPDATED_AT, SAVE_CONFLICT, rowVersion, updateIfUnchanged } from '../../src/lib/admin/row-version.ts'
+import { INVALID_UPDATED_AT, NULL_UPDATED_AT, SAVE_CONFLICT, rowVersion, updateIfUnchanged } from '../../src/lib/admin/row-version.ts'
 import { updateEpisodeCore, updateSeasonCore } from '../../src/lib/admin/season-episode-writes.ts'
-import { createRowVersionChains } from '../../src/lib/admin/version-chain.ts'
+import { NULL_UPDATED_AT as CLIENT_NULL_UPDATED_AT, createRowVersionChains } from '../../src/lib/admin/version-chain.ts'
 import { createFakeSupabase, type Row } from './helpers/fake-supabase.ts'
 
 const id = (p: string, n = 0) => `${p.repeat(8)}-0000-4000-8000-${String(n).padStart(12, '0')}`
@@ -39,6 +39,57 @@ for (const table of ['categories', 'shorts', 'faqs'] as const) {
     assert.equal(r2.row?.updated_at, fresh.value.next)
   })
 }
+
+// ---- shorts.updated_at is nullable (PR #29 re-review item 5) -----------------------
+// A short whose updated_at is NULL could never be saved: the editor sent '' (refused) and
+// .eq('updated_at', null) matches nothing. The drawer now sends an explicit NULL marker; only
+// shorts (the one nullable updated_at) accepts it, and it is matched with .is(null).
+
+test('NULL marker: shared by client and server, refused unless the caller opts in', () => {
+  assert.equal(CLIENT_NULL_UPDATED_AT, NULL_UPDATED_AT)
+  assert.ok(NULL_UPDATED_AT.length > 0)
+  assert.deepEqual(rowVersion(NULL_UPDATED_AT), { ok: false, error: INVALID_UPDATED_AT }, 'strict tables never take it')
+  assert.deepEqual(rowVersion(NULL_UPDATED_AT, { nullable: true }), { ok: true, value: { expected: null, next: null } })
+  assert.deepEqual(rowVersion(V0, { nullable: true }), { ok: true, value: { expected: V0, next: null } })
+})
+
+test('nullable: a missing or malformed version is still refused (missing is not NULL)', () => {
+  for (const bad of [undefined, null, '', ' ', 'null', 'NULL', 'now', 0, {}]) {
+    assert.deepEqual(rowVersion(bad, { nullable: true }), { ok: false, error: INVALID_UPDATED_AT }, String(bad))
+  }
+})
+
+test('updateIfUnchanged(shorts): expected NULL lands on a NULL row and returns the new updated_at', async () => {
+  const f = createFakeSupabase({ shorts: [{ id: 'r1', title: 'a', updated_at: null }] }, { updatedAtTables: ['shorts'] })
+  const v = rowVersion(NULL_UPDATED_AT, { nullable: true })
+  assert.ok(v.ok)
+  const r = await updateIfUnchanged(f.client, 'shorts', 'r1', { title: 'b' }, v.value, '*')
+  assert.equal(r.error, null)
+  assert.equal(r.row?.title, 'b')
+  assert.ok(typeof v.value.next === 'string' && v.value.next.length > 0)
+  assert.equal(f.tables.shorts![0]!.updated_at, v.value.next)
+})
+
+test('updateIfUnchanged(shorts): expected NULL on a row that has an updated_at conflicts, nothing written', async () => {
+  const f = createFakeSupabase({ shorts: [{ id: 'r1', title: 'a', updated_at: V0 }] }, { updatedAtTables: ['shorts'] })
+  const v = rowVersion(NULL_UPDATED_AT, { nullable: true })
+  assert.ok(v.ok)
+  const before = f.snapshot()
+  const r = await updateIfUnchanged(f.client, 'shorts', 'r1', { title: 'b' }, v.value, '*')
+  assert.equal(r.error, SAVE_CONFLICT)
+  assert.deepEqual(f.snapshot(), before)
+  assert.equal(v.value.next, null)
+})
+
+test('updateIfUnchanged: expected NULL on a NOT NULL updated_at table is refused before any write', async () => {
+  for (const table of ['categories', 'faqs', 'shows', 'app_config'] as const) {
+    const f = createFakeSupabase({ [table]: [{ id: 'r1', name: 'a', updated_at: null }] }, { updatedAtTables: [table] })
+    const before = f.snapshot()
+    const r = await updateIfUnchanged(f.client, table, 'r1', { name: 'b' }, { expected: null, next: null }, '*')
+    assert.equal(r.error, INVALID_UPDATED_AT, table)
+    assert.deepEqual(f.snapshot(), before, table)
+  }
+})
 
 // ---- seasons and episodes ---------------------------------------------------------
 
@@ -198,7 +249,8 @@ test('updateCategory, updateShort and upsertFaq (update branch) write through up
   for (const [name, table] of [['updateCategory', 'categories'], ['updateShort', 'shorts'], ['upsertFaq', 'faqs']] as const) {
     const b = bodyOf(name)
     assert.match(b, /expectedUpdatedAt/, `${name} takes expectedUpdatedAt`)
-    assert.match(b, /rowVersion\(expectedUpdatedAt\)/, `${name} validates it`)
+    // shorts.updated_at is nullable: updateShort opts in to the NULL marker (re-review item 5).
+    assert.match(b, name === 'updateShort' ? /rowVersion\(expectedUpdatedAt, \{ nullable: true \}\)/ : /rowVersion\(expectedUpdatedAt\)/, `${name} validates it`)
     assert.ok(b.includes(`updateIfUnchanged(`) && b.includes(`'${table}'`), `${name} writes ${table} through updateIfUnchanged`)
     assert.ok(!new RegExp(`from\\('${table}'\\)\\s*\\.update\\(`).test(b), `${name} has no plain update`)
     assert.match(b, /withUpdatedAt\(|\bupdatedAt\b/, `${name} returns the new updatedAt`)
@@ -228,4 +280,14 @@ test('getFaqs reads updated_at; reorderCategories returns the new versions to th
   assert.match(reorder, /\.select\('id, sort_order, updated_at'\)/)
   const manager = readFileSync('src/components/admin/categories-manager.tsx', 'utf8')
   assert.match(manager, /mergeVersions\(|updated_at: v\.updated_at/)
+})
+
+test('the short drawer sends the NULL marker for a NULL updated_at; updateShort opts in, no other action does', () => {
+  const drawer = readFileSync('src/components/admin/short-form-drawer.tsx', 'utf8')
+  assert.match(drawer, /versions\.expected\(editingShort\.id, editingShort\.updated_at \?\? NULL_UPDATED_AT\)/)
+  assert.ok(!/editingShort\.updated_at \?\? ''/.test(drawer), 'never an empty version')
+  assert.match(drawer, /import \{[^}]*NULL_UPDATED_AT[^}]*\} from '@\/lib\/admin\/version-chain'/)
+  const short = bodyOf('updateShort')
+  assert.match(short, /rowVersion\(expectedUpdatedAt, \{ nullable: true \}\)/)
+  assert.equal((actions.match(/nullable: true/g) ?? []).length, 1, 'only updateShort accepts a NULL updated_at')
 })

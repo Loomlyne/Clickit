@@ -168,6 +168,13 @@ const ALLOWED: Allowed[] = [
     why: 'reorderShow: per-row CAS on the sort_order read before; both moves or neither.',
   },
   {
+    file: 'src/lib/admin/row-version.ts',
+    chain: ".update(patch as never) .eq('id', id as string) .is('updated_at', null)",
+    kind: 'column-cas',
+    check: /\.is\('updated_at', null\)/,
+    why: 'updateIfUnchanged with an expected NULL (shorts only, re-review item 5): IS NULL is the CAS; other tables are refused first.',
+  },
+  {
     file: 'src/app/api/cron/publish-scheduled/route.ts',
     chain: ".update({ status: 'now-streaming' })",
     kind: 'state-guard',

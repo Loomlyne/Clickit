@@ -5,6 +5,13 @@
 // a page refresh that brings a newer value never moves an already-loaded form forward, because
 // its values may predate another admin's save. Pure, no imports: node --test loads it.
 
+/**
+ * The version an editor sends for a row whose updated_at is NULL (only shorts.updated_at is
+ * nullable). Distinct from a missing version, which every save refuses (PR #29 re-review
+ * item 5). Not a timestamptz, so it can never be mistaken for one.
+ */
+export const NULL_UPDATED_AT = 'updated_at:null'
+
 export type VersionChain = {
   /** The newest updated_at reachable from `base` through our own saves. */
   resolve(base: string): string

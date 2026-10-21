@@ -232,7 +232,8 @@ function main(argv) {
     console.error(`refused: env file for target ${target} not found (${envFile})`)
     return 1
   }
-  const envCheck = checkEnv(process.env)
+  // The preview build is local only (XDG_CONFIG_HOME allowed); workersdev is deployable.
+  const envCheck = checkEnv(process.env, target === 'preview' ? 'local' : 'remote')
   if (!envCheck.ok) {
     console.error(envCheck.reason)
     return 1

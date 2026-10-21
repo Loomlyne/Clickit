@@ -251,7 +251,7 @@ export function checkVerifyReport(report, manifest, options = {}) {
 function accountReasons(whoami, processEnv, reasons) {
   const who = checkWhoamiOutput(whoami, 'remote')
   if (!who.ok) reasons.push(who.reason)
-  const env = checkEnv(processEnv ?? {})
+  const env = checkEnv(processEnv ?? {}, 'remote')
   if (!env.ok) reasons.push(env.reason)
   if (processEnv?.VERCEL || processEnv?.VERCEL_ENV) {
     reasons.push('refused: VERCEL or VERCEL_ENV is set in the deploy shell')

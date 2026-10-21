@@ -1,5 +1,5 @@
 // Optimistic concurrency for admin form saves (deferred item 23, residual b). shows and
-// app_config carry updated_at, set by the set_updated_at BEFORE UPDATE trigger
+// app_config carry updated_at (NOT NULL; shorts.updated_at is nullable, see NULL_UPDATED_AT), set by the set_updated_at BEFORE UPDATE trigger
 // (supabase/migrations/20260401000000_create_schema.sql). A form sends back the updated_at it
 // was loaded with; the UPDATE only lands while the row still holds exactly that value, and
 // returns the new one so the next save from the same page chains on it. 0 rows: someone saved
@@ -10,7 +10,10 @@
 // microseconds and make every save conflict.
 // No next/*, server-only or '@/' imports: node --test loads this file.
 import { MEDIA_SAVE_CONFLICT } from '../../server/media-references.ts'
+import { NULL_UPDATED_AT } from './version-chain.ts'
 import type { AdminDb } from './ports'
+
+export { NULL_UPDATED_AT }
 import type { ParseResult } from './schemas'
 
 /** The one conflict line (1d6ce5b); no new copy. */
@@ -40,7 +43,24 @@ export function parseUpdatedAt(value: unknown): ParseResult<string> {
  */
 export type RowVersion = { expected: string; next: string | null }
 
-export function rowVersion(value: unknown): ParseResult<RowVersion> {
+/** A version on a table whose updated_at may be NULL (expected null = the row holds NULL). */
+export type NullableRowVersion = { expected: string | null; next: string | null }
+
+/** Tables whose updated_at column is nullable; only these accept an expected NULL. */
+const NULLABLE_UPDATED_AT = new Set<string>(['shorts'])
+
+/**
+ * Parse the editor's version. With `{ nullable: true }` (shorts only) the explicit
+ * NULL_UPDATED_AT marker means "the row's updated_at is NULL"; a missing, blank or malformed
+ * value is refused either way.
+ */
+export function rowVersion(value: unknown): ParseResult<RowVersion>
+export function rowVersion(value: unknown, opts: { nullable: true }): ParseResult<NullableRowVersion>
+export function rowVersion(
+  value: unknown,
+  opts?: { nullable: true }
+): ParseResult<RowVersion | NullableRowVersion> {
+  if (opts?.nullable && value === NULL_UPDATED_AT) return { ok: true, value: { expected: null, next: null } }
   const p = parseUpdatedAt(value)
   return p.ok ? { ok: true, value: { expected: p.value, next: null } } : p
 }
@@ -58,22 +78,32 @@ export function updatedAtOf(data: unknown): string | null {
 /**
  * UPDATE one row only while its updated_at is still `version.expected`. On success
  * `version.next` holds the new updated_at and `row` the selected row. 0 rows: SAVE_CONFLICT,
- * nothing written.
+ * nothing written. An expected NULL (shorts only) is matched with IS NULL; on any other
+ * table it is refused before the write.
  */
 export async function updateIfUnchanged(
   db: AdminDb,
   table: 'shows' | 'app_config' | 'categories' | 'shorts' | 'faqs',
   id: string | number,
   patch: Record<string, unknown>,
-  version: RowVersion,
+  version: RowVersion | NullableRowVersion,
   columns = 'id, updated_at'
 ): Promise<{ error: string | null; row: Record<string, unknown> | null }> {
-  const { data, error } = await db
-    .from(table as 'shows')
-    .update(patch as never)
-    .eq('id', id as string)
-    .eq('updated_at', version.expected)
-    .select(columns)
+  if (version.expected === null && !NULLABLE_UPDATED_AT.has(table))
+    return { error: INVALID_UPDATED_AT, row: null }
+  const { data, error } = await (version.expected === null
+    ? db
+        .from(table as 'shows')
+        .update(patch as never)
+        .eq('id', id as string)
+        .is('updated_at', null)
+        .select(columns)
+    : db
+        .from(table as 'shows')
+        .update(patch as never)
+        .eq('id', id as string)
+        .eq('updated_at', version.expected)
+        .select(columns))
   if (error) return { error: error.message, row: null }
   if (!Array.isArray(data) || data.length === 0)
     return { error: SAVE_CONFLICT, row: null }

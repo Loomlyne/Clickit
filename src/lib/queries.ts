@@ -1286,7 +1286,8 @@ export type PublicLegalPage = {
   content: string
   title_ar: string | null
   content_ar: string | null
-  /** The Arabic is shown on /ar only when true (legalPageForLocale); drafts are never read. */
+  /** The Arabic is shown on /ar only when true (legalPageForLocale). The draft columns are not
+   * selected here, and anon/authenticated cannot select them (column grant, 20261021120000). */
   ar_reviewed: boolean
   updated_at: string
 }

@@ -86,17 +86,21 @@ Item 12 (Koss 2026-10-21, question form):
 | 30 | workers.dev build with media on R2 ("flag on workers.dev") | controller, Koss's word | open |
 | 31 | name the draft test show (read only) | Koss | open |
 | 32 | approve the single live write of Phase 2 (draft show poster) | Koss | open |
-| 33 | Workers plan decision (priced question) | Koss | DUE: Task 4 early stop triggered |
-| 34 | approve the measurement sign-ins (before 31-32) | Koss | open |
+| 33 | Workers plan decision (priced question) | Koss | DECIDED 2026-10-21: "Stay Free, do the rebuild" (signed-out 02-21 pass failed every route, 02-CPU-REPORT.md). The caching rebuild belongs to session "Clickit /en CPU" on its own branch, PR to main after #29 |
+| 34 | approve the measurement sign-ins (before 31-32) | Koss | WAITS for the rebuild to land (measuring now would measure code about to change) |
+| 02-21 rest | signed-in rows, media Worker rows, local cron estimate | C or the rebuild session | WAITS for the rebuild to land |
 | 02-22 | gate, coverage, UAT (below), teardown | C + Koss (UAT) | open |
 | P3-8b | R2 upload sweep (uploads never finalised, Koss Option B): weekly `cleanup-media` dry run, then `R2_UPLOAD_SWEEP_DELETE` "off" → "on" | Koss's word, controller deploys with `--allow-upload-sweep-delete` | built 2026-10-21, ships "off" (dry run); flip after P3-8 and one read dry-run report (runbook P3-8b) |
 
 Notes:
+- CPU / cache / layout code belongs to the "Clickit /en CPU" session from 2026-10-21; this session (C) does not edit it. d43fd90 (locale-root 308) stays as it is. The Phase 3 cutover is gated on every public route measuring under 10 ms CPU (Workers Free) after the rebuild.
 - Cron placeholder (controller, 2026-10-20): PR #27 (Phase 6) adds `/api/cron/youtube-recheck`, which needs a daily Worker cron trigger. Whichever of Phase 2 / Phase 6 lands second wires it: one entry in `src/server/cron-schedule.ts` (cron map) plus the trigger in `wrangler.jsonc` `triggers.crons` at the Phase 3 cutover (crons stay `[]` until then). Phase 2 does not edit Phase 6 files.
 - PRs #27 (Phase 6) and #28 (Phase 4) landed on main (6d748ff, 9225d04) and are merged into this branch (f767ae7, 2026-10-21).
 - Phase 6 hand-offs to Phase 2: (b) the `youtube-recheck` route uses `cronAuthOk` and (c) `30 1 * * *` is in `CRON_ROUTES` (2026-10-21; `triggers.crons` stays `[]` until P3-8, which now lists all three). (a) done 2026-10-21 (Koss: go): `src/server/youtube/rate-limit.ts` now runs on `decideRateLimit` with the shared store, same keys and limits, fail closed (the four admin YouTube limits were fail open before); TODO removed. `src/server/youtube/bearer.ts` is now unused by the route (kept with its test).
 - Uploads never finalised (Koss chose Option B, 2026-10-21): swept by the weekly `cleanup-media` cron, after the rate_limits prune and before the Supabase sweep, fail-soft, reported as `r2UploadSweep` in every response. Minted upload keys only, older than 24 h (object `uploaded` and the key's mint time), no live reference (a failed reference read deletes nothing); variants go with their original, `_v/` variants of copied Supabase objects are never touched. Dry run unless `R2_UPLOAD_SWEEP_DELETE` is exactly "on"; deletes through `deleteIfUnreferenced` (references re-read right before). Runbook P3-8b.
 - Open decisions: pr-gate.yml triggers vs rule 4 (Phase 1 file); Phase 3 Q1-Q4 in `03-CUTOVER-DRAFT.md`.
+- PR #29 re-review, info item 6: no audit row records who ticked "Arabic reviewed" on a legal page (`upsertLegalPage` writes no `admin_audit_log` entry; the row keeps only `ar_reviewed` and `updated_at`). Consider one audit row per publish (admin id, page id, reviewed true/false), the way `deleteLegalPage` audits through `runAdminAction`. Not built; needs Koss's word.
+- PR #29 re-review, info item 7: `arabicMaxLengths` (`src/lib/admin/arabic-limits.ts`) reads zod schema internals to find each Arabic field's `.max()`; brittle on a zod upgrade: if the internal shape changes, `maxLengthOf` finds no max and the AI fill runs without a limit. `tests/unit/arabic-limits.test.ts` exercises it against the installed zod, so an upgrade should fail there first; the sturdier fix is plain limit constants next to the schemas. Not changed.
 
 ## Pending Koss signatures (copy)
 

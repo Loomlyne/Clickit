@@ -137,7 +137,7 @@ type ActionResult<T = unknown> = {
  */
 type VersionedResult<T = unknown> = ActionResult<T> & { updatedAt?: string }
 
-const withUpdatedAt = <R extends { success: boolean }>(r: R, version: RowVersion): R & { updatedAt?: string } =>
+const withUpdatedAt = <R extends { success: boolean }>(r: R, version: { next: string | null }): R & { updatedAt?: string } =>
   r.success && version.next ? { ...r, updatedAt: version.next } : r
 
 export type {
@@ -2440,7 +2440,8 @@ export async function updateShort(
     const idParsed = parseId(id, 'short')
     if (!idParsed.ok) return { success: false, error: idParsed.error }
     id = idParsed.value
-    const version = rowVersion(expectedUpdatedAt)
+    // shorts.updated_at is nullable: the drawer sends NULL_UPDATED_AT for a NULL row (re-review item 5).
+    const version = rowVersion(expectedUpdatedAt, { nullable: true })
     if (!version.ok) return { success: false, error: version.error }
     const parsed = shortSchema.parse(data)
     const admin = createAdminClient()
@@ -3048,12 +3049,19 @@ export async function deleteCastMember(id: string): Promise<ActionResult> {
 /** Admin editor row: published and draft Arabic plus the review flag (item 12, PR #29). */
 export type LegalPage = LegalPageRow
 
+/**
+ * The draft columns are not readable by anon or authenticated (column grant in migration
+ * 20261021120000), so the editor reads through the service client, after assertAdmin: this
+ * is an exported Server Action, callable by anyone who can reach the endpoint.
+ */
 export async function getLegalPages(): Promise<LegalPage[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
+  await assertAdmin()
+  const admin = createAdminClient()
+  const { data, error } = await admin
     .from('legal_pages')
     .select('id, slug, title, content, title_ar, content_ar, title_ar_draft, content_ar_draft, ar_reviewed, sort_order, updated_at')
     .order('sort_order', { ascending: true })
+  if (error) throw new Error(error.message)
   return (data ?? []) as LegalPage[]
 }
 
@@ -3068,10 +3076,11 @@ export async function upsertLegalPage(
 ): Promise<VersionedResult<LegalPage>> {
   try {
     const user = await assertAdmin()
-    const supabase = await createClient()
     const arabic = createArabicFiller(user.id)
+    // Service client: the core's pre-read and the RETURNING of its write include the draft
+    // columns, which the session (authenticated) role cannot select.
     const result = await upsertLegalPageCore(
-      supabase as unknown as AdminDb,
+      createAdminClient() as unknown as AdminDb,
       { fill: arabic.fill },
       raw,
       expectedUpdatedAt
