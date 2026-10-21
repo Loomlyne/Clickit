@@ -45,7 +45,7 @@ export default async function SupportPage() {
       id="support-top"
       className="px-4 pt-6 pb-16 sm:px-6 sm:pt-8 sm:pb-20 md:px-12"
     >
-      <div className="grid gap-px overflow-hidden rounded-[12px] border border-[var(--line)] bg-[var(--line)] lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid gap-px overflow-hidden rounded-card border border-[var(--line)] bg-[var(--line)] lg:grid-cols-[1.05fr_0.95fr]">
         {/* Left — info panel */}
         <div className="bg-[var(--bg-1)] p-6 sm:p-8 lg:p-10">
           <PageEyebrow className="mb-3 sm:mb-4">{t('pageTitle')}</PageEyebrow>
@@ -73,7 +73,7 @@ export default async function SupportPage() {
               ].map((color) => (
                 <div
                   key={color}
-                  className={`h-[3px] w-6 rounded-[1px] sm:w-8 ${color}`}
+                  className={`h-[3px] w-6 rounded-hairline sm:w-8 ${color}`}
                 />
               ))}
             </div>

@@ -59,7 +59,7 @@ export default async function ArchivePage() {
     <div className="space-y-5">
       <AdminPageHeader title={t('heading')} description={t('description')} />
 
-      <div className="border-brand-orange-safe/25 bg-brand-orange-safe/8 flex items-start gap-3 rounded-[12px] border px-4 py-3">
+      <div className="border-brand-orange-safe/25 bg-brand-orange-safe/8 flex items-start gap-3 rounded-card border px-4 py-3">
         <AlertTriangle className="text-brand-orange-safe mt-0.5 size-5 shrink-0" />
         <div className="text-[14px]">
           <p className="text-brand-orange-safe font-medium">

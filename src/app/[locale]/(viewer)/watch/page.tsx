@@ -130,7 +130,7 @@ export default async function WatchPage({
 
       {activeCategory && (
         <section className="px-4 pt-6 sm:px-10">
-          <div className="flex flex-col gap-3 rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 rounded-card border border-[var(--line)] bg-[var(--bg-1)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               {activeCategory.color && (
                 <span
@@ -169,7 +169,7 @@ export default async function WatchPage({
 
       {categorySlug && !activeCategory && (
         <section className="px-4 pt-8 sm:px-10">
-          <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] px-5 py-6 text-center">
+          <div className="rounded-card border border-[var(--line)] bg-[var(--bg-1)] px-5 py-6 text-center">
             <div className="mono mb-2 text-[var(--text-mute)]">
               {t('categoryNotFound')}
             </div>

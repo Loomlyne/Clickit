@@ -36,7 +36,7 @@ export function FeaturedShortsGrid({ shorts }: { shorts: ViewShort[] }) {
             onClick={() => setOverlayIdx(i)}
             onMouseEnter={() => prefetchShort(s.youtubeVideoId)}
             onTouchStart={() => prefetchShort(s.youtubeVideoId)}
-            className="group relative cursor-pointer overflow-hidden rounded-[var(--uis-r-media)] bg-[var(--bg-2)]"
+            className="group relative cursor-pointer overflow-hidden rounded-media bg-[var(--bg-2)]"
             style={{ aspectRatio: '9/16' }}
           >
             <Image

@@ -72,7 +72,7 @@ export function EpisodeTray({
         <Drawer.Content
           onMouseEnter={() => onSnapPointChange(WATCH_TRAY_SNAP_POINTS[1])}
           onMouseLeave={() => onSnapPointChange(WATCH_TRAY_SNAP_POINTS[0])}
-          className="fixed inset-x-0 bottom-0 z-30 flex h-[95dvh] max-h-[95dvh] flex-col rounded-t-[16px] border border-[var(--line)] bg-[var(--bg-1)]/95 text-[var(--text)] shadow-2xl backdrop-blur-xl outline-none"
+          className="fixed inset-x-0 bottom-0 z-30 flex h-[95dvh] max-h-[95dvh] flex-col rounded-t-panel border border-[var(--line)] bg-[var(--bg-1)]/95 text-[var(--text)] shadow-2xl backdrop-blur-xl outline-none"
         >
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="flex min-h-[72px] items-center gap-4 border-b border-[var(--line)] bg-[var(--bg-1)]/80 px-4 py-3 backdrop-blur-xl sm:px-8">
@@ -150,7 +150,7 @@ export function EpisodeTray({
                         episode.status !== 'published' || !episode.youtubeId
                       }
                       className={cn(
-                        'group flex h-fit w-[260px] shrink-0 flex-col rounded-[12px] border p-0 text-start transition sm:w-[360px] md:w-[400px]',
+                        'group flex h-fit w-[260px] shrink-0 flex-col rounded-card border p-0 text-start transition sm:w-[360px] md:w-[400px]',
                         isCurrent
                           ? 'border-[var(--primary)] bg-white/[0.06]'
                           : 'border-transparent bg-transparent hover:border-[var(--line-2)]',
@@ -164,7 +164,7 @@ export function EpisodeTray({
                         brandColor={brandColor}
                         title={episode.title}
                         imageUrl={thumbnailUrl}
-                        className="w-full rounded-[11px]"
+                        className="w-full rounded-media"
                       >
                         <div className="flex h-full items-center justify-center bg-black/20 opacity-0 transition group-hover:opacity-100">
                           <span className="flex size-12 items-center justify-center rounded-full bg-black/65">

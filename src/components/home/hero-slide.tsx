@@ -60,7 +60,7 @@ export function HeroSlide({
         className="pointer-events-none absolute inset-0"
         style={{
           background: `
-            linear-gradient(90deg, rgba(10,10,10,0.9) 0%, rgba(10,10,10,0.5) 40%, transparent 70%),
+            linear-gradient(90deg, rgb(var(--ink-legacy-rgb) / 0.9) 0%, rgb(var(--ink-legacy-rgb) / 0.5) 40%, transparent 70%),
             linear-gradient(180deg, transparent 40%, var(--bg-0) 98%)
           `,
         }}

@@ -266,7 +266,7 @@ export function WatchShell({
 
       {/* Auto-hide chrome, top overlay strip */}
       <div
-        className={`fixed top-0 right-0 left-0 z-20 flex items-center justify-between border-b border-[var(--line)] bg-[var(--bg-0)]/90 px-4 [padding-top:max(1rem,env(safe-area-inset-top))] pb-8 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.65)] backdrop-blur-md transition-opacity duration-200 ease-in-out ${chromeClass}`}
+        className={`fixed top-0 right-0 left-0 z-20 flex items-center justify-between border-b border-[var(--line)] bg-[var(--bg-0)]/90 px-4 [padding-top:max(1rem,env(safe-area-inset-top))] pb-8 shadow-bar backdrop-blur-md transition-opacity duration-200 ease-in-out ${chromeClass}`}
         inert={isIdle}
       >
         {/* Left: back to show */}

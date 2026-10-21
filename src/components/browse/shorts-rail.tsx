@@ -61,7 +61,7 @@ export function ShortsRail({ shorts }: ShortsRailProps) {
               onClick={() => setOverlayIdx(i)}
               onMouseEnter={() => prefetchShort(s.youtubeVideoId)}
               onTouchStart={() => prefetchShort(s.youtubeVideoId)}
-              className="group focus-visible:ring-ring relative block shrink-0 cursor-pointer overflow-hidden rounded-[11px] bg-[var(--bg-2)] text-start focus-visible:ring-2 focus-visible:outline-none"
+              className="group focus-visible:ring-ring relative block shrink-0 cursor-pointer overflow-hidden rounded-media bg-[var(--bg-2)] text-start focus-visible:ring-2 focus-visible:outline-none"
               style={{ width: 180, aspectRatio: '9/16' }}
             >
               {getThumbnailUrl(s) ? (

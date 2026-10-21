@@ -230,7 +230,7 @@ export function ShortsOverlay({
       {/* Main card — YouTube Short embed */}
       <div className="flex w-full max-w-[380px] flex-col items-center gap-3 px-4 lg:px-0">
         <div
-          className="relative w-full overflow-hidden rounded-[10px] shadow-[0_40px_120px_rgba(0,0,0,0.6)]"
+          className="relative w-full overflow-hidden rounded-xl shadow-modal"
           style={{ aspectRatio: '9/16' }}
         >
           <iframe

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-20T00:46:09.831Z"
+last_updated: "2026-10-20T22:23:18.983Z"
 last_activity: 2026-10-20
 progress:
   total_phases: 9
-  completed_phases: 0
-  total_plans: 13
-  completed_plans: 12
-  percent: 0
+  completed_phases: 2
+  total_plans: 31
+  completed_plans: 24
+  percent: 22
 ---
 
 # Project State
@@ -20,16 +20,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-04)
 
 **Core value:** A signed-in viewer opens a show and an episode from YouTube plays immediately, with progress remembered — and the admin can put a whole YouTube season on the platform from one playlist link.
-**Current focus:** Phase 01.1 — admin-actions-hardening-inserted
+**Current focus:** Phase 4 — Design System Truth
 
 ## Current Position
 
-Phase: 01.1 (admin-actions-hardening-inserted) — UAT PASSED, awaiting PR review and Ship
-Plan: 13 of 13
-Status: UAT passed (Koss, 2026-10-20; step 14 upload-audit gap to backlog) — merged origin/main cfbc8fb for landing
-Last activity: 2026-10-20 - Completed quick task 261020-ej8 on main: Apply UI System ui.config.json tokens to Clickit
+Phase: 4 (Design System Truth) — EXECUTING
+Plan: 7 of 14
+Status: Ready to execute
+Last activity: 2026-10-20
 
-Progress: [█████████░] 92%
+Progress: [████████░░] 77%
 
 ## Performance Metrics
 
@@ -58,6 +58,12 @@ Progress: [█████████░] 92%
 | Phase 01.1 P10 | 25min | 3 tasks | 4 files |
 | Phase 01.1 P11 | 30min | 3 tasks | 3 files |
 | Phase 01.1 P12 | 40min | 3 tasks | 5 files |
+| Phase 04 P01 | 25min | 3 tasks | 7 files |
+| Phase 04 P02 | 12min | 2 tasks | 3 files |
+| Phase 04 P03 | 15min | 4 tasks | 8 files |
+| Phase 04 P04 | 15min | 3 tasks | 8 files |
+| Phase 04 P05 | 8min | 2 tasks | 6 files |
+| Phase 04 P06 | 5min | 4 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -75,6 +81,9 @@ Recent decisions affecting current work:
 - [Phase 01.1]: runAdminAction revalidates in finally on success/wrote/throw; revalidate errors logged only
 - [Phase 01.1]: Plan 11: revalidation show id comes from core result; client id only as UUID-checked fallback
 - [Phase 01.1]: Hero cores share one tail: audit row written before staged media deletion commits; audit failure restores config and rolls back
+- [Phase 04-01]: Named shadows in @theme static (not self-referencing @theme inline); radius scale moved to @theme static with --radius-hairline; shadow-bar added for watch-shell
+- [Phase 04]: Phase 04-03: Q4=A, category colours stay free content; Desert Sand (brand-yellow) is genre/category default only, shows keep 5 brand values
+- [Phase 4]: Phase 4 Plan 04: admin design-system summary compares canonicalCssValue(live) with resolved signed values; fonts excluded from the count (next/font hashes the family)
 
 ### Pending Todos
 
@@ -86,7 +95,6 @@ None yet.
 - Owner decisions pending (pricing, not assumed): Workers Paid $5/mo if Free CPU fails (Phase 2); Image Transformations stays on the free tier only.
 - Stray Cloudflare NS pair (ignat/nataly) must be resolved before any NS change (Phase 1).
 - Live migration state and `private.is_admin()` presence unverified — read-only audit in Phase 1 before any schema ship.
-
 
 ### Quick Tasks Completed
 
@@ -115,6 +123,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-20T00:46:09.826Z
-Stopped at: Completed 01.1-12-PLAN.md
+Last session: 2026-10-20T22:23:18.977Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None

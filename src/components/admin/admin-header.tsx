@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   Menu,
   MessageSquare,
+  Palette,
   ScrollText,
   Settings,
   Tags,
@@ -42,6 +43,7 @@ export function AdminHeader() {
   const pathname = usePathname()
   const router = useRouter()
   const t = useTranslations('admin.dashboard')
+  const tDs = useTranslations('admin.designSystem')
   const tNav = useTranslations('nav')
   const tAdmin = useTranslations('admin.common')
   const prefetched = useRef(new Set<string>())
@@ -72,10 +74,11 @@ export function AdminHeader() {
           { label: t('archive'), href: '/admin/archive', icon: Archive },
           { label: t('settings'), href: '/admin/settings', icon: Settings },
           { label: t('audit'), href: '/admin/audit', icon: ScrollText },
+          { label: tDs('navLabel'), href: '/admin/design-system', icon: Palette },
         ],
       },
     ],
-    [t]
+    [t, tDs]
   )
 
   const allHrefs = useMemo(
@@ -173,7 +176,7 @@ export function AdminHeader() {
           onMouseEnter={() => prefetchRoute('/profile')}
           onTouchStart={() => prefetchRoute('/profile')}
           prefetch
-          className="m-3 flex min-h-11 items-center gap-3 rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] px-3 py-2 text-[13px] font-medium text-[var(--text)] transition-colors hover:bg-[var(--bg-2)]"
+          className="m-3 flex min-h-11 items-center gap-3 rounded-card border border-[var(--line)] bg-[var(--bg-1)] px-3 py-2 text-[13px] font-medium text-[var(--text)] transition-colors hover:bg-[var(--bg-2)]"
         >
           <span className="flex size-8 items-center justify-center rounded-full bg-[var(--primary)] text-[var(--primary-foreground)]">
             <User className="size-4" aria-hidden />

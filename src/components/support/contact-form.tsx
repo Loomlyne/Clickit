@@ -210,7 +210,7 @@ export function ContactForm() {
 
       <div role="status">
         {submitState === 'saved_email_failed' && (
-          <p className="border-brand-orange-safe/35 bg-brand-orange-safe/10 rounded-[12px] border px-3.5 py-3 text-sm leading-snug text-[var(--text)]">
+          <p className="border-brand-orange-safe/35 bg-brand-orange-safe/10 rounded-card border px-3.5 py-3 text-sm leading-snug text-[var(--text)]">
             {t('savedEmailFailedInline')}
           </p>
         )}

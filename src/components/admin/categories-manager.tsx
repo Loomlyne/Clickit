@@ -39,6 +39,11 @@ import {
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { generateSlug } from '@/lib/slug'
+import {
+  CATEGORY_HEX_PLACEHOLDER,
+  COLOR_INPUT_EMPTY_HEX,
+  COLOR_PICKER_RAINBOW,
+} from '@/lib/brand-colors'
 import type { Database } from '@/lib/database.types'
 
 type CategoryRecord = Database['public']['Tables']['categories']['Row'] & {
@@ -108,12 +113,12 @@ function ColorPicker({
             style={{
               background:
                 previewColor ??
-                'conic-gradient(from 0deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)',
+                COLOR_PICKER_RAINBOW,
             }}
           />
           <input
             type="color"
-            value={previewColor ?? '#000000'}
+            value={previewColor ?? COLOR_INPUT_EMPTY_HEX}
             onChange={handleNativeColor}
             className="absolute inset-0 cursor-pointer opacity-0"
             aria-label={t('colorPickerOpen')}
@@ -123,7 +128,7 @@ function ColorPicker({
         <Input
           value={rawInput}
           onChange={handleTextChange}
-          placeholder="#F8C623"
+          placeholder={CATEGORY_HEX_PLACEHOLDER}
           maxLength={7}
           className="w-32 font-mono text-sm"
           aria-label={t('colorHexAria')}
