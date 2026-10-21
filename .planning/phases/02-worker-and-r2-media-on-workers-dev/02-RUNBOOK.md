@@ -91,6 +91,8 @@ Then wait.
 
 ### First workers.dev deploy (remote spike)
 
+> **Migration gate before ANY app-Worker deploy of the PR #29 code (Step 12 redeploys, Step 30, every later "deploy workers.dev"):** migration `supabase/migrations/20261021120000_legal_pages_arabic_review.sql` must already be live: applied through `apply-live-migrations.yml` (from main, after Koss's approval of the dry run) and read back read-only (`legal_pages` has `ar_reviewed`, `title_ar_draft`, `content_ar_draft`; anon cannot select the two draft columns). The public legal query selects `ar_reviewed`, so without the migration `/legal/*`, `/terms` and `/privacy` return 404. The controller checks this before it runs the deploy command; no migration read-back, no deploy.
+
 **Step 12 [CONTROL] - first deploy of the app Worker, media flag off**
 Trigger: Koss writes "deploy workers.dev" (the same word for every app-Worker deploy in Phase 2, including redeploys).
 Command (control session, in a checkout of the pushed phase-branch commit the work session names): `npm run cf:deploy:workersdev -- --media-flag off`
@@ -199,6 +201,7 @@ Then wait.
 
 **Step 30 [CONTROL] - workers.dev build with media on R2**
 Trigger: Step 29 printed 0 failures AND Koss writes "flag on workers.dev".
+Pre-check: migration 20261021120000 (legal pages Arabic review) is live and read back (migration gate above Step 12). Not live: stop, no deploy.
 Command: `npm run cf:deploy:workersdev -- --media-flag verified --media-origin https://clickit-media.<SUB>.workers.dev --verify-report .tmp/r2-media-reports/verify-<timestamp>.json`
 Expected: the guard checks the verify report (same manifest, object count equal, 0 failures) before building; the build sets `NEXT_PUBLIC_MEDIA_CUTOVER_READY=verified` and `NEXT_PUBLIC_MEDIA_ORIGIN` for this target only. Images on `https://clickit.<SUB>.workers.dev/en` load from `clickit-media.<SUB>.workers.dev`. No Vercel build ever gets this flag.
 Then wait.
@@ -237,6 +240,7 @@ Then wait.
 Do not run any step in Part B during Phase 2. Each becomes a numbered step in the Phase 3 runbook with its own commands and expected output. Order matters.
 
 - **P3-pre-cpu (Phase 3, not now, cutover gate, Koss 2026-10-21)** After the caching rebuild lands and is deployed to workers.dev, re-run the 02-21 measurement: every public route must be under 10 ms CPU (Workers Free, p95 of warm requests, no `exceededCpu`). The cutover does not start until this passes.
+- **P3-pre-migration (Phase 3, not now, cutover gate, before ANY cutover deploy)** Migration `supabase/migrations/20261021120000_legal_pages_arabic_review.sql` must be live BEFORE any deploy of this code to www or the custom domains: applied through `apply-live-migrations.yml` with Koss's approval of the dry run, then read back read-only (`ar_reviewed`, `title_ar_draft`, `content_ar_draft` present; anon refused on the draft columns). The public legal query selects `ar_reviewed`: without the migration every legal page answers 404. Already applied for the workers.dev deploys in Part A: read it back again anyway.
 - **P3-pre-max-rows (Phase 3, not now, pre-cutover check, read-only)** Confirm the live Supabase PostgREST `max_rows` is at least 1000: supabase.com dashboard, project `lajguozmtissnnfccmej`, Settings, API, Max rows. Koss reads it, or a session reads it through a read-only path. No change is needed; Phase 6's `readAllPages` relies on pages of up to 1000 rows. If it shows less than 1000, stop and tell the controller (added 2026-10-21 at the controller's request). **Done 2026-10-21: Koss read Max rows = 1000 (passes).**
 - **P3-1 (Phase 3, not now)** Resolve the stray Cloudflare NS pair `ignat`/`nataly` (SAFE-05, Phase 1 item): find the owning account or rule it out. Must close before P3-3.
 - **P3-2 (Phase 3, not now)** Add the zone `clickitstory.ae` to the ClickitStory account (Free plan) and re-create every current record DNS-only first (Vercel records and Resend records unchanged), compared line by line with the live zone at tasjeel.
