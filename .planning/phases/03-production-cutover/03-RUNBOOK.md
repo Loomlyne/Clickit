@@ -337,7 +337,7 @@ Command:
 3. `node scripts/cf/check-gates.mjs --base https://clickit.clickitstory.workers.dev`
 4. `node scripts/cutover/keys-check.mjs --expect legacy-on --legacy-ip 216.198.79.1 --worker-site https://clickit.clickitstory.workers.dev`
 5. `node scripts/cutover/proof-check.mjs --expect vercel --vercel-ip 216.198.79.1 --site-path /en/portfolio` (public www still Vercel).
-Expected: 1 `proof-check worker: ALL PASS`. 2 `proof-check worker: ALL PASS`; if it still shows `x-vercel-id` the route did not fire for a grey record (research A1): log "route not fired for a grey record (A1): the flip is the first real test" and continue only with Koss's word. 3 `ALL PASS` (log `check-gates workers.dev: ALL PASS`; see 03-GATES.md section 9 item 1: check-gates must accept the locale-root 308 before this step). 4 `PASS keys legacy-on: legacy 200, publishable 200` and `keys-check legacy-on: ALL PASS`. 5 `proof-check vercel: ALL PASS`.
+Expected: 1 `proof-check worker: ALL PASS`. 2 `proof-check worker: ALL PASS`; if it still shows `x-vercel-id` the route did not fire for a grey record (research A1): log "route not fired for a grey record (A1): the flip is the first real test" and continue only with Koss's word. 3 `ALL PASS` (log `check-gates workers.dev: ALL PASS`; see 03-GATES.md section 9 item 1: check-gates must accept the locale-root 308 before this step). 4 `PASS keys legacy-on: legacy 200, publishable 200` and `keys-check legacy-on: ALL PASS`. 5 `proof-check vercel: ALL PASS`. (The check-gates 308 finding is fixed in cfafdb6.)
 Rollback: none (read-only).
 Then wait.
 

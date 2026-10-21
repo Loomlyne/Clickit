@@ -58,7 +58,7 @@ exit=1
 
 ## Open items for the controller
 
-1. **check-gates vs the locale-root 308 (blocks Step 28's `ALL PASS`).** `scripts/cf/check-gates.mjs` wants `GET /en` and `GET /ar` to answer 200; the app answers 308 to `/<locale>/portfolio` since 02-21. A small reviewed fix on its own branch before Step 28 (03-GATES.md section 9 item 1, `deferred-items.md`). Not fixed in this PR (03-06 was writing-only; Phase 2 file).
+1. **check-gates vs the locale-root 308 (blocks Step 28's `ALL PASS`).** `scripts/cf/check-gates.mjs` wants `GET /en` and `GET /ar` to answer 200; the app answers 308 to `/<locale>/portfolio` since 02-21. A small reviewed fix on its own branch before Step 28 (03-GATES.md section 9 item 1, `deferred-items.md`). Not fixed in this PR (03-06 was writing-only; Phase 2 file). **FIXED in this branch (cfafdb6): check-gates accepts the locale-root 308 and probes `/<locale>/portfolio` for 200.**
 2. `.planning/handovers/r2-media-copy.md` needs the "superseded for re-sync" header line (03-GATES.md section 8). The CLAUDE.local.md half of G7 is already applied.
 3. Steps 23 and 42 are the first live checks of `rollback.mjs --verify-token` (user token required) and of keys-check's exact-401 rule (a 403 is a finding for Koss).
 4. ROADMAP and REQUIREMENTS: no DNS-*, MAIL-*, MEDIA-* or PLAT-* requirement is ticked; they close with the ops plans (03-07 … 03-13). The signed rewording lines wait in 03-GATES.md section 7.
