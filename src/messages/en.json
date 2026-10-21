@@ -104,6 +104,7 @@
     "accountCreated": "Account created! Welcome to Clickit Story.",
     "termsAccept": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
     "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "callbackError": "Could not verify your identity",
     "googleSSOComingSoon": "Google SSO coming soon",
     "appleSSOComingSoon": "Apple SSO coming soon",

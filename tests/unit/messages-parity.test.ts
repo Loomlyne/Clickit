@@ -51,7 +51,7 @@ const PHASE5_KEYS: string[] = [
     'mfaCodeWrong', 'mfaTooMany', 'mfaEnrolFailed', 'mfaSecondTitle',
     'mfaSecondSub', 'mfaSecondAdd', 'mfaSecondSkip', 'mfaDoneTitle',
     'mfaDoneOpen', 'mfaVerifyTitle', 'mfaVerifySub', 'mfaStaleNote',
-    'mfaLostPhone',
+    'mfaLostPhone', 'hidePassword',
   ].map((k) => `auth.${k}`),
   // profile additions
   ...[
