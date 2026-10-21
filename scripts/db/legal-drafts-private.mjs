@@ -41,11 +41,15 @@ export const CHECKS = [
   { role: 'service_role', expect: 'allow', sql: 'select title_ar_draft, content_ar_draft from public.legal_pages limit 1' },
 ]
 
+/** Record separator for psql's unaligned output: legal page bodies contain newlines. */
+export const RECORD_SEPARATOR = '\u001e'
+
 /** docker exec arguments: one psql session, role switched, then the one query. */
 export function psqlArgs(check) {
   return [
     'exec', CLICKIT_DB_CONTAINER, 'psql',
     '-U', 'postgres', '-d', 'postgres', '-X', '-q', '-At',
+    '-R', RECORD_SEPARATOR,
     '-v', 'ON_ERROR_STOP=1',
     '-c', `set role ${check.role}`,
     '-c', check.sql,
@@ -70,12 +74,12 @@ export function evaluate(check, res) {
   }
   if (res.status !== 0) return { ok: false, detail: firstError(res.stderr) }
   if (check.expectOut !== undefined) {
-    const out = String(res.stdout ?? '').trim()
+    const out = String(res.stdout ?? '').split(RECORD_SEPARATOR).join('').trim()
     return out === check.expectOut
       ? { ok: true, detail: `returned ${out}` }
       : { ok: false, detail: `returned ${out.slice(0, 20)} (expected ${check.expectOut})` }
   }
-  const rows = String(res.stdout ?? '').split('\n').filter((l) => l !== '').length
+  const rows = String(res.stdout ?? '').replace(/\n$/, '').split(RECORD_SEPARATOR).filter((r) => r !== '').length
   return { ok: true, detail: `read ok (${rows} row${rows === 1 ? '' : 's'})` }
 }
 

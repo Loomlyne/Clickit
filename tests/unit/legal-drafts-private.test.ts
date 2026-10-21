@@ -9,6 +9,7 @@ import {
   CHECKS,
   CLICKIT_DB_CONTAINER,
   MIGRATION_VERSION,
+  RECORD_SEPARATOR,
   evaluate,
   psqlArgs,
 } from '../../scripts/db/legal-drafts-private.mjs'
@@ -21,6 +22,8 @@ test('only the Clickit stack: the container is pinned', () => {
   const args = psqlArgs({ role: 'anon', sql: 'select 1' })
   assert.deepEqual(args.slice(0, 3), ['exec', CLICKIT_DB_CONTAINER, 'psql'])
   assert.ok(args.includes('ON_ERROR_STOP=1'))
+  // Rows are split on a record separator, not newlines (legal bodies are multi-line).
+  assert.equal(args[args.indexOf('-R') + 1], RECORD_SEPARATOR)
   // The role is switched in the same session as the query.
   assert.ok(args.includes('set role anon'))
   assert.equal(args.at(-1), 'select 1')
@@ -57,6 +60,8 @@ test('evaluate: deny passes only on permission denied; allow needs exit 0 (and t
   assert.equal(evaluate(deny, { status: 2, stdout: '', stderr: 'could not connect' }).ok, false)
   const allow = { role: 'anon', expect: 'allow', sql: 'select title from public.legal_pages' }
   assert.equal(evaluate(allow, { status: 0, stdout: 'Terms of Use', stderr: '' }).ok, true)
+  const multiLine = evaluate(allow, { status: 0, stdout: `Terms\nline 2\nline 3${RECORD_SEPARATOR}Privacy\nline 2\n`, stderr: '' })
+  assert.equal(multiLine.detail, 'read ok (2 rows)')
   assert.equal(evaluate(allow, { status: 1, stdout: '', stderr: 'ERROR:  permission denied for table legal_pages' }).ok, false)
   const exact = { role: 'postgres', expect: 'allow', sql: 'select 1', expectOut: 'O' }
   assert.equal(evaluate(exact, { status: 0, stdout: 'O\n', stderr: '' }).ok, true)
