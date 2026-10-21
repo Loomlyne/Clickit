@@ -214,7 +214,8 @@ export const DEFAULT_TOP_TICKER: TopTickerConfig = {
 // getAppConfig() — cached public read.
 //
 // - Uses the cookie-free createPublicClient (unstable_cache forbids next/headers).
-// - NEVER selects youtube_api_key (column privilege revoked for anon/auth).
+// - NEVER selects the YouTube key: it lives in Supabase Vault and only the
+//   service role reads it (src/server/youtube-key.ts, D-20).
 // - Tagged 'site-config' (same tag as getHeroVideo) so one updateTag call
 //   invalidates the whole site config on save.
 // ---------------------------------------------------------------------------
@@ -227,8 +228,8 @@ export const DEFAULT_TOP_TICKER: TopTickerConfig = {
 export const getAppConfig = cache(unstable_cache(
   async (): Promise<AppConfig> => {
     const supabase = createPublicClient()
-    // Select every non-sensitive column explicitly. youtube_api_key is
-    // deliberately omitted.
+    // Select every non-sensitive column explicitly. The YouTube key is not in
+    // this table (Supabase Vault, D-20).
     const { data } = await supabase
       .from('app_config')
       .select(
@@ -456,23 +457,4 @@ function mergeTopTicker(v: unknown): TopTickerConfig {
     enabled,
     items: items.length > 0 ? items : DEFAULT_TOP_TICKER.items,
   }
-}
-
-// ---------------------------------------------------------------------------
-// Admin-only helper: reads the server-side-only youtube_api_key.
-// Called from server actions / API routes that run with service-role access
-// OR from the admin-authenticated supabase server client.
-// ---------------------------------------------------------------------------
-
-export async function getYouTubeApiKey(): Promise<string | null> {
-  // Uses the admin client (service role) to bypass the column REVOKE.
-  const { createAdminClient } = await import('@/lib/supabase/admin')
-  const supabase = createAdminClient()
-  const { data } = await supabase
-    .from('app_config')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .select('youtube_api_key' as any)
-    .eq('id', 1)
-    .single<{ youtube_api_key: string | null }>()
-  return data?.youtube_api_key ?? null
 }

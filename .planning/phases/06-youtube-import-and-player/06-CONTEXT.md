@@ -1,0 +1,145 @@
+# Phase 6: YouTube Import and Player - Context
+
+**Gathered:** 2026-10-20
+**Status:** Ready for planning
+**Signed:** Koss, 2026-10-20 ("signed continue" on `06-DISCUSS-QUESTIONS.md`): every question answered with its recommended option (A). Pictures: `mockups/06-q*.png`. Plan gate (via controller, 2026-10-20): G2, G4 as recommended; G5 and G6 changed (D-22, D-15/D-20).
+
+<domain>
+## Phase Boundary
+
+An admin puts a whole YouTube season on the platform from one playlist link (preview, then commit, drafts only), or adds one episode from one link with server-side validation. The YouTube API key moves to a Cloudflare Worker secret and the database copy is removed. Viewers switching episodes resume each episode's own position, in a watch page where nothing is drawn over the playing YouTube player, with player language and captions following the site locale and branded error states. Episode reorder never leaves gaps or duplicates and reports errors. Requirements YT-01 to YT-07.
+
+Built against main as it will be after Phases 2–5: Cloudflare Workers via OpenNext, R2 media, `requireAdmin` and the two-admin audit from Phase 5.
+
+</domain>
+
+<decisions>
+## Implementation Decisions
+
+### Playlist import (YT-01, YT-02)
+- **D-01 (Q1):** Import is a side sheet opened from the show's admin page ("Import season from YouTube"). Table, one row per video: tick box, thumbnail, title, length, status chip. Unplayable rows are unticked, greyed and carry the reason. Nothing is saved until "Import N episodes as drafts". Picture: `mockups/06-q1.png` option A.
+- **D-02 (Q2):** The admin picks the target: a new season (default; season title prefilled from the playlist title, editable) or an existing season, where new videos are appended after its last episode.
+- **D-03 (Q3):** Playlist order sets episode order. Numbers continue after the season's last episode (empty new season starts at 1). No title parsing.
+- **D-04 (Q4):** YouTube text goes into the field matching its script: Arabic script → `title_ar`/`description_ar`; otherwise → `title`/`description`. `title` is NOT NULL, so for Arabic-only titles `title` temporarily holds the same text and the draft shows a "Needs English title" mark until an admin edits it. No machine translation.
+- **D-05 (Q5):** Re-importing a playlist offers only videos not yet on Clickit, as drafts. Existing episodes are never touched (admin edits stay). Videos removed from the playlist stay on Clickit.
+- **D-06 (Q6):** Admins upload not-yet-released episodes as **Unlisted** on YouTube; Clickit's scheduler decides when viewers see them. Private videos are refused with "Set it to Unlisted or Public, then import again".
+- **D-07 (Q7):** The import success state has a "Schedule these N episodes" button that opens the existing bulk scheduler with the new drafts selected.
+
+### Player (YT-05, YT-06)
+- **D-08 (Q8):** Watch page becomes stacked: solid top bar above the video; the video at 16:9 (letterboxed in black when the screen is wider); a control bar under it (previous, title, next, "Start from the beginning"); episodes under that. Same order on phones. No element overlaps the iframe at any time, including the tray (no hover raise over the player), the prev/next arrows and the top bar. Picture: `mockups/06-q8.png` option A (desktop and 375px).
+- **D-09 (Q9, CHANGED by Koss at plan gate G1 = B, 2026-10-20):** Shipped default `ENDED_MODE = 'bar'`. On ENDED the ended video and YouTube's own end screen stay visible; nothing is drawn on the player. The control bar under the video turns into an "Up next" strip with the 8-second countdown, "Play now" and "Cancel". Cancel returns the bar to normal ("Finished" + Next episode). Reduced motion: no countdown, no auto-advance. Last episode: "You've finished {show}" in the bar. The card mode (`'card'`, the earlier signed Q9 A) stays only as the alternative constant. Pictures: `mockups/06-g1-b.png`, `06-g1-b-states.png`.
+- **D-10 (Q10):** Switching episodes resumes silently at the episode's saved position; the control bar shows "Resumed at m:ss · Start from the beginning". Episodes at ≥95% (completed) start at 0:00.
+- **D-11 (Q11):** Player errors (100, 101, 150, 5, 2, and the region-blocked case) replace the player with a branded card: "This episode can't play right now", plain reason, "Play next episode", "Back to the show". The episode is flagged for admins (D-17). Picture: `mockups/06-q11.png` option A.
+- **D-12 (Q12):** Captions: English site → English captions on when the video has them; Arabic site → captions follow the viewer's YouTube setting. Player UI language (`hl`) follows the site locale on both.
+
+### Episode order (YT-07)
+- **D-13 (Q13):** Keep up/down arrows, saved on each click. Picture: `mockups/06-q13.png` option A.
+- **D-14 (Q14):** Up/down swaps with the nearest episode in the season, whatever its number. Archive/delete does not renumber. A "Renumber 1 to N" action closes gaps on purpose, with a confirm and an audit row.
+- **D-19 (Q19):** Reorder and renumber run as one all-or-nothing database function (`reorder_episodes` / `renumber_season` or equivalent), shipped in the same reviewed Phase 6 migration. This is a deliberate exception to Phase 1.1 D-05 (app-level compensation), for these two operations only.
+
+### YouTube key and checks (YT-04)
+- **D-15 (Q15, CHANGED by Koss at plan gate G6, 2026-10-20):** Admin › Settings has an editable YouTube key field. Admins paste or change the key at any time; it works on the next request with no redeploy. The field is masked with a right-side show/hide eye; after saving it shows only `••••` + the last 4 characters (never the full key again). "Test key" sits next to the field (one `videos.list` call, 1 unit) with last test time and result. States: Key missing (empty), editing (masked, eye), saved (`••••abcd`), Test ok / Test failed. Pictures: `mockups/06-g6-key-*.png`. Supersedes the read-only status from Q15 and the Worker-secret storage.
+- **D-20 (G6):** Key storage is server-side only, in Supabase Vault (`vault.create_secret` / `vault.update_secret`, one named secret `youtube_api_key`). It is read only through a `SECURITY DEFINER` function (fixed `search_path`) that only `service_role` can execute; it is written through a second `SECURITY DEFINER` function, also `service_role`-only, called by an admin-only server action that checks the admin role on the server (`requireAdmin`). No client role (`anon`, `authenticated`) can read it, through PostgREST or any view. The read function returns the plaintext only to server code; the UI only ever receives `hasKey` + `last4`. The key is cached at most per request (no module-level cache), so a change applies on the next request. Both functions go into migration 1. The old `app_config.youtube_api_key` column is still nulled and dropped by migration 2 (G4). No Worker secret for this key.
+- **D-16 (Q16, amended G6):** New key is created in the Clickit Google account (owner of the YouTube channel), Google Cloud project "clickit-story", restricted by API to YouTube Data API v3 only. Koss pastes it into Admin › Settings on live and presses Test key; the old key is then deleted in Google Cloud. The key never appears in chat, a repo file, logs or an audit row (audit records only "key changed" + last 4).
+- **D-17 (Q17):** Daily Cloudflare Cron Trigger re-checks every stored episode video (batched `videos.list`, ≤50 ids per call, about 6 units/day for ~300 episodes), refreshes stored YouTube status and length (meets the 30-day Developer Policies refresh), and marks broken episodes with a red "Can't play" badge in admin plus a dashboard count. Viewer player-error reports (D-11) feed the same flag. Nothing is unpublished automatically. ~~**Signed G2:** the check refreshes status, length and checked-at only; never titles or descriptions.~~ **CHANGED by Koss 2026-10-20 (PR #27 review item 7): refresh unless edited.** The check also brings the YouTube text up to date: episode title, Arabic title, description and Arabic description (sorted by script the same way the import does it), and a short's title, channel name and picture. It skips any field an admin changed on Clickit; each such field remembers that it was edited (an "edited" mark per field) and stays edited. Empty text on YouTube never empties a field on Clickit. The first check of an episode or short changes no text: it only marks the fields that already differ from YouTube as edited, so text typed before this change is kept. Episode pictures are built from the video id, so there is nothing to refresh. It still never unpublishes anything.
+- **D-21 (G4):** Two migrations: migration 1 (new columns, unique index on `youtube_video_id`, renumber function, Vault key functions) before deploy; migration 2 (drop `app_config.youtube_api_key`) in its own PR after Test key passes on live.
+- **D-22 (G5, CHANGED by Koss 2026-10-20):** If the controller's pre-migration read finds one YouTube video id on more than one episode, the newest row (latest `updated_at`) keeps the id and the older row(s) get `youtube_video_id = null` automatically. Koss gave his word for this live clear in advance. The controller first writes every affected row (id, show, season/episode, video id, updated_at) to the run log, then clears, then reads back that no duplicate remains. This is a controller step, never an executor step.
+
+### Jev
+- **D-18 (Q18):** No Jev call in Phase 6. Idea kept in Deferred.
+
+### Claude's Discretion (listed in the questions file, not objected to)
+- Thumbnails stay on `i.ytimg.com` (`unoptimized`, maxres → standard → high fallback), not copied to R2.
+- Dedupe across the whole catalog: a video already on any show/season is "Already on Clickit" and not imported again. Database uniqueness on `youtube_video_id` (or equivalent) backs this; exact constraint chosen in planning.
+- Paging past 50 via `nextPageToken`; `videos.list` batched with `part=snippet,contentDetails,status`; `search.list` never used.
+- Status rules: `privacyStatus=private` → Private; missing item → Removed; `status.embeddable=false` → Not embeddable; `contentDetails.regionRestriction` blocks `AE` (blocked list contains AE, or allowed list lacks AE) → Blocked in UAE; `uploadStatus≠processed` or live/upcoming broadcast → Not ready.
+- The playlist must be Public or Unlisted; a private playlist error is shown in the sheet.
+- Every import and single add writes an audit row (admin, playlist id, episode count).
+- Single-link add keeps today's episode form: paste → title/description/length fill in; save re-validates on the server (`^[A-Za-z0-9_-]{11}$`, then API existence, privacy, embeddable, AE region) and refuses with a plain message.
+- Keep `Referrer-Policy: strict-origin-when-cross-origin` (error 153 otherwise), one playing YouTube player per page, player ≥200×200.
+
+</decisions>
+
+<canonical_refs>
+## Canonical References
+
+**Downstream agents MUST read these before planning or implementing.**
+
+### Phase scope and decisions
+- `.planning/ROADMAP.md` §"Phase 6: YouTube Import and Player" — goal, success criteria, owner gates
+- `.planning/REQUIREMENTS.md` — YT-01 … YT-07
+- `.planning/phases/06-youtube-import-and-player/06-DISCUSS-QUESTIONS.md` — the signed questions, with examples
+- `.planning/phases/06-youtube-import-and-player/mockups/06-mockups.html` and `06-q1.png`, `06-q8.png`, `06-q9.png`, `06-q11.png`, `06-q13.png`, `06-q15.png` — signed pictures (option A in each)
+- `.planning/phases/01.1-admin-actions-hardening-inserted/01.1-CONTEXT.md` — D-05 app-level compensation (Phase 6 D-19 is the reorder exception), D-07 never swallow errors, D-09 unit-test pattern
+- `.planning/prompts/00-common-rules.md` — work-session rules, heavy-step lock
+
+### Research already done (project level)
+- `.planning/research/PITFALLS.md` §Pitfall 12 (playlist edge cases, quota, key restriction) and §Pitfall 13 (RMF overlays, error 153)
+- `.planning/research/ARCHITECTURE.md` §Pattern 6 (preview-then-commit), `src/server/youtube/` layout, secrets table
+- `.planning/research/SUMMARY.md` — YouTube RMF, thumbnail decision, contract migration dropping `youtube_api_key`
+
+### Design
+- `DESIGN.md`, `ui.config.json`, `src/styles/globals.css` — tokens, radius roles, 44px targets, nothing under 11px
+
+### External (verify in research)
+- https://developers.google.com/youtube/terms/required-minimum-functionality
+- https://developers.google.com/youtube/terms/developer-policies
+- https://developers.google.com/youtube/v3/determine_quota_cost
+- https://developers.google.com/youtube/v3/docs/playlistItems/list and /videos
+- https://developers.google.com/youtube/iframe_api_reference and /player_parameters
+
+</canonical_refs>
+
+<code_context>
+## Existing Code Insights
+
+### Reusable Assets
+- `src/lib/youtube.ts`: `validateYouTubeUrl` (host allow-list + ID), `extractYouTubeId`, `loadYouTubeAPI`. Add playlist-URL parsing (`list=`) here or in `src/server/youtube/`.
+- `src/app/api/youtube-meta/route.ts`: `parseIsoDuration`, thumbnail fallback; to be replaced by a server module reading the key through the Vault read function (D-20) and `requireAdmin`.
+- `src/hooks/use-progress-tracker.ts`: upserts `watch_progress (user_id, episode_id)` every 10 s, on pause, hide and unmount; 95% = completed.
+- `src/components/watch/youtube-player.tsx`: single `YT.Player`, error state, playerVars (no `hl`/`cc_lang_pref`/`cc_load_policy` yet).
+- `src/components/admin/episode-form-drawer.tsx` (`YouTubeFetchButton`) and `youtube-url-input.tsx`: single-link add flow.
+- Existing bulk scheduler (`applyShowSchedule`, `PlannedEpisodeSlot` in `admin/actions.ts`) for D-07.
+
+### Established Patterns
+- Episodes: `unique (season_id, episode_number)`, `status in (draft, coming-soon, published)`, `youtube_video_id text`, `duration` in minutes. Seasons: `unique (show_id, season_number)`, `title` NOT NULL, `episode_count`.
+- Admin writes go through server actions in `src/app/[locale]/admin/actions.ts` with the service-role client; Phase 1.1 adds zod schemas, id guards and audit rows.
+- `app_config.youtube_api_key` read via `getYouTubeApiKey()` in `src/lib/config.ts`; column privilege revoked for anon/authenticated (migration `20260724115941`).
+
+### Defects found (root causes for this phase)
+- `watch-shell.tsx` `handleEpisodeSwitch` calls `loadVideoById({ startSeconds: 0 })` → YT-05. `progressMap` holds only percent/completed, not seconds.
+- `watch-shell.tsx`: top chrome strip (`fixed top-0 z-20`), prev/next arrows (`fixed top-1/2`) and `AutoplayOverlay` (`absolute inset-0`) render over the iframe; `episode-tray.tsx` raises to 50% on hover over the player → RMF.
+- `reorderEpisode` swaps only with `episode_number ± 1` and ignores update errors → fails on gaps (YT-07).
+- `/api/youtube-meta` checks `app_config.admin_user_id` (single admin) and reads the key from the database.
+
+### Integration Points
+- Admin show page `src/app/[locale]/admin/shows/[id]/page.tsx` + `episodes-table.tsx` (import button, reorder, "Can't play" badge, "Needs English title" mark).
+- Watch page `src/app/[locale]/(watch)/watch/[episodeId]/page.tsx` + `watch-shell.tsx`, `episode-tray.tsx`, `autoplay-overlay.tsx`.
+- Settings `src/components/admin/settings/advanced-tab.tsx` (key field → status).
+- Cron: Worker `scheduled` handler from Phase 2 (Cron Triggers) for D-17.
+- Messages `src/messages/en.json` / `ar.json` for every new string.
+
+</code_context>
+
+<specifics>
+## Specific Ideas
+
+- Import sheet copy: "Nothing is saved until you press Import. Episodes land as drafts." Summary chips: Ready / Can't play / Already on Clickit.
+- Error card copy: "This episode can't play right now" + "Play next episode" + "Back to <show>".
+- Control bar copy: "Resumed at 9:12 · Start from the beginning".
+
+</specifics>
+
+<deferred>
+## Deferred Ideas
+
+- Jev pre-unticking trailers/teasers/shorts in the import preview (Q18) — later, advisory only, on Koss's word.
+- Refreshing titles/descriptions of existing episodes from YouTube on re-import (Q5 B) — not wanted.
+- Auto-hiding broken episodes (Q17 B) — not wanted; flag only.
+
+</deferred>
+
+---
+
+*Phase: 06-youtube-import-and-player*
+*Context gathered: 2026-10-20*

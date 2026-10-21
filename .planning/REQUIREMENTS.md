@@ -79,7 +79,7 @@
 - [ ] **YT-01**: Admin pastes a YouTube playlist link and sees a preview of every video (title, thumbnail, duration, status) before importing it as a season
 - [ ] **YT-02**: Private, deleted, non-embeddable and UAE-blocked videos are flagged and excluded; importing the same playlist again adds no duplicates; imported episodes land as drafts
 - [ ] **YT-03**: Admin adds a single episode from a YouTube link; the video ID is validated on the server
-- [ ] **YT-04**: The YouTube API key lives in a Worker secret and the old database copy is removed
+- [ ] **YT-04**: The YouTube API key is stored server-side only (Supabase Vault, readable only by the service role), admins set or change it in Settings with immediate effect, and the old plaintext database column is removed (changed by Koss 2026-10-20)
 - [ ] **YT-05**: Switching episodes in the player resumes each episode's own saved position
 - [ ] **YT-06**: The player follows YouTube's embed rules: nothing drawn over the video (autoplay-next card moved off the player), player and captions in the site language, branded error states
 - [ ] **YT-07**: Episode reorder never leaves gaps or duplicates and reports errors

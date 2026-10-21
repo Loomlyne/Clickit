@@ -13,10 +13,11 @@ type FailRule = {
   kind: 'error' | 'throw'
 }
 type Filter =
-  | { kind: 'eq' | 'neq' | 'gt' | 'lt'; col: string; value: any }
+  | { kind: 'eq' | 'neq' | 'gt' | 'gte' | 'lt'; col: string; value: any }
   | { kind: 'in'; col: string; value: any[] }
   | { kind: 'is'; col: string; value: any }
   | { kind: 'notnull'; col: string }
+  | { kind: 'like'; col: string; value: string }
 export type FakeCall = {
   table: string
   op: Op | 'rpc'
@@ -29,10 +30,12 @@ type RpcHandler = (
 ) => { data: any; error: any } | Promise<{ data: any; error: any }>
 
 // Unique constraints emulated (migrations): shows.slug, episodes
-// (season_id, episode_number) including archived, show_categories.show_id.
+// (season_id, episode_number) including archived, episodes.youtube_video_id
+// catalog-wide (06-01 partial index: null and '' skipped),
+// show_categories.show_id.
 const UNIQUE: Record<string, string[][]> = {
   shows: [['slug']],
-  episodes: [['season_id', 'episode_number']],
+  episodes: [['season_id', 'episode_number'], ['youtube_video_id']],
   show_categories: [['show_id']],
 }
 
@@ -56,6 +59,8 @@ function matches(row: Row, f: Filter): boolean {
       return v !== f.value
     case 'gt':
       return v > f.value
+    case 'gte':
+      return v >= f.value
     case 'lt':
       return v < f.value
     case 'in':
@@ -64,21 +69,35 @@ function matches(row: Row, f: Filter): boolean {
       return f.value === null ? v == null : v === f.value
     case 'notnull':
       return v != null
+    case 'like':
+      return typeof v === 'string' && likeToRegExp(f.value).test(v)
   }
 }
 
-function violatesUnique(table: string, rows: Row[]): boolean {
+/** SQL LIKE (case-sensitive): % is any run, _ is one character. */
+function likeToRegExp(pattern: string): RegExp {
+  let re = ''
+  for (const ch of pattern) {
+    if (ch === '%') re += '.*'
+    else if (ch === '_') re += '.'
+    else re += ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  }
+  return new RegExp(`^${re}$`, 's')
+}
+
+/** The violated column set, or null. Null and empty-string values never collide. */
+function violatesUnique(table: string, rows: Row[]): string[] | null {
   for (const cols of UNIQUE[table] ?? []) {
     const seen = new Set<string>()
     for (const r of rows) {
       const vals = cols.map((c) => r[c])
-      if (vals.some((x) => x == null)) continue
+      if (vals.some((x) => x == null || x === '')) continue
       const key = JSON.stringify(vals)
-      if (seen.has(key)) return true
+      if (seen.has(key)) return cols
       seen.add(key)
     }
   }
-  return false
+  return null
 }
 
 export function createFakeSupabase(initial: Tables = {}) {
@@ -123,6 +142,7 @@ export function createFakeSupabase(initial: Tables = {}) {
     private wantCount = false
     private orderBy: { col: string; asc: boolean } | null = null
     private max: number | null = null
+    private window: { from: number; to: number } | null = null
     private mode: 'many' | 'single' | 'maybe' = 'many'
 
     private table: string
@@ -163,8 +183,16 @@ export function createFakeSupabase(initial: Tables = {}) {
       this.filters.push({ kind: 'gt', col, value })
       return this
     }
+    gte(col: string, value: any) {
+      this.filters.push({ kind: 'gte', col, value })
+      return this
+    }
     lt(col: string, value: any) {
       this.filters.push({ kind: 'lt', col, value })
+      return this
+    }
+    like(col: string, value: string) {
+      this.filters.push({ kind: 'like', col, value })
       return this
     }
     in(col: string, value: any[]) {
@@ -187,6 +215,11 @@ export function createFakeSupabase(initial: Tables = {}) {
     }
     limit(n: number) {
       this.max = n
+      return this
+    }
+    /** PostgREST .range(from, to): rows from..to inclusive, after order. */
+    range(from: number, to: number) {
+      this.window = { from, to }
       return this
     }
     single() {
@@ -218,6 +251,7 @@ export function createFakeSupabase(initial: Tables = {}) {
           return (x > y ? 1 : -1) * (asc ? 1 : -1)
         })
       }
+      if (this.window) out = out.slice(this.window.from, this.window.to + 1)
       if (this.max != null) out = out.slice(0, this.max)
       out = clone(out)
       if (this.mode === 'single') {
@@ -278,8 +312,8 @@ export function createFakeSupabase(initial: Tables = {}) {
           created_at: tick(),
           ...clone(r),
         }))
-        if (violatesUnique(this.table, [...rows, ...fresh]))
-          return this.uniqueError()
+        const clash = violatesUnique(this.table, [...rows, ...fresh])
+        if (clash) return this.uniqueError(clash)
         rows.push(...fresh)
         return this.returning
           ? this.shape(fresh)
@@ -288,7 +322,8 @@ export function createFakeSupabase(initial: Tables = {}) {
 
       if (this.op === 'update') {
         const next = rows.map((r) => (hit(r) ? { ...r, ...clone(this.patch) } : r))
-        if (violatesUnique(this.table, next)) return this.uniqueError()
+        const clash = violatesUnique(this.table, next)
+        if (clash) return this.uniqueError(clash)
         const changed: Row[] = []
         rows.forEach((r, i) => {
           if (hit(r)) {
@@ -309,12 +344,14 @@ export function createFakeSupabase(initial: Tables = {}) {
         : { data: null, error: null, count: null }
     }
 
-    private uniqueError() {
+    // Postgres-style message naming the constraint (<table>_<cols>_key).
+    private uniqueError(cols: string[]) {
+      const name = `${this.table}_${cols.join('_')}_key`
       return {
         data: null,
         error: {
           code: '23505',
-          message: `duplicate key value violates unique constraint on ${this.table}`,
+          message: `duplicate key value violates unique constraint "${name}" on ${this.table}`,
         },
         count: null,
       }

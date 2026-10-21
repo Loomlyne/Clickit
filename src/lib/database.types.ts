@@ -200,17 +200,27 @@ export type Database = {
           created_at: string
           description: string
           description_ar: string | null
+          description_ar_edited: boolean
+          description_edited: boolean
           duration: number | null
           episode_number: number
           fts: unknown
           id: string
+          player_error_at: string | null
+          player_error_code: number | null
           publish_at: string | null
           season_id: string
           show_id: string
           status: string
           title: string
           title_ar: string | null
+          title_ar_edited: boolean
+          title_edited: boolean
           updated_at: string
+          youtube_checked_at: string | null
+          youtube_duration_seconds: number | null
+          youtube_status: string | null
+          youtube_text_baseline_at: string | null
           youtube_video_id: string | null
         }
         Insert: {
@@ -218,17 +228,27 @@ export type Database = {
           created_at?: string
           description?: string
           description_ar?: string | null
+          description_ar_edited?: boolean
+          description_edited?: boolean
           duration?: number | null
           episode_number: number
           fts?: unknown
           id?: string
+          player_error_at?: string | null
+          player_error_code?: number | null
           publish_at?: string | null
           season_id: string
           show_id: string
           status?: string
           title: string
           title_ar?: string | null
+          title_ar_edited?: boolean
+          title_edited?: boolean
           updated_at?: string
+          youtube_checked_at?: string | null
+          youtube_duration_seconds?: number | null
+          youtube_status?: string | null
+          youtube_text_baseline_at?: string | null
           youtube_video_id?: string | null
         }
         Update: {
@@ -236,17 +256,27 @@ export type Database = {
           created_at?: string
           description?: string
           description_ar?: string | null
+          description_ar_edited?: boolean
+          description_edited?: boolean
           duration?: number | null
           episode_number?: number
           fts?: unknown
           id?: string
+          player_error_at?: string | null
+          player_error_code?: number | null
           publish_at?: string | null
           season_id?: string
           show_id?: string
           status?: string
           title?: string
           title_ar?: string | null
+          title_ar_edited?: boolean
+          title_edited?: boolean
           updated_at?: string
+          youtube_checked_at?: string | null
+          youtube_duration_seconds?: number | null
+          youtube_status?: string | null
+          youtube_text_baseline_at?: string | null
           youtube_video_id?: string | null
         }
         Relationships: [
@@ -536,6 +566,7 @@ export type Database = {
         Row: {
           archived: boolean | null
           channel_name: string | null
+          channel_name_edited: boolean
           created_at: string | null
           duration_seconds: number | null
           expires_at: string | null
@@ -545,12 +576,15 @@ export type Database = {
           sort_order: number | null
           thumbnail_url: string | null
           title: string
+          title_edited: boolean
           updated_at: string | null
+          youtube_checked_at: string | null
           youtube_video_id: string
         }
         Insert: {
           archived?: boolean | null
           channel_name?: string | null
+          channel_name_edited?: boolean
           created_at?: string | null
           duration_seconds?: number | null
           expires_at?: string | null
@@ -560,12 +594,15 @@ export type Database = {
           sort_order?: number | null
           thumbnail_url?: string | null
           title: string
+          title_edited?: boolean
           updated_at?: string | null
+          youtube_checked_at?: string | null
           youtube_video_id: string
         }
         Update: {
           archived?: boolean | null
           channel_name?: string | null
+          channel_name_edited?: boolean
           created_at?: string | null
           duration_seconds?: number | null
           expires_at?: string | null
@@ -575,7 +612,9 @@ export type Database = {
           sort_order?: number | null
           thumbnail_url?: string | null
           title?: string
+          title_edited?: boolean
           updated_at?: string | null
+          youtube_checked_at?: string | null
           youtube_video_id?: string
         }
         Relationships: []
@@ -973,7 +1012,27 @@ export type Database = {
       }
     }
     Functions: {
+      get_youtube_key: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
+      record_short_checks: { Args: { p_rows: Json }; Returns: number }
+      record_youtube_checks: { Args: { p_rows: Json }; Returns: number }
+      renumber_season: {
+        Args: { p_season_id: string }
+        Returns: {
+          episode_id: string
+          new_number: number
+          old_number: number
+        }[]
+      }
+      set_youtube_key: { Args: { p_key: string }; Returns: string }
+      youtube_key_meta: {
+        Args: never
+        Returns: {
+          has_key: boolean
+          last4: string
+          updated_at: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

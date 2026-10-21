@@ -1,5 +1,8 @@
 import { getTranslations } from 'next-intl/server'
-import { getAppConfig, getYouTubeApiKey } from '@/lib/config'
+import { getAppConfig } from '@/lib/config'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { readLastKeyTestCore } from '@/lib/admin/youtube-key-status'
+import { readYouTubeKeyMeta } from '@/server/youtube-key'
 import { getLegalPages, getFaqs } from '@/app/[locale]/admin/actions'
 import { SettingsTabs } from '@/components/admin/settings/settings-tabs'
 import { AdminPageHeader } from '@/components/admin/admin-shell'
@@ -12,19 +15,22 @@ import { AdminPageHeader } from '@/components/admin/admin-shell'
  * server-action save (updateSiteMetadata, updateFooterContent, etc.) refreshes
  * this page via updateTag('site-config') + revalidatePath('/', 'layout').
  *
- * The YouTube API key is read only through the server-side helper. The client
- * receives an availability boolean, never the credential.
+ * YouTube key (G6): the page reads only whether a key is stored, its last 4
+ * characters and the last Test key result. The key itself never leaves the
+ * server; it is saved through the saveYouTubeApiKey Server Action.
  */
 export default async function AdminSettingsPage() {
-  const [config, t, legalPages, faqs, youtubeApiKey] = await Promise.all([
+  const [config, t, legalPages, faqs, keyMeta, lastTest] = await Promise.all([
     getAppConfig(),
     getTranslations('admin.settings'),
     getLegalPages(),
     getFaqs(),
-    getYouTubeApiKey(),
+    readYouTubeKeyMeta(),
+    readLastKeyTestCore(createAdminClient()),
   ])
 
-  const hasYouTubeKey = Boolean(youtubeApiKey)
+  // Only these three fields cross to the client.
+  const youtubeKey = { hasKey: keyMeta.hasKey, last4: keyMeta.last4, lastTest }
 
   return (
     <div className="space-y-6">
@@ -32,7 +38,7 @@ export default async function AdminSettingsPage() {
 
       <SettingsTabs
         config={config}
-        hasYouTubeKey={hasYouTubeKey}
+        youtubeKey={youtubeKey}
         legalPages={legalPages}
         faqs={faqs}
       />
