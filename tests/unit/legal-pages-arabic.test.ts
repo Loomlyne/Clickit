@@ -299,6 +299,79 @@ test('migration: additive draft columns + ar_reviewed, existing Arabic stays pub
   assert.ok(off !== -1 && off < upd && upd < on)
 })
 
+// ---- draft privacy (PR #29 re-review item 1) -----------------------------------
+// legal_pages had a table-wide SELECT grant for anon and authenticated, so the draft columns
+// were readable with the anon key. The migration swaps it for a column grant that leaves the
+// two draft columns out; a column REVOKE alone does nothing while the table grant exists.
+
+const DRAFT_COLUMNS = ['title_ar_draft', 'content_ar_draft']
+/** Every legal_pages column except the drafts: what anon and authenticated may select. */
+const PUBLIC_LEGAL_COLUMNS = [
+  'id', 'slug', 'title', 'content', 'sort_order', 'created_at', 'updated_at',
+  'title_ar', 'content_ar', 'ar_reviewed',
+]
+
+function legalRowColumns(): string[] {
+  const t = read('src/lib/database.types.ts')
+  const block = t.slice(t.indexOf('legal_pages: {'), t.indexOf('Insert:', t.indexOf('legal_pages: {')))
+  return [...block.matchAll(/^\s+(\w+)\??:/gm)].map((m) => m[1]!).filter((c) => c !== 'Row')
+}
+
+function selectList(src: string, fn: string): string[] {
+  const body = src.slice(src.indexOf(`export async function ${fn}(`))
+  const m = /\.select\('([^']*)'\)/.exec(body)
+  assert.ok(m, `${fn} has a select list`)
+  return m![1]!.split(',').map((c) => c.trim())
+}
+
+test('migration: anon and authenticated get a column grant without the draft columns', () => {
+  const sql = read(MIGRATION)
+  const revoke = sql.search(/^revoke select on table public\.legal_pages from anon, authenticated;$/m)
+  assert.ok(revoke !== -1, 'the table-wide SELECT grant is revoked')
+  const grant = /^grant select \(([^)]*)\)\s+on table public\.legal_pages to anon, authenticated;$/m.exec(sql)
+  assert.ok(grant, 'a column-level SELECT grant follows')
+  assert.ok(sql.indexOf('add column if not exists ar_reviewed') < revoke && revoke < grant!.index)
+  const granted = grant![1]!.split(',').map((c) => c.trim()).filter(Boolean)
+  assert.deepEqual([...granted].sort(), [...PUBLIC_LEGAL_COLUMNS].sort())
+  for (const c of DRAFT_COLUMNS) assert.ok(!granted.includes(c), `${c} is not granted`)
+  // The grant lists every column the table has, drafts excepted (schema from the types).
+  assert.deepEqual(
+    [...granted].sort(),
+    legalRowColumns().filter((c) => !DRAFT_COLUMNS.includes(c)).sort(),
+    'column grant out of step with legal_pages'
+  )
+  assert.ok(!/grant select on (table )?public\.legal_pages to/i.test(sql), 'no table-wide SELECT re-grant')
+  assert.ok(!/to (public|anon|authenticated)[^;]*;/i.test(sql.replace(grant![0], '')), 'no other grant to the browser roles')
+  // The comments say what is enforced, not "never shown".
+  assert.ok(!sql.includes('Never shown publicly'))
+  assert.equal((sql.match(/Not readable by anon or authenticated \(column grant\)/g) ?? []).length, 2)
+})
+
+test('public legal queries select only granted columns (a draft or new column would be refused)', () => {
+  const q = read('src/lib/queries.ts')
+  for (const fn of ['getLegalPageBySlug', 'getAllLegalPages']) {
+    for (const c of selectList(q, fn)) assert.ok(PUBLIC_LEGAL_COLUMNS.includes(c), `${fn} selects ${c}`)
+  }
+})
+
+test('admin legal reads and saves go through the service client after assertAdmin', () => {
+  const a = read('src/app/[locale]/admin/actions.ts')
+  const body = (name: string) => {
+    const start = a.indexOf(`export async function ${name}(`)
+    assert.notEqual(start, -1, name)
+    return a.slice(start, a.indexOf('\nexport ', start + 10))
+  }
+  const get = body('getLegalPages')
+  assert.match(get, /await assertAdmin\(\)/, 'getLegalPages is an exported Server Action: admin only')
+  assert.match(get, /createAdminClient\(\)/)
+  assert.ok(get.indexOf('assertAdmin()') < get.indexOf('createAdminClient()'))
+  assert.ok(!/\bcreateClient\(/.test(get), 'the session client cannot read the drafts')
+  const upsert = body('upsertLegalPage')
+  assert.match(upsert, /upsertLegalPageCore\(\s*createAdminClient\(\) as unknown as AdminDb/)
+  assert.ok(!/\bcreateClient\(/.test(upsert), 'the pre-read and RETURNING need the drafts')
+  assert.ok(upsert.indexOf('assertAdmin()') < upsert.indexOf('createAdminClient()'))
+})
+
 test('database types carry the new columns', () => {
   const t = read('src/lib/database.types.ts')
   const legal = t.slice(t.indexOf('legal_pages: {'), t.indexOf('likes: {'))
