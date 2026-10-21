@@ -4,7 +4,9 @@
 # Builds a scratch database (p5_proof_<pid>) inside the local stack container
 # supabase_db_Clickit, applies every supabase/migrations file and the seed, runs
 # supabase/tests/0*.sql and m*.sql, then supabase/pending/*.sql and
-# supabase/tests/pending_*.sql. The shared `postgres` database is only read
+# supabase/tests/pending_*.sql. supabase/tests/pre_*.sql fixtures run once,
+# just before the first migration whose name contains _phase5_ (or, when there
+# is none, before supabase/pending). The shared `postgres` database is only read
 # (fingerprinted before and after) and the scratch database is always dropped.
 #
 #   bash scripts/db-proof.sh [--only <glob>] [--types-out <path>]
@@ -157,9 +159,27 @@ run_tests() {
   done
 }
 
+# run_pre_fixtures : apply supabase/tests/pre_*.sql once, in name order
+PRE_DONE=0
+run_pre_fixtures() {
+  local f pre=0
+  [ "$PRE_DONE" = 1 ] && return 0
+  echo "--- pre fixtures"
+  for f in $(ls supabase/tests/pre_*.sql 2>/dev/null | sort); do
+    apply_sql "$f" || return 1
+    pre=$((pre + 1))
+  done
+  PRE_DONE=1
+  echo "pre_fixtures=$pre"
+}
+
 echo "--- migrations"
 for f in supabase/migrations/*.sql; do
   b=$(basename "$f" .sql); v=${b%%_*}; n=${b#*_}
+  # Fixtures describe the database as it stands before Phase 5 (for example an
+  # app_config row pointing at an account), so they run just before the first
+  # _phase5_ migration.
+  case "$b" in *_phase5_*) run_pre_fixtures || exit 1 ;; esac
   apply_sql "$f" || exit 1
   docker exec "$C" psql -U postgres -d "$DB" -q -c "insert into supabase_migrations.schema_migrations values ('$v','$n')" >/dev/null
 done
@@ -171,13 +191,8 @@ echo "seed=ok"
 echo "--- tests"
 run_tests '0*.sql' 'm*.sql'
 
-echo "--- pre-pending fixtures"
-pre=0
-for f in $(ls supabase/tests/pre_*.sql 2>/dev/null | sort); do
-  apply_sql "$f" || exit 1
-  pre=$((pre + 1))
-done
-echo "pre_fixtures=$pre"
+# Without a _phase5_ migration the fixtures still run once, before pending migrations.
+run_pre_fixtures || exit 1
 
 echo "--- pending migrations"
 pend=0

@@ -26,9 +26,11 @@ scratch database (prints `types_written=<path|no>`).
    from a read-only schema dump of the shared database, applies every
    `supabase/migrations/*.sql` and `supabase/seed.sql`.
 3. Runs `supabase/tests/0*.sql` and `m*.sql` in name order, each printing `ok <name>`.
-4. Applies `supabase/tests/pre_*.sql` fixtures (data that must exist before pending
-   migrations run; prints `pre_fixtures=<n>`), then `supabase/pending/*.sql`
-   (prints `pending_applied=<n>`), then runs `supabase/tests/pending_*.sql`.
+4. Applies `supabase/tests/pre_*.sql` fixtures once (data that must exist before the
+   Phase 5 migrations run; prints `pre_fixtures=<n>`): just before the first
+   `supabase/migrations/*_phase5_*.sql` file, or, when there is none, before
+   `supabase/pending/*.sql`. Then applies `supabase/pending/*.sql`
+   (prints `pending_applied=<n>`) and runs `supabase/tests/pending_*.sql`.
 5. Drops the scratch database, checks the shared database fingerprint
    (`schema_migrations`, `public.shows`, `auth.users` counts) is unchanged, prints
    `scratch_db_left=0`, `shared_db_unchanged=yes` and, last, `exit=<rc>`.
@@ -43,4 +45,5 @@ scratch database (prints `types_written=<path|no>`).
 - Each file runs in one transaction (`psql --single-transaction`). A file that writes data
   must undo it (end with `rollback;`) so later files see the seeded state.
 - File naming: `0*.sql` and `m*.sql` run against the migrated schema; `pre_*.sql` are
-  fixtures applied before pending migrations; `pending_*.sql` run after `supabase/pending/*.sql`.
+  fixtures applied before the first `_phase5_` migration (they persist, no `rollback;`);
+  `pending_*.sql` run after `supabase/pending/*.sql`.
