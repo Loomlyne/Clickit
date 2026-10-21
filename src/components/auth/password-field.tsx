@@ -56,6 +56,7 @@ export function PasswordField({
         <Input
           {...props}
           id={inputId}
+          dir="ltr"
           type={shown ? 'text' : 'password'}
           aria-invalid={error ? true : undefined}
           aria-describedby={
@@ -63,14 +64,14 @@ export function PasswordField({
               .filter(Boolean)
               .join(' ') || undefined
           }
-          className={cn('pe-12', className)}
+          className={cn('pe-11', className)}
         />
         <button
           type="button"
           onClick={() => setShown((v) => !v)}
           aria-label={shown ? t('hidePassword') : t('showPassword')}
           aria-pressed={shown}
-          className="absolute end-0 top-0 flex size-11 items-center justify-center rounded-lg text-[var(--text-mute)] transition-colors outline-none hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+          className="absolute right-0 top-0 flex size-11 items-center justify-center rounded-lg text-[var(--text-mute)] transition-colors outline-none hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
         >
           {shown ? (
             <EyeOff className="size-4" aria-hidden />
