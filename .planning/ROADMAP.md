@@ -134,7 +134,7 @@ Plans:
 **Plans**: 13 plans (13 serial waves; code W1-W6 in the work worktree, ops W7-W13 by the controller and Koss after Ship)
 
 Plans:
-- [ ] 03-01-PLAN.md — W1: entry gate (Phase 2 on main, r2:media + verify-media-host on main; STOP halts), publish refresh on every run (three Phase 2 crons kept, amended D-12/G8), env.production in wrangler.jsonc + drift test
+- [x] 03-01-PLAN.md — W1: entry gate (Phase 2 on main, r2:media + verify-media-host on main; STOP halts), publish refresh on every run (three Phase 2 crons kept, amended D-12/G8), env.production in wrangler.jsonc + drift test
 - [ ] 03-02-PLAN.md — W2: production build target, checkProductionDeploy, D-18 target switch, media r2 env guard, cf:deploy:production
 - [ ] 03-03-PLAN.md — W3: dns-check (registry + jen/brett + SOA in every phase, explicit --with-resend flags) and rollback.mjs (Keychain token, proxied toggle only)
 - [ ] 03-04-PLAN.md — W4: x-clickit-runtime header, proof-check, keys-check (legacy 401 / captcha probe), media-health --expect-source, parse-auth-results
@@ -273,7 +273,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | 1. Safe Ground | 0/TBD | Not started | - |
 | 1.1. Admin Actions Hardening (INSERTED) | 13/13 | UAT passed, PR open | - |
 | 2. Worker and R2 Media on workers.dev | 18/22 | In Progress|  |
-| 3. Production Cutover | 0/13 | Planned | - |
+| 3. Production Cutover | 1/13 | In Progress|  |
 | 4. Design System Truth | 14/14 | UAT pending (PR) |  |
 | 5. Accounts and Email | 0/TBD | Not started | - |
 | 6. YouTube Import and Player | 0/25 | Planned | - |
