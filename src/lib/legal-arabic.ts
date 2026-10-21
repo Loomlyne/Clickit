@@ -4,6 +4,9 @@
 // never read here. Pure: node --test loads it.
 import { pickLocalized, type Locale } from './locale.ts'
 
+/** Server error when "Arabic reviewed" is ticked with no Arabic body; the editor shows admin.settings.legalArReviewRequired instead. */
+export const LEGAL_REVIEW_REQUIRED = 'Add the Arabic text before ticking "Arabic reviewed".'
+
 export type LegalPageText = {
   title: string
   content: string

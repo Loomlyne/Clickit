@@ -28,7 +28,7 @@ import {
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { upsertLegalPage, deleteLegalPage } from '@/app/[locale]/admin/actions'
 import type { LegalPage } from '@/app/[locale]/admin/actions'
-import { legalArabicForEditor } from '@/lib/legal-arabic'
+import { LEGAL_REVIEW_REQUIRED, legalArabicForEditor } from '@/lib/legal-arabic'
 import { useRowVersions } from '@/components/admin/row-version'
 import { SettingsCard, SettingsField } from './settings-card'
 
@@ -128,7 +128,11 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
     const result = await upsertLegalPage(draft, expected)
     setSaving(false)
     if (!result.success) {
-      toast.error(result.error ?? t('legalSaveFailed'))
+      toast.error(
+        result.error === LEGAL_REVIEW_REQUIRED
+          ? t('legalArReviewRequired')
+          : (result.error ?? t('legalSaveFailed'))
+      )
       return
     }
     if (draft.id && expected) versions.saved(draft.id, expected, result.updatedAt)

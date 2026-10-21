@@ -41,7 +41,9 @@ export const LEGAL_PAGE_COLUMNS =
   'id, slug, title, content, title_ar, content_ar, title_ar_draft, content_ar_draft, ar_reviewed, sort_order, updated_at'
 
 /** Server error line (admin actions return English errors; shown as a toast). */
-export const LEGAL_REVIEW_REQUIRED = 'Add the Arabic text before ticking "Arabic reviewed".'
+// The admin form maps this error to the localised admin.settings.legalArReviewRequired.
+export { LEGAL_REVIEW_REQUIRED } from '../legal-arabic.ts'
+import { LEGAL_REVIEW_REQUIRED } from '../legal-arabic.ts'
 
 export const legalPageSchema = z.object({
   id: z.string().uuid().optional(),
