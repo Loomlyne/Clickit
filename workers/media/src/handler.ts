@@ -124,12 +124,14 @@ export function guessContentType(key: string) {
 }
 
 /**
- * `?v=` (admin cache-bust) or a served variant is immutable; otherwise one
- * hour. Stored R2 cacheControl is ignored on purpose: the app has written
+ * Only a non-empty `?v=` (admin cache-bust stamp) is immutable for a year; every
+ * other response, variants included, gets one hour. A variant key is re-written
+ * when its original is replaced under the same key, so without a stamp it must
+ * not be pinned. Stored R2 cacheControl is ignored on purpose: the app has written
  * invalid values (a bare '31536000'), so the policy is decided here.
  */
-export function cacheControlFor(url: URL, variantServed = false) {
-  if (variantServed || url.searchParams.has('v')) return VERSIONED_CACHE_CONTROL
+export function cacheControlFor(url: URL) {
+  if (url.searchParams.get('v')) return VERSIONED_CACHE_CONTROL
   return UNVERSIONED_CACHE_CONTROL
 }
 
@@ -247,8 +249,7 @@ async function fromR2(
   bucket: MediaBucket,
   objectKey: string,
   request: Request,
-  url: URL,
-  variant = false
+  url: URL
 ): Promise<Response | null> {
   const isHead = request.method === 'HEAD'
   const object = isHead
@@ -264,7 +265,7 @@ async function fromR2(
     object.httpMetadata?.contentType || guessContentType(objectKey)
   headers.set('Content-Type', contentType)
   if (isSvg(contentType)) headers.set('Content-Disposition', 'inline')
-  headers.set('Cache-Control', cacheControlFor(url, variant))
+  headers.set('Cache-Control', cacheControlFor(url))
   headers.set('ETag', object.httpEtag)
   headers.set('Last-Modified', object.uploaded.toUTCString())
   headers.set('Accept-Ranges', 'bytes')
@@ -391,13 +392,7 @@ async function serve(
           )
     try {
       for (const candidate of candidates) {
-        const hit = await fromR2(
-          env.MEDIA_BUCKET,
-          candidate,
-          request,
-          url,
-          candidate !== objectKey
-        )
+        const hit = await fromR2(env.MEDIA_BUCKET, candidate, request, url)
         if (hit) return hit
       }
     } catch {

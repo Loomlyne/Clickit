@@ -10,7 +10,7 @@ buckets `show-artwork`, `site-assets` and `avatars`.
   serve Supabase only.
 - Range requests (206), conditional requests (304), `X-Media-Source: r2|supabase`.
 - `Cache-Control` is decided from the URL only (stored R2 values are ignored): one year
-  immutable when the URL carries `?v=` or a variant is served, else `public, max-age=3600`.
+  immutable only when the URL carries a non-empty `?v=` stamp (variants included), else `public, max-age=3600`.
 - `?w=640|1280|1920` serves the AVIF or WebP variant from R2 key
   `_v/<w>/<avif|webp>/<bucket>/<key>` chosen from `Accept` (avif, then webp), falls back
   to the original, and adds `Vary: Accept`. Variants are never read from Supabase.
