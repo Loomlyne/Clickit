@@ -119,6 +119,23 @@ Plans:
 - [ ] 02-22-PLAN.md — W11: Gate and coverage, [OWNER] UAT (local preview write paths; workers.dev reads, sign-in, one approved draft write), teardown
 **UI hint**: yes
 
+### Phase 02.1: Cached public pages on Workers Free (INSERTED)
+
+**Goal:** Every public page answers under 10 ms CPU on Workers Free, signed out and signed in: a gateway entrypoint verifies the visitor class and hands public GETs to Workers Cache, and the public pages no longer depend on who is visiting. Admin, server actions, /auth/callback, /api and crons are out of scope.
+**Requirements**: PLAT-09
+**Depends on:** Phase 2 (merged to main 6ebc802)
+**Source:** `.planning/debug/cpu-en-home.md` "Plan v2" and `.planning/debug/cpu-public-cache-mockup.html`, signed by Koss 2026-10-21 15:03 CET (CPU route "Free + rebuild"; loading look 1A + 2A + 3A). Signed-out `/<locale>/auth` is cached; `/auth*` is hard-denied only for the signed-in class (controller, 2026-10-21).
+**Success Criteria** (what must be TRUE):
+  1. A spike runs first and passes before any other plan executes. It proves five things: RSC and segment payloads are the same across router state; refills succeed often enough on Free; the forged-cookie and poisoning tests pass; ISR revalidation through the DO queue works; Workers Cache works on this Free account.
+  2. On workers.dev, wrangler tail shows every public route under 10 ms CPU on a cache hit, for both classes, measured with interleaved routes, and no hit returns 1102.
+  3. A forged or expired sign-in cookie never gets the signed-in copy. A signed-in copy never contains signed-out UI, and a signed-out copy never contains personal data. Redirects are never stored for the signed-in class. Two different signed-out requests get byte-identical HTML apart from the allowed key parts.
+  4. An admin content save reaches visitors after one refill, and the old copy is served until that refill succeeds. A coming-soon toggle takes effect at once. Bare `/` and unprefixed paths answer a 307 from the gateway.
+  5. The signed loading look ships: header 1A, show page 2A, Continue watching 3A, in EN and AR. A long-session test stays signed in, and `npm run gate:local` passes.
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 02.1 to break down)
+
 ### Phase 3: Production Cutover
 **Goal**: clickitstory.ae is a zone in the ClickitStory Cloudflare account that Resend can send from. Viewers at www.clickitstory.ae and the apex are served by the Worker. Every media URL in the database points at R2, the old Vercel deployment can no longer write to live data, rollback stays possible until the proof window ends, and then the Vercel project is deleted.
 **Depends on**: Phase 2

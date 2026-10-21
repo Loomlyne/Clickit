@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-20T22:23:18.983Z"
+last_updated: "2026-10-21T14:04:24.081Z"
 last_activity: 2026-10-20
 progress:
-  total_phases: 9
-  completed_phases: 2
-  total_plans: 31
-  completed_plans: 24
-  percent: 22
+  total_phases: 10
+  completed_phases: 3
+  total_plans: 80
+  completed_plans: 69
+  percent: 30
 ---
 
 # Project State
@@ -80,6 +80,10 @@ Progress: [████████░░] 77%
 | Phase 04 P06 | 5min | 4 tasks | 6 files |
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 02.1 inserted after Phase 2: Cached public pages on Workers Free: every public page under 10 ms CPU on Workers Free (Koss signed plan v2 2026-10-21 15:03 CET; .planning/debug/cpu-en-home.md) (URGENT)
 
 ### Decisions
 
