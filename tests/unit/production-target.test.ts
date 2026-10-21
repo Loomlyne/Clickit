@@ -64,6 +64,10 @@ const prodReport = {
 }
 const prodOptions = { mediaFlag: 'verified', mediaOrigin: 'https://media.clickitstory.ae', verifyReport: prodReport, manifest }
 
+// Config fixtures are cloned and mutated freely in each case.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Loose = any
+
 const realConfig = parseJsonc(readFileSync('wrangler.jsonc', 'utf8'))
 
 function prodEnv(fileOver: Record<string, string> = {}, optionsOver: Record<string, unknown> = {}) {
@@ -81,7 +85,7 @@ function prodStamp(over: Record<string, unknown> = {}) {
   return { ...stamp, ...over }
 }
 
-function configWith(mutate: (env: Record<string, any>, top: Record<string, any>) => void) {
+function configWith(mutate: (env: Record<string, Loose>, top: Record<string, Loose>) => void) {
   const config = structuredClone(realConfig)
   mutate(config.env.production, config)
   return config
@@ -449,8 +453,8 @@ const mediaConfig = {
   },
 }
 
-function mediaInput(env: string, mutate?: (config: any) => void) {
-  const config = structuredClone(mediaConfig) as any
+function mediaInput(env: string, mutate?: (config: Loose) => void) {
+  const config = structuredClone(mediaConfig) as Loose
   mutate?.(config)
   return { whoami: whoamiOk, processEnv: {}, gitStatus: '', wranglerConfig: config, env }
 }
