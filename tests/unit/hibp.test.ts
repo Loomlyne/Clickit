@@ -37,9 +37,17 @@ test('the full password and the full hash never leave in the URL or headers', as
   const f = fakeFetch(`${SUFFIX}:1`)
   await isPwned('password', f.impl)
   const sent = JSON.stringify({ url: f.calls[0].url, headers: [...new Headers(f.calls[0].init?.headers)] })
-  assert.ok(!sent.includes('password'))
+  // the host name contains "password", so check the secret on the path and headers only
+  const path = f.calls[0].url.replace('https://api.pwnedpasswords.com', '')
+  assert.ok(!path.toLowerCase().includes('password'))
   assert.ok(!sent.toUpperCase().includes(SUFFIX))
   assert.ok(!sent.toUpperCase().includes(PREFIX + SUFFIX))
+  // a distinctive password never appears anywhere in what is sent
+  const g = fakeFetch('')
+  await isPwned('Zx9-unique-secret-Q7', g.impl)
+  const sentG = JSON.stringify({ url: g.calls[0].url, headers: [...new Headers(g.calls[0].init?.headers)] })
+  assert.ok(!sentG.includes('unique-secret'))
+  assert.match(g.calls[0].url, /\/range\/[0-9A-F]{5}$/)
 })
 
 test('suffix match is case-insensitive', async () => {
