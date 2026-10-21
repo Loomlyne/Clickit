@@ -62,7 +62,7 @@ export function updatedAtOf(data: unknown): string | null {
  */
 export async function updateIfUnchanged(
   db: AdminDb,
-  table: 'shows' | 'app_config',
+  table: 'shows' | 'app_config' | 'categories' | 'shorts' | 'faqs',
   id: string | number,
   patch: Record<string, unknown>,
   version: RowVersion,

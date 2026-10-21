@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { createShort, updateShort } from '@/app/[locale]/admin/actions'
+import { useRowVersions } from '@/components/admin/row-version'
 import { extractYouTubeId } from '@/lib/youtube'
 import type { Database } from '@/lib/database.types'
 
@@ -70,6 +71,8 @@ export function ShortFormDrawer({
   const isEditing = !!editingShort
   const [fetching, setFetching] = useState(false)
   const [saving, setSaving] = useState(false)
+  // The save lands only while the short still holds the updated_at it was opened with (item 8).
+  const versions = useRowVersions()
 
   const {
     register,
@@ -176,11 +179,17 @@ export function ShortFormDrawer({
       sort_order: isEditing ? (editingShort?.sort_order ?? 0) : 0,
       expires_at: expiresAt,
     }
-    const result = isEditing
-      ? await updateShort(editingShort!.id, actionData)
+    const expected = editingShort
+      ? versions.expected(editingShort.id, editingShort.updated_at ?? '')
+      : ''
+    const result = editingShort
+      ? await updateShort(editingShort.id, actionData, expected)
       : await createShort(actionData)
 
     setSaving(false)
+    if (editingShort) {
+      versions.saved(editingShort.id, expected, (result as { updatedAt?: string }).updatedAt)
+    }
 
     if (result.success) {
       toast.success(isEditing ? t('toastUpdated') : t('toastSaved'))

@@ -31,6 +31,7 @@ import {
   updateEpisode,
 } from '@/app/[locale]/admin/actions'
 import type { Database } from '@/lib/database.types'
+import { useRowVersions } from '@/components/admin/row-version'
 
 type Episode = Database['public']['Tables']['episodes']['Row']
 
@@ -73,6 +74,8 @@ export function EpisodesTable({
     }).format(new Date(iso))
   const [isPending, startTransition] = useTransition()
   const [editEpisode, setEditEpisode] = useState<Episode | null>(null)
+  // An episode save lands only while the row still holds the updated_at it was opened with (item 8).
+  const versions = useRowVersions()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [archiveTarget, setArchiveTarget] = useState<Episode | null>(null)
   const [archiveLoading, setArchiveLoading] = useState(false)
@@ -282,11 +285,14 @@ export function EpisodesTable({
           if (!editEpisode) {
             return { success: false, error: tTable('noEpisodeSelected') }
           }
-          return updateEpisode(editEpisode.id, {
-            ...data,
-            show_id: showId,
-            season_id: seasonId,
-          })
+          const expected = versions.expected(editEpisode.id, editEpisode.updated_at)
+          const result = await updateEpisode(
+            editEpisode.id,
+            { ...data, show_id: showId, season_id: seasonId },
+            expected
+          )
+          versions.saved(editEpisode.id, expected, result.updatedAt)
+          return result
         }}
       />
 

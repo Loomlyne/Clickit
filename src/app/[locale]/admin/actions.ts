@@ -9,6 +9,7 @@ import { logAudit, logAuditStrict } from '@/lib/audit'
 import { runAdminAction, type AdminActionEnv } from '@/lib/admin/action-runner'
 import { archiveShowCore, restoreShowCore } from '@/lib/admin/show-archive'
 import type { AdminDb, AuditWriter, RestoreResult } from '@/lib/admin/ports'
+import type { Database } from '@/lib/database.types'
 import { adminImageDb } from '@/lib/admin/image-db'
 import { finalizeImageUploadCore, type ImageUploadPorts } from '@/lib/admin/image-upload'
 import {
@@ -549,29 +550,28 @@ export async function createCategory(
   }
 }
 
+/** Lands only while the row still holds the updated_at the editor opened (review item 8, PR #29). */
 export async function updateCategory(
   id: string,
-  data: z.input<typeof categorySchema>
-): Promise<ActionResult> {
+  data: z.input<typeof categorySchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
     const idParsed = parseId(id, 'category')
     if (!idParsed.ok) return { success: false, error: idParsed.error }
     id = idParsed.value
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     // sort_order stays optional so an omitted value is not written as 0.
     const parsed = categorySchema
       .extend({ sort_order: z.number().int().min(0).optional() })
       .parse(data)
     const admin = createAdminClient()
 
-    const { data: category, error } = await admin
-      .from('categories')
-      .update(parsed)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) return { success: false, error: error.message }
+    const { error, row } = await updateIfUnchanged(admin, 'categories', id, parsed, version.value, '*')
+    if (error || !row) return { success: false, error: error ?? 'Category not found.' }
+    const category = row as unknown as Database['public']['Tables']['categories']['Row']
 
     await logAudit({
       adminUserId: user.id,
@@ -582,7 +582,7 @@ export async function updateCategory(
     })
 
     bumpCatalogCache()
-    return { success: true, data: category }
+    return withUpdatedAt({ success: true, data: category }, version.value)
   } catch (err) {
     console.error('[admin/categories] update failed', err)
     return {
@@ -649,13 +649,20 @@ export async function reorderCategories(
     categoryIds = orderParsed.data
     const admin = createAdminClient()
 
+    // Each row comes back with its new updated_at so the page's editors keep a fresh version
+    // (an edit after a reorder is our own change, not a conflict; review item 8, PR #29).
     const results = await Promise.all(
       categoryIds.map((id, index) =>
-        admin.from('categories').update({ sort_order: index }).eq('id', id)
+        admin
+          .from('categories')
+          .update({ sort_order: index })
+          .eq('id', id)
+          .select('id, sort_order, updated_at')
       )
     )
     const error = results.find((result) => result.error)?.error
     if (error) return { success: false, error: error.message }
+    const versions = results.flatMap((result) => result.data ?? [])
 
     await logAudit({
       adminUserId: user.id,
@@ -665,7 +672,7 @@ export async function reorderCategories(
     })
 
     bumpCatalogCache()
-    return { success: true }
+    return { success: true, data: versions }
   } catch (err) {
     console.error('[admin/categories] reorder failed', err)
     return {
@@ -723,17 +730,20 @@ export async function createSeason(
 
 export async function updateSeason(
   id: string,
-  data: Partial<z.input<typeof seasonSchema>>
-): Promise<ActionResult> {
+  data: Partial<z.input<typeof seasonSchema>>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   return runAdminAction(
     adminEnv,
     async (ctx) => {
       const arabic = createArabicFiller(ctx.adminUserId)
+      // Checked against the drawer's updated_at before any AI call (review item 8, PR #29).
       const result = await updateSeasonCore(
         ctx.db,
         { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
         id,
-        data
+        data,
+        expectedUpdatedAt
       )
       return withArabicMissing(result, arabic.missing())
     },
@@ -781,17 +791,20 @@ export async function createEpisode(
 
 export async function updateEpisode(
   id: string,
-  data: Partial<z.input<typeof episodeSchema>>
-): Promise<ActionResult> {
+  data: Partial<z.input<typeof episodeSchema>>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   return runAdminAction(
     adminEnv,
     async (ctx) => {
       const arabic = createArabicFiller(ctx.adminUserId)
+      // Checked against the drawer's updated_at before any AI call (review item 8, PR #29).
       const result = await updateEpisodeCore(
         ctx.db,
         { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
         id,
-        data
+        data,
+        expectedUpdatedAt
       )
       return withArabicMissing(result, arabic.missing())
     },
@@ -2046,26 +2059,25 @@ export async function createShort(
   }
 }
 
+/** Lands only while the row still holds the updated_at the drawer opened (review item 8, PR #29). */
 export async function updateShort(
   id: string,
-  data: z.input<typeof shortSchema>
-): Promise<ActionResult> {
+  data: z.input<typeof shortSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
     const idParsed = parseId(id, 'short')
     if (!idParsed.ok) return { success: false, error: idParsed.error }
     id = idParsed.value
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = shortSchema.parse(data)
     const admin = createAdminClient()
 
-    const { data: short, error } = await admin
-      .from('shorts')
-      .update(parsed)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) return { success: false, error: error.message }
+    const { error, row } = await updateIfUnchanged(admin, 'shorts', id, parsed, version.value, '*')
+    if (error || !row) return { success: false, error: error ?? 'Short not found.' }
+    const short = row as unknown as Database['public']['Tables']['shorts']['Row']
 
     await logAudit({
       adminUserId: user.id,
@@ -2077,7 +2089,7 @@ export async function updateShort(
 
     revalidatePath('/admin/shorts')
     updateTag('shorts')
-    return { success: true, data: short }
+    return withUpdatedAt({ success: true, data: short }, version.value)
   } catch (err) {
     console.error('[admin/shorts] update failed', err)
     return {
@@ -2695,6 +2707,7 @@ export type Faq = {
   question_ar: string | null
   answer_ar: string | null
   sort_order: number
+  updated_at: string
 }
 
 const faqSchema = z.object({
@@ -2711,12 +2724,16 @@ export async function getFaqs(): Promise<Faq[]> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('faqs')
-    .select('id, question, answer, question_ar, answer_ar, sort_order')
+    .select('id, question, answer, question_ar, answer_ar, sort_order, updated_at')
     .order('sort_order', { ascending: true })
   return (data ?? []) as Faq[]
 }
 
-export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
+/** An update takes the editor's updated_at (review item 8, PR #29); a create does not. */
+export async function upsertFaq(
+  raw: unknown,
+  expectedUpdatedAt?: string
+): Promise<VersionedResult<Faq>> {
   try {
     const user = await assertAdmin()
     const parsed = faqSchema.safeParse(raw)
@@ -2725,22 +2742,40 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
 
     const supabase = await createClient()
     const { id, ...fields } = parsed.data
+    const version = id ? rowVersion(expectedUpdatedAt) : null
+    if (version && !version.ok) return { success: false, error: version.error }
+    if (version?.ok) {
+      // A stale editor: refuse before any AI call (the UPDATE below is the atomic check).
+      const { data: cur, error: curError } = await supabase
+        .from('faqs')
+        .select('updated_at')
+        .eq('id', id as string)
+        .maybeSingle()
+      if (curError) return { success: false, error: curError.message }
+      if (!cur) return { success: false, error: 'FAQ not found.' }
+      if (cur.updated_at !== version.value.expected) return { success: false, error: SAVE_CONFLICT }
+    }
 
     // Auto-fill blank Arabic fields from their English source (Workers AI).
     const arabic = createArabicFiller(user.id)
     fields.question_ar = await arabic.fill(fields.question, fields.question_ar, faqArMax.question_ar)
     fields.answer_ar = await arabic.fill(fields.answer, fields.answer_ar)
 
-    if (id) {
-      const { data, error } = await supabase
-        .from('faqs')
-        .update(fields)
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) return { success: false, error: error.message }
+    if (id && version?.ok) {
+      const { error, row } = await updateIfUnchanged(
+        supabase as unknown as AdminDb,
+        'faqs',
+        id,
+        fields,
+        version.value,
+        '*'
+      )
+      if (error || !row) return { success: false, error: error ?? 'FAQ not found.' }
       bumpFaqCache()
-      return withArabicMissing({ success: true, data: data as Faq }, arabic.missing())
+      return withArabicMissing(
+        withUpdatedAt({ success: true, data: row as unknown as Faq }, version.value),
+        arabic.missing()
+      )
     } else {
       const { data, error } = await supabase
         .from('faqs')

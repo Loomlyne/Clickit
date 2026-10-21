@@ -17,6 +17,7 @@ import {
   seasonSchema,
   seasonUpdateSchema,
 } from './schemas.ts'
+import { SAVE_CONFLICT, rowVersion, updatedAtOf } from './row-version.ts'
 import type { AdminDb, ArabicFill, AuditWriter, CoreResult } from './ports'
 
 type Deps = { audit: AuditWriter; adminUserId: string; fillArabic: ArabicFill }
@@ -24,6 +25,8 @@ type Obj = Record<string, unknown>
 type StepResult = { error: string | null }
 type SeasonData = { showId?: string; season?: unknown }
 type EpisodeData = { showId?: string; episode?: unknown }
+/** A drawer save: success carries the row's new updated_at for the next save (item 8, PR #29). */
+type Versioned<T> = CoreResult<T> & { updatedAt?: string }
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
@@ -175,27 +178,37 @@ export async function createSeasonCore(
   return { success: true, wrote: true, data: { season: created, showId: parsed.show_id } }
 }
 
+/**
+ * The season drawer save. `expectedUpdatedAt` is the row's updated_at the drawer was loaded
+ * with (review item 8, PR #29): checked before any AI call, and the UPDATE lands only while
+ * the row still holds it; 0 rows is the existing conflict line with nothing written.
+ */
 export async function updateSeasonCore(
   db: AdminDb,
   deps: Deps,
   id: unknown,
-  data: unknown
-): Promise<CoreResult<SeasonData>> {
+  data: unknown,
+  expectedUpdatedAt: unknown
+): Promise<Versioned<SeasonData>> {
   const pid = parseId(id, 'season')
   if (!pid.ok) return { success: false, error: pid.error, wrote: false }
   const p = seasonUpdateSchema.safeParse(data)
   if (!p.success) return { success: false, error: formatZodError(p.error), wrote: false }
+  const version = rowVersion(expectedUpdatedAt)
+  if (!version.ok) return { success: false, error: version.error, wrote: false }
+  const expected = version.value.expected
   const seasonId = pid.value
 
   const cur = await db
     .from('seasons')
-    .select('id, show_id, title, title_ar, season_number')
+    .select('id, show_id, title, title_ar, season_number, updated_at')
     .eq('id', seasonId)
     .maybeSingle()
   if (cur.error) return { success: false, error: cur.error.message, wrote: false }
   if (!cur.data) return { success: false, error: 'Season not found.', wrote: false }
   const row = cur.data as unknown as Obj
   const showId = row.show_id as string
+  if (row.updated_at !== expected) return { success: false, error: SAVE_CONFLICT, wrote: false, data: { showId } }
 
   const { show_id: clientShow, ...rest } = p.data
   if (clientShow !== undefined && clientShow !== showId) {
@@ -213,33 +226,54 @@ export async function updateSeasonCore(
   }
   const keys = Object.keys(patch)
   if (keys.length === 0) {
-    return { success: true, wrote: false, data: { season: row, showId } }
+    return { success: true, wrote: false, data: { season: row, showId }, updatedAt: expected }
   }
   const before = pick(row, keys)
 
   let updated: unknown = null
+  let written: string | null = null
+  let stale = false
   const steps: WriteStep[] = [
     {
       name: 'update-season',
       run: async () => {
-        const res = await db.from('seasons').update(patch as never).eq('id', seasonId).select().single()
+        const res = await db
+          .from('seasons')
+          .update(patch as never)
+          .eq('id', seasonId)
+          .eq('updated_at', expected)
+          .select()
         if (res.error) return { error: res.error.message }
-        updated = res.data
-        return { error: null }
+        if (!Array.isArray(res.data) || res.data.length !== 1) {
+          stale = true
+          return { error: SAVE_CONFLICT }
+        }
+        updated = res.data[0]
+        written = updatedAtOf(res.data)
+        return written ? { error: null } : { error: 'The saved season came back without updated_at.' }
       },
+      // Compare-and-swap on the value we wrote: a save that landed after ours is never undone.
       undo: async () => {
-        const res = await db.from('seasons').update(before as never).eq('id', seasonId)
-        return { error: res.error?.message ?? null }
+        if (!written) return { error: 'No updated_at to restore against.' }
+        const res = await db
+          .from('seasons')
+          .update(before as never)
+          .eq('id', seasonId)
+          .eq('updated_at', written)
+          .select('id')
+        return oneRow(res, 'restore season')
       },
     },
     auditStep(deps, 'update', 'season', () => seasonId, () => ({ before, after: patch })),
   ]
   const result = await runWithCompensation(steps)
+  // Someone saved since the drawer loaded: the update changed 0 rows, nothing else ran.
+  if (stale) return { success: false, error: SAVE_CONFLICT, wrote: false, data: { showId } }
   if (!result.ok) {
     await recordFailure(deps, 'update', 'season', seasonId, result, { before, after: patch })
     return { success: false, error: failMessage(result), wrote: result.wrote, data: { showId } }
   }
-  return { success: true, wrote: true, data: { season: updated, showId } }
+  return { success: true, wrote: true, data: { season: updated, showId }, updatedAt: written ?? undefined }
 }
 
 export async function deleteSeasonCore(
@@ -458,16 +492,24 @@ export async function createEpisodeCore(
   return { success: true, wrote: true, data: { episode: created, showId } }
 }
 
+/**
+ * The episode drawer save, with the same updated_at check as updateSeasonCore (review item 8,
+ * PR #29). A conflict on the UPDATE also undoes an archived-episode number bump made before it.
+ */
 export async function updateEpisodeCore(
   db: AdminDb,
   deps: Deps,
   id: unknown,
-  data: unknown
-): Promise<CoreResult<EpisodeData>> {
+  data: unknown,
+  expectedUpdatedAt: unknown
+): Promise<Versioned<EpisodeData>> {
   const pid = parseId(id, 'episode')
   if (!pid.ok) return { success: false, error: pid.error, wrote: false }
   const p = episodeUpdateSchema.safeParse(data)
   if (!p.success) return { success: false, error: formatZodError(p.error), wrote: false }
+  const version = rowVersion(expectedUpdatedAt)
+  if (!version.ok) return { success: false, error: version.error, wrote: false }
+  const expected = version.value.expected
   const episodeId = pid.value
 
   const cur = await db.from('episodes').select('*').eq('id', episodeId).maybeSingle()
@@ -476,6 +518,7 @@ export async function updateEpisodeCore(
   const row = cur.data as unknown as Obj
   const showId = row.show_id as string
   const seasonId = row.season_id as string
+  if (row.updated_at !== expected) return { success: false, error: SAVE_CONFLICT, wrote: false, data: { showId } }
 
   const { show_id: clientShow, season_id: clientSeason, ...rest } = p.data
   if (clientShow !== undefined && clientShow !== showId) {
@@ -527,15 +570,22 @@ export async function updateEpisodeCore(
   }
 
   const keys = Object.keys(patch)
-  if (keys.length === 0) return { success: true, wrote: false, data: { episode: row, showId } }
+  if (keys.length === 0) return { success: true, wrote: false, data: { episode: row, showId }, updatedAt: expected }
   const before = pick(row, keys)
 
   let updated: unknown = null
+  let written: string | null = null
+  let stale = false
   steps.push(
     {
       name: 'update-episode',
       run: async () => {
-        const res = await db.from('episodes').update(patch as never).eq('id', episodeId).select().single()
+        const res = await db
+          .from('episodes')
+          .update(patch as never)
+          .eq('id', episodeId)
+          .eq('updated_at', expected)
+          .select()
         if (res.error) {
           return {
             error:
@@ -544,20 +594,36 @@ export async function updateEpisodeCore(
                 : res.error.message,
           }
         }
-        updated = res.data
-        return { error: null }
+        if (!Array.isArray(res.data) || res.data.length !== 1) {
+          stale = true
+          return { error: SAVE_CONFLICT }
+        }
+        updated = res.data[0]
+        written = updatedAtOf(res.data)
+        return written ? { error: null } : { error: 'The saved episode came back without updated_at.' }
       },
+      // Compare-and-swap on the value we wrote: a save that landed after ours is never undone.
       undo: async () => {
-        const res = await db.from('episodes').update(before as never).eq('id', episodeId)
-        return { error: res.error?.message ?? null }
+        if (!written) return { error: 'No updated_at to restore against.' }
+        const res = await db
+          .from('episodes')
+          .update(before as never)
+          .eq('id', episodeId)
+          .eq('updated_at', written)
+          .select('id')
+        return oneRow(res, 'restore episode')
       },
     },
     auditStep(deps, 'update', 'episode', () => episodeId, () => ({ before, after: patch }))
   )
   const result = await runWithCompensation(steps)
   if (!result.ok) {
+    // A conflict: the archived bump (if any) was undone by the compensation; nothing else ran.
+    if (stale && result.leftInPlace.length === 0) {
+      return { success: false, error: SAVE_CONFLICT, wrote: false, data: { showId } }
+    }
     await recordFailure(deps, 'update', 'episode', episodeId, result, { before, after: patch })
     return { success: false, error: failMessage(result), wrote: result.wrote, data: { showId } }
   }
-  return { success: true, wrote: true, data: { episode: updated, showId } }
+  return { success: true, wrote: true, data: { episode: updated, showId }, updatedAt: written ?? undefined }
 }

@@ -24,6 +24,7 @@ import {
   createEpisode,
 } from '@/app/[locale]/admin/actions'
 import type { Database } from '@/lib/database.types'
+import { useRowVersions } from '@/components/admin/row-version'
 
 type Season = Database['public']['Tables']['seasons']['Row']
 type Episode = Database['public']['Tables']['episodes']['Row']
@@ -62,6 +63,8 @@ export function SeasonTabs({
   const t = useTranslations('admin.seasonTabs')
   const [seasonDrawerOpen, setSeasonDrawerOpen] = useState(false)
   const [editSeason, setEditSeason] = useState<Season | null>(null)
+  // A season save lands only while the row still holds the updated_at it was opened with (item 8).
+  const seasonVersions = useRowVersions()
   const [episodeDrawerOpen, setEpisodeDrawerOpen] = useState(false)
   const [activeSeasonIdForEpisode, setActiveSeasonIdForEpisode] = useState<
     string | null
@@ -214,10 +217,13 @@ export function SeasonTabs({
         nextSeasonNumber={seasons.length + 1}
         onSave={async (data) => {
           if (editSeason) {
-            const result = await updateSeason(editSeason.id, {
-              ...data,
-              show_id: showId,
-            })
+            const expected = seasonVersions.expected(editSeason.id, editSeason.updated_at)
+            const result = await updateSeason(
+              editSeason.id,
+              { ...data, show_id: showId },
+              expected
+            )
+            seasonVersions.saved(editSeason.id, expected, result.updatedAt)
             if (result.success) router.refresh()
             return result
           }

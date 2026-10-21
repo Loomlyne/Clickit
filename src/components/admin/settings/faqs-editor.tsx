@@ -27,6 +27,7 @@ import {
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { upsertFaq, deleteFaq } from '@/app/[locale]/admin/actions'
 import type { Faq } from '@/app/[locale]/admin/actions'
+import { useRowVersions } from '@/components/admin/row-version'
 import { SettingsCard, SettingsField } from './settings-card'
 
 type Draft = {
@@ -36,6 +37,8 @@ type Draft = {
   question_ar: string
   answer_ar: string
   sort_order: number
+  /** updated_at the editor opened with (not a form field; the action's schema drops it). */
+  updated_at?: string
 }
 
 const emptyDraft = (nextOrder: number): Draft => ({
@@ -55,6 +58,8 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Faq | null>(null)
   const [deleting, setDeleting] = useState(false)
+  // Each save is checked against the updated_at this editor opened the FAQ with (item 8).
+  const versions = useRowVersions()
 
   function openNew() {
     const nextOrder =
@@ -70,18 +75,22 @@ export function FaqsEditor({ initial }: { initial: Faq[] }) {
       question_ar: faq.question_ar ?? '',
       answer_ar: faq.answer_ar ?? '',
       sort_order: faq.sort_order,
+      updated_at: faq.updated_at,
     })
   }
 
   async function onSave() {
     if (!draft) return
     setSaving(true)
-    const result = await upsertFaq(draft)
+    const expected =
+      draft.id && draft.updated_at ? versions.expected(draft.id, draft.updated_at) : undefined
+    const result = await upsertFaq(draft, expected)
     setSaving(false)
     if (!result.success) {
       toast.error(result.error ?? t('faqSaveFailed'))
       return
     }
+    if (draft.id && expected) versions.saved(draft.id, expected, result.updatedAt)
     const saved = result.data as Faq
     setFaqs((prev) =>
       draft.id

@@ -201,7 +201,7 @@ test('updateCategory, updateShort and upsertFaq (update branch) write through up
     assert.match(b, /rowVersion\(expectedUpdatedAt\)/, `${name} validates it`)
     assert.ok(b.includes(`updateIfUnchanged(`) && b.includes(`'${table}'`), `${name} writes ${table} through updateIfUnchanged`)
     assert.ok(!new RegExp(`from\\('${table}'\\)\\s*\\.update\\(`).test(b), `${name} has no plain update`)
-    assert.match(b, /updatedAt/, `${name} returns the new updatedAt`)
+    assert.match(b, /withUpdatedAt\(|\bupdatedAt\b/, `${name} returns the new updatedAt`)
   }
   const faq = bodyOf('upsertFaq')
   assert.ok(faq.indexOf('rowVersion(expectedUpdatedAt)') < faq.indexOf('createArabicFiller('), 'FAQ version is checked before any AI call')
