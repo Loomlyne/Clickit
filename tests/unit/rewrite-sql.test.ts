@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { spawnSync } from 'node:child_process'
 import { scanSql } from '../../scripts/migration-guard.mjs'
 
 // MEDIA-08 / MEDIA-02 (plan 03-05): lint the backup-table migration and the
@@ -239,4 +240,32 @@ test('check-backup-table: existence, RLS flag, row count, no anon/authenticated 
   assert.match(sql, /has_table_privilege\('authenticated', 'private\.media_url_rewrite_backup', 'select'\)/)
   assert.match(sql, /aclexplode\(c\.relacl\)/)
   assert.doesNotMatch(stripComments(sql), /\binsert\b|\bupdate\b/i, 'read-only')
+})
+
+test('with-heavy-lock.sh and test-local.sh parse, and a log path inside the repo is refused before the lock', () => {
+  for (const script of ['scripts/cutover/with-heavy-lock.sh', 'scripts/cutover/sql/test-local.sh']) {
+    const syntax = spawnSync('bash', ['-n', join(ROOT, script)], { encoding: 'utf8' })
+    assert.equal(syntax.status, 0, `${script}: ${syntax.stderr}`)
+  }
+  const refused = spawnSync(join(ROOT, 'scripts/cutover/with-heavy-lock.sh'), ['./x.log', '--', 'true'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  })
+  assert.equal(refused.status, 64)
+  assert.match(refused.stderr, /refusing log path inside the repository/)
+  const lock = readFileSync(join(ROOT, 'scripts/cutover/with-heavy-lock.sh'), 'utf8')
+  assert.ok(lock.includes('LOCK=/Users/koss/.clickit-heavy.lock'))
+  assert.match(lock, /echo "exit=\$status" >>"\$LOG_ABS"/)
+  assert.match(lock, /trap release EXIT/)
+})
+
+test('test-local.sql: one transaction that ends in rollback, every ops file included', () => {
+  const sql = ops('test-local.sql')
+  assert.match(sql, /^begin;$/m)
+  assert.match(sql, /^rollback;$/m)
+  assert.doesNotMatch(stripComments(sql), /^commit\b/im)
+  for (const name of REQUIRED_OPS) assert.ok(sql.includes(`\\ir ${name}`), `test-local.sql does not run ${name}`)
+  assert.ok(sql.includes('\\ir migration_media_url_rewrite_backup.sql'))
+  assert.ok(sql.includes("raise notice 'test-local: PASS'"))
+  assert.ok(sql.includes("'local stack has no shows rows: run supabase db reset --local first'"))
 })
