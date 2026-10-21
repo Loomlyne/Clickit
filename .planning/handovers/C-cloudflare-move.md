@@ -1,7 +1,8 @@
 # Hand-over: job C, Cloudflare move (Phase 2 execution, Phase 3 plan draft)
 
-Session: work session C. Branch `claude/phase-02-execute-19d86a` (worktree `.claude/worktrees/phase-02-execute-19d86a`), pushed to origin. Final commit: 15dda47 (hand-over commit; code tip 9bf2faf).
-PR: none yet. Plan: one PR for the whole phase after 02-22 (the remaining four plans are owner/controller-gated). The controller may open a PR earlier for review of 02-01..02-19; the diff against main is code-complete for the Worker.
+Session: work session C. Branch `claude/phase-02-execute-19d86a` (worktree `.claude/worktrees/phase-02-execute-19d86a`), pushed to origin, contains origin/main c0da1d8. Updated 2026-10-21.
+PR: draft "Phase 2: Cloudflare Workers and R2" against main, opened 2026-10-21 for review while the owner runbook steps are still open. Do not merge until the steps below are closed and Koss says Ship.
+Live today: app Worker `clickit` on https://clickit.clickitstory.workers.dev at d7b59d6 (version 0c24ae10, 2026-10-20 23:29 CET, media flag off). c9bdde8 (Arabic prompt fix) and later commits wait for the next redeploy (Koss's own "deploy workers.dev" each time). www stays on Vercel.
 
 ## Done (18 of 22 Phase 2 plans, plus extras)
 
@@ -26,41 +27,65 @@ PR: none yet. Plan: one PR for the whole phase after 02-22 (the remaining four p
 | 02-18 | browser → R2 video uploads | 02-18 |
 | 02-19 | old upload actions, sharp, @aws-sdk out of request paths; admin works on the Worker | 02-19 |
 
-Extras: shared-key and live-key guards for images and video (c0c4cbf..9bf2faf); deferred items 21-23 left (remove actions and cross-scope sharing, see deferred-items.md); unknown-route 500 → 404 (`src/app/[locale]/[...rest]`, locale not-found); merge of origin/main (Phase 1, B4 admin restyle, perf, job D) with resolution log in the merge commit; media deploy guard follows main's `supabase-only`/`r2` env split; video and image finalize refuse an already-live key; replaced key kept while another live value uses it; runbook fixes (Turnstile widget before first deploy, Step 4b enable R2, Step 28 production stop); Phase 3 cutover draft v2 (`.planning/phases/03-production-cutover/03-CUTOVER-DRAFT.md`) after an independent review.
+Extras since the first hand-over (2026-10-20):
+- Deferred items 21-23 fixed: media deletes check every live reference across all tables and fail safe; compare-and-swap on media writes (f77ff68, 1d6ce5b).
+- Admin form saves check `updated_at` (shows, every app_config settings section, settings-page media; reorder/featured CAS on previous values) with a shared row-version provider (9a953f9, b73b30c).
+- Admin Arabic fill on Workers AI (`AI` binding, `@cf/google/gemma-4-26b-a4b-it`), fail closed, 60 calls per admin per 10 min, warning toast with the signed ticker copy; Google Translate path, key and RUNBOOK Step 19 removed (a24d365, d7b59d6). Live model check without DB writes, prompt fixed to translate places, months and times (c9bdde8).
+- DOQueueHandler deploy warning: not a bug (OpenNext's local populate-cache proxy); the deployed Worker exports the class. No change.
+- RUNBOOK: pre-cutover check that live PostgREST max_rows >= 1000 (Phase 6 readAllPages); youtube-recheck cron note at P3-8 (858e427).
+
+Earlier extras: shared-key and live-key guards for images and video (c0c4cbf..9bf2faf); unknown-route 500 → 404 (`src/app/[locale]/[...rest]`, locale not-found); merge of origin/main (Phase 1, B4 admin restyle, perf, job D) with resolution log in the merge commit; media deploy guard follows main's `supabase-only`/`r2` env split; video and image finalize refuse an already-live key; replaced key kept while another live value uses it; runbook fixes (Turnstile widget before first deploy, Step 4b enable R2, Step 28 production stop); Phase 3 cutover draft v2 (`.planning/phases/03-production-cutover/03-CUTOVER-DRAFT.md`) after an independent review.
 CI: Phase 1's `pr-gate.yml` / `apply-live-migrations.yml` (on main) replace the CI items in the job brief; this branch's own `ci.yml` was dropped in the merge. Note for the controller: `pr-gate.yml` runs on `[opened, synchronize, reopened]` with no `paths-ignore` (by design, required checks); Koss's rule 4 says once on open with paths-ignore. That is Phase 1's file: decide there.
 
 ## Gates (final tree)
 
-- `npm run gate:local` (lint, typecheck, unit, guard:migrations, next build, cf:build) under the heavy lock: exit=0 on 9bf2faf (`/Users/koss/clickit-phase02-logs/shared-key-gate.log`).
-- `npm run test:unit`: 1003/1003 pass. Lint 0 errors (24 warnings, known). `tsc --noEmit` clean.
-- Worker preview smoke after the main merge: `/en` 200, `/en/auth` 200 with the Turnstile widget in #21's slot, `/en/auth/sign-in` 404; admin settings save 200 on the Worker (02-19).
+- `npm run gate:local` (lint, typecheck, unit, guard:migrations, next build, cf:build) under the heavy lock on the PR head: see `/Users/koss/clickit-phase02-logs/pr-gate.log` (exit line recorded in the PR body). Previous: exit=0 on c9bdde8 (`prompt-gate.log`), exit=0 on d7b59d6 (`translate-ai-gate.log`).
+- Unit tests 1124/1124. Lint 0 errors (24 known warnings). `tsc --noEmit` clean.
+- Controller clean-clone checks: prp2 at d7b59d6 exit=0; c9bdde8 check run by the controller.
+- workers.dev after deploy (controller, 2026-10-20 23:29 CET): `/en`, `/ar`, `/en/auth` 200; `/` 307 → `/en`; bindings list includes env.AI and env.NEXT_CACHE_DO_QUEUE.
 
 ## Not verified
 
-- Anything remote: no deploy, no R2 (not enabled), no real presigned PUT, no Worker secrets, no Turnstile real keys, no Web Analytics token, no CPU numbers (02-10, 02-20, 02-21, 02-22).
-- Real Safari playback, Arabic/RTL layout of the new upload zone and Turnstile placement, a file near 50 MB.
-- Contact/newsletter against Cloudflare's real siteverify.
+- A real admin save on workers.dev (would write a live row + rate_limits + audit rows: needs Koss's word; Step 32 covers the one approved write).
+- Media Worker on R2 (Step 28 production stop), copy run and verify (Steps 25-29), flag-on build (Step 30).
+- CPU per route on Workers Free (Task 4 / 02-21), real presigned PUT, real Turnstile siteverify on contact/newsletter.
+- Real Safari playback, Arabic/RTL layout of the upload zone and Turnstile placement, a file near 50 MB.
 - `check-revalidate` (needs a signed-in cookie).
 
-## Remaining plans (owner/controller-gated)
+## Remaining runbook steps and owners
 
+| Step | What | Owner | State |
+|------|------|-------|-------|
+| 1-12, 13-18, 20, 21 | login, subdomain, R2, buckets, CORS, D1, env file, Turnstile widget, first deploy, secrets | Koss / controller | done (2026-10-20) |
+| 19 | Google key | — | removed (Workers AI) |
+| 22 | Web Analytics site | Koss | controller to confirm |
+| 23 | Supabase redirect allow-list for `https://clickit.clickitstory.workers.dev/**` | Koss (dashboard) | open |
+| 24 | secret names read-back | Koss | controller to confirm; delete a stray GOOGLE_TRANSLATE_API_KEY if listed |
+| Task 4 (02-10) | wrangler tail + CPU sample on /en, /ar, /en/auth | C (session), after Step 23 | open |
+| 25-27 | copy credentials, dry-run, execute copy (reads Supabase Storage, writes R2) | Koss | open (R2 already holds a verified copy from #24; re-sync only with `npm run r2:media -- --refresh` then `--execute`) |
+| 28 | deploy media Worker (`--env r2` flips production media: stop first) | controller, Koss's word | open |
+| 29 | verify every object on the media host | Koss or controller | open |
+| 30 | workers.dev build with media on R2 ("flag on workers.dev") | controller, Koss's word | open |
+| 31 | name the draft test show (read only) | Koss | open |
+| 32 | approve the single live write of Phase 2 (draft show poster) | Koss | open |
+| 33 | Workers plan decision, only if the CPU report fails (priced question) | Koss | open / conditional |
+| 34 | approve the measurement sign-ins (before 31-32) | Koss | open |
+| 02-22 | gate, coverage, UAT (below), teardown | C + Koss (UAT) | open |
+
+Notes:
 - Cron placeholder (controller, 2026-10-20): PR #27 (Phase 6) adds `/api/cron/youtube-recheck`, which needs a daily Worker cron trigger. Whichever of Phase 2 / Phase 6 lands second wires it: one entry in `src/server/cron-schedule.ts` (cron map) plus the trigger in `wrangler.jsonc` `triggers.crons` at the Phase 3 cutover (crons stay `[]` until then). Phase 2 does not edit Phase 6 files.
-- Admin Arabic fill (2026-10-20): Workers AI `AI` binding, `@cf/google/gemma-4-26b-a4b-it`, live-checked on the ClickitStory account (about 2 neurons per short field; free allowance 10,000/day). Google Translate and its secret are gone (RUNBOOK Step 19 removed).
-
-
-- 02-10: RUNBOOK Steps 1-24 (login, subdomain, enable R2 [4b], buckets, CORS, D1, env file incl. Turnstile widget [20 before 12], first workers.dev deploy [12], secrets, Web Analytics, Supabase redirect URL), then CPU sample.
-- 02-20: code-complete deploy, media Worker deploy (Step 28 production stop), copy, verify, flag-on build.
-- 02-21: per-route CPU on Workers Free, stop rule with the priced question.
-- 02-22: gate, coverage, UAT, teardown.
+- PRs #27 (Phase 6) and #28 (Phase 4) are open; whichever lands second resolves conflicts.
+- Open decisions: pr-gate.yml triggers vs rule 4 (Phase 1 file); Phase 3 Q1-Q4 in `03-CUTOVER-DRAFT.md`.
 
 ## Pending Koss signatures (copy)
 
 - Arabic for: `turnstile.checkFailed` ("Security check failed. Please try again."), the 02-11 rate-limit and "temporarily unavailable" lines, the 02-17/02-18 upload texts (progress, Retry, refused, Safari note, "Saving…", "Upload an MP4 video.", not-fast-start sentence, "Checking fast-start…", "MP4, fast-start, under 50MB").
+- Arabic for the conflict line ("This item changed while you were saving. Reload and try again."), "Missing or invalid updated_at.", "Could not read every media reference".
 - Wording for the hero ">8 MB" warning that still mentions Supabase egress (deferred item 13).
 
 ## UAT (numbered, after 02-10..02-20 owner steps; on workers.dev)
 
-1. Open `https://clickit.<SUB>.workers.dev/en` → home renders, images load from the media origin.
+1. Open `https://clickit.clickitstory.workers.dev/en` → home renders, images load from the media origin.
 2. Open `/en/auth`, sign in with a real account → Turnstile widget above the button, button enabled after the check, signed in.
 3. Open a show, pick an episode → YouTube player plays; progress saved after reload.
 4. Admin: `/en/admin/settings`, change the tagline, Save → toast "Site metadata saved"; reload shows it.
@@ -68,4 +93,5 @@ CI: Phase 1's `pr-gate.yml` / `apply-live-migrations.yml` (on main) replace the 
 6. Admin: upload an SVG → refused toast, nothing saved.
 7. Admin: upload a fast-start MP4 hero to a draft show → progress, plays; a non-fast-start MP4 → refused, nothing saved.
 8. `/en/auth/sign-in` → 404 page. `/` → redirects to `/en`.
-9. Cron: `curl -s -o /dev/null -w "%{http_code}" https://clickit.<SUB>.workers.dev/api/cron/publish-scheduled` → 401 (no secret).
+9. Admin: save a show with an empty Arabic title/description → saved; Arabic description filled; if any field could not be filled, warning toast "Saved. N Arabic field(s) could not be translated automatically; fill them in by hand."
+10. Cron: `curl -s -o /dev/null -w "%{http_code}" https://clickit.clickitstory.workers.dev/api/cron/publish-scheduled` → 401 (no secret).
