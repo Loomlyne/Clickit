@@ -5,6 +5,8 @@
 **Confidence:** HIGH on OpenNext/wrangler shape, DNS behaviour (empirically probed), SQL (tested on the local stack); MEDIUM on Supabase key-disable behaviour and Resend eu-west-1 record values; LOW on GraphQL analytics access with the wrangler OAuth token and on Worker-route fail-open settings.
 
 <user_constraints>
+> **Amended 2026-10-21:** the `55 0 * * *` cron below is superseded by 03-CONTEXT.md A-3 (three Phase 2 crons, `CRON_EXPRESSIONS_FOR_PHASE_3`); the CPU entry condition by A-1/A-5; the plans carry the amended text.
+
 ## User Constraints (from CONTEXT.md)
 
 Status line in CONTEXT.md: Decisions D-01..D-15 are the RECOMMENDED answers to `03-DISCUSS-QUESTIONS.md` Q1..Q15, **pending Koss's signature** (relayed by the controller). Plans are written against them; any other answer is applied as a plan revision before execution.

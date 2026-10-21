@@ -134,13 +134,13 @@ Plans:
 **Plans**: 13 plans (13 serial waves; code W1-W6 in the work worktree, ops W7-W13 by the controller and Koss after Ship)
 
 Plans:
-- [ ] 03-01-PLAN.md — W1: entry gate (Phase 2 on main, r2:media + verify-media-host on main; STOP halts), cron 55 0 * * * + refresh on every run, env.production in wrangler.jsonc + drift test
+- [ ] 03-01-PLAN.md — W1: entry gate (Phase 2 on main, r2:media + verify-media-host on main; STOP halts), publish refresh on every run (three Phase 2 crons kept, amended D-12/G8), env.production in wrangler.jsonc + drift test
 - [ ] 03-02-PLAN.md — W2: production build target, checkProductionDeploy, D-18 target switch, media r2 env guard, cf:deploy:production
 - [ ] 03-03-PLAN.md — W3: dns-check (registry + jen/brett + SOA in every phase, explicit --with-resend flags) and rollback.mjs (Keychain token, proxied toggle only)
 - [ ] 03-04-PLAN.md — W4: x-clickit-runtime header, proof-check, keys-check (legacy 401 / captcha probe), media-health --expect-source, parse-auth-results
 - [ ] 03-05-PLAN.md — W5: backup-table migration, rewrite/scan/report/reverse SQL, with-heavy-lock.sh, local rolled-back test, lint test
 - [ ] 03-06-PLAN.md — W6: 03-RUNBOOK.md Steps 1-56, 03-GATES.md (branch B wording), gate:local, hand-over, PR
-- [ ] 03-07-PLAN.md — W7 [ops]: DNS-01 proof, Resend + MAIL-02, [BLOCKING] backup-table migration via workflow (Steps 1-12)
+- [ ] 03-07-PLAN.md — W7 [ops]: DNS-01 proof, Resend + MAIL-02, [BLOCKING] backup-table migration via workflow (Steps 0a P3-pre-cpu, 0b P3-pre-migration, 1-12)
 - [ ] 03-08-PLAN.md — W8 [ops]: r2:media re-sync, media Worker R2-first, verify on media.clickitstory.ae (Steps 13-17)
 - [ ] 03-09-PLAN.md — W9 [ops]: new Supabase keys on the Worker, production env file, Turnstile/CORS, DNS token, zone settings (Steps 18-24)
 - [ ] 03-10-PLAN.md — W10 [ops]: production deploy (route inert), Vercel crons off, pre-flip proofs, fail-open, G-DNS, the flip, UAT, cron (Steps 25-35)

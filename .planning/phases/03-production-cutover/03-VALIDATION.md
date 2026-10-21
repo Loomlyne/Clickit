@@ -35,7 +35,7 @@ created: 2026-10-20
 | DNS-01 | `tests/unit/dns-check.test.ts`; live `node scripts/cutover/dns-check.mjs --phase pre-flip` (4 `.ae` servers + jen/brett) | — |
 | MAIL-02 | dns-check (Resend records on both NS); `tests/unit/parse-auth-results.test.ts` | Resend "Verify"; test send headers show spf=pass, dkim=pass, dmarc=pass |
 | DNS-02 | `scripts/cutover/proof-check.mjs --site https://www.clickitstory.ae` (server: cloudflare, no x-vercel-id, apex 301); `scripts/cf/check-gates.mjs --base https://www.clickitstory.ae` | sign in with a real account, play an episode, progress remembered |
-| DNS-03 | unit: cron key `55 0 * * *`, production guard; live `scripts/cutover/keys-check.mjs` (legacy anon → 401 after close) | Vercel crons off (branch A) or dashboard read-back; admin audit page loads on the secret key |
+| DNS-03 | unit: env.production crons = CRON_EXPRESSIONS_FOR_PHASE_3 (three, amended D-12/G8), publish refresh every run, production guard; live `scripts/cutover/keys-check.mjs` (legacy anon → 401 after close) | Vercel crons off (branch A) or dashboard read-back; admin audit page loads on the secret key |
 | DNS-04 | `dns-check.mjs --phase rollback` + `proof-check.mjs --expect vercel`; cert notAfter read | optional flip-day rehearsal toggle (his word) |
 | MEDIA-02 | `npm run media:health`; `scripts/media/verify-media-host.mjs --origin https://media.clickitstory.ae` 0 failures | — |
 | MEDIA-08 | local rolled-back SQL test (rewrite, scan, reverse); `tests/unit/rewrite-sql.test.ts`; live read-only scan = 0 | his word before the rewrite |
@@ -48,7 +48,7 @@ created: 2026-10-20
 | Plan-Task | Req | Automated verify | Kind |
 |-----------|-----|------------------|------|
 | 03-01-T1 | DNS-02 | grep "^ENTRY: PASS" in 03-ENTRY.md (STOP fails the verify and halts); deploy-guard, verify-media-host and r2:media present; merge-base check | gate |
-| 03-01-T2 | DNS-03 | NT tests/unit/cron-schedule.test.ts tests/unit/scheduled.test.ts tests/unit/publish-scheduled-refresh.test.ts | unit |
+| 03-01-T2 | DNS-03 | NT tests/unit/cron-schedule.test.ts tests/unit/scheduled.test.ts (unchanged, must still pass) tests/unit/publish-scheduled-refresh.test.ts | unit |
 | 03-01-T3 | DNS-02, DNS-03 | NT tests/unit/cutover-config.test.ts tests/unit/deploy-guard.test.ts | unit |
 | 03-02-T1 | DNS-02, DNS-03, MEDIA-02 | NT tests/unit/production-target.test.ts tests/unit/deploy-guard.test.ts tests/unit/cutover-config.test.ts | unit |
 | 03-02-T2 | DNS-02 | npm run test:unit (build args, report-hash and stamp/HEAD mismatch, deploy-only source check) + script greps + offline guard dry run refuses (no wrangler) | unit + offline dry run |
@@ -61,10 +61,10 @@ created: 2026-10-20
 | 03-05-T2 | MEDIA-08 | /Users/koss/.clickit-checks/p3-sql-test.log has "test-local: PASS" and exit=0 (via with-heavy-lock.sh; scan ignores a non-media workers.dev auth value) | local DB (rolled back) |
 | 03-06-T1/T2 | all | runbook Step 1-56 presence greps; no key shapes; every wrangler line HOME-pinned with whoami in the step; every later dns-check passes --with-resend | doc |
 | 03-06-T3 | all | p3-gate.log exit=0 (npm run gate:local); PR open | full gate |
-| 03-07 | DNS-01, MAIL-02, MEDIA-08 | log greps: "dns-check ns: ALL PASS", "dns-check resend: ALL PASS", "MAIL-02: PASS", "backup table: OK" | live read + owner |
+| 03-07 | DNS-01, MAIL-02, MEDIA-08 | log greps: "P3-pre-cpu: PASS", "P3-pre-migration: PASS", "dns-check ns: ALL PASS", "dns-check resend: ALL PASS", "MAIL-02: PASS", "backup table: OK" | live read + owner |
 | 03-08 | MEDIA-02 | r2:media logs end exit=0 (heavy lock); log greps: "verify ok ... 0 failures", "x-media-source: r2" | live read + owner |
 | 03-09 | DNS-03, DNS-04 | log greps: secret names, "env file counts: 5 1", "token active" or D-16 branch B, "Rocket Loader: off" | owner + read-back |
-| 03-10 | DNS-02, DNS-03, DNS-04 | p3-build-production.log exit=0; log greps: "deploy-only: using build stamp", "Vercel crons disabled" or signed branch B, "dns-check post-flip: ALL PASS", "proof-check worker: ALL PASS", "UAT www: pass", "publish-scheduled status 200" | live + owner UAT |
+| 03-10 | DNS-02, DNS-03, DNS-04 | p3-build-production.log exit=0; log greps: "deploy-only: using build stamp", "Vercel crons disabled" or signed branch B, "dns-check post-flip: ALL PASS", "proof-check worker: ALL PASS", "UAT www: pass", "publish-scheduled status 200", "youtube-recheck status 200" (or key_missing reported to Koss), "cron exceededCpu: none" | live + owner UAT |
 | 03-11 | DNS-04 | 7 GREEN daily lines; "no rollback needed" or rollback ALL PASS; Koss's close word | live daily |
 | 03-12 | DNS-03, MEDIA-08 | log greps: "keys-check legacy-off: PASS", "captcha-probe on: PASS", "scan-old-hosts: 0 rows" | live + owner |
 | 03-13 | PLAT-11 | log greps: "dns-check final: ALL PASS", deletion or "branch B applied", signed rewording in REQUIREMENTS, evidence table | live + owner |
@@ -75,7 +75,7 @@ created: 2026-10-20
 - [ ] `tests/unit/cutover-config.test.ts`
 - [ ] `tests/unit/parse-auth-results.test.ts`
 - [ ] `tests/unit/rewrite-sql.test.ts` + `scripts/cutover/sql/test-local.sql`
-- [ ] updates to `tests/unit/cron-schedule.test.ts`, `tests/unit/scheduled.test.ts`, deploy-guard/build-target tests
+- [ ] deploy-guard/build-target test updates (`tests/unit/cron-schedule.test.ts` and `tests/unit/scheduled.test.ts` stay unchanged, amended D-12)
 
 ## Manual-Only Verifications
 
