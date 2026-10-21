@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-21T13:55:40.692Z"
+last_updated: "2026-10-21T13:58:56.322Z"
 last_activity: 2026-10-21
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 123
-  completed_plans: 72
+  completed_plans: 73
   percent: 33
 ---
 
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 05 (accounts-and-email) — EXECUTING
-Plan: 3 of 42
+Plan: 4 of 42
 Status: Ready to execute
 Last activity: 2026-10-21
 Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
@@ -80,6 +80,7 @@ Progress: [██████░░░░] 60%
 | Phase 04 P06 | 5min | 4 tasks | 6 files |
 | Phase 05 P01 | 25min | 2 tasks | 6 files |
 | Phase 05 P02 | 10min | 2 tasks | 4 files |
+| Phase 05 P03 | 10min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -118,6 +119,7 @@ Recent decisions affecting current work:
 - [Phase 4]: Phase 4 Plan 04: admin design-system summary compares canonicalCssValue(live) with resolved signed values; fonts excluded from the count (next/font hashes the family)
 - [Phase 05]: 05-01: db-proof.sh scratch bootstrap creates supabase_vault and mirrors default privileges; pre_*.sql fixtures run before supabase/pending
 - [Phase 05]: 05-02: isPublicPath is one exact list plus slash-bounded prefixes (fails closed, /about walled); normalizeCode returns at most 6 ASCII digits, shared client/server; AUTH_LINK_MINUTES=15, RESEND_WAIT_SECONDS=60
+- [Phase 05]: 05-03: isPwned races fetch against its own 3 s timer (fails open, null); decideAdminMfa accepts totp and mfa/totp, age 0..12 h inclusive, fails closed
 
 ### Pending Todos
 
@@ -157,8 +159,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-21T13:55:35.540Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-10-21T13:58:56.312Z
+Stopped at: Completed 05-03-PLAN.md
 Phase 2 last session: 2026-10-20T10:45:11.285Z
 Phase 2 stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above is the controller's)
 Resume file: None
