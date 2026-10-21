@@ -203,7 +203,7 @@ test('episode-list: layout matches the signed rail and phone list', () => {
   assert.match(c, /snap-x/)
   assert.match(c, /snap-start/)
   assert.match(c, /overflow-x-auto/)
-  assert.match(c, /rounded-\[11px\]/, 'thumbnail radius')
+  assert.match(c, /rounded-media/, 'thumbnail radius (11px)')
   assert.match(c, /outline-\[var\(--primary\)\]/, 'current outline')
   assert.match(c, /outline-offset-2/)
   assert.match(c, /w-28|w-\[112px\]/, 'phone thumbnail is 112px wide')

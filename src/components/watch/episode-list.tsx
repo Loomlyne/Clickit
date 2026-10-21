@@ -54,7 +54,7 @@ function EpisodeThumb({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-[11px] bg-[var(--bg-2)]',
+        'relative overflow-hidden rounded-media bg-[var(--bg-2)]',
         className
       )}
     >
@@ -188,7 +188,7 @@ export function EpisodeList({
               aria-current={current ? 'true' : undefined}
               data-current={current ? 'true' : undefined}
               className={cn(
-                'w-[220px] flex-none snap-start rounded-[12px] text-start',
+                'w-[220px] flex-none snap-start rounded-card text-start',
                 FOCUS_OUTLINE,
                 !playable && 'cursor-not-allowed'
               )}
@@ -234,7 +234,7 @@ export function EpisodeList({
               aria-current={current ? 'true' : undefined}
               data-current={current ? 'true' : undefined}
               className={cn(
-                'flex w-full items-center gap-3 rounded-[12px] p-2 text-start',
+                'flex w-full items-center gap-3 rounded-card p-2 text-start',
                 FOCUS_OUTLINE,
                 current && 'bg-[var(--bg-2)]',
                 !playable && 'cursor-not-allowed'

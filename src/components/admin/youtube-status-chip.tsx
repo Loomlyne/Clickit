@@ -17,12 +17,11 @@ export type YouTubeStatus =
 const BASE =
   'inline-flex min-h-6 items-center gap-1 rounded-full border px-3 text-[11px] leading-none font-bold tracking-[0.04em] whitespace-nowrap'
 
-// TODO(phase-4): the brand-*-safe tone classes may be renamed by the Phase 4 token pass
 const TONE_CLASSES: Record<YouTubeChipTone, string> = {
-  ok: 'border-brand-green-safe/35 bg-brand-green-safe/8 text-brand-green-safe',
-  bad: 'border-brand-red-safe/35 bg-brand-red-safe/8 text-brand-red-safe',
-  warn: 'border-brand-orange-safe/35 bg-brand-orange-safe/8 text-brand-orange-safe',
-  neutral: 'border-[var(--line-2)] bg-transparent text-[var(--text-mute)]',
+  ok: 'border-status-success/35 bg-status-success/8 text-status-success',
+  bad: 'border-status-danger/35 bg-status-danger/8 text-status-danger',
+  warn: 'border-status-warning/35 bg-status-warning/8 text-status-warning',
+  neutral: 'border-status-neutral-line bg-transparent text-status-neutral',
 }
 
 export function toneForYouTubeStatus(status: YouTubeStatus): YouTubeChipTone {

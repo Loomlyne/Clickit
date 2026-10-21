@@ -361,7 +361,7 @@ test('route-scoped-toaster: null on /watch/, the same dark Toaster elsewhere', (
   assert.match(c, /if \([^)]*startsWith\('\/watch\/'\)[^)]*\) return null/, 'nothing mounted there')
   assert.match(c, /<Toaster\s+theme="dark"/, 'same dark Toaster')
   assert.match(c, /toastOptions=\{\{/, 'toast options moved verbatim')
-  assert.match(c, /bg-\[#10131a\]/, 'toast surface unchanged')
+  assert.match(c, /border border-white\/10 bg-\[var\(--bg-1\)\] text-foreground shadow-popover/, 'Phase 4 toast class')
 })
 
 test('next.config: Referrer-Policy stays strict-origin-when-cross-origin (error 153)', () => {

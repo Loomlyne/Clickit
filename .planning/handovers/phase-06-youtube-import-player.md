@@ -49,8 +49,18 @@ Also recorded as "Phase 6 hand-off" lines in the ROADMAP sections of Phases 2, 4
 | 3 | Register the `30 1 * * *` trigger for `/api/cron/youtube-recheck` (whichever of Phase 2 / Phase 6 lands second; controller wires it at merge) | Phase 2 | `src/app/api/cron/youtube-recheck/route.ts:1` |
 | 4 | `requireAdminForYouTube()` stands in for `requireAdmin()` (admins table + TOTP at `/{locale}/auth/mfa`; accepts both admins, so Nejib can import) | Phase 5 | `src/app/[locale]/admin/actions.ts:223` |
 | 5 | UAT admin script → replaced by `npm run seed:local-admin` (Phase 5; also applies M2 locally; TOTP code first after Phase 5 lands) | Phase 5 | outside the repo: `/Users/koss/.clickit-checks/phase06-uat-admin.cjs` (deleted after UAT) |
-| 6 | Status chip `brand-*-safe` tone classes | Phase 4 | `src/components/admin/youtube-status-chip.tsx:20` |
-| 7 | Advanced tab `text-brand-green-safe` → `var(--safe-green)` | Phase 4 | `src/components/admin/settings/advanced-tab.tsx:278` |
+| 6 | Status chip `brand-*-safe` tone classes | Phase 4 | DONE at the Phase 4 merge: `status-success/warning/danger/neutral` |
+| 7 | Advanced tab `text-brand-green-safe` → green token | Phase 4 | DONE at the Phase 4 merge: `text-status-success` |
+
+### Phase 4 merge (main 0cf489f, PR #28)
+
+- Conflicts resolved:
+  - `episode-tray.tsx` stays deleted. Phase 4's swaps (`rounded-t-panel`, `rounded-card`, `rounded-media`, `shadow-bar`) are in its replacements, `episode-list.tsx` and `up-next-card.tsx`. The overlay bar that carried `shadow-bar` is gone in the stacked layout.
+  - `layout.tsx` keeps `<RouteScopedToaster />`. The toaster now carries Phase 4's class (`bg-[var(--bg-1)] … shadow-popover`).
+  - `en.json` and `ar.json` keep both `youtubeImport` and `designSystem`.
+  - ROADMAP keeps Phase 4's Plans line, and the two Phase 4 hand-off lines are dropped (done).
+- Phase 4's `RADIUS_CODEMOD`, `SHADOW_CODEMOD` and `STATUS_TONES` tables (`src/lib/design-truth.ts`) were applied to the Phase 6 files and to `06-UI-SPEC.md`. All values are identical. Status renames cover only the Phase 6 status uses; `brand-*-safe` lines that came from main are left as they are.
+- `clickit/no-raw-design-values`: 0 errors.
 
 ## Review fixes (PR #27 review of record, fallback reviewer, REQUEST CHANGES, 2026-10-20)
 

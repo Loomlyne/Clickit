@@ -146,13 +146,11 @@ test('advanced tab: old YouTube row, link and Cloudflare copy are gone', () => {
   }
 })
 
-test('advanced tab: row 3 is aria-live and the green icon carries TODO(phase-4)', () => {
+test('advanced tab: row 3 is aria-live and the green icon uses the Phase 4 status-success token', () => {
   assert.ok(advanced.includes('aria-live="polite"'), 'row 3 is not aria-live')
-  const lines = advanced.split('\n')
-  const at = lines.findIndex((l) => l.includes('text-brand-green-safe'))
-  assert.ok(at !== -1, 'no text-brand-green-safe icon')
-  const near = lines.slice(Math.max(0, at - 3), at + 1).join('\n')
-  assert.match(near, /\/\/ TODO\(phase-4\): use var\(--safe-green\)/)
+  assert.match(advanced, /const TEST_OK_ICON = 'text-status-success /)
+  assert.equal(advanced.includes('TODO(phase-4)'), false, 'stale TODO(phase-4) left')
+  assert.equal(advanced.includes('brand-green-safe'), false, 'old green class left')
 })
 
 test('settings page reads hasKey + last4 + last test only, never the key', () => {

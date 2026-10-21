@@ -119,7 +119,7 @@ export function RenumberSeasonDialog({
             {shown.map((change) => (
               <li
                 key={change.id}
-                className="flex items-center gap-3 rounded-[12px] bg-[var(--bg-2)] px-3 py-2 text-sm"
+                className="flex items-center gap-3 rounded-card bg-[var(--bg-2)] px-3 py-2 text-sm"
               >
                 <span className="shrink-0">
                   {t('renumberChange', { from: change.from, to: change.to })}
@@ -137,7 +137,7 @@ export function RenumberSeasonDialog({
           )}
 
           {failure && (
-            <p role="alert" className="text-brand-red-safe mt-4 text-sm">
+            <p role="alert" className="text-status-danger mt-4 text-sm">
               {t('renumberFailed', { reason: sentence(failure) })}
             </p>
           )}

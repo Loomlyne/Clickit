@@ -68,7 +68,7 @@ export function ImportPlaylistTable({
         : false
 
   return (
-    <div className="overflow-hidden rounded-[12px] border border-[var(--line)]">
+    <div className="overflow-hidden rounded-card border border-[var(--line)]">
       <Table aria-busy={skeletonRows > 0} className="table-fixed">
         <TableHeader>
           <TableRow className="sticky top-0 z-[1] h-11 bg-[var(--bg-2)] hover:bg-[var(--bg-2)]">
@@ -153,14 +153,14 @@ export function ImportPlaylistTable({
                       height={54}
                       unoptimized
                       className={cn(
-                        'h-9 w-16 rounded-[11px] object-cover sm:h-[54px] sm:w-24',
+                        'h-9 w-16 rounded-media object-cover sm:h-[54px] sm:w-24',
                         !view.tickable && 'opacity-40'
                       )}
                     />
                   ) : (
                     <div
                       className={cn(
-                        'h-9 w-16 rounded-[11px] bg-[var(--bg-3)] sm:h-[54px] sm:w-24',
+                        'h-9 w-16 rounded-media bg-[var(--bg-3)] sm:h-[54px] sm:w-24',
                         !view.tickable && 'opacity-40'
                       )}
                     />
@@ -211,12 +211,12 @@ export function ImportPlaylistTable({
             >
               <TableCell className="w-11 p-0">
                 <div className="flex size-11 items-center justify-center">
-                  <Skeleton className="size-5 rounded-[6px]" />
+                  <Skeleton className="size-5 rounded-md" />
                 </div>
               </TableCell>
               <TableCell className={cn(CELL, 'w-7 max-sm:hidden')} />
               <TableCell className={cn(CELL, 'w-16 sm:w-24')}>
-                <Skeleton className="h-9 w-16 rounded-[11px] sm:h-[54px] sm:w-24" />
+                <Skeleton className="h-9 w-16 rounded-media sm:h-[54px] sm:w-24" />
               </TableCell>
               <TableCell className={CELL}>
                 <Skeleton className="h-3.5 w-3/4" />

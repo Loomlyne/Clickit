@@ -30,7 +30,7 @@ test('header and cells carry the call-site overrides from UI-SPEC 1.6', () => {
   assert.match(c, /h-11[^'"`]*text-\[11px\][^'"`]*font-normal[^'"`]*tracking-\[0\.14em\]/)
   assert.match(c, /px-2 py-0/)
   assert.match(c, /sticky top-0 z-\[1\] h-11 bg-\[var\(--bg-2\)\]/)
-  assert.match(c, /overflow-hidden rounded-\[12px\] border border-\[var\(--line\)\]/)
+  assert.match(c, /overflow-hidden rounded-card border border-\[var\(--line\)\]/)
 })
 
 test('body rows are 64px and skipped rows are disabled, muted and dimmed', () => {
@@ -72,7 +72,7 @@ test('thumbnails are unoptimized next/image with an empty alt and a fallback box
   assert.match(c, /import Image from 'next\/image'/)
   assert.match(c, /<Image[\s\S]*?unoptimized[\s\S]*?\/>/)
   assert.match(c, /alt=""/)
-  assert.match(c, /rounded-\[11px\] object-cover/)
+  assert.match(c, /rounded-media object-cover/)
   assert.match(c, /bg-\[var\(--bg-3\)\]/)
 })
 

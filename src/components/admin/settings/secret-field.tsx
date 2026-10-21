@@ -77,7 +77,7 @@ export function SecretField({
             readOnly
             disabled={disabled}
             dir="ltr"
-            className="h-11 flex-1 rounded-[8px] font-mono text-sm text-[var(--text-dim)]"
+            className="h-11 flex-1 rounded-field font-mono text-sm text-[var(--text-dim)]"
           />
           <Button
             type="button"
@@ -124,7 +124,7 @@ export function SecretField({
             disabled={disabled}
             readOnly={readOnly}
             dir="ltr"
-            className="h-11 rounded-[8px] pe-12 font-mono text-sm"
+            className="h-11 rounded-field pe-12 font-mono text-sm"
           />
           <button
             type="button"
@@ -132,7 +132,7 @@ export function SecretField({
             onClick={() => setReveal((r) => !r)}
             aria-pressed={reveal}
             aria-label={reveal ? t('hideValue') : t('revealValue')}
-            className="absolute end-0 top-0 size-11 inline-flex items-center justify-center rounded-[8px] text-[var(--text-dim)] outline-none hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:pointer-events-none disabled:opacity-40"
+            className="absolute end-0 top-0 size-11 inline-flex items-center justify-center rounded-field text-[var(--text-dim)] outline-none hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:pointer-events-none disabled:opacity-40"
           >
             {reveal ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>

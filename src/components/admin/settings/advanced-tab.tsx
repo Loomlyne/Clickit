@@ -276,8 +276,7 @@ type LastTestView = {
 type SaveLine = { kind: 'formatInvalid' } | { kind: 'saveFailed'; reason: string }
 
 const KEY_BUTTON = 'min-h-11 w-full px-6 py-2 text-sm font-bold sm:w-auto'
-// TODO(phase-4): use var(--safe-green) once Phase 4 adds it
-const TEST_OK_ICON = 'text-brand-green-safe size-4 shrink-0'
+const TEST_OK_ICON = 'text-status-success size-4 shrink-0'
 
 function formatTestDate(at: string, locale: string): string {
   const d = new Date(at)
@@ -421,10 +420,10 @@ function YouTubeKeyBlock({ initial }: { initial: YouTubeKeyView }) {
       </span>
     )
   } else if (saveLine?.kind === 'formatInvalid') {
-    row3 = <span className="text-brand-red-safe">{t('formatInvalid')}</span>
+    row3 = <span className="text-status-danger">{t('formatInvalid')}</span>
   } else if (saveLine?.kind === 'saveFailed') {
     row3 = (
-      <span className="text-brand-red-safe">
+      <span className="text-status-danger">
         {tidy(t('keySaveFailed', { reason: saveLine.reason }))}
       </span>
     )
@@ -442,7 +441,7 @@ function YouTubeKeyBlock({ initial }: { initial: YouTubeKeyView }) {
   } else if (lastTest) {
     row3 = (
       <span className="inline-flex items-start gap-2 text-[var(--text-dim)]">
-        <AlertTriangle className="text-brand-red-safe mt-0.5 size-4 shrink-0" aria-hidden />
+        <AlertTriangle className="text-status-danger mt-0.5 size-4 shrink-0" aria-hidden />
         <span>
           {tidy(
             t('lastTestFailed', {
@@ -496,7 +495,7 @@ function YouTubeKeyBlock({ initial }: { initial: YouTubeKeyView }) {
       </p>
       <form
         onSubmit={onSaveKey}
-        className="flex flex-col gap-3 rounded-[12px] border border-[var(--line)] bg-[var(--bg-2)] px-4 py-3"
+        className="flex flex-col gap-3 rounded-card border border-[var(--line)] bg-[var(--bg-2)] px-4 py-3"
       >
         <div className="flex items-center gap-3">
           {!hasKey ? (
@@ -610,7 +609,7 @@ function FlagRow({
             {meta.description}
           </p>
           {meta.warning && value && (
-            <p className="text-brand-orange-safe mt-1.5 flex items-center gap-1 text-xs">
+            <p className="text-status-warning mt-1.5 flex items-center gap-1 text-xs">
               <AlertTriangle className="size-3.5" />
               {meta.warning}
             </p>

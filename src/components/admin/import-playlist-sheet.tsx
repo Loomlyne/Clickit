@@ -95,10 +95,10 @@ function SheetBanner({
   return (
     <div
       role="alert"
-      className="border-brand-red-safe/35 bg-brand-red-safe/8 flex flex-wrap items-center gap-3 rounded-[12px] border px-4 py-3 text-sm text-[var(--text)]"
+      className="border-status-danger/35 bg-status-danger/8 flex flex-wrap items-center gap-3 rounded-card border px-4 py-3 text-sm text-[var(--text)]"
     >
       <TriangleAlert
-        className="text-brand-red-safe size-4 shrink-0"
+        className="text-status-danger size-4 shrink-0"
         aria-hidden
       />
       <span className="min-w-0 flex-1">{children}</span>
@@ -468,8 +468,8 @@ export function ImportPlaylistSheet({
           <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
             {result ? (
               <div className="flex flex-col items-center gap-4 px-6 py-12 text-center">
-                <div className="border-brand-green-safe/35 bg-brand-green-safe/8 flex size-11 items-center justify-center rounded-full border">
-                  <Check className="text-brand-green-safe size-5" aria-hidden />
+                <div className="border-status-success/35 bg-status-success/8 flex size-11 items-center justify-center rounded-full border">
+                  <Check className="text-status-success size-5" aria-hidden />
                 </div>
                 <h3
                   ref={successRef}
@@ -531,7 +531,7 @@ export function ImportPlaylistSheet({
                   {linkError ? (
                     <p
                       role="alert"
-                      className="text-brand-red-safe mt-2 text-sm"
+                      className="text-status-danger mt-2 text-sm"
                     >
                       {tErr(YOUTUBE_ERROR_MESSAGE_KEYS[linkError])}
                     </p>
@@ -600,7 +600,7 @@ export function ImportPlaylistSheet({
                         }}
                       />
                       {rows.length > 0 && seasonTitle.trim() === '' ? (
-                        <p className="text-brand-red-safe mt-2 text-sm">
+                        <p className="text-status-danger mt-2 text-sm">
                           {t('seasonTitleRequired')}
                         </p>
                       ) : null}
@@ -643,19 +643,19 @@ export function ImportPlaylistSheet({
                 ) : null}
 
                 {!showTable && !emptyPlaylist && !readError ? (
-                  <div className="rounded-[12px] border border-dashed border-[var(--line-2)] px-6 py-12 text-center text-sm text-[var(--text-mute)]">
+                  <div className="rounded-card border border-dashed border-[var(--line-2)] px-6 py-12 text-center text-sm text-[var(--text-mute)]">
                     {t('emptyBeforeLink')}
                   </div>
                 ) : null}
 
                 {emptyPlaylist && readError ? (
-                  <div className="rounded-[12px] border border-dashed border-[var(--line-2)] px-6 py-12 text-center text-sm text-[var(--text-mute)]">
+                  <div className="rounded-card border border-dashed border-[var(--line-2)] px-6 py-12 text-center text-sm text-[var(--text-mute)]">
                     {bannerText(readError)}
                   </div>
                 ) : null}
 
                 {allAlready ? (
-                  <div className="rounded-[12px] border border-[var(--line-2)] px-4 py-3">
+                  <div className="rounded-card border border-[var(--line-2)] px-4 py-3">
                     <p className="text-sm font-bold">
                       {t('allAlreadyHeading')}
                     </p>
@@ -666,7 +666,7 @@ export function ImportPlaylistSheet({
                 ) : null}
 
                 {noneImportable ? (
-                  <div className="border-brand-orange-safe/35 bg-brand-orange-safe/8 rounded-[12px] border px-4 py-3 text-sm">
+                  <div className="border-status-warning/35 bg-status-warning/8 rounded-card border px-4 py-3 text-sm">
                     {t('noneImportable')}
                   </div>
                 ) : null}

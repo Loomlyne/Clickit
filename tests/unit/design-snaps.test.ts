@@ -8,6 +8,8 @@ function read(rel: string): string {
 
 const select = read('src/components/ui/select.tsx')
 const localeLayout = read('src/app/[locale]/layout.tsx')
+// Phase 6 moved the Toaster out of the layout into RouteScopedToaster (04-P6-ADDENDUM).
+const toaster = read('src/components/route-scoped-toaster.tsx')
 const landing = read('src/components/landing/landing-hero-animations.tsx')
 const viewerLayout = read('src/app/[locale]/(viewer)/layout.tsx')
 const avatar = read('src/components/layout/user-avatar.tsx')
@@ -25,9 +27,12 @@ test('D-03 snap 1: select uses card/field radius, popover surface and shadow tok
 })
 
 test('D-03 snap 2: toaster uses --bg-1 and shadow-popover', () => {
-  assert.ok(localeLayout.includes('bg-[var(--bg-1)] text-foreground shadow-popover'))
-  assert.ok(!localeLayout.includes('#10131a'))
-  assert.ok(!localeLayout.includes('shadow-['))
+  assert.ok(toaster.includes('bg-[var(--bg-1)] text-foreground shadow-popover'))
+  assert.ok(localeLayout.includes('<RouteScopedToaster />'))
+  for (const src of [localeLayout, toaster]) {
+    assert.ok(!src.includes('#10131a'))
+    assert.ok(!src.includes('shadow-['))
+  }
 })
 
 test('D-03 snap 3: /portfolio CTA uses the yellow glow and primary hover token', () => {

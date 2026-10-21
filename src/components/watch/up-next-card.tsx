@@ -373,7 +373,7 @@ function UpNextStage({
             title={next.title}
             aspectRatio="220/124"
             imageUrl={next.thumbnailUrl ?? undefined}
-            className="w-[220px] rounded-[11px]"
+            className="w-[220px] rounded-media"
           />
           {counting ? (
             <CountdownRing

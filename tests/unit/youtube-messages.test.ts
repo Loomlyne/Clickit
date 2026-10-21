@@ -389,11 +389,12 @@ test('YouTubeStatusChip: tone classes, 11px text, logical properties only', () =
     new URL('../../src/components/admin/youtube-status-chip.tsx', import.meta.url),
     'utf8',
   )
-  assert.match(src, /TODO\(phase-4\)/)
-  assert.match(src, /brand-green-safe\/35 bg-brand-green-safe\/8 text-brand-green-safe/)
-  assert.match(src, /brand-red-safe\/35 bg-brand-red-safe\/8 text-brand-red-safe/)
-  assert.match(src, /brand-orange-safe\/35 bg-brand-orange-safe\/8 text-brand-orange-safe/)
-  assert.match(src, /border-\[var\(--line-2\)\] bg-transparent text-\[var\(--text-mute\)\]/)
+  // Phase 4 status tones (04-P6-ADDENDUM): same colours, status-* names.
+  assert.doesNotMatch(src, /TODO\(phase-4\)|brand-(?:green|red|orange)-safe/)
+  assert.match(src, /border-status-success\/35 bg-status-success\/8 text-status-success/)
+  assert.match(src, /border-status-danger\/35 bg-status-danger\/8 text-status-danger/)
+  assert.match(src, /border-status-warning\/35 bg-status-warning\/8 text-status-warning/)
+  assert.match(src, /border-status-neutral-line bg-transparent text-status-neutral/)
   assert.match(src, /text-\[11px\]/)
   assert.doesNotMatch(src, /text-\[(?:[0-9]|10)px\]/)
   assert.doesNotMatch(src, /\b(?:left|right)-/)

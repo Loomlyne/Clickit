@@ -25,7 +25,7 @@ signed_source: "06-CONTEXT.md D-01..D-19 + mockups/06-mockups.html option A (#q1
 | Icon library | lucide-react |
 | Font | LBC (local, `--font-lbc`), English and Arabic. Only two files exist: 400 and 700 |
 | Mode | Dark only |
-| Radius roles | pill 999px (controls, chips, buttons), field 8px (`rounded-lg`), card 12px (`rounded-[12px]`), media 11px (`rounded-[11px]`), panel 16px (`rounded-[16px]`) |
+| Radius roles | pill 999px (controls, chips, buttons), field 8px (`rounded-lg`), card 12px (`rounded-card`), media 11px (`rounded-media`), panel 16px (`rounded-panel`) |
 | Touch target | 44px (`min-h-11` / `size-11`) for every interactive element this contract specifies; hit areas wider than the visible control are opt-in per call site only where neighbours are ≥12px apart (memory rule "tap area opt-in", PR #20) |
 | Minimum text | 11px. Nothing smaller anywhere in this phase |
 | Contrast | 4.5:1 for every text/background pair (computed values under Color) |
@@ -52,7 +52,7 @@ The existing scheduler dialog (`ScheduleEpisodesButton`) opens unchanged; it is 
 
 ### Upstream branches: what Phase 6 must preserve
 
-1. `origin/claude/phase-02-execute-19d86a` has **no changes of its own** to `src/components/watch` or `src/components/ui`. The diff `origin/main → phase-02` only shows the reverse of #20 (phase-02 branched before the viewer design pass landed). Phase 6 keeps #20's values on main: `Button` default/lg `min-h-11`; `Checkbox` `size-5 rounded-[6px]`; `TabsTrigger` `min-h-11`; logical `start-*`/`end-*` and `rtl:rotate-180` / `rtl:scale-x-[-1]` on chevrons; `var(--text*)`, `var(--line*)`, `var(--primary)` instead of `white/NN` text, `zinc-950`, `pink-400`. If phase-02 is rebased after Phase 6, it must not bring back the `white/NN` text colours, `size-8`, `left-3`/`right-3`.
+1. `origin/claude/phase-02-execute-19d86a` has **no changes of its own** to `src/components/watch` or `src/components/ui`. The diff `origin/main → phase-02` only shows the reverse of #20 (phase-02 branched before the viewer design pass landed). Phase 6 keeps #20's values on main: `Button` default/lg `min-h-11`; `Checkbox` `size-5 rounded-md`; `TabsTrigger` `min-h-11`; logical `start-*`/`end-*` and `rtl:rotate-180` / `rtl:scale-x-[-1]` on chevrons; `var(--text*)`, `var(--line*)`, `var(--primary)` instead of `white/NN` text, `zinc-950`, `pink-400`. If phase-02 is rebased after Phase 6, it must not bring back the `white/NN` text colours, `size-8`, `left-3`/`right-3`.
 2. `origin/claude/design-b4-admin-be0a4c` (admin UI System pass, unmerged) edits `episodes-table.tsx`, `episode-form-drawer.tsx`, `settings/advanced-tab.tsx`, `settings/settings-card.tsx`, `status-badge.tsx`, `schedule-episodes-button.tsx`, `empty-state.tsx`. Whichever lands second rebases. When Phase 6 touches those lines it uses B4's tokens: `border-[var(--line)]`, `bg-[var(--bg-2)]`, `text-brand-*-safe` instead of `amber-*`/`orange-300`, `end-3` instead of `right-3`, `text-[11px]` minimum, arrow group `gap-2`.
 
 ---
@@ -158,9 +158,9 @@ Base: `inline-flex min-h-6 items-center gap-1 rounded-full border px-3 text-[11p
 
 | Tone | Classes | Statuses |
 |------|---------|----------|
-| ok | `border-brand-green-safe/35 bg-brand-green-safe/8 text-brand-green-safe` | Ready, Key set, All episodes play |
-| bad | `border-brand-red-safe/35 bg-brand-red-safe/8 text-brand-red-safe` | Private, Removed, Not embeddable, Blocked in UAE, Can't play, Key missing, Test failed |
-| warn | `border-brand-orange-safe/35 bg-brand-orange-safe/8 text-brand-orange-safe` | Not ready, Needs English title, Check overdue |
+| ok | `border-status-success/35 bg-status-success/8 text-status-success` | Ready, Key set, All episodes play |
+| bad | `border-status-danger/35 bg-status-danger/8 text-status-danger` | Private, Removed, Not embeddable, Blocked in UAE, Can't play, Key missing, Test failed |
+| warn | `border-status-warning/35 bg-status-warning/8 text-status-warning` | Not ready, Needs English title, Check overdue |
 | neutral | `border-[var(--line-2)] bg-transparent text-[var(--text-mute)]` | Already on Clickit, Not tested yet |
 
 Meaning is never colour alone: every chip carries its words, and every greyed row also carries a reason line.
@@ -228,7 +228,7 @@ Both open the same sheet. The button is enabled even when the key is missing (th
 - Overline label (11px/400, uppercase, `tracking-[0.14em] text-[var(--text-mute)] mb-2`): `linkLabel`.
 - `<Input type="url" inputMode="url" dir="ltr" className="text-sm" placeholder={linkPlaceholder} autoFocus>` (links are always LTR, also on the Arabic admin).
 - Reading starts by itself when the value parses as a playlist link: on paste immediately, after 400ms without typing, and on Enter. No separate "Read" button.
-- Parse errors show under the field, `mt-2 text-sm text-brand-red-safe`, `role="alert"`, input gets `aria-invalid`:
+- Parse errors show under the field, `mt-2 text-sm text-status-danger`, `role="alert"`, input gets `aria-invalid`:
   - Not a YouTube link, or no `list=`: `youtubeErrors.notAPlaylistLink`.
   - A single-video link with no `list=`: `youtubeErrors.videoLinkInImport`.
   - A `watch?v=…&list=…` link is accepted as the playlist.
@@ -240,7 +240,7 @@ Row `grid gap-3 sm:grid-cols-2` under the link field (visible from the start, so
 | Field | Spec |
 |-------|------|
 | Put into | Overline label `targetLabel`. `<Select>` with `<SelectTrigger className="w-full text-sm">` (44px). First option, default: `targetNewSeason` (number = highest season number + 1). Then one option per existing season, ascending: `targetExistingSeason`. |
-| Season title (new season only) | Overline label `seasonTitleLabel`. `<Input className="text-sm">` prefilled with the playlist title once read (empty while reading, placeholder `seasonTitlePlaceholder`), editable, required, `maxLength={120}`, `dir="auto"`. Empty on submit: `seasonTitleRequired` under the field (`mt-2 text-sm text-brand-red-safe`), import button disabled. If the admin edited the title, a later re-read never overwrites it. |
+| Season title (new season only) | Overline label `seasonTitleLabel`. `<Input className="text-sm">` prefilled with the playlist title once read (empty while reading, placeholder `seasonTitlePlaceholder`), editable, required, `maxLength={120}`, `dir="auto"`. Empty on submit: `seasonTitleRequired` under the field (`mt-2 text-sm text-status-danger`), import button disabled. If the admin edited the title, a later re-read never overwrites it. |
 | Existing season chosen | The title field is replaced in the same grid cell by a read-only line, `text-sm text-[var(--text-dim)]`, `self-end min-h-11 flex items-center`: `appendNote`, or `appendNoteEmpty` when that season has no episodes. |
 
 ### 1.5 Summary row and numbering note
@@ -252,13 +252,13 @@ Row `grid gap-3 sm:grid-cols-2` under the link field (visible from the start, so
 
 ### 1.6 Table
 
-Container: `overflow-hidden rounded-[12px] border border-[var(--line)]`. Built with `ui/table` and the call-site overrides above.
+Container: `overflow-hidden rounded-card border border-[var(--line)]`. Built with `ui/table` and the call-site overrides above.
 
 | Column | Width | Header (11px/400 uppercase) | Cell |
 |--------|-------|-----------------------------|------|
 | Tick | 44px | Header checkbox: ticks or clears all **Ready** rows; `checked="indeterminate"` when some are ticked; `aria-label={selectAllAria}` | `<label>` box `flex size-11 items-center justify-center` wrapping `<Checkbox>` (`size-5`, primitive unchanged), `aria-label={rowSelectAria}` |
 | # | 28px, `text-end`, hidden under 640px | `#` | Playlist position (1-based, `Intl.NumberFormat`), `text-sm text-[var(--text-mute)]` |
-| Thumb | 96×54 (64×36 under 640px) | none | `<Image unoptimized>` from the API `thumbnails.medium.url` (i.ytimg.com), `rounded-[11px] object-cover`, `alt=""` (the title is next to it). Missing: `bg-[var(--bg-3)]` box |
+| Thumb | 96×54 (64×36 under 640px) | none | `<Image unoptimized>` from the API `thumbnails.medium.url` (i.ytimg.com), `rounded-media object-cover`, `alt=""` (the title is next to it). Missing: `bg-[var(--bg-3)]` box |
 | Title | flex, `min-w-0` | `titleColumn` | Line 1: `<div className="truncate text-sm"><bdi>{title}</bdi></div>`. Line 2 `mt-1 text-[11px] text-[var(--text-mute)]`: for Ready rows the visibility (`visibilityPublic` / `visibilityUnlisted`), plus ` · ` + `arabicTitle` when the title is Arabic script; for skipped rows the reason (§1.7). Under 640px the length is appended to line 2 (` · 24:10`) |
 | Time | 56px, `text-end`, hidden under 640px | `timeColumn` | `formatClock`, `text-sm text-[var(--text-dim)] tabular-nums`; `—` when unknown |
 | Status | 152px (`auto` under 640px), `text-end` | `statusColumn` | `YouTubeStatusChip` |
@@ -287,12 +287,12 @@ Row order is always playlist order; statuses do not sort rows.
 
 | State | What shows |
 |-------|-----------|
-| Empty (sheet just opened) | Link field focused; target row visible; in place of summary + table a dashed panel `rounded-[12px] border border-dashed border-[var(--line-2)] px-6 py-12 text-center text-sm text-[var(--text-mute)]` with `emptyBeforeLink`. Import button disabled, label `importButton` with count 0 |
+| Empty (sheet just opened) | Link field focused; target row visible; in place of summary + table a dashed panel `rounded-card border border-dashed border-[var(--line-2)] px-6 py-12 text-center text-sm text-[var(--text-mute)]` with `emptyBeforeLink`. Import button disabled, label `importButton` with count 0 |
 | Reading (first page) | Meta only, `flex items-center gap-2`: `Loader2 size-4 animate-spin motion-reduce:animate-none` + `reading`, `aria-live="polite"`. Table shows the header + 6 `<Skeleton>` rows at 64px (44px checkbox box, 96×54 thumb, two text bars, chip bar). Import button disabled |
 | Paging (more pages) | Rows already read stay visible and tickable; meta keeps updating `reading` with the page number; 2 skeleton rows at 64px at the end. Import button stays disabled until the last page and the `videos.list` checks finish, so the count is final |
 | Loaded | Summary, numbering note, full table; import button enabled when ≥1 row is ticked and (for a new season) the title is filled |
-| Nothing new | Every video `Already on Clickit`: the table still lists them (the admin sees where each one is) and a neutral panel above it `rounded-[12px] border border-[var(--line-2)] px-4 py-3`: `allAlreadyHeading` (14px/700), `allAlreadyBody` (14px/400 `text-[var(--text-dim)]`). The footer's import button is replaced by `<Button variant="outline" className="text-sm font-bold">` `common.close` |
-| Nothing importable | Every row skipped for other reasons: warn panel above the table (`border-brand-orange-safe/35 bg-brand-orange-safe/8`, same padding) with `noneImportable`. Import button disabled |
+| Nothing new | Every video `Already on Clickit`: the table still lists them (the admin sees where each one is) and a neutral panel above it `rounded-card border border-[var(--line-2)] px-4 py-3`: `allAlreadyHeading` (14px/700), `allAlreadyBody` (14px/400 `text-[var(--text-dim)]`). The footer's import button is replaced by `<Button variant="outline" className="text-sm font-bold">` `common.close` |
+| Nothing importable | Every row skipped for other reasons: warn panel above the table (`border-status-warning/35 bg-status-warning/8`, same padding) with `noneImportable`. Import button disabled |
 | Empty playlist | `youtubeErrors.emptyPlaylist` in the dashed panel |
 | Error: private or missing playlist | Error banner with `youtubeErrors.playlistPrivate`. Link field keeps the value for editing |
 | Error: quota used up | Banner `youtubeErrors.quota`. Rows already read stay; import button disabled |
@@ -303,14 +303,14 @@ Row order is always playlist order; statuses do not sort rows.
 | Import failed | Banner `youtubeErrors.importFailed` with the server reason; preview and ticks kept so the admin can press Import again |
 | Success | §1.9 |
 
-Error banner: `role="alert"`, `flex items-center gap-3 rounded-[12px] border border-brand-red-safe/35 bg-brand-red-safe/8 px-4 py-3 text-sm text-[var(--text)]`; `TriangleAlert size-4 shrink-0 text-brand-red-safe` at start; text `flex-1`; optional action button at end (`shrink-0`). Placed directly under the target row. Under 640px the action button drops to its own line (`flex-wrap`, button `w-full`).
+Error banner: `role="alert"`, `flex items-center gap-3 rounded-card border border-status-danger/35 bg-status-danger/8 px-4 py-3 text-sm text-[var(--text)]`; `TriangleAlert size-4 shrink-0 text-status-danger` at start; text `flex-1`; optional action button at end (`shrink-0`). Placed directly under the target row. Under 640px the action button drops to its own line (`flex-wrap`, button `w-full`).
 
 ### 1.9 Success state (D-07)
 
 The body is replaced (same sheet, no new dialog):
 
 - Centered column `flex flex-col items-center gap-4 px-6 py-12 text-center`:
-  - Circle `size-11 rounded-full border border-brand-green-safe/35 bg-brand-green-safe/8 flex items-center justify-center` with `Check size-5 text-brand-green-safe` (`aria-hidden`).
+  - Circle `size-11 rounded-full border border-status-success/35 bg-status-success/8 flex items-center justify-center` with `Check size-5 text-status-success` (`aria-hidden`).
   - Heading `text-[20px] leading-tight font-bold`: `successHeading`. Receives focus on mount (`tabIndex={-1}`, `outline-none`) so screen readers hear it.
   - Body `text-sm text-[var(--text-dim)] max-w-md`: `successBody`.
   - If any imported episode has an Arabic-only title: `flex items-center gap-2` with warn chip `status.needsEnglishTitle` + `text-sm text-[var(--text-dim)]` `successNeedsEnglish`.
@@ -433,16 +433,16 @@ Season row `flex items-center gap-2 px-4 pt-3 md:px-5`:
 - Phone only, at `ms-auto`: Watchlist and Like icon buttons (`size-11`, as in the desktop top bar).
 
 Desktop (≥768px), horizontal rail `flex gap-4 overflow-x-auto px-5 py-2 snap-x` (8px vertical padding stops overflow from clipping focus rings):
-- Card: `<button>` `w-[220px] flex-none snap-start text-start rounded-[12px] outline-none focus-visible:outline-2 focus-visible:outline-[var(--primary)] focus-visible:outline-offset-2`.
-- Thumbnail 220×124 `rounded-[11px]` (`ShowArt` with the YouTube thumbnail, `unoptimized`, maxres → standard → high fallback); current episode: `outline-2 outline-[var(--primary)] outline-offset-2` on the thumbnail.
+- Card: `<button>` `w-[220px] flex-none snap-start text-start rounded-card outline-none focus-visible:outline-2 focus-visible:outline-[var(--primary)] focus-visible:outline-offset-2`.
+- Thumbnail 220×124 `rounded-media` (`ShowArt` with the YouTube thumbnail, `unoptimized`, maxres → standard → high fallback); current episode: `outline-2 outline-[var(--primary)] outline-offset-2` on the thumbnail.
 - Progress bar `mt-2 h-[3px] rounded-full bg-white/[0.18]`, fill `bg-[var(--primary)]` at the saved percent; completed = 100%; not started = track only.
 - Title `mt-2 text-sm truncate`: `{n} · <bdi>{title}</bdi>` (episode number via `Intl.NumberFormat`).
 - Meta `mt-1 text-[11px] text-[var(--text-mute)]`: `nowPlaying` (current), `watched` (completed), `minutesLeft` (in progress), `episode.minutesAbbr` (not started), `notOutYet` (not published / no video).
 - On select: the rail scrolls the current card into view (`scrollIntoView({ inline: 'nearest', block: 'nearest' })`, `behavior: 'auto'` under reduced motion).
 
 Phone (<768px), vertical list `flex flex-col gap-2 px-4 py-3`:
-- Row: `<button>` `flex w-full items-center gap-3 rounded-[12px] p-2 text-start`; current `bg-[var(--bg-2)]`; focus ring as desktop.
-- Thumbnail 112×63 `relative overflow-hidden rounded-[11px]`; progress bar inside the thumbnail at the bottom: `absolute inset-x-0 bottom-0 h-[3px] bg-white/[0.18]` with primary fill.
+- Row: `<button>` `flex w-full items-center gap-3 rounded-card p-2 text-start`; current `bg-[var(--bg-2)]`; focus ring as desktop.
+- Thumbnail 112×63 `relative overflow-hidden rounded-media`; progress bar inside the thumbnail at the bottom: `absolute inset-x-0 bottom-0 h-[3px] bg-white/[0.18]` with primary fill.
 - Text: title `text-sm line-clamp-2` (`{n} · <bdi>{title}</bdi>`), meta `mt-1 text-[11px] text-[var(--text-mute)]` (same keys as desktop).
 
 Not playable (not published or no video): `disabled`, `aria-disabled`, thumbnail `opacity-40`, meta `notOutYet`; text colours unchanged (no opacity on text).
@@ -483,7 +483,7 @@ Wide (≥560px box), `flex items-center gap-8`:
   - Title `text-[24px] leading-tight font-bold text-[var(--text)] line-clamp-2 mb-2` (`<bdi>`), `id` used by `aria-labelledby` on the card.
   - Meta `text-sm text-[var(--text-dim)] mb-4`: `episode.minutesAbbr`.
   - Buttons: primary `Play size-4 fill-current` + `player.autoplayPlayNow`; outline `upNextCancel`.
-- Thumbnail block `relative flex-none`: 220×124 `rounded-[11px]`; countdown ring 64×64 at `absolute -top-3 -end-3`, `rounded-full bg-[var(--bg-0)]`.
+- Thumbnail block `relative flex-none`: 220×124 `rounded-media`; countdown ring 64×64 at `absolute -top-3 -end-3`, `rounded-full bg-[var(--bg-0)]`.
 
 Narrow (<560px box, e.g. 375px phone at 211px tall), `flex flex-col justify-center gap-3`:
 - Row `flex items-center gap-3`: overline (as above, `truncate`) + countdown ring 44×44 at `ms-auto`.
@@ -584,9 +584,9 @@ Behaviour (D-14 nearest neighbour):
 - Gap hint on the line of the existing episode count, `ms-2 text-[11px] text-[var(--text-mute)]`: `gapsHint`.
 - Click opens its own `<Dialog>` (not `ConfirmDialog`, so the archive dialogs are untouched):
   - `<DialogTitle className="text-[20px] leading-tight font-bold">` `renumberTitle`; `<DialogDescription className="text-sm leading-normal">` `renumberDescription`.
-  - List `mt-4 max-h-48 space-y-1 overflow-y-auto` of changed episodes only; each row `flex items-center gap-3 rounded-[12px] bg-[var(--bg-2)] px-3 py-2 text-sm`: `renumberChange` then the title `truncate` (`<bdi>`). At most 8 rows, then `text-sm text-[var(--text-mute)]` `renumberMore`.
+  - List `mt-4 max-h-48 space-y-1 overflow-y-auto` of changed episodes only; each row `flex items-center gap-3 rounded-card bg-[var(--bg-2)] px-3 py-2 text-sm`: `renumberChange` then the title `truncate` (`<bdi>`). At most 8 rows, then `text-sm text-[var(--text-mute)]` `renumberMore`.
   - Footer: `<Button variant="outline" className="text-sm font-bold">` `common.cancel`; `<Button className="text-sm font-bold">` `renumberConfirm` (loading: `Loader2 size-4` + `admin.confirmDialog.processing`).
-- Success: dialog closes, `toast.success(renumberDone)`, `router.refresh()`. Failure: dialog stays open, `mt-4 text-sm text-brand-red-safe` `role="alert"` under the list with `renumberFailed`.
+- Success: dialog closes, `toast.success(renumberDone)`, `router.refresh()`. Failure: dialog stays open, `mt-4 text-sm text-status-danger` `role="alert"` under the list with `renumberFailed`.
 
 ### 5.3 "Can't play" badge (D-17)
 
@@ -619,10 +619,10 @@ Replaces the YouTube `IntegrationRow` in `settings/advanced-tab.tsx`. It is its 
 
 Layout:
 - Overline 11px uppercase `mb-2`: `youtubeKeyTitle`.
-- Card `rounded-[12px] border border-[var(--line)] bg-[var(--bg-2)] px-4 py-3 flex flex-col gap-3`:
+- Card `rounded-card border border-[var(--line)] bg-[var(--bg-2)] px-4 py-3 flex flex-col gap-3`:
   - Row 1 `flex items-center gap-3`: status chip (start) + text `flex-1 min-w-0 text-sm text-[var(--text-dim)]` (`keyHelp`).
   - Row 2 `flex flex-col gap-2 sm:flex-row sm:items-center`:
-    - Field: reuse `secret-field.tsx`, updated. `<Input type="password" autoComplete="off" spellCheck={false} className="h-11 rounded-[8px] pe-12 font-mono text-sm">` with the show/hide eye **inside the field on the end side** (`absolute end-0 top-0 size-11`, `Eye` / `EyeOff` `size-4`, `aria-label` `revealValue` / `hideValue`, `aria-pressed`). Label `<Label>` (11px uppercase override) `keyLabel`, placeholder `keyPlaceholder`.
+    - Field: reuse `secret-field.tsx`, updated. `<Input type="password" autoComplete="off" spellCheck={false} className="h-11 rounded-field pe-12 font-mono text-sm">` with the show/hide eye **inside the field on the end side** (`absolute end-0 top-0 size-11`, `Eye` / `EyeOff` `size-4`, `aria-label` `revealValue` / `hideValue`, `aria-pressed`). Label `<Label>` (11px uppercase override) `keyLabel`, placeholder `keyPlaceholder`.
     - Saved state: the field shows `keySavedMasked` (`•••• {last4}`) read-only, `font-mono`, with `<Button variant="outline" className="px-6 text-sm font-bold">` `changeKey` (44px). Change clears the field and focuses it; Esc or `cancelChange` returns to the saved state.
     - Buttons (end, `w-full` under 640px): primary `saveKey` (disabled while empty or unchanged) and outline `testKey`.
   - Row 3 `aria-live="polite"` `text-sm`: last test line (`lastTestOk` / `lastTestFailed` + `testReason.*`) or `notTested`.
