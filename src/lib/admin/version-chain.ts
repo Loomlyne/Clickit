@@ -26,3 +26,26 @@ export function createVersionChain(): VersionChain {
     },
   }
 }
+
+/**
+ * One chain per row id, for an editor that lists many rows (legal pages, FAQs, categories,
+ * shorts, seasons, episodes; review item 8, PR #29). Rows can share an updated_at (seeded in
+ * one statement), so one shared chain would move another row forward by mistake.
+ */
+export type RowVersionChains = {
+  resolve(id: string, base: string): string
+  link(id: string, from: string, to: string): void
+}
+
+export function createRowVersionChains(): RowVersionChains {
+  const chains = new Map<string, VersionChain>()
+  const chainFor = (id: string) => {
+    let c = chains.get(id)
+    if (!c) chains.set(id, (c = createVersionChain()))
+    return c
+  }
+  return {
+    resolve: (id, base) => (chains.get(id)?.resolve(base) ?? base),
+    link: (id, from, to) => chainFor(id).link(from, to),
+  }
+}

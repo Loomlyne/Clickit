@@ -8,6 +8,7 @@
 // moves an already-loaded form forward: its values may predate another admin's save.
 import { createContext, useContext, useState, type ReactNode } from 'react'
 import {
+  createRowVersionChains,
   createVersionChain,
   type VersionChain,
 } from '@/lib/admin/version-chain'
@@ -64,4 +65,22 @@ export function useRowVersion(updatedAt: string): RowVersion {
   const [chain] = useState(createVersionChain)
   const [base] = useState(updatedAt)
   return handle(chain, base)
+}
+
+export type RowVersions = {
+  /** The updated_at to send for row `id`, whose editor opened with `base`. */
+  expected(id: string, base: string): string
+  /** Record a save of row `id` that expected `from` and returned `next`. */
+  saved(id: string, from: string, next: string | null | undefined): void
+}
+
+/** For a list editor: one chain per row id (legal pages, FAQs, categories, shorts, seasons, episodes). */
+export function useRowVersions(): RowVersions {
+  const [chains] = useState(createRowVersionChains)
+  return {
+    expected: (id, base) => chains.resolve(id, base),
+    saved: (id, from, next) => {
+      if (next) chains.link(id, from, next)
+    },
+  }
 }

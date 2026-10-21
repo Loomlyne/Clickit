@@ -176,8 +176,9 @@ async function main() {
   )
   await backfillTable(
     'legal_pages',
-    [['title', 'title_ar'], ['content', 'content_ar']],
-    'id, title, title_ar, content, content_ar'
+    // Legal Arabic is a draft until an admin ticks "Arabic reviewed" (Koss 2026-10-21).
+    [['title', 'title_ar_draft'], ['content', 'content_ar_draft']],
+    'id, title, title_ar_draft, content, content_ar_draft'
   )
   await backfillAppConfig()
   console.log('\nDone.')

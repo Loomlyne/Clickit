@@ -1187,6 +1187,7 @@
       "legalContentArLabel": "Content (Arabic)",
       "legalContentArHint": "Arabic body shown on the Arabic locale. Leave blank to fall back to English.",
       "legalContentArPlaceholder": "أدخل النص القانوني الكامل هنا...",
+      "legalArReviewedLabel": "Arabic reviewed",
       "legalSaveChanges": "Save Changes",
       "legalCreate": "Create Page",
       "legalDeleteTitle": "Delete legal page",

@@ -301,36 +301,45 @@ export type Database = {
       }
       legal_pages: {
         Row: {
+          ar_reviewed: boolean
           content: string
           content_ar: string | null
+          content_ar_draft: string | null
           created_at: string
           id: string
           slug: string
           sort_order: number
           title: string
           title_ar: string | null
+          title_ar_draft: string | null
           updated_at: string
         }
         Insert: {
+          ar_reviewed?: boolean
           content?: string
           content_ar?: string | null
+          content_ar_draft?: string | null
           created_at?: string
           id?: string
           slug: string
           sort_order?: number
           title: string
           title_ar?: string | null
+          title_ar_draft?: string | null
           updated_at?: string
         }
         Update: {
+          ar_reviewed?: boolean
           content?: string
           content_ar?: string | null
+          content_ar_draft?: string | null
           created_at?: string
           id?: string
           slug?: string
           sort_order?: number
           title?: string
           title_ar?: string | null
+          title_ar_draft?: string | null
           updated_at?: string
         }
         Relationships: []

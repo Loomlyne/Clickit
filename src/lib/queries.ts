@@ -1234,6 +1234,8 @@ export type PublicLegalPage = {
   content: string
   title_ar: string | null
   content_ar: string | null
+  /** The Arabic is shown on /ar only when true (legalPageForLocale); drafts are never read. */
+  ar_reviewed: boolean
   updated_at: string
 }
 
@@ -1241,7 +1243,7 @@ export async function getLegalPageBySlug(slug: string): Promise<PublicLegalPage 
   const supabase = createPublicClient()
   const { data } = await supabase
     .from('legal_pages')
-    .select('id, slug, title, content, title_ar, content_ar, updated_at')
+    .select('id, slug, title, content, title_ar, content_ar, ar_reviewed, updated_at')
     .eq('slug', slug)
     .single()
   return (data ?? null) as PublicLegalPage | null
@@ -1251,7 +1253,7 @@ export async function getAllLegalPages(): Promise<PublicLegalPage[]> {
   const supabase = createPublicClient()
   const { data } = await supabase
     .from('legal_pages')
-    .select('id, slug, title, content, title_ar, content_ar, updated_at')
+    .select('id, slug, title, content, title_ar, content_ar, ar_reviewed, updated_at')
     .order('sort_order', { ascending: true })
   return (data ?? []) as PublicLegalPage[]
 }

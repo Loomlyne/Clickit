@@ -71,6 +71,7 @@ import {
 } from '@/server/r2-delete'
 import { readMediaReferenceUrls, type ReferenceDb } from '@/server/media-references'
 import { removeMediaCore } from '@/lib/admin/media-removal'
+import { upsertLegalPageCore, type LegalPageRow } from '@/lib/admin/legal-pages'
 import { SAVE_CONFLICT, rowVersion, updateIfUnchanged, type RowVersion } from '@/lib/admin/row-version'
 
 /**
@@ -2626,77 +2627,45 @@ export async function deleteCastMember(id: string): Promise<ActionResult> {
 // Legal Pages Actions
 // ---------------------------------------------------------------------------
 
-export type LegalPage = {
-  id: string
-  slug: string
-  title: string
-  content: string
-  title_ar: string | null
-  content_ar: string | null
-  sort_order: number
-  updated_at: string
-}
-
-const legalPageSchema = z.object({
-  id: z.string().uuid().optional(),
-  slug: z
-    .string()
-    .min(1, 'Slug is required')
-    .max(80)
-    .regex(/^[a-z0-9-]+$/, 'Lowercase letters, numbers, hyphens only'),
-  title: z.string().min(1, 'Title is required').max(200),
-  content: z.string(),
-  title_ar: z.string().max(200).optional().nullable(),
-  content_ar: z.string().optional().nullable(),
-  sort_order: z.number().int().min(0).default(0),
-})
+/** Admin editor row: published and draft Arabic plus the review flag (item 12, PR #29). */
+export type LegalPage = LegalPageRow
 
 export async function getLegalPages(): Promise<LegalPage[]> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('legal_pages')
-    .select('id, slug, title, content, title_ar, content_ar, sort_order, updated_at')
+    .select('id, slug, title, content, title_ar, content_ar, title_ar_draft, content_ar_draft, ar_reviewed, sort_order, updated_at')
     .order('sort_order', { ascending: true })
   return (data ?? []) as LegalPage[]
 }
 
+/**
+ * Legal pages Arabic = "AI draft, admin approves" (Koss 2026-10-21): a blank Arabic field is
+ * drafted by the AI into the draft columns; only a save with "Arabic reviewed" ticked
+ * publishes it (upsertLegalPageCore). An update takes the editor's updated_at (item 8).
+ */
 export async function upsertLegalPage(
-  raw: unknown
-): Promise<ActionResult<LegalPage>> {
+  raw: unknown,
+  expectedUpdatedAt?: string
+): Promise<VersionedResult<LegalPage>> {
   try {
     const user = await assertAdmin()
-    const parsed = legalPageSchema.safeParse(raw)
-    if (!parsed.success)
-      return { success: false, error: parsed.error.issues[0].message }
-
     const supabase = await createClient()
-    const { id, ...fields } = parsed.data
-
-    // Auto-fill blank Arabic fields from their English source (Workers AI).
     const arabic = createArabicFiller(user.id)
-    fields.title_ar = await arabic.fill(fields.title, fields.title_ar)
-    fields.content_ar = await arabic.fill(fields.content, fields.content_ar)
-
-    if (id) {
-      const { data, error } = await supabase
-        .from('legal_pages')
-        .update(fields)
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) return { success: false, error: error.message }
-      bumpLegalCache(parsed.data.slug)
-      return withArabicMissing({ success: true, data: data as LegalPage }, arabic.missing())
-    } else {
-      const { data, error } = await supabase
-        .from('legal_pages')
-        .insert(fields)
-        .select()
-        .single()
-      if (error) return { success: false, error: error.message }
-      bumpLegalCache(parsed.data.slug)
-      return withArabicMissing({ success: true, data: data as LegalPage }, arabic.missing())
+    const result = await upsertLegalPageCore(
+      supabase as unknown as AdminDb,
+      { fill: arabic.fill },
+      raw,
+      expectedUpdatedAt
+    )
+    if (!result.success || !result.data) {
+      return { success: false, error: result.error ?? 'Failed to save legal page' }
     }
+    bumpLegalCache(result.data.slug)
+    return withArabicMissing(
+      { success: true, data: result.data, updatedAt: result.updatedAt },
+      arabic.missing()
+    )
   } catch (err) {
     console.error('[admin/legal] upsert failed', err)
     return {
