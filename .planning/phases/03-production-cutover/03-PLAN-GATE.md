@@ -36,7 +36,9 @@ New wording: "Every stored photo and video is served from media.clickitstory.ae;
 **G7. Fix in your local file (controller does it, not the work session).** `/Users/koss/Developer/Clickit/CLAUDE.local.md` line 32 says to re-sync media with `npm run r2:copy`. That tool would overwrite the fast-start videos. Proposed: replace it with `npm run r2:media -- --refresh`, then `--execute`, and mark `.planning/handovers/r2-media-copy.md` as superseded for re-sync.
 - **Yes (recommended).**
 
-## Open decisions after Phase 2 landed (2026-10-21)
+**SIGNED (amendments):** G8 yes (three crons), G9 yes (code plans may start; P3-pre-cpu stays a hard gate before any live step), G10 yes (sweep reports only; deletes after the rewrite on "sweep deletes on", optional for Phase 3) — Koss via controller question form 2026-10-21 15:03 CET
+
+## Decisions after Phase 2 landed (2026-10-21, signed above)
 
 Reply: `G8 yes … G10 yes`, or "all yes". Recommended answer first. The controller records the answer here as one line `**SIGNED (amendments):** G8 <answer>, G9 <answer>, G10 <answer>, <date time>` at the start of its own line (03-01's entry check reads it).
 
