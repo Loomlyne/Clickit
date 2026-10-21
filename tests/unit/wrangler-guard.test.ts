@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { checkWhoamiOutput, checkEnv } from '../../scripts/cf/wrangler-guard.mjs'
+import { readFileSync } from 'node:fs'
+import { checkWhoamiOutput, checkEnv, wranglerChildEnv, CLICKIT_HOME } from '../../scripts/cf/wrangler-guard.mjs'
 
 const CLICKIT = 'e329b099b6e4272fc0915a99832e47fe'
 const VAMOS = '0123456789abcdef0123456789abcdef'
@@ -49,4 +50,61 @@ test('CLOUDFLARE_ACCOUNT_ID mismatch fails, match and unset pass', () => {
   assert.equal(checkEnv({ CLOUDFLARE_ACCOUNT_ID: VAMOS }).ok, false)
   assert.equal(checkEnv({ CLOUDFLARE_ACCOUNT_ID: CLICKIT }).ok, true)
   assert.equal(checkEnv({}).ok, true)
+})
+
+// ------------------------------------------------- other credential routes (review item 4)
+
+const REFUSED_NAMES = [
+  'CLOUDFLARE_API_TOKEN',
+  'CF_API_TOKEN',
+  'CLOUDFLARE_API_KEY',
+  'CF_API_KEY',
+  'CLOUDFLARE_EMAIL',
+  'CF_EMAIL',
+  'CLOUDFLARE_API_BASE_URL',
+  'CF_API_BASE_URL',
+  'XDG_CONFIG_HOME',
+]
+
+test('checkEnv refuses every other wrangler credential or config route, naming the variable', () => {
+  for (const name of REFUSED_NAMES) {
+    const res = checkEnv({ [name]: 'x' })
+    assert.equal(res.ok, false, name)
+    assert.ok(res.reason.includes(name), `${name}: ${res.reason}`)
+    assert.ok(!res.reason.includes("'x'"), name)
+  }
+})
+
+test('checkEnv ignores an empty value for a refused name', () => {
+  for (const name of REFUSED_NAMES) assert.equal(checkEnv({ [name]: '' }).ok, true, name)
+})
+
+test('checkEnv refuses a deprecated CF_ACCOUNT_ID that is not ClickitStory', () => {
+  assert.equal(checkEnv({ CF_ACCOUNT_ID: VAMOS }).ok, false)
+  assert.equal(checkEnv({ CF_ACCOUNT_ID: CLICKIT }).ok, true)
+})
+
+test('wranglerChildEnv keeps only PATH and pins HOME; no credential or XDG variable passes', () => {
+  const env = wranglerChildEnv({
+    PATH: '/usr/bin',
+    HOME: '/Users/someone',
+    CLOUDFLARE_API_TOKEN: 't',
+    CLOUDFLARE_API_KEY: 'k',
+    CLOUDFLARE_EMAIL: 'e',
+    XDG_CONFIG_HOME: '/x',
+    CLOUDFLARE_ACCOUNT_ID: VAMOS,
+  })
+  assert.deepEqual(env, { PATH: '/usr/bin', HOME: CLICKIT_HOME, WRANGLER_SEND_METRICS: 'false' })
+})
+
+test('the guard CLI spawns wrangler whoami with wranglerChildEnv, not the parent env', () => {
+  const src = readFileSync('scripts/cf/wrangler-guard.mjs', 'utf8')
+  const main = src.slice(src.indexOf('function main('))
+  assert.match(main, /env: wranglerChildEnv\(process\.env\)/)
+  assert.equal(/\.\.\.process\.env/.test(main), false)
+})
+
+test('deploy.mjs uses the shared wranglerChildEnv for its wrangler children', () => {
+  const src = readFileSync('scripts/cf/deploy.mjs', 'utf8')
+  assert.match(src, /wranglerChildEnv\(process\.env\)/)
 })
