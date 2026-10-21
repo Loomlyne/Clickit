@@ -21,9 +21,10 @@ const ops = (name: string) => read(SQL_DIR, name)
 const migration = () => read(MIG_DIR, backupMigrations[0])
 const stripComments = (sql: string) => sql.replace(/--[^\n]*/g, '')
 
-const SCAN_PATTERN = String.raw`supabase\.co/storage/v1/|clickit-media\.[a-z0-9-]+\.workers\.dev`
+const SCAN_PATTERN = String.raw`supabase\.co/storage/v1/|clickit-media(-r2)?\.[a-z0-9-]+\.workers\.dev`
 const SUPABASE_RX = String.raw`https://lajguozmtissnnfccmej\.supabase\.co/storage/v1/object/public/(show-artwork|site-assets|avatars)/`
 const WORKER_RX = String.raw`https://clickit-media\.clickitstory\.workers\.dev/(show-artwork|site-assets|avatars)/`
+const WORKER_R2_RX = String.raw`https://clickit-media-r2\.clickitstory\.workers\.dev/(show-artwork|site-assets|avatars)/`
 const REPLACEMENT = String.raw`https://media.clickitstory.ae/\1/`
 
 const DRIVER: Array<[string, string]> = [
@@ -126,6 +127,7 @@ test('rewrite: both host patterns, replacement, backup insert, guarded update, m
   const sql = ops('rewrite-media-urls.sql')
   assert.ok(sql.includes(SUPABASE_RX), 'Supabase Storage pattern')
   assert.ok(sql.includes(WORKER_RX), 'media Worker pattern')
+  assert.ok(sql.includes(WORKER_R2_RX), 'media-r2 Worker pattern (Phase 2 option A test host)')
   assert.ok(sql.includes(`'${REPLACEMENT}'`), 'replacement')
   assert.match(sql, /insert into private\.media_url_rewrite_backup/)
   assert.match(sql, /to_jsonb\(t\.%\d\$I\) = b\.old_value/)
@@ -145,10 +147,11 @@ test('rewrite: jsonb structural check (strict $.** leaf count) raises on change'
 
 test('rewrite regex semantics: ?v= kept, picsum, other bucket, render and sign paths untouched', () => {
   const regexes = hostRegexLiterals(ops('rewrite-media-urls.sql')).filter((rx) => rx.startsWith('https://'))
-  assert.deepEqual(regexes, [SUPABASE_RX, WORKER_RX])
+  assert.deepEqual(regexes, [SUPABASE_RX, WORKER_RX, WORKER_R2_RX])
   const base = 'https://lajguozmtissnnfccmej.supabase.co/storage/v1'
   assert.equal(rewriteText(`${base}/object/public/show-artwork/a/b.webp?v=3`, regexes), 'https://media.clickitstory.ae/show-artwork/a/b.webp?v=3')
   assert.equal(rewriteText('https://clickit-media.clickitstory.workers.dev/site-assets/x.mp4', regexes), 'https://media.clickitstory.ae/site-assets/x.mp4')
+  assert.equal(rewriteText('https://clickit-media-r2.clickitstory.workers.dev/show-artwork/p/poster.webp?v=9', regexes), 'https://media.clickitstory.ae/show-artwork/p/poster.webp?v=9')
   assert.equal(rewriteText(`${base}/object/public/avatars/u.png`, regexes), 'https://media.clickitstory.ae/avatars/u.png')
   for (const left of [
     'https://picsum.photos/seed/x/400/600',
@@ -156,6 +159,9 @@ test('rewrite regex semantics: ?v= kept, picsum, other bucket, render and sign p
     `${base}/render/image/public/show-artwork/x.png?width=200`,
     `${base}/object/sign/show-artwork/x.png?token=t`,
     'https://clickit-media.other.workers.dev/show-artwork/x.png',
+    'https://clickit-media-r2.other.workers.dev/show-artwork/x.png',
+    'https://clickit-media-r2.clickitstory.workers.dev/other-bucket/x.png',
+    'https://clickit-media-r3.clickitstory.workers.dev/show-artwork/x.png',
     `see ${base}/object/public/show-artwork/x.png`,
   ]) {
     assert.equal(rewriteText(left, regexes), left)
@@ -180,6 +186,8 @@ test('scan pattern semantics: media hosts match, other workers.dev values and a 
   assert.ok(rx.test('https://lajguozmtissnnfccmej.supabase.co/storage/v1/render/image/public/x.png'))
   assert.ok(rx.test('https://clickit-media.clickitstory.workers.dev/x'))
   assert.ok(rx.test('https://clickit-media.other-sub.workers.dev/x'))
+  assert.ok(rx.test('https://clickit-media-r2.clickitstory.workers.dev/show-artwork/x.png'))
+  assert.ok(rx.test('https://clickit-media-r2.other-sub.workers.dev/x'))
   assert.ok(!rx.test('https://some-app.someone.workers.dev/x'))
   assert.ok(!rx.test('lajguozmtissnnfccmej'))
   assert.ok(!rx.test('https://lajguozmtissnnfccmej.supabase.co/auth/v1/callback'))

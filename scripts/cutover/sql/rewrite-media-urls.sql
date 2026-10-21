@@ -1,4 +1,5 @@
--- MEDIA-08 rewrite (D-09): Supabase Storage and Phase 2 media Worker URLs ->
+-- MEDIA-08 rewrite (D-09): Supabase Storage and Phase 2 media Worker URLs
+-- (clickit-media and clickit-media-r2, the Phase 2 option A test host) ->
 -- https://media.clickitstory.ae/<bucket>/<key>, query string (?v=) kept.
 --
 -- Run ONCE on live by the controller after Koss's word and a fresh local dump
@@ -26,7 +27,8 @@ declare
   v_run uuid := gen_random_uuid();
   v_rx text[] := array[
     'https://lajguozmtissnnfccmej\.supabase\.co/storage/v1/object/public/(show-artwork|site-assets|avatars)/',
-    'https://clickit-media\.clickitstory\.workers\.dev/(show-artwork|site-assets|avatars)/'];
+    'https://clickit-media\.clickitstory\.workers\.dev/(show-artwork|site-assets|avatars)/',
+    'https://clickit-media-r2\.clickitstory\.workers\.dev/(show-artwork|site-assets|avatars)/'];
   v_repl text := 'https://media.clickitstory.ae/\1/';
   c record;
   v_new text;
@@ -74,11 +76,11 @@ begin
     -- text: the URL must start the value; jsonb: the URL must start a JSON string.
     v_new := case c.typ
       when 'text' then format(
-        'regexp_replace(regexp_replace(t.%1$I, %2$L, %4$L), %3$L, %4$L)',
-        c.col, '^' || v_rx[1], '^' || v_rx[2], v_repl)
+        'regexp_replace(regexp_replace(regexp_replace(t.%1$I, %2$L, %5$L), %3$L, %5$L), %4$L, %5$L)',
+        c.col, '^' || v_rx[1], '^' || v_rx[2], '^' || v_rx[3], v_repl)
       else format(
-        'regexp_replace(regexp_replace(t.%1$I::text, %2$L, %4$L, ''g''), %3$L, %4$L, ''g'')::jsonb',
-        c.col, '"' || v_rx[1], '"' || v_rx[2], '"' || v_repl) end;
+        'regexp_replace(regexp_replace(regexp_replace(t.%1$I::text, %2$L, %5$L, ''g''), %3$L, %5$L, ''g''), %4$L, %5$L, ''g'')::jsonb',
+        c.col, '"' || v_rx[1], '"' || v_rx[2], '"' || v_rx[3], '"' || v_repl) end;
 
     execute format($q$
       insert into private.media_url_rewrite_backup (run_id, table_name, column_name, row_pk, old_value, new_value)

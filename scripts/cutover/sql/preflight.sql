@@ -8,14 +8,15 @@
 --      the rewrite would change (rewritable) and old-host values the rewrite
 --      can NOT convert (not_rewritable): Storage render/image or object/sign
 --      paths, a bucket other than show-artwork/site-assets/avatars, a
---      clickit-media workers.dev host with another subdomain, a URL inside
+--      clickit-media or clickit-media-r2 workers.dev host with another
+--      subdomain, a URL inside
 --      prose. Any not rewritable value => verdict "stop: plan revision".
 --   4. the DB-wide old-host scan restricted to columns that are NOT driver
 --      columns and not public.admin_audit_log (D-19). Any row here means an
 --      old-host value the rewrite would never touch => "stop: plan revision".
 --
 -- Old media host pattern (same as scan-old-hosts.sql):
---   supabase\.co/storage/v1/|clickit-media\.[a-z0-9-]+\.workers\.dev
+--   supabase\.co/storage/v1/|clickit-media(-r2)?\.[a-z0-9-]+\.workers\.dev
 -- The rewrite regexes and replacement below are copied from
 -- rewrite-media-urls.sql (tests/unit/rewrite-sql.test.ts keeps them equal).
 -- The [marker] comments let scripts/cutover/sql/test-local.sql run each block.
@@ -29,8 +30,9 @@ with rx as (
   select
     'https://lajguozmtissnnfccmej\.supabase\.co/storage/v1/object/public/(show-artwork|site-assets|avatars)/'::text as rx1,
     'https://clickit-media\.clickitstory\.workers\.dev/(show-artwork|site-assets|avatars)/'::text as rx2,
+    'https://clickit-media-r2\.clickitstory\.workers\.dev/(show-artwork|site-assets|avatars)/'::text as rx3,
     'https://media.clickitstory.ae/\1/'::text as repl,
-    'supabase\.co/storage/v1/|clickit-media\.[a-z0-9-]+\.workers\.dev'::text as old_host
+    'supabase\.co/storage/v1/|clickit-media(-r2)?\.[a-z0-9-]+\.workers\.dev'::text as old_host
 ),
 driver(tbl, col, typ) as (values
   ('app_config', 'hero_video_url', 'text'),
@@ -56,11 +58,11 @@ probe as (
   select d.tbl, d.col, rx.old_host,
     case d.typ
       when 'text' then format(
-        'regexp_replace(regexp_replace(t.%1$I, %2$L, %4$L), %3$L, %4$L)',
-        d.col, '^' || rx.rx1, '^' || rx.rx2, rx.repl)
+        'regexp_replace(regexp_replace(regexp_replace(t.%1$I, %2$L, %5$L), %3$L, %5$L), %4$L, %5$L)',
+        d.col, '^' || rx.rx1, '^' || rx.rx2, '^' || rx.rx3, rx.repl)
       else format(
-        'regexp_replace(regexp_replace(t.%1$I::text, %2$L, %4$L, ''g''), %3$L, %4$L, ''g'')::jsonb',
-        d.col, '"' || rx.rx1, '"' || rx.rx2, '"' || rx.repl) end as expr
+        'regexp_replace(regexp_replace(regexp_replace(t.%1$I::text, %2$L, %5$L, ''g''), %3$L, %5$L, ''g''), %4$L, %5$L, ''g'')::jsonb',
+        d.col, '"' || rx.rx1, '"' || rx.rx2, '"' || rx.rx3, '"' || rx.repl) end as expr
   from driver d cross join rx
 ),
 counted as (
@@ -108,7 +110,7 @@ select table_schema, table_name, column_name, hits, 'stop: plan revision' as ver
     (xpath('/row/n/text()', query_to_xml(format(
       'select count(*) as n from %I.%I where %I::text ~* %L',
       c.table_schema, c.table_name, c.column_name,
-      'supabase\.co/storage/v1/|clickit-media\.[a-z0-9-]+\.workers\.dev'), false, true, '')))[1]::text::int as hits
+      'supabase\.co/storage/v1/|clickit-media(-r2)?\.[a-z0-9-]+\.workers\.dev'), false, true, '')))[1]::text::int as hits
   from information_schema.columns c
   where c.table_schema in ('public', 'auth')
     and c.data_type in ('text', 'character varying', 'jsonb', 'json', 'ARRAY')

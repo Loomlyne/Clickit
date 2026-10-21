@@ -46,7 +46,7 @@ begin
   if not exists (select 1 from public.show_cast) then
     raise exception 'local stack has no show_cast rows: run supabase db reset --local first';
   end if;
-  execute format('select string_agg(format(''%%s.%%s.%%s=%%s'', table_schema, table_name, column_name, hits), '','') from (%s
+  execute format('select string_agg(format(''%%s.%%s.%%s=%%s'', table_schema, table_name, column_name, hits), '','' order by table_schema, table_name, column_name) from (%s
 ) s', v_scan) into v_hits;
   if v_hits is not null then
     raise exception 'local stack already holds old-host values (%): the planted counts would be wrong', v_hits;
@@ -59,18 +59,22 @@ select (select id from public.shows order by slug limit 1) as show_a,
        (select id from public.shows order by slug offset 1 limit 1) as show_b,
        (select id from public.show_cast order by id limit 1) as cast_a;
 
--- show A: Supabase Storage URLs with ?v= and one media Worker URL (4 values)
+-- show A: Supabase Storage URLs with ?v=, one clickit-media and one
+-- clickit-media-r2 (Phase 2 option A test host) Worker URL (5 values)
 update public.shows s set
   hero_url = 'https://lajguozmtissnnfccmej.supabase.co/storage/v1/object/public/show-artwork/fx/hero.webp?v=11',
   card_image_url = 'https://lajguozmtissnnfccmej.supabase.co/storage/v1/object/public/show-artwork/fx/card.webp?v=12',
   poster_url = 'https://lajguozmtissnnfccmej.supabase.co/storage/v1/object/public/show-artwork/fx/poster.webp?v=13',
-  hero_image_mobile_url = 'https://clickit-media.clickitstory.workers.dev/show-artwork/fx/hero-m.webp?v=14'
+  hero_image_mobile_url = 'https://clickit-media.clickitstory.workers.dev/show-artwork/fx/hero-m.webp?v=14',
+  hero_video_url = 'https://clickit-media-r2.clickitstory.workers.dev/show-artwork/fx/hero.mp4?v=15'
 from fx where s.id = fx.show_a;
 
--- show B: picsum poster (D-10, left alone) and a bucket the rewrite does not know
+-- show B: picsum poster (D-10, left alone), a bucket the rewrite does not know
+-- and a clickit-media-r2 host on another subdomain (both not rewritable)
 update public.shows s set
   poster_url = 'https://picsum.photos/seed/clickit-fx/400/600',
-  card_image_url = 'https://lajguozmtissnnfccmej.supabase.co/storage/v1/object/public/other-bucket/fx/card.webp'
+  card_image_url = 'https://lajguozmtissnnfccmej.supabase.co/storage/v1/object/public/other-bucket/fx/card.webp',
+  logo_url = 'https://clickit-media-r2.other-sub.workers.dev/show-artwork/fx/logo.png'
 from fx where s.id = fx.show_b;
 
 -- one cast image (1 value)
@@ -127,21 +131,21 @@ begin
   if v_nr is null or v_od is null then
     raise exception 'test-local: preflight markers not found';
   end if;
-  execute format('select string_agg(format(''%%s.%%s=%%s'', table_name, column_name, not_rewritable), '','') filter (where not_rewritable > 0),
+  execute format('select string_agg(format(''%%s.%%s=%%s'', table_name, column_name, not_rewritable), '','' order by table_name, column_name) filter (where not_rewritable > 0),
                          sum(not_rewritable), sum(rewritable) from (%s
 ) s', v_nr) into v_nr_cols, v_nr_total, v_rewritable;
-  if v_nr_cols is distinct from 'shows.card_image_url=1' or v_nr_total <> 1 then
-    raise exception 'test-local: preflight not rewritable = % (total %), expected shows.card_image_url=1', v_nr_cols, v_nr_total;
+  if v_nr_cols is distinct from 'shows.card_image_url=1,shows.logo_url=1' or v_nr_total <> 2 then
+    raise exception 'test-local: preflight not rewritable = % (total %), expected shows.card_image_url=1,shows.logo_url=1', v_nr_cols, v_nr_total;
   end if;
-  if v_rewritable <> 8 then
-    raise exception 'test-local: preflight rewritable = %, expected 8', v_rewritable;
+  if v_rewritable <> 9 then
+    raise exception 'test-local: preflight rewritable = %, expected 9', v_rewritable;
   end if;
-  execute format('select string_agg(format(''%%s.%%s.%%s=%%s'', table_schema, table_name, column_name, hits), '','') from (%s
+  execute format('select string_agg(format(''%%s.%%s.%%s=%%s'', table_schema, table_name, column_name, hits), '','' order by table_schema, table_name, column_name) from (%s
 ) s', v_od) into v_od_hits;
   if v_od_hits is not null then
     raise exception 'test-local: preflight outside-driver hits %, expected none', v_od_hits;
   end if;
-  raise notice 'test-local: preflight ok (not rewritable shows.card_image_url=1, rewritable 8, outside-driver 0)';
+  raise notice 'test-local: preflight ok (not rewritable shows.card_image_url=1 and shows.logo_url=1, rewritable 9, outside-driver 0)';
 end $preflight$;
 
 -- 6. Rewrite (run 1).
@@ -159,22 +163,24 @@ declare
   f0 jsonb;
 begin
   select count(*) into v_cnt from private.media_url_rewrite_backup where run_id = v_run;
-  if v_cnt <> 8 then
-    raise exception 'test-local: backup rows % for run %, expected 8 planted values', v_cnt, v_run;
+  if v_cnt <> 9 then
+    raise exception 'test-local: backup rows % for run %, expected 9 planted values', v_cnt, v_run;
   end if;
 
   select s.* into a from public.shows s join fx on s.id = fx.show_a;
   if a.hero_url <> 'https://media.clickitstory.ae/show-artwork/fx/hero.webp?v=11'
      or a.card_image_url <> 'https://media.clickitstory.ae/show-artwork/fx/card.webp?v=12'
      or a.poster_url <> 'https://media.clickitstory.ae/show-artwork/fx/poster.webp?v=13'
-     or a.hero_image_mobile_url <> 'https://media.clickitstory.ae/show-artwork/fx/hero-m.webp?v=14' then
+     or a.hero_image_mobile_url <> 'https://media.clickitstory.ae/show-artwork/fx/hero-m.webp?v=14'
+     or a.hero_video_url <> 'https://media.clickitstory.ae/show-artwork/fx/hero.mp4?v=15' then
     raise exception 'test-local: show A not rewritten as expected (?v= kept): %', to_jsonb(a);
   end if;
 
   select s.* into b from public.shows s join fx on s.id = fx.show_b;
   if b.poster_url <> 'https://picsum.photos/seed/clickit-fx/400/600'
-     or b.card_image_url <> 'https://lajguozmtissnnfccmej.supabase.co/storage/v1/object/public/other-bucket/fx/card.webp' then
-    raise exception 'test-local: picsum or other-bucket value was touched: %', to_jsonb(b);
+     or b.card_image_url <> 'https://lajguozmtissnnfccmej.supabase.co/storage/v1/object/public/other-bucket/fx/card.webp'
+     or b.logo_url <> 'https://clickit-media-r2.other-sub.workers.dev/show-artwork/fx/logo.png' then
+    raise exception 'test-local: picsum, other-bucket or other-subdomain value was touched: %', to_jsonb(b);
   end if;
 
   if (select image_url from public.show_cast c join fx on c.id = fx.cast_a)
@@ -200,17 +206,17 @@ begin
     raise exception 'test-local: shorts thumbnails were touched';
   end if;
 
-  -- scan: exactly the planted other-bucket column; the auth workers.dev value is ignored
-  execute format('select string_agg(format(''%%s.%%s.%%s=%%s'', table_schema, table_name, column_name, hits), '','') from (%s
+  -- scan: exactly the two planted not-rewritable columns; the auth workers.dev value is ignored
+  execute format('select string_agg(format(''%%s.%%s.%%s=%%s'', table_schema, table_name, column_name, hits), '','' order by table_schema, table_name, column_name) from (%s
 ) s', v_scan) into v_hits;
-  if v_hits is distinct from 'public.shows.card_image_url=1' then
-    raise exception 'test-local: scan after rewrite = %, expected public.shows.card_image_url=1', v_hits;
+  if v_hits is distinct from 'public.shows.card_image_url=1,public.shows.logo_url=1' then
+    raise exception 'test-local: scan after rewrite = %, expected public.shows.card_image_url=1,public.shows.logo_url=1', v_hits;
   end if;
   if (select count(*) from auth.audit_log_entries where payload::text ~ 'workers\.dev')
      + (select count(*) from auth.users where raw_user_meta_data::text ~ 'workers\.dev') = 0 then
     raise exception 'test-local: the non-media workers.dev fixture is missing';
   end if;
-  raise notice 'test-local: rewrite ok (8 backup rows, ?v= kept, picsum and other-bucket untouched, footer leaves equal, scan = public.shows.card_image_url=1)';
+  raise notice 'test-local: rewrite ok (9 backup rows incl. clickit-media-r2, ?v= kept, picsum, other-bucket and other-subdomain untouched, footer leaves equal, scan = shows.card_image_url and shows.logo_url)';
 end $after_rewrite$;
 
 \ir scan-old-hosts.sql
@@ -282,8 +288,8 @@ declare
 begin
   select count(*), count(*) filter (where restored_at is null) into v_cnt, v_open
   from private.media_url_rewrite_backup where run_id = v_run;
-  if v_cnt <> 8 or v_open <> 0 then
-    raise exception 'test-local: run 2 has % rows, % open; expected 8 and 0', v_cnt, v_open;
+  if v_cnt <> 9 or v_open <> 0 then
+    raise exception 'test-local: run 2 has % rows, % open; expected 9 and 0', v_cnt, v_open;
   end if;
   select count(*) into v_diff
   from snap s full join cur c on c.tbl = s.tbl and c.id = s.id
@@ -291,7 +297,7 @@ begin
   if v_diff <> 0 then
     raise exception 'test-local: % row(s) differ from the snapshot after the single-open-run reverse', v_diff;
   end if;
-  raise notice 'test-local: single-open-run reverse ok (run 2, 8 values, byte-identical)';
+  raise notice 'test-local: single-open-run reverse ok (run 2, 9 values, byte-identical)';
   raise notice 'test-local: PASS';
 end $after_reverse2$;
 

@@ -89,6 +89,10 @@ completed: 2026-10-21
 
 ### Auto-fixed Issues
 
+**0. [Follow-up fix, coordinator 2026-10-21] clickit-media-r2 test host**
+- **Found after:** main merged into the branch (1d11529, PR #30). The workers.dev app now uses a second media Worker host, `clickit-media-r2.<sub>.workers.dev` (02-RUNBOOK Steps 28-32b, deploy-guard MEDIA_HOST `^clickit-media(?:-r2)?\.`). The scan pattern `clickit-media\.[a-z0-9-]+\.workers\.dev` did not match that host, so a row left on it would have been missed and the read-back would wrongly have shown zero.
+- **Fix:** the scan, preflight and report pattern is now `supabase\.co/storage/v1/|clickit-media(-r2)?\.[a-z0-9-]+\.workers\.dev`. Rewrite and preflight also map `https://clickit-media-r2\.clickitstory\.workers\.dev/(show-artwork|site-assets|avatars)/` to `https://media.clickitstory.ae/<bucket>/`, with the same anchoring and `?v=` kept. Other subdomains of either name still count as not rewritable. test-local.sql adds a rewritable clickit-media-r2 value (show A hero_video_url) and a not-rewritable one on another subdomain (show B logo_url). The planted rewritable count goes from 8 to 9, and not rewritable is now shows.card_image_url plus shows.logo_url. Local re-run: `/Users/koss/.clickit-checks/p3-exec/p3-sql-test-r2.log`, PASS, exit=0. The D-09 sources sentence in 03-CONTEXT.md names the host.
+
 **1. [Rule 3 - Blocking] Two tests pinned the newest migration**
 - **Found during:** final gates
 - **Issue:** `youtube-migration.test.ts` and `legal-pages-arabic.test.ts` asserted that `20261021120000_legal_pages_arabic_review.sql` is the newest migration. The new Phase 3 migration sorts after it, so both failed.
@@ -104,7 +108,7 @@ completed: 2026-10-21
 **3. [Rule 2 - Critical] Stricter rewrite matching than the research SQL**
 - **Found during:** Task 1
 - **Issue:** the research regexes were unanchored, so a URL inside prose or in the middle of a value would also have been rewritten.
-- **Fix:** text columns anchor on `^`; jsonb anchors on the opening `"` of a JSON string. Anything else stays as it is and preflight counts it as not rewritable. The rewrite also refuses a missing or retyped driver column before writing anything.
+- **Fix:** text columns anchor on `^`; jsonb anchors on the opening `"` of a JSON string (three host regexes since fix 0). Anything else stays as it is and preflight counts it as not rewritable. The rewrite also refuses a missing or retyped driver column before writing anything.
 - **Commit:** `b5c46f9`
 
 **4. [Path] Local test log location**

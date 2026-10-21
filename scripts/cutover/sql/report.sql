@@ -26,9 +26,9 @@ order by s.slug;
 
 select count(*) as audit_rows_with_old_host
 from public.admin_audit_log a
-where to_jsonb(a)::text ~* 'supabase\.co/storage/v1/|clickit-media\.[a-z0-9-]+\.workers\.dev';
+where to_jsonb(a)::text ~* 'supabase\.co/storage/v1/|clickit-media(-r2)?\.[a-z0-9-]+\.workers\.dev';
 
 select a.id, a.created_at, a.action_type, a.entity_type, a.entity_id
 from public.admin_audit_log a
-where to_jsonb(a)::text ~* 'supabase\.co/storage/v1/|clickit-media\.[a-z0-9-]+\.workers\.dev'
+where to_jsonb(a)::text ~* 'supabase\.co/storage/v1/|clickit-media(-r2)?\.[a-z0-9-]+\.workers\.dev'
 order by a.created_at;
