@@ -33,6 +33,7 @@
 ```
 $ node scripts/cf/deploy.mjs --target production --dry-run --offline --verify-report /nonexistent.json
 account check: skipped (offline)
+secret check: skipped (offline)
 deploy-guard REFUSED:
   - .open-next/cloudflare/next-env.mjs is missing: cannot prove no .env value is in the bundle
   - no production build: run cf:build:production first (.open-next/clickit-build-stamp.json missing)
