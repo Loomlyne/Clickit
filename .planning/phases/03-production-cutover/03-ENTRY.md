@@ -12,3 +12,10 @@ Run: 2026-10-21T14:06:48Z by the Phase 3 work session, read-only (git fetch, git
 
 ENTRY: STOP
 NEEDS KOSS: Phase 2 UAT (item 2) and the media verify report (item 3) are not on main; Phase 2 finish is PR #30, still open. Under G1 the code plans do not start. Decision asked of Koss through the controller: start the code plans now with items 2-3 moved to a pre-live gate, or wait for Phase 2 UAT.
+
+## Re-run 2026-10-21T14:07:47Z (after G11, Koss 2026-10-21 ~15:10 CET)
+
+origin/main = 787ca3a4065f8bb585025c2dc987077b3abc9736 (unchanged; already an ancestor of this branch).
+1. PASS (as above). 2. FAIL, recorded only (G11: re-read at runbook Step 0c). 3. FAIL, recorded only (G11: Step 0c). 4. PASS (G9 branch). 5. as above. 6. PASS. 7. PASS (G8 yes, G10 yes; G11 signed).
+
+ENTRY: PASS 787ca3a4065f8bb585025c2dc987077b3abc9736

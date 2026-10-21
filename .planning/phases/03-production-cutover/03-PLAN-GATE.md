@@ -38,6 +38,8 @@ New wording: "Every stored photo and video is served from media.clickitstory.ae;
 
 **SIGNED (amendments):** G8 yes (three crons), G9 yes (code plans may start; P3-pre-cpu stays a hard gate before any live step), G10 yes (sweep reports only; deletes after the rewrite on "sweep deletes on", optional for Phase 3) — Koss via controller question form 2026-10-21 15:03 CET
 
+**SIGNED (G11):** A — code plans 03-01…03-06 start before the Phase 2 UAT and the media verify report are on main; both move to runbook Step 0c ("Phase 2 UAT passed and media verify shows 0 failures, read before Step 1"). 03-02 runs only after PR #30 lands on main and main is merged here — Koss via controller question form 2026-10-21 ~15:10 CET
+
 ## Decisions after Phase 2 landed (2026-10-21, signed above)
 
 Reply: `G8 yes … G10 yes`, or "all yes". Recommended answer first. The controller records the answer here as one line `**SIGNED (amendments):** G8 <answer>, G9 <answer>, G10 <answer>, <date time>` at the start of its own line (03-01's entry check reads it).
