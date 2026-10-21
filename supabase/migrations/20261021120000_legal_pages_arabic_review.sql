@@ -8,7 +8,8 @@
 --   ar_reviewed                       an admin approved the published Arabic
 --
 -- Additive only: two nullable columns and one boolean with a default; no row is removed and
--- no existing value changes except ar_reviewed below.
+-- no existing value changes except ar_reviewed below. The browser roles lose read access to
+-- the two draft columns only (column grant below); every other column stays readable.
 
 alter table public.legal_pages
   add column if not exists title_ar_draft text,
@@ -16,11 +17,21 @@ alter table public.legal_pages
   add column if not exists ar_reviewed boolean not null default false;
 
 comment on column public.legal_pages.title_ar_draft is
-  'Unreviewed Arabic title (AI draft or an unticked admin edit). Never shown publicly.';
+  'Unreviewed Arabic title (AI draft or an unticked admin edit). Not readable by anon or authenticated (column grant); the admin reads it with the service role.';
 comment on column public.legal_pages.content_ar_draft is
-  'Unreviewed Arabic body (AI draft or an unticked admin edit). Never shown publicly.';
+  'Unreviewed Arabic body (AI draft or an unticked admin edit). Not readable by anon or authenticated (column grant); the admin reads it with the service role.';
 comment on column public.legal_pages.ar_reviewed is
   'An admin ticked "Arabic reviewed": title_ar/content_ar are shown on /ar. False: /ar shows the English.';
+
+-- Draft privacy (PR #29 re-review item 1). anon and authenticated held a table-wide SELECT
+-- grant, so the drafts were readable with the public anon key. A column REVOKE does nothing
+-- while that table grant exists, so the table grant is replaced by a column grant listing
+-- every column except the two drafts. The RLS read policy (using true) is unchanged.
+-- INSERT/UPDATE/DELETE grants are unchanged (RLS keeps them admin-only). A column added to
+-- legal_pages later is NOT readable by anon/authenticated until it is added to this list.
+revoke select on table public.legal_pages from anon, authenticated;
+grant select (id, slug, title, content, sort_order, created_at, updated_at, title_ar, content_ar, ar_reviewed)
+  on table public.legal_pages to anon, authenticated;
 
 -- Arabic that is already published before this change stays published: rows with a
 -- non-blank content_ar are marked reviewed. The updated_at trigger is paused for this one
