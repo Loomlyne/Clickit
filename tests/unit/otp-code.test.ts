@@ -5,6 +5,7 @@ import {
   AUTH_LINK_MINUTES,
   CODE_LENGTH,
   RESEND_WAIT_SECONDS,
+  formatCountdown,
   normalizeCode,
   resendRemaining,
 } from '../../src/lib/auth-code.ts'
@@ -70,4 +71,17 @@ test('timing constants', () => {
   assert.equal(CODE_LENGTH, 6)
   assert.equal(AUTH_LINK_MINUTES, 15)
   assert.equal(RESEND_WAIT_SECONDS, 60)
+})
+
+test('formatCountdown gives m:ss', () => {
+  assert.equal(formatCountdown(42, 'en'), '0:42')
+  assert.equal(formatCountdown(60, 'en'), '1:00')
+  assert.equal(formatCountdown(5, 'en'), '0:05')
+})
+
+test('formatCountdown follows the locale numbering system', () => {
+  // The locale tag decides the digits (Phase 7 owns which one the UI uses);
+  // an Arabic-Indic numbering system must come through whole.
+  assert.equal(formatCountdown(5, 'ar-u-nu-arab'), '٠:٠٥')
+  assert.equal(formatCountdown(42, 'ar-u-nu-arab'), '٠:٤٢')
 })

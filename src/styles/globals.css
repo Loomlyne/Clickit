@@ -767,3 +767,20 @@ html[lang='ar'] [class*='tracking-['] {
     --landscape-w: 220px;
   }
 }
+
+/* CodeField caret bar (05-12): blinks at 1s steps, static under reduced motion. */
+@keyframes code-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.code-caret {
+  animation: code-caret 1s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .code-caret {
+    animation: none;
+  }
+}

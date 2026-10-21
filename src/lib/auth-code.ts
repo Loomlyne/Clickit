@@ -3,6 +3,10 @@
 // the client). AUTH_LINK_MINUTES must equal the Supabase Email OTP expiration
 // (900 s, owner step 05-35); templates and copy read this constant.
 
+// m:ss resend countdown. Phase 6's formatClock is on this branch, so reuse it
+// under the name the auth screens use (UI-SPEC Typography, numbers and digits).
+export { formatClock as formatCountdown } from './i18n-format.ts'
+
 export const CODE_LENGTH = 6
 export const AUTH_LINK_MINUTES = 15
 export const RESEND_WAIT_SECONDS = 60
