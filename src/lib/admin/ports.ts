@@ -41,7 +41,9 @@ export type RestoreResult = ActionResult & {
   showConflict?: ShowRestoreConflict
 }
 
+/** `maxLength`: the field's schema max; a longer translation is null (review item 7, PR #29). */
 export type ArabicFill = (
   en: string | null | undefined,
-  ar: string | null | undefined
+  ar: string | null | undefined,
+  maxLength?: number
 ) => Promise<string | null>

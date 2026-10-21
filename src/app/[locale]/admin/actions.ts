@@ -48,6 +48,7 @@ import {
 import { generateSlug } from '@/lib/slug'
 import { createArabicFiller } from '@/lib/translate'
 import { withArabicMissing } from '@/lib/admin/arabic-missing'
+import { arabicMaxLengths } from '@/lib/admin/arabic-limits'
 import { fillTickerArabic, type TickerItem } from '@/lib/admin/ticker'
 import {
   removeHeroVideoCore,
@@ -1284,6 +1285,8 @@ const siteMetadataSchema = z.object({
   site_tagline: z.string().trim().min(1, 'Tagline is required').max(120),
   site_tagline_ar: z.string().trim().max(120).nullable(),
 })
+// Each *_ar field's max: an AI fill longer than it is dropped (review item 7, PR #29).
+const siteMetadataArMax = arabicMaxLengths(siteMetadataSchema)
 
 const authPageSchema = z.object({
   auth_heading: z.string().trim().max(120).nullable(),
@@ -1296,6 +1299,7 @@ const authPageSchema = z.object({
   auth_quote_attribution_ar: z.string().trim().max(120).nullable(),
   auth_allow_skip: z.boolean(),
 })
+const authPageArMax = arabicMaxLengths(authPageSchema)
 
 const liveStreamUrlSchema = z.object({
   live_stream_url: z
@@ -1346,6 +1350,7 @@ const footerSchema = z.object({
     cookies: urlOrEmpty,
   }),
 })
+const footerArMax = arabicMaxLengths(footerSchema)
 
 const hrefOrEmpty = z
   .string()
@@ -1529,9 +1534,14 @@ export async function updateSiteMetadata(
     const arabic = createArabicFiller(user.id)
     parsed.site_description_ar = await arabic.fill(
       parsed.site_description,
-      parsed.site_description_ar
+      parsed.site_description_ar,
+      siteMetadataArMax.site_description_ar
     )
-    parsed.site_tagline_ar = await arabic.fill(parsed.site_tagline, parsed.site_tagline_ar)
+    parsed.site_tagline_ar = await arabic.fill(
+      parsed.site_tagline,
+      parsed.site_tagline_ar,
+      siteMetadataArMax.site_tagline_ar
+    )
 
     const { error } = await saveConfigSection(parsed, version.value)
     if (error) return { success: false, error }
@@ -1564,16 +1574,23 @@ export async function updateAuthPageConfig(
     const arabic = createArabicFiller(user.id)
     parsed.auth_heading_ar = await arabic.fill(
       parsed.auth_heading,
-      parsed.auth_heading_ar
+      parsed.auth_heading_ar,
+      authPageArMax.auth_heading_ar
     )
     parsed.auth_subheading_ar = await arabic.fill(
       parsed.auth_subheading,
-      parsed.auth_subheading_ar
+      parsed.auth_subheading_ar,
+      authPageArMax.auth_subheading_ar
     )
-    parsed.auth_quote_ar = await arabic.fill(parsed.auth_quote, parsed.auth_quote_ar)
+    parsed.auth_quote_ar = await arabic.fill(
+      parsed.auth_quote,
+      parsed.auth_quote_ar,
+      authPageArMax.auth_quote_ar
+    )
     parsed.auth_quote_attribution_ar = await arabic.fill(
       parsed.auth_quote_attribution,
-      parsed.auth_quote_attribution_ar
+      parsed.auth_quote_attribution_ar,
+      authPageArMax.auth_quote_attribution_ar
     )
 
     const { error } = await saveConfigSection(parsed, version.value)
@@ -1605,7 +1622,7 @@ export async function updateFooterContent(
 
     // Auto-fill blank Arabic tagline from English (Workers AI).
     const arabic = createArabicFiller(user.id)
-    parsed.taglineAr = (await arabic.fill(parsed.tagline, parsed.taglineAr)) ?? ''
+    parsed.taglineAr = (await arabic.fill(parsed.tagline, parsed.taglineAr, footerArMax.taglineAr)) ?? ''
 
     // The social icon urls ride in this jsonb: a stale footer form can no longer write back
     // an icon url another save already replaced.
@@ -1632,6 +1649,7 @@ const portfolioContentSchema = z.object({
   portfolio_heading: z.string().trim().max(200).nullable(),
   portfolio_heading_ar: z.string().trim().max(200).nullable(),
 })
+const portfolioArMax = arabicMaxLengths(portfolioContentSchema)
 
 export async function updatePortfolioContent(
   input: z.input<typeof portfolioContentSchema>,
@@ -1647,11 +1665,13 @@ export async function updatePortfolioContent(
     const arabic = createArabicFiller(user.id)
     parsed.hero_description_ar = await arabic.fill(
       parsed.hero_description,
-      parsed.hero_description_ar
+      parsed.hero_description_ar,
+      portfolioArMax.hero_description_ar
     )
     parsed.portfolio_heading_ar = await arabic.fill(
       parsed.portfolio_heading,
-      parsed.portfolio_heading_ar
+      parsed.portfolio_heading_ar,
+      portfolioArMax.portfolio_heading_ar
     )
 
     const updatePayload = {
@@ -1862,7 +1882,7 @@ export async function updateTopTicker(
 
     // Auto-fill blank Arabic fields (strict, per-admin rate limit): never English in an Arabic slot.
     const arabic = createArabicFiller(user.id)
-    const { items, untranslated } = await fillTickerArabic(trimmed, arabic.fillBatch)
+    const { items, untranslated } = await fillTickerArabic(trimmed, arabic.fillBatch, arabicMaxLengths(topTickerItemSchema))
 
     if (parsed.enabled && items.length === 0) {
       return {
@@ -2716,6 +2736,7 @@ const faqSchema = z.object({
   answer_ar: z.string().optional().nullable(),
   sort_order: z.number().int().min(0).default(0),
 })
+const faqArMax = arabicMaxLengths(faqSchema)
 
 export async function getFaqs(): Promise<Faq[]> {
   const supabase = await createClient()
@@ -2738,7 +2759,7 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
 
     // Auto-fill blank Arabic fields from their English source (Workers AI).
     const arabic = createArabicFiller(user.id)
-    fields.question_ar = await arabic.fill(fields.question, fields.question_ar)
+    fields.question_ar = await arabic.fill(fields.question, fields.question_ar, faqArMax.question_ar)
     fields.answer_ar = await arabic.fill(fields.answer, fields.answer_ar)
 
     if (id) {

@@ -9,12 +9,58 @@ export function hasArabicScript(text: string): boolean {
   return ARABIC_RE.test(text)
 }
 
+/** At least this share of the counted letters must be Arabic script (review item 7, PR #29). */
+export const MIN_ARABIC_SHARE = 0.5
+const MIN_ARABIC_LETTERS = 2
+
+// Kept as written by the prompt, so never counted: URLs, emails, @handles.
+const URL_RE = /\bhttps?:\/\/\S+|\bwww\.\S+/gi
+const EMAIL_RE = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g
+const HANDLE_RE = /@[\w.]+/g
+const WORD_RE = /[\p{L}\p{M}]+/gu
+const ARABIC_WORD_RE = /\p{Script=Arabic}/u
+const LETTER_RE = /\p{L}/gu
+const CAPITALISED_RE = /^\p{Lu}/u
+
+function words(text: string): string[] {
+  return text.replace(URL_RE, ' ').replace(EMAIL_RE, ' ').replace(HANDLE_RE, ' ').match(WORD_RE) ?? []
+}
+
+/**
+ * The answer reads as an Arabic translation of `source`: at least MIN_ARABIC_SHARE of its
+ * letters are Arabic script. Digits, punctuation, URLs, emails and @handles are not counted;
+ * a capitalised Latin word that also appears verbatim in the source (a name or brand the
+ * prompt keeps) is not counted either, while a lowercase one ("the new season") counts as
+ * untranslated. Refused when fewer than 2 Arabic letters, or when every Latin word of the
+ * source is still there verbatim (nothing was translated, e.g. "Season 2" -> "Season 2 ي").
+ */
+export function hasArabicShare(source: string, translated: string): boolean {
+  const sourceLatin = new Set(words(source).filter((w) => !ARABIC_WORD_RE.test(w)))
+  const present = new Set<string>()
+  let arabic = 0
+  let foreign = 0
+  for (const w of words(translated)) {
+    const letters = (w.match(LETTER_RE) ?? []).length
+    if (ARABIC_WORD_RE.test(w)) {
+      arabic += letters
+      continue
+    }
+    if (sourceLatin.has(w)) present.add(w)
+    if (!(sourceLatin.has(w) && CAPITALISED_RE.test(w))) foreign += letters
+  }
+  if (arabic < MIN_ARABIC_LETTERS) return false
+  if (arabic / (arabic + foreign) < MIN_ARABIC_SHARE) return false
+  if (sourceLatin.size > 0 && present.size === sourceLatin.size) return false
+  return true
+}
+
 /** Returns the trimmed translation only if it is real Arabic and differs from the source. */
 export function acceptArabicTranslation(source: string, translated: string | null | undefined): string | null {
   const t = translated?.trim()
   if (!t) return null
   if (t === source.trim()) return null
   if (!hasArabicScript(t)) return null
+  if (!hasArabicShare(source, t)) return null
   return t
 }
 

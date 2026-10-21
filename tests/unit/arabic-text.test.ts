@@ -202,10 +202,11 @@ test('translateWithAi: blank input makes no call', async () => {
 })
 
 test('batch: one call per non-blank string, results keep their positions', async () => {
-  const map: Record<string, string> = { a: 'أ', b: 'b', c: 'ج' }
+  // Two Arabic letters at least: one stray letter is not a translation (hasArabicShare).
+  const map: Record<string, string> = { a: 'أب', b: 'b', c: 'جد' }
   const { ai, calls } = fakeAi((t) => openAi(map[t]))
   const out = await translateBatchStrictCore(['a', '', 'b', ' c '], { ai })
-  assert.deepEqual(out, ['أ', null, null, 'ج'])
+  assert.deepEqual(out, ['أب', null, null, 'جد'])
   assert.deepEqual(calls.map((c) => (c.input.messages as Array<{ content: string }>)[1]!.content).sort(), ['a', 'b', 'c'])
 })
 

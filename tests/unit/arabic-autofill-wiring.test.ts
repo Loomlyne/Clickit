@@ -60,7 +60,7 @@ test('every auto-fill admin action fills through the per-admin filler and report
   }
   const ticker = bodyOf('updateTopTicker')
   assert.ok(ticker.includes('createArabicFiller(user.id)'))
-  assert.ok(ticker.includes('fillTickerArabic(trimmed, arabic.fillBatch)'))
+  assert.ok(ticker.includes('fillTickerArabic(trimmed, arabic.fillBatch, arabicMaxLengths(topTickerItemSchema))'))
 })
 
 test('the filler is created after the admin check (user id from the authenticated admin)', () => {
