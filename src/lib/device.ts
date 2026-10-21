@@ -1,4 +1,5 @@
 import { headers } from 'next/headers'
+import { isMobileFromHeaders } from './device-class'
 
 /**
  * Server-side viewport detection via User-Agent + client hints.
@@ -13,10 +14,5 @@ import { headers } from 'next/headers'
  * the right tradeoff.
  */
 export async function getIsMobile(): Promise<boolean> {
-  const h = await headers()
-  const chUaMobile = h.get('sec-ch-ua-mobile')
-  if (chUaMobile === '?1') return true
-  if (chUaMobile === '?0') return false
-  const ua = h.get('user-agent') ?? ''
-  return /Mobile|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/.test(ua)
+  return isMobileFromHeaders(await headers())
 }
