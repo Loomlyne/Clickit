@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-21T15:14:21.714Z"
+last_updated: "2026-10-21T15:28:36.771Z"
 last_activity: 2026-10-21
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 123
-  completed_plans: 83
+  completed_plans: 84
   percent: 33
 ---
 
@@ -25,8 +25,8 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 05 (accounts-and-email) — EXECUTING
-Plan: 13 of 42 (05-10, 05-11, 05-12 and 05-14 done)
-Status: Ready to execute
+Plan: 13 of 42 (05-10, 05-11, 05-12 and 05-14 done; 05-13 Tasks 1-2 and Task 3 step 1 done, step 2 waits for the controller's go)
+Status: Waiting (05-13 shared-stack migration up --local needs the controller's go)
 Last activity: 2026-10-21
 Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
 
@@ -142,6 +142,8 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-10: auth templates are sentinels swapped for Go actions after render, locale branch wraps whole documents; production and local sets differ only in the logo URL; MAIL-01/AUTH-02/AUTH-04 stay Pending until 05-35/05-38
 - [Phase 05]: 05-14: M2 and M3 staged in supabase/pending and proven by db-proof (pending_applied=2); 05-41 copies them byte for byte, 05-37 applies both in one approval
 - [Phase 05]: 05-11: app emails pre-rendered at build into src/generated/app-email-templates.json (drift-tested); renderAppEmail fills escaped values in one pass, bundle 7 inputs / 9.1 KiB gzip; HTML byte-identical to the direct React path; MAIL-03..06 stay Pending until producers, queue and sends exist
+- [Phase 05]: 05-13: M1b = supabase/migrations/20261021151843_phase5_m1b_email_outbox.sql, proven in db-proof (exit=0, negative runs fail as expected); sweep also re-enqueues expired 'sending' leases; build_digest and capped enqueue_email take advisory locks; support_admin mirror: any sent copy wins, never downgraded
+- [Phase 05]: 05-13: src/lib/database.types.ts gets the scratch-DB types merged as additions only (223+/0-; live-only tables and __InternalSupabase kept); the live gen-types script is never run
 
 ### Pending Todos
 
@@ -149,6 +151,7 @@ None yet.
 
 ### Blockers/Concerns
 
+- 05-13 Task 3 step 2: `supabase migration up --local` on the shared supabase_db_Clickit stack (adds M1a/M1b; Phase 6 shares it) waits for the controller's go.
 - No code reaches production until Phase 3 (Vercel deploys are BLOCKED).
 - Owner decisions pending (pricing, not assumed): Workers Paid $5/mo if Free CPU fails (Phase 2); Image Transformations stays on the free tier only.
 - Stray Cloudflare NS pair (ignat/nataly) must be resolved before any NS change (Phase 1).
@@ -181,8 +184,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-21T15:14:18.002Z
-Stopped at: Completed 05-11-PLAN.md
+Last session: 2026-10-21T15:28:36.763Z
+Stopped at: 05-13 Task 3 step 2 (NEEDS CONTROLLER: go for migration up --local on the shared stack); resume file .planning/phases/05-accounts-and-email/05-13-SUMMARY.md
 Phase 2 last session: 2026-10-20T10:45:11.285Z
 Phase 2 stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above is the controller's)
 Resume file: None
