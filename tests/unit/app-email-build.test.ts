@@ -3,7 +3,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-// @ts-expect-error plain .mjs build script without type declarations
 import { SLOT, buildAppTemplates } from '../../scripts/build-app-templates.mjs'
 import { slotsOf } from '../../src/emails/app/template-fill.ts'
 import type { AppTemplateFile } from '../../src/emails/app/template-fill.ts'
