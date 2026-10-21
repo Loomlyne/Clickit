@@ -108,3 +108,38 @@ test('deploy.mjs uses the shared wranglerChildEnv for its wrangler children', ()
   const src = readFileSync('scripts/cf/deploy.mjs', 'utf8')
   assert.match(src, /wranglerChildEnv\(process\.env\)/)
 })
+
+// ------------------------------- XDG_CONFIG_HOME only blocks remote work (PR #29 re-review item 4)
+// A local preview build never talks to Cloudflare, and its wrangler children get
+// wranglerChildEnv (no XDG) anyway; refusing XDG_CONFIG_HOME there only blocked builds.
+
+test('checkEnv local mode allows XDG_CONFIG_HOME; remote mode and the default still refuse it', () => {
+  assert.equal(checkEnv({ XDG_CONFIG_HOME: '/x' }, 'local').ok, true)
+  const remote = checkEnv({ XDG_CONFIG_HOME: '/x' }, 'remote')
+  assert.equal(remote.ok, false)
+  assert.ok(remote.reason.includes('XDG_CONFIG_HOME'))
+  assert.equal(checkEnv({ XDG_CONFIG_HOME: '/x' }).ok, false, 'default is the strict (remote) mode')
+})
+
+test('checkEnv local mode keeps every other refusal', () => {
+  for (const name of REFUSED_NAMES.filter((n) => n !== 'XDG_CONFIG_HOME')) {
+    const res = checkEnv({ [name]: 'x' }, 'local')
+    assert.equal(res.ok, false, name)
+    assert.ok(res.reason.includes(name), name)
+  }
+  assert.equal(checkEnv({ CLOUDFLARE_ACCOUNT_ID: VAMOS }, 'local').ok, false)
+  assert.equal(checkEnv({ XDG_CONFIG_HOME: '/x', CLOUDFLARE_API_TOKEN: 't' }, 'local').reason.includes('XDG_CONFIG_HOME'), false)
+})
+
+test('checkEnv refuses an unknown mode', () => {
+  assert.equal(checkEnv({}, 'preview' as never).ok, false)
+})
+
+test('callers: guard CLI passes its mode, preview build is local, workersdev build and deploys are remote', () => {
+  const guard = readFileSync('scripts/cf/wrangler-guard.mjs', 'utf8')
+  assert.match(guard.slice(guard.indexOf('function main(')), /checkEnv\(process\.env, mode\)/)
+  const build = readFileSync('scripts/cf/build-target.mjs', 'utf8')
+  assert.match(build, /checkEnv\(process\.env, target === 'preview' \? 'local' : 'remote'\)/)
+  assert.match(readFileSync('scripts/cf/deploy.mjs', 'utf8'), /checkEnv\(process\.env, 'remote'\)/)
+  assert.match(readFileSync('scripts/cf/deploy-guard.mjs', 'utf8'), /checkEnv\(processEnv \?\? \{\}, 'remote'\)/)
+})
