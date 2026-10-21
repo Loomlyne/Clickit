@@ -69,7 +69,7 @@ function refuse(reasons) {
 function parentChecks() {
   const reasons = []
   if (process.env.HOME !== CLICKIT_HOME) reasons.push(`HOME must be ${CLICKIT_HOME}`)
-  const env = checkEnv(process.env)
+  const env = checkEnv(process.env, 'remote')
   if (!env.ok) reasons.push(env.reason)
   return reasons
 }

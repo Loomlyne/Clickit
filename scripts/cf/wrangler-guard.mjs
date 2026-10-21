@@ -47,7 +47,8 @@ export function checkWhoamiOutput(text, mode) {
 
 // Any of these lets wrangler authenticate (or read its config) somewhere other
 // than the pinned ClickitStory login under CLICKIT_HOME. CF_* are wrangler's
-// deprecated aliases, still honoured by wrangler 4.
+// deprecated aliases, still honoured by wrangler 4. XDG_CONFIG_HOME is refused
+// only in remote mode (REMOTE_ONLY_ENV_NAMES).
 export const REFUSED_ENV_NAMES = [
   'CLOUDFLARE_API_TOKEN',
   'CF_API_TOKEN',
@@ -61,13 +62,24 @@ export const REFUSED_ENV_NAMES = [
 ]
 const ACCOUNT_ENV_NAMES = ['CLOUDFLARE_ACCOUNT_ID', 'CF_ACCOUNT_ID']
 
+// Refused for remote work only (deploys, the workersdev build, --remote). A local
+// preview build never reaches Cloudflare and its wrangler children get
+// wranglerChildEnv, which drops XDG_CONFIG_HOME anyway (PR #29 re-review item 4).
+export const REMOTE_ONLY_ENV_NAMES = ['XDG_CONFIG_HOME']
+
 /**
  * Names only in the reason, never a value.
  * @param {Record<string, string | undefined>} env
+ * @param {'local' | 'remote'} [mode]  'remote' (default) for anything that deploys
  * @returns {{ ok: boolean, reason: string }}
  */
-export function checkEnv(env) {
-  const set = REFUSED_ENV_NAMES.filter((name) => env[name])
+export function checkEnv(env, mode = 'remote') {
+  if (mode !== 'local' && mode !== 'remote') {
+    return { ok: false, reason: `refused: unknown mode ${String(mode)}` }
+  }
+  const set = REFUSED_ENV_NAMES.filter(
+    (name) => env[name] && !(mode === 'local' && REMOTE_ONLY_ENV_NAMES.includes(name))
+  )
   if (set.length > 0) {
     return { ok: false, reason: `refused: ${set.join(', ')} set; use the pinned wrangler login only` }
   }
@@ -95,7 +107,7 @@ function main(argv) {
     console.error(`refused: HOME must be ${CLICKIT_HOME}`)
     return 1
   }
-  const envCheck = checkEnv(process.env)
+  const envCheck = checkEnv(process.env, mode)
   if (!envCheck.ok) {
     console.error(envCheck.reason)
     return 1
