@@ -10,6 +10,9 @@
 //   npm run cf:deploy:media -- --env r2              # R2 first: only after DNS-PLAN.md §5d passes
 //   (clickit-media serves media.clickitstory.ae in every env, so either one changes production media)
 //   add --dry-run to run the guard only (no build, no deploy)
+//   add --allow-upload-sweep-delete ONLY on Koss's word, when wrangler.jsonc sets
+//   R2_UPLOAD_SWEEP_DELETE to "on" (the weekly cron then deletes unfinalised R2 uploads);
+//   without it the guard refuses "on"
 //
 // Prints reasons and never any env value. Refuses while a .env file that
 // OpenNext folds into the bundle exists in the root (before the build and again
@@ -21,6 +24,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   NEXT_ENV_MODULE_PATH,
+  UPLOAD_SWEEP_FLAG,
   checkDeploy,
   checkEnvFiles,
   checkMediaDeploy,
@@ -130,8 +134,15 @@ function deployWorkersdev(argv) {
     // Checked again right before the upload: a file added during the build counts too.
     envFilesPresent: findFoldedEnvFiles(process.cwd()),
     nextEnvText: existsSync(NEXT_ENV_MODULE_PATH) ? readFileSync(NEXT_ENV_MODULE_PATH, 'utf8') : null,
+    allowUploadSweepDelete: argv.includes('--allow-upload-sweep-delete'),
   })
   if (!result.ok) return refuse(result.reasons)
+  if (wranglerConfig?.vars?.[UPLOAD_SWEEP_FLAG] === 'on') {
+    console.warn('')
+    console.warn(`!!! ${UPLOAD_SWEEP_FLAG}=on: the weekly cleanup-media cron will DELETE unfinalised R2 uploads !!!`)
+    console.warn('!!! Allowed by --allow-upload-sweep-delete. Only with Koss\'s word.                          !!!')
+    console.warn('')
+  }
   if (dryRun) {
     console.log('deploy-guard ok (dry run)')
     return 0

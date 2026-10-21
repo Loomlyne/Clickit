@@ -7,6 +7,7 @@ import { getPublicMediaOrigin } from '@/lib/supabase-media'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { supabaseCleanupEnabled } from '@/server/scheduled'
 import { pruneRateLimits } from '@/server/rate-limit-store'
+import { runUploadSweep } from '@/server/r2-upload-sweep'
 
 /**
  * Scheduled sweep: deletes hero media files in Supabase Storage that no show
@@ -30,6 +31,11 @@ import { pruneRateLimits } from '@/server/rate-limit-store'
  *
  * Also prunes rate_limits rows older than 24 h first (review item 9, PR #29): one
  * DELETE, fail-soft, reported as `rateLimitsPruned`; a failed prune never stops the sweep.
+ *
+ * Then sweeps R2 uploads that were never finalised (src/server/r2-upload-sweep.ts):
+ * minted upload keys older than 24 h with no live reference, in the app Worker's MEDIA
+ * bucket. Dry run unless R2_UPLOAD_SWEEP_DELETE is exactly "on" (Koss's word). Fail-soft,
+ * reported as `r2UploadSweep` in every response.
  *
  * Invocation:
  *   The Worker scheduled handler sends `Authorization: Bearer ${CRON_SECRET}`.
@@ -100,6 +106,31 @@ async function runCleanup() {
     console.error('[cron/cleanup-media] rate_limits prune failed', rateLimitsPruned.error)
   }
 
+  // --- Step 0b: R2 uploads never finalised (never throws) -------------------
+  // Before the Supabase sweep, which returns early on the Worker and can fail.
+  const r2UploadSweep = await runUploadSweep({
+    getEnv: getWorkerEnv,
+    guard: {
+      readReferences: () => readMediaReferenceUrls(admin as unknown as ReferenceDb),
+      mediaOrigin: getPublicMediaOrigin(),
+      label: '[cron/cleanup-media r2-upload-sweep]',
+    },
+    nowMs: startedAt,
+  })
+  const sweepLog = {
+    mode: r2UploadSweep.mode,
+    examined: r2UploadSweep.examined,
+    truncated: r2UploadSweep.truncated,
+    candidates: r2UploadSweep.candidates,
+    deleted: r2UploadSweep.deleted,
+    error: r2UploadSweep.error,
+  }
+  if (r2UploadSweep.error) {
+    console.error('[cron/cleanup-media] r2 upload sweep failed', sweepLog)
+  } else {
+    console.log('[cron/cleanup-media] r2 upload sweep', { ...sweepLog, candidateKeys: r2UploadSweep.candidateKeys })
+  }
+
   // --- Step 1: gather all URLs currently referenced by the DB --------------
   const [{ data: shows, error: showsError }, { data: cast, error: castError }] =
     await Promise.all([
@@ -117,6 +148,7 @@ async function runCleanup() {
         error: 'Failed to load media references',
         details: showsError?.message ?? castError?.message,
         rateLimitsPruned,
+        r2UploadSweep,
       },
       { status: 500 }
     )
@@ -236,7 +268,7 @@ async function runCleanup() {
       artworkOrphans: artworkOrphans.length,
       videoOrphans: videoOrphans.length,
     })
-    return NextResponse.json({ ok: true, skipped: 'supabase-originals', candidates, rateLimitsPruned })
+    return NextResponse.json({ ok: true, skipped: 'supabase-originals', candidates, rateLimitsPruned, r2UploadSweep })
   }
 
   // --- Step 3: delete orphans ---------------------------------------------
@@ -314,6 +346,7 @@ async function runCleanup() {
     durationMs,
     errors,
     rateLimitsPruned,
+    r2UploadSweep: sweepLog,
   })
 
   return NextResponse.json({
@@ -328,5 +361,6 @@ async function runCleanup() {
     durationMs,
     errors,
     rateLimitsPruned,
+    r2UploadSweep,
   })
 }

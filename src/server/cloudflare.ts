@@ -13,6 +13,11 @@ export type R2BucketLike = {
   get(key: string, options?: unknown): Promise<unknown | null>
   put(key: string, value: unknown, options?: unknown): Promise<unknown>
   delete(keys: string | string[]): Promise<void>
+  list(options?: {
+    prefix?: string
+    cursor?: string
+    limit?: number
+  }): Promise<{ objects: Array<{ key: string; uploaded: Date }>; truncated: boolean; cursor?: string }>
 }
 
 /**
@@ -33,6 +38,8 @@ export type WorkerEnv = {
   CRON_SECRET?: string
   TURNSTILE_SECRET_KEY?: string
   LOCAL_DEV?: string
+  /** Exactly "on" lets the weekly R2 upload sweep delete; anything else is a dry run. */
+  R2_UPLOAD_SWEEP_DELETE?: string
   /** Local preview only (.dev.vars); never a wrangler secret or var. */
   LOCAL_UPLOAD_SHIM_SECRET?: string
 }

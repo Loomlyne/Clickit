@@ -47,6 +47,12 @@
     "CLOUDFLARE_R2_BUCKET": "clickit-media",
     // Declares the Worker runtime. cleanup-media refuses to delete Supabase
     // originals here unless CLEANUP_SUPABASE_ORIGINALS=on (never set in Phase 2).
-    "CLICKIT_RUNTIME": "workers"
+    "CLICKIT_RUNTIME": "workers",
+    // Weekly cleanup-media cron: sweep of R2 uploads never finalised (minted upload keys
+    // older than 24 h with no live reference; src/server/r2-upload-sweep.ts). "off" = dry
+    // run: it only reports what it would delete. Real deletes only for exactly "on", and
+    // only on Koss's word after he has read a dry-run report (02-RUNBOOK.md). The deploy
+    // guard refuses "on" unless the deploy passes --allow-upload-sweep-delete.
+    "R2_UPLOAD_SWEEP_DELETE": "off"
   }
 }

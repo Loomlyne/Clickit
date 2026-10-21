@@ -258,6 +258,32 @@ function accountReasons(whoami, processEnv, reasons) {
   }
 }
 
+// The weekly R2 upload sweep deletes only when this var is exactly "on"
+// (src/server/r2-upload-sweep.ts). Shipping "on" needs Koss's word, spelled out on the
+// deploy command as --allow-upload-sweep-delete; any other value than "off"/"on" refuses.
+export const UPLOAD_SWEEP_FLAG = 'R2_UPLOAD_SWEEP_DELETE'
+export const ALLOW_UPLOAD_SWEEP_DELETE_ARG = '--allow-upload-sweep-delete'
+
+/**
+ * @param {Record<string, unknown> | undefined} vars  wrangler.jsonc vars
+ * @param {unknown} allow  true only when the deploy passed --allow-upload-sweep-delete
+ * @returns {string[]} reasons
+ */
+export function uploadSweepFlagReasons(vars, allow) {
+  if (!vars || !Object.prototype.hasOwnProperty.call(vars, UPLOAD_SWEEP_FLAG)) return []
+  const value = vars[UPLOAD_SWEEP_FLAG]
+  if (value === 'off') return []
+  if (value === 'on') {
+    return allow === true
+      ? []
+      : [
+          `wrangler.jsonc vars ${UPLOAD_SWEEP_FLAG} is "on" (the weekly sweep would delete R2 uploads): ` +
+            `pass ${ALLOW_UPLOAD_SWEEP_DELETE_ARG} only on Koss's word, or set it back to "off"`,
+        ]
+  }
+  return [`wrangler.jsonc vars ${UPLOAD_SWEEP_FLAG} must be exactly "off" or "on"`]
+}
+
 function emptyCrons(triggers) {
   return Array.isArray(triggers?.crons) && triggers.crons.length === 0
 }
@@ -275,6 +301,7 @@ function emptyCrons(triggers) {
  *   manifest?: any,
  *   envFilesPresent: string[],
  *   nextEnvText: string | null,
+ *   allowUploadSweepDelete?: boolean,
  * }} input
  * @returns {{ ok: boolean, reasons: string[] }}
  */
@@ -331,6 +358,7 @@ export function checkDeploy(input) {
     if (config.vars && Object.prototype.hasOwnProperty.call(config.vars, 'LOCAL_DEV')) {
       reasons.push('wrangler.jsonc vars contain LOCAL_DEV')
     }
+    reasons.push(...uploadSweepFlagReasons(config.vars, input.allowUploadSweepDelete))
   }
   return { ok: reasons.length === 0, reasons }
 }
