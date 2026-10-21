@@ -20,6 +20,7 @@ import {
 import {
   PRODUCTION_ENV_FILE,
   PRODUCTION_SITE_URL,
+  PRODUCTION_SUPABASE_URL,
   buildEnvFor,
   checkProductionBuildArgs,
   classifySupabaseKey,
@@ -201,6 +202,49 @@ test('buildEnvFor production refuses a missing Supabase URL and a VERCEL shell',
   assert.throws(() => prodEnv({ NEXT_PUBLIC_SUPABASE_URL: '' }), /SUPABASE_URL/)
   assert.throws(() => buildEnvFor('production', prodFileEnv, prodOptions, { VERCEL: '1' }), /VERCEL/)
   assert.throws(() => buildEnvFor('production', prodFileEnv, prodOptions, { VERCEL_ENV: 'production' }), /VERCEL/)
+})
+
+test('buildEnvFor production pins NEXT_PUBLIC_SUPABASE_URL to the live project URL exactly (PR #31 review 3)', () => {
+  assert.equal(PRODUCTION_SUPABASE_URL, 'https://lajguozmtissnnfccmej.supabase.co')
+  assert.equal(prodEnv({ NEXT_PUBLIC_SUPABASE_URL: PRODUCTION_SUPABASE_URL }).NEXT_PUBLIC_SUPABASE_URL, PRODUCTION_SUPABASE_URL)
+  const refused = [
+    `${PRODUCTION_SUPABASE_URL}/`,
+    'https://placeholder.supabase.co',
+    'https://otherproject.supabase.co',
+    'http://lajguozmtissnnfccmej.supabase.co',
+    ` ${PRODUCTION_SUPABASE_URL}`,
+  ]
+  for (const value of refused) {
+    assert.throws(
+      () => prodEnv({ NEXT_PUBLIC_SUPABASE_URL: value }),
+      (err: Error) => err.message.includes(`must be exactly ${PRODUCTION_SUPABASE_URL}`) && err.message.includes('is a different value'),
+      value,
+    )
+  }
+  const withoutUrl: Record<string, string> = { ...prodFileEnv }
+  delete withoutUrl.NEXT_PUBLIC_SUPABASE_URL
+  assert.throws(
+    () => buildEnvFor('production', withoutUrl, prodOptions, {}),
+    (err: Error) => err.message.includes('NEXT_PUBLIC_SUPABASE_URL is missing') && err.message.includes(PRODUCTION_SUPABASE_URL),
+  )
+  // The refusal never echoes the value it was given.
+  try {
+    prodEnv({ NEXT_PUBLIC_SUPABASE_URL: 'https://placeholder.supabase.co' })
+  } catch (err) {
+    assert.equal((err as Error).message.includes('placeholder'), false)
+  }
+})
+
+test('the Supabase URL pin is production only: workers.dev and preview builds are unchanged', () => {
+  const workersdev = buildEnvFor(
+    'workersdev',
+    { ...prodFileEnv, NEXT_PUBLIC_SITE_URL: 'https://clickit.clickitstory.workers.dev', NEXT_PUBLIC_SUPABASE_URL: 'https://placeholder.supabase.co' },
+    { mediaFlag: 'off' },
+    {},
+  )
+  assert.equal(workersdev.NEXT_PUBLIC_SUPABASE_URL, 'https://placeholder.supabase.co')
+  const preview = buildEnvFor('preview', { NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:55321' }, {}, {})
+  assert.equal(preview.NEXT_PUBLIC_SUPABASE_URL, 'http://127.0.0.1:55321')
 })
 
 // -------------------------------------------------------------------- makeStamp

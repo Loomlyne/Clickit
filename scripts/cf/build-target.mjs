@@ -36,6 +36,9 @@ export const WORKERSDEV_ENV_FILE = `${CLICKIT_HOME}/clickit.workersdev.env`
 // Production (www) build env file: outside the repo, next to the wrangler login (D-07).
 export const PRODUCTION_ENV_FILE = `${CLICKIT_HOME}/clickit.production.env`
 export const PRODUCTION_SITE_URL = 'https://www.clickitstory.ae'
+// The live project's API URL. Public (it ships in every client bundle), so pinned here:
+// a production build against any other project, the placeholder or a typo is refused.
+export const PRODUCTION_SUPABASE_URL = 'https://lajguozmtissnnfccmej.supabase.co'
 export const STAMP_PATH = '.open-next/clickit-build-stamp.json'
 export const DEFAULT_MANIFEST_PATH = '.tmp/r2-media-manifest.json'
 export const PREVIEW_MEDIA_ORIGIN = 'http://127.0.0.1:8789'
@@ -208,15 +211,12 @@ function productionEnv(publicFromFile, options) {
   if (publicFromFile.NEXT_PUBLIC_SITE_URL !== PRODUCTION_SITE_URL) {
     throw new Error(`NEXT_PUBLIC_SITE_URL must be exactly ${PRODUCTION_SITE_URL} for the production target`)
   }
-  const supabaseUrl = String(publicFromFile.NEXT_PUBLIC_SUPABASE_URL ?? '')
-  let parsedSupabase = null
-  try {
-    parsedSupabase = new URL(supabaseUrl)
-  } catch {
-    parsedSupabase = null
-  }
-  if (!parsedSupabase || parsedSupabase.protocol !== 'https:' || !parsedSupabase.hostname.endsWith('.supabase.co')) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL must be an https supabase.co URL in the production env file')
+  // Exact match, no trailing slash: the value itself is never printed (PR #31 review 3).
+  if (publicFromFile.NEXT_PUBLIC_SUPABASE_URL !== PRODUCTION_SUPABASE_URL) {
+    const state = String(publicFromFile.NEXT_PUBLIC_SUPABASE_URL ?? '') === '' ? 'is missing' : 'is a different value'
+    throw new Error(
+      `NEXT_PUBLIC_SUPABASE_URL ${state} in the production env file: it must be exactly ${PRODUCTION_SUPABASE_URL} (no trailing slash)`
+    )
   }
   const keyKind = classifySupabaseKey(publicFromFile.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   if (keyKind !== 'publishable') {

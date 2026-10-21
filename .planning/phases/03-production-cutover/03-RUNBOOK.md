@@ -271,7 +271,7 @@ Command (his terminal):
 2. `read -rs PUB` (the publishable key), `read -rs TSK` (the Turnstile site key of the same widget as workers.dev), `read -rs BEACON` (Step 20 token)
 3. `printf 'NEXT_PUBLIC_SUPABASE_URL=https://lajguozmtissnnfccmej.supabase.co\nNEXT_PUBLIC_SUPABASE_ANON_KEY=%s\nNEXT_PUBLIC_SITE_URL=https://www.clickitstory.ae\nNEXT_PUBLIC_TURNSTILE_SITE_KEY=%s\nNEXT_PUBLIC_CF_BEACON_TOKEN=%s\n' "$PUB" "$TSK" "$BEACON" > /Users/koss/.clickit-cloudflare/clickit.production.env && unset PUB TSK BEACON`
 4. Checks (counts only): `grep -cE '^(NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_ANON_KEY|NEXT_PUBLIC_SITE_URL|NEXT_PUBLIC_TURNSTILE_SITE_KEY|NEXT_PUBLIC_CF_BEACON_TOKEN)=' /Users/koss/.clickit-cloudflare/clickit.production.env` and `grep -c '^NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_' /Users/koss/.clickit-cloudflare/clickit.production.env` and `stat -f %Lp /Users/koss/.clickit-cloudflare/clickit.production.env`
-Expected: `5`, `1`, `600`. Log `env file counts: 5 1`. (The production build refuses a legacy JWT, any `sb_secret_` value in a NEXT_PUBLIC name, the Turnstile test key and an empty beacon token.)
+Expected: `5`, `1`, `600`. Log `env file counts: 5 1`. (The production build refuses a legacy JWT, any `sb_secret_` value in a NEXT_PUBLIC name, the Turnstile test key, an empty beacon token and a `NEXT_PUBLIC_SUPABASE_URL` other than exactly `https://lajguozmtissnnfccmej.supabase.co`, no trailing slash.)
 Rollback: `rm /Users/koss/.clickit-cloudflare/clickit.production.env` (outside every repo).
 Then wait.
 
