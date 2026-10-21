@@ -69,7 +69,7 @@ Eliminated:
 Conclusion: even warm, a render costs 35-65 ms CPU, so no render fits Free's 10 ms. Only a cached
 answer that skips both the proxy and the Next server does.
 
-## Fix
+## Prototype fix (e49a219, kept on the branch; superseded by plan v2 below)
 
 `src/server/anon-html-cache.ts` + `custom-worker.ts` (tests: `tests/unit/anon-html-cache.test.ts`).
 
@@ -152,26 +152,101 @@ still fails for /en/auth, show and episode pages and every signed-in page.
   (1102), every route fails, cheapest success 4 ms. Every page is private/no-store with no
   `x-nextjs-cache`.
 
-## Plan: cached public pages on Workers Free (for Koss's signature; no code until signed)
+## Plan v2: cached public pages on Workers Free (after the independent review; for Koss's signature, no code until signed)
 
-Koss, 2026-10-21 (via controller): "Stay Free, do the rebuild". Goal: every public route answers
-under 10 ms CPU, signed out and signed in.
+v1 and its addendum are replaced by this section. The independent review (Sonnet) verdict was
+"sound with changes"; each required change is marked [R1]-[R9].
 
-Status of code already on this branch: e49a219 (anonymous Worker cache in front of OpenNext,
-lazy OpenNext load) was built before the scope change. It stays as step 4's base; nothing new is
-written before the signature.
+### Goal [R4]
 
-### Why this shape
+Every **public page** answers under 10 ms CPU on Workers Free, signed out and signed in: locale
+roots, portfolio, about, support, privacy, terms, legal, auth (signed out), watch home, show
+pages, episode pages, browse, updates, my-list, profile, coming-soon.
+**Out of scope, stays over 10 ms:** /admin/* and admin server actions, the viewer server actions
+(contact, player-error), /auth/callback, /api/*, crons.
 
-- A render costs 35-100 ms warm, so the fix is to stop rendering per request.
-- OpenNext's own cache (ISR + `enableCacheInterception`) still runs the proxy first (next-intl,
-  Supabase session, `getAppConfig`), which alone is about 15-20 ms locally. So a Worker-level
-  front cache that answers before the proxy is needed too.
-- Client navigation fetches RSC payloads. For dynamic pages those depend on the router state
-  tree, which makes the key unbounded. For static pages the payload is per path. So pages must
-  become truly static (ISR), not just Worker-cached.
+### Options for Koss [R9] (prices and facts read 2026-10-21)
 
-### Reads that make public pages per-visitor today (map)
+| | What | Monthly cost | Effort | Still over 10 ms after | Visible change |
+|---|---|---|---|---|---|
+| A | Zone Cache Rule (bypass on `sb-` cookie, edge TTL, purge by API) | $0 | — | **not possible**: zone cache rules apply to proxied origin requests and `fetch()` subrequests; "Cloudflare Workers run before the cache", so the Worker's own HTML is never cached by them (developers.cloudflare.com/workers/reference/how-the-cache-works/). Free cache keys can vary by device ("Cache by device type", no plan restriction listed, cache-rules/settings, updated 2026-10-15), but that does not help here. | — |
+| A2 | **Workers Cache** (launched 2026-07-06, "available today to every Worker on any plan", blog.cloudflare.com/workers-cache/): a cache in front of the Worker; "cache hits do not consume CPU time" (developers.cloudflare.com/workers/cache/) | $0 | only as the cache layer under C (pages are per-visitor today, and any `Set-Cookie` bypasses it) | — | — |
+| B | **Workers Paid**: "$5 USD per month for an account", 10 million requests and 30 million CPU ms included, then $0.30 per extra million requests and $0.02 per extra million CPU ms; CPU limit 30 s per request by default (developers.cloudflare.com/workers/platform/pricing/, last updated 2026-10-02) | $5 at today's scale (30M CPU ms covers ~500k renders/month at 60 ms; traffic not measured, Web Analytics off) | none in code; Koss subscribes in the dashboard | nothing (limit becomes 30 s) | none |
+| C | **This plan**: gateway + Workers Cache + user-independent pages | $0 | 8-9 session days | admin, actions, /auth/callback, /api, crons (out of scope); a fill (miss) runs in its own invocation and can still 1102 | pictures 1-3, utm dropped on the locale-root hop |
+
+### Design (C)
+
+1. **Gateway** = the default `fetch` entrypoint, with Workers Cache off. It runs on every request
+   (~0.5-2 ms, estimate) and decides:
+   - **Hard deny** [R1]: `/admin*`, `/<locale>/admin*`, `/auth/callback`, `/api/*`, non-GET/HEAD,
+     any `next-action` header, and `/<locale>/auth*` for a signed-in visitor. These go straight
+     to OpenNext and are never cacheable.
+   - **Bare `/` and unprefixed paths** [R3]: the gateway answers a 307 to `/<locale><path><query>`.
+     The locale is the NEXT_LOCALE cookie if it is en/ar, else the Accept-Language negotiation,
+     else en. No proxy, not cached. Excluded: `/api`, `/auth/callback`, `/_next`, files with an
+     extension, sitemap.xml, robots.txt.
+   - **Visitor class, verified** [R1]: it rebuilds the Supabase auth cookie (chunked `.0/.1`,
+     `base64-` prefix) and verifies the JWT locally (ES256, JWKS from the project, cached per
+     isolate; same check as `getClaims()`).
+     - Valid -> `user`.
+     - Auth cookie present but invalid, expired or unverifiable -> bypass to OpenNext (the proxy
+       refreshes or clears it).
+     - Only the `sb-…-code-verifier` cookie, or no auth cookie -> `anon`.
+     - Cookie presence alone never makes `user`.
+   - **Key** [R5]: `cf.cacheKey = /__c/<class>/<rsc-kind>/<segment-prefetch>/<path>?<allowlisted params>`.
+     - `_rsc` is stripped.
+     - `utm_*`, `fbclid`, `gclid` and `msclkid` are removed from the URL itself before the
+       render, so no cached body or Location carries a visitor's query (fixes the e49a219 308
+       bug).
+     - `next` (auth) and `category` (browse) are kept only when they pass the same sanitizers
+       as the pages; other values bypass.
+     - No device part: the hero picks its media in the browser.
+   - It **strips** `Cookie`, `Authorization` and `Accept-Language` before calling the cached
+     entrypoint, and sets `x-clickit-class: user|anon` (any copy on the incoming request is
+     dropped). The render physically cannot see who is visiting, so no personal data can enter a
+     shared entry. The proxy's gates read only that class header on this path.
+2. **Cached entrypoint** = OpenNext behind `ctx.exports`, with Workers Cache on.
+   - Cacheable responses carry `Cache-Control: max-age=<long>, stale-while-revalidate,
+     stale-if-error` plus `Cache-Tag`.
+   - Everything else returns `no-store`.
+   - The class `user` never stores redirects [R1]; gate 307s are cached only for `anon`.
+3. **Fill success on Free** [R2]:
+   - Fills run in the cached entrypoint's own invocation, so the gateway stays under 10 ms even
+     on a miss.
+   - Content changes use `ctx.cache.invalidate()` (mark stale), not purge. Visitors keep getting
+     the last good copy until a refill succeeds, and `stale-if-error` covers a refill that ends
+     in 1102. The copy is served stale indefinitely.
+   - Public pages are prerendered at build (`generateStaticParams`; ISR in the R2 incremental
+     cache, populated at deploy on the build machine, not in a Free invocation), so most fills
+     are a cache read plus the proxy, not a render.
+   - Workers Cache keys include the Worker version and "pre-warming is not available". The
+     controller runs a seeding script after each deploy: every URL x class x locale, retried
+     until it is served from the cache.
+4. **Freshness** [R6]:
+   - Invalidation is by content tags only: `site-config`, `shows`, `episodes`, `shorts`,
+     `seasons`, `categories`, and the FAQ/legal `revalidatePath` calls.
+   - `profile/actions.ts` (`revalidatePath('/profile')`) does not invalidate anything shared.
+   - The coming-soon toggle (`updateFeatureFlags` -> `bumpSiteConfigCache`: `updateTag('site-config')`
+     + `revalidatePath('/', 'layout')`) **purges** instead of invalidating, so the cached 307s and
+     pages switch on the next request.
+   - Purges and invalidations are debounced: Workers Cache uses Free purge limits, 5 tag requests
+     a minute per account.
+   - A test walks the import graph of every cached route and fails on `cookies()`, `headers()`
+     or the server Supabase client.
+5. **User-independent pages**: the reads in the map below move to the browser or to the URL
+   locale (pictures 1-3).
+6. **Session refresh** [R7]:
+   - Hits skip the proxy's token rotation. The browser client (`createBrowserClient`,
+     auto-refresh) refreshes before expiry and rewrites the cookie.
+   - An expired JWT bypasses to the proxy, which refreshes it, about once an hour per user.
+   - Race covered by a long-session test: local Supabase with a 60 s JWT, two tabs, 15 minutes
+     of mixed cached and bypassed pages. The user must stay signed in, with no
+     `refresh_token_already_used`.
+7. **Prototype e49a219** is replaced by 1-2. Its tested rules (targets, locale cookie,
+   storability) are reused. If the spike rejects Workers Cache, the prototype's Cache API + R2
+   tier is the fallback; then the R2 lifecycle step and cost below apply.
+
+### Reads that make public pages per-visitor today (map, unchanged from v1)
 
 | File | Reads | Moves to |
 |---|---|---|
@@ -190,150 +265,94 @@ written before the signature.
 Writes are already browser-side (progress `hooks/use-progress-tracker.ts`, watchlist, like), so
 they cost no Worker CPU. Server actions left: contact form, player error report (rare).
 
-### What changes (build order, each with tests)
 
-1. Locale from the URL everywhere (12 files). Small.
-2. Shared layout and header without a server session read: `AuthSection` resolves the session
-   in the browser (`getSession()` reads the cookie, no network) and shows the placeholder the
-   signature picks (picture 1).
-3. Personal data to browser hooks: show page, episode page (resume waits for the position),
-   watch home rail, updates prefill, my-list, profile (pictures 2 and 3). Hero and show-page
-   media variant chosen in the browser.
-4. Pages static: `generateStaticParams` for shows and legal slugs, on-demand ISR for episodes,
-   long `revalidate` fallback, existing `updateTag` / `revalidatePath` calls do the
-   invalidation (D1 tag cache already deployed). `enableCacheInterception: true` once the gate
-   tests pass with it on (research Pitfall 2).
-5. Worker front cache (extends e49a219): key = build + auth class (`sb-` cookie present or not)
-   + path + RSC kind (`rsc` / `next-router-segment-prefetch` value); stores 200, 308 and gate
-   307s; freshness = latest `revalidatedAt` in the D1 tag cache (read at most every 10 s per
-   isolate), so an admin save shows within ~10 s; stale-while-revalidate on a change.
-6. Post-deploy warm-up script for the controller (every public URL x locale x class, retries),
-   plus a tail-based CPU check that reuses `scripts/cf/measure-routes.mjs`.
+### Spike first [R8]; stop and report if any part fails
 
-First task is a spike that settles the one technical unknown: Next 16 RSC and segment-prefetch
-responses for static pages must be the same for any router state. If they are not, stop and
-report before building the rest.
+a. RSC and segment-prefetch payloads for each cached route are identical across
+   `next-router-state-tree` and `next-url` (Next 16.4.2, OpenNext 1.20.12, local preview diff).
+b. Fill success rate on Free:
+   - workers.dev now runs main 787ca3a (version 7222dcee); read-only GETs, about 30 fills per
+     route type, about 1 request/s.
+   - Record ok vs 1102 for a render and for an ISR read (02-CPU-REPORT had 47/179 at 1102).
+c. Forged/expired cookie and poisoning tests below, against the local preview.
+d. The wrangler warning "DurableObjectNamespace … DOQueueHandler … no such class is exported"
+   shows on every deploy, even though custom-worker.ts re-exports it. Check:
+   - whether ISR revalidation through `NEXT_CACHE_DO_QUEUE` really runs on workers.dev (a static
+     test page with a short `revalidate`; tail shows the DO invocation and the R2 entry changes);
+   - fix the export if not.
+e. Workers Cache on the ClickitStory Free account (a controller deploy to workers.dev):
+   - `cache.enabled` is accepted;
+   - a hit shows no Worker CPU in tail;
+   - gateway -> `ctx.exports` with `cf.cacheKey` works;
+   - `invalidate`/`purge` by tag works from a server action;
+   - whether hits and the gateway->cached call each count toward the 100k requests/day.
 
-### Expected CPU per route (Workers Free; estimates until measured)
+### Named tests [R1, R5, R6]
 
-| Route | Today ok-p50 (02-CPU-REPORT) | After: cache hit | After: front-cache miss, ISR hit | After: full render (rare) |
-|---|---|---|---|---|
-| /en, /ar (308) | 42 / 59 ms | ~1-3 ms | proxy only ~10-20 ms | n/a |
-| /portfolio, /about, /support, /privacy, /terms, /legal/* | 38-73 ms | ~1-3 ms | ~10-20 ms | 40-100 ms warm |
-| /browse, /watch (home) | 35 / 93 ms | ~1-3 ms | ~10-20 ms | 40-180 ms |
-| /series/<slug> (en, ar) | 61 / 74 ms | ~1-3 ms | ~10-20 ms | 60-130 ms |
-| /watch/<episode> | not measured | ~1-3 ms | ~10-20 ms | ~60-150 ms |
-| /auth (signed out), /updates, /coming-soon | 42-48 ms | ~1-3 ms | ~10-20 ms | 40-70 ms |
-| /my-list, /profile (signed in) | not measured | ~1-3 ms | ~10-20 ms | 40-100 ms |
-| /admin/*, admin server actions | not measured | not cached | — | 50-300+ ms (stays over 10 ms) |
-| contact / player-error actions, /auth/callback, /api/*, crons | — | not cached | — | over 10 ms, rare |
+- Forged `Cookie: sb-x=1` -> anon; a JWT signed with another key -> bypass. Neither ever gets
+  the user shell or a cached /watch/<episode> body.
+- Expired JWT with a valid signature -> bypass to the proxy (refresh); the response is not cached.
+- Code-verifier cookie only -> anon.
+- Admin and non-admin signed in -> the same viewer shell; `/admin*` is never cached for either;
+  the Admin menu entry comes from the browser.
+- No redirect stored in class `user`. Anon 307s are stored, and the coming-soon toggle purges them.
+- Hard-deny list -> always OpenNext, `no-store`.
+- Poisoning: the same URL with varied Accept-Language, Cookie, User-Agent, X-Forwarded-Host,
+  Forwarded and Next-Url gives an identical body before a route joins the cache.
+- RTL: a stored /ar body has `lang="ar" dir="rtl"`, a stored /en body `lang="en" dir="ltr"`.
+- `/` and unprefixed paths: 307 by cookie, then Accept-Language, then en; not cached; proxy not
+  invoked.
+- `_rsc` is stripped; utm is absent from stored bodies and Location headers.
+- Import graph: no `cookies()`/`headers()`/server Supabase client in cached routes.
+- A profile action does not invalidate shared entries; a content action does.
+- The long-session refresh test (design 6).
 
-Hits should be the bulk of traffic. Misses happen once per path x class x RSC kind after a deploy
-(warm-up covers them) and after an admin save (stale copy served meanwhile).
+### Expected CPU per route (estimates until the spike measures them)
+
+| Route | Today ok-p50 (02-CPU-REPORT) | Hit | Miss (fill, own invocation) |
+|---|---|---|---|
+| /, unprefixed paths | proxy 307 | gateway 307, ~0.5-1 ms (never cached) | — |
+| /en, /ar (308) | 42 / 59 ms | gateway ~0.5-2 ms, cache 0 | proxy only, ~10-20 ms |
+| portfolio, about, support, privacy, terms, legal, coming-soon | 38-73 ms | ~0.5-2 ms | ISR read ~10-20 ms; render 40-100 ms |
+| /auth (signed out) | 42 / 48 ms | ~0.5-2 ms | ~10-20 ms / 40-70 ms |
+| watch home, browse | 93 / 35 ms | ~0.5-2 ms | ~10-20 ms / 40-180 ms |
+| show, episode | 61-74 ms / not measured | ~0.5-2 ms | ~10-20 ms / 60-150 ms |
+| updates, my-list, profile (user class) | 48 ms / not measured | ~0.5-2 ms | ~10-20 ms / 40-100 ms |
+| admin, actions, /auth/callback, /api, crons | 50-300+ ms | out of scope | — |
 
 ### Effort
 
-About 6-8 working days of session time: locale 0.5; header 0.5; personal data to the browser 2-3;
-static/ISR + interception 1-1.5; front cache extension + warm-up 1-1.5; tests, local preview
-measurement and Playwright 1. Lands as one PR to main (after #29, now merged).
+8-9 session days:
+- spike 1-1.5;
+- gateway, JWT verification and unprefixed redirects 1.5;
+- user-independent pages 3;
+- ISR, tags and invalidation 1;
+- the named tests, long-session test and seeding script 1.5.
+One PR to main.
 
 ### Risks
 
-1. Admin pages stay dynamic and over 10 ms. Two admins working steadily can hit 1102 errors;
-   Free's tolerance is not documented. Only Workers Paid or an admin rewrite fixes that.
-2. Misses still cost 40-900 ms. First views after a deploy need the warm-up, and an unwarmed
-   page can answer 1102 once.
-3. RSC and segment-prefetch keys (the spike). If static payloads still vary by router state,
-   client navigation misses and goes over 10 ms.
-4. `enableCacheInterception` skips the proxy for ISR hits: gates must still hold. Gate tests run
-   with it on, and gate redirects are cached per auth class.
-5. Visible: placeholders for signed-in state (pictures 1-3), resume waits ~0.1-0.3 s, phone hero
-   may show its poster briefly, admin edits take ~10 s to appear.
-6. The cache never holds personal data: keys carry only build, class and path; the `sb-`
-   cookie only picks the class. A forged `sb-` cookie gets the signed-in shell with no data
-   (RLS).
-7. Free quotas: R2 class A/B and D1 reads stay far below free limits at today's traffic;
-   requests still count against 100k/day.
+- Workers Cache is three months old. The Free docs do not say whether hits and the
+  gateway->cached call count toward 100k/day (the gateway call may double it); the spike reads
+  this.
+- Fills can still 1102 on Free. Stale copies hide that after the first fill, but the first view
+  after a deploy depends on seeding.
+- Every deploy starts the cache cold (version in the key).
+- Visible: pictures 1-3; utm dropped on the `/en` -> `/en/portfolio` hop; admin edits show
+  after one refill instead of at once; coming-soon switches at once.
+- If the spike falls back to the prototype tier:
+  - R2 lifecycle, Koss's live step after the first deploy:
+    `HOME=/Users/koss/.clickit-cloudflare npx -y wrangler@4.151.2 r2 bucket lifecycle add clickit-next-cache anon-html-expiry anon-html/ --expire-days 7`.
+  - R2 on Free (pricing page updated 2026-10-01): 1M Class A, 10M Class B, 10 GB per month,
+    delete free. Reads are capped by 100k requests/day, so at most ~3M Class B a month.
+  - Writes happen once per fill.
 
-### Pictures for the signature
+### Pictures
 
-`.planning/debug/cpu-public-cache-mockup.html`: header (signed out, signed in, admin; EN and AR),
-show-page buttons and progress, Continue watching rail; before and after with options A/B.
-Recommended: 1A empty avatar circle, 2A grey placeholders, 3A placeholder row.
+`.planning/debug/cpu-public-cache-mockup.html`:
+- section 0, request flow;
+- sections 1-3, before/after for the header, show page and Continue watching, EN and AR,
+  options A/B. Recommended: 1A, 2A, 3A.
 
-GSD: this is phase-sized; `/gsd-phase` (insert a decimal phase after 2) then
-`/gsd-plan-phase`, so it gets discuss, plan and UAT gates. Jev: a small typed
-"cacheable / bypass" decision per request is plain code, so Jev adds nothing here. Automation:
-a post-deploy warm-up and CPU-sample agent (tail + measure-routes) that reports p95 per route.
-
-## Addendum for the controller (2026-10-21): prototype, remaining routes, risks
-
-### (1) What e49a219 does, in plain words (prototype; nothing merges or deploys before the signature)
-
-The Worker keeps a copy of six signed-out page types (/<locale> 308, /portfolio, /about,
-/support, /privacy, /terms, EN and AR) and answers from it before the proxy and Next.js
-run. The copy lives 120 s, in the edge cache, with R2 as backup. It is kept twice, once for
-phones and once for desktops, because the hero picks its video by device. That uses the same
-detection as today, so there is no visible difference. Visible effect: an admin edit takes up
-to 120 s to reach signed-out visitors of those pages. Every answer it touches carries
-`x-clickit-cache` (HIT-EDGE, HIT-R2, MISS); bypassed requests carry nothing.
-Picture: section 0 of `.planning/debug/cpu-public-cache-mockup.html`.
-
-### (2) Routes the prototype does not cover
-
-| Route | Today (02-CPU-REPORT ok-p50) | Signed out | Signed in | How it gets under 10 ms |
-|---|---|---|---|---|
-| /en/auth, /ar/auth | 42 / 48 ms | cacheable (public form; Turnstile runs in the browser) | proxy already sends signed-in visitors on; that redirect is cached per class | add to the list; key also on `?next=` but only when it passes `getSafeAuthNextPath` (other values render and are not stored) |
-| /series/<slug> | 61 / 74 ms | cacheable once the page stops reading the session and User-Agent | needs the hybrid: static show, list/like/progress from the browser | static/ISR + front cache, both classes |
-| /watch (home), /watch/<episode> | 93 ms / not measured | when sign-in skip is on: cacheable; when off: the gate 307 to /auth, cached per class | hybrid: static page, Continue watching / list / like / resume position from the browser (writes already are) | static/ISR + front cache, both classes |
-| /browse | 35 ms | it only redirects to /watch (keeps `?category=`), from inside a page render | same | move the redirect into the proxy (like d43fd90) and cache it; key on `category` |
-| /updates | 48 ms | not public: the gate sends signed-out visitors to /auth (307, cacheable per class) | prefill of the email moves to the browser; page cached for the signed-in class | front cache, signed-in class |
-
-Signed-in on Free: the limit is per request, not per visitor. A signed-in render costs the same
-40-150 ms, and Free started refusing requests after about 2 minutes of steady traffic. Viewers
-watching shows are the core use, and with sign-in skip off every watch page is signed-in. So
-signed-in pages must be cached too, and the hybrid (shared cached shell + personal data fetched by
-the browser straight from Supabase under RLS) is worth it: it is the only way the signed-in
-routes fit, and it costs no Worker CPU because those reads never touch the Worker. Without
-it, show, episode and watch-home requests from signed-in viewers stay at 40-150 ms and get 1102
-under load. Admin is the exception: it stays rendered, over 10 ms (2 users).
-
-### (3) Risks
-
-- **Stale content.** Prototype: up to 120 s after an admin save. Plan: freshness compares the
-  copy with the last revalidation OpenNext writes to D1 on every save (`updateTag` /
-  `revalidatePath`, already in the admin actions), read at most every 10 s per Worker
-  instance. Edits show within ~10 s, and the old copy is served while the new one renders.
-  Content with no save (scheduled publish at 01:00) relies on that cron's own revalidation:
-  check it during the build.
-- **Cache poisoning.** The key holds only build, class, device and path, plus allowlisted,
-  sanitised params (`next`, `category`). The Host cannot be spoofed, because Cloudflare routes by
-  host. Anything else in the request that changes the HTML would poison the copy. Known ones:
-  User-Agent (keyed by device), the NEXT_LOCALE cookie (only stored when it equals the URL locale),
-  Accept-Language (changes only the cookie, which is never stored). Router/action headers bypass.
-  The plan adds a test that renders one URL with varied headers (language, cookie, UA, forwarded
-  host, `next-url`) and requires identical text before a route is allowed into the cache. Only
-  200 HTML and 308/307 are stored; any Set-Cookie other than NEXT_LOCALE blocks storing.
-- **A signed-in user getting a signed-out copy.** The prototype bypasses on any `sb-` cookie,
-  which also covers the chunked `.0/.1` and the PKCE code-verifier cookies. The plan keys on that
-  class instead, so the signed-in copy never contains signed-out UI. Browsers and Cloudflare's
-  CDN never store the page: visitors keep `cache-control: private, no-store`. A forged `sb-`
-  cookie gets the signed-in shell, with no data (RLS).
-- **RTL / locale mixups.** The locale is in the path and the key; `lang`/`dir` come from the
-  `[locale]` segment. The prototype refuses to store a render whose cookie locale differs from
-  the URL. The plan moves every cookie-locale read to the URL locale and adds a store guard: the
-  body must contain `lang="ar" dir="rtl"` for /ar and `lang="en" dir="ltr"` for /en, or it is
-  not stored.
-- **R2 lifecycle rule (live step for Koss, after the first deploy with the cache).** Old builds
-  leave copies under `anon-html/`. One numbered step in his terminal:
-  1. `HOME=/Users/koss/.clickit-cloudflare npx -y wrangler@4.151.2 r2 bucket lifecycle add clickit-next-cache anon-html-expiry anon-html/ --expire-days 7`
-  Expected: the rule is listed by `... r2 bucket lifecycle list clickit-next-cache`. Seven days,
-  not one, so copies of the live build that nobody refreshed are not deleted every day.
-- **R2 and D1 cost on Free** (R2 pricing page, updated 2026-10-01: 10 GB, 1M Class A,
-  10M Class B per month; delete is free; D1 5M reads / 100k writes per day). A hit reads R2 only
-  when the edge cache misses; on workers.dev the edge cache may never hold, so every hit is
-  one Class B read. Workers Free caps requests at 100k/day, so at most ~3M Class B per month:
-  under 10M. Writes (Class A) happen once per miss. With the prototype's 120 s life, 24 keys x
-  720 refreshes/day is about 0.5M per month in the worst case, under 1M. With the plan's
-  save-based freshness, writes happen only after a deploy or a save. Storage is a few MB. D1: one
-  small read per Worker instance every 10 s.
+Next step: `/gsd-phase` (insert a decimal phase after 2), then `/gsd-plan-phase` with the spike
+as plan 1. Jev: no fit. Automation: a post-deploy seeding and CPU-sample agent.
