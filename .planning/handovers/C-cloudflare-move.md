@@ -76,7 +76,8 @@ Item 12 (Koss 2026-10-21, question form):
 | 1-12, 13-18, 20, 21 | login, subdomain, R2, buckets, CORS, D1, env file, Turnstile widget, first deploy, secrets | Koss / controller | done (2026-10-20) |
 | 19 | Google key | — | removed (Workers AI) |
 | 22 | Web Analytics site | Koss | optional, skipped unless Koss asks |
-| 23 | Supabase redirect allow-list for `https://clickit.clickitstory.workers.dev/**` | Koss (dashboard) | open |
+| 23 | Supabase redirect allow-list for `https://clickit.clickitstory.workers.dev/**` | Koss (dashboard) | done 2026-10-21: Redirect URLs exactly www/**, apex/**, workers.dev/**; 12 Vercel URLs removed; Site URL stays www |
+| P3-pre-max-rows | live PostgREST Max rows ≥ 1000 | Koss | done 2026-10-21: 1000 |
 | 24 | secret names read-back | controller | done (2026-10-21 12:3x CET): CRON_SECRET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY, TURNSTILE_SECRET_KEY; no Google key |
 | Task 4 (02-10) | wrangler tail + CPU sample on /en, /ar, /en/auth | C (session), after Step 23 | open |
 | 25-27 | copy credentials, dry-run, execute copy (reads Supabase Storage, writes R2) | Koss | open (R2 already holds a verified copy from #24; re-sync only with `npm run r2:media -- --refresh` then `--execute`) |
@@ -92,7 +93,7 @@ Item 12 (Koss 2026-10-21, question form):
 Notes:
 - Cron placeholder (controller, 2026-10-20): PR #27 (Phase 6) adds `/api/cron/youtube-recheck`, which needs a daily Worker cron trigger. Whichever of Phase 2 / Phase 6 lands second wires it: one entry in `src/server/cron-schedule.ts` (cron map) plus the trigger in `wrangler.jsonc` `triggers.crons` at the Phase 3 cutover (crons stay `[]` until then). Phase 2 does not edit Phase 6 files.
 - PRs #27 (Phase 6) and #28 (Phase 4) landed on main (6d748ff, 9225d04) and are merged into this branch (f767ae7, 2026-10-21).
-- Phase 6 hand-offs addressed to Phase 2 (main's ROADMAP), NOT done yet, waiting for the controller's go: (a) `src/server/youtube/rate-limit.ts` onto `decideRateLimit`; (b) the `youtube-recheck` cron route onto `cronAuthOk`; (c) `30 1 * * *` into `CRON_ROUTES` now, and into `wrangler.jsonc` `triggers.crons` only at the Phase 3 cutover (crons stay `[]`).
+- Phase 6 hand-offs to Phase 2: (b) the `youtube-recheck` route uses `cronAuthOk` and (c) `30 1 * * *` is in `CRON_ROUTES` (2026-10-21; `triggers.crons` stays `[]` until P3-8, which now lists all three). Still open, not asked yet: (a) `src/server/youtube/rate-limit.ts` onto `decideRateLimit` (TODO(phase-2) in that file); `src/server/youtube/bearer.ts` is now unused by the route (kept with its test).
 - Open decisions: pr-gate.yml triggers vs rule 4 (Phase 1 file); Phase 3 Q1-Q4 in `03-CUTOVER-DRAFT.md`.
 
 ## Pending Koss signatures (copy)

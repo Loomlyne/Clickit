@@ -11,10 +11,6 @@ const SERVICE = 'src/server/youtube-service.ts'
 const route = readFileSync(ROUTE, 'utf8')
 const service = readFileSync(SERVICE, 'utf8')
 
-const TODO_AUTH =
-  '// TODO(phase-2): swap the inline Bearer check for cronAuthOk(header, secret) from src/server/cron-auth.ts (constant time)'
-const TODO_SCHEDULE =
-  "// TODO(phase-2): register '30 1 * * *' -> /api/cron/youtube-recheck in CRON_ROUTES (src/server/cron-schedule.ts) and wrangler.jsonc triggers.crons"
 
 /** Every console.* call with its full argument text (balanced parentheses). */
 function consoleCalls(src: string): string[] {
@@ -41,10 +37,11 @@ test('route exports GET', () => {
 test('auth block is the constant-time check and runs before any other work', () => {
   const block = [
     "const authHeader = req.headers.get('authorization')",
-    'if (!bearerMatches(authHeader, process.env.CRON_SECRET)) {',
+    'if (!(await cronAuthOk(authHeader, process.env.CRON_SECRET))) {',
     "return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })",
   ]
-  assert.ok(route.includes("import { bearerMatches } from '@/server/youtube/bearer'"))
+  assert.ok(route.includes("import { cronAuthOk } from '@/server/cron-auth'"))
+  assert.ok(!route.includes('bearerMatches'), 'the Phase 6 inline check is gone')
   // No plain string compare of the header is left.
   assert.doesNotMatch(route, /authHeader\s*[!=]==/)
   assert.doesNotMatch(route, /[!=]==\s*authHeader/)
@@ -61,14 +58,10 @@ test('auth block is the constant-time check and runs before any other work', () 
   }
 })
 
-test('both TODO(phase-2) markers are present, the auth one right above the check', () => {
-  assert.equal(route.split('TODO(phase-2)').length - 1, 2)
-  assert.ok(route.includes(TODO_AUTH))
-  assert.ok(route.includes(TODO_SCHEDULE))
-  assert.ok(route.indexOf(TODO_SCHEDULE) < route.indexOf('import '), 'schedule TODO sits at the top')
-  const authTodo = route.indexOf(TODO_AUTH)
-  assert.ok(authTodo > route.indexOf('export async function GET'))
-  assert.ok(authTodo < route.indexOf("req.headers.get('authorization')"))
+test('Phase 2 wired the route: no TODO(phase-2) left, schedule in CRON_ROUTES', () => {
+  assert.ok(!route.includes('TODO(phase-2)'))
+  const map = readFileSync('src/server/cron-schedule.ts', 'utf8')
+  assert.ok(map.includes("'30 1 * * *': '/api/cron/youtube-recheck'"))
 })
 
 test('missing key: 503 key_missing; otherwise recheckVideosCore', () => {
@@ -97,10 +90,11 @@ test('logs use the [cron/youtube-recheck] prefix and never mention a key, url or
   for (const call of routeLogs) assert.ok(call.includes("'[cron/youtube-recheck]"), call)
 })
 
-test('route does no cache tagging and imports no Phase 2 module', () => {
+test('route does no cache tagging; its only Phase 2 import is cron-auth', () => {
   assert.doesNotMatch(route, /updateTag|revalidateTag|revalidatePath/)
-  // The TODO comments name the Phase 2 files; no import may use them yet.
-  assert.doesNotMatch(route, /from ['"][^'"]*(cron-auth|cron-schedule|scheduled)['"]/)
+  // Phase 2 wired the auth (cronAuthOk); the schedule lives in cron-schedule.ts,
+  // which the route itself must not import.
+  assert.doesNotMatch(route, /from ['"][^'"]*(cron-schedule|scheduled)['"]/)
 })
 
 test('youtube-service starts with server-only and builds the client from the Vault key, header only', () => {

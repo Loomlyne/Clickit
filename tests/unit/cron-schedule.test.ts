@@ -22,7 +22,11 @@ test('cronPathFor does not resolve inherited object keys', () => {
   assert.equal(cronPathFor('toString'), null)
 })
 
-test('CRON_ROUTES is frozen and has exactly the two publish/cleanup crons', () => {
+test('cronPathFor maps the daily YouTube re-check cron', () => {
+  assert.equal(cronPathFor('30 1 * * *'), '/api/cron/youtube-recheck')
+})
+
+test('CRON_ROUTES is frozen and has exactly the publish, cleanup and youtube-recheck crons', () => {
   assert.equal(Object.isFrozen(CRON_ROUTES), true)
-  assert.deepEqual(Object.keys(CRON_ROUTES).sort(), ['0 1 * * *', '0 4 * * 1'])
+  assert.deepEqual(Object.keys(CRON_ROUTES).sort(), ['0 1 * * *', '0 4 * * 1', '30 1 * * *'])
 })

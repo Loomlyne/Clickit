@@ -1,9 +1,8 @@
-// TODO(phase-2): register '30 1 * * *' -> /api/cron/youtube-recheck in CRON_ROUTES (src/server/cron-schedule.ts) and wrangler.jsonc triggers.crons
 import { NextResponse } from 'next/server'
 
 import { recheckVideosCore, type RecheckReason } from '@/lib/admin/youtube-check'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { bearerMatches } from '@/server/youtube/bearer'
+import { cronAuthOk } from '@/server/cron-auth'
 import { getServerYouTubeClient } from '@/server/youtube-service'
 
 /**
@@ -19,8 +18,9 @@ import { getServerYouTubeClient } from '@/server/youtube-service'
  * "Can't play" from the stored status. The JSON reports checked (episodes),
  * notOk and shortsChecked.
  *
- * Schedule: none yet. Until Phase 2 registers the trigger (TODO at the top) the
- * check runs by hand:
+ * Schedule: '30 1 * * *' UTC in CRON_ROUTES (src/server/cron-schedule.ts); the
+ * Worker trigger goes on at the Phase 3 cutover (RUNBOOK P3-8, wrangler.jsonc
+ * crons stay [] until then). By hand:
  *   curl -H "Authorization: Bearer $CRON_SECRET" \
  *     localhost:3000/api/cron/youtube-recheck
  *
@@ -32,10 +32,10 @@ const YOUTUBE_REASONS = new Set<RecheckReason>(['quota', 'key_rejected', 'api_no
 
 export async function GET(req: Request) {
   // --- Auth guard ----------------------------------------------------------
-  // TODO(phase-2): swap the inline Bearer check for cronAuthOk(header, secret) from src/server/cron-auth.ts (constant time)
-  // SHA-256 of both sides, compared with timingSafeEqual (src/server/youtube/bearer.ts).
+  // Same constant-time check as every cron route (src/server/cron-auth.ts):
+  // SHA-256 of both sides, timingSafeEqual, blank secret refused.
   const authHeader = req.headers.get('authorization')
-  if (!bearerMatches(authHeader, process.env.CRON_SECRET)) {
+  if (!(await cronAuthOk(authHeader, process.env.CRON_SECRET))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

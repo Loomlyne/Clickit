@@ -10,7 +10,7 @@ import { CRON_ROUTES, cronPathFor } from './cron-schedule.ts'
 const SELF_ORIGIN = 'https://self.invalid'
 
 /**
- * The two UTC schedules, in code and docs only. wrangler.jsonc keeps
+ * The three UTC schedules, in code and docs only. wrangler.jsonc keeps
  * "triggers": {"crons": []} until the Phase 3 cutover (P3-8, after P3-6), so
  * nothing is scheduled on deploy. Phase 3 copies this list into wrangler.jsonc.
  */

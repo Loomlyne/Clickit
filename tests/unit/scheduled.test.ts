@@ -41,8 +41,8 @@ test('buildCronRequest trims the secret like cronAuthOk does', () => {
   assert.equal(req?.headers.get('authorization'), 'Bearer s')
 })
 
-test('CRON_EXPRESSIONS_FOR_PHASE_3 lists exactly the two mapped crons', () => {
-  assert.deepEqual([...CRON_EXPRESSIONS_FOR_PHASE_3].sort(), ['0 1 * * *', '0 4 * * 1'])
+test('CRON_EXPRESSIONS_FOR_PHASE_3 lists exactly the three mapped crons', () => {
+  assert.deepEqual([...CRON_EXPRESSIONS_FOR_PHASE_3].sort(), ['0 1 * * *', '0 4 * * 1', '30 1 * * *'])
   for (const cron of CRON_EXPRESSIONS_FOR_PHASE_3) {
     assert.ok(buildCronRequest(cron, 's'), cron)
   }

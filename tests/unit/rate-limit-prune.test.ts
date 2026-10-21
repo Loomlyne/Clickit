@@ -62,7 +62,7 @@ test('pruneRateLimits never throws: an error or a throw comes back as { error }'
   assert.equal(typeof r3.error, 'string')
 })
 
-test('cleanup-media cron prunes first, fail-soft, and reports it; no new cron trigger', () => {
+test('cleanup-media cron prunes first, fail-soft, and reports it; no extra cron beyond the mapped three', () => {
   const route = readFileSync('src/app/api/cron/cleanup-media/route.ts', 'utf8')
   const run = route.slice(route.indexOf('async function runCleanup()'))
   const prune = run.indexOf('pruneRateLimits(admin, ')
@@ -70,5 +70,5 @@ test('cleanup-media cron prunes first, fail-soft, and reports it; no new cron tr
   assert.ok(prune < run.indexOf('supabaseCleanupEnabled('), 'prune runs before the originals switch returns')
   assert.ok(prune < run.indexOf("from('shows')"), 'prune runs before the media sweep can fail')
   assert.match(run, /rateLimitsPruned/, 'the JSON reports the prune result')
-  assert.deepEqual(Object.keys(CRON_ROUTES).sort(), ['0 1 * * *', '0 4 * * 1'])
+  assert.deepEqual(Object.keys(CRON_ROUTES).sort(), ['0 1 * * *', '0 4 * * 1', '30 1 * * *'])
 })
