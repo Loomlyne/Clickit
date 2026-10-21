@@ -25,8 +25,8 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 05 (accounts-and-email) — EXECUTING
-Plan: 13 of 42 (05-10, 05-11, 05-12 and 05-14 done; 05-13 Tasks 1-2 and Task 3 step 1 done, step 2 waits for the controller's go)
-Status: Waiting (05-13 shared-stack migration up --local needs the controller's go)
+Plan: 16 of 42 (waves 0-3 done; 05-13 done; 05-38 next)
+Status: Executing (wave 4)
 Last activity: 2026-10-21
 Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
 
@@ -151,7 +151,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- 05-13 Task 3 step 2: `supabase migration up --local` on the shared supabase_db_Clickit stack (adds M1a/M1b; Phase 6 shares it) waits for the controller's go.
+- 05-13 Task 3 step 2 done 2026-10-21 15:29Z: shared supabase_db_Clickit now has M1a + M1b (migration up --local, exit=0).
 - No code reaches production until Phase 3 (Vercel deploys are BLOCKED).
 - Owner decisions pending (pricing, not assumed): Workers Paid $5/mo if Free CPU fails (Phase 2); Image Transformations stays on the free tier only.
 - Stray Cloudflare NS pair (ignat/nataly) must be resolved before any NS change (Phase 1).

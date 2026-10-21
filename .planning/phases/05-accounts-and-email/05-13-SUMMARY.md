@@ -121,3 +121,10 @@ None beyond the plan's register. T-05-13-01 (RLS/grants, tested as anon and auth
 
 - FOUND: supabase/migrations/20261021151843_phase5_m1b_email_outbox.sql, supabase/tests/m1b_outbox.sql, supabase/tests/m1b_welcome.sql, supabase/tests/m1b_digest.sql, src/lib/database.types.ts
 - FOUND: 2a4075a, 6bfe36d, 59c9ef8
+
+## Task 3 step 2: shared local stack (orchestrator, 2026-10-21 15:29Z)
+
+- Go: the controller cleared it earlier ("When you need the local stack, re-apply under the lock"), and CLAUDE.local.md lets each session apply its own migrations under the heavy lock. No separate NEEDS CONTROLLER round-trip was needed.
+- Path: `migration-up`. `bash scripts/heavy-run.sh supabase migration up --local` ran detached and applied `20261021142458_phase5_m1a_accounts.sql` and `20261021151843_phase5_m1b_email_outbox.sql`. Log `/Users/koss/.clickit-checks/p5-migration-up.log` ends with `exit=0`.
+- Check: `supabase_migrations.schema_migrations` now ends 20261021151843, 20261021142458, 20261021120000. `to_regclass('public.email_outbox')` and `to_regclass('public.admins')` are both present. `public.admins` is empty.
+- Types were not regenerated: Step 1 had already written them.
