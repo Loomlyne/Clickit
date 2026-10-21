@@ -8,6 +8,7 @@
 //        --verify-report <path> [--manifest <path>]
 //   npm run cf:deploy:media -- --env supabase-only   # Supabase originals (production today)
 //   npm run cf:deploy:media -- --env r2              # R2 first: only after DNS-PLAN.md §5d passes
+//   npm run cf:deploy:media -- --env r2-workersdev   # separate clickit-media-r2 Worker, workers.dev only (Step 28)
 //   (clickit-media serves media.clickitstory.ae in every env, so either one changes production media)
 //   add --dry-run to run the guard only (no build, no deploy)
 //   add --allow-upload-sweep-delete ONLY on Koss's word, when wrangler.jsonc sets
@@ -163,7 +164,7 @@ function deployWorkersdev(argv) {
 function deployMedia(argv) {
   const dryRun = argv.includes('--dry-run')
   if (!argv.includes('--env')) {
-    return refuse(['--env is required: pass --env supabase-only or --env r2'])
+    return refuse(['--env is required: pass --env supabase-only, --env r2 or --env r2-workersdev'])
   }
   const mediaEnv = readOption(argv, '--env')
   const early = parentChecks()

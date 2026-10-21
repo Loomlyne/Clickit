@@ -80,12 +80,13 @@ Item 12 (Koss 2026-10-21, question form):
 | P3-pre-max-rows | live PostgREST Max rows ≥ 1000 | Koss | done 2026-10-21: 1000 |
 | 24 | secret names read-back | controller | done (2026-10-21 12:3x CET): CRON_SECRET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY, TURNSTILE_SECRET_KEY; no Google key |
 | Task 4 (02-10) | wrangler tail + CPU sample on /en, /ar, /en/auth | C | done 2026-10-21 on d7b59d6: EARLY STOP, p95 CPU 940 / 117 / 386 ms (Free limit 10 ms); numbers in 02-SPIKE.md; Step 33 now due |
-| 25-27 | copy credentials, dry-run, execute copy (reads Supabase Storage, writes R2) | Koss | open (R2 already holds a verified copy from #24; re-sync only with `npm run r2:media -- --refresh` then `--execute`) |
-| 28 | deploy media Worker (`--env r2` flips production media: stop first) | controller, Koss's word | open |
-| 29 | verify every object on the media host | Koss or controller | open |
-| 30 | workers.dev build with media on R2 ("flag on workers.dev") | controller, Koss's word | open |
+| 25-27 | copy credentials, dry-run, execute copy (reads Supabase Storage, writes R2) | Koss (27 after the controller's "dry-run reviewed, run step 27") | prepared 2026-10-21 in the main checkout (runbook "Media copy, media Worker, flag on"); re-sync only with `npm run r2:media -- --refresh` then `--execute` |
+| 28 | deploy media Worker | controller, Koss's word | 28a DECIDED 2026-10-21: A (Koss in session C). Env `r2-workersdev` → separate Worker `clickit-media-r2`, workers.dev only, `routes: []`; built on `phase-02-finish` (guard + tests + wrangler dry run). Runs after that PR is on main: `npm run cf:deploy:media -- --env r2-workersdev` |
+| 29 | verify every object on the media host (read only) | Koss or controller | open, after 28 |
+| 30 | workers.dev build with media on R2 ("flag on workers.dev") | controller, Koss's word | open, after 29; migration pre-check already passed (run 39609825509) |
 | 31 | name the draft test show (read only) | Koss | open |
 | 32 | approve the single live write of Phase 2 (draft show poster) | Koss | open |
+| 32b | revert the test poster to the Step 31 value, then delete its R2 keys (review of #30) | controller, Koss's words "approve poster revert" / "approve test poster cleanup" | open, right after 32 |
 | 33 | Workers plan decision (priced question) | Koss | DECIDED 2026-10-21: "Stay Free, do the rebuild" (signed-out 02-21 pass failed every route, 02-CPU-REPORT.md). The caching rebuild belongs to session "Clickit /en CPU" on its own branch, PR to main after #29 |
 | 34 | approve the measurement sign-ins (before 31-32) | Koss | WAITS for the rebuild to land (measuring now would measure code about to change) |
 | 02-21 rest | signed-in rows, media Worker rows, local cron estimate | C or the rebuild session | WAITS for the rebuild to land |
