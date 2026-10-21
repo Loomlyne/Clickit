@@ -5,6 +5,7 @@ import {
   checkDeploy,
   checkMediaDeploy,
   checkVerifyReport,
+  isAllowedMediaOrigin,
   parseJsonc,
 } from '../../scripts/cf/deploy-guard.mjs'
 import { buildEnvFor, classifyTurnstileSiteKey, makeStamp, parseEnvFile } from '../../scripts/cf/build-target.mjs'
@@ -648,9 +649,9 @@ test('checkMediaDeploy refuses non-empty cron triggers at top level or in the en
   assert.equal(checkMediaDeploy(mediaInput({ wranglerConfig: envCron, env: 'supabase-only' })).ok, false)
 })
 
-test('checkMediaDeploy passes the real workers/media/wrangler.jsonc for both envs', () => {
+test('checkMediaDeploy passes the real workers/media/wrangler.jsonc for every env', () => {
   const real = parseJsonc(readFileSync('workers/media/wrangler.jsonc', 'utf8'))
-  for (const env of ['supabase-only', 'r2']) {
+  for (const env of ['supabase-only', 'r2', 'r2-workersdev']) {
     const res = checkMediaDeploy(mediaInput({ wranglerConfig: real, env }))
     assert.deepEqual(res.reasons, [], env)
   }
@@ -660,4 +661,88 @@ test('checkMediaDeploy refuses a dirty tree', () => {
   const res = checkMediaDeploy(mediaInput({ gitStatus: '?? stray.txt\n' }))
   assert.equal(res.ok, false)
   assert.match(reasonsOf(res), /dirty/)
+})
+
+// ------------------------------------------- r2-workersdev (Step 28 option A, 2026-10-21)
+// A separate Worker (clickit-media-r2) on workers.dev only. `routes` is inheritable in
+// wrangler, so an env without an explicit [] would take media.clickitstory.ae.
+
+function withWorkersdevEnv(over: Record<string, unknown> = {}) {
+  const config = structuredClone(mediaConfig) as unknown as { env: Record<string, Record<string, unknown>> }
+  config.env['r2-workersdev'] = {
+    name: 'clickit-media-r2',
+    workers_dev: true,
+    routes: [],
+    vars: { ...SUPA },
+    r2_buckets: [{ binding: 'MEDIA_BUCKET', bucket_name: 'clickit-media' }],
+    ...over,
+  }
+  return config
+}
+
+test('checkMediaDeploy passes env r2-workersdev: own name, no routes, workers.dev, one MEDIA_BUCKET', () => {
+  const res = checkMediaDeploy(mediaInput({ wranglerConfig: withWorkersdevEnv(), env: 'r2-workersdev' }))
+  assert.deepEqual(res.reasons, [])
+})
+
+test('checkMediaDeploy refuses r2-workersdev without an explicit empty routes array (would inherit the custom domain)', () => {
+  const inherit = withWorkersdevEnv()
+  delete inherit.env['r2-workersdev'].routes
+  assert.match(reasonsOf(checkMediaDeploy(mediaInput({ wranglerConfig: inherit, env: 'r2-workersdev' }))), /routes/)
+  const custom = withWorkersdevEnv({ routes: [{ pattern: 'media.clickitstory.ae', custom_domain: true }] })
+  assert.match(reasonsOf(checkMediaDeploy(mediaInput({ wranglerConfig: custom, env: 'r2-workersdev' }))), /routes/)
+  const single = withWorkersdevEnv({ route: 'media.clickitstory.ae/*' })
+  assert.equal(checkMediaDeploy(mediaInput({ wranglerConfig: single, env: 'r2-workersdev' })).ok, false)
+})
+
+test('checkMediaDeploy refuses r2-workersdev named clickit-media, off workers.dev, or without its binding', () => {
+  const named = withWorkersdevEnv({ name: 'clickit-media' })
+  assert.match(reasonsOf(checkMediaDeploy(mediaInput({ wranglerConfig: named, env: 'r2-workersdev' }))), /clickit-media-r2/)
+  const noDev = withWorkersdevEnv({ workers_dev: false })
+  assert.match(reasonsOf(checkMediaDeploy(mediaInput({ wranglerConfig: noDev, env: 'r2-workersdev' }))), /workers_dev/)
+  const noR2 = withWorkersdevEnv({ r2_buckets: [] })
+  assert.match(reasonsOf(checkMediaDeploy(mediaInput({ wranglerConfig: noR2, env: 'r2-workersdev' }))), /MEDIA_BUCKET/)
+})
+
+test('checkMediaDeploy refuses env r2 or supabase-only renamed away from clickit-media', () => {
+  assert.equal(checkMediaDeploy(mediaInput({ wranglerConfig: withR2Env({ name: 'clickit-media-r2' }) })).ok, false)
+  const config = structuredClone(mediaConfig)
+  config.env['supabase-only'].name = 'clickit-media-r2'
+  assert.equal(checkMediaDeploy(mediaInput({ wranglerConfig: config, env: 'supabase-only' })).ok, false)
+})
+
+test('the real r2-workersdev env sets routes [] and the production envs keep media.clickitstory.ae', () => {
+  const real = parseJsonc(readFileSync('workers/media/wrangler.jsonc', 'utf8'))
+  assert.deepEqual(real.env['r2-workersdev'].routes, [])
+  assert.equal(real.env['r2-workersdev'].name, 'clickit-media-r2')
+  for (const env of ['supabase-only', 'r2']) {
+    assert.deepEqual(real.env[env].routes, [{ pattern: 'media.clickitstory.ae', custom_domain: true }], env)
+  }
+})
+
+test('isAllowedMediaOrigin accepts clickit-media-r2 on workers.dev and nothing looser', () => {
+  assert.equal(isAllowedMediaOrigin('https://clickit-media-r2.clickitstory.workers.dev'), true)
+  assert.equal(isAllowedMediaOrigin('https://clickit-media.clickitstory.workers.dev'), true)
+  assert.equal(isAllowedMediaOrigin('https://media.clickitstory.ae'), true)
+  for (const bad of [
+    'https://clickit-media-r3.clickitstory.workers.dev',
+    'https://clickit-media-r2x.clickitstory.workers.dev',
+    'https://clickit-media-r2.clickitstory.workers.dev.evil.com',
+    'http://clickit-media-r2.clickitstory.workers.dev',
+    'https://clickit.clickitstory.workers.dev',
+  ]) {
+    assert.equal(isAllowedMediaOrigin(bad), false, bad)
+  }
+})
+
+test('buildEnvFor workersdev verified accepts a clickit-media-r2 origin with a report made against it', () => {
+  const origin = 'https://clickit-media-r2.clickitstory.workers.dev'
+  const env = buildEnvFor(
+    'workersdev',
+    fileEnv,
+    { mediaFlag: 'verified', mediaOrigin: origin, verifyReport: { ...goodReport, origin }, manifest },
+    {},
+  )
+  assert.equal(env.NEXT_PUBLIC_MEDIA_CUTOVER_READY, 'verified')
+  assert.equal(env.NEXT_PUBLIC_MEDIA_ORIGIN, origin)
 })

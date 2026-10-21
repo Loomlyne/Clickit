@@ -85,7 +85,8 @@ c. **Attach `media.clickitstory.ae` (controller deploys).** `workers/media/wrang
    `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 deploy -c workers/media/wrangler.jsonc --env supabase-only`.
    Cloudflare creates the `media` record and its certificate.
    Check: `curl -sI https://media.clickitstory.ae/site-assets/settings/favicon.png`
-   → 200, `x-media-source: supabase`; then `npm run media:health` → every URL ok.
+   → 200 (the Worker sends no header naming its source; `media:health`'s
+   `source` field reads null); then `npm run media:health` → every URL ok.
 
 d. **R2 later (gate).** Enable R2 + create bucket `clickit-media`, copy objects
    (`npm run r2:media` dry run, then `--execute` on Koss's word). Before any
