@@ -252,7 +252,21 @@ const VERSIONED_ACTIONS = [
   'finalizeSiteImageUpload',
   'finalizeHeroVideoUpload',
   'finalizePreloaderVideoUpload',
+  // Review item 8 (PR #29): the list editors' saves.
+  'updateCategory',
+  'updateShort',
+  'upsertFaq',
+  'upsertLegalPage',
+  'updateSeason',
+  'updateEpisode',
 ]
+
+/** Actions whose core validates updated_at (rowVersion) and returns the new one. */
+const VIA_CORE: Record<string, string> = {
+  upsertLegalPage: 'src/lib/admin/legal-pages.ts',
+  updateSeason: 'src/lib/admin/season-episode-writes.ts',
+  updateEpisode: 'src/lib/admin/season-episode-writes.ts',
+}
 
 const WRITES_ROW =
   /'app_config'|'app-config'|updateShowCore\(|setHeroVideoUrlCore\(|removeHeroVideoCore\(|'hero-desktop'|target: 'preloader'|updateIfUnchanged\(/
@@ -262,9 +276,16 @@ test('every action that saves app_config or a show form takes and validates upda
   for (const name of VERSIONED_ACTIONS) {
     const a = all.find((x) => x.name === name)
     assert.ok(a, `${name} missing`)
-    assert.ok(a.body.includes('rowVersion('), `${name} must validate updated_at with rowVersion()`)
+    const coreFile = VIA_CORE[name]
+    const core = coreFile ? readFileSync(coreFile, 'utf8') : ''
+    assert.ok(
+      a.body.includes('rowVersion(') || (core.includes('rowVersion(') && a.body.includes('expectedUpdatedAt')),
+      `${name} must validate updated_at with rowVersion()`
+    )
     // updateShow passes the core's result through; updateShowCore returns the new value itself.
-    const viaCore = a.body.includes('updateShowCore(') && /updatedAt: written/.test(readFileSync('src/lib/admin/show-writes.ts', 'utf8'))
+    const viaCore =
+      (a.body.includes('updateShowCore(') && /updatedAt: written/.test(readFileSync('src/lib/admin/show-writes.ts', 'utf8'))) ||
+      (!!coreFile && /updatedAt/.test(core))
     assert.ok(/\bupdatedAt\b|withUpdatedAt\(/.test(a.body) || viaCore, `${name} must return the new updatedAt`)
   }
   const unlisted = all.filter((a) => WRITES_ROW.test(a.body) && !VERSIONED_ACTIONS.includes(a.name)).map((a) => a.name)
@@ -303,7 +324,7 @@ test('every client call of a versioned action passes the version from a row-vers
       for (const args of callArgs(text, name)) {
         calls++
         if (!/expected/.test(args)) problems.push(`${file}: ${name}${args.slice(0, 80)}`)
-        if (!/use(Shared)?RowVersion\(/.test(text)) problems.push(`${file}: no row-version hook`)
+        if (!/use(Shared)?RowVersions?\(/.test(text)) problems.push(`${file}: no row-version hook`)
       }
     }
   }
