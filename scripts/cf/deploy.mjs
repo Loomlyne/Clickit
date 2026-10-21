@@ -18,7 +18,10 @@
 //   (clickit-media serves media.clickitstory.ae in every env, so either one changes production media)
 //   add --dry-run to run the guard only (no build, no deploy)
 //   add --offline (only with --dry-run) to skip wrangler whoami and every wrangler call;
-//   the guard then reports "account check: skipped (offline)" and checks the rest
+//   the guard then reports "account check: skipped (offline)" (production also
+//   "secret check: skipped (offline)") and checks the rest
+//   production reads `wrangler secret list --name clickit` (names only, never printed):
+//   RESEND_API_KEY must be set and CLEANUP_SUPABASE_ORIGINALS must not be
 //   D-18: after a production deploy, --target workersdev is refused unless
 //   --override-production-reason "<why, 15+ characters>" is passed (Koss's word only)
 //   add --allow-upload-sweep-delete ONLY on Koss's word, when wrangler.jsonc sets
@@ -38,6 +41,7 @@ import {
   NEXT_ENV_MODULE_PATH,
   PRODUCTION_CRONS,
   PRODUCTION_ROUTE,
+  PRODUCTION_WORKER_NAME,
   UPLOAD_SWEEP_FLAG,
   checkDeploy,
   checkEnvFiles,
@@ -71,6 +75,14 @@ function readWhoami() {
   const res = run('npx', ['wrangler', 'whoami'])
   if (res.error) return null
   return `${res.stdout ?? ''}\n${res.stderr ?? ''}`
+}
+
+// Read-only: secret names of the production Worker (the API returns no values). The
+// output goes to the guard only and is never printed. null when wrangler fails.
+function readSecretList() {
+  const res = run('npx', ['wrangler', 'secret', 'list', '--name', PRODUCTION_WORKER_NAME])
+  if (res.error || res.status !== 0) return null
+  return res.stdout ?? ''
 }
 
 function gitInfo() {
@@ -242,6 +254,9 @@ function deployProduction(argv) {
 
   const whoami = offline ? null : readWhoami()
   if (whoami === null && !offline) return refuse(['could not run wrangler whoami'])
+  // RESEND_API_KEY present, CLEANUP_SUPABASE_ORIGINALS absent (runbook Step 25), dry run too.
+  const secretList = offline ? null : readSecretList()
+  if (secretList === null && !offline) return refuse([`could not run wrangler secret list --name ${PRODUCTION_WORKER_NAME}`])
   const git = gitInfo()
 
   if (!dryRun) {
@@ -278,6 +293,7 @@ function deployProduction(argv) {
     envFilesPresent: findFoldedEnvFiles(process.cwd()),
     nextEnvText: existsSync(NEXT_ENV_MODULE_PATH) ? readFileSync(NEXT_ENV_MODULE_PATH, 'utf8') : null,
     allowUploadSweepDelete: argv.includes('--allow-upload-sweep-delete'),
+    secretList,
   })
   printNotes(result.notes)
   if (!result.ok) return refuse(result.reasons)

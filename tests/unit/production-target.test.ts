@@ -15,7 +15,9 @@ import {
   checkMediaDeploy,
   checkProductionDeploy,
   checkTargetSwitch,
+  checkWorkerSecrets,
   parseJsonc,
+  parseSecretListNames,
 } from '../../scripts/cf/deploy-guard.mjs'
 import {
   PRODUCTION_ENV_FILE,
@@ -95,6 +97,18 @@ function configWith(mutate: (env: Record<string, Loose>, top: Record<string, Loo
   return config
 }
 
+// `wrangler secret list --name clickit` (JSON, the wrangler 4 default): names and types only.
+const secretListOf = (names: string[]) =>
+  JSON.stringify(names.map((name) => ({ name, type: 'secret_text' })), null, '  ')
+const SECRET_NAMES = [
+  'CRON_SECRET',
+  'R2_ACCESS_KEY_ID',
+  'R2_SECRET_ACCESS_KEY',
+  'RESEND_API_KEY',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'TURNSTILE_SECRET_KEY',
+]
+
 function prodInput(over: Record<string, unknown> = {}) {
   return {
     whoami: whoamiOk,
@@ -109,6 +123,7 @@ function prodInput(over: Record<string, unknown> = {}) {
     manifest,
     envFilesPresent: [],
     nextEnvText: EMPTY_NEXT_ENV,
+    secretList: secretListOf(SECRET_NAMES),
     ...over,
   }
 }
@@ -313,6 +328,52 @@ test('checkProductionDeploy refuses CLEANUP_SUPABASE_ORIGINALS and LOCAL_DEV in 
   assert.match(reasonsOf(cleanup), /CLEANUP_SUPABASE_ORIGINALS/)
   const local = checkProductionDeploy(prodInput({ wranglerConfig: configWith((env) => (env.vars.LOCAL_DEV = '1')) }))
   assert.match(reasonsOf(local), /LOCAL_DEV/)
+})
+
+test('checkProductionDeploy: CLEANUP_SUPABASE_ORIGINALS in env.production vars stops, absent passes (PR #31 review 4)', () => {
+  assert.equal('CLEANUP_SUPABASE_ORIGINALS' in (realConfig.env.production.vars ?? {}), false)
+  assert.deepEqual(checkProductionDeploy(prodInput()).reasons, [])
+  for (const value of ['on', 'off', '']) {
+    const res = checkProductionDeploy(prodInput({ wranglerConfig: configWith((env) => (env.vars.CLEANUP_SUPABASE_ORIGINALS = value)) }))
+    assert.equal(res.ok, false, value)
+    assert.match(reasonsOf(res), /env\.production vars contain CLEANUP_SUPABASE_ORIGINALS/, value)
+  }
+})
+
+test('parseSecretListNames reads the JSON and pretty formats; anything else is null', () => {
+  assert.deepEqual(parseSecretListNames(secretListOf(['A', 'B'])), ['A', 'B'])
+  assert.deepEqual(parseSecretListNames('[]'), [])
+  assert.deepEqual(parseSecretListNames(`[WARNING] banner\n${secretListOf(['A'])}\n`), ['A'])
+  assert.deepEqual(parseSecretListNames('Secret Name: A\n\nSecret Name: B\n'), ['A', 'B'])
+  for (const bad of [null, undefined, '', 'Not logged in', '[{"type":"secret_text"}]', '{"name":"A"}']) {
+    assert.equal(parseSecretListNames(bad as string | null), null, String(bad))
+  }
+})
+
+test('checkWorkerSecrets: CLEANUP_SUPABASE_ORIGINALS present stops, absent is ok; RESEND_API_KEY required (PR #31 review 4)', () => {
+  assert.deepEqual(checkWorkerSecrets(secretListOf(SECRET_NAMES)), { ok: true, reasons: [] })
+  const present = checkWorkerSecrets(secretListOf([...SECRET_NAMES, 'CLEANUP_SUPABASE_ORIGINALS']))
+  assert.equal(present.ok, false)
+  assert.equal(present.reasons.length, 1)
+  assert.match(present.reasons[0]!, /has a secret CLEANUP_SUPABASE_ORIGINALS: the cleanup cron must never delete Supabase originals/)
+  const pretty = checkWorkerSecrets('Secret Name: RESEND_API_KEY\nSecret Name: CLEANUP_SUPABASE_ORIGINALS\n')
+  assert.equal(pretty.ok, false)
+  const noResend = checkWorkerSecrets(secretListOf(SECRET_NAMES.filter((n) => n !== 'RESEND_API_KEY')))
+  assert.match(reasonsOf(noResend), /has no secret RESEND_API_KEY/)
+  assert.match(reasonsOf(checkWorkerSecrets('')), /could not read the secret names of Worker clickit/)
+})
+
+test('checkProductionDeploy stops on the CLEANUP_SUPABASE_ORIGINALS secret and an unreadable list; offline skips with a note', () => {
+  const present = checkProductionDeploy(prodInput({ secretList: secretListOf([...SECRET_NAMES, 'CLEANUP_SUPABASE_ORIGINALS']) }))
+  assert.equal(present.ok, false)
+  assert.match(reasonsOf(present), /secret CLEANUP_SUPABASE_ORIGINALS/)
+  const absent = checkProductionDeploy(prodInput({ secretList: secretListOf(SECRET_NAMES) }))
+  assert.deepEqual(absent.reasons, [])
+  assert.equal(checkProductionDeploy(prodInput({ secretList: null })).ok, false)
+  assert.equal(checkProductionDeploy(prodInput({ secretList: undefined })).ok, false)
+  const offline = checkProductionDeploy(prodInput({ whoami: null, offline: true, secretList: null }))
+  assert.deepEqual(offline.reasons, [])
+  assert.ok(offline.notes.includes('secret check: skipped (offline)'))
 })
 
 test('checkProductionDeploy: R2_UPLOAD_SWEEP_DELETE "on" needs --allow-upload-sweep-delete; any other value refused', () => {
@@ -631,6 +692,18 @@ test('deploy.mjs records the last deploy outside the repo and checks D-18 before
   assert.match(dev, /writeLastDeploy\('workersdev', git\.head\)/)
   const record = fnBody('writeLastDeploy')
   assert.match(record, /\{ target, gitSha, deployedAt: /)
+})
+
+test('deploy.mjs production reads the secret names (read-only, never printed) and passes them to the guard', () => {
+  const read = fnBody('readSecretList')
+  assert.match(read, /run\('npx', \['wrangler', 'secret', 'list', '--name', PRODUCTION_WORKER_NAME\]\)/)
+  assert.equal(/console\.|process\.stdout/.test(read), false)
+  const prod = fnBody('deployProduction')
+  assert.match(prod, /const secretList = offline \? null : readSecretList\(\)/)
+  assert.match(prod, /\n    secretList,\n/)
+  // Read before the dry-run branch, so the dry run checks it too.
+  assert.ok(prod.indexOf('readSecretList()') < prod.indexOf('if (dryRun) {\n    console.log'))
+  assert.equal(/console\.\w+\([^)]*secretList/.test(prod), false)
 })
 
 test('deploy.mjs skips wrangler whoami when --offline is set and passes offline to every guard', () => {

@@ -35,6 +35,7 @@ export const PRODUCTION_CRONS = Object.freeze(['0 1 * * *', '0 4 * * 1', '30 1 *
 // D-18: a workers.dev deploy after a production deploy needs a written reason this long.
 export const OVERRIDE_MIN_LENGTH = 15
 export const OFFLINE_ACCOUNT_NOTE = 'account check: skipped (offline)'
+export const OFFLINE_SECRETS_NOTE = 'secret check: skipped (offline)'
 const BINDING_KEYS = [
   'kv_namespaces',
   'd1_databases',
@@ -309,6 +310,66 @@ export function uploadSweepFlagReasons(vars, allow) {
   return [`wrangler.jsonc vars ${UPLOAD_SWEEP_FLAG} must be exactly "off" or "on"`]
 }
 
+// Worker secrets of `clickit`, read with `wrangler secret list --name clickit` before a
+// production deploy (runbook Step 25). Names only: the API never returns values and none
+// is ever printed. RESEND_API_KEY must be there (the email queue marks mails failed
+// without it, Phase 5 05-08). CLEANUP_SUPABASE_ORIGINALS must not be: on the Worker the
+// cleanup cron never deletes Supabase originals (A-3, T-03-02; PR #31 review 4).
+export const REQUIRED_WORKER_SECRETS = Object.freeze(['RESEND_API_KEY'])
+export const FORBIDDEN_WORKER_SECRETS = Object.freeze(['CLEANUP_SUPABASE_ORIGINALS'])
+
+/**
+ * Secret names from `wrangler secret list` output: the default JSON format
+ * (`[{ "name": ..., "type": ... }]`) or `--format pretty` (`Secret Name: X`).
+ * null when the output is neither (fail closed).
+ * @param {string | null | undefined} output  stdout of the command
+ * @returns {string[] | null}
+ */
+export function parseSecretListNames(output) {
+  const text = String(output ?? '')
+  const end = text.lastIndexOf(']')
+  // The JSON array is the last thing printed; a stray "[" before it (a banner) is skipped.
+  for (let start = text.indexOf('['); start >= 0 && start < end; start = text.indexOf('[', start + 1)) {
+    let list
+    try {
+      list = JSON.parse(text.slice(start, end + 1))
+    } catch {
+      continue
+    }
+    if (Array.isArray(list) && list.every((item) => item && typeof item.name === 'string')) {
+      return list.map((item) => item.name)
+    }
+  }
+  const pretty = [...text.matchAll(/^\s*Secret Name:\s*(\S+)\s*$/gm)].map((m) => m[1])
+  return pretty.length > 0 ? pretty : null
+}
+
+/**
+ * @param {string | null | undefined} output  stdout of `wrangler secret list --name clickit`
+ * @returns {{ ok: boolean, reasons: string[] }}
+ */
+export function checkWorkerSecrets(output) {
+  const names = parseSecretListNames(output)
+  if (names === null) {
+    return { ok: false, reasons: [`could not read the secret names of Worker ${PRODUCTION_WORKER_NAME} (wrangler secret list)`] }
+  }
+  const reasons = []
+  for (const name of REQUIRED_WORKER_SECRETS) {
+    if (!names.includes(name)) {
+      reasons.push(`Worker ${PRODUCTION_WORKER_NAME} has no secret ${name}: Koss puts it first (runbook Step 25)`)
+    }
+  }
+  for (const name of FORBIDDEN_WORKER_SECRETS) {
+    if (names.includes(name)) {
+      reasons.push(
+        `Worker ${PRODUCTION_WORKER_NAME} has a secret ${name}: the cleanup cron must never delete Supabase originals; ` +
+          `Koss deletes it (wrangler secret delete ${name} --name ${PRODUCTION_WORKER_NAME}) before the deploy`
+      )
+    }
+  }
+  return { ok: reasons.length === 0, reasons }
+}
+
 function emptyCrons(triggers) {
   return Array.isArray(triggers?.crons) && triggers.crons.length === 0
 }
@@ -423,14 +484,20 @@ function sameRoute(actual, expected) {
  *   envFilesPresent: string[],
  *   nextEnvText: string | null,
  *   allowUploadSweepDelete?: boolean,
+ *   secretList?: string | null,
  *   offline?: boolean,
- * }} input
+ * }} input  `secretList`: stdout of `wrangler secret list --name clickit` (skipped offline)
  * @returns {{ ok: boolean, reasons: string[], notes: string[] }}
  */
 export function checkProductionDeploy(input) {
   const reasons = []
   const notes = []
   accountReasons(input.whoami, input.processEnv, reasons, { offline: input.offline, notes })
+  if (input.offline === true) {
+    notes.push(OFFLINE_SECRETS_NOTE)
+  } else {
+    reasons.push(...checkWorkerSecrets(input.secretList).reasons)
+  }
   reasons.push(...checkEnvFiles(input.envFilesPresent).reasons)
   reasons.push(...checkNextEnvModule(input.nextEnvText).reasons)
 
