@@ -24,3 +24,17 @@ export function pickLocalized(locale: Locale, en: string, ar: string | null | un
   if (locale === 'ar' && ar && ar.trim()) return ar
   return en
 }
+
+/**
+ * Public render path for a field with an `_ar` companion: the stored Arabic on the Arabic
+ * locale, otherwise the English. Never translates on a viewer request (review item 6, PR #29):
+ * a missing Arabic value is filled by the admin save, not by Workers AI at render time.
+ * Async so the existing Promise.all callers in queries.ts keep their shape.
+ */
+export async function localizedField(
+  locale: Locale,
+  en: string,
+  ar: string | null | undefined
+): Promise<string> {
+  return pickLocalized(locale, en, ar)
+}

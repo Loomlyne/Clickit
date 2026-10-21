@@ -1,7 +1,7 @@
 // English -> Arabic through the Workers AI binding `AI` (pure: no next/* or '@/'
 // imports, so node --test can load it). The binding is injected. Every failure
-// path returns null; callers decide whether null means "leave empty" (admin,
-// strict) or "show the English" (public render).
+// path returns null and the admin save leaves the Arabic field empty. Only admin
+// saves call it; public pages never translate (review item 6, PR #29).
 
 const ARABIC_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/
 

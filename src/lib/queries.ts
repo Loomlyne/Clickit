@@ -3,8 +3,7 @@ import { unstable_cache } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createPublicClient } from '@/lib/supabase/public'
 import type { Database } from '@/lib/database.types'
-import { DEFAULT_LOCALE, pickLocalized, type Locale } from '@/lib/locale'
-import { translateEnToAr } from '@/lib/translate'
+import { DEFAULT_LOCALE, localizedField, pickLocalized, type Locale } from '@/lib/locale'
 import { isEpisodeLive } from '@/lib/scheduling'
 import {
   resolveSupabaseVideoUrl,
@@ -86,18 +85,6 @@ export function mapShow(db: DbShow, locale: Locale = DEFAULT_LOCALE): ViewShow {
       : undefined,
     heroVideoMobileType: (db.hero_video_mobile_type as ViewShow['heroVideoMobileType']) ?? undefined,
   }
-}
-
-export async function localizedField(
-  locale: Locale,
-  en: string,
-  ar: string | null | undefined
-): Promise<string> {
-  const picked = pickLocalized(locale, en, ar)
-  if (locale === 'ar' && picked === en && en.trim()) {
-    return translateEnToAr(en)
-  }
-  return picked
 }
 
 export async function mapShowLocalized(
