@@ -67,7 +67,8 @@ test('exactly one expand migration exists and it sorts last (bar later phases)',
   assert.ok(FILE > PRE_PHASE6_LAST, 'sorts after every pre-Phase 6 migration')
   // Only a later phase's own migration may sort after it: Phase 2 legal pages Arabic review (PR #29).
   assert.deepEqual(
-    files.filter((f) => f > FILE),
+    // Later phases name their own migrations `_phaseN_` (Phase 5 M1a onward).
+    files.filter((f) => f > FILE && !/_phase\d+_/.test(f)),
     ['20261021120000_legal_pages_arabic_review.sql']
   )
   assert.match(FILE, /^\d{14}_youtube_episode_status_and_order\.sql$/)
