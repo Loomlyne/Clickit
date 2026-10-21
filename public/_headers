@@ -1,0 +1,10 @@
+# Workers Assets headers (served for static assets only; Worker-rendered
+# responses get their headers from next.config.ts headers()).
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/brand/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  X-Content-Type-Options: nosniff

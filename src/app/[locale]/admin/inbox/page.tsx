@@ -18,14 +18,15 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Link } from '@/i18n/navigation'
-import { getAppConfig } from '@/lib/config'
+import { getAppConfigWithVersion } from '@/lib/config'
 
 export default async function AdminInboxPage() {
-  const [supabase, tDash, t, config] = await Promise.all([
+  // Uncached, with updated_at: the recipient save is checked against it (deferred item 23).
+  const [supabase, tDash, t, { config, updatedAt }] = await Promise.all([
     createClient(),
     getTranslations('admin.dashboard'),
     getTranslations('admin.inboxPage'),
-    getAppConfig(),
+    getAppConfigWithVersion(),
   ])
 
   const [{ data: supportMessages }, { data: newsletterSubscribers }] =
@@ -52,6 +53,7 @@ export default async function AdminInboxPage() {
 
       <InboxRecipientForm
         initialEmail={config.footer.contactEmail}
+        updatedAt={updatedAt}
         title={t('receiverTitle')}
         description={t('receiverDescription')}
         label={t('receiverLabel')}

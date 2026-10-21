@@ -157,7 +157,12 @@ test('settings page reads hasKey + last4 + last test only, never the key', () =>
   assert.ok(page.includes('readYouTubeKeyMeta()'), 'page does not call readYouTubeKeyMeta()')
   assert.ok(page.includes('readLastKeyTestCore('), 'page does not read the last test')
   assert.match(page, /hasKey: \w+\.hasKey,\s*last4: \w+\.last4,\s*lastTest\b/)
-  for (const banned of ['getYouTubeApiKey', 'get_youtube_key', 'readYouTubeApiKey', 'getServerYouTubeClient', 'updatedAt']) {
+  for (const banned of ['getYouTubeApiKey', 'get_youtube_key', 'readYouTubeApiKey', 'getServerYouTubeClient']) {
     assert.equal(page.includes(banned), false, `settings page has ${banned}`)
   }
+  // The key's change time never crosses; the only updatedAt on the page is app_config's row
+  // version from getAppConfigWithVersion (review item 8, PR #29).
+  assert.doesNotMatch(page, /Meta\.updatedAt/, 'settings page sends the key change time')
+  assert.match(page, /const youtubeKey = \{ hasKey: \w+\.hasKey, last4: \w+\.last4, lastTest \}/)
+  assert.match(page, /\{ config, updatedAt \}[\s\S]*getAppConfigWithVersion\(\)/)
 })

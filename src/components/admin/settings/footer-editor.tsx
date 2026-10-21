@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
+import { useArabicMissingToast } from '@/components/admin/arabic-missing-toast'
 import Image from 'next/image'
 import { Loader2, Plus, Trash2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -17,17 +18,22 @@ import {
 } from '@/components/ui/select'
 import {
   updateFooterContent,
-  uploadSocialIcon,
+  finalizeSocialIconUpload,
 } from '@/app/[locale]/admin/actions'
 import type { FooterContent, SocialLinkItem } from '@/lib/config'
+import { uploadImageDirect } from '@/lib/browser-upload'
+import { notifyUploadError, notifyUploaded } from '@/components/admin/upload-status'
 import { SOCIAL_PLATFORMS } from '@/lib/social-platforms'
 import { stripStorageCacheBust } from '@/lib/supabase-media'
 import { SettingsCard, SettingsField } from './settings-card'
+import { useSharedRowVersion } from '@/components/admin/row-version'
 
 export function FooterEditor({ initial }: { initial: FooterContent }) {
   const [v, setV] = useState<FooterContent>(initial)
   const [saving, setSaving] = useState(false)
   const t = useTranslations('admin.settings')
+  const warnArabicMissing = useArabicMissingToast()
+  const version = useSharedRowVersion()
 
   const dirty = JSON.stringify(v) !== JSON.stringify(initial)
 
@@ -60,10 +66,13 @@ export function FooterEditor({ initial }: { initial: FooterContent }) {
   async function onSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const result = await updateFooterContent(v)
+    const expected = version.expected()
+    const result = await updateFooterContent(v, expected)
     setSaving(false)
-    if (result.success) toast.success(t('footerSaved'))
-    else toast.error(result.error ?? t('saveFailed'))
+    if (result.success) {
+      version.saved(expected, result.updatedAt)
+      if (!warnArabicMissing(result)) toast.success(t('footerSaved'))
+    } else toast.error(result.error ?? t('saveFailed'))
   }
 
   return (
@@ -255,24 +264,37 @@ function SocialIconUpload({
 }) {
   const [busy, setBusy] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const t = useTranslations('admin.settings')
 
-  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
+  // Browser -> R2 directly. The icon is a small 36px control with no zone, so the
+  // existing spinner stays and messages are toasts. The finalize action writes no
+  // database row: the returned url is saved with the footer form, as before.
+  async function uploadFile(file: File) {
     setBusy(true)
     try {
-      const fd = new FormData()
-      fd.set('file', file)
-      const result = await uploadSocialIcon(fd)
-      if (!result.success) {
-        toast.error(result.error ?? 'Upload failed')
+      const result = await uploadImageDirect({
+        file,
+        kind: 'social-icon',
+        finalize: ({ key, variantKeys }) => finalizeSocialIconUpload({ key, variantKeys }),
+      })
+      if (!result.ok) {
+        notifyUploadError(result.error, { retry: () => void uploadFile(file) })
         return
       }
-      onUploaded(result.data ?? '')
+      onUploaded(result.url)
+      notifyUploaded({ message: t('uploaded'), safariFallback: result.safariFallback })
+    } catch {
+      toast.error(t('uploadFailed'))
     } finally {
       setBusy(false)
       if (inputRef.current) inputRef.current.value = ''
     }
+  }
+
+  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    void uploadFile(file)
   }
 
   return (

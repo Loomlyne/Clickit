@@ -1212,7 +1212,7 @@
       "legalTitleLabel": "العنوان",
       "legalTitlePlaceholder": "شروط الاستخدام",
       "legalTitleArLabel": "العنوان (بالعربية)",
-      "legalTitleArHint": "يظهر عند تبديل اللغة إلى العربية. اتركه فارغاً للرجوع إلى الإنجليزية.",
+      "legalTitleArHint": "يبقى مسودة حتى تتم المراجعة؛ وحتى ذلك تظهر النسخة الإنجليزية",
       "legalTitleArPlaceholder": "شروط الاستخدام",
       "legalSlugLabel": "المعرّف",
       "legalSlugHint": "مسار الرابط: /legal/[slug]",
@@ -1221,8 +1221,10 @@
       "legalContentLabel": "المحتوى",
       "legalContentPlaceholder": "أدخل النص القانوني الكامل هنا...",
       "legalContentArLabel": "المحتوى (بالعربية)",
-      "legalContentArHint": "النص العربي المعروض على اللغة العربية. اتركه فارغاً للرجوع إلى الإنجليزية.",
+      "legalContentArHint": "يبقى مسودة حتى تتم المراجعة؛ وحتى ذلك تظهر النسخة الإنجليزية",
       "legalContentArPlaceholder": "أدخل النص القانوني الكامل هنا...",
+      "legalArReviewedLabel": "تمت مراجعة العربية",
+      "legalArReviewRequired": "أضف النص العربي أولاً",
       "legalSaveChanges": "حفظ التغييرات",
       "legalCreate": "إنشاء صفحة",
       "legalDeleteTitle": "حذف الصفحة القانونية",
@@ -1429,7 +1431,8 @@
       "loading": "جارٍ التحميل…",
       "noEpisodes": "لا توجد حلقات بعد",
       "noShows": "لا توجد برامج بعد",
-      "adminNavAria": "الإدارة"
+      "adminNavAria": "الإدارة",
+      "arabicAutoFillMissing": "تم الحفظ. تعذّرت الترجمة التلقائية لـ {count} من الحقول العربية؛ أدخلها يدويًا."
     },
     "heroMedia": {
       "desktopHero": "هيرو سطح المكتب",
@@ -1824,5 +1827,8 @@
     "authEmailNotConfirmed": "يُرجى تأكيد بريدك الإلكتروني أولاً",
     "authRateLimit": "محاولات كثيرة جداً. يُرجى الانتظار والمحاولة لاحقاً.",
     "authGeneric": "فشل المصادقة. يُرجى المحاولة مرة أخرى."
+  },
+  "turnstile": {
+    "checkFailed": "تعذّر التحقق. حاول مرة أخرى."
   }
 }

@@ -1,6 +1,8 @@
-// Rate-limit seam for admin writes and viewer reports (Phase 6), on the same
-// rate_limits ledger as src/app/actions/contact.ts.
+// Rate-limit seam for admin writes and viewer reports (Phase 6), on the shared
+// rate_limits ledger: decideRateLimit (src/server/rate-limit-policy.ts) over
+// supabaseRateLimitStore (src/server/rate-limit-store.ts), fail closed.
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
 import {
@@ -17,7 +19,7 @@ const opts = (over: Partial<Parameters<typeof withinRateLimitCore>[1]> = {}) => 
   max: 2,
   windowSec: 60,
   now: NOW,
-  failOpen: false,
+  failOpen: false as const,
   ...over,
 })
 
@@ -63,44 +65,56 @@ test('counts only rows of this key inside the window', async () => {
 test('a row exactly at the window start still counts', async () => {
   const fake = createFakeSupabase({
     rate_limits: [
-      { id: 'edge', key: 'k', created_at: '2025-12-31T23:59:30.000Z' },
+      { id: 'edge', key: 'scope:k', created_at: '2025-12-31T23:59:30.000Z' },
     ],
   })
   assert.equal(
-    await withinRateLimitCore(fake.client, opts({ key: 'k', max: 1 })),
+    await withinRateLimitCore(fake.client, opts({ key: 'scope:k', max: 1 })),
     false
   )
 })
 
-for (const failOpen of [true, false]) {
-  test(`count error returns failOpen=${failOpen} and writes nothing`, async () => {
-    const fake = createFakeSupabase({ rate_limits: [] })
-    fake.failOn({ table: 'rate_limits', op: 'select', nth: 1 })
-    assert.equal(
-      await withinRateLimitCore(fake.client, opts({ failOpen })),
-      failOpen
-    )
-    assert.equal(fake.tables.rate_limits.length, 0)
-  })
+test('the ledger row key is the caller key unchanged (scope and subject split at the last colon)', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  assert.equal(await withinRateLimitCore(fake.client, opts({ key: 'player-error:ep-1:user-9' })), true)
+  assert.deepEqual(fake.tables.rate_limits.map((r) => r.key), ['player-error:ep-1:user-9'])
+})
 
-  test(`thrown count returns failOpen=${failOpen}`, async () => {
+test('a key with no subject after its last colon refuses without touching the ledger', async () => {
+  for (const key of ['nocolon', 'player-error:ep-1:', ':']) {
     const fake = createFakeSupabase({ rate_limits: [] })
-    fake.throwOn({ table: 'rate_limits', op: 'select', nth: 1 })
-    assert.equal(
-      await withinRateLimitCore(fake.client, opts({ failOpen })),
-      failOpen
-    )
-  })
+    assert.equal(await withinRateLimitCore(fake.client, opts({ key })), false, key)
+    assert.equal(fake.calls.filter((c) => c.table === 'rate_limits').length, 0, key)
+  }
+})
 
-  test(`insert error returns failOpen=${failOpen}`, async () => {
-    const fake = createFakeSupabase({ rate_limits: [] })
-    fake.failOn({ table: 'rate_limits', op: 'insert', nth: 1 })
-    assert.equal(
-      await withinRateLimitCore(fake.client, opts({ failOpen })),
-      failOpen
-    )
-  })
-}
+// Fail closed on every ledger failure (decideRateLimit): a count error, a thrown
+// count or an insert error all refuse.
+test('count error refuses and writes nothing', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  fake.failOn({ table: 'rate_limits', op: 'select', nth: 1 })
+  assert.equal(await withinRateLimitCore(fake.client, opts()), false)
+  assert.equal(fake.tables.rate_limits.length, 0)
+})
+
+test('thrown count refuses and writes nothing', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  fake.throwOn({ table: 'rate_limits', op: 'select', nth: 1 })
+  assert.equal(await withinRateLimitCore(fake.client, opts()), false)
+  assert.equal(fake.tables.rate_limits.length, 0)
+})
+
+test('insert error refuses', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  fake.failOn({ table: 'rate_limits', op: 'insert', nth: 1 })
+  assert.equal(await withinRateLimitCore(fake.client, opts()), false)
+})
+
+test('an empty key part refuses without touching the ledger', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  assert.equal(await withinYouTubeActionLimit(fake.client, 'import', '', NOW), false)
+  assert.equal(fake.calls.filter((c) => c.table === 'rate_limits').length, 0)
+})
 
 test('max 0 refuses without writing', async () => {
   const fake = createFakeSupabase({ rate_limits: [] })
@@ -147,11 +161,24 @@ test('withinYouTubeActionLimit: preview allows 60, the 61st is refused', async (
   assert.equal(await withinYouTubeActionLimit(fake.client, 'preview', 'admin-1', NOW), false)
 })
 
-test('withinYouTubeActionLimit fails open when the ledger fails', async () => {
+test('withinYouTubeActionLimit fails closed when the ledger fails', async () => {
   const fake = createFakeSupabase({ rate_limits: [] })
   fake.failOn({ table: 'rate_limits', op: 'select', nth: 1 })
-  assert.equal(await withinYouTubeActionLimit(fake.client, 'meta', 'admin-1', NOW), true)
+  assert.equal(await withinYouTubeActionLimit(fake.client, 'meta', 'admin-1', NOW), false)
   const thrown = createFakeSupabase({ rate_limits: [] })
   thrown.throwOn({ table: 'rate_limits', op: 'select', nth: 1 })
-  assert.equal(await withinYouTubeActionLimit(thrown.client, 'meta', 'admin-1', NOW), true)
+  assert.equal(await withinYouTubeActionLimit(thrown.client, 'meta', 'admin-1', NOW), false)
+  const insertFail = createFakeSupabase({ rate_limits: [] })
+  insertFail.failOn({ table: 'rate_limits', op: 'insert', nth: 1 })
+  assert.equal(await withinYouTubeActionLimit(insertFail.client, 'meta', 'admin-1', NOW), false)
+})
+
+test('the seam is decideRateLimit over the shared store, with no own ledger code and no TODO', () => {
+  const src = readFileSync(new URL('../../src/server/youtube/rate-limit.ts', import.meta.url), 'utf8')
+  assert.match(src, /import \{ decideRateLimit \} from '\.\.\/rate-limit-policy\.ts'/)
+  assert.match(src, /import \{ supabaseRateLimitStore \} from '\.\.\/rate-limit-store\.ts'/)
+  assert.equal(src.split('decideRateLimit(').length - 1, 1, 'one decideRateLimit call')
+  assert.doesNotMatch(src, /from\(\s*'rate_limits'/, 'no direct rate_limits reads or writes')
+  assert.doesNotMatch(src, /TODO/)
+  assert.doesNotMatch(src, /failOpen:\s*true/)
 })

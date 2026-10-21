@@ -3,11 +3,10 @@ import { notFound } from 'next/navigation'
 import { NextIntlClientProvider, hasLocale } from 'next-intl'
 import { getMessages, setRequestLocale } from 'next-intl/server'
 import Script from 'next/script'
-import { Analytics } from '@vercel/analytics/next'
-import { SpeedInsights } from '@vercel/speed-insights/next'
 import localFont from 'next/font/local'
 
 import '@/styles/globals.css'
+import { CfWebAnalytics } from '@/components/analytics/cf-web-analytics'
 import { MotionConfig } from 'motion/react'
 import { RouteScopedToaster } from '@/components/route-scoped-toaster'
 import { getAppConfig } from '@/lib/config'
@@ -148,8 +147,7 @@ export default async function LocaleLayout({
               Inside the provider so next-intl's usePathname has its locale. */}
           <RouteScopedToaster />
         </NextIntlClientProvider>
-        <Analytics />
-        <SpeedInsights />
+        <CfWebAnalytics token={process.env.NEXT_PUBLIC_CF_BEACON_TOKEN} />
 
         {googleAnalyticsId && (
           <>

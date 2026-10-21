@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getLegalPageBySlug, getAllLegalPages } from '@/lib/queries'
-import { pickLocalized } from '@/lib/locale'
+import { legalPageForLocale } from '@/lib/legal-arabic'
 import { getLocale } from '@/lib/locale-server'
 import { getTranslations } from 'next-intl/server'
 import { LegalPageContent } from '@/components/legal/legal-page-content'
@@ -20,7 +20,7 @@ export async function generateMetadata({
   const { slug } = await params
   const [page, locale] = await Promise.all([getLegalPageBySlug(slug), getLocale()])
   if (!page) return {}
-  return { title: pickLocalized(locale, page.title, page.title_ar) }
+  return { title: legalPageForLocale(page, locale).title }
 }
 
 export default async function LegalPage({
@@ -37,8 +37,8 @@ export default async function LegalPage({
 
   if (!page) notFound()
 
-  const title = pickLocalized(locale, page.title, page.title_ar)
-  const content = pickLocalized(locale, page.content, page.content_ar)
+  // Arabic only after an admin ticked "Arabic reviewed"; otherwise the English legal text.
+  const { title, content } = legalPageForLocale(page, locale)
 
   return (
     <LegalDocument eyebrow={tLegal('eyebrow')} title={title}>

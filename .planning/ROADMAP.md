@@ -92,7 +92,31 @@ Plans:
 **Phase 6 hand-off**: `src/server/youtube/rate-limit.ts` — replace the `withinRateLimitCore` stand-in with `decideRateLimit` from `src/server/rate-limit-policy.ts` (used by the viewer error report and the YouTube key save).
 **Phase 6 hand-off**: `src/app/api/cron/youtube-recheck/route.ts` — swap the inline `Bearer <CRON_SECRET>` check for `cronAuthOk(header, secret)` from `src/server/cron-auth.ts` (constant time).
 **Phase 6 hand-off**: `src/app/api/cron/youtube-recheck/route.ts` — register the `30 1 * * *` trigger for `/api/cron/youtube-recheck` in `CRON_ROUTES` (`src/server/cron-schedule.ts`) and in `wrangler.jsonc` `triggers.crons` (deployed switched off like the other crons).
-**Plans**: TBD
+**Plans**: 22 plans (11 waves; run one plan at a time, never two builds at once). Proposed roadmap/requirement edits 1-9 are in 02-CONTEXT.md, not applied until Koss signs them (plan 02-05).
+
+Plans:
+- [x] 02-01-PLAN.md — W1: Local spike: 01.1 precondition, [OWNER] package check, Next 16.4.2 + OpenNext 1.20.12 upgrade, base wrangler/OpenNext config, account guard, proxy.ts preview check, bundle/startup, cron URL
+- [x] 02-02-PLAN.md — W2: Runbook upkeep and the R2 CORS rule builder
+- [x] 02-03-PLAN.md — W2: Media Worker clickit-media (Range/206, 304, ETag, AVIF/WebP negotiation, original fallback, allowlist, SVG CSP)
+- [x] 02-04-PLAN.md — W2: Pure security helpers: constant-time cron auth, cron map, CF-Connecting-IP, fail-closed rate limit, Turnstile siteverify
+- [x] 02-05-PLAN.md — W1: [OWNER] Mockups signed (Turnstile placement, upload states) + roadmap edits 1-9 signed and applied as a planning note
+- [x] 02-06-PLAN.md — W3: Build targets, stamp and deploy guard, cf:* scripts, .env.example
+- [x] 02-07-PLAN.md — W3: Worker port: scheduled() to cron routes, bindings accessor, _headers, site-url without Vercel fallbacks, check scripts
+- [x] 02-08-PLAN.md — W3: Copy script: dry-run report, sharp WebP/AVIF variants, faststart remux, idempotency, checksum reports, verify-every-object script
+- [x] 02-09-PLAN.md — W3: Custom next/image loader and media-origin rules, next.config images
+- [ ] 02-10-PLAN.md — W4: Remote spike: [OWNER] account resources, [CONTROL] first workers.dev deploy, secrets and dashboards, early CPU sample
+- [x] 02-11-PLAN.md — W3: Turnstile server side, fail-closed limiter, captchaToken on auth actions, BotID removed from server and proxy
+- [x] 02-12-PLAN.md — W4: Upload infrastructure: kinds, magic bytes, aws4fetch presign, finalize with delete-on-failure
+- [x] 02-13-PLAN.md — W4: Turnstile widget on sign-in, sign-up, reset, contact, newsletter as signed; BotID client removed
+- [x] 02-14-PLAN.md — W5: Vercel code removal, CSP builder, Cloudflare Web Analytics beacon, no-vercel test
+- [x] 02-15-PLAN.md — W5: Image finalize core and actions (artwork, site image, social icon, cast, avatar)
+- [x] 02-16-PLAN.md — W6: Video finalize on R2 (hero, preloader, show) with fast-start and audio checks
+- [x] 02-17-PLAN.md — W6: Browser image uploads direct to R2 with WebP variants and the signed UI
+- [x] 02-18-PLAN.md — W7: Browser video uploads direct to R2 with the signed UI
+- [x] 02-19-PLAN.md — W8: Old upload actions, sharp, S3 SDK and r2-media removed from request paths; bodySizeLimit 2mb
+- [ ] 02-20-PLAN.md — W9: [OWNER+CONTROL] Code-complete deploy, media Worker deploy, copy, verify, flag-on workers.dev build
+- [ ] 02-21-PLAN.md — W10: [OWNER] Per-route CPU on Workers Free, 02-CPU-REPORT.md, stop rule with priced question
+- [ ] 02-22-PLAN.md — W11: Gate and coverage, [OWNER] UAT (local preview write paths; workers.dev reads, sign-in, one approved draft write), teardown
 **UI hint**: yes
 
 ### Phase 3: Production Cutover
@@ -233,7 +257,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 |-------|----------------|--------|-----------|
 | 1. Safe Ground | 0/TBD | Not started | - |
 | 1.1. Admin Actions Hardening (INSERTED) | 13/13 | UAT passed, PR open | - |
-| 2. Worker and R2 Media on workers.dev | 0/TBD | Not started | - |
+| 2. Worker and R2 Media on workers.dev | 18/22 | In Progress|  |
 | 3. Production Cutover | 0/TBD | Not started | - |
 | 4. Design System Truth | 14/14 | UAT pending (PR) |  |
 | 5. Accounts and Email | 0/TBD | Not started | - |

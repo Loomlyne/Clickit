@@ -45,6 +45,7 @@ import {
   updateEpisode,
 } from '@/app/[locale]/admin/actions'
 import type { Database } from '@/lib/database.types'
+import { useRowVersions } from '@/components/admin/row-version'
 import { cantPlayReason, type CantPlayReason } from '@/lib/admin/youtube-health'
 import { isolate, localeTag } from '@/lib/i18n-format'
 import { cn } from '@/lib/utils'
@@ -127,6 +128,8 @@ export function EpisodesTable({
       : tStatus(STATUS_TEXT_KEY[reason])
   const [isPending, startTransition] = useTransition()
   const [editEpisode, setEditEpisode] = useState<Episode | null>(null)
+  // An episode save lands only while the row still holds the updated_at it was opened with (item 8).
+  const versions = useRowVersions()
   const [editFocus, setEditFocus] = useState<'title' | undefined>(undefined)
   // The arrow that was clicked ("<episodeId>:<up|down>"), for its spinner.
   const [movingKey, setMovingKey] = useState<string | null>(null)
@@ -463,11 +466,14 @@ export function EpisodesTable({
           if (!editEpisode) {
             return { success: false, error: tTable('noEpisodeSelected') }
           }
-          return updateEpisode(editEpisode.id, {
-            ...data,
-            show_id: showId,
-            season_id: seasonId,
-          })
+          const expected = versions.expected(editEpisode.id, editEpisode.updated_at)
+          const result = await updateEpisode(
+            editEpisode.id,
+            { ...data, show_id: showId, season_id: seasonId },
+            expected
+          )
+          versions.saved(editEpisode.id, expected, result.updatedAt)
+          return result
         }}
       />
 

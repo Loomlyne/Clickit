@@ -23,3 +23,13 @@ test('existing tag_ar kept and not sent', async () => {
   assert.equal(items[0]!.text_ar, 'مرحبا')
   assert.equal(untranslated, 0)
 })
+
+test('per-field max lengths go to the batch, one per slot (review item 7, PR #29)', async () => {
+  let limits: Array<number | undefined> = []
+  await fillTickerArabic(
+    [{ tag: 'NEW', text: 'Season 2 is out', tag2: 'LIVE' }],
+    async (texts, maxLengths) => { limits = maxLengths ?? []; return texts.map(() => 'نص') },
+    { tag_ar: 24, text_ar: 240, tag2_ar: 24 }
+  )
+  assert.deepEqual(limits, [24, 240, 24])
+})

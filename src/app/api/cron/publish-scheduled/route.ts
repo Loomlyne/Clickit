@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { cronAuthOk } from '@/server/cron-auth'
 import { revalidatePath, updateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -13,19 +14,17 @@ import { createAdminClient } from '@/lib/supabase/admin'
  * (see lib/scheduling.isEpisodeLive), so an episode is watchable at the exact
  * scheduled minute regardless of when this cron runs. This sweep persists the
  * status change so search, admin views, and the Now Streaming / Coming Soon rail
- * placement stay correct. Daily is sufficient (Vercel Hobby plan limit).
+ * placement stay correct. Daily is sufficient.
  *
- * Schedule: see vercel.json. Auth: Vercel sends `Authorization: Bearer
- * ${CRON_SECRET}` automatically.
+ * Schedule: daily 01:00 UTC (src/server/cron-schedule.ts). Auth: the Worker
+ * scheduled handler sends `Authorization: Bearer ${CRON_SECRET}`.
  *   Local dev: curl -H "Authorization: Bearer $CRON_SECRET" \
  *     localhost:3000/api/cron/publish-scheduled
  */
 export async function GET(req: Request) {
   // --- Auth guard ----------------------------------------------------------
-  const authHeader = req.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET?.trim()
-  const expected = `Bearer ${cronSecret}`
-  if (!cronSecret || authHeader !== expected) {
+  // Constant-time compare (PLAT-07); an empty or missing secret refuses.
+  if (!(await cronAuthOk(req.headers.get('authorization'), process.env.CRON_SECRET))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

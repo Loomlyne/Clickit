@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
-import { checkBotId } from 'botid/server'
 
 import {
   buildNewsletterInterests,
@@ -18,6 +17,11 @@ import { getAppConfig } from '@/lib/config'
 import type { Json } from '@/lib/database.types'
 import { sendTransactionalEmail } from '@/lib/resend'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { clientIpFrom } from '@/server/client-ip'
+import { guardPublicForm, readCaptchaToken, type GuardError } from '@/server/form-guard'
+import type { RateLimitStore } from '@/server/rate-limit-policy'
+import { supabaseRateLimitStore } from '@/server/rate-limit-store'
+import { verifyTurnstileToken } from '@/server/turnstile'
 
 function validationError(fieldErrors: Record<string, string[] | undefined>) {
   return {
@@ -27,71 +31,62 @@ function validationError(fieldErrors: Record<string, string[] | undefined>) {
   }
 }
 
-async function getClientIp(): Promise<string> {
-  try {
-    const h = await headers()
-    return (
-      h.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-      h.get('x-real-ip') ||
-      'unknown'
-    )
-  } catch {
-    return 'unknown'
+// Abuse throttle store for public unauthenticated actions: the rate_limits
+// ledger (service_role only), shared helper in src/server/rate-limit-store.ts.
+// The client IP is folded into the key as `<key>:<ip>`; errors throw, so the
+// limiter (decideRateLimit) fails closed.
+function rateLimitStore(): RateLimitStore {
+  return supabaseRateLimitStore(createAdminClient())
+}
+
+// Messages are plain strings in the action result (same shape as before). The
+// captcha line is the signed copy from mockups/DECISIONS.md. Localised keys
+// are a 02-13 / owner item: no Arabic wording is signed yet.
+const GUARD_MESSAGES: Record<GuardError, string> = {
+  captcha: 'Security check failed. Please try again.',
+  rate_limited: 'Too many requests. Please try again in a little while.',
+  unavailable: 'This service is temporarily unavailable. Please try again later.',
+}
+
+function guardRefusal(context: string, error: GuardError, reason?: string) {
+  console.warn('[contact]', context, 'refused', error, reason ?? '')
+  return {
+    ok: false as const,
+    code: 'unknown' as const,
+    message: GUARD_MESSAGES[error],
   }
 }
 
-// Abuse throttle for public unauthenticated actions. Counts recent rows in the
-// rate_limits ledger (service_role only) for this key/window. Fails OPEN on any
-// error so a limiter hiccup never blocks a real user.
-async function withinRateLimit(
-  key: string,
-  max: number,
-  windowSec: number
-): Promise<boolean> {
+// Turnstile siteverify (with remoteip) first, then the fail-closed limiter on
+// the Cloudflare-supplied client IP. Runs after zod validation and before any
+// insert, so a refused request writes nothing (T-02-41, T-02-42, T-02-43).
+async function guardAction(
+  context: 'support' | 'newsletter',
+  turnstileToken: unknown,
+  limit: number
+) {
+  let ip: string | null = null
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const admin = createAdminClient() as any
-    const since = new Date(Date.now() - windowSec * 1000).toISOString()
-    const { count } = await admin
-      .from('rate_limits')
-      .select('id', { count: 'exact', head: true })
-      .eq('key', key)
-      .gte('created_at', since)
-    if ((count ?? 0) >= max) return false
-    await admin.from('rate_limits').insert({ key })
-    return true
-  } catch {
-    return true
-  }
-}
-
-const rateLimited = {
-  ok: false as const,
-  code: 'unknown' as const,
-  message: 'Too many requests. Please try again in a little while.',
-}
-
-// Detect-and-log bot signal, mirroring the auth actions' deliberate policy:
-// BotID has produced false negatives in this app, so we keep the signal but do
-// NOT hard-block (rate-limiting above is the real abuse gate). Availability >
-// strict gating for a single-admin media site.
-async function logBotSignal(context: string): Promise<void> {
-  try {
-    const result = await checkBotId({
-      developmentOptions: {
-        isDevelopment: process.env.NODE_ENV !== 'production',
-        bypass: process.env.NODE_ENV !== 'production' ? 'HUMAN' : undefined,
-      },
+    ip = clientIpFrom(await headers(), {
+      allowLocalOverride: process.env.LOCAL_DEV === '1',
     })
-    if (!result.isHuman) {
-      console.warn('[contact]', context, 'BotID flagged non-human', {
-        isBot: result.isBot,
-        isVerifiedBot: result.isVerifiedBot,
-      })
-    }
-  } catch (err) {
-    console.error('[contact]', context, 'BotID check failed', err)
+  } catch {
+    ip = null
   }
+  let store: RateLimitStore
+  try {
+    store = rateLimitStore()
+  } catch {
+    return guardRefusal(context, 'unavailable', 'store-init')
+  }
+  const result = await guardPublicForm({
+    token: readCaptchaToken(turnstileToken),
+    secret: process.env.TURNSTILE_SECRET_KEY,
+    ip,
+    verify: (args) => verifyTurnstileToken({ ...args, fetchImpl: fetch }),
+    rateLimit: { key: context, limit, windowMs: 3_600_000, store },
+  })
+  return result.ok ? null : guardRefusal(context, result.error, result.reason)
 }
 
 async function getContactRecipient() {
@@ -99,8 +94,11 @@ async function getContactRecipient() {
   return config.footer.contactEmail.trim() || 'contact@clickitstory.com'
 }
 
+// turnstileToken: the widget token (string) or a FormData carrying the
+// cf-turnstile-response field. Plan 02-13 wires the client.
 export async function submitSupportMessage(
-  input: SupportMessageInput
+  input: SupportMessageInput,
+  turnstileToken?: string | FormData
 ): Promise<SupportSubmitResult> {
   const parsed = supportMessageSchema.safeParse(input)
 
@@ -108,10 +106,8 @@ export async function submitSupportMessage(
     return validationError(parsed.error.flatten().fieldErrors)
   }
 
-  if (!(await withinRateLimit(`support:${await getClientIp()}`, 5, 3600))) {
-    return rateLimited
-  }
-  await logBotSignal('support')
+  const refused = await guardAction('support', turnstileToken, 5)
+  if (refused) return refused
 
   try {
     const admin = createAdminClient()
@@ -192,7 +188,8 @@ export async function submitSupportMessage(
 }
 
 export async function subscribeToNewsletter(
-  input: NewsletterSignupInput
+  input: NewsletterSignupInput,
+  turnstileToken?: string | FormData
 ): Promise<NewsletterSignupResult> {
   const parsed = newsletterSignupSchema.safeParse(input)
 
@@ -200,10 +197,8 @@ export async function subscribeToNewsletter(
     return validationError(parsed.error.flatten().fieldErrors)
   }
 
-  if (!(await withinRateLimit(`newsletter:${await getClientIp()}`, 10, 3600))) {
-    return rateLimited
-  }
-  await logBotSignal('newsletter')
+  const refused = await guardAction('newsletter', turnstileToken, 10)
+  if (refused) return refused
 
   try {
     const admin = createAdminClient()

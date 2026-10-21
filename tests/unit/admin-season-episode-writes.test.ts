@@ -19,6 +19,8 @@ const SE2 = id('d')
 const E1 = id('e', 1)
 const E2 = id('e', 2)
 const E3 = id('e', 3) // archived, holds number 3
+// updated_at as PostgREST returns it; every season/episode update call passes it (item 8).
+const V0 = '2026-10-20T10:00:00.000001+00:00'
 
 const ep = (eid: string, num: number, archived = false, season = SE1, show = S1): Row => ({
   id: eid,
@@ -34,6 +36,7 @@ const ep = (eid: string, num: number, archived = false, season = SE1, show = S1)
   status: 'draft',
   publish_at: null,
   archived,
+  updated_at: V0,
 })
 
 function world(archiveAll = false) {
@@ -43,11 +46,11 @@ function world(archiveAll = false) {
       { id: S2, title: 'Show 2', season_count: 1, episode_count: 0 },
     ],
     seasons: [
-      { id: SE1, show_id: S1, title: 'Season 1', title_ar: 'الموسم 1', season_number: 1, episode_count: 2 },
-      { id: SE2, show_id: S2, title: 'Other', title_ar: 'آخر', season_number: 1, episode_count: 0 },
+      { id: SE1, show_id: S1, title: 'Season 1', title_ar: 'الموسم 1', season_number: 1, episode_count: 2, updated_at: V0 },
+      { id: SE2, show_id: S2, title: 'Other', title_ar: 'آخر', season_number: 1, episode_count: 0, updated_at: V0 },
     ],
     episodes: [ep(E1, 1, archiveAll), ep(E2, 2, archiveAll), ep(E3, 3, true)],
-  })
+  }, { updatedAtTables: ['seasons', 'episodes'] })
 }
 
 function deps(f: ReturnType<typeof world>) {
@@ -81,7 +84,7 @@ test('updateSeasonCore: archived, bad number and empty title are refused, season
   for (const bad of [{ archived: true }, { season_number: 0 }, { title: '' }]) {
     const f = world()
     const before = f.snapshot()
-    const res = await updateSeasonCore(f.client, deps(f), SE1, bad)
+    const res = await updateSeasonCore(f.client, deps(f), SE1, bad, V0)
     assert.equal(res.success, false)
     assert.equal(res.wrote, false)
     assert.deepEqual(f.snapshot(), before)
@@ -92,7 +95,7 @@ test('updateSeasonCore: archived, bad number and empty title are refused, season
 test('updateSeasonCore: show_id of another show is refused', async () => {
   const f = world()
   const before = f.snapshot()
-  const res = await updateSeasonCore(f.client, deps(f), SE1, { title: 'X', show_id: S2 })
+  const res = await updateSeasonCore(f.client, deps(f), SE1, { title: 'X', show_id: S2 }, V0)
   assert.equal(res.success, false)
   assert.equal(res.error, 'Season belongs to a different show.')
   assert.deepEqual(f.snapshot(), before)
@@ -101,7 +104,7 @@ test('updateSeasonCore: show_id of another show is refused', async () => {
 test('updateSeasonCore: a title-only edit keeps the existing Arabic title', async () => {
   const f = world()
   const d = deps(f)
-  const res = await updateSeasonCore(f.client, d, SE1, { title: 'New' })
+  const res = await updateSeasonCore(f.client, d, SE1, { title: 'New' }, V0)
   assert.equal(res.success, true)
   assert.equal(d.fills.length, 0)
   assert.equal(row(f, 'seasons', SE1)!.title, 'New')
@@ -111,7 +114,7 @@ test('updateSeasonCore: a title-only edit keeps the existing Arabic title', asyn
 test('updateSeasonCore: a blank title_ar is filled from the title', async () => {
   const f = world()
   const d = deps(f)
-  const res = await updateSeasonCore(f.client, d, SE1, { title: 'New', title_ar: '' })
+  const res = await updateSeasonCore(f.client, d, SE1, { title: 'New', title_ar: '' }, V0)
   assert.equal(res.success, true)
   assert.deepEqual(d.fills, [['New', null]])
   assert.equal(row(f, 'seasons', SE1)!.title_ar, 'ar-New')
@@ -119,7 +122,7 @@ test('updateSeasonCore: a blank title_ar is filled from the title', async () => 
 
 test('updateSeasonCore: success writes one update season audit row with before/after', async () => {
   const f = world()
-  const res = await updateSeasonCore(f.client, deps(f), SE1, { title: 'New', show_id: S1 })
+  const res = await updateSeasonCore(f.client, deps(f), SE1, { title: 'New', show_id: S1 }, V0)
   assert.equal(res.success, true)
   assert.equal(res.wrote, true)
   const rows = f.auditRows()
@@ -307,7 +310,7 @@ test('updateEpisodeCore: archived, unknown column and bad status are refused, wr
   for (const bad of [{ archived: true }, { status: 'live' }, { episode_count: 2 }]) {
     const f = world()
     const before = f.snapshot()
-    const res = await updateEpisodeCore(f.client, deps(f), E1, bad)
+    const res = await updateEpisodeCore(f.client, deps(f), E1, bad, V0)
     assert.equal(res.success, false)
     assert.equal(res.wrote, false)
     assert.deepEqual(f.snapshot(), before)
@@ -317,7 +320,7 @@ test('updateEpisodeCore: archived, unknown column and bad status are refused, wr
 test('updateEpisodeCore: a different season_id is refused', async () => {
   const f = world()
   const before = f.snapshot()
-  const res = await updateEpisodeCore(f.client, deps(f), E1, { season_id: SE2 })
+  const res = await updateEpisodeCore(f.client, deps(f), E1, { season_id: SE2 }, V0)
   assert.equal(res.success, false)
   assert.match(res.error ?? '', /different season/)
   assert.deepEqual(f.snapshot(), before)
@@ -325,7 +328,7 @@ test('updateEpisodeCore: a different season_id is refused', async () => {
 
 test('updateEpisodeCore: a number held only by an archived episode bumps it', async () => {
   const f = world()
-  const res = await updateEpisodeCore(f.client, deps(f), E1, { episode_number: 3 })
+  const res = await updateEpisodeCore(f.client, deps(f), E1, { episode_number: 3 }, V0)
   assert.equal(res.success, true)
   assert.equal(row(f, 'episodes', E1)!.episode_number, 3)
   assert.equal(row(f, 'episodes', E3)!.episode_number, 4)
@@ -334,7 +337,7 @@ test('updateEpisodeCore: a number held only by an archived episode bumps it', as
 test('updateEpisodeCore: a number held by a visible episode is refused', async () => {
   const f = world()
   const before = f.snapshot()
-  const res = await updateEpisodeCore(f.client, deps(f), E1, { episode_number: 2 })
+  const res = await updateEpisodeCore(f.client, deps(f), E1, { episode_number: 2 }, V0)
   assert.equal(res.success, false)
   assert.match(res.error ?? '', /already exists/)
   assert.deepEqual(f.snapshot(), before)
@@ -343,7 +346,7 @@ test('updateEpisodeCore: a number held by a visible episode is refused', async (
 test('updateEpisodeCore: forced update failure undoes the bump, audits the failure, reports wrote and showId', async () => {
   const f = world()
   f.failOn({ table: 'episodes', op: 'update', nth: 2 })
-  const res = await updateEpisodeCore(f.client, deps(f), E1, { episode_number: 3 })
+  const res = await updateEpisodeCore(f.client, deps(f), E1, { episode_number: 3 }, V0)
   assert.equal(res.success, false)
   assert.equal(res.wrote, true)
   assert.equal((res.data as { showId?: string }).showId, S1)
@@ -361,7 +364,7 @@ test('updateEpisodeCore: success writes an update episode audit row and does not
     title: 'Renamed',
     show_id: S1,
     season_id: SE1,
-  })
+  }, V0)
   assert.equal(res.success, true)
   assert.equal(row(f, 'episodes', E1)!.title, 'Renamed')
   const rows = f.auditRows()
@@ -378,7 +381,7 @@ test('updateEpisodeCore: success writes an update episode audit row and does not
 test('updateEpisodeCore: a title-only edit keeps the existing Arabic title', async () => {
   const f = world()
   const d = deps(f)
-  const res = await updateEpisodeCore(f.client, d, E1, { title: 'Renamed' })
+  const res = await updateEpisodeCore(f.client, d, E1, { title: 'Renamed' }, V0)
   assert.equal(res.success, true)
   assert.equal(d.fills.length, 0)
   assert.equal(row(f, 'episodes', E1)!.title_ar, 'حلقة 1')
@@ -517,13 +520,15 @@ test('updateEpisodeCore: verify runs only when the video id is present and chang
   const v = verifier((raw) => okMeta(raw.slice(-11)))
   const d = { ...deps(f), verifyVideo: v.verifyVideo }
 
-  await updateEpisodeCore(f.client, d, E1, { title: 'Only title' })
-  await updateEpisodeCore(f.client, d, E1, { youtube_video_id: 'storedVid01' })
-  await updateEpisodeCore(f.client, d, E1, { youtube_video_id: 'https://youtu.be/storedVid01' })
+  // Each save chains on the updated_at the previous one wrote (item 8).
+  const at = () => row(f, 'episodes', E1)!.updated_at as string
+  await updateEpisodeCore(f.client, d, E1, { title: 'Only title' }, at())
+  await updateEpisodeCore(f.client, d, E1, { youtube_video_id: 'storedVid01' }, at())
+  await updateEpisodeCore(f.client, d, E1, { youtube_video_id: 'https://youtu.be/storedVid01' }, at())
   assert.equal(v.calls.length, 0)
   assert.equal(row(f, 'episodes', E1)!.youtube_video_id, 'storedVid01')
 
-  const res = await updateEpisodeCore(f.client, d, E1, { youtube_video_id: 'https://youtu.be/newVideo001' })
+  const res = await updateEpisodeCore(f.client, d, E1, { youtube_video_id: 'https://youtu.be/newVideo001' }, at())
   assert.equal(res.success, true, res.error)
   assert.deepEqual(v.calls, [['https://youtu.be/newVideo001', { excludeEpisodeId: E1 }]])
   assert.equal(row(f, 'episodes', E1)!.youtube_video_id, 'newVideo001')
@@ -536,7 +541,7 @@ test('updateEpisodeCore: a verify refusal leaves the episode unchanged with the 
   const res = await updateEpisodeCore(f.client, { ...deps(f), verifyVideo: v.verifyVideo }, E1, {
     youtube_video_id: 'privVideo01',
     title: 'Changed',
-  })
+  }, V0)
   assert.equal(res.success, false)
   assert.equal(res.wrote, false)
   assert.deepEqual(res.data, { showId: S1, youtubeError: { code: 'video_private' } })
@@ -550,7 +555,8 @@ test('updateEpisodeCore: a 23505 on the video index returns the duplicate messag
     f.client,
     { ...deps(f), verifyVideo: verifier(() => okMeta('takenVid001')).verifyVideo },
     E1,
-    { youtube_video_id: 'takenVid001' }
+    { youtube_video_id: 'takenVid001' },
+    V0
   )
   assert.equal(res.success, false)
   assert.equal(res.error, 'This video is already on Clickit.')

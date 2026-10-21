@@ -9,6 +9,7 @@ import { updateGenreConfig } from '@/app/[locale]/admin/actions'
 import type { GenreConfig } from '@/lib/config'
 import { BRAND_PALETTE } from '@/lib/brand-colors'
 import { SettingsCard } from './settings-card'
+import { useSharedRowVersion } from '@/components/admin/row-version'
 
 /**
  * Genre color overrides — maps genre name to a brand-palette color.
@@ -61,15 +62,19 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
   const [config, setConfig] = useState<GenreConfig>(initial)
   const [saving, setSaving] = useState(false)
   const t = useTranslations('admin.settings')
+  const version = useSharedRowVersion()
 
   const dirty = JSON.stringify(config) !== JSON.stringify(initial)
 
   async function onSave() {
     setSaving(true)
-    const result = await updateGenreConfig(config)
+    const expected = version.expected()
+    const result = await updateGenreConfig(config, expected)
     setSaving(false)
-    if (result.success) toast.success(t('genreColorsSaved'))
-    else toast.error(result.error ?? t('saveFailed'))
+    if (result.success) {
+      version.saved(expected, result.updatedAt)
+      toast.success(t('genreColorsSaved'))
+    } else toast.error(result.error ?? t('saveFailed'))
   }
 
   function setColor(genre: string, color: string | undefined) {

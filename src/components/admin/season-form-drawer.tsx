@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { useArabicMissingToast } from '@/components/admin/arabic-missing-toast'
 
 import {
   Sheet,
@@ -46,6 +47,7 @@ export function SeasonFormDrawer({
 }: SeasonFormDrawerProps) {
   const isEdit = !!season
   const t = useTranslations('admin.seasonForm')
+  const warnArabicMissing = useArabicMissingToast()
   const tCommon = useTranslations('common')
   const tErrors = useTranslations('errors')
 
@@ -72,7 +74,7 @@ export function SeasonFormDrawer({
     const normalized = { ...data, title_ar: data.title_ar || null }
     const result = await onSave(normalized)
     if (result.success) {
-      toast.success(isEdit ? t('seasonUpdated') : t('seasonCreated'))
+      if (!warnArabicMissing(result)) toast.success(isEdit ? t('seasonUpdated') : t('seasonCreated'))
       form.reset({ title: '', title_ar: '', season_number: nextSeasonNumber })
       onOpenChange(false)
     } else {

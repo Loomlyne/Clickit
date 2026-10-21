@@ -127,7 +127,8 @@ test('createShort and updateShort check the video on the server before writing',
   for (const [name, write] of [
     ['createShort', ".insert({ ...parsed"],
     // The write also carries the edited flags (review item 7).
-    ['updateShort', '.update({ ...parsed, ...edited })'],
+    // ...through the compare-and-swap write (review item 8, PR #29).
+    ['updateShort', '{ ...parsed, ...edited },'],
   ] as const) {
     const text = block(name)
     const parse = text.indexOf('shortSchema.parse(data)')

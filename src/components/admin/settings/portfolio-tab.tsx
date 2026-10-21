@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
+import { useArabicMissingToast } from '@/components/admin/arabic-missing-toast'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -11,6 +12,7 @@ import { updatePortfolioContent } from '@/app/[locale]/admin/actions'
 import type { AppConfig } from '@/lib/config'
 import { SettingsCard, SettingsField } from './settings-card'
 import { FooterEditor } from './footer-editor'
+import { useSharedRowVersion } from '@/components/admin/row-version'
 
 function PageHeading({
   title,
@@ -38,6 +40,8 @@ type Values = {
 
 export function PortfolioTab({ config }: { config: AppConfig }) {
   const t = useTranslations('admin.settings')
+  const warnArabicMissing = useArabicMissingToast()
+  const version = useSharedRowVersion()
   const [values, setValues] = useState<Values>({
     hero_description: config.heroDescription ?? '',
     hero_description_ar: config.heroDescriptionAr ?? '',
@@ -62,15 +66,21 @@ export function PortfolioTab({ config }: { config: AppConfig }) {
   async function onSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const result = await updatePortfolioContent({
-      hero_description: values.hero_description || null,
-      hero_description_ar: values.hero_description_ar || null,
-      portfolio_heading: values.portfolio_heading || null,
-      portfolio_heading_ar: values.portfolio_heading_ar || null,
-    })
+    const expected = version.expected()
+    const result = await updatePortfolioContent(
+      {
+        hero_description: values.hero_description || null,
+        hero_description_ar: values.hero_description_ar || null,
+        portfolio_heading: values.portfolio_heading || null,
+        portfolio_heading_ar: values.portfolio_heading_ar || null,
+      },
+      expected
+    )
     setSaving(false)
-    if (result.success) toast.success(t('portfolioSaved'))
-    else toast.error(result.error ?? t('saveFailed'))
+    if (result.success) {
+      version.saved(expected, result.updatedAt)
+      if (!warnArabicMissing(result)) toast.success(t('portfolioSaved'))
+    } else toast.error(result.error ?? t('saveFailed'))
   }
 
   return (

@@ -1,13 +1,18 @@
 #!/usr/bin/env node
 
 /**
- * Creates a verified, non-destructive copy of Clickit's public Supabase media
- * into one R2 bucket. Source objects stay untouched throughout this process.
+ * Creates a verified, non-destructive, optimised copy of Clickit's public
+ * Supabase media in one R2 bucket. Source objects stay untouched; nothing is
+ * ever deleted in Supabase or R2.
  *
- * First create a manifest:
- *   CLOUDFLARE_R2_BUCKET=<bucket> npm run r2:media
+ * Default (read-only, no R2 call): list Supabase Storage, download each object
+ * to a temp file to measure it, write the manifest and a dry-run report
+ * (.tmp/r2-media-reports/dry-run-<timestamp>.json and .md):
+ *   NEXT_PUBLIC_SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
+ *   CLOUDFLARE_R2_BUCKET=<bucket> npm run r2:media -- --refresh
  *
- * After reviewing it and enabling R2, copy and verify every object:
+ * After the dry-run report is reviewed, copy and verify (write path, needs
+ * --execute plus the ClickitStory account/bucket guard):
  *   CLOUDFLARE_ACCOUNT_ID=<account> CLOUDFLARE_R2_BUCKET=<bucket> \
  *   R2_ACCESS_KEY_ID=<key> R2_SECRET_ACCESS_KEY=<secret> npm run r2:media -- --execute
  *
@@ -27,7 +32,25 @@ import { Readable, Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
+import { spawnSync } from 'node:child_process'
+import sharp from 'sharp'
 import { createClient } from '@supabase/supabase-js'
+import { CLICKIT_ACCOUNT_ID } from './cf/wrangler-guard.mjs'
+import { MEDIA_BUCKET_NAME } from './cf/deploy-guard.mjs'
+import { isFaststart } from './media/faststart.mjs'
+import {
+  buildCopyReport,
+  buildDryRunReport,
+  extractMediaReferences,
+  manifestFileInfo,
+  writeReportFiles,
+} from './media/report.mjs'
+import {
+  VARIANT_SPEC_VERSION,
+  displayWidth,
+  encodeVariant,
+  planVariants,
+} from './media/variants.mjs'
 
 const {
   GetObjectCommand,
@@ -44,9 +67,47 @@ const DEFAULT_MANIFEST_PATH = resolve(
 )
 const DEFAULT_SOURCE_BUCKETS = ['show-artwork', 'site-assets', 'avatars']
 const MANIFEST_VERSION = 1
+const DEFAULT_REPORT_DIR = resolve(PROJECT_ROOT, '.tmp/r2-media-reports')
+const FASTSTART_PROBE_BYTES = 64 * 1024
+const VARIANT_CACHE_CONTROL = 'public, max-age=31536000, immutable'
+// app_config columns that may hold media URLs. youtube_api_key and
+// admin_user_id are deliberately never selected.
+const APP_CONFIG_SCAN_COLUMNS = [
+  'favicon_dark_url',
+  'favicon_url',
+  'footer_content',
+  'cta_copy',
+  'genre_config',
+  'feature_flags',
+  'hero_description',
+  'hero_description_ar',
+  'hero_video_url',
+  'live_stream_url',
+  'og_image_url',
+  'portfolio_heading',
+  'portfolio_heading_ar',
+  'site_description',
+  'site_description_ar',
+  'site_tagline',
+  'site_tagline_ar',
+  'site_title',
+  'top_ticker',
+]
+const EXTENSION_TYPES = {
+  avif: 'image/avif',
+  gif: 'image/gif',
+  ico: 'image/x-icon',
+  jpeg: 'image/jpeg',
+  jpg: 'image/jpeg',
+  mp4: 'video/mp4',
+  png: 'image/png',
+  svg: 'image/svg+xml',
+  webm: 'video/webm',
+  webp: 'image/webp',
+}
 
-function requiredEnv(name) {
-  const value = process.env[name]?.trim()
+function requiredEnv(name, env = process.env) {
+  const value = env[name]?.trim()
   if (!value) throw new Error(`Missing ${name}`)
   return value
 }
@@ -101,10 +162,10 @@ function destinationKey(bucket, key) {
   return `${bucket}/${key}`
 }
 
-function createR2Client() {
-  const accountId = requiredEnv('CLOUDFLARE_ACCOUNT_ID')
-  const accessKeyId = requiredEnv('R2_ACCESS_KEY_ID')
-  const secretAccessKey = requiredEnv('R2_SECRET_ACCESS_KEY')
+function createR2Client(env = process.env) {
+  const accountId = requiredEnv('CLOUDFLARE_ACCOUNT_ID', env)
+  const accessKeyId = requiredEnv('R2_ACCESS_KEY_ID', env)
+  const secretAccessKey = requiredEnv('R2_SECRET_ACCESS_KEY', env)
   return new S3Client({
     region: 'auto',
     endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
@@ -180,6 +241,7 @@ export function createR2MediaManifest({
       sourceKey: object.sourceKey,
       destinationKey: destinationKey(object.sourceBucket, object.sourceKey),
       source: object.source,
+      ...(object.analysis ? { analysis: object.analysis } : {}),
     }))
     .sort((left, right) =>
       left.destinationKey.localeCompare(right.destinationKey)
@@ -284,7 +346,7 @@ async function writeManifest(path, manifest) {
   await fs.rename(temporaryPath, path)
 }
 
-async function hashFile(path) {
+export async function hashFile(path) {
   const sha256 = createHash('sha256')
   const md5 = createHash('md5')
   let size = 0
@@ -448,6 +510,7 @@ export async function putR2Object(client, bucket, key, path, metadata) {
         ContentDisposition: metadata.contentDisposition ?? undefined,
         ContentEncoding: metadata.contentEncoding ?? undefined,
         ContentLanguage: metadata.contentLanguage ?? undefined,
+        Metadata: metadata.customMetadata ?? undefined,
       })
     )
   } finally {
@@ -455,97 +518,688 @@ export async function putR2Object(client, bucket, key, path, metadata) {
   }
 }
 
-async function copyAndVerifyObject({
-  object,
-  sourceOrigin,
-  bucket,
-  r2Client,
-  tempDir,
-}) {
-  const sourcePath = join(tempDir, 'source-object')
-  const destinationPath = join(tempDir, 'destination-object')
-  await Promise.all([
-    fs.rm(sourcePath, { force: true }),
-    fs.rm(destinationPath, { force: true }),
-  ])
 
-  const source = await downloadSourceObject(object, sourceOrigin, sourcePath)
-  const exists = await downloadR2Object(
-    r2Client,
-    bucket,
-    object.destinationKey,
-    destinationPath
+// ---------------------------------------------------------------------------
+// Helpers shared by the dry-run and the copy
+// ---------------------------------------------------------------------------
+
+function effectiveContentType(contentType, key) {
+  const declared = String(contentType ?? '')
+    .split(';')[0]
+    .trim()
+    .toLowerCase()
+  if (declared && declared !== 'application/octet-stream') return declared
+  const extension = key.split('.').pop()?.toLowerCase() ?? ''
+  return EXTENSION_TYPES[extension] ?? (declared || 'application/octet-stream')
+}
+
+function isMp4(contentType, key) {
+  return contentType === 'video/mp4' || key.toLowerCase().endsWith('.mp4')
+}
+
+function isRasterType(contentType) {
+  return /^image\/(jpeg|png|webp|avif)$/.test(contentType)
+}
+
+async function readPrefix(path, length = FASTSTART_PROBE_BYTES) {
+  const handle = await fs.open(path, 'r')
+  try {
+    const buffer = Buffer.alloc(length)
+    const { bytesRead } = await handle.read(buffer, 0, length, 0)
+    return new Uint8Array(buffer.buffer, buffer.byteOffset, bytesRead)
+  } finally {
+    await handle.close()
+  }
+}
+
+function sha256Of(buffer) {
+  return createHash('sha256').update(buffer).digest('hex')
+}
+
+function toolMissingError(name) {
+  return new Error(
+    `${name} was not found on PATH. Install it (for example: brew install ffmpeg) or set ${name.toUpperCase()}_PATH. This script never downloads binaries.`
   )
-  let status = 'verified-existing'
+}
+
+/**
+ * Default ffprobe runner: argument array, no shell.
+ * @returns {{ durationSeconds: number | null, bitRate: number | null }}
+ */
+export function runFfprobe(path) {
+  const result = spawnSync(
+    process.env.FFPROBE_PATH || 'ffprobe',
+    [
+      '-v',
+      'error',
+      '-show_entries',
+      'format=duration,bit_rate',
+      '-of',
+      'json',
+      path,
+    ],
+    { encoding: 'utf8' }
+  )
+  if (result.error?.code === 'ENOENT') throw toolMissingError('ffprobe')
+  if (result.status !== 0) throw new Error('ffprobe failed')
+  const format = JSON.parse(result.stdout).format ?? {}
+  const duration = Number(format.duration)
+  const bitRate = Number(format.bit_rate)
+  return {
+    durationSeconds: Number.isFinite(duration) ? duration : null,
+    bitRate: Number.isFinite(bitRate) ? bitRate : null,
+  }
+}
+
+/**
+ * Default lossless remux: ffmpeg -i in -c copy -movflags +faststart out.
+ * Argument array and temp file names only, never a shell string.
+ */
+export function runFfmpegFaststart(inputPath, outputPath) {
+  const result = spawnSync(
+    process.env.FFMPEG_PATH || 'ffmpeg',
+    [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-y',
+      '-i',
+      inputPath,
+      '-c',
+      'copy',
+      '-movflags',
+      '+faststart',
+      outputPath,
+    ],
+    { encoding: 'utf8' }
+  )
+  if (result.error?.code === 'ENOENT') throw toolMissingError('ffmpeg')
+  if (result.status !== 0) throw new Error('ffmpeg faststart remux failed')
+}
+
+/**
+ * Write-path guard: only the ClickitStory account and the clickit-media
+ * bucket, never an API token. Values are never printed.
+ */
+export function assertWriteGuard(env, bucket) {
+  if (env.CLOUDFLARE_API_TOKEN) {
+    throw new Error('refused: CLOUDFLARE_API_TOKEN is set; the copy uses R2 S3 keys only')
+  }
+  if (String(env.CLOUDFLARE_ACCOUNT_ID ?? '').trim().toLowerCase() !== CLICKIT_ACCOUNT_ID) {
+    throw new Error('refused: CLOUDFLARE_ACCOUNT_ID is not the ClickitStory account')
+  }
+  if (bucket !== MEDIA_BUCKET_NAME) {
+    throw new Error(`refused: CLOUDFLARE_R2_BUCKET must be ${MEDIA_BUCKET_NAME}`)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Dry run: manifest + analysis + report (reads Supabase, no R2 call)
+// ---------------------------------------------------------------------------
+
+async function analyzeObject({ object, sourceOrigin, tempDir, probe, specVersion }) {
+  const path = join(tempDir, 'analysis-object')
+  await fs.rm(path, { force: true })
+  const source = await downloadSourceObject(object, sourceOrigin, path)
+  const contentType = effectiveContentType(
+    source.metadata.contentType,
+    object.sourceKey
+  )
+  const analysis = {
+    sha256: source.sha256,
+    size: source.size,
+    contentType,
+    width: null,
+    height: null,
+    pages: null,
+    faststart: null,
+    willRemux: false,
+    durationSeconds: null,
+    bitRate: null,
+    plannedVariants: [],
+    skipReason: null,
+  }
+
+  if (isRasterType(contentType)) {
+    try {
+      const metadata = await sharp(await fs.readFile(path)).metadata()
+      analysis.width = displayWidth(metadata)
+      analysis.height = metadata.height ?? null
+      analysis.pages = metadata.pages ?? 1
+    } catch (error) {
+      analysis.error = `unreadable image: ${error instanceof Error ? error.message : String(error)}`
+    }
+  }
+  if (isMp4(contentType, object.sourceKey)) {
+    analysis.faststart = isFaststart(await readPrefix(path))
+    analysis.willRemux = analysis.faststart === false
+    try {
+      Object.assign(analysis, probe(path))
+    } catch (error) {
+      analysis.probeError = error instanceof Error ? error.message : String(error)
+    }
+  }
+  const plan = planVariants(
+    { contentType, width: analysis.width, pages: analysis.pages },
+    object.destinationKey,
+    { specVersion }
+  )
+  analysis.plannedVariants = plan.variants.map((variant) => variant.key)
+  analysis.skipReason = plan.skipReason
+  await fs.rm(path, { force: true })
+  return analysis
+}
+
+async function findReferencesOutsideManifest(client, manifest) {
+  const { data, error } = await client
+    .from('app_config')
+    .select(APP_CONFIG_SCAN_COLUMNS.join(','))
+  if (error) throw new Error(`app_config scan failed: ${error.message}`)
+  const known = new Set(manifest.objects.map((object) => object.destinationKey))
+  const buckets = new Set([
+    ...DEFAULT_SOURCE_BUCKETS,
+    ...manifest.objects.map((object) => object.sourceBucket),
+  ])
+  const missing = new Map()
+  for (const row of data ?? []) {
+    for (const ref of extractMediaReferences(row, buckets)) {
+      const destination = `${ref.bucket}/${ref.key}`
+      if (known.has(destination)) continue
+      const entry = missing.get(destination) ?? {
+        bucket: ref.bucket,
+        key: ref.key,
+        url: ref.url,
+        columns: [],
+      }
+      if (!entry.columns.includes(ref.column)) entry.columns.push(ref.column)
+      missing.set(destination, entry)
+    }
+  }
+  return [...missing.values()].sort((a, b) =>
+    `${a.bucket}/${a.key}`.localeCompare(`${b.bucket}/${b.key}`)
+  )
+}
+
+export async function createManifest(options, deps = {}) {
+  const env = deps.env ?? process.env
+  const log = deps.log ?? console.log
+  const now = deps.now ?? (() => new Date())
+  const probe = deps.runFfprobe ?? runFfprobe
+  const specVersion = deps.specVersion ?? VARIANT_SPEC_VERSION
+  const reportDir = deps.reportDir ?? DEFAULT_REPORT_DIR
+  if (existsSync(options.manifestPath) && !options.refresh) {
+    throw new Error(
+      `Manifest already exists at ${options.manifestPath}. Review it or use --refresh.`
+    )
+  }
+
+  const sourceOrigin = new URL(requiredEnv('NEXT_PUBLIC_SUPABASE_URL', env)).origin
+  const destinationBucket = requiredEnv('CLOUDFLARE_R2_BUCKET', env)
+  const client =
+    deps.supabase ??
+    createClient(sourceOrigin, requiredEnv('SUPABASE_SERVICE_ROLE_KEY', env), {
+      auth: { persistSession: false },
+    })
+  const buckets = options.buckets.length
+    ? [...new Set(options.buckets)]
+    : DEFAULT_SOURCE_BUCKETS
+  const objects = (
+    await Promise.all(
+      buckets.map((bucket) => collectBucketObjects(client, bucket))
+    )
+  ).flat()
+  const manifest = createR2MediaManifest({ sourceOrigin, destinationBucket, objects })
+  validateR2MediaManifest(manifest)
+
+  // Read-only: download each object to a temp file to measure it. No R2 call.
+  const tempDir = await fs.mkdtemp(join(tmpdir(), 'clickit-r2-analyze-'))
+  try {
+    for (const object of manifest.objects) {
+      try {
+        object.analysis = await analyzeObject({
+          object,
+          sourceOrigin,
+          tempDir,
+          probe,
+          specVersion,
+        })
+      } catch (error) {
+        object.analysis = {
+          error: error instanceof Error ? error.message : String(error),
+        }
+      }
+    }
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true })
+  }
+  const referencedNotInManifest = await findReferencesOutsideManifest(client, manifest)
+
+  await writeManifest(options.manifestPath, manifest)
+  const info = manifestFileInfo(options.manifestPath)
+  const report = buildDryRunReport({
+    manifest,
+    ...info,
+    referencedNotInManifest,
+    generatedAt: now().toISOString(),
+  })
+  const paths = await writeReportFiles(reportDir, 'dry-run', report, now())
+  log(`Wrote ${manifest.objects.length} objects to ${options.manifestPath}`)
+  log(`Dry-run report: ${paths.mdPath} (detail: ${paths.jsonPath})`)
+  return { manifest, report, paths }
+}
+
+// ---------------------------------------------------------------------------
+// Execute: copy originals, remux, variants, checksum report
+// ---------------------------------------------------------------------------
+
+async function headR2Object(client, bucket, key) {
+  try {
+    return await client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
+  } catch (error) {
+    if (isMissingR2Object(error)) return null
+    throw error
+  }
+}
+
+function bytesDiffer(destination, source) {
+  return (
+    destination.size !== source.size ||
+    destination.sha256 !== source.sha256 ||
+    (source.md5 !== undefined && destination.md5 !== source.md5)
+  )
+}
+
+async function copyPlain({ r2Client, bucket, dstKey, sourcePath, source, tempDir }) {
+  const dstPath = join(tempDir, 'destination-object')
+  await fs.rm(dstPath, { force: true })
+  let status = 'skipped (identical)'
+  const exists = await downloadR2Object(r2Client, bucket, dstKey, dstPath)
   if (exists) {
-    const destination = await hashFile(destinationPath)
-    if (
-      destination.size !== source.size ||
-      destination.sha256 !== source.sha256 ||
-      destination.md5 !== source.md5
-    ) {
-      throw new Error(
-        `Destination conflict for ${object.destinationKey}; it was not overwritten`
-      )
+    if (bytesDiffer(await hashFile(dstPath), source)) {
+      throw new Error(`Destination conflict for ${dstKey}; it was not overwritten`)
     }
   } else {
-    await putR2Object(
-      r2Client,
-      bucket,
-      object.destinationKey,
-      sourcePath,
-      source.metadata
-    )
-    const copied = await downloadR2Object(
-      r2Client,
-      bucket,
-      object.destinationKey,
-      destinationPath
-    )
-    if (!copied) throw new Error(`R2 did not return ${object.destinationKey}`)
-
-    const destination = await hashFile(destinationPath)
-    if (
-      destination.size !== source.size ||
-      destination.sha256 !== source.sha256 ||
-      destination.md5 !== source.md5
-    ) {
-      throw new Error(`R2 checksum mismatch for ${object.destinationKey}`)
+    await putR2Object(r2Client, bucket, dstKey, sourcePath, source.metadata)
+    const copied = await downloadR2Object(r2Client, bucket, dstKey, dstPath)
+    if (!copied) throw new Error(`R2 did not return ${dstKey}`)
+    if (bytesDiffer(await hashFile(dstPath), source)) {
+      throw new Error(`R2 checksum mismatch for ${dstKey}`)
     }
-    status = 'copied-and-verified'
+    status = 'copied'
   }
-
-  const destinationMetadata = await verifyR2DestinationMetadata(
-    r2Client,
-    bucket,
-    object.destinationKey,
-    source.metadata
-  )
-
+  await verifyR2DestinationMetadata(r2Client, bucket, dstKey, source.metadata)
+  const head = await headR2Object(r2Client, bucket, dstKey)
   return {
     status,
-    verifiedAt: new Date().toISOString(),
-    byteLength: source.size,
     sha256: source.sha256,
-    md5: source.md5,
-    sourceMetadata: source.metadata,
-    destinationMetadata,
+    size: source.size,
+    etag: normalizedEtag(head?.ETag),
   }
+}
+
+async function copyRemuxed({ object, source, sourcePath, ctx, push }) {
+  const { r2Client, bucket, tempDir, runFfmpeg } = ctx
+  const servedKey = object.destinationKey
+  const keptKey = `_orig/${servedKey}`
+  const contentType = effectiveContentType(source.metadata.contentType, object.sourceKey)
+
+  // The untouched original first, so a crash never leaves a remux without it.
+  const kept = await copyPlain({ r2Client, bucket, dstKey: keptKey, sourcePath, source, tempDir })
+  push({
+    role: 'original-kept',
+    srcBucket: object.sourceBucket,
+    srcKey: object.sourceKey,
+    srcSha256: source.sha256,
+    dstKey: keptKey,
+    dstSha256: kept.sha256,
+    dstSize: kept.size,
+    dstEtag: kept.etag,
+    contentType,
+    transform: 'none',
+    status: kept.status,
+    verified: kept.sha256 === source.sha256,
+  })
+
+  const dstPath = join(tempDir, 'destination-object')
+  await fs.rm(dstPath, { force: true })
+  const head = await headR2Object(r2Client, bucket, servedKey)
+  if (head) {
+    const metadata = head.Metadata ?? {}
+    if (metadata['src-sha256'] !== source.sha256 || metadata.transform !== 'ffmpeg:faststart') {
+      throw new Error(`Destination conflict for ${servedKey}; it was not overwritten`)
+    }
+    const present = await downloadR2Object(r2Client, bucket, servedKey, dstPath)
+    if (!present) throw new Error(`R2 did not return ${servedKey}`)
+    const dst = await hashFile(dstPath)
+    const faststart = isFaststart(await readPrefix(dstPath)) === true
+    await verifyR2DestinationMetadata(r2Client, bucket, servedKey, {
+      ...source.metadata,
+      size: dst.size,
+    })
+    push({
+      role: 'video-remux',
+      srcBucket: object.sourceBucket,
+      srcKey: object.sourceKey,
+      srcSha256: source.sha256,
+      dstKey: servedKey,
+      dstSha256: dst.sha256,
+      dstSize: dst.size,
+      dstEtag: normalizedEtag(head.ETag),
+      contentType,
+      transform: 'ffmpeg:faststart',
+      status: 'skipped (identical)',
+      verified: faststart,
+    })
+    return
+  }
+
+  const outputPath = join(tempDir, 'remuxed-object.mp4')
+  await fs.rm(outputPath, { force: true })
+  await runFfmpeg(sourcePath, outputPath)
+  if (isFaststart(await readPrefix(outputPath)) !== true) {
+    throw new Error(`ffmpeg output for ${servedKey} is not faststart`)
+  }
+  const output = await hashFile(outputPath)
+  const metadata = {
+    ...source.metadata,
+    size: output.size,
+    customMetadata: {
+      'src-sha256': source.sha256,
+      transform: 'ffmpeg:faststart',
+    },
+  }
+  await putR2Object(r2Client, bucket, servedKey, outputPath, metadata)
+  const written = await downloadR2Object(r2Client, bucket, servedKey, dstPath)
+  if (!written) throw new Error(`R2 did not return ${servedKey}`)
+  const dst = await hashFile(dstPath)
+  if (dst.sha256 !== output.sha256 || dst.size !== output.size) {
+    throw new Error(`R2 checksum mismatch for ${servedKey}`)
+  }
+  await verifyR2DestinationMetadata(r2Client, bucket, servedKey, metadata)
+  const after = await headR2Object(r2Client, bucket, servedKey)
+  push({
+    role: 'video-remux',
+    srcBucket: object.sourceBucket,
+    srcKey: object.sourceKey,
+    srcSha256: source.sha256,
+    dstKey: servedKey,
+    dstSha256: dst.sha256,
+    dstSize: dst.size,
+    dstEtag: normalizedEtag(after?.ETag),
+    contentType,
+    transform: 'ffmpeg:faststart',
+    status: 'remuxed',
+    verified: true,
+  })
+}
+
+async function copyVariants({ object, source, sourcePath, contentType, ctx, push }) {
+  const { r2Client, bucket, tempDir, specVersion } = ctx
+  const input = await fs.readFile(sourcePath)
+  // Buffers, not paths: libvips caches by file name and every temp file here is reused.
+  const metadata = await sharp(input).metadata()
+  const plan = planVariants(
+    { contentType, width: displayWidth(metadata), pages: metadata.pages ?? 1 },
+    object.destinationKey,
+    { specVersion }
+  )
+  if (plan.variants.length === 0) return
+
+  const variantPath = join(tempDir, 'variant-object')
+  const dstPath = join(tempDir, 'destination-object')
+  for (const variant of plan.variants) {
+    await Promise.all([
+      fs.rm(variantPath, { force: true }),
+      fs.rm(dstPath, { force: true }),
+    ])
+    const head = await headR2Object(r2Client, bucket, variant.key)
+    let status = 'skipped (identical)'
+    let expected = null
+    const existing = head?.Metadata ?? {}
+    const identical =
+      head &&
+      existing['src-sha256'] === source.sha256 &&
+      existing['variant-spec'] === variant.spec
+    if (head && !identical && !existing['variant-spec']) {
+      // Not a variant this script wrote: never overwrite it.
+      throw new Error(`Destination conflict for ${variant.key}; it was not overwritten`)
+    }
+    let variantMetadata = {
+      size: head ? Number(head.ContentLength) : 0,
+      contentType: variant.contentType,
+      cacheControl: VARIANT_CACHE_CONTROL,
+      contentDisposition: null,
+      contentEncoding: null,
+      contentLanguage: null,
+    }
+    if (!identical) {
+      const encoded = await encodeVariant(input, variant.width, variant.format)
+      await fs.writeFile(variantPath, encoded.data)
+      expected = { sha256: sha256Of(encoded.data), size: encoded.data.length }
+      variantMetadata = {
+        ...variantMetadata,
+        size: encoded.data.length,
+        customMetadata: {
+          'src-sha256': source.sha256,
+          'variant-spec': variant.spec,
+        },
+      }
+      await putR2Object(r2Client, bucket, variant.key, variantPath, variantMetadata)
+      status = 'written'
+    }
+    const present = await downloadR2Object(r2Client, bucket, variant.key, dstPath)
+    if (!present) throw new Error(`R2 did not return ${variant.key}`)
+    const dst = await hashFile(dstPath)
+    if (expected && (dst.sha256 !== expected.sha256 || dst.size !== expected.size)) {
+      throw new Error(`R2 checksum mismatch for ${variant.key}`)
+    }
+    variantMetadata.size = dst.size
+    await verifyR2DestinationMetadata(r2Client, bucket, variant.key, variantMetadata)
+    const decoded = await sharp(await fs.readFile(dstPath)).metadata()
+    if (decoded.width !== variant.width) {
+      throw new Error(`Variant ${variant.key} decodes to width ${decoded.width}, expected ${variant.width}`)
+    }
+    const after = await headR2Object(r2Client, bucket, variant.key)
+    push({
+      role: 'variant',
+      srcBucket: object.sourceBucket,
+      srcKey: object.sourceKey,
+      srcSha256: source.sha256,
+      dstKey: variant.key,
+      dstSha256: dst.sha256,
+      dstSize: dst.size,
+      dstEtag: normalizedEtag(after?.ETag),
+      contentType: variant.contentType,
+      transform: `sharp:${variant.format}:${variant.width}:${variant.spec}`,
+      variantWidth: variant.width,
+      variantFormat: variant.format,
+      variantSpec: variant.spec,
+      status,
+      verified: true,
+    })
+  }
+}
+
+/**
+ * Copies every manifest object, then writes the checksum report (also after
+ * failures). Never deletes anything; never overwrites a differing original.
+ */
+export async function runCopy({
+  manifest,
+  bucket,
+  sourceOrigin,
+  r2Client,
+  manifestSha256,
+  manifestObjectCount,
+  reportDir = DEFAULT_REPORT_DIR,
+  runFfmpeg = runFfmpegFaststart,
+  specVersion = VARIANT_SPEC_VERSION,
+  now = () => new Date(),
+  log = console.log,
+  tempRoot = tmpdir(),
+}) {
+  const startedAt = now().toISOString()
+  const rows = []
+  const failures = []
+  const tempDir = await fs.mkdtemp(join(tempRoot, 'clickit-r2-media-'))
+  const ctx = { r2Client, bucket, tempDir, runFfmpeg, specVersion }
+  const push = (row) => {
+    rows.push(row)
+    log(`${row.status}: ${row.dstKey}`)
+  }
+  try {
+    for (const object of manifest.objects) {
+      const sourcePath = join(tempDir, 'source-object')
+      try {
+        await fs.rm(sourcePath, { force: true })
+        const source = await downloadSourceObject(object, sourceOrigin, sourcePath)
+        if (object.analysis?.sha256 && object.analysis.sha256 !== source.sha256) {
+          throw new Error(
+            `Source changed since manifest for ${object.destinationKey}, refresh the manifest before copying`
+          )
+        }
+        const contentType = effectiveContentType(source.metadata.contentType, object.sourceKey)
+        const needsRemux =
+          isMp4(contentType, object.sourceKey) &&
+          isFaststart(await readPrefix(sourcePath)) === false
+        if (needsRemux) {
+          await copyRemuxed({ object, source, sourcePath, ctx, push })
+          continue
+        }
+        const original = await copyPlain({
+          r2Client,
+          bucket,
+          dstKey: object.destinationKey,
+          sourcePath,
+          source,
+          tempDir,
+        })
+        push({
+          role: 'original',
+          srcBucket: object.sourceBucket,
+          srcKey: object.sourceKey,
+          srcSha256: source.sha256,
+          dstKey: object.destinationKey,
+          dstSha256: original.sha256,
+          dstSize: original.size,
+          dstEtag: original.etag,
+          contentType,
+          transform: 'none',
+          status: original.status,
+          verified: original.sha256 === source.sha256,
+        })
+        if (isRasterType(contentType)) {
+          await copyVariants({ object, source, sourcePath, contentType, ctx, push })
+        }
+      } catch (error) {
+        failures.push({
+          key: object.destinationKey,
+          error: error instanceof Error ? error.message : String(error),
+        })
+        log(`failed: ${object.destinationKey}`)
+      }
+    }
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true })
+  }
+
+  const report = buildCopyReport({
+    rows,
+    failures,
+    manifestSha256,
+    manifestObjectCount,
+    bucket,
+    startedAt,
+    finishedAt: now().toISOString(),
+    specVersion,
+  })
+  const paths = await writeReportFiles(reportDir, 'copy', report, now())
+  if (failures.length === 0) {
+    log(`Verified ${report.summary.originals} originals, ${report.summary.variants} variants`)
+  }
+  log(`Checksum report: ${paths.jsonPath} and ${paths.mdPath}`)
+  return { report, paths }
+}
+
+export function assertManifestDestinationBucket(manifest, bucket) {
+  if (!manifest.destinationBucket || manifest.destinationBucket !== bucket) {
+    throw new Error('CLOUDFLARE_R2_BUCKET does not match the reviewed manifest')
+  }
+}
+
+export function assertManifestSourceOrigin(manifest, currentSourceUrl) {
+  const currentSourceOrigin = new URL(currentSourceUrl).origin
+  if (manifest.sourceOrigin !== currentSourceOrigin) {
+    throw new Error(
+      'NEXT_PUBLIC_SUPABASE_URL does not match the reviewed manifest source origin'
+    )
+  }
+  return currentSourceOrigin
+}
+
+export async function executeManifest(options, deps = {}) {
+  const env = deps.env ?? process.env
+  const bucket = requiredEnv('CLOUDFLARE_R2_BUCKET', env)
+  assertWriteGuard(env, bucket)
+  const source = await fs.readFile(options.manifestPath, 'utf8')
+  const manifest = validateR2MediaManifest(JSON.parse(source))
+  assertManifestDestinationBucket(manifest, bucket)
+  const sourceOrigin = assertManifestSourceOrigin(
+    manifest,
+    requiredEnv('NEXT_PUBLIC_SUPABASE_URL', env)
+  )
+  const info = manifestFileInfo(options.manifestPath)
+  const r2Client = deps.r2Client ?? createR2Client(env)
+  await assertR2BucketAccess(r2Client, bucket)
+
+  const { report } = await runCopy({
+    manifest,
+    bucket,
+    sourceOrigin,
+    r2Client,
+    ...info,
+    reportDir: deps.reportDir,
+    runFfmpeg: deps.runFfmpeg,
+    specVersion: deps.specVersion,
+    now: deps.now,
+    log: deps.log,
+  })
+  if (report.failures.length) {
+    throw new Error(
+      `${report.failures.length} objects failed. Source objects were not changed.`
+    )
+  }
+  return report
 }
 
 function usage() {
   return `Usage:
-  CLOUDFLARE_R2_BUCKET=<bucket> npm run r2:media [-- --manifest <path> --bucket <name> ...]
+  CLOUDFLARE_R2_BUCKET=<bucket> npm run r2:media [-- --refresh --manifest <path> --bucket <name> ...]
   CLOUDFLARE_R2_BUCKET=<bucket> npm run r2:media -- --execute [--manifest <path>]
 
-The default command only creates a manifest. --execute copies each object,
-never deletes source data, refuses destination conflicts, and verifies SHA-256
-byte length, source identity, and response metadata by downloading and heading
-the R2 object after upload.
+The default command is a dry run. It reads Supabase Storage, downloads each
+object to a temp file to measure it (type, size, sha256, width, MP4 faststart,
+duration, bitrate), writes the manifest, and writes a dry-run report to
+.tmp/r2-media-reports/dry-run-<timestamp>.json and .md (planned variants,
+skipped types with reasons, totals, media URLs found in app_config that are not
+in the manifest). It makes no R2 call and no Supabase write.
+
+--execute is the only write path. It requires CLOUDFLARE_ACCOUNT_ID to be the
+ClickitStory account and CLOUDFLARE_R2_BUCKET to be ${MEDIA_BUCKET_NAME}. It copies
+each original byte-for-byte (SHA-256 checked by downloading the R2 object),
+writes WebP and AVIF variants at 640, 1280 and 1920 px only when strictly
+narrower than the original (not for SVG, ICO, GIF, animated images or video),
+and remuxes an MP4 whose moov box follows mdat with ffmpeg -c copy
+-movflags +faststart: the remux is served at the original key and the untouched
+original is kept at _orig/<bucket>/<key>. Re-running changes nothing that is
+already identical. A differing existing original is never overwritten. Nothing
+is ever deleted. Every run writes a checksum report to
+.tmp/r2-media-reports/copy-<timestamp>.json and .md.
 
 --execute uses Cloudflare's S3-compatible API directly. It requires
 CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_R2_BUCKET, R2_ACCESS_KEY_ID, and
-R2_SECRET_ACCESS_KEY. Wrangler login, OAuth, and API tokens are not used.`
+R2_SECRET_ACCESS_KEY. Wrangler login, OAuth, and API tokens are not used.
+ffmpeg (and ffprobe) must be on PATH for the MP4 steps; they are never downloaded.`
 }
 
 function parseOptions(args) {
@@ -583,105 +1237,7 @@ function parseOptions(args) {
   return options
 }
 
-async function createManifest(options) {
-  if (existsSync(options.manifestPath) && !options.refresh) {
-    throw new Error(
-      `Manifest already exists at ${options.manifestPath}. Review it or use --refresh.`
-    )
-  }
-
-  const sourceOrigin = new URL(requiredEnv('NEXT_PUBLIC_SUPABASE_URL')).origin
-  const serviceRoleKey = requiredEnv('SUPABASE_SERVICE_ROLE_KEY')
-  const client = createClient(sourceOrigin, serviceRoleKey, {
-    auth: { persistSession: false },
-  })
-  const buckets = options.buckets.length
-    ? [...new Set(options.buckets)]
-    : DEFAULT_SOURCE_BUCKETS
-  const objects = (
-    await Promise.all(
-      buckets.map((bucket) => collectBucketObjects(client, bucket))
-    )
-  ).flat()
-  const manifest = createR2MediaManifest({
-    sourceOrigin,
-    destinationBucket: requiredEnv('CLOUDFLARE_R2_BUCKET'),
-    objects,
-  })
-  validateR2MediaManifest(manifest)
-  await writeManifest(options.manifestPath, manifest)
-  console.log(
-    `Wrote ${manifest.objects.length} objects to ${options.manifestPath}`
-  )
-}
-
-export function assertManifestDestinationBucket(manifest, bucket) {
-  if (!manifest.destinationBucket || manifest.destinationBucket !== bucket) {
-    throw new Error('CLOUDFLARE_R2_BUCKET does not match the reviewed manifest')
-  }
-}
-
-export function assertManifestSourceOrigin(manifest, currentSourceUrl) {
-  const currentSourceOrigin = new URL(currentSourceUrl).origin
-  if (manifest.sourceOrigin !== currentSourceOrigin) {
-    throw new Error(
-      'NEXT_PUBLIC_SUPABASE_URL does not match the reviewed manifest source origin'
-    )
-  }
-  return currentSourceOrigin
-}
-
-async function executeManifest(options) {
-  const source = await fs.readFile(options.manifestPath, 'utf8')
-  const manifest = validateR2MediaManifest(JSON.parse(source))
-  const bucket = requiredEnv('CLOUDFLARE_R2_BUCKET')
-  assertManifestDestinationBucket(manifest, bucket)
-  const sourceOrigin = assertManifestSourceOrigin(
-    manifest,
-    requiredEnv('NEXT_PUBLIC_SUPABASE_URL')
-  )
-  const r2Client = createR2Client()
-  await assertR2BucketAccess(r2Client, bucket)
-
-  const tempDir = await fs.mkdtemp(join(tmpdir(), 'clickit-r2-media-'))
-  let failures = 0
-  try {
-    for (const object of manifest.objects) {
-      try {
-        object.copy = await copyAndVerifyObject({
-          object,
-          sourceOrigin,
-          bucket,
-          r2Client,
-          tempDir,
-        })
-        await writeManifest(options.manifestPath, manifest)
-        console.log(`${object.copy.status}: ${object.destinationKey}`)
-      } catch (error) {
-        failures += 1
-        object.copy = {
-          status: 'failed',
-          failedAt: new Date().toISOString(),
-          error: error instanceof Error ? error.message : String(error),
-        }
-        await writeManifest(options.manifestPath, manifest)
-        console.error(`failed: ${object.destinationKey}`)
-      }
-    }
-  } finally {
-    await fs.rm(tempDir, { recursive: true, force: true })
-  }
-
-  if (failures) {
-    throw new Error(
-      `${failures} objects failed. Source objects were not changed.`
-    )
-  }
-  console.log(`Verified ${manifest.objects.length} R2 objects.`)
-}
-
 async function main() {
-  await loadEnvFile(resolve(PROJECT_ROOT, '.vercel/.env.production.local'))
   await loadEnvFile(resolve(PROJECT_ROOT, '.env.local'))
   const options = parseOptions(process.argv.slice(2))
   if (options.help) {

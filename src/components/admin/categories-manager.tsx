@@ -45,6 +45,7 @@ import {
   COLOR_PICKER_RAINBOW,
 } from '@/lib/brand-colors'
 import type { Database } from '@/lib/database.types'
+import { useRowVersions } from '@/components/admin/row-version'
 
 type CategoryRecord = Database['public']['Tables']['categories']['Row'] & {
   showCount: number
@@ -59,7 +60,8 @@ type CategoryDraft = {
 
 type EditorState =
   | { mode: 'create' }
-  | { mode: 'edit'; categoryId: string }
+  /** updatedAt: the row's updated_at when the editor opened (review item 8, PR #29). */
+  | { mode: 'edit'; categoryId: string; updatedAt: string }
   | null
 
 const EMPTY_DRAFT: CategoryDraft = {
@@ -307,6 +309,9 @@ export function CategoriesManager({
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null)
   const [isReordering, startReorderTransition] = useTransition()
+  // A save lands only while the row still holds the updated_at its editor opened with; our own
+  // saves and reorders move that forward.
+  const versions = useRowVersions()
 
   const editingCategory = useMemo(
     () =>
@@ -343,7 +348,25 @@ export function CategoriesManager({
       slug: category.slug,
       color: category.color ?? null,
     })
-    setEditorState({ mode: 'edit', categoryId: category.id })
+    setEditorState({ mode: 'edit', categoryId: category.id, updatedAt: category.updated_at })
+  }
+
+  /** Our own reorder: each row's new sort_order and updated_at, and its version chain moves on. */
+  function mergeVersions(
+    before: CategoryRecord[],
+    fresh: Array<Pick<CategoryRecord, 'id' | 'sort_order' | 'updated_at'>>
+  ) {
+    const byId = new Map(fresh.map((v) => [v.id, v]))
+    for (const prev of before) {
+      const v = byId.get(prev.id)
+      if (v) versions.saved(prev.id, prev.updated_at, v.updated_at)
+    }
+    setCategories((current) =>
+      current.map((c) => {
+        const v = byId.get(c.id)
+        return v ? { ...c, sort_order: v.sort_order, updated_at: v.updated_at } : c
+      })
+    )
   }
 
   function toggleCategorySelection(categoryId: string, checked: boolean) {
@@ -372,11 +395,16 @@ export function CategoriesManager({
       color: draft.color ?? null,
     }
 
+    const expected =
+      editingId && editorState?.mode === 'edit'
+        ? versions.expected(editingId, editorState.updatedAt)
+        : ''
     const result = editingId
-      ? await updateCategory(editingId, payload)
+      ? await updateCategory(editingId, payload, expected)
       : await createCategory(payload)
 
     setSaving(false)
+    if (editingId) versions.saved(editingId, expected, (result as { updatedAt?: string }).updatedAt)
 
     if (!result.success || !result.data) {
       toast.error(result.error ?? tCat('toastSaveFailed'))
@@ -473,6 +501,10 @@ export function CategoriesManager({
         toast.error(result.error ?? tCat('toastReorderFailed'))
         return
       }
+      mergeVersions(
+        nextCategories,
+        (result.data ?? []) as Array<Pick<CategoryRecord, 'id' | 'sort_order' | 'updated_at'>>
+      )
       router.refresh()
     })
   }

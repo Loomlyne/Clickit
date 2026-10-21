@@ -28,6 +28,7 @@ Phase: 4 (Design System Truth) — EXECUTING
 Plan: 7 of 14
 Status: Ready to execute
 Last activity: 2026-10-20
+Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
 
 Progress: [████████░░] 77%
 
@@ -58,6 +59,19 @@ Progress: [████████░░] 77%
 | Phase 01.1 P10 | 25min | 3 tasks | 4 files |
 | Phase 01.1 P11 | 30min | 3 tasks | 3 files |
 | Phase 01.1 P12 | 40min | 3 tasks | 5 files |
+| Phase 02 P02 | 15min | 2 tasks | 3 files |
+| Phase 02 P04 | 20min | 2 tasks | 9 files |
+| Phase 02 P08 | 80min | 3 tasks | 9 files |
+| Phase 02 P09 | 15min | 2 tasks | 7 files |
+| Phase 02 P11 | 35min | 2 tasks | 5 files |
+| Phase 02 P12 | 100min | 3 tasks | 16 files |
+| Phase 02 P13 | 150min | 2 tasks | 13 files |
+| Phase 02 P14 | 70min | 2 tasks | 23 files |
+| Phase 02 P15 | 55min | 2 tasks | 11 files |
+| Phase 02 P16 | 90min | 2 tasks | 9 files |
+| Phase 02 P17 | 215min | 2 tasks | 13 files |
+| Phase 02 P18 | 150min | 2 tasks | 8 files |
+| Phase 02 P19 | 55min | 2 tasks | 15 files |
 | Phase 04 P01 | 25min | 3 tasks | 7 files |
 | Phase 04 P02 | 12min | 2 tasks | 3 files |
 | Phase 04 P03 | 15min | 4 tasks | 8 files |
@@ -81,6 +95,22 @@ Recent decisions affecting current work:
 - [Phase 01.1]: runAdminAction revalidates in finally on success/wrote/throw; revalidate errors logged only
 - [Phase 01.1]: Plan 11: revalidation show id comes from core result; client id only as UUID-checked fallback
 - [Phase 01.1]: Hero cores share one tail: audit row written before staged media deletion commits; audit failure restores config and rolls back
+- [Phase 02-01]: proxy.ts runs as the OpenNext Node middleware under local preview; no edge middleware.ts fallback needed
+- [Phase 02-01]: Worker gzip bundle is 3079.28 KiB, 7 KiB over 3 MiB; confirm the real Free size limit at the plan 02-10 deploy
+- [Phase 02-01]: react-hooks/set-state-in-effect set to warn after the eslint-config-next 16.4.2 bump; refactor deferred (phase 02 deferred-items.md)
+- [Phase 02]: 02-02: R2 CORS builder refuses http, wildcard, path/query/hash and credentials; runbook Rule 5 lists the four owner-gated live-Supabase exceptions
+- [Phase 02]: 02-08: the copy no longer rewrites the manifest (checksum report holds per-object state), so manifestSha256 stays stable for the deploy guard; write path guarded to the ClickitStory account and bucket clickit-media; sharp reads Buffers because libvips caches by file name
+- [Phase 02]: 02-09: loader widths pinned to the Worker's VARIANT_WIDTHS by a drift test; remotePatterns dropped with the custom loader; loopback media origin (127.0.0.1 + ALLOW_LOOPBACK=1) never rewrites Supabase URLs; CSP img-src for loopback preview is left to 02-14
+- [Phase 02]: 02-11: contact/newsletter refuse without a valid Turnstile token and a free fail-closed per-IP slot (IP folded into the rate_limits key); auth actions pass captchaToken to Supabase and never call siteverify; token is the last optional action argument (02-13 wires clients); no Arabic copy invented, messages keys deferred to Koss
+- [Phase 02]: 02-12: presign uses aws4fetch allHeaders so Content-Type is really signed; finalize deletes only keys proven ours (kind/owner shape check first, variants only as _v/<w>/webp/<verified key>); keys are <stem>-<ts>-<rand>.<ext> so the old hero/preloader path regexes do not match (02-16 uses keyMatchesKind); local shim route checks the Host header and buffers the body, proven on preview
+- [Phase 02]: 02-13: Turnstile on the five forms as signed (turnstile-A); token is the last action argument and captchaToken for the reset request; single-use token renewed by remounting the widget (React key, no ref); no site key means no widget and the server still refuses contact/newsletter; deploy guard stamp records the site key class and refuses test or missing keys; Arabic for turnstile.checkFailed pending Koss; BotID client code removed (package.json and next.config left to 02-14)
+- [Phase 02]: 02-14: CSP is a pure tested builder (src/lib/csp.ts); loopback Supabase/media origins only for the preview target (CSP_UPGRADE_INSECURE=false); exact R2 S3 host in connect-src; Cloudflare Web Analytics beacon renders only with NEXT_PUBLIC_CF_BEACON_TOKEN (owner step); vercel.json, .vercelignore, check-cron.sh, botid and @vercel/* removed, VERCEL=1 cleanup fallback dropped, no-vercel guard test; storage-range-proxy Vercel header kept until Phase 3
+- [Phase 02]: 02-15: image finalize core order is finalize, write one target, strict audit, then delete previous R2 object, with compensation on write and audit failure (tested); only R2 keys on our media origin are ever deleted, Supabase originals never; social icon and cast-without-member write no db row (form state until Save); artwork finalize has optional commit (default true) so 02-17 can keep the drawer's Cancel behaviour; avatar owner comes from the session
+- [Phase 02]: 02-16: video finalize reads only the first 4 MiB (min of object size) and checks fast-start and, for hero only, the audio track with the pure box walker (no ffprobe on Workers); non-fast-start, oversize (50MB, preloader 20MB) and no-audio files are refused and deleted; 01.1 order kept (write, strict audit, then delete previous R2 object; Supabase originals never deleted); show finalize has commit (default true) so 02-18 can keep write-on-Save
+- [Phase 02]: 02-17: every image upload goes browser -> requestMediaUpload -> XHR PUT with the signed Content-Type -> finalize*Upload; WebP copies (640/1280/1920, narrower than the source) are made in the browser only when canvas toBlob really returns image/webp, otherwise the original goes alone with the signed Safari note; progress zone and toasts as signed (option M); artwork and hero image finalize with commit:false so the drawer still writes on Save; hero-media-picker's image path switched too (02-18 only does its video path); admin actions return 500 on the Worker until 02-19 removes the sharp import (deferred item 10)
+- [Phase 02]: 02-18: every video upload (hero desktop/mobile, preloader, show drawer) goes browser -> requestMediaUpload -> XHR PUT (video/mp4, signed Content-Type) -> finalize*VideoUpload through uploadVideoDirect; the show drawer uses commit:false (upload then Save); signed texts verbatim (Upload an MP4 video., the not-fast-start sentence, Checking fast-start…, helper line MP4, fast-start, under 50MB); the signed not-fast-start sentence replaces the server's text on the client; stale 8 MB 'Supabase egress' warning left for Koss's wording (deferred item 13)
+- [Phase 02]: 02-19: no file under src/ imports sharp or @aws-sdk/* (guard test worker-request-paths in gate:local); old FormData and signed-upload actions and src/lib/r2-media* deleted; admin media deletion is R2-only (src/server/r2-delete.ts), no admin action or cron removes a Supabase original unless CLEANUP_SUPABASE_ORIGINALS=on; bodySizeLimit 2mb; sharp and S3 SDK are devDependencies; Worker preview serves all admin pages and a saved admin action with no stub; bundle 14,286 KiB raw / 2,936 KiB gzip
+- [Phase 02]: 02-04: security helpers are pure with injected I/O; cron auth and rate limiter refuse on every uncertain path; Turnstile reasons are fixed codes that never echo secret or token
 - [Phase 04-01]: Named shadows in @theme static (not self-referencing @theme inline); radius scale moved to @theme static with --radius-hairline; shadow-bar added for watch-shell
 - [Phase 04]: Phase 04-03: Q4=A, category colours stay free content; Desert Sand (brand-yellow) is genre/category default only, shows keep 5 brand values
 - [Phase 4]: Phase 4 Plan 04: admin design-system summary compares canonicalCssValue(live) with resolved signed values; fonts excluded from the count (next/font hashes the family)
@@ -125,4 +155,6 @@ None yet.
 
 Last session: 2026-10-20T22:23:18.977Z
 Stopped at: Completed 04-01-PLAN.md
+Phase 2 last session: 2026-10-20T10:45:11.285Z
+Phase 2 stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above is the controller's)
 Resume file: None

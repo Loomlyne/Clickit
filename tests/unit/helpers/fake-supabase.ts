@@ -100,7 +100,16 @@ function violatesUnique(table: string, rows: Row[]): string[] | null {
   return null
 }
 
-export function createFakeSupabase(initial: Tables = {}) {
+export type FakeOptions = {
+  /**
+   * Tables whose BEFORE UPDATE trigger sets updated_at = now() (shows, app_config in the
+   * migrations). Every matched row gets a fresh value in the PostgREST JSON format, with
+   * microseconds and a +00:00 offset, e.g. 2026-10-20T16:43:24.123457+00:00.
+   */
+  updatedAtTables?: string[]
+}
+
+export function createFakeSupabase(initial: Tables = {}, options: FakeOptions = {}) {
   const tables: Tables = {}
   for (const [k, v] of Object.entries(initial)) tables[k] = clone(v)
   if (!tables.admin_audit_log) tables.admin_audit_log = []
@@ -110,6 +119,9 @@ export function createFakeSupabase(initial: Tables = {}) {
   const rpcs = new Map<string, RpcHandler>()
   let clock = Date.parse('2026-01-01T00:00:00.000Z')
   const tick = () => new Date((clock += 1)).toISOString()
+  let micros = 123456
+  const touched = new Set(options.updatedAtTables ?? [])
+  const nowStamp = () => `2026-10-20T16:43:24.${String((micros += 1) % 1000000).padStart(6, '0')}+00:00`
 
   const tableRows = (t: string) => (tables[t] ??= [])
 
@@ -217,7 +229,7 @@ export function createFakeSupabase(initial: Tables = {}) {
       this.max = n
       return this
     }
-    /** PostgREST .range(from, to): rows from..to inclusive, after order. */
+    /** PostgREST .range(from, to): rows from..to inclusive, after order (count stays the full match). */
     range(from: number, to: number) {
       this.window = { from, to }
       return this
@@ -296,7 +308,8 @@ export function createFakeSupabase(initial: Tables = {}) {
         }
       }
 
-      const rows = tableRows(this.table)
+      // A read of a table that does not exist yet must not create it (snapshots compare tables).
+      const rows = this.op === 'select' ? (tables[this.table] ?? []) : tableRows(this.table)
       const hit = (r: Row) => this.filters.every((f) => matches(r, f))
 
       if (this.op === 'select') {
@@ -321,7 +334,11 @@ export function createFakeSupabase(initial: Tables = {}) {
       }
 
       if (this.op === 'update') {
-        const next = rows.map((r) => (hit(r) ? { ...r, ...clone(this.patch) } : r))
+        const next = rows.map((r) =>
+          hit(r)
+            ? { ...r, ...clone(this.patch), ...(touched.has(this.table) ? { updated_at: nowStamp() } : {}) }
+            : r
+        )
         const clash = violatesUnique(this.table, next)
         if (clash) return this.uniqueError(clash)
         const changed: Row[] = []

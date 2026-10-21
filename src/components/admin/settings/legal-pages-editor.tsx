@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
+import { useArabicMissingToast } from '@/components/admin/arabic-missing-toast'
 import { Pencil, Plus, Trash2, Loader2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -26,6 +28,8 @@ import {
 import { ConfirmDialog } from '@/components/admin/confirm-dialog'
 import { upsertLegalPage, deleteLegalPage } from '@/app/[locale]/admin/actions'
 import type { LegalPage } from '@/app/[locale]/admin/actions'
+import { LEGAL_REVIEW_REQUIRED, legalArabicForEditor } from '@/lib/legal-arabic'
+import { useRowVersions } from '@/components/admin/row-version'
 import { SettingsCard, SettingsField } from './settings-card'
 
 function slugify(text: string) {
@@ -52,7 +56,11 @@ type Draft = {
   content: string
   title_ar: string
   content_ar: string
+  /** Ticked: the Arabic is published on /ar. Unticked: it stays a draft and /ar shows English. */
+  ar_reviewed: boolean
   sort_order: number
+  /** updated_at the editor opened with (not a form field; the action's schema drops it). */
+  updated_at?: string
 }
 
 const emptyDraft = (): Draft => ({
@@ -61,11 +69,13 @@ const emptyDraft = (): Draft => ({
   content: '',
   title_ar: '',
   content_ar: '',
+  ar_reviewed: false,
   sort_order: 0,
 })
 
 export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
   const t = useTranslations('admin.settings')
+  const warnArabicMissing = useArabicMissingToast()
   const tc = useTranslations('common')
   const [pages, setPages] = useState<LegalPage[]>(initial)
   const [draft, setDraft] = useState<Draft | null>(null)
@@ -73,6 +83,8 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
   const [deleteTarget, setDeleteTarget] = useState<LegalPage | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [slugTouched, setSlugTouched] = useState(false)
+  // Each save is checked against the updated_at this editor opened the row with (item 8).
+  const versions = useRowVersions()
 
   function openNew() {
     setDraft(emptyDraft())
@@ -80,14 +92,18 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
   }
 
   function openEdit(page: LegalPage) {
+    // The published Arabic when reviewed, else the AI/admin draft.
+    const arabic = legalArabicForEditor(page)
     setDraft({
       id: page.id,
       slug: page.slug,
       title: page.title,
       content: page.content,
-      title_ar: page.title_ar ?? '',
-      content_ar: page.content_ar ?? '',
+      title_ar: arabic.title_ar,
+      content_ar: arabic.content_ar,
+      ar_reviewed: page.ar_reviewed,
       sort_order: page.sort_order,
+      updated_at: page.updated_at,
     })
     setSlugTouched(true)
   }
@@ -107,12 +123,19 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
   async function onSave() {
     if (!draft) return
     setSaving(true)
-    const result = await upsertLegalPage(draft)
+    const expected =
+      draft.id && draft.updated_at ? versions.expected(draft.id, draft.updated_at) : undefined
+    const result = await upsertLegalPage(draft, expected)
     setSaving(false)
     if (!result.success) {
-      toast.error(result.error ?? t('legalSaveFailed'))
+      toast.error(
+        result.error === LEGAL_REVIEW_REQUIRED
+          ? t('legalArReviewRequired')
+          : (result.error ?? t('legalSaveFailed'))
+      )
       return
     }
+    if (draft.id && expected) versions.saved(draft.id, expected, result.updatedAt)
     const saved = result.data as LegalPage
     setPages((prev) =>
       draft.id
@@ -120,7 +143,7 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
         : [...prev, saved]
     )
     setDraft(null)
-    toast.success(draft.id ? t('legalUpdated') : t('legalCreated'))
+    if (!warnArabicMissing(result)) toast.success(draft.id ? t('legalUpdated') : t('legalCreated'))
   }
 
   async function onDelete() {
@@ -326,6 +349,18 @@ export function LegalPagesEditor({ initial }: { initial: LegalPage[] }) {
                   className="resize-y rounded-lg font-mono text-sm leading-relaxed"
                 />
               </SettingsField>
+
+              <label className="flex items-center gap-2 text-sm text-[var(--text)]">
+                <Checkbox
+                  checked={draft.ar_reviewed}
+                  onCheckedChange={(checked) =>
+                    setDraft((d) =>
+                      d ? { ...d, ar_reviewed: checked === true } : d
+                    )
+                  }
+                />
+                {t('legalArReviewedLabel')}
+              </label>
             </div>
           )}
 

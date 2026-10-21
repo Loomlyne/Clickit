@@ -2,11 +2,16 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import {
+  MEDIA_BUCKETS,
   MEDIA_CSP,
+  PUBLIC_MEDIA_BUCKETS,
   UNVERSIONED_CACHE_CONTROL,
+  VARIANT_WIDTHS,
   VERSIONED_CACHE_CONTROL,
+  cacheControlFor,
   handleMediaRequest,
   parseMediaPath,
+  variantCandidates,
   type MediaBucket,
   type MediaFetch,
   type MediaObject,
@@ -619,4 +624,329 @@ test('media-health extracts direct and /_next/image-wrapped media URLs', async (
     supabaseOriginalUrl('https://media.clickitstory.ae/site-assets/a.png?v=1'),
     'https://lajguozmtissnnfccmej.supabase.co/storage/v1/object/public/site-assets/a.png'
   )
+})
+
+// ---------------------------------------------------------------------------
+// Plan 02-03: spec behaviors layered on the existing media Worker (one Worker).
+// The fake bucket below applies Range and onlyIf like R2 does.
+// ---------------------------------------------------------------------------
+
+type Stored = { bytes: Uint8Array; contentType: string; etag?: string }
+
+function fakeR2(store: Record<string, Stored>) {
+  const calls: { method: string; key: string }[] = []
+
+  function build(key: string, withBody: boolean, options?: { range?: Headers; onlyIf?: Headers }) {
+    const item = store[key]
+    if (!item) return null
+    const etag = item.etag ?? 'e1'
+    const object: MediaObject = {
+      size: item.bytes.byteLength,
+      etag,
+      httpEtag: `"${etag}"`,
+      uploaded: new Date('2026-10-01T00:00:00Z'),
+      httpMetadata: { contentType: item.contentType },
+    }
+    if (!withBody) return object
+
+    const onlyIf = options?.onlyIf
+    const inm = onlyIf?.get('if-none-match')
+    const im = onlyIf?.get('if-match')
+    if ((inm && inm === object.httpEtag) || (im && im !== object.httpEtag)) {
+      return { ...object, body: undefined }
+    }
+
+    let bytes = item.bytes
+    const rangeHeader = options?.range?.get('range')
+    const match = rangeHeader ? /^bytes=(\d*)-(\d*)$/.exec(rangeHeader) : null
+    if (match) {
+      if (match[1] === '') {
+        const suffix = Number(match[2])
+        bytes = item.bytes.slice(Math.max(0, item.bytes.byteLength - suffix))
+        object.range = { suffix }
+      } else {
+        const offset = Number(match[1])
+        const end = match[2] === '' ? item.bytes.byteLength - 1 : Number(match[2])
+        bytes = item.bytes.slice(offset, end + 1)
+        object.range = { offset, length: bytes.byteLength }
+      }
+    }
+    object.body = stream(bytes)
+    return object
+  }
+
+  const bucket: MediaBucket = {
+    async head(key) {
+      calls.push({ method: 'head', key })
+      return build(key, false)
+    },
+    async get(key, options) {
+      calls.push({ method: 'get', key })
+      return build(key, true, options)
+    },
+  }
+  return { bucket, calls }
+}
+
+function bigBytes(size: number) {
+  const bytes = new Uint8Array(size)
+  for (let i = 0; i < size; i++) bytes[i] = i % 251
+  return bytes
+}
+
+async function call(
+  path: string,
+  init: RequestInit & { headers?: Record<string, string> },
+  bucket?: MediaBucket,
+  fetchImpl: MediaFetch = failingFetch()
+) {
+  return handleMediaRequest(
+    new Request(`${BASE}${path}`, init),
+    { SUPABASE_URL, MEDIA_BUCKET: bucket },
+    fetchImpl
+  )
+}
+
+test('02-03 MEDIA_BUCKETS is the exact public bucket allowlist', () => {
+  assert.deepEqual([...MEDIA_BUCKETS].sort(), ['avatars', 'show-artwork', 'site-assets'])
+  assert.equal(MEDIA_BUCKETS, PUBLIC_MEDIA_BUCKETS)
+  assert.deepEqual([...VARIANT_WIDTHS], [640, 1280, 1920])
+})
+
+test('02-03 405 with Allow: GET, HEAD for POST, PUT and DELETE', async () => {
+  for (const method of ['POST', 'PUT', 'DELETE']) {
+    const response = await call('/show-artwork/a.jpg', { method })
+    assert.equal(response.status, 405, method)
+    assert.equal(response.headers.get('allow'), 'GET, HEAD', method)
+  }
+})
+
+test('02-03 404 for root, unknown bucket, empty key, traversal and direct variant paths', async () => {
+  const { bucket, calls } = fakeR2({
+    'show-artwork/a.jpg': { bytes: bigBytes(10), contentType: 'image/jpeg' },
+    '_v/640/webp/show-artwork/a.jpg': { bytes: bigBytes(10), contentType: 'image/webp' },
+  })
+  for (const path of [
+    '/',
+    '/unknown-bucket/a.jpg',
+    '/show-artwork/',
+    '/show-artwork/../x',
+    '/show-artwork/a//b.jpg',
+    '/show-artwork/%2e%2e/x',
+    '/show-artwork/%2E%2E/x',
+    '/_v/640/webp/show-artwork/a.jpg',
+  ]) {
+    const response = await call(path, {}, bucket)
+    assert.equal(response.status, 404, path)
+  }
+  assert.equal(calls.length, 0, 'no bucket read for rejected paths')
+})
+
+test('02-03 200 GET has body, etag, accept-ranges, nosniff, CORP and 3600 cache', async () => {
+  const bytes = bigBytes(300)
+  const { bucket } = fakeR2({ 'show-artwork/a.jpg': { bytes, contentType: 'image/jpeg' } })
+  const response = await call('/show-artwork/a.jpg', {}, bucket)
+  assert.equal(response.status, 200)
+  assert.deepEqual(new Uint8Array(await response.arrayBuffer()), bytes)
+  assert.equal(response.headers.get('etag'), '"e1"')
+  assert.equal(response.headers.get('accept-ranges'), 'bytes')
+  assert.equal(response.headers.get('x-content-type-options'), 'nosniff')
+  assert.equal(response.headers.get('cross-origin-resource-policy'), 'cross-origin')
+  assert.equal(response.headers.get('cache-control'), 'public, max-age=3600')
+  assert.equal(response.headers.get('vary'), null)
+})
+
+test('02-03 ?v= gives one-year immutable cache', async () => {
+  const { bucket } = fakeR2({ 'show-artwork/a.jpg': { bytes: bigBytes(5), contentType: 'image/jpeg' } })
+  const response = await call('/show-artwork/a.jpg?v=123', {}, bucket)
+  assert.equal(response.headers.get('cache-control'), 'public, max-age=31536000, immutable')
+})
+
+test('02-03 cacheControlFor rule: only a ?v= stamp is immutable, a variant alone is not', () => {
+  assert.equal(cacheControlFor(new URL(`${BASE}/a/b`)), 'public, max-age=3600')
+  assert.equal(cacheControlFor(new URL(`${BASE}/a/b?v=1`)), VERSIONED_CACHE_CONTROL)
+  assert.equal(cacheControlFor(new URL(`${BASE}/a/b?w=1280`)), UNVERSIONED_CACHE_CONTROL)
+  assert.equal(cacheControlFor(new URL(`${BASE}/a/b?w=1280&v=1`)), VERSIONED_CACHE_CONTROL)
+  // An empty stamp is no version.
+  assert.equal(cacheControlFor(new URL(`${BASE}/a/b?v=`)), UNVERSIONED_CACHE_CONTROL)
+})
+
+test('02-03 Range bytes=0-1023 on a 5000-byte object is 206 with Content-Range', async () => {
+  const bytes = bigBytes(5000)
+  const { bucket } = fakeR2({ 'show-artwork/hero.mp4': { bytes, contentType: 'video/mp4' } })
+  const response = await call('/show-artwork/hero.mp4', { headers: { range: 'bytes=0-1023' } }, bucket)
+  assert.equal(response.status, 206)
+  assert.equal(response.headers.get('content-range'), 'bytes 0-1023/5000')
+  assert.equal(response.headers.get('content-length'), '1024')
+  assert.deepEqual(new Uint8Array(await response.arrayBuffer()), bytes.slice(0, 1024))
+})
+
+test('02-03 suffix range bytes=-500 is 206 with the tail', async () => {
+  const bytes = bigBytes(5000)
+  const { bucket } = fakeR2({ 'show-artwork/hero.mp4': { bytes, contentType: 'video/mp4' } })
+  const response = await call('/show-artwork/hero.mp4', { headers: { range: 'bytes=-500' } }, bucket)
+  assert.equal(response.status, 206)
+  assert.equal(response.headers.get('content-range'), 'bytes 4500-4999/5000')
+  assert.equal(response.headers.get('content-length'), '500')
+})
+
+test('02-03 If-None-Match equal to the etag is 304, empty body, etag kept', async () => {
+  const { bucket } = fakeR2({ 'show-artwork/a.jpg': { bytes: bigBytes(20), contentType: 'image/jpeg' } })
+  const response = await call('/show-artwork/a.jpg', { headers: { 'if-none-match': '"e1"' } }, bucket)
+  assert.equal(response.status, 304)
+  assert.equal(response.headers.get('etag'), '"e1"')
+  assert.equal((await response.text()), '')
+})
+
+test('02-03 If-Match mismatch is 412', async () => {
+  const { bucket } = fakeR2({ 'show-artwork/a.jpg': { bytes: bigBytes(20), contentType: 'image/jpeg' } })
+  const response = await call('/show-artwork/a.jpg', { headers: { 'if-match': '"other"' } }, bucket)
+  assert.equal(response.status, 412)
+})
+
+test('02-03 HEAD returns the GET headers and a null body', async () => {
+  const { bucket } = fakeR2({ 'show-artwork/a.jpg': { bytes: bigBytes(42), contentType: 'image/jpeg' } })
+  const get = await call('/show-artwork/a.jpg?v=1', {}, bucket)
+  const head = await call('/show-artwork/a.jpg?v=1', { method: 'HEAD' }, bucket)
+  await get.arrayBuffer()
+  assert.equal(head.status, 200)
+  assert.equal(head.body, null)
+  assert.equal(head.headers.get('content-length'), '42')
+  for (const name of [
+    'etag',
+    'accept-ranges',
+    'cache-control',
+    'content-type',
+    'x-content-type-options',
+    'cross-origin-resource-policy',
+    'content-length',
+  ]) {
+    assert.equal(head.headers.get(name), get.headers.get(name), name)
+  }
+})
+
+const VARIANT_STORE = (): Record<string, Stored> => ({
+  'show-artwork/a.jpg': { bytes: bigBytes(100), contentType: 'image/jpeg' },
+  '_v/1280/avif/show-artwork/a.jpg': { bytes: bigBytes(30), contentType: 'image/avif', etag: 'va' },
+  '_v/1280/webp/show-artwork/a.jpg': { bytes: bigBytes(40), contentType: 'image/webp', etag: 'vw' },
+})
+
+test('02-03 variantCandidates orders avif, webp, original and honours q=0', () => {
+  assert.deepEqual(variantCandidates('show-artwork/a.jpg', 1280, 'image/avif,image/webp,*/*'), [
+    '_v/1280/avif/show-artwork/a.jpg',
+    '_v/1280/webp/show-artwork/a.jpg',
+    'show-artwork/a.jpg',
+  ])
+  assert.deepEqual(variantCandidates('show-artwork/a.jpg', 1280, 'image/webp'), [
+    '_v/1280/webp/show-artwork/a.jpg',
+    'show-artwork/a.jpg',
+  ])
+  assert.deepEqual(variantCandidates('show-artwork/a.jpg', 1280, 'image/avif;q=0, image/webp'), [
+    '_v/1280/webp/show-artwork/a.jpg',
+    'show-artwork/a.jpg',
+  ])
+  assert.deepEqual(variantCandidates('show-artwork/a.jpg', 1280, ''), ['show-artwork/a.jpg'])
+  assert.deepEqual(variantCandidates('show-artwork/a.jpg', 999, 'image/avif'), ['show-artwork/a.jpg'])
+})
+
+test('02-03 ?w=1280 with avif+webp Accept serves the avif variant, Vary Accept, one hour without ?v=', async () => {
+  const { bucket } = fakeR2(VARIANT_STORE())
+  const response = await call(
+    '/show-artwork/a.jpg?w=1280',
+    { headers: { accept: 'image/avif,image/webp,image/*' } },
+    bucket
+  )
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get('content-type'), 'image/avif')
+  assert.equal(response.headers.get('etag'), '"va"')
+  assert.equal(response.headers.get('vary'), 'Accept')
+  // A variant can be re-made under the same key, so without a stamp it is not immutable.
+  assert.equal(response.headers.get('cache-control'), 'public, max-age=3600')
+  assert.equal((await response.arrayBuffer()).byteLength, 30)
+})
+
+test('02-03 ?w=1280&v= serves the variant with the one-year immutable cache', async () => {
+  const { bucket } = fakeR2(VARIANT_STORE())
+  const response = await call(
+    '/show-artwork/a.jpg?w=1280&v=1780693451111',
+    { headers: { accept: 'image/avif,image/webp,image/*' } },
+    bucket
+  )
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get('content-type'), 'image/avif')
+  assert.equal(response.headers.get('cache-control'), 'public, max-age=31536000, immutable')
+})
+
+test('02-03 ?w=1280 with webp-only Accept serves the webp variant', async () => {
+  const { bucket } = fakeR2(VARIANT_STORE())
+  const response = await call('/show-artwork/a.jpg?w=1280', { headers: { accept: 'image/webp' } }, bucket)
+  assert.equal(response.headers.get('content-type'), 'image/webp')
+  assert.equal(response.headers.get('vary'), 'Accept')
+})
+
+test('02-03 ?w=1280 with variants missing serves the original with Vary Accept', async () => {
+  const { bucket } = fakeR2({ 'show-artwork/a.jpg': { bytes: bigBytes(100), contentType: 'image/jpeg' } })
+  const response = await call(
+    '/show-artwork/a.jpg?w=1280',
+    { headers: { accept: 'image/avif,image/webp' } },
+    bucket
+  )
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get('content-type'), 'image/jpeg')
+  assert.equal(response.headers.get('vary'), 'Accept')
+  assert.equal(response.headers.get('cache-control'), 'public, max-age=3600')
+})
+
+test('02-03 ?w=999 serves the original and never looks up a variant', async () => {
+  const { bucket, calls } = fakeR2(VARIANT_STORE())
+  const response = await call('/show-artwork/a.jpg?w=999', { headers: { accept: 'image/avif' } }, bucket)
+  assert.equal(response.headers.get('content-type'), 'image/jpeg')
+  assert.deepEqual(calls.map((c) => c.key), ['show-artwork/a.jpg'])
+  assert.equal(response.headers.get('vary'), null)
+})
+
+test('02-03 variant range request is 206 from the variant bytes', async () => {
+  const { bucket } = fakeR2(VARIANT_STORE())
+  const response = await call(
+    '/show-artwork/a.jpg?w=1280',
+    { headers: { accept: 'image/avif', range: 'bytes=0-9' } },
+    bucket
+  )
+  assert.equal(response.status, 206)
+  assert.equal(response.headers.get('content-range'), 'bytes 0-9/30')
+})
+
+test('02-03 stored image/svg+xml gets the sandbox CSP and inline disposition', async () => {
+  const { bucket } = fakeR2({
+    'site-assets/logo.svg': { bytes: new TextEncoder().encode('<svg onload="x()"/>'), contentType: 'image/svg+xml' },
+  })
+  const response = await call('/site-assets/logo.svg', {}, bucket)
+  assert.equal(response.headers.get('content-security-policy'), "default-src 'none'; style-src 'unsafe-inline'; sandbox")
+  assert.equal(response.headers.get('content-disposition'), 'inline')
+  assert.equal(response.headers.get('x-content-type-options'), 'nosniff')
+})
+
+test('02-03 original missing is 404 even with ?w=, variants are never read from Supabase', async () => {
+  const { bucket } = fakeR2({})
+  const { calls, fetchImpl } = recordingFetch(() => new Response('{}', { status: 400 }))
+  const response = await call(
+    '/show-artwork/gone.jpg?w=640',
+    { headers: { accept: 'image/avif' } },
+    bucket,
+    fetchImpl
+  )
+  assert.equal(response.status, 404)
+  assert.equal(response.headers.get('vary'), 'Accept')
+  assert.equal(calls.length, 1)
+  assert.ok(!calls[0].input.includes('_v/'), calls[0].input)
+})
+
+test('02-03 original in Supabase but not R2 is still served with ?w= (permanent fallback)', async () => {
+  const { bucket } = fakeR2({})
+  const { fetchImpl } = recordingFetch(
+    () => new Response(new Uint8Array([1, 2]), { status: 200, headers: { 'content-type': 'image/jpeg' } })
+  )
+  const response = await call('/show-artwork/a.jpg?w=640', { headers: { accept: 'image/webp' } }, bucket, fetchImpl)
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get('vary'), 'Accept')
 })

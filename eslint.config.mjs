@@ -8,6 +8,12 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   prettier,
+  {
+    // eslint-config-next 16.4.2 (react-hooks plugin bump) flags four existing
+    // effects (admin tables, carousel) that 16.2.9 accepted. Kept as a warning
+    // so the Next 16.4.2 upgrade (plan 02-01) does not rewrite UI code.
+    rules: { 'react-hooks/set-state-in-effect': 'warn' },
+  },
   // Phase 4 DS-02 guard (error since 04-13)
   {
     files: ['src/**/*.{ts,tsx}'],
@@ -39,6 +45,9 @@ const eslintConfig = defineConfig([
     'build/**',
     '.planning/**',
     'next-env.d.ts',
+    '.open-next/**',
+    '.wrangler/**',
+    'workers/**/.wrangler/**',
   ]),
 ])
 

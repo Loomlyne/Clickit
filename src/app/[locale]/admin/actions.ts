@@ -2,14 +2,16 @@
 
 import { revalidatePath, updateTag } from 'next/cache'
 import { z } from 'zod'
-import sharp from 'sharp'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { validateYouTubeUrl } from '@/lib/youtube'
 import { logAudit, logAuditStrict } from '@/lib/audit'
 import { runAdminAction, type AdminActionEnv } from '@/lib/admin/action-runner'
 import { archiveShowCore, restoreShowCore } from '@/lib/admin/show-archive'
-import type { RestoreResult } from '@/lib/admin/ports'
+import type { AdminDb, AuditWriter, RestoreResult } from '@/lib/admin/ports'
+import type { Database } from '@/lib/database.types'
+import { adminImageDb } from '@/lib/admin/image-db'
+import { finalizeImageUploadCore, type ImageUploadPorts } from '@/lib/admin/image-upload'
 import {
   createShowCore,
   deleteShowCore,
@@ -21,7 +23,6 @@ import {
   commitImportSchema,
   episodeSchema,
   formatZodError,
-  parseHeroVariant,
   parseDirection,
   parseId,
   seasonSchema,
@@ -33,12 +34,6 @@ import {
   createEpisodeCore,
   updateEpisodeCore,
 } from '@/lib/admin/season-episode-writes'
-import {
-  PRELOADER_VIDEO_LIMIT,
-  SHOW_VIDEO_LIMIT,
-  savePreloaderVideoCore,
-  saveShowVideoCore,
-} from '@/lib/admin/video-uploads'
 import { ROW_DELETE, deleteRowAuditedCore } from '@/lib/admin/row-deletes'
 import {
   archiveEpisodeCore,
@@ -62,7 +57,6 @@ import {
   type VerifyOutcome,
   type YouTubeMeta,
 } from '@/lib/admin/youtube-verify'
-import type { AdminDb } from '@/lib/admin/ports'
 import type { YouTubeErrorCode } from '@/lib/youtube-errors'
 import { getServerYouTubeClient } from '@/server/youtube-service'
 import { withinYouTubeActionLimit } from '@/server/youtube/rate-limit'
@@ -83,29 +77,46 @@ import {
   type PlannedEpisodeSlot,
 } from '@/lib/admin/show-schedule'
 import { generateSlug } from '@/lib/slug'
-import { fillArabic, translateBatchToArabicStrict } from '@/lib/translate'
+import { createArabicFiller } from '@/lib/translate'
+import { withArabicMissing } from '@/lib/admin/arabic-missing'
+import { arabicMaxLengths } from '@/lib/admin/arabic-limits'
 import { fillTickerArabic, type TickerItem } from '@/lib/admin/ticker'
 import {
-  SITE_IMAGE_MIME_EXT,
-  SOCIAL_ICON_MIME_EXT,
-  checkHeroVideoSize,
-  checkImageUpload,
-} from '@/lib/admin/media-guards'
-import {
-  createHeroVideoPath,
   removeHeroVideoCore,
-  saveHeroVideoCore,
+  saveVideoCore,
   setHeroVideoUrlCore,
   type HeroVideoPorts,
 } from '@/lib/admin/hero-video'
 import { mp4BytesHasAudioTrack } from '@/lib/mp4-audio'
+import { getPublicMediaOrigin } from '@/lib/supabase-media'
+import { getWorkerEnv } from '@/server/cloudflare'
+import { liveKeysForUrl, r2KeyFromUrl, r2KeysForUrl } from '@/server/r2-keys'
+import { finalizeUploadedObject, type FinalizeBucket } from '@/server/upload-finalize'
 import {
-  assertPublicMediaWriteReady,
-  mirrorPublicMediaObject,
-  prepareMirroredPublicMediaDeletion,
-  R2MediaRollbackError,
-} from '@/lib/r2-media'
-import type { MirroredPublicMediaDeletion } from '@/lib/r2-media'
+  stageR2Deletion,
+  stageShowMedia as stageR2ShowMedia,
+  type DeletableBucket,
+  type ListableBucket,
+  type MediaDeleteGuard,
+  type StagedR2Deletion,
+} from '@/server/r2-delete'
+import { readMediaReferenceUrls, type ReferenceDb } from '@/server/media-references'
+import { removeMediaCore } from '@/lib/admin/media-removal'
+import { upsertLegalPageCore, type LegalPageRow } from '@/lib/admin/legal-pages'
+import { SAVE_CONFLICT, rowVersion, updateIfUnchanged, type RowVersion } from '@/lib/admin/row-version'
+
+/**
+ * Deferred items 21-23: every R2 delete of a key that was ever live re-reads every media
+ * reference (all scopes) right before deleting, through this guard. `db` must be the
+ * service client so every row of every table is seen.
+ */
+function mediaGuard(db: AdminDb, label: string): MediaDeleteGuard {
+  return {
+    readReferences: () => readMediaReferenceUrls(db as unknown as ReferenceDb),
+    mediaOrigin: getPublicMediaOrigin(),
+    label,
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -115,82 +126,19 @@ type ActionResult<T = unknown> = {
   success: boolean
   error?: string
   data?: T
+  /** Saved, but this many Arabic fields could not be auto-filled and stay empty. */
+  arabicMissing?: number
 }
 
-async function stageMirroredPublicMediaDeletion(
-  admin: ReturnType<typeof createAdminClient>,
-  bucket: 'show-artwork' | 'site-assets' | 'avatars',
-  paths: string[]
-): Promise<MirroredPublicMediaDeletion> {
-  const r2Deletion = await prepareMirroredPublicMediaDeletion(bucket, paths)
-  return {
-    commit: async () => {
-      const { error } = await admin.storage.from(bucket).remove(paths)
-      if (error) {
-        await r2Deletion.rollback()
-        return false
-      }
-      return r2Deletion.commit()
-    },
-    rollback: r2Deletion.rollback,
-  }
-}
+/**
+ * A save of a shows or app_config row from a loaded form (deferred item 23, residual b): it
+ * takes the updated_at the form was loaded with and, on success, returns the new one so the
+ * next save from the same page chains on it. A stale value: the conflict line, nothing written.
+ */
+type VersionedResult<T = unknown> = ActionResult<T> & { updatedAt?: string }
 
-async function removeMirroredPublicMedia(
-  admin: ReturnType<typeof createAdminClient>,
-  bucket: 'show-artwork' | 'site-assets' | 'avatars',
-  paths: string[]
-) {
-  const deletion = await stageMirroredPublicMediaDeletion(admin, bucket, paths)
-  return deletion.commit()
-}
-
-async function cleanupMirroredPublicMedia(
-  admin: ReturnType<typeof createAdminClient>,
-  bucket: 'show-artwork' | 'site-assets' | 'avatars',
-  paths: string[],
-  label: string
-) {
-  try {
-    if (!(await removeMirroredPublicMedia(admin, bucket, paths))) {
-      console.error(`${label} media cleanup failed`)
-    }
-  } catch (error) {
-    console.error(`${label} media cleanup failed`, error)
-  }
-}
-
-async function mirrorUploadedPublicMedia(
-  admin: ReturnType<typeof createAdminClient>,
-  input: Parameters<typeof mirrorPublicMediaObject>[0]
-) {
-  try {
-    await mirrorPublicMediaObject(input)
-  } catch (error) {
-    if (error instanceof R2MediaRollbackError) throw error
-    const { error: removeError } = await admin.storage
-      .from(input.bucket)
-      .remove([input.key])
-    if (removeError) {
-      console.error('[mirrorUploadedPublicMedia] source cleanup failed', removeError)
-    }
-    throw error
-  }
-}
-
-export type SignedVideoUploadTarget = {
-  path: string
-  token: string
-}
-
-function isMp4File(file: { name?: string; type?: string }) {
-  const name = file.name?.toLowerCase() ?? ''
-  const type = file.type ?? ''
-  return (
-    type === 'video/mp4' ||
-    (name.endsWith('.mp4') && (!type || type === 'application/octet-stream'))
-  )
-}
+const withUpdatedAt = <R extends { success: boolean }>(r: R, version: { next: string | null }): R & { updatedAt?: string } =>
+  r.success && version.next ? { ...r, updatedAt: version.next } : r
 
 export type {
   EpisodeConflict,
@@ -401,17 +349,19 @@ export async function createShow(
         generateSlug(rest.title, id ? `show-${id.slice(0, 8)}` : undefined)
       )
 
-      // Auto-fill blank Arabic fields from their English source (DeepL).
-      // fillArabic is strict: a failed translation stores null, not English.
-      rest.title_ar = await fillArabic(rest.title, rest.title_ar)
-      rest.description_ar = await fillArabic(rest.description, rest.description_ar)
-      rest.tagline_ar = await fillArabic(rest.tagline, rest.tagline_ar)
+      // Auto-fill blank Arabic fields from their English source (Workers AI).
+      // Strict: a failed translation stores null, not English.
+      const arabic = createArabicFiller(ctx.adminUserId)
+      rest.title_ar = await arabic.fill(rest.title, rest.title_ar)
+      rest.description_ar = await arabic.fill(rest.description, rest.description_ar)
+      rest.tagline_ar = await arabic.fill(rest.tagline, rest.tagline_ar)
 
-      return createShowCore(
+      const result = await createShowCore(
         ctx.db,
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
         { insertData: { ...(id ? { id } : {}), ...rest }, categoryIds: category_ids }
       )
+      return withArabicMissing(result, arabic.missing())
     },
     {
       fallbackError: 'Failed to create show',
@@ -422,11 +372,15 @@ export async function createShow(
 
 export async function updateShow(
   id: string,
-  data: z.input<typeof showSchema>
-): Promise<ActionResult> {
+  data: z.input<typeof showSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   return runAdminAction(
     adminEnv,
     async (ctx) => {
+      // Refuse a missing or malformed updated_at before any translation call or db read.
+      const version = rowVersion(expectedUpdatedAt)
+      if (!version.ok) return { success: false, error: version.error, wrote: false }
       const parsed = showSchema.parse(data)
       const { id: _parsedId, category_ids, ...updateData } = parsed
       void _parsedId
@@ -442,22 +396,24 @@ export async function updateShow(
         updateData.slug = normalizedSlug
       }
 
-      // Auto-fill blank Arabic fields from their English source (DeepL).
-      updateData.title_ar = await fillArabic(updateData.title, updateData.title_ar)
-      updateData.description_ar = await fillArabic(
+      // Auto-fill blank Arabic fields from their English source (Workers AI).
+      const arabic = createArabicFiller(ctx.adminUserId)
+      updateData.title_ar = await arabic.fill(updateData.title, updateData.title_ar)
+      updateData.description_ar = await arabic.fill(
         updateData.description,
         updateData.description_ar
       )
-      updateData.tagline_ar = await fillArabic(
+      updateData.tagline_ar = await arabic.fill(
         updateData.tagline,
         updateData.tagline_ar
       )
 
-      return updateShowCore(
+      const result = await updateShowCore(
         ctx.db,
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
-        { id, updateData, categoryIds: category_ids }
+        { id, updateData, categoryIds: category_ids, expectedUpdatedAt: version.value.expected }
       )
+      return withArabicMissing(result, arabic.missing())
     },
     {
       fallbackError: 'Failed to update show',
@@ -517,12 +473,15 @@ const revalidateRestore = () => {
 export async function restoreShow(id: string): Promise<RestoreResult> {
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      restoreShowCore(
+    async (ctx) => {
+      const arabic = createArabicFiller(ctx.adminUserId)
+      const result = await restoreShowCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
         { showId: id }
-      ),
+      )
+      return withArabicMissing(result, arabic.missing())
+    },
     {
       fallbackError: 'Failed to restore show',
       revalidate: revalidateRestore,
@@ -536,12 +495,15 @@ export async function resolveConflictsAndRestore(
 ): Promise<RestoreResult> {
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      restoreShowCore(
+    async (ctx) => {
+      const arabic = createArabicFiller(ctx.adminUserId)
+      const result = await restoreShowCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
         { showId, fixes }
-      ),
+      )
+      return withArabicMissing(result, arabic.missing())
+    },
     {
       fallbackError: 'Failed to resolve conflicts',
       revalidate: revalidateRestore,
@@ -562,16 +524,19 @@ export async function resolveRestoreConflictsAndRestore(
   if (data?.slug) rename.slug = data.slug
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      restoreShowCore(
+    async (ctx) => {
+      const arabic = createArabicFiller(ctx.adminUserId)
+      const result = await restoreShowCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
         {
           showId,
           rename: Object.keys(rename).length > 0 ? rename : undefined,
           fixes: data?.episodeFixes,
         }
-      ),
+      )
+      return withArabicMissing(result, arabic.missing())
+    },
     {
       fallbackError: 'Failed to resolve conflicts',
       revalidate: revalidateRestore,
@@ -579,55 +544,14 @@ export async function resolveRestoreConflictsAndRestore(
   )
 }
 
-// List and delete every file under shows/{id}/ in both buckets. Listing (not
-// hard-coded names) works for legacy stable-path rows and versioned rows
-// (hero-{timestamp}.webp): whatever is in the folder gets staged for deletion.
-async function stageShowMedia(
-  admin: ReturnType<typeof createAdminClient>,
-  showId: string
-): Promise<MirroredPublicMediaDeletion[]> {
-  const staged: MirroredPublicMediaDeletion[] = []
-
-  async function listShowFolderFiles(bucket: string, prefix: string) {
-    const paths: string[] = []
-    let offset = 0
-
-    for (;;) {
-      const { data, error: listError } = await admin.storage
-        .from(bucket)
-        .list(prefix, { limit: 1000, offset })
-      if (listError) throw new Error('Could not list show media')
-
-      const entries = data ?? []
-      for (const entry of entries) {
-        if (!entry.name) continue
-        const path = prefix + '/' + entry.name
-        if (entry.id) {
-          paths.push(path)
-        } else {
-          paths.push(...(await listShowFolderFiles(bucket, path)))
-        }
-      }
-
-      if (entries.length < 1000) return paths
-      offset += entries.length
-    }
-  }
-
-  async function purgeShowFolder(bucket: 'show-artwork' | 'site-assets') {
-    const paths = await listShowFolderFiles(bucket, ['shows', showId].join('/'))
-    if (paths.length === 0) return
-    staged.push(await stageMirroredPublicMediaDeletion(admin, bucket, paths))
-  }
-
-  try {
-    await purgeShowFolder('show-artwork') // poster, hero, hero-mobile, logo
-    await purgeShowFolder('site-assets') // hero videos
-  } catch (mediaError) {
-    await Promise.all(staged.map((deletion) => deletion.rollback()))
-    throw mediaError
-  }
-  return staged
+// List and delete every R2 object under <bucket>/shows/{id}/ in both buckets (artwork,
+// logo, cast portraits, hero videos). Listing (not hard-coded names) works for legacy
+// stable-path rows and versioned rows (hero-{timestamp}.webp). R2 only: Supabase Storage
+// originals are never deleted here (MEDIA-07). Commit runs after the show row is gone and
+// keeps any file another show, the site settings or a profile still uses.
+async function stageShowMedia(showId: string, db: AdminDb): Promise<StagedR2Deletion[]> {
+  const bucket = (await getWorkerEnv()).MEDIA as unknown as ListableBucket
+  return stageR2ShowMedia(bucket, showId, mediaGuard(db, '[deleteShowPermanently]'))
 }
 
 export async function deleteShowPermanently(id: string): Promise<ActionResult> {
@@ -641,7 +565,7 @@ export async function deleteShowPermanently(id: string): Promise<ActionResult> {
           adminUserId: ctx.adminUserId,
           media: {
             stage: async (showId) =>
-              (await stageShowMedia(ctx.db, showId)).map((deletion) => ({
+              (await stageShowMedia(showId, ctx.db)).map((deletion) => ({
                 commit: async () => {
                   const ok = await deletion.commit()
                   if (!ok) console.error('[deleteShowPermanently] media cleanup failed')
@@ -705,29 +629,28 @@ export async function createCategory(
   }
 }
 
+/** Lands only while the row still holds the updated_at the editor opened (review item 8, PR #29). */
 export async function updateCategory(
   id: string,
-  data: z.input<typeof categorySchema>
-): Promise<ActionResult> {
+  data: z.input<typeof categorySchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
     const idParsed = parseId(id, 'category')
     if (!idParsed.ok) return { success: false, error: idParsed.error }
     id = idParsed.value
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     // sort_order stays optional so an omitted value is not written as 0.
     const parsed = categorySchema
       .extend({ sort_order: z.number().int().min(0).optional() })
       .parse(data)
     const admin = createAdminClient()
 
-    const { data: category, error } = await admin
-      .from('categories')
-      .update(parsed)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) return { success: false, error: error.message }
+    const { error, row } = await updateIfUnchanged(admin, 'categories', id, parsed, version.value, '*')
+    if (error || !row) return { success: false, error: error ?? 'Category not found.' }
+    const category = row as unknown as Database['public']['Tables']['categories']['Row']
 
     await logAudit({
       adminUserId: user.id,
@@ -738,7 +661,7 @@ export async function updateCategory(
     })
 
     bumpCatalogCache()
-    return { success: true, data: category }
+    return withUpdatedAt({ success: true, data: category }, version.value)
   } catch (err) {
     console.error('[admin/categories] update failed', err)
     return {
@@ -805,13 +728,20 @@ export async function reorderCategories(
     categoryIds = orderParsed.data
     const admin = createAdminClient()
 
+    // Each row comes back with its new updated_at so the page's editors keep a fresh version
+    // (an edit after a reorder is our own change, not a conflict; review item 8, PR #29).
     const results = await Promise.all(
       categoryIds.map((id, index) =>
-        admin.from('categories').update({ sort_order: index }).eq('id', id)
+        admin
+          .from('categories')
+          .update({ sort_order: index })
+          .eq('id', id)
+          .select('id, sort_order, updated_at')
       )
     )
     const error = results.find((result) => result.error)?.error
     if (error) return { success: false, error: error.message }
+    const versions = results.flatMap((result) => result.data ?? [])
 
     await logAudit({
       adminUserId: user.id,
@@ -821,7 +751,7 @@ export async function reorderCategories(
     })
 
     bumpCatalogCache()
-    return { success: true }
+    return { success: true, data: versions }
   } catch (err) {
     console.error('[admin/categories] reorder failed', err)
     return {
@@ -858,12 +788,15 @@ export async function createSeason(
 ): Promise<ActionResult> {
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      createSeasonCore(
+    async (ctx) => {
+      const arabic = createArabicFiller(ctx.adminUserId)
+      const result = await createSeasonCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
         data
-      ),
+      )
+      return withArabicMissing(result, arabic.missing())
+    },
     {
       fallbackError: 'Failed to create season',
       revalidate: (result) => {
@@ -876,17 +809,23 @@ export async function createSeason(
 
 export async function updateSeason(
   id: string,
-  data: Partial<z.input<typeof seasonSchema>>
-): Promise<ActionResult> {
+  data: Partial<z.input<typeof seasonSchema>>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      updateSeasonCore(
+    async (ctx) => {
+      const arabic = createArabicFiller(ctx.adminUserId)
+      // Checked against the drawer's updated_at before any AI call (review item 8, PR #29).
+      const result = await updateSeasonCore(
         ctx.db,
-        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic },
+        { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: arabic.fill },
         id,
-        data
-      ),
+        data,
+        expectedUpdatedAt
+      )
+      return withArabicMissing(result, arabic.missing())
+    },
     {
       fallbackError: 'Failed to update season',
       revalidate: (result) => {
@@ -909,17 +848,20 @@ export async function createEpisode(
 ): Promise<ActionResult> {
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      createEpisodeCore(
+    async (ctx) => {
+      const arabic = createArabicFiller(ctx.adminUserId)
+      const result = await createEpisodeCore(
         ctx.db,
         {
           audit: ctx.audit,
           adminUserId: ctx.adminUserId,
-          fillArabic,
+          fillArabic: arabic.fill,
           verifyVideo: serverVideoVerifier(ctx.db),
         },
         data
-      ),
+      )
+      return withArabicMissing(result, arabic.missing())
+    },
     {
       fallbackError: 'Failed to create episode',
       revalidate: (result) => {
@@ -933,22 +875,28 @@ export async function createEpisode(
 
 export async function updateEpisode(
   id: string,
-  data: Partial<z.input<typeof episodeSchema>>
-): Promise<ActionResult> {
+  data: Partial<z.input<typeof episodeSchema>>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   return runAdminAction(
     adminEnv,
-    (ctx) =>
-      updateEpisodeCore(
+    async (ctx) => {
+      const arabic = createArabicFiller(ctx.adminUserId)
+      // Checked against the drawer's updated_at before any AI call (review item 8, PR #29).
+      const result = await updateEpisodeCore(
         ctx.db,
         {
           audit: ctx.audit,
           adminUserId: ctx.adminUserId,
-          fillArabic,
+          fillArabic: arabic.fill,
           verifyVideo: serverVideoVerifier(ctx.db, id),
         },
         id,
-        data
-      ),
+        data,
+        expectedUpdatedAt
+      )
+      return withArabicMissing(result, arabic.missing())
+    },
     {
       fallbackError: 'Failed to update episode',
       revalidate: (result) => {
@@ -1414,121 +1362,6 @@ const ARTWORK_UPLOAD_SLOTS = [
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
-export async function uploadArtwork(
-  formData: FormData
-): Promise<ActionResult<string>> {
-  try {
-    await assertAdmin()
-    assertPublicMediaWriteReady()
-    const admin = createAdminClient()
-
-    const file = formData.get('file') as File | null
-    const showId = formData.get('showId') as string | null
-    const slot = formData.get('slot') as string | null
-
-    if (!file || !showId || !slot) {
-      console.warn('[uploadArtwork] missing args', {
-        hasFile: !!file,
-        showId,
-        slot,
-      })
-      return { success: false, error: 'Missing file, showId, or slot' }
-    }
-
-    if (
-      !UUID_RE.test(showId) ||
-      showId.includes('/') ||
-      showId.includes('..') ||
-      slot.includes('/') ||
-      slot.includes('..') ||
-      !ARTWORK_UPLOAD_SLOTS.includes(
-        slot as (typeof ARTWORK_UPLOAD_SLOTS)[number]
-      )
-    ) {
-      return { success: false, error: 'Invalid showId or slot' }
-    }
-
-    const ALLOWED_MIME = ['image/webp', 'image/png', 'image/jpeg']
-    if (!ALLOWED_MIME.includes(file.type)) {
-      console.warn('[uploadArtwork] bad mime rejected', {
-        showId,
-        slot,
-        mime: file.type,
-      })
-      return {
-        success: false,
-        error: 'File must be a WebP, PNG, or JPEG image',
-      }
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      console.warn('[uploadArtwork] oversize rejected', {
-        showId,
-        slot,
-        sizeMB: Math.round(file.size / 1024 / 1024),
-      })
-      return { success: false, error: 'Image must be under 10MB' }
-    }
-
-    // All slots use versioned paths so uploads never overwrite the live DB-referenced
-    // asset in-place. Form state holds the new URL; DB commit happens on Save.
-    // Clicking Cancel on the drawer keeps the DB pointing at the still-existing old
-    // file, so the live viewer is never shown a half-saved state. Orphans from saves
-    // (where the DB moves to the new URL and the old file is abandoned) are cleaned
-    // up by the scheduled sweep (see /api/cron/cleanup-media).
-    const ext = slot === 'logo' ? 'png' : 'webp'
-
-    // Transcode non-matching inputs to the storage format. For logo slot we keep PNG
-    // (preserves transparency and is the convention). For hero/poster slots we convert
-    // JPEG/PNG to WebP so the .webp extension accurately describes the bytes. If the
-    // upload is already in the target format we pass the bytes through unchanged.
-    let uploadBody: Buffer | File = file
-    let uploadContentType = file.type
-    const targetMime = ext === 'png' ? 'image/png' : 'image/webp'
-    if (file.type !== targetMime) {
-      const input = Buffer.from(await file.arrayBuffer())
-      const pipeline = sharp(input)
-      const transcoded =
-        ext === 'png'
-          ? await pipeline.png().toBuffer()
-          : await pipeline.webp({ quality: 88 }).toBuffer()
-      uploadBody = transcoded
-      uploadContentType = targetMime
-    }
-
-    const path = `shows/${showId}/${slot}-${Date.now()}.${ext}`
-
-    const { error } = await admin.storage
-      .from('show-artwork')
-      .upload(path, uploadBody, {
-        upsert: false,
-        contentType: uploadContentType,
-        cacheControl: '31536000',
-      })
-
-    if (error) return { success: false, error: error.message }
-
-    await mirrorUploadedPublicMedia(admin, {
-      bucket: 'show-artwork',
-      key: path,
-      body: uploadBody,
-      contentType: uploadContentType,
-      cacheControl: '31536000',
-    })
-
-    const { data: urlData } = admin.storage
-      .from('show-artwork')
-      .getPublicUrl(path)
-
-    return { success: true, data: urlData.publicUrl }
-  } catch (err) {
-    console.error('[uploadArtwork] failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
-    }
-  }
-}
-
 // Note: an earlier deleteArtwork() server action was removed here. Post-versioning
 // the UI uses form-state clearing (null-out the URL on Save) instead of an
 // imperative storage delete — the orphaned versioned files are collected by the
@@ -1540,111 +1373,64 @@ export async function uploadArtwork(
 // Hero Video Management
 // ---------------------------------------------------------------------------
 
-function heroPorts(admin: ReturnType<typeof createAdminClient>): HeroVideoPorts {
-  const bucket = admin.storage.from('site-assets')
+/**
+ * R2-backed ports for the video core (plan 02-16): the app Worker's MEDIA binding for
+ * head, a 4 MiB range read and delete. Nothing here reads a whole video, and nothing
+ * deletes a Supabase Storage original: only keys behind our own media origin qualify.
+ */
+async function videoPorts(db: AdminDb, appConfigVersion?: RowVersion): Promise<HeroVideoPorts> {
+  const env = await getWorkerEnv()
+  const bucket = env.MEDIA as unknown as FinalizeBucket
+  const mediaOrigin = getPublicMediaOrigin()
   return {
-    db: admin,
-    storage: {
-      info: (path) => bucket.info(path),
-      download: (path) => bucket.download(path),
-      remove: (paths) => bucket.remove(paths),
-      publicUrl: (path) => bucket.getPublicUrl(path).data.publicUrl,
+    db,
+    mediaOrigin,
+    appConfigVersion,
+    finalize: async (input) => {
+      const r = await finalizeUploadedObject({
+        kind: input.kind,
+        slot: input.slot,
+        showId: input.showId,
+        userId: input.userId,
+        key: input.key,
+        variantKeys: [],
+        bucket,
+      })
+      if (r.ok) return { ok: true, key: r.key }
+      return { ok: false, error: r.error, ...(r.cleanupFailed ? { cleanupFailed: true as const } : {}) }
+    },
+    head: async (key) => {
+      const head = await bucket.head(key)
+      return head ? { size: head.size } : null
+    },
+    readHead: async (key, maxBytes) => {
+      const object = await bucket.get(key, { range: { offset: 0, length: maxBytes } })
+      return object ? new Uint8Array(await object.arrayBuffer()) : null
     },
     media: {
-      mirrorUpload: (path, blob) =>
-        mirrorUploadedPublicMedia(admin, {
-          bucket: 'site-assets',
-          key: path,
-          body: blob,
-          contentType: 'video/mp4',
-          cacheControl: '31536000',
-        }),
-      cleanup: (paths) => cleanupMirroredPublicMedia(admin, 'site-assets', paths, '[hero]'),
-      stageDeletion: (paths) => stageMirroredPublicMediaDeletion(admin, 'site-assets', paths),
+      delete: (keys) => bucket.delete(keys),
+      // Nothing is deleted before commit, so rollback has nothing to restore. Commit re-reads
+      // every reference and keeps a key still used anywhere (deferred items 21-23).
+      stageDeletion: async (keys) => stageR2Deletion(bucket, keys, mediaGuard(db, '[video]')),
     },
     hasAudioTrack: mp4BytesHasAudioTrack,
-    storagePathFromUrl: (url) => getPublicStoragePath(url, 'site-assets'),
-    now: Date.now,
+    previousR2Keys: (url) => r2KeysForUrl(url, mediaOrigin),
+    storagePathFromUrl: (url) => r2KeyFromUrl(url, mediaOrigin) ?? getPublicStoragePath(url, 'site-assets'),
   }
-}
-
-export async function createHeroVideoUpload(
-  file: {
-    name: string
-    size: number
-    type: string
-  },
-  variant: HeroVariant = 'desktop'
-): Promise<ActionResult<SignedVideoUploadTarget>> {
-  try {
-    await assertAdmin()
-    assertPublicMediaWriteReady()
-    const admin = createAdminClient()
-
-    const v = parseHeroVariant(variant)
-    if (!v.ok) return { success: false, error: v.error }
-
-    if (!isMp4File(file)) {
-      return { success: false, error: 'File must be an MP4 video' }
-    }
-
-    // Client-reported size only; the server proof is saveHeroVideoCore (storage info()).
-    const sizeCheck = checkHeroVideoSize(file.size)
-    if (!sizeCheck.ok) return { success: false, error: sizeCheck.error }
-
-    const path = createHeroVideoPath(v.value)
-    const { data, error } = await admin.storage
-      .from('site-assets')
-      .createSignedUploadUrl(path)
-
-    if (error) return { success: false, error: error.message }
-
-    return { success: true, data: { path: data.path, token: data.token } }
-  } catch (err) {
-    console.error('[createHeroVideoUpload] failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
-    }
-  }
-}
-
-export async function saveHeroVideoUpload(
-  path: string,
-  variant: HeroVariant = 'desktop'
-): Promise<ActionResult<string>> {
-  const res = await runAdminAction(
-    adminEnv,
-    async (ctx) => {
-      const r = await saveHeroVideoCore(
-        heroPorts(ctx.db),
-        { audit: ctx.audit, adminUserId: ctx.adminUserId },
-        { path, variant }
-      )
-      if (r.mediaCleanupFailed) console.error('[saveHeroVideoUpload] media cleanup failed')
-      return r
-    },
-    {
-      fallbackError: 'Upload failed',
-      revalidate: () => {
-        updateTag('site-config')
-        revalidatePath('/')
-        revalidatePath('/portfolio')
-      },
-    }
-  )
-  return res
 }
 
 export async function setHeroVideoUrl(
   youtubeUrl: string,
-  variant: HeroVariant = 'desktop'
-): Promise<ActionResult> {
+  variant: HeroVariant,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   // The runner checks admin first; validation runs inside it so a non-admin
   // learns nothing about what a valid URL looks like.
   return runAdminAction(
     adminEnv,
     async (ctx) => {
+      const version = rowVersion(expectedUpdatedAt)
+      if (!version.ok) return { success: false, error: version.error, wrote: false }
       const trimmed = typeof youtubeUrl === 'string' ? youtubeUrl.trim() : ''
       if (!trimmed) return { success: false, error: 'URL is required', wrote: false }
 
@@ -1666,12 +1452,12 @@ export async function setHeroVideoUrl(
       // Store canonical form so viewers always get a predictable embed URL.
       const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`
       const r = await setHeroVideoUrlCore(
-        heroPorts(ctx.db),
+        await videoPorts(ctx.db, version.value),
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
         { canonicalUrl, variant }
       )
       if (r.mediaCleanupFailed) console.error('[setHeroVideoUrl] media cleanup failed')
-      return r
+      return withUpdatedAt(r, version.value)
     },
     {
       fallbackError: 'Failed to save URL',
@@ -1684,18 +1470,21 @@ export async function setHeroVideoUrl(
 }
 
 export async function removeHeroVideo(
-  variant: HeroVariant = 'desktop'
-): Promise<ActionResult> {
+  variant: HeroVariant,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   return runAdminAction(
     adminEnv,
     async (ctx) => {
+      const version = rowVersion(expectedUpdatedAt)
+      if (!version.ok) return { success: false, error: version.error, wrote: false }
       const r = await removeHeroVideoCore(
-        heroPorts(ctx.db),
+        await videoPorts(ctx.db, version.value),
         { audit: ctx.audit, adminUserId: ctx.adminUserId },
         { variant }
       )
       if (r.mediaCleanupFailed) console.error('[removeHeroVideo] media cleanup failed')
-      return r
+      return withUpdatedAt(r, version.value)
     },
     {
       fallbackError: 'Failed to remove video',
@@ -1707,24 +1496,28 @@ export async function removeHeroVideo(
   )
 }
 
-export async function setHeroVideoMuted(muted: boolean): Promise<ActionResult> {
+export async function setHeroVideoMuted(
+  muted: boolean,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     await assertAdmin()
-    const admin = createAdminClient()
-
-    // hero_video_muted not yet in generated database.types — `as never` is the
-    // codebase convention for columns added by a migration before gen-types runs.
-    const { error } = await admin
-      .from('app_config')
-      .update({ hero_video_muted: muted } as never)
-      .eq('id', 1)
-
-    if (error) return { success: false, error: error.message }
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
+    if (typeof muted !== 'boolean') return { success: false, error: 'Invalid audio setting' }
+    const { error } = await updateIfUnchanged(
+      createAdminClient(),
+      'app_config',
+      1,
+      { hero_video_muted: muted },
+      version.value
+    )
+    if (error) return { success: false, error }
 
     updateTag('site-config')
     revalidatePath('/')
 
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -1738,112 +1531,36 @@ export async function setHeroVideoMuted(muted: boolean): Promise<ActionResult> {
 // Preloader Video Management
 // ---------------------------------------------------------------------------
 
-function createPreloaderVideoPath() {
-  return `preloader/video-${Date.now()}.mp4`
-}
-
-export async function createPreloaderVideoUpload(file: {
-  name: string
-  size: number
-  type: string
-}): Promise<ActionResult<SignedVideoUploadTarget>> {
+export async function removePreloaderVideo(expectedUpdatedAt: string): Promise<VersionedResult> {
   try {
     await assertAdmin()
-    assertPublicMediaWriteReady()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const admin = createAdminClient()
-
-    if (!isMp4File(file)) {
-      return { success: false, error: 'File must be an MP4 video' }
-    }
-
-    // Client-reported size only; the server proof is savePreloaderVideoCore (storage info()).
-    if (file.size > PRELOADER_VIDEO_LIMIT.maxBytes) {
-      return { success: false, error: PRELOADER_VIDEO_LIMIT.tooLarge }
-    }
-
-    const path = createPreloaderVideoPath()
-    const { data, error } = await admin.storage
-      .from('site-assets')
-      .createSignedUploadUrl(path)
-
-    if (error) return { success: false, error: error.message }
-
-    return { success: true, data: { path: data.path, token: data.token } }
-  } catch (err) {
-    console.error('[createPreloaderVideoUpload] failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
-    }
-  }
-}
-
-export async function savePreloaderVideoUpload(
-  path: string
-): Promise<ActionResult<string>> {
-  return runAdminAction(
-    adminEnv,
-    (ctx) =>
-      savePreloaderVideoCore(heroPorts(ctx.db), { audit: ctx.audit, adminUserId: ctx.adminUserId }, { path }),
-    {
-      fallbackError: 'Upload failed',
-      revalidate: () => {
-        updateTag('site-config')
-        revalidatePath('/', 'layout')
+    // Compare-and-swap clear, then the R2 object goes only if nothing else uses it (R2 only:
+    // a preloader that still points at a Supabase original keeps that file, MEDIA-07).
+    const result = await removeMediaCore(
+      {
+        db: admin,
+        media: (await getWorkerEnv()).MEDIA as unknown as DeletableBucket,
+        mediaOrigin: getPublicMediaOrigin(),
+        version: version.value,
       },
-    }
-  )
-}
-
-export async function removePreloaderVideo(): Promise<ActionResult> {
-  try {
-    await assertAdmin()
-    const admin = createAdminClient()
-
-    const { data: previousConfig, error: previousConfigError } = await admin
-      .from('app_config')
-      .select()
-      .eq('id', 1)
-      .single()
-    if (previousConfigError || !previousConfig) {
-      return {
-        success: false,
-        error: previousConfigError?.message ?? 'Could not load site config',
-      }
-    }
-
-    const previousPreloaderUrl = (
-      previousConfig as unknown as { preloader_video_url: string | null }
-    ).preloader_video_url
-    const previousPath = getPublicStoragePath(previousPreloaderUrl, 'site-assets')
-    const mediaDeletion = previousPath
-      ? await stageMirroredPublicMediaDeletion(admin, 'site-assets', [
-          previousPath,
-        ])
-      : null
-    const { error: configError } = await admin
-      .from('app_config')
-      .update({ preloader_video_url: null } as never)
-      .eq('id', 1)
-
-    if (configError) {
-      const restored = await mediaDeletion?.rollback()
-      return {
-        success: false,
-        error: restored !== false
-          ? configError.message
-          : 'Could not remove the preloader video and restore R2 media',
-      }
-    }
-
-    if (mediaDeletion && !(await mediaDeletion.commit())) {
-      console.error('[removePreloaderVideo] media cleanup failed')
-    }
+      {
+        kind: 'clear-column',
+        table: 'app_config',
+        id: 1,
+        column: 'preloader_video_url',
+        notFound: 'Could not load site config',
+      },
+      '[removePreloaderVideo]'
+    )
+    if (!result.success) return { success: false, error: result.error }
 
     updateTag('site-config')
     revalidatePath('/', 'layout')
 
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[removePreloaderVideo] failed', err)
     return {
@@ -1856,66 +1573,6 @@ export async function removePreloaderVideo(): Promise<ActionResult> {
 // ---------------------------------------------------------------------------
 // Per-Show Hero Video Management
 // ---------------------------------------------------------------------------
-
-// Uploads MP4 to storage and returns the public URL. Does NOT write to DB —
-// the URL is persisted when the parent form is saved (same pattern as artwork).
-export async function createShowVideoUpload(file: {
-  name: string
-  size: number
-  type: string
-  showId: string
-  variant: 'desktop' | 'mobile'
-}): Promise<ActionResult<SignedVideoUploadTarget>> {
-  try {
-    await assertAdmin()
-    assertPublicMediaWriteReady()
-    const admin = createAdminClient()
-    const { name, size, type, showId, variant } = file
-
-    const showIdParsed = parseId(showId, 'show')
-    if (!showIdParsed.ok) return { success: false, error: showIdParsed.error }
-
-    if (variant !== 'desktop' && variant !== 'mobile') {
-      return { success: false, error: 'Invalid variant' }
-    }
-
-    if (!isMp4File({ name, type })) {
-      return { success: false, error: 'File must be an MP4 video' }
-    }
-
-    // Client-reported size only; the server proof is saveShowVideoCore (storage info()).
-    if (size > SHOW_VIDEO_LIMIT.maxBytes) {
-      return { success: false, error: SHOW_VIDEO_LIMIT.tooLarge }
-    }
-
-    const path = `shows/${showIdParsed.value}/hero-${variant}-${Date.now()}.mp4`
-    const { data, error } = await admin.storage
-      .from('site-assets')
-      .createSignedUploadUrl(path)
-
-    if (error) return { success: false, error: error.message }
-
-    return { success: true, data: { path: data.path, token: data.token } }
-  } catch (err) {
-    console.error('[createShowVideoUpload] failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
-    }
-  }
-}
-
-export async function saveShowVideoUpload(
-  path: string
-): Promise<ActionResult<string>> {
-  return runAdminAction(
-    adminEnv,
-    (ctx) =>
-      saveShowVideoCore(heroPorts(ctx.db), { audit: ctx.audit, adminUserId: ctx.adminUserId }, { path }),
-    // The URL is written when the show form is saved; nothing cached changes here.
-    { fallbackError: 'Upload failed', revalidate: () => {} }
-  )
-}
 
 // Note: an earlier deleteShowVideoFile() server action was removed here. Same
 // reasoning as deleteArtwork — post-versioning the UI uses form-state clearing
@@ -1946,12 +1603,16 @@ export async function toggleFeatured(showId: string) {
 
     const newFeatured = !show.featured
 
-    const { error } = await admin
+    // Compare-and-swap on the value just read: two clicks at once flip it exactly once.
+    const { data: flipped, error } = await admin
       .from('shows')
-      .update({ featured: newFeatured })
+      .update({ featured: !show.featured })
       .eq('id', showId)
+      .eq('featured', show.featured)
+      .select('id')
 
     if (error) throw error
+    if (!flipped || flipped.length === 0) return { success: false, error: SAVE_CONFLICT }
 
     revalidatePath('/admin')
     revalidatePath('/')
@@ -1990,6 +1651,8 @@ const siteMetadataSchema = z.object({
   site_tagline: z.string().trim().min(1, 'Tagline is required').max(120),
   site_tagline_ar: z.string().trim().max(120).nullable(),
 })
+// Each *_ar field's max: an AI fill longer than it is dropped (review item 7, PR #29).
+const siteMetadataArMax = arabicMaxLengths(siteMetadataSchema)
 
 const authPageSchema = z.object({
   auth_heading: z.string().trim().max(120).nullable(),
@@ -2002,6 +1665,7 @@ const authPageSchema = z.object({
   auth_quote_attribution_ar: z.string().trim().max(120).nullable(),
   auth_allow_skip: z.boolean(),
 })
+const authPageArMax = arabicMaxLengths(authPageSchema)
 
 const liveStreamUrlSchema = z.object({
   live_stream_url: z
@@ -2052,6 +1716,7 @@ const footerSchema = z.object({
     cookies: urlOrEmpty,
   }),
 })
+const footerArMax = arabicMaxLengths(footerSchema)
 
 const hrefOrEmpty = z
   .string()
@@ -2175,29 +1840,41 @@ async function auditConfigUpdate(
   })
 }
 
+/**
+ * Write one settings section of the app_config row (deferred item 23, residual b): only while
+ * the row still holds the updated_at the settings page loaded (or our own last save produced).
+ * 0 rows is the conflict line and nothing is written; success leaves the new value in
+ * `version.next`.
+ */
+function saveConfigSection(patch: Record<string, unknown>, version: RowVersion) {
+  return updateIfUnchanged(createAdminClient(), 'app_config', 1, patch, version)
+}
+
 export async function updateLiveStreamUrl(
-  input: z.input<typeof liveStreamUrlSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof liveStreamUrlSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = liveStreamUrlSchema.parse(input)
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      .update({
+    const { error } = await saveConfigSection(
+      {
         live_stream_url: parsed.live_stream_url,
         live_stream_label: parsed.live_stream_label,
         live_stream_label_ar: parsed.live_stream_label_ar,
-      })
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+      },
+      version.value
+    )
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, [
       'live_stream_url',
       'live_stream_label',
       'live_stream_label_ar',
     ])
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -2208,29 +1885,36 @@ export async function updateLiveStreamUrl(
 }
 
 export async function updateSiteMetadata(
-  input: z.input<typeof siteMetadataSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof siteMetadataSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = siteMetadataSchema.parse(input)
 
-    // Auto-fill blank Arabic fields from their English source (DeepL).
-    parsed.site_description_ar = await fillArabic(
+    // Auto-fill blank Arabic fields from their English source (Workers AI).
+    const arabic = createArabicFiller(user.id)
+    parsed.site_description_ar = await arabic.fill(
       parsed.site_description,
-      parsed.site_description_ar
+      parsed.site_description_ar,
+      siteMetadataArMax.site_description_ar
     )
-    parsed.site_tagline_ar = await fillArabic(parsed.site_tagline, parsed.site_tagline_ar)
+    parsed.site_tagline_ar = await arabic.fill(
+      parsed.site_tagline,
+      parsed.site_tagline_ar,
+      siteMetadataArMax.site_tagline_ar
+    )
 
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update(parsed as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    const { error } = await saveConfigSection(parsed, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, Object.keys(parsed))
     bumpSiteConfigCache()
-    return { success: true }
+    return withArabicMissing(
+      { success: true, updatedAt: version.value.next ?? undefined },
+      arabic.missing()
+    )
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -2241,36 +1925,46 @@ export async function updateSiteMetadata(
 }
 
 export async function updateAuthPageConfig(
-  input: z.input<typeof authPageSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof authPageSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = authPageSchema.parse(input)
 
-    // Auto-fill blank Arabic copy from the English source (DeepL).
-    parsed.auth_heading_ar = await fillArabic(
+    // Auto-fill blank Arabic copy from the English source (Workers AI).
+    const arabic = createArabicFiller(user.id)
+    parsed.auth_heading_ar = await arabic.fill(
       parsed.auth_heading,
-      parsed.auth_heading_ar
+      parsed.auth_heading_ar,
+      authPageArMax.auth_heading_ar
     )
-    parsed.auth_subheading_ar = await fillArabic(
+    parsed.auth_subheading_ar = await arabic.fill(
       parsed.auth_subheading,
-      parsed.auth_subheading_ar
+      parsed.auth_subheading_ar,
+      authPageArMax.auth_subheading_ar
     )
-    parsed.auth_quote_ar = await fillArabic(parsed.auth_quote, parsed.auth_quote_ar)
-    parsed.auth_quote_attribution_ar = await fillArabic(
+    parsed.auth_quote_ar = await arabic.fill(
+      parsed.auth_quote,
+      parsed.auth_quote_ar,
+      authPageArMax.auth_quote_ar
+    )
+    parsed.auth_quote_attribution_ar = await arabic.fill(
       parsed.auth_quote_attribution,
-      parsed.auth_quote_attribution_ar
+      parsed.auth_quote_attribution_ar,
+      authPageArMax.auth_quote_attribution_ar
     )
 
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      .update(parsed as never)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    const { error } = await saveConfigSection(parsed, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, Object.keys(parsed))
     bumpSiteConfigCache()
-    return { success: true }
+    return withArabicMissing(
+      { success: true, updatedAt: version.value.next ?? undefined },
+      arabic.missing()
+    )
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -2281,25 +1975,29 @@ export async function updateAuthPageConfig(
 }
 
 export async function updateFooterContent(
-  input: z.input<typeof footerSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof footerSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = footerSchema.parse(input)
 
-    // Auto-fill blank Arabic tagline from English (DeepL).
-    parsed.taglineAr = (await fillArabic(parsed.tagline, parsed.taglineAr)) ?? ''
+    // Auto-fill blank Arabic tagline from English (Workers AI).
+    const arabic = createArabicFiller(user.id)
+    parsed.taglineAr = (await arabic.fill(parsed.tagline, parsed.taglineAr, footerArMax.taglineAr)) ?? ''
 
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ footer_content: parsed } as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    // The social icon urls ride in this jsonb: a stale footer form can no longer write back
+    // an icon url another save already replaced.
+    const { error } = await saveConfigSection({ footer_content: parsed }, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, ['footer_content'])
     bumpSiteConfigCache()
-    return { success: true }
+    return withArabicMissing(
+      { success: true, updatedAt: version.value.next ?? undefined },
+      arabic.missing()
+    )
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -2315,39 +2013,40 @@ const portfolioContentSchema = z.object({
   portfolio_heading: z.string().trim().max(200).nullable(),
   portfolio_heading_ar: z.string().trim().max(200).nullable(),
 })
+const portfolioArMax = arabicMaxLengths(portfolioContentSchema)
 
 export async function updatePortfolioContent(
-  input: z.input<typeof portfolioContentSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof portfolioContentSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = portfolioContentSchema.parse(input)
 
-    // Auto-fill blank Arabic fields from their English source (DeepL).
-    parsed.hero_description_ar = await fillArabic(
+    // Auto-fill blank Arabic fields from their English source (Workers AI).
+    const arabic = createArabicFiller(user.id)
+    parsed.hero_description_ar = await arabic.fill(
       parsed.hero_description,
-      parsed.hero_description_ar
+      parsed.hero_description_ar,
+      portfolioArMax.hero_description_ar
     )
-    parsed.portfolio_heading_ar = await fillArabic(
+    parsed.portfolio_heading_ar = await arabic.fill(
       parsed.portfolio_heading,
-      parsed.portfolio_heading_ar
+      parsed.portfolio_heading_ar,
+      portfolioArMax.portfolio_heading_ar
     )
-
-    const admin = createAdminClient()
 
     const updatePayload = {
       hero_description: parsed.hero_description,
       hero_description_ar: parsed.hero_description_ar,
       portfolio_heading: parsed.portfolio_heading,
       portfolio_heading_ar: parsed.portfolio_heading_ar,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any
-    const { error } = await admin
-      .from('app_config')
-      .update(updatePayload)
-      .eq('id', 1)
+    }
+    const { error } = await saveConfigSection(updatePayload, version.value)
 
-    if (error) return { success: false, error: error.message }
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, [
       'hero_description',
       'hero_description_ar',
@@ -2355,7 +2054,10 @@ export async function updatePortfolioContent(
       'portfolio_heading_ar',
     ])
     bumpSiteConfigCache()
-    return { success: true }
+    return withArabicMissing(
+      { success: true, updatedAt: version.value.next ?? undefined },
+      arabic.missing()
+    )
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -2366,10 +2068,13 @@ export async function updatePortfolioContent(
 }
 
 export async function updateContactRecipient(
-  input: { contactEmail: string }
-): Promise<ActionResult> {
+  input: { contactEmail: string },
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const admin = createAdminClient()
 
     // Read footer_content fresh (not cached getAppConfig, which defaults to
@@ -2395,16 +2100,14 @@ export async function updateContactRecipient(
       ...currentFooter,
       contactEmail: input.contactEmail,
     })
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ footer_content: parsed } as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    // Lands only while the row still holds the updated_at the inbox page loaded, so the footer
+    // read above is the one we merge into (no other save in between).
+    const { error } = await updateIfUnchanged(admin, 'app_config', 1, { footer_content: parsed }, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, ['footer_content.contactEmail'])
     bumpSiteConfigCache()
     revalidatePath('/admin/inbox')
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -2415,21 +2118,19 @@ export async function updateContactRecipient(
 }
 
 export async function updateCtaCopy(
-  input: z.input<typeof ctaCopySchema>
-): Promise<ActionResult> {
+  input: z.input<typeof ctaCopySchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = ctaCopySchema.parse(input)
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ cta_copy: parsed } as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    const { error } = await saveConfigSection({ cta_copy: parsed }, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, ['cta_copy'])
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -2440,21 +2141,19 @@ export async function updateCtaCopy(
 }
 
 export async function updateGenreConfig(
-  input: z.input<typeof genreConfigSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof genreConfigSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = genreConfigSchema.parse(input)
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ genre_config: parsed } as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    const { error } = await saveConfigSection({ genre_config: parsed }, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, ['genre_config'])
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -2465,23 +2164,21 @@ export async function updateGenreConfig(
 }
 
 export async function updateIntegrations(
-  input: z.input<typeof integrationsSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof integrationsSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = integrationsSchema.parse(input)
     // Empty strings from form inputs → null so DB stays clean
     const cleaned: Record<string, string | null> = {
       google_analytics_id: parsed.google_analytics_id?.trim() || null,
       meta_pixel_id: parsed.meta_pixel_id?.trim() || null,
     }
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update(cleaned as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    const { error } = await saveConfigSection(cleaned, version.value)
+    if (error) return { success: false, error }
     // Log which integration keys were touched without leaking the secret values.
     const keysTouched = Object.entries(cleaned)
       .filter(([, v]) => v !== null)
@@ -2491,7 +2188,7 @@ export async function updateIntegrations(
       keysTouched.length ? keysTouched : ['integrations_cleared']
     )
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -2502,21 +2199,19 @@ export async function updateIntegrations(
 }
 
 export async function updateFeatureFlags(
-  input: z.input<typeof featureFlagsSchema>
-): Promise<ActionResult> {
+  input: z.input<typeof featureFlagsSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = featureFlagsSchema.parse(input)
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ feature_flags: parsed } as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    const { error } = await saveConfigSection({ feature_flags: parsed }, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, ['feature_flags'])
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -2527,10 +2222,13 @@ export async function updateFeatureFlags(
 }
 
 export async function updateTopTicker(
-  input: z.input<typeof topTickerSchema>
-): Promise<ActionResult<{ untranslated: number }>> {
+  input: z.input<typeof topTickerSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult<{ untranslated: number }>> {
   try {
     const user = await assertAdmin()
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = topTickerSchema.parse(input)
     const trimmed: TickerItem[] = parsed.items
       .map((row) => ({
@@ -2543,8 +2241,9 @@ export async function updateTopTicker(
       }))
       .filter((row) => row.tag.length > 0 || row.text.length > 0 || (row.tag2 ?? '').length > 0)
 
-    // Auto-fill blank Arabic fields in one strict batch: never English in an Arabic slot.
-    const { items, untranslated } = await fillTickerArabic(trimmed, translateBatchToArabicStrict)
+    // Auto-fill blank Arabic fields (strict, per-admin rate limit): never English in an Arabic slot.
+    const arabic = createArabicFiller(user.id)
+    const { items, untranslated } = await fillTickerArabic(trimmed, arabic.fillBatch, arabicMaxLengths(topTickerItemSchema))
 
     if (parsed.enabled && items.length === 0) {
       return {
@@ -2554,16 +2253,11 @@ export async function updateTopTicker(
     }
 
     const payload = { enabled: parsed.enabled, items }
-    const admin = createAdminClient()
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ top_ticker: payload } as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
+    const { error } = await saveConfigSection({ top_ticker: payload }, version.value)
+    if (error) return { success: false, error }
     await auditConfigUpdate(user.id, ['top_ticker'], { untranslated })
     bumpSiteConfigCache()
-    return { success: true, data: { untranslated } }
+    return { success: true, data: { untranslated }, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
@@ -2589,214 +2283,44 @@ function isSiteImageKind(kind: unknown): kind is SiteImageKind {
   return typeof kind === 'string' && Object.prototype.hasOwnProperty.call(SITE_IMAGE_COLUMN, kind)
 }
 
-// Upload OG image or favicon to site-assets bucket.
-// Returns the public URL and writes it to the matching app_config column.
-export async function uploadSiteImage(
-  formData: FormData
-): Promise<ActionResult<string>> {
-  try {
-    await assertAdmin()
-    assertPublicMediaWriteReady()
-    const admin = createAdminClient()
-
-    const file = formData.get('file') as File | null
-    const kind = formData.get('kind')
-    if (!file) return { success: false, error: 'No file provided' }
-    if (!isSiteImageKind(kind)) {
-      return { success: false, error: 'Invalid kind' }
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      return { success: false, error: 'Image must be under 5MB' }
-    }
-
-    // SVG is refused (declared type and sniffed bytes); PNG, JPEG, WebP and ICO stay allowed (AVIF is not in the site-assets bucket allow-list).
-    const bytes = new Uint8Array(await file.arrayBuffer())
-    const checked = checkImageUpload({
-      declaredMime: file.type,
-      bytes,
-      allow: SITE_IMAGE_MIME_EXT,
-    })
-    if (!checked.ok) return { success: false, error: checked.error }
-    const mime = checked.mime
-    const ext = checked.ext
-
-    const column = SITE_IMAGE_COLUMN[kind]
-    const { data: previousConfig, error: previousConfigError } = await admin
-      .from('app_config')
-      .select(column)
-      .eq('id', 1)
-      .single()
-    if (previousConfigError || !previousConfig) {
-      return {
-        success: false,
-        error: previousConfigError?.message ?? 'Could not load site config',
-      }
-    }
-
-    const previousUrl = (
-      previousConfig as unknown as Record<string, string | null>
-    )[column]
-    const path = `settings/${kind}-${Date.now()}.${ext}`
-
-    const body = new Blob([bytes], { type: mime })
-
-    const { error: uploadError } = await admin.storage
-      .from('site-assets')
-      .upload(path, body, {
-        upsert: false,
-        contentType: mime,
-        cacheControl: '31536000',
-      })
-
-    if (uploadError) return { success: false, error: uploadError.message }
-
-    await mirrorUploadedPublicMedia(admin, {
-      bucket: 'site-assets',
-      key: path,
-      body,
-      contentType: mime,
-      cacheControl: '31536000',
-    })
-
-    const { data: urlData } = admin.storage
-      .from('site-assets')
-      .getPublicUrl(path)
-    // Cache-bust the URL so browsers always pick up the latest upload
-    const bustedUrl = `${urlData.publicUrl}?v=${Date.now()}`
-
-    const { error: dbError } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ [column]: bustedUrl } as any)
-      .eq('id', 1)
-
-    if (dbError) {
-      await cleanupMirroredPublicMedia(
-        admin,
-        'site-assets',
-        [path],
-        '[uploadSiteImage]'
-      )
-      return { success: false, error: dbError.message }
-    }
-
-    const previousPath = getPublicStoragePath(previousUrl, 'site-assets')
-    if (previousPath && previousPath !== path) {
-      await cleanupMirroredPublicMedia(
-        admin,
-        'site-assets',
-        [previousPath],
-        '[uploadSiteImage]'
-      )
-    }
-
-    bumpSiteConfigCache()
-    return { success: true, data: bustedUrl }
-  } catch (err) {
-    console.error('[admin/actions] mutation failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
-    }
-  }
-}
-
 export async function removeSiteImage(
-  kind: SiteImageKind
-): Promise<ActionResult> {
+  kind: SiteImageKind,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     await assertAdmin()
     if (!isSiteImageKind(kind)) return { success: false, error: 'Invalid kind' }
+    const version = rowVersion(expectedUpdatedAt)
+    if (!version.ok) return { success: false, error: version.error }
     const admin = createAdminClient()
-    const column = SITE_IMAGE_COLUMN[kind]
-    const { data: previousConfig, error: previousConfigError } = await admin
-      .from('app_config')
-      .select(column)
-      .eq('id', 1)
-      .single()
-    if (previousConfigError || !previousConfig) {
-      return {
-        success: false,
-        error: previousConfigError?.message ?? 'Could not load site config',
-      }
-    }
-
-    const previousUrl = (
-      previousConfig as unknown as Record<string, string | null>
-    )[column]
-    const { error } = await admin
-      .from('app_config')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ [column]: null } as any)
-      .eq('id', 1)
-    if (error) return { success: false, error: error.message }
-
-    const previousPath = getPublicStoragePath(previousUrl, 'site-assets')
-    if (previousPath) {
-      await cleanupMirroredPublicMedia(
-        admin,
-        'site-assets',
-        [previousPath],
-        '[removeSiteImage]'
-      )
-    }
+    // Compare-and-swap clear, then the R2 object goes only if no other live value (another
+    // site image, a show, a profile...) still uses it. R2 only; a Supabase original is never
+    // deleted (MEDIA-07).
+    const result = await removeMediaCore(
+      {
+        db: admin,
+        media: (await getWorkerEnv()).MEDIA as unknown as DeletableBucket,
+        mediaOrigin: getPublicMediaOrigin(),
+        version: version.value,
+      },
+      {
+        kind: 'clear-column',
+        table: 'app_config',
+        id: 1,
+        column: SITE_IMAGE_COLUMN[kind],
+        notFound: 'Could not load site config',
+      },
+      '[removeSiteImage]'
+    )
+    if (!result.success) return { success: false, error: result.error }
 
     bumpSiteConfigCache()
-    return { success: true }
+    return { success: true, updatedAt: version.value.next ?? undefined }
   } catch (err) {
     console.error('[admin/actions] mutation failed', err)
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to remove',
-    }
-  }
-}
-
-export async function uploadSocialIcon(
-  formData: FormData
-): Promise<ActionResult<string>> {
-  try {
-    await assertAdmin()
-    assertPublicMediaWriteReady()
-    const admin = createAdminClient()
-
-    const file = formData.get('file') as File | null
-    if (!file) return { success: false, error: 'No file provided' }
-    if (file.size > 2 * 1024 * 1024) {
-      return { success: false, error: 'Icon must be under 2MB' }
-    }
-
-    const bytes = new Uint8Array(await file.arrayBuffer())
-    const checked = checkImageUpload({
-      declaredMime: file.type,
-      bytes,
-      allow: SOCIAL_ICON_MIME_EXT,
-    })
-    if (!checked.ok) return { success: false, error: checked.error }
-
-    const path = `settings/social-icons/${Date.now()}.${checked.ext}`
-    const body = new Blob([bytes], { type: checked.mime })
-    const { error: uploadError } = await admin.storage
-      .from('site-assets')
-      .upload(path, body, { upsert: false, contentType: checked.mime, cacheControl: '31536000' })
-
-    if (uploadError) return { success: false, error: uploadError.message }
-
-    await mirrorUploadedPublicMedia(admin, {
-      bucket: 'site-assets',
-      key: path,
-      body,
-      contentType: checked.mime,
-      cacheControl: '31536000',
-    })
-
-    const { data: urlData } = admin.storage.from('site-assets').getPublicUrl(path)
-    return { success: true, data: urlData.publicUrl }
-  } catch (err) {
-    console.error('[admin/actions] uploadSocialIcon failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Upload failed',
     }
   }
 }
@@ -2905,25 +2429,32 @@ export async function createShort(
   }
 }
 
+/** Lands only while the row still holds the updated_at the drawer opened (review item 8, PR #29). */
 export async function updateShort(
   id: string,
-  data: z.input<typeof shortSchema>
-): Promise<ActionResult> {
+  data: z.input<typeof shortSchema>,
+  expectedUpdatedAt: string
+): Promise<VersionedResult> {
   try {
     const user = await assertAdmin()
     const idParsed = parseId(id, 'short')
     if (!idParsed.ok) return { success: false, error: idParsed.error }
     id = idParsed.value
+    // shorts.updated_at is nullable: the drawer sends NULL_UPDATED_AT for a NULL row (re-review item 5).
+    const version = rowVersion(expectedUpdatedAt, { nullable: true })
+    if (!version.ok) return { success: false, error: version.error }
     const parsed = shortSchema.parse(data)
     const admin = createAdminClient()
 
     const { data: current, error: readError } = await admin
       .from('shorts')
-      .select('youtube_video_id, title, channel_name, title_edited, channel_name_edited')
+      .select('youtube_video_id, title, channel_name, title_edited, channel_name_edited, updated_at')
       .eq('id', id)
       .maybeSingle()
     if (readError) return { success: false, error: readError.message }
     if (!current) return { success: false, error: 'Short not found.' }
+    // A stale drawer stops here, before the YouTube call; the write below is CAS too.
+    if (current.updated_at !== version.value.expected) return { success: false, error: SAVE_CONFLICT }
 
     // Server video check before the write; the stored video is not re-checked.
     const video = await checkShortVideoCore(
@@ -2943,14 +2474,17 @@ export async function updateShort(
       video.meta ? shortTextFromYouTube(video.meta) : null
     )
 
-    const { data: short, error } = await admin
-      .from('shorts')
-      .update({ ...parsed, ...edited })
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) return { success: false, error: error.message }
+    // Lands only while the row still holds the drawer's updated_at (review item 8, PR #29).
+    const { error, row } = await updateIfUnchanged(
+      admin,
+      'shorts',
+      id,
+      { ...parsed, ...edited },
+      version.value,
+      '*'
+    )
+    if (error || !row) return { success: false, error: error ?? 'Short not found.' }
+    const short = row as unknown as Database['public']['Tables']['shorts']['Row']
 
     await logAudit({
       adminUserId: user.id,
@@ -2962,7 +2496,7 @@ export async function updateShort(
 
     revalidatePath('/admin/shorts')
     updateTag('shorts')
-    return { success: true, data: short }
+    return withUpdatedAt({ success: true, data: short }, version.value)
   } catch (err) {
     console.error('[admin/shorts] update failed', err)
     return {
@@ -3162,72 +2696,309 @@ export async function addCastMember(
   }
 }
 
-export async function uploadCastImage(
-  formData: FormData
-): Promise<ActionResult<string>> {
-  try {
-    await assertAdmin()
-    assertPublicMediaWriteReady()
-    const admin = createAdminClient()
+// ---------------------------------------------------------------------------
+// Direct-to-R2 image finalize (plan 02-15). The browser has already PUT the object
+// (and optional WebP variants) to R2 with a presigned URL; these actions take only
+// the key, verify it (size, kind/owner prefix, magic bytes), write ONE target,
+// audit strictly, then delete the previous R2 object. No file body ever arrives.
+// The old FormData upload* actions above stay until plan 02-19 removes them.
+// ---------------------------------------------------------------------------
 
-    const file = formData.get('file') as File | null
-    const showId = formData.get('showId') as string | null
+const finalizeKeySchema = z.object({
+  key: z.string().min(1).max(300),
+  variantKeys: z.array(z.string().max(400)).max(3).default([]),
+})
 
-    if (!file || file.size === 0) {
-      return { success: false, error: 'No file provided' }
-    }
-    const showIdParsed = parseId(showId, 'show')
-    if (!showIdParsed.ok) {
-      return { success: false, error: showIdParsed.error }
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      return { success: false, error: 'Image must be under 2MB' }
-    }
+const ARTWORK_COLUMN = {
+  poster: 'poster_url',
+  card: 'card_image_url',
+  hero: 'hero_url',
+  'hero-mobile': 'hero_image_mobile_url',
+  logo: 'logo_url',
+} as const satisfies Record<(typeof ARTWORK_UPLOAD_SLOTS)[number], string>
 
-    const extMap: Record<string, string> = {
-      'image/png': 'png',
-      'image/jpeg': 'jpg',
-      'image/webp': 'webp',
-    }
-    const ext = extMap[file.type]
-    if (!ext) {
-      return {
-        success: false,
-        error: 'Only PNG, JPEG, or WebP images are allowed',
-      }
-    }
+// Live scopes (Phase 01.1 review): a re-sent key live in ANY of these is refused before finalize.
+const ARTWORK_COLUMNS = Object.values(ARTWORK_COLUMN)
+const SITE_IMAGE_COLUMNS = Object.values(SITE_IMAGE_COLUMN)
 
-    const path = `shows/${showIdParsed.value}/cast/${Date.now()}.${ext}`
-
-    const { error: uploadError } = await admin.storage
-      .from('show-artwork')
-      .upload(path, file, {
-        upsert: false,
-        contentType: file.type,
-        cacheControl: '31536000',
-      })
-
-    if (uploadError) return { success: false, error: uploadError.message }
-
-    await mirrorUploadedPublicMedia(admin, {
-      bucket: 'show-artwork',
-      key: path,
-      body: file,
-      contentType: file.type,
-      cacheControl: '31536000',
-    })
-
-    const { data: urlData } = admin.storage
-      .from('show-artwork')
-      .getPublicUrl(path)
-    return { success: true, data: `${urlData.publicUrl}?v=${Date.now()}` }
-  } catch (err) {
-    console.error('[admin/cast] upload failed', err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to upload cast image',
-    }
+async function adminImagePorts(
+  db: AdminDb,
+  audit: AuditWriter,
+  appConfigVersion?: RowVersion
+): Promise<ImageUploadPorts> {
+  const env = await getWorkerEnv()
+  const bucket = env.MEDIA as unknown as FinalizeBucket
+  const mediaOrigin = getPublicMediaOrigin()
+  return {
+    finalize: (input) =>
+      finalizeUploadedObject({
+        kind: input.kind as Parameters<typeof finalizeUploadedObject>[0]['kind'],
+        slot: input.slot,
+        showId: input.showId,
+        userId: input.userId,
+        key: input.key,
+        variantKeys: input.variantKeys,
+        liveKeys: input.liveKeys,
+        bucket,
+      }),
+    db: adminImageDb(db, appConfigVersion),
+    media: { delete: (keys) => bucket.delete(keys) },
+    audit,
+    mediaOrigin,
+    previousR2Keys: (url) => r2KeysForUrl(url, mediaOrigin),
+    liveKeys: (url) => liveKeysForUrl(url, mediaOrigin),
+    // Every scope, read fresh before finalize and again right before each delete.
+    references: () => readMediaReferenceUrls(db as unknown as ReferenceDb),
   }
+}
+
+const finalizeArtworkSchema = finalizeKeySchema.extend({
+  showId: z.string().regex(UUID_RE, 'Invalid showId or slot'),
+  slot: z.enum(ARTWORK_UPLOAD_SLOTS, { message: 'Invalid showId or slot' }),
+  /**
+   * Default true: the slot column of this show is written. A form that holds the
+   * new url in its own state until Save (as the artwork drawer does today) passes false.
+   */
+  commit: z.boolean().default(true),
+})
+
+export async function finalizeArtworkUpload(
+  input: z.input<typeof finalizeArtworkSchema>
+): Promise<ActionResult<string> & { mediaCleanupFailed?: boolean }> {
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = finalizeArtworkSchema.safeParse(input)
+      if (!parsed.success) {
+        return { success: false, error: formatZodError(parsed.error), wrote: false }
+      }
+      const { showId, slot, key, variantKeys, commit } = parsed.data
+      return finalizeImageUploadCore(await adminImagePorts(ctx.db, ctx.audit), {
+        kind: 'artwork',
+        slot,
+        showId,
+        key,
+        variantKeys,
+        userId: ctx.adminUserId,
+        target: commit ? { type: 'show-artwork', showId, column: ARTWORK_COLUMN[slot] } : null,
+        live: { type: 'show-artwork', showId, columns: ARTWORK_COLUMNS },
+      })
+    },
+    { fallbackError: 'Upload failed', revalidate: (r) => (r?.wrote ? bumpCatalogCache() : undefined) }
+  )
+}
+
+const finalizeSiteImageSchema = finalizeKeySchema.extend({
+  kind: z.enum(['og', 'favicon', 'favicon-dark', 'auth'], { message: 'Invalid kind' }),
+})
+
+export async function finalizeSiteImageUpload(
+  input: z.input<typeof finalizeSiteImageSchema> & { expectedUpdatedAt: string }
+): Promise<VersionedResult<string> & { mediaCleanupFailed?: boolean }> {
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = finalizeSiteImageSchema.safeParse(input)
+      if (!parsed.success) {
+        return { success: false, error: formatZodError(parsed.error), wrote: false }
+      }
+      // The settings page's app_config updated_at (deferred item 23, residual b); input is an
+      // object here (the schema parse above refused anything else).
+      const version = rowVersion(input.expectedUpdatedAt)
+      if (!version.ok) return { success: false, error: version.error, wrote: false }
+      const { kind, key, variantKeys } = parsed.data
+      const r = await finalizeImageUploadCore(await adminImagePorts(ctx.db, ctx.audit, version.value), {
+        kind: 'site-image',
+        slot: kind,
+        key,
+        variantKeys,
+        userId: ctx.adminUserId,
+        target: { type: 'app-config', column: SITE_IMAGE_COLUMN[kind] },
+        live: { type: 'app-config', columns: SITE_IMAGE_COLUMNS },
+      })
+      return withUpdatedAt(r, version.value)
+    },
+    { fallbackError: 'Upload failed', revalidate: (r) => (r?.wrote ? bumpSiteConfigCache() : undefined) }
+  )
+}
+
+// A social icon url lives in the footer form until the footer is saved (as today),
+// so this finalize verifies and audits the object but changes no database row.
+export async function finalizeSocialIconUpload(
+  input: z.input<typeof finalizeKeySchema>
+): Promise<ActionResult<string> & { mediaCleanupFailed?: boolean }> {
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = finalizeKeySchema.safeParse(input)
+      if (!parsed.success) {
+        return { success: false, error: formatZodError(parsed.error), wrote: false }
+      }
+      const { key, variantKeys } = parsed.data
+      return finalizeImageUploadCore(await adminImagePorts(ctx.db, ctx.audit), {
+        kind: 'social-icon',
+        slot: null,
+        key,
+        variantKeys,
+        userId: ctx.adminUserId,
+        target: null,
+        live: { type: 'social-icons' },
+      })
+    },
+    { fallbackError: 'Upload failed', revalidate: () => undefined }
+  )
+}
+
+const finalizeCastImageSchema = finalizeKeySchema.extend({
+  showId: z.string().regex(UUID_RE, 'Invalid show id'),
+  /** Absent while the cast member does not exist yet: the url is returned and saved with the member. */
+  castId: z.string().regex(UUID_RE, 'Invalid cast member id').optional(),
+})
+
+export async function finalizeCastImageUpload(
+  input: z.input<typeof finalizeCastImageSchema>
+): Promise<ActionResult<string> & { mediaCleanupFailed?: boolean }> {
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = finalizeCastImageSchema.safeParse(input)
+      if (!parsed.success) {
+        return { success: false, error: formatZodError(parsed.error), wrote: false }
+      }
+      const { showId, castId, key, variantKeys } = parsed.data
+      return finalizeImageUploadCore(await adminImagePorts(ctx.db, ctx.audit), {
+        kind: 'cast-image',
+        slot: null,
+        showId,
+        key,
+        variantKeys,
+        userId: ctx.adminUserId,
+        target: castId ? { type: 'cast', castId, showId } : null,
+        live: { type: 'show-cast', showId },
+      })
+    },
+    {
+      fallbackError: 'Failed to upload cast image',
+      revalidate: (r) => (r?.wrote ? bumpCatalogCache() : undefined),
+    }
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Video finalize actions (plan 02-16): the browser PUT the MP4 to R2 with a presigned
+// URL; these check it and write the target. No video bytes pass through an action.
+// ---------------------------------------------------------------------------
+
+const finalizeVideoKeySchema = z.object({ key: z.string().min(1).max(300) })
+
+const finalizeHeroVideoSchema = finalizeVideoKeySchema.extend({
+  variant: z.enum(['desktop', 'mobile'], { message: 'Invalid hero variant.' }),
+})
+
+export async function finalizeHeroVideoUpload(
+  input: z.input<typeof finalizeHeroVideoSchema> & { expectedUpdatedAt: string }
+): Promise<VersionedResult<string> & { mediaCleanupFailed?: boolean }> {
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = finalizeHeroVideoSchema.safeParse(input)
+      if (!parsed.success) {
+        return { success: false, error: formatZodError(parsed.error), wrote: false }
+      }
+      // The settings page's app_config updated_at (deferred item 23, residual b); input is an
+      // object here (the schema parse above refused anything else).
+      const version = rowVersion(input.expectedUpdatedAt)
+      if (!version.ok) return { success: false, error: version.error, wrote: false }
+      const { variant, key } = parsed.data
+      const r = await saveVideoCore(
+        await videoPorts(ctx.db, version.value),
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        { key, target: variant === 'mobile' ? 'hero-mobile' : 'hero-desktop' }
+      )
+      if (r.mediaCleanupFailed) console.error('[finalizeHeroVideoUpload] media cleanup failed')
+      return withUpdatedAt(r, version.value)
+    },
+    {
+      fallbackError: 'Upload failed',
+      revalidate: (r) => {
+        if (!r?.wrote) return
+        updateTag('site-config')
+        revalidatePath('/')
+        revalidatePath('/portfolio')
+      },
+    }
+  )
+}
+
+export async function finalizePreloaderVideoUpload(
+  input: z.input<typeof finalizeVideoKeySchema> & { expectedUpdatedAt: string }
+): Promise<VersionedResult<string> & { mediaCleanupFailed?: boolean }> {
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = finalizeVideoKeySchema.safeParse(input)
+      if (!parsed.success) {
+        return { success: false, error: formatZodError(parsed.error), wrote: false }
+      }
+      // The settings page's app_config updated_at (deferred item 23, residual b); input is an
+      // object here (the schema parse above refused anything else).
+      const version = rowVersion(input.expectedUpdatedAt)
+      if (!version.ok) return { success: false, error: version.error, wrote: false }
+      const r = await saveVideoCore(
+        await videoPorts(ctx.db, version.value),
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        { key: parsed.data.key, target: 'preloader' }
+      )
+      if (r.mediaCleanupFailed) console.error('[finalizePreloaderVideoUpload] media cleanup failed')
+      return withUpdatedAt(r, version.value)
+    },
+    {
+      fallbackError: 'Upload failed',
+      revalidate: (r) => {
+        if (!r?.wrote) return
+        updateTag('site-config')
+        revalidatePath('/', 'layout')
+      },
+    }
+  )
+}
+
+const finalizeShowVideoSchema = finalizeHeroVideoSchema.extend({
+  showId: z.string().regex(UUID_RE, 'Invalid show id.'),
+  /**
+   * Default true: the show's hero video columns are written. A form that holds the new url
+   * in its own state until Save (as the show drawer does today) passes false.
+   */
+  commit: z.boolean().default(true),
+})
+
+export async function finalizeShowVideoUpload(
+  input: z.input<typeof finalizeShowVideoSchema>
+): Promise<ActionResult<string> & { mediaCleanupFailed?: boolean }> {
+  return runAdminAction(
+    adminEnv,
+    async (ctx) => {
+      const parsed = finalizeShowVideoSchema.safeParse(input)
+      if (!parsed.success) {
+        return { success: false, error: formatZodError(parsed.error), wrote: false }
+      }
+      const { showId, variant, key, commit } = parsed.data
+      const r = await saveVideoCore(
+        await videoPorts(ctx.db),
+        { audit: ctx.audit, adminUserId: ctx.adminUserId },
+        { key, target: 'show', showId, variant, commit }
+      )
+      if (r.mediaCleanupFailed) console.error('[finalizeShowVideoUpload] media cleanup failed')
+      return r
+    },
+    {
+      fallbackError: 'Upload failed',
+      revalidate: (r) => {
+        if (!r?.wrote) return
+        bumpCatalogCache()
+      },
+    }
+  )
 }
 
 export async function deleteCastMember(id: string): Promise<ActionResult> {
@@ -3238,41 +3009,19 @@ export async function deleteCastMember(id: string): Promise<ActionResult> {
     id = idParsed.value
     const admin = createAdminClient()
 
-    const { data: cast, error: castError } = await admin
-      .from('show_cast')
-      .select('image_url')
-      .eq('id', id)
-      .single()
-    if (castError || !cast) {
-      return {
-        success: false,
-        error: castError?.message ?? 'Cast member not found',
-      }
-    }
-
-    const imagePath = getPublicStoragePath(cast.image_url, 'show-artwork')
-    const mediaDeletion = imagePath
-      ? await stageMirroredPublicMediaDeletion(admin, 'show-artwork', [
-          imagePath,
-        ])
-      : null
-
-    const { error } = await admin.from('show_cast').delete().eq('id', id)
-
-    if (error) {
-      const restored = await mediaDeletion?.rollback()
-      return {
-        success: false,
-        error:
-          restored === false
-            ? 'Could not delete cast and restore R2 media'
-            : error.message,
-      }
-    }
-
-    if (mediaDeletion && !(await mediaDeletion.commit())) {
-      console.error('[deleteCastMember] media cleanup failed')
-    }
+    // The row is deleted only while its image is still the one read (compare-and-swap); the
+    // portrait goes only if no other member, show or setting still uses it. R2 only; a
+    // Supabase original is never deleted (MEDIA-07).
+    const result = await removeMediaCore(
+      {
+        db: admin,
+        media: (await getWorkerEnv()).MEDIA as unknown as DeletableBucket,
+        mediaOrigin: getPublicMediaOrigin(),
+      },
+      { kind: 'delete-row', table: 'show_cast', id, column: 'image_url', notFound: 'Cast member not found' },
+      '[deleteCastMember]'
+    )
+    if (!result.success) return { success: false, error: result.error }
 
     await logAudit({
       adminUserId: user.id,
@@ -3297,76 +3046,53 @@ export async function deleteCastMember(id: string): Promise<ActionResult> {
 // Legal Pages Actions
 // ---------------------------------------------------------------------------
 
-export type LegalPage = {
-  id: string
-  slug: string
-  title: string
-  content: string
-  title_ar: string | null
-  content_ar: string | null
-  sort_order: number
-  updated_at: string
-}
+/** Admin editor row: published and draft Arabic plus the review flag (item 12, PR #29). */
+export type LegalPage = LegalPageRow
 
-const legalPageSchema = z.object({
-  id: z.string().uuid().optional(),
-  slug: z
-    .string()
-    .min(1, 'Slug is required')
-    .max(80)
-    .regex(/^[a-z0-9-]+$/, 'Lowercase letters, numbers, hyphens only'),
-  title: z.string().min(1, 'Title is required').max(200),
-  content: z.string(),
-  title_ar: z.string().max(200).optional().nullable(),
-  content_ar: z.string().optional().nullable(),
-  sort_order: z.number().int().min(0).default(0),
-})
-
+/**
+ * The draft columns are not readable by anon or authenticated (column grant in migration
+ * 20261021120000), so the editor reads through the service client, after assertAdmin: this
+ * is an exported Server Action, callable by anyone who can reach the endpoint.
+ */
 export async function getLegalPages(): Promise<LegalPage[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
+  await assertAdmin()
+  const admin = createAdminClient()
+  const { data, error } = await admin
     .from('legal_pages')
-    .select('id, slug, title, content, title_ar, content_ar, sort_order, updated_at')
+    .select('id, slug, title, content, title_ar, content_ar, title_ar_draft, content_ar_draft, ar_reviewed, sort_order, updated_at')
     .order('sort_order', { ascending: true })
+  if (error) throw new Error(error.message)
   return (data ?? []) as LegalPage[]
 }
 
+/**
+ * Legal pages Arabic = "AI draft, admin approves" (Koss 2026-10-21): a blank Arabic field is
+ * drafted by the AI into the draft columns; only a save with "Arabic reviewed" ticked
+ * publishes it (upsertLegalPageCore). An update takes the editor's updated_at (item 8).
+ */
 export async function upsertLegalPage(
-  raw: unknown
-): Promise<ActionResult<LegalPage>> {
+  raw: unknown,
+  expectedUpdatedAt?: string
+): Promise<VersionedResult<LegalPage>> {
   try {
-    await assertAdmin()
-    const parsed = legalPageSchema.safeParse(raw)
-    if (!parsed.success)
-      return { success: false, error: parsed.error.issues[0].message }
-
-    const supabase = await createClient()
-    const { id, ...fields } = parsed.data
-
-    // Auto-fill blank Arabic fields from their English source (DeepL).
-    fields.title_ar = await fillArabic(fields.title, fields.title_ar)
-    fields.content_ar = await fillArabic(fields.content, fields.content_ar)
-
-    if (id) {
-      const { data, error } = await supabase
-        .from('legal_pages')
-        .update(fields)
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) return { success: false, error: error.message }
-      bumpLegalCache(parsed.data.slug)
-      return { success: true, data: data as LegalPage }
-    } else {
-      const { data, error } = await supabase
-        .from('legal_pages')
-        .insert(fields)
-        .select()
-        .single()
-      if (error) return { success: false, error: error.message }
-      bumpLegalCache(parsed.data.slug)
-      return { success: true, data: data as LegalPage }
+    const user = await assertAdmin()
+    const arabic = createArabicFiller(user.id)
+    // Service client: the core's pre-read and the RETURNING of its write include the draft
+    // columns, which the session (authenticated) role cannot select.
+    const result = await upsertLegalPageCore(
+      createAdminClient() as unknown as AdminDb,
+      { fill: arabic.fill },
+      raw,
+      expectedUpdatedAt
+    )
+    if (!result.success || !result.data) {
+      return { success: false, error: result.error ?? 'Failed to save legal page' }
     }
+    bumpLegalCache(result.data.slug)
+    return withArabicMissing(
+      { success: true, data: result.data, updatedAt: result.updatedAt },
+      arabic.missing()
+    )
   } catch (err) {
     console.error('[admin/legal] upsert failed', err)
     return {
@@ -3396,6 +3122,7 @@ export type Faq = {
   question_ar: string | null
   answer_ar: string | null
   sort_order: number
+  updated_at: string
 }
 
 const faqSchema = z.object({
@@ -3406,40 +3133,64 @@ const faqSchema = z.object({
   answer_ar: z.string().optional().nullable(),
   sort_order: z.number().int().min(0).default(0),
 })
+const faqArMax = arabicMaxLengths(faqSchema)
 
 export async function getFaqs(): Promise<Faq[]> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('faqs')
-    .select('id, question, answer, question_ar, answer_ar, sort_order')
+    .select('id, question, answer, question_ar, answer_ar, sort_order, updated_at')
     .order('sort_order', { ascending: true })
   return (data ?? []) as Faq[]
 }
 
-export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
+/** An update takes the editor's updated_at (review item 8, PR #29); a create does not. */
+export async function upsertFaq(
+  raw: unknown,
+  expectedUpdatedAt?: string
+): Promise<VersionedResult<Faq>> {
   try {
-    await assertAdmin()
+    const user = await assertAdmin()
     const parsed = faqSchema.safeParse(raw)
     if (!parsed.success)
       return { success: false, error: parsed.error.issues[0].message }
 
     const supabase = await createClient()
     const { id, ...fields } = parsed.data
-
-    // Auto-fill blank Arabic fields from their English source (DeepL).
-    fields.question_ar = await fillArabic(fields.question, fields.question_ar)
-    fields.answer_ar = await fillArabic(fields.answer, fields.answer_ar)
-
-    if (id) {
-      const { data, error } = await supabase
+    const version = id ? rowVersion(expectedUpdatedAt) : null
+    if (version && !version.ok) return { success: false, error: version.error }
+    if (version?.ok) {
+      // A stale editor: refuse before any AI call (the UPDATE below is the atomic check).
+      const { data: cur, error: curError } = await supabase
         .from('faqs')
-        .update(fields)
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) return { success: false, error: error.message }
+        .select('updated_at')
+        .eq('id', id as string)
+        .maybeSingle()
+      if (curError) return { success: false, error: curError.message }
+      if (!cur) return { success: false, error: 'FAQ not found.' }
+      if (cur.updated_at !== version.value.expected) return { success: false, error: SAVE_CONFLICT }
+    }
+
+    // Auto-fill blank Arabic fields from their English source (Workers AI).
+    const arabic = createArabicFiller(user.id)
+    fields.question_ar = await arabic.fill(fields.question, fields.question_ar, faqArMax.question_ar)
+    fields.answer_ar = await arabic.fill(fields.answer, fields.answer_ar)
+
+    if (id && version?.ok) {
+      const { error, row } = await updateIfUnchanged(
+        supabase as unknown as AdminDb,
+        'faqs',
+        id,
+        fields,
+        version.value,
+        '*'
+      )
+      if (error || !row) return { success: false, error: error ?? 'FAQ not found.' }
       bumpFaqCache()
-      return { success: true, data: data as Faq }
+      return withArabicMissing(
+        withUpdatedAt({ success: true, data: row as unknown as Faq }, version.value),
+        arabic.missing()
+      )
     } else {
       const { data, error } = await supabase
         .from('faqs')
@@ -3448,7 +3199,7 @@ export async function upsertFaq(raw: unknown): Promise<ActionResult<Faq>> {
         .single()
       if (error) return { success: false, error: error.message }
       bumpFaqCache()
-      return { success: true, data: data as Faq }
+      return withArabicMissing({ success: true, data: data as Faq }, arabic.missing())
     }
   } catch (err) {
     console.error('[admin/faq] upsert failed', err)

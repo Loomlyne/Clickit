@@ -6,6 +6,7 @@ import {
   reorderShowCore,
   updateShowCore,
 } from '../../src/lib/admin/show-writes.ts'
+import { INVALID_UPDATED_AT, SAVE_CONFLICT } from '../../src/lib/admin/row-version.ts'
 import { createFakeSupabase, type Row } from './helpers/fake-supabase.ts'
 
 const id = (p: string, n = 0) =>
@@ -17,8 +18,12 @@ const D = id('d') // archived
 const CAT1 = id('1', 1)
 const CAT2 = id('2', 2)
 
+// The exact PostgREST JSON format of a timestamptz.
+const STAMP = '2026-10-20T16:43:24.123456+00:00'
+
 const show = (sid: string, title: string, sort: number, archived = false): Row => ({
   id: sid,
+  updated_at: STAMP,
   title,
   slug: title.toLowerCase().replace(/ /g, '-'),
   description: `${title} description`,
@@ -85,6 +90,7 @@ test('updateShowCore: forced category insert failure leaves show and categories 
     id: A,
     updateData: upd() as never,
     categoryIds: [CAT2],
+    expectedUpdatedAt: STAMP,
   })
   assert.equal(res.success, false)
   assert.match(res.error ?? '', /forced failure/)
@@ -106,6 +112,7 @@ test('updateShowCore: forced category delete failure restores the show row', asy
     id: A,
     updateData: upd() as never,
     categoryIds: [CAT2],
+    expectedUpdatedAt: STAMP,
   })
   assert.equal(res.success, false)
   assert.deepEqual(snapShowsAndCats(f), before)
@@ -118,6 +125,7 @@ test('updateShowCore: forced shows update failure attempts no category writes', 
     id: A,
     updateData: upd() as never,
     categoryIds: [CAT2],
+    expectedUpdatedAt: STAMP,
   })
   assert.equal(res.success, false)
   assert.equal(dbOps(f, 'show_categories', 'delete').length, 0)
@@ -131,6 +139,7 @@ test('updateShowCore: archived show is refused unchanged', async () => {
     id: D,
     updateData: upd({ slug: 'show-d2', title: 'Show D2' }) as never,
     categoryIds: [],
+    expectedUpdatedAt: STAMP,
   })
   assert.equal(res.success, false)
   assert.equal(res.error, 'Restore this show before editing it.')
@@ -144,6 +153,7 @@ test('updateShowCore: invalid id is refused with no db calls', async () => {
     id: 'x',
     updateData: upd() as never,
     categoryIds: [],
+    expectedUpdatedAt: STAMP,
   })
   assert.equal(res.success, false)
   assert.equal(res.error, 'Invalid show id.')
@@ -157,6 +167,7 @@ test('updateShowCore: success replaces categories and writes a committed audit r
     id: A,
     updateData: upd() as never,
     categoryIds: [CAT2, CAT2],
+    expectedUpdatedAt: STAMP,
   })
   assert.equal(res.success, true)
   assert.deepEqual(
@@ -174,6 +185,7 @@ test('updateShowCore: forced failure reports wrote true and data.showId', async 
     id: A,
     updateData: upd() as never,
     categoryIds: [CAT2],
+    expectedUpdatedAt: STAMP,
   })
   assert.equal(res.wrote, true)
   assert.equal(res.data?.showId, A)
@@ -325,4 +337,185 @@ test('reorderShowCore: success swaps sort_order and audits', async () => {
   assert.equal(so(B), 0)
   assert.equal(so(A), 1)
   assert.equal(f.auditRows()[0]!.diff.outcome, 'committed')
+})
+
+// ---- Deferred item 23 residual (b): the show drawer save checks updated_at ----
+
+/** Same rows, with the shows BEFORE UPDATE trigger (updated_at = now()) emulated. */
+function triggerWorld() {
+  return createFakeSupabase(
+    {
+      shows: [show(A, 'Show A', 0), show(B, 'Show B', 1), show(C, 'Show C', 2), show(D, 'Show D', 3, true)],
+      show_categories: [{ show_id: A, category_id: CAT1 }],
+    },
+    { updatedAtTables: ['shows'] }
+  )
+}
+const rowA = (f: ReturnType<typeof triggerWorld>) => f.tables.shows!.find((s) => s.id === A)!
+
+test('updateShowCore: a stale updated_at is refused with the conflict line; nothing written, no audit row', async () => {
+  const f = triggerWorld()
+  const before = f.snapshot()
+  const res = await updateShowCore(f.client, deps(f), {
+    id: A,
+    updateData: upd() as never,
+    categoryIds: [CAT2],
+    expectedUpdatedAt: '2026-10-20T16:43:20.000001+00:00',
+  })
+  assert.equal(res.success, false)
+  assert.equal(res.error, SAVE_CONFLICT)
+  assert.equal(res.wrote, false)
+  assert.deepEqual(f.snapshot(), before)
+  assert.equal(dbOps(f, 'show_categories', 'delete').length, 0)
+  assert.equal(dbOps(f, 'show_categories', 'insert').length, 0)
+})
+
+test('updateShowCore: a fresh updated_at saves and returns the new value from the database', async () => {
+  const f = triggerWorld()
+  const res = await updateShowCore(f.client, deps(f), {
+    id: A,
+    updateData: upd() as never,
+    categoryIds: [CAT2],
+    expectedUpdatedAt: STAMP,
+  })
+  assert.equal(res.success, true, res.error)
+  assert.equal(rowA(f).title, 'Show A2')
+  assert.equal(typeof res.updatedAt, 'string')
+  assert.notEqual(res.updatedAt, STAMP)
+  assert.equal(res.updatedAt, rowA(f).updated_at)
+  const update = f.calls.find((c) => c.table === 'shows' && c.op === 'update')!
+  assert.ok(update.filters.some((x) => x.kind === 'eq' && x.col === 'updated_at' && x.value === STAMP))
+})
+
+test('updateShowCore: two sequential saves from the same drawer both succeed', async () => {
+  const f = triggerWorld()
+  const first = await updateShowCore(f.client, deps(f), {
+    id: A,
+    updateData: upd() as never,
+    categoryIds: [CAT2],
+    expectedUpdatedAt: STAMP,
+  })
+  assert.equal(first.success, true, first.error)
+  const second = await updateShowCore(f.client, deps(f), {
+    id: A,
+    updateData: upd({ title: 'Show A3', slug: 'show-a3' }) as never,
+    categoryIds: [CAT1],
+    expectedUpdatedAt: first.updatedAt,
+  })
+  assert.equal(second.success, true, second.error)
+  assert.equal(rowA(f).title, 'Show A3')
+  assert.equal(second.updatedAt, rowA(f).updated_at)
+  // Re-sending the first value now is stale.
+  const third = await updateShowCore(f.client, deps(f), {
+    id: A,
+    updateData: upd({ title: 'Show A4', slug: 'show-a4' }) as never,
+    categoryIds: [CAT1],
+    expectedUpdatedAt: first.updatedAt,
+  })
+  assert.equal(third.error, SAVE_CONFLICT)
+  assert.equal(rowA(f).title, 'Show A3')
+})
+
+test('updateShowCore: a missing or malformed updated_at is refused before any database call', async () => {
+  for (const bad of [undefined, null, '', 'now', 42]) {
+    const f = triggerWorld()
+    const res = await updateShowCore(f.client, deps(f), {
+      id: A,
+      updateData: upd() as never,
+      categoryIds: [CAT2],
+      expectedUpdatedAt: bad,
+    })
+    assert.equal(res.success, false)
+    assert.equal(res.error, INVALID_UPDATED_AT)
+    assert.equal(res.wrote, false)
+    assert.equal(f.calls.length, 0, String(bad))
+  }
+})
+
+test('updateShowCore: the undo after a failed category step does not overwrite a save that landed after ours', async () => {
+  const f = triggerWorld()
+  // Another admin saves right after our shows update, before our category insert fails.
+  const client = f.client
+  let updates = 0
+  const db = {
+    from: (t: string) => {
+      const b = client.from(t)
+      if (t === 'show_categories') {
+        const orig = b.insert.bind(b)
+        b.insert = (rows: unknown) => {
+          if (updates++ === 0) {
+            const row = f.tables.shows!.find((s) => s.id === A)!
+            row.title = 'Theirs'
+            row.updated_at = '2026-10-20T16:59:59.999999+00:00'
+          }
+          return orig(rows)
+        }
+      }
+      return b
+    },
+  } as never
+  f.failOn({ table: 'show_categories', op: 'insert', nth: 1 })
+  const res = await updateShowCore(db, deps(f), {
+    id: A,
+    updateData: upd() as never,
+    categoryIds: [CAT2],
+    expectedUpdatedAt: STAMP,
+  })
+  assert.equal(res.success, false)
+  assert.equal(rowA(f).title, 'Theirs', 'the undo is compare-and-swap on the value we wrote')
+})
+
+test('reorderShowCore: a sort_order that changed since the read is refused, nothing moved', async () => {
+  const f = world()
+  const client = f.client
+  let reads = 0
+  const db = {
+    from: (t: string) => {
+      const b = client.from(t)
+      if (t === 'shows') {
+        const then = b.then.bind(b)
+        b.then = (ok: unknown, ko: unknown) =>
+          then((v: unknown) => {
+            // Another admin reordered right after our list read.
+            if (++reads === 1) f.tables.shows!.find((s) => s.id === B)!.sort_order = 7
+            return (ok as (x: unknown) => unknown)(v)
+          }, ko as never)
+      }
+      return b
+    },
+  } as never
+  const res = await reorderShowCore(db, deps(f), { id: B, direction: 'up' })
+  assert.equal(res.success, false)
+  assert.equal(res.error, SAVE_CONFLICT)
+  assert.equal(res.wrote, false)
+  const so = (sid: string) => f.tables.shows!.find((s) => s.id === sid)!.sort_order
+  assert.equal(so(B), 7)
+  assert.equal(so(A), 0)
+  assert.equal(f.auditRows().length, 0)
+})
+
+test('reorderShowCore: the second row moved meanwhile: the first move is undone, conflict line', async () => {
+  const f = world()
+  const client = f.client
+  let reads = 0
+  const db = {
+    from: (t: string) => {
+      const b = client.from(t)
+      if (t === 'shows') {
+        const then = b.then.bind(b)
+        b.then = (ok: unknown, ko: unknown) =>
+          then((v: unknown) => {
+            if (++reads === 1) f.tables.shows!.find((s) => s.id === A)!.sort_order = 9
+            return (ok as (x: unknown) => unknown)(v)
+          }, ko as never)
+      }
+      return b
+    },
+  } as never
+  const res = await reorderShowCore(db, deps(f), { id: B, direction: 'up' })
+  assert.equal(res.success, false)
+  assert.equal(res.error, SAVE_CONFLICT)
+  const so = (sid: string) => f.tables.shows!.find((s) => s.id === sid)!.sort_order
+  assert.equal(so(B), 1, 'first move undone')
+  assert.equal(so(A), 9, 'their value kept')
 })

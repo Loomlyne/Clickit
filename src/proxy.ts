@@ -1,4 +1,5 @@
 import createMiddleware from 'next-intl/middleware'
+import { localeRootTarget } from '@/server/locale-root'
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { routing } from '@/i18n/routing'
@@ -78,14 +79,6 @@ function isAuthRequiredDespiteSkip(
   return false
 }
 
-/** Vercel BotID challenge/proxy paths — must stay locale-free (see withBotId). */
-const BOTID_PREFIX = '/149e9513-01fa-4fb0-aad4-566afd725d1b'
-
-function isBotIdPath(pathname: string): boolean {
-  const { pathWithoutLocale } = stripLocale(pathname)
-  return pathWithoutLocale.startsWith(BOTID_PREFIX)
-}
-
 const handleI18nRouting = createMiddleware(routing)
 
 /**
@@ -93,8 +86,8 @@ const handleI18nRouting = createMiddleware(routing)
  * from `fromResponse`. Without copying the cookies, the redirect drops the
  * refreshed sb-…-auth-token and silently logs the user out.
  */
-function redirectWithCookies(url: URL, fromResponse: NextResponse): NextResponse {
-  const redirect = NextResponse.redirect(url)
+function redirectWithCookies(url: URL, fromResponse: NextResponse, status = 307): NextResponse {
+  const redirect = NextResponse.redirect(url, status)
   fromResponse.cookies.getAll().forEach((cookie) => {
     redirect.cookies.set(cookie.name, cookie.value, cookie)
   })
@@ -139,17 +132,6 @@ export async function proxy(request: NextRequest) {
   if (pathname === '/auth/callback') {
     const { response } = await updateSession(request)
     return response
-  }
-
-  // BotID loads c.js relative to the current URL, so on /en/auth the browser
-  // requests /en/149e9513-…/c.js. withBotId rewrites only match the root path;
-  // without this strip+rewrite, next-intl treats the script as a page → 500
-  // ("No intl context found") and auth Server Actions never get a challenge token.
-  if (isBotIdPath(pathname)) {
-    const { pathWithoutLocale } = stripLocale(pathname)
-    const url = request.nextUrl.clone()
-    url.pathname = pathWithoutLocale
-    return NextResponse.rewrite(url)
   }
 
   // Step 1: Run next-intl routing. This may return a 3xx redirect when the
@@ -207,6 +189,15 @@ export async function proxy(request: NextRequest) {
       url.search = ''
       return redirectWithCookies(url, intlResponse)
     }
+  }
+
+  // Locale root: a real 308 to the portfolio landing, before any render
+  // (plan 02-21 CPU work). The query string is kept.
+  const rootTarget = localeRootTarget(pathWithoutLocale, locale)
+  if (rootTarget) {
+    const url = request.nextUrl.clone()
+    url.pathname = rootTarget
+    return redirectWithCookies(url, intlResponse, 308)
   }
 
   // Step 5: Auth gate. Runs AFTER the coming-soon gate so coming-soon wins

@@ -62,9 +62,14 @@ function assertServiceRoleOnly(signature: string): void {
   )
 }
 
-test('exactly one expand migration exists and it sorts last', () => {
+test('exactly one expand migration exists and it sorts last (bar later phases)', () => {
   assert.equal(matches.length, 1)
-  assert.equal(files[files.length - 1], FILE)
+  assert.ok(FILE > PRE_PHASE6_LAST, 'sorts after every pre-Phase 6 migration')
+  // Only a later phase's own migration may sort after it: Phase 2 legal pages Arabic review (PR #29).
+  assert.deepEqual(
+    files.filter((f) => f > FILE),
+    ['20261021120000_legal_pages_arabic_review.sql']
+  )
   assert.match(FILE, /^\d{14}_youtube_episode_status_and_order\.sql$/)
 })
 

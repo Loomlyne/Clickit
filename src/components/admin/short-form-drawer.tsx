@@ -27,6 +27,8 @@ import {
   type YouTubeErrorCode,
 } from '@/lib/youtube-errors'
 import { formatQuotaReset, nextQuotaReset } from '@/lib/youtube-quota'
+import { useRowVersions } from '@/components/admin/row-version'
+import { NULL_UPDATED_AT } from '@/lib/admin/version-chain'
 import { extractYouTubeId } from '@/lib/youtube'
 import type { Database } from '@/lib/database.types'
 
@@ -81,6 +83,8 @@ export function ShortFormDrawer({
   const isEditing = !!editingShort
   const [fetching, setFetching] = useState(false)
   const [saving, setSaving] = useState(false)
+  // The save lands only while the short still holds the updated_at it was opened with (item 8).
+  const versions = useRowVersions()
 
   const {
     register,
@@ -202,11 +206,17 @@ export function ShortFormDrawer({
       sort_order: isEditing ? (editingShort?.sort_order ?? 0) : 0,
       expires_at: expiresAt,
     }
-    const result = isEditing
-      ? await updateShort(editingShort!.id, actionData)
+    const expected = editingShort
+      ? versions.expected(editingShort.id, editingShort.updated_at ?? NULL_UPDATED_AT)
+      : ''
+    const result = editingShort
+      ? await updateShort(editingShort.id, actionData, expected)
       : await createShort(actionData)
 
     setSaving(false)
+    if (editingShort) {
+      versions.saved(editingShort.id, expected, (result as { updatedAt?: string }).updatedAt)
+    }
 
     if (result.success) {
       toast.success(isEditing ? t('toastUpdated') : t('toastSaved'))

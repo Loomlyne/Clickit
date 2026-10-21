@@ -1212,7 +1212,7 @@
       "legalTitleLabel": "Title",
       "legalTitlePlaceholder": "Terms of Use",
       "legalTitleArLabel": "Title (Arabic)",
-      "legalTitleArHint": "Shown when the viewer switches to Arabic. Leave blank to fall back to English.",
+      "legalTitleArHint": "Stays a draft until reviewed; English shows until then",
       "legalTitleArPlaceholder": "شروط الاستخدام",
       "legalSlugLabel": "Slug",
       "legalSlugHint": "URL path: /legal/[slug]",
@@ -1221,8 +1221,10 @@
       "legalContentLabel": "Content",
       "legalContentPlaceholder": "Enter the full legal text here...",
       "legalContentArLabel": "Content (Arabic)",
-      "legalContentArHint": "Arabic body shown on the Arabic locale. Leave blank to fall back to English.",
+      "legalContentArHint": "Stays a draft until reviewed; English shows until then",
       "legalContentArPlaceholder": "أدخل النص القانوني الكامل هنا...",
+      "legalArReviewedLabel": "Arabic reviewed",
+      "legalArReviewRequired": "Add the Arabic text before ticking \"Arabic reviewed\".",
       "legalSaveChanges": "Save Changes",
       "legalCreate": "Create Page",
       "legalDeleteTitle": "Delete legal page",
@@ -1429,7 +1431,8 @@
       "loading": "Loading…",
       "noEpisodes": "No episodes yet",
       "noShows": "No shows yet",
-      "adminNavAria": "Admin"
+      "adminNavAria": "Admin",
+      "arabicAutoFillMissing": "Saved. {count} Arabic field(s) could not be translated automatically; fill them in by hand."
     },
     "heroMedia": {
       "desktopHero": "Desktop Hero",
@@ -1824,5 +1827,8 @@
     "authEmailNotConfirmed": "Please confirm your email first",
     "authRateLimit": "Too many sign-in attempts. Please wait and try again.",
     "authGeneric": "Authentication failed. Please try again."
+  },
+  "turnstile": {
+    "checkFailed": "Security check failed. Please try again."
   }
 }

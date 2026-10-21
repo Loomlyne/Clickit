@@ -225,16 +225,17 @@ export const DEFAULT_TOP_TICKER: TopTickerConfig = {
 // tags, once in the body for googleAnalyticsId/metaPixelId. Each call without
 // cache() is a separate Vercel data-cache lookup. With cache(), the second
 // call returns the memoized result instantly.
+// Every non-sensitive column, selected explicitly. The YouTube key is not in
+// this table (Supabase Vault, D-20).
+const APP_CONFIG_COLUMNS =
+  'site_title, site_description, site_description_ar, site_tagline, site_tagline_ar, og_image_url, favicon_url, favicon_dark_url, hero_video_url, hero_video_type, hero_video_mobile_url, hero_video_mobile_type, hero_video_muted, preloader_video_url, auth_image_url, auth_heading, auth_heading_ar, auth_subheading, auth_subheading_ar, auth_quote, auth_quote_ar, auth_quote_attribution, auth_quote_attribution_ar, auth_allow_skip, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, live_stream_label, live_stream_label_ar, hero_description, hero_description_ar, portfolio_heading, portfolio_heading_ar'
+
 export const getAppConfig = cache(unstable_cache(
   async (): Promise<AppConfig> => {
     const supabase = createPublicClient()
-    // Select every non-sensitive column explicitly. The YouTube key is not in
-    // this table (Supabase Vault, D-20).
     const { data } = await supabase
       .from('app_config')
-      .select(
-        'site_title, site_description, site_description_ar, site_tagline, site_tagline_ar, og_image_url, favicon_url, favicon_dark_url, hero_video_url, hero_video_type, hero_video_mobile_url, hero_video_mobile_type, hero_video_muted, preloader_video_url, auth_image_url, auth_heading, auth_heading_ar, auth_subheading, auth_subheading_ar, auth_quote, auth_quote_ar, auth_quote_attribution, auth_quote_attribution_ar, auth_allow_skip, footer_content, cta_copy, genre_config, google_analytics_id, meta_pixel_id, feature_flags, top_ticker, live_stream_url, live_stream_label, live_stream_label_ar, hero_description, hero_description_ar, portfolio_heading, portfolio_heading_ar' as string
-      )
+      .select(APP_CONFIG_COLUMNS as string)
       .eq('id', 1)
       .single<RawConfigRow>()
 
@@ -243,6 +244,29 @@ export const getAppConfig = cache(unstable_cache(
   ['app-config-v2'],
   { revalidate: 900, tags: ['site-config'] } // 15 min
 ))
+
+// ---------------------------------------------------------------------------
+// getAppConfigWithVersion() — uncached read for the admin forms (deferred item
+// 23, residual b). The values and the row's updated_at come from ONE read, so
+// the version a form sends back always matches the values it shows: a save
+// then lands only if nobody changed the row since. Never cached (a stale cached
+// row with a fresh version would let a form overwrite a newer save) and fails
+// closed: a read error throws instead of showing defaults that a save could
+// write over the real row.
+// ---------------------------------------------------------------------------
+
+export async function getAppConfigWithVersion(): Promise<{ config: AppConfig; updatedAt: string }> {
+  const supabase = createPublicClient()
+  const { data, error } = await supabase
+    .from('app_config')
+    .select(`${APP_CONFIG_COLUMNS}, updated_at` as string)
+    .eq('id', 1)
+    .single<NonNullable<RawConfigRow> & { updated_at: string }>()
+  if (error || !data || typeof data.updated_at !== 'string') {
+    throw new Error(error?.message ?? 'Could not load site config')
+  }
+  return { config: mapConfig(data), updatedAt: data.updated_at }
+}
 
 // ---------------------------------------------------------------------------
 // Internal shape (raw DB row) — declared locally because generated types may

@@ -24,6 +24,8 @@ const SE1 = id('c')
 const E1 = id('e', 1)
 const E2 = id('e', 2)
 const E3 = id('e', 3) // archived, holds number 3
+// updated_at as PostgREST returns it; every season/episode update call passes it (item 8).
+const V0 = '2026-10-20T10:00:00.000001+00:00'
 const NOW = new Date('2026-08-10T08:00:00Z')
 
 const ep = (eid: string, num: number, archived = false): Row => ({
@@ -40,6 +42,7 @@ const ep = (eid: string, num: number, archived = false): Row => ({
   status: 'draft',
   publish_at: null,
   archived,
+  updated_at: V0,
 })
 
 type Fake = ReturnType<typeof world>
@@ -57,7 +60,7 @@ function world(withRpc = true, archiveAll = false) {
       },
     ],
     seasons: [
-      { id: SE1, show_id: S1, title: 'Season 1', title_ar: 'الموسم 1', season_number: 1, episode_count: 2 },
+      { id: SE1, show_id: S1, title: 'Season 1', title_ar: 'الموسم 1', season_number: 1, episode_count: 2, updated_at: V0 },
     ],
     episodes: [ep(E1, 1, archiveAll), ep(E2, 2, archiveAll), ep(E3, 3, true)],
   })
@@ -126,7 +129,7 @@ test('updateEpisode path with archived:true in the payload: refused, no write, n
     (ctx) =>
       updateEpisodeCore(ctx.db, { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: fill }, E1, {
         archived: true,
-      }),
+      }, V0),
     { fallbackError: 'Failed to update episode', revalidate: spy.revalidate }
   )
   assert.equal(res.success, false)
@@ -143,7 +146,7 @@ test('updateEpisode path with a failure on the second update: wrote true, revali
     (ctx) =>
       updateEpisodeCore(ctx.db, { audit: ctx.audit, adminUserId: ctx.adminUserId, fillArabic: fill }, E1, {
         episode_number: 3,
-      }),
+      }, V0),
     { fallbackError: 'Failed to update episode', revalidate: spy.revalidate }
   )
   assert.equal(res.success, false)

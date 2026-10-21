@@ -1,45 +1,47 @@
-// Rate-limit seam for Phase 6 admin writes and viewer reports. Same ledger as
-// src/app/actions/contact.ts: count `rate_limits` rows for `key` inside the
-// window, refuse at `max`, else record one row. Pure: the caller passes the
-// service-role client. `failOpen` decides the answer when the ledger fails
-// (viewer reports pass false: fail closed, RESEARCH Pattern 10).
+// Rate-limit seam for Phase 6 admin writes and viewer reports, on the shared
+// rate_limits ledger: decideRateLimit (src/server/rate-limit-policy.ts) over
+// supabaseRateLimitStore (src/server/rate-limit-store.ts). Pure: the caller
+// passes the service-role client. Fail closed on every uncertain path: a ledger
+// read or write error, a bad count, a bad limit or an empty subject refuses.
+//
+// The store writes rows as `<scope>:<subject>`, so the caller's full key is split
+// at its last colon and the row key stays exactly the caller's key (the viewer
+// report count reads rows by that prefix).
 
 import type { AdminDb } from '../../lib/admin/ports'
+import { decideRateLimit } from '../rate-limit-policy.ts'
+import { supabaseRateLimitStore } from '../rate-limit-store.ts'
 
 export type RateLimitOptions = {
   key: string
   max: number
   windowSec: number
   now?: Date
-  failOpen: boolean
+  /** Always false: the shared limiter fails closed. Kept so call sites state it. */
+  failOpen: false
 }
 
-// TODO(phase-2): replace with decideRateLimit from src/server/rate-limit-policy.ts once Phase 2 lands
 export async function withinRateLimitCore(
   db: AdminDb,
-  { key, max, windowSec, now = new Date(), failOpen }: RateLimitOptions
+  { key, max, windowSec, now = new Date() }: RateLimitOptions
 ): Promise<boolean> {
-  try {
-    const since = new Date(now.getTime() - windowSec * 1000).toISOString()
-    const { count, error } = await db
-      .from('rate_limits')
-      .select('id', { count: 'exact', head: true })
-      .eq('key', key)
-      .gte('created_at', since)
-    if (error || typeof count !== 'number') return failOpen
-    if (count >= max) return false
-    const inserted = await db.from('rate_limits').insert({ key })
-    if (inserted.error) return failOpen
-    return true
-  } catch {
-    return failOpen
-  }
+  const cut = key.lastIndexOf(':')
+  if (cut <= 0) return false
+  const decision = await decideRateLimit({
+    ip: key.slice(cut + 1),
+    key: key.slice(0, cut),
+    limit: max,
+    windowMs: windowSec * 1000,
+    store: supabaseRateLimitStore(db),
+    now: () => now.getTime(),
+  })
+  return decision.allowed
 }
 
 // Per-admin limits on the four admin YouTube calls (PR #27 review, finding 2),
 // so a loop cannot burn the 10,000-unit daily quota. Keyed per admin user and
-// action. Fail open: a ledger hiccup must not lock the admins out of their own
-// tools; the quota itself is the hard stop.
+// action. Fail closed like every other limiter: a ledger failure refuses the call
+// (the admin sees the rate-limited message and retries).
 export const YOUTUBE_ACTION_LIMITS = {
   preview: { prefix: 'yt-preview', max: 60, windowSec: 10 * 60 },
   meta: { prefix: 'yt-meta', max: 60, windowSec: 10 * 60 },
@@ -62,6 +64,6 @@ export function withinYouTubeActionLimit(
     max: limit.max,
     windowSec: limit.windowSec,
     now,
-    failOpen: true,
+    failOpen: false,
   })
 }

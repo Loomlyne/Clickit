@@ -23,6 +23,8 @@ import { createFakeSupabase, type Row } from './helpers/fake-supabase.ts'
 const S1 = 'aaaaaaaa-0000-4000-8000-000000000001'
 const SE1 = 'cccccccc-0000-4000-8000-000000000001'
 const E1 = 'eeeeeeee-0000-4000-8000-000000000001'
+// updated_at as PostgREST returns it; every episode update passes it (review item 8, PR #29).
+const V0 = '2026-10-20T10:00:00.000001+00:00'
 
 const stored = (over: Row = {}): Row => ({
   id: E1,
@@ -41,6 +43,7 @@ const stored = (over: Row = {}): Row => ({
   title_ar_edited: false,
   description_edited: false,
   description_ar_edited: false,
+  updated_at: V0,
   ...over,
 })
 
@@ -49,7 +52,7 @@ function world(ep: Row = stored()) {
     shows: [{ id: S1, title: 'Show 1', season_count: 1, episode_count: 1 }],
     seasons: [{ id: SE1, show_id: S1, title: 'Season 1', season_number: 1, episode_count: 1 }],
     episodes: [ep],
-  })
+  }, { updatedAtTables: ['episodes'] })
 }
 
 const meta = (over: Partial<YouTubeMeta> = {}): YouTubeMeta => ({
@@ -148,7 +151,7 @@ test('updateEpisodeCore: changing a field sets its flag in the same write; savin
   for (const f of EPISODE_TEXT_FIELDS) {
     const w = world(stored({ title_ar: 'عنوان', description_ar: 'وصف' }))
     const value = f.endsWith('_ar') ? 'نص جديد' : 'New text'
-    const res = await updateEpisodeCore(w.client, deps(w), E1, { [f]: value })
+    const res = await updateEpisodeCore(w.client, deps(w), E1, { [f]: value }, V0)
     assert.equal(res.success, true, res.error)
     assert.equal(ep(w)[f], value)
     assert.equal(ep(w)[`${f}_edited`], true, `${f}_edited set`)
@@ -163,7 +166,7 @@ test('updateEpisodeCore: changing a field sets its flag in the same write; savin
     title: 'YouTube title',
     description: ' YouTube text ',
     status: 'published',
-  })
+  }, V0)
   assert.equal(res.success, true, res.error)
   for (const f of EPISODE_TEXT_FIELDS) assert.equal(ep(same)[`${f}_edited`], false)
   assert.equal(Object.keys(lastPatch(same)).some((k) => k.endsWith('_edited')), false)
@@ -172,7 +175,7 @@ test('updateEpisodeCore: changing a field sets its flag in the same write; savin
 test('updateEpisodeCore: a failed write rolls the flag back with the text', async () => {
   const w = world()
   w.failOn({ table: 'admin_audit_log', op: 'insert', nth: 1 })
-  const res = await updateEpisodeCore(w.client, deps(w), E1, { title: 'Renamed' })
+  const res = await updateEpisodeCore(w.client, deps(w), E1, { title: 'Renamed' }, V0)
   assert.equal(res.success, false)
   assert.equal(ep(w).title, 'YouTube title')
   assert.equal(ep(w).title_edited, false)
@@ -180,7 +183,7 @@ test('updateEpisodeCore: a failed write rolls the flag back with the text', asyn
 
 test('updateEpisodeCore: once edited stays edited, even when the text goes back to YouTube\'s', async () => {
   const w = world(stored({ title: 'Mine', title_edited: true }))
-  const res = await updateEpisodeCore(w.client, deps(w), E1, { title: 'YouTube title' })
+  const res = await updateEpisodeCore(w.client, deps(w), E1, { title: 'YouTube title' }, V0)
   assert.equal(res.success, true, res.error)
   assert.equal(ep(w).title_edited, true)
 })
@@ -285,9 +288,11 @@ test('source guard: createShort and updateShort set the flags in their own write
   assert.match(create, /const edited = flagsOnCreate\(\s*SHORT_TEXT_FIELDS,\s*parsed,\s*video\.meta \? shortTextFromYouTube\(video\.meta\) : null\s*\)/)
   assert.match(create, /\.insert\(\{ \.\.\.parsed, \.\.\.edited, sort_order:/)
   const update = body('updateShort')
-  assert.match(update, /\.select\('youtube_video_id, title, channel_name, title_edited, channel_name_edited'\)/)
+  // updated_at too: a stale drawer is refused before the YouTube call (review item 8, PR #29).
+  assert.match(update, /\.select\('youtube_video_id, title, channel_name, title_edited, channel_name_edited, updated_at'\)/)
   assert.match(update, /const edited = flagsOnUpdate\(\s*SHORT_TEXT_FIELDS,\s*parsed,\s*current,\s*video\.meta \? shortTextFromYouTube\(video\.meta\) : null\s*\)/)
-  assert.match(update, /\.update\(\{ \.\.\.parsed, \.\.\.edited \}\)/)
+  // The flags ride in the same compare-and-swap UPDATE (updateIfUnchanged, review item 8, PR #29).
+  assert.match(update, /updateIfUnchanged\(\s*admin,\s*'shorts',\s*id,\s*\{ \.\.\.parsed, \.\.\.edited \},/)
   // Clients cannot send a flag: the shorts schema has none.
   const schema = src.slice(src.indexOf('const shortSchema = z.object({'), src.indexOf('})', src.indexOf('const shortSchema = z.object({')))
   assert.doesNotMatch(schema, /_edited/)
