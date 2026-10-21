@@ -91,7 +91,8 @@ Item 12 (Koss 2026-10-21, question form):
 
 Notes:
 - Cron placeholder (controller, 2026-10-20): PR #27 (Phase 6) adds `/api/cron/youtube-recheck`, which needs a daily Worker cron trigger. Whichever of Phase 2 / Phase 6 lands second wires it: one entry in `src/server/cron-schedule.ts` (cron map) plus the trigger in `wrangler.jsonc` `triggers.crons` at the Phase 3 cutover (crons stay `[]` until then). Phase 2 does not edit Phase 6 files.
-- PRs #27 (Phase 6) and #28 (Phase 4) are open; whichever lands second resolves conflicts.
+- PRs #27 (Phase 6) and #28 (Phase 4) landed on main (6d748ff, 9225d04) and are merged into this branch (f767ae7, 2026-10-21).
+- Phase 6 hand-offs addressed to Phase 2 (main's ROADMAP), NOT done yet, waiting for the controller's go: (a) `src/server/youtube/rate-limit.ts` onto `decideRateLimit`; (b) the `youtube-recheck` cron route onto `cronAuthOk`; (c) `30 1 * * *` into `CRON_ROUTES` now, and into `wrangler.jsonc` `triggers.crons` only at the Phase 3 cutover (crons stay `[]`).
 - Open decisions: pr-gate.yml triggers vs rule 4 (Phase 1 file); Phase 3 Q1-Q4 in `03-CUTOVER-DRAFT.md`.
 
 ## Pending Koss signatures (copy)
