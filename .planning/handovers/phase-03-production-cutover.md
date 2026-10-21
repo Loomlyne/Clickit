@@ -15,7 +15,7 @@
 | Typecheck | clean |
 | Migration guard | 1 file checked, 0 violations |
 | `next build` / `cf:build` | compiled, 57/57 static pages; `build stamp written: target preview, media flag off` |
-| Local SQL proof (03-05) | `/Users/koss/.clickit-checks/p3-exec/p3-sql-test-r2.log`: `test-local: PASS`, `exit=0` (one rolled-back transaction on the local stack) |
+| Local SQL proof (03-05, re-run after the PR #31 review fixes) | `/Users/koss/.clickit-checks/p3-exec/p3-sql-test-pr31.log`: `test-local: PASS`, `exit=0` (one rolled-back transaction on the local stack; now also updated_at drift, concurrent edit, strict refusal and partial reverse). Not part of `gate:local` (it needs the heavy lock that `gate:local` already holds): the controller runs it before Ship, see "Controller pre-Ship step" below |
 | CI (`pr-gate.yml`) | runs on PR open and every push (Clickit exception) |
 
 ## What changed, per plan
@@ -24,7 +24,7 @@
 - **03-02:** `build-target --target production` (env file `/Users/koss/.clickit-cloudflare/clickit.production.env`, publishable key only, real Turnstile, beacon token, media verified on `media.clickitstory.ae`, report sha256 in the stamp); `checkProductionDeploy`, `checkTargetSwitch` (D-18), media custom-domain route rule; `deploy.mjs --target production` is deploy-only and writes `clickit.last-deploy.json`; `--offline` dry run; npm scripts `cf:build:production`, `cf:deploy:production`. Test: `production-target.test.ts` (52 cases).
 - **03-03:** `scripts/cutover/dns-check.mjs` (+ core; phases ns, resend, pre-flip, post-flip, rollback, final; registry + jen/brett + SOA) and `rollback.mjs` (+ core; Keychain token `clickit-cf-dns-edit`, one PATCH `{ proxied: false }` on www). Tests: `dns-check.test.ts`, `rollback.test.ts`.
 - **03-04:** `x-clickit-runtime: workers` on every Worker response (`src/server/runtime-header.ts`, `custom-worker.ts`); `proof-check.mjs` (`--site-path`), `keys-check.mjs` (legacy 401 / publishable 200, captcha probe, `--extract-only`), `media-health --expect-source r2|supabase`, `parse-auth-results.mjs`, `http-pin.mjs`. Tests: `runtime-header`, `proof-check`, `keys-check`, `media-health-source`, `parse-auth-results`.
-- **03-05:** migration `supabase/migrations/20261021143410_media_url_rewrite_backup.sql` (creates `private.media_url_rewrite_backup` only; RLS on; grants revoked); ops SQL `check-backup-table`, `preflight`, `rewrite-media-urls`, `scan-old-hosts`, `report`, `reverse-media-urls` (also the `clickit-media-r2` test host); `with-heavy-lock.sh`; local proof `test-local.sql/.sh`. Tests: `rewrite-sql.test.ts`; `youtube-migration.test.ts` and `legal-pages-arabic.test.ts` allow the new newest migration.
+- **03-05:** migration `supabase/migrations/20261021143410_media_url_rewrite_backup.sql` (creates `private.media_url_rewrite_backup` only, with `reverse_skipped_at` / `reverse_skip_reason`; RLS on; grants revoked); ops SQL `check-backup-table`, `preflight` (role privileges and trigger list), `rewrite-media-urls`, `scan-old-hosts`, `report`, `reverse-media-urls` (strict) and `reverse-media-urls-partial` (also the `clickit-media-r2` test host); rewrite and reverse pause the four `updated_at` triggers inside their own transaction (PR #31 review findings 1, 2, 6); `with-heavy-lock.sh`; local proof `test-local.sql/.sh`. Tests: `rewrite-sql.test.ts`; `youtube-migration.test.ts` and `legal-pages-arabic.test.ts` allow the new newest migration.
 - **03-06:** `03-RUNBOOK.md` (Steps 0a-0c, 1-56, 36a, 52a; each with Command or Where, Expected, Rollback, Then wait; trigger words), `03-GATES.md` (branch B wording, legacy-key inventory, rollback ceiling, risk list, deviations, rewording for signature, controller follow-ups, findings), `deferred-items.md`.
 
 ## Guard dry-run outputs (03-02, offline, no wrangler started)
@@ -46,7 +46,7 @@ exit=1
 - npm: `cf:build:production`, `cf:deploy:production` (`--dry-run`, `--verify-report`, `--allow-upload-sweep-delete` only at Step 52a), `cf:deploy:media` (`--env r2`, `--env supabase-only`), `r2:media` (`--refresh`, `--execute`; Koss's terminal), `media:health -- --expect-source r2`.
 - `scripts/cutover/dns-check.mjs`, `proof-check.mjs`, `keys-check.mjs`, `rollback.mjs`, `parse-auth-results.mjs`, `with-heavy-lock.sh`.
 - `scripts/cf/check-gates.mjs`, `scripts/media/verify-media-host.mjs`.
-- `scripts/cutover/sql/check-backup-table.sql`, `preflight.sql`, `rewrite-media-urls.sql`, `scan-old-hosts.sql`, `report.sql`, `reverse-media-urls.sql` (live: `supabase db query --linked --project-ref lajguozmtissnnfccmej -f …`). `test-local.sql/.sh` are local only.
+- `scripts/cutover/sql/check-backup-table.sql`, `preflight.sql`, `rewrite-media-urls.sql`, `scan-old-hosts.sql`, `report.sql`, `reverse-media-urls.sql` (strict, the default), `reverse-media-urls-partial.sql` (only on Koss's "reverse rewrite partial", runbook Step 52) (live: `supabase db query --linked --project-ref lajguozmtissnnfccmej -f …`). `test-local.sql/.sh` are local only.
 - `.github/workflows/apply-live-migrations.yml` (Step 10 dispatch; Koss approves at Step 11).
 
 ## PR checklist (controller)
@@ -54,6 +54,14 @@ exit=1
 - **Migration file present: Phase 1 migration rule applies.** Exactly one new migration, `20261021143410_media_url_rewrite_backup.sql` (create table, RLS, revoke; no drop/delete/truncate; guard 0 violations). It reaches live only through `apply-live-migrations.yml` after Koss approves (runbook Steps 10-12), never on merge. Its dry run must list only this file (Step 0b's two migrations must already be live).
 - Review: Grok via Koss's subscription; fallback the local `reviewer` agent, and say so on the PR. No Codex, CodeRabbit, Cursor or API-key reviewer.
 - Clean-clone check before Ship (`/Users/koss/.clickit-checks/pr-check.sh <pr> <branch>`; the build needs the placeholder public env).
+- Local SQL proof before Ship (the controller pre-Ship step below).
+
+## Controller pre-Ship step: local SQL proof (PR #31 review finding 7; same text as 03-GATES.md section 10)
+
+`test-local.sh` needs Docker, `supabase_db_Clickit` and the heavy lock; `gate:local` already holds that lock, so the proof is not inside `gate:local`. Run once before Ship, after the clean-clone check, from the checked clone (or the main checkout after the merge):
+
+1. `perl -MPOSIX -e 'POSIX::setsid(); exec @ARGV' caffeinate -i -s -m scripts/cutover/sql/test-local.sh /Users/koss/.clickit-checks/p3-exec/p3-sql-test-preship.log`, then `until grep -q '^exit=' /Users/koss/.clickit-checks/p3-exec/p3-sql-test-preship.log; do sleep 5; done; grep -E 'before_backup_table|test-local: PASS|psql_status|after_rollback_backup_table|^exit=' /Users/koss/.clickit-checks/p3-exec/p3-sql-test-preship.log`.
+   Expected: `before_backup_table=[]`, `test-local: PASS`, `psql_status=0`, `after_rollback_backup_table=[]`, last line `exit=0`. A non-empty `before_backup_table` means an older backup table is on the local stack: `supabase db reset --local` under the lock, then run again. Any other exit: no Ship.
 - Live steps are in `03-RUNBOOK.md` and run only after Ship; Part 0 (Steps 0a P3-pre-cpu, 0b P3-pre-migration, 0c P3-pre-phase2) gates every live step.
 
 ## Open items for the controller
