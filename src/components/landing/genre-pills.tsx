@@ -1,8 +1,9 @@
 import { getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getCategories } from '@/lib/queries'
+import { DEFAULT_CATEGORY_PILL_HEX } from '@/lib/brand-colors'
 
-const DEFAULT_COLOR = '#8D9CFF'
+const DEFAULT_COLOR = DEFAULT_CATEGORY_PILL_HEX
 
 export async function GenrePills() {
   const [categories, locale] = await Promise.all([getCategories(), getLocale()])

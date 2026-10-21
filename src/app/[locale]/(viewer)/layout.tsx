@@ -37,7 +37,7 @@ export default async function ViewerLayout({
       <div
         id="preload-cover"
         aria-hidden="true"
-        style={{ position: 'fixed', inset: 0, background: '#0a0a0a', zIndex: 997 }}
+        style={{ position: 'fixed', inset: 0, background: 'var(--bg-0)', zIndex: 997 }}
       />
       <EntryPreload videoUrl={config.preloaderVideoUrl} />
       <ViewerScrollPersistence />

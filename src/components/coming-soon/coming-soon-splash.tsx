@@ -8,7 +8,7 @@ export async function ComingSoonSplash() {
     <div className="relative flex min-h-[calc(100dvh-var(--nav-h))] flex-col items-center justify-center overflow-hidden px-6 py-16">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(255,204,0,0.09),transparent_55%),radial-gradient(ellipse_60%_50%_at_50%_100%,rgba(255,255,255,0.04),transparent_60%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgb(var(--primary-rgb)/0.09),transparent_55%),radial-gradient(ellipse_60%_50%_at_50%_100%,rgba(255,255,255,0.04),transparent_60%)]"
       />
       <div
         aria-hidden
@@ -22,7 +22,7 @@ export async function ComingSoonSplash() {
           width={640}
           height={434}
           priority
-          className="h-auto w-[min(72vw,420px)] object-contain drop-shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
+          className="h-auto w-[min(72vw,420px)] object-contain drop-shadow-splash"
         />
 
         <p className="mt-10 font-[family-name:var(--font-app)] text-[11px] tracking-[0.28em] text-[var(--text-mute)] uppercase">

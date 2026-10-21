@@ -394,7 +394,7 @@ export function ShowForm({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="start"
-                    className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)] rounded-lg border border-[var(--line-2)] bg-[var(--popover)] p-1 shadow-[var(--shadow-soft)]"
+                    className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)] rounded-lg border border-[var(--line-2)] bg-[var(--popover)] p-1 shadow-soft"
                   >
                     <DropdownMenuRadioGroup
                       value={selectedCategoryId}
@@ -518,7 +518,7 @@ export function ShowForm({
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)] rounded-lg border border-[var(--line-2)] bg-[var(--popover)] p-1 shadow-[var(--shadow-soft)]"
+                className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)] rounded-lg border border-[var(--line-2)] bg-[var(--popover)] p-1 shadow-soft"
               >
                 {DAYS.map((d) => (
                   <DropdownMenuCheckboxItem

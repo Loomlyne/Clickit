@@ -33,7 +33,7 @@ export default async function ResetPasswordPage() {
           />
         </div>
 
-        <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-1)] p-6 shadow-[var(--shadow-panel)] sm:p-8">
+        <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-1)] p-6 shadow-panel sm:p-8">
           <p className="mb-3 text-xs font-medium tracking-[0.2em] text-[var(--text-mute)] uppercase">
             {t('resetHeading')}
           </p>

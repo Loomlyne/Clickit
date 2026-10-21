@@ -22,7 +22,7 @@ export function RouteScopedToaster() {
       toastOptions={{
         classNames: {
           toast:
-            'border border-white/10 bg-[#10131a] text-foreground shadow-[0_24px_80px_rgba(0,0,0,0.45)]',
+            'border border-white/10 bg-[var(--bg-1)] text-foreground shadow-popover',
           description: 'text-muted-foreground',
           actionButton: 'bg-primary text-primary-foreground',
           cancelButton: 'bg-secondary text-secondary-foreground',

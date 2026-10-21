@@ -110,19 +110,35 @@ Plans:
 **Plans**: TBD
 
 ### Phase 4: Design System Truth
-**Goal**: One signed design truth (LBC, #ffcc00, #0a0a0a, 8px radius) exists in tokens, docs and a Claude Design canvas before any new viewer, admin or email screen is coded.
+**Goal**: One signed design truth (LBC, #ffcc00, #090909, 8px field/base radius, pill controls) exists in tokens, docs and a Claude Design canvas before any new viewer, admin or email screen is coded.
 **Depends on**: Phase 3 (the design work itself can start in parallel with Phases 2-3; code ships after the cutover)
 **Requirements**: DS-01, DS-02, DS-03, DS-04
 **Success Criteria** (what must be TRUE):
-  1. DESIGN.md and `/design-system` show the live look: LBC, #ffcc00 accent, #0a0a0a surfaces and an 8px base radius. No indigo-era values remain.
+  1. DESIGN.md and `/admin/design-system` show the live look: LBC, #ffcc00 accent, #090909 surfaces, an 8px field/base radius and pill controls. No indigo-era values remain.
   2. A search of `src/` finds no hard-coded hex colours or arbitrary radii outside the token files, and one brand-colour map serves the whole app. The live site looks unchanged.
   3. The Claude Design canvas shows foundations, viewer screens (including the OTP sign-in, the RTL treatment and an RMF-compliant player), admin screens (playlist import preview, inbox) and the email templates. Koss has signed it.
-  4. A signed-out visitor or a non-admin viewer opening `/design-system` is refused.
+  4. A signed-out visitor or a non-admin viewer opening `/admin/design-system` is refused.
 **Owner-gated**: [OWNER] sign the canvas (it blocks UI build in Phases 5-7); [OWNER] Ship.
-**Phase 6 hand-off**: `src/components/admin/youtube-status-chip.tsx` — the `brand-green-safe` / `brand-red-safe` / `brand-orange-safe` tone classes may be renamed by the token pass; update the chip to the final names.
-**Phase 6 hand-off**: `src/components/admin/settings/advanced-tab.tsx` — swap `text-brand-green-safe` on the Test-ok icon for `var(--safe-green)` once Phase 4 adds that token.
-**Plans**: TBD
+**Plans**: 14 plans (10 waves). Owner-visible and codemod plans open with a 04-GATE.md answer check (stop on any B; Q7 must read C); 04-09 and 04-13 carry the codemod answer check and 04-10 to 04-12 inherit it through depends_on. Same-wave plans run one after another in this one branch. Every wave closes with a heavy-locked gate:local.
 **UI hint**: yes
+
+Plans:
+- [x] 04-01-PLAN.md — W1: [Q1/Q2/Q3] merge main; named radius/shadow/status + exact-value tokens; design-truth.ts; email-tokens.ts (Q7 = C); cn(); pin tests
+- [x] 04-02-PLAN.md — W2: ESLint rule clickit/no-raw-design-values (warn) + fixtures + baseline inventory
+- [x] 04-03-PLAN.md — W3: [Q4] one brand map (D-04); consumers; parity test; gate (W1-W3)
+- [x] 04-04-PLAN.md — W4: [Q1/Q2/Q5] admin-only /admin/design-system page, sidebar link, EN+AR copy, access pins
+- [x] 04-05-PLAN.md — W4: [Q1/Q3] D-03 snaps (select at /98, toaster, /portfolio CTA) + D-01 literals
+- [x] 04-07-PLAN.md — W4: [Q1/Q2/Q6/Q8, Q7=C, Q9=yes; orchestrator] canvas spike + Foundations + Viewer boards
+- [x] 04-06-PLAN.md — W5: [Q1/Q2/Q4/Q5, Q7=C] DESIGN.md (+ two-scheme email tokens) + parity test; wording; 04-P6-ADDENDUM.md; gate (W4)
+- [x] 04-08-PLAN.md — W5: [orchestrator] canvas Admin boards + Email boards from Phase 5's signed picture (both schemes)
+- [x] 04-09-PLAN.md — W6: [Q1/Q2] merge main; codemod 1/5 (UI primitives, chrome); gate (W5-W6)
+- [x] 04-10-PLAN.md — W7: codemod 2/5 (show cards, home, browse, series)
+- [x] 04-11-PLAN.md — W7: codemod 3/5 (watch, shorts, landing, support, coming-soon, lib gradients)
+- [x] 04-12-PLAN.md — W8: codemod 4/5 (viewer routes, loading skeletons); gate (W7-W8)
+- [x] 04-13-PLAN.md — W9: [Q1/Q2/Q3] codemod 5/5 (admin + admin.css), rule to error, banned-literal tests, ledger; gate
+- [x] 04-14-PLAN.md — W10: [orchestrator] reviewer pass on board legends, [OWNER] four signatures (D-08); final gate
+
+Deferred (not a Phase 4 plan): After Phases 5–6 ship, a separate job moves the proven Clickit patterns into Loomlyne/ui-system as general components, its own repo PR (Koss, 2026-10-20 18:45 CET): playlist import preview, 6-digit code boxes, up-next bar, key field with the right-side eye, status chips, skeletons, the admin TOTP page. Not a Phase 4 plan; the UI System repo is not changed in Phase 4.
 
 ### Phase 5: Accounts and Email
 **Goal**: Only signed-in viewers get past the landing and legal pages. Viewers can join or sign in with a 6-digit email code or a password. Both admins work under their own TOTP-protected accounts, and every auth and app email arrives branded from `Clickit Story <no-reply@clickitstory.ae>`, once, in the viewer's language.
@@ -219,7 +235,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | 1.1. Admin Actions Hardening (INSERTED) | 13/13 | UAT passed, PR open | - |
 | 2. Worker and R2 Media on workers.dev | 0/TBD | Not started | - |
 | 3. Production Cutover | 0/TBD | Not started | - |
-| 4. Design System Truth | 0/TBD | Not started | - |
+| 4. Design System Truth | 14/14 | UAT pending (PR) |  |
 | 5. Accounts and Email | 0/TBD | Not started | - |
 | 6. YouTube Import and Player | 0/25 | Planned | - |
 | 7. Product Completeness, Search and Arabic | 0/TBD | Not started | - |
