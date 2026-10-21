@@ -462,3 +462,126 @@ test('SUPPORT_REPLY_HOURS is 48 and email-constants.ts has no imports', () => {
   assert.ok(!/^\s*import\b/m.test(src))
   assert.ok(!/\bfrom\s+['"]/.test(src))
 })
+
+// ---------------------------------------------------------------------------
+// End to end through the Worker fill path (Task 3)
+// ---------------------------------------------------------------------------
+
+const E2E_CTX: AppEmailCtx = {
+  siteOrigin: 'https://www.clickitstory.ae',
+  links: {
+    unsubscribe: async () => 'https://www.clickitstory.ae/en/unsubscribe?t=a.b',
+    newsletterConfirm: async () => 'https://www.clickitstory.ae/en/newsletter/confirm?t=a.b',
+  },
+}
+
+/** Splits the html at the end of the hidden preheader div (react-email Preview). */
+function splitPreheader(html: string): { inner: string; visible: string } {
+  const open = 'data-skip-in-text="true">'
+  const start = html.indexOf(open)
+  assert.ok(start > 0, 'hidden preheader div')
+  const from = start + open.length
+  const end = html.indexOf('</div></div>', from)
+  assert.ok(end > from, 'padding div closes the preheader')
+  return { inner: html.slice(from, end + '</div>'.length), visible: html.slice(end + '</div></div>'.length) }
+}
+
+test('condition 1: hostile support_admin name', async () => {
+  const { renderAppEmail } = await import('../../src/emails/render-app.ts')
+  const { en: EN, fill } = await import('../../src/emails/messages/en.ts')
+  const { ar: AR } = await import('../../src/emails/messages/ar.ts')
+  const escapedName = escapeHtml(HOSTILE)
+  for (const locale of ['en', 'ar'] as const) {
+    const out = await renderAppEmail(
+      {
+        kind: 'support_admin',
+        locale,
+        payload: { message_id: 'm-1', name: HOSTILE, email: 'a@b.example', subject: 'Hi & "bye"', message: 'Hello' },
+        idempotency_key: 'k',
+        to_user: null,
+      },
+      E2E_CTX
+    )
+    const html = out.html
+    for (const piece of ['&lt;script&gt;', '&quot;Q&quot;', 'O&#x27;Neil', ' &amp; ', 'نور']) {
+      assert.ok(html.includes(piece), `${locale}: ${piece}`)
+    }
+    assert.ok(!html.toLowerCase().includes('<script'), `${locale}: no <script`)
+
+    const { inner, visible } = splitPreheader(html)
+    const names = count(visible, escapedName)
+    assert.ok(names >= 2, `${locale}: From row and reply hint (${names})`)
+    assert.equal(count(visible, `<bdi>${escapedName}</bdi>`), names, `${locale}: every visible name in <bdi>`)
+
+    const m = locale === 'ar' ? AR : EN
+    const preText = fill(m.e9.preheader, { name: HOSTILE })
+    assert.equal(
+      inner,
+      `${escapeHtml(preText)}<div>${PREVIEW_PAD.repeat(PREVIEW_MAX - preText.length)}</div>`,
+      `${locale}: preheader is escaped plain text plus the padding div`
+    )
+    assert.ok(!/<(?!\/?div>)/.test(inner), `${locale}: no tag inside the preheader but the padding div`)
+
+    if (locale === 'ar') {
+      assert.match(html, /<html[^>]*lang="ar"[^>]*dir="rtl"/)
+      assert.match(html, /<table[^>]*lang="ar"[^>]*dir="rtl"/)
+    }
+    assert.ok(out.text.includes(HOSTILE), `${locale}: text has the name as given`)
+    for (const entity of ['&amp;', '&lt;', '&quot;']) {
+      assert.ok(!out.text.includes(entity), `${locale}: text has no ${entity}`)
+    }
+  }
+})
+
+test('condition 1: sentinel text in values is inert end to end', async () => {
+  const { renderAppEmail } = await import('../../src/emails/render-app.ts')
+  const { renderAppEmailDirect } = await import('../../src/emails/app/direct.ts')
+  const adminRow: AppEmailRow = {
+    kind: 'support_admin',
+    locale: 'en',
+    payload: {
+      message_id: 'm-1',
+      name: '__clk_txt_name__',
+      email: 'a@b.example',
+      subject: 'Subject',
+      message: '__clk_blk_shows__ __clk_pre_preheader__',
+    },
+    idempotency_key: 'k',
+    to_user: null,
+  }
+  const digestRow: AppEmailRow = {
+    kind: 'digest',
+    locale: 'en',
+    payload: {
+      shows: [
+        {
+          title: '__clk_url_logo__',
+          title_ar: null,
+          slug: 's',
+          image_url: 'https://media.clickitstory.ae/shows/1.jpg',
+          episodes: [{ id: 'e1', season_number: 1, episode_number: 1, title: 'Pilot', title_ar: null }],
+        },
+      ],
+      total_shows: 1,
+    },
+    idempotency_key: 'k2',
+    to_user: 'u-1',
+  }
+  for (const r of [adminRow, digestRow]) {
+    const fillOut = await renderAppEmail(r, E2E_CTX)
+    const direct = await renderAppEmailDirect(r, E2E_CTX)
+    for (const s of ['__clk_txt_name__', '__clk_blk_shows__', '__clk_pre_preheader__', '__clk_url_logo__']) {
+      assert.equal(count(fillOut.html, s), count(direct.html, s), `${r.kind} html ${s}`)
+      assert.equal(count(fillOut.text, s), count(direct.text, s), `${r.kind} text ${s}`)
+    }
+  }
+  const admin = await renderAppEmail(adminRow, E2E_CTX)
+  assert.ok(count(admin.html, '__clk_txt_name__') >= 3, 'preheader, From row, reply hint')
+  assert.ok(admin.html.includes('__clk_blk_shows__ __clk_pre_preheader__'))
+  assert.ok(admin.text.includes('__clk_blk_shows__ __clk_pre_preheader__'))
+  const digest = await renderAppEmail(digestRow, E2E_CTX)
+  assert.ok(digest.html.includes('<bdi>__clk_url_logo__</bdi>'))
+  assert.ok(digest.text.includes('__clk_url_logo__'))
+  assert.equal(count(digest.html, LOGO_URL), 1, 'the logo URL appears once')
+  assert.equal(count(digest.html, `<img src="${LOGO_URL}"`), 1, 'and only in the logo src')
+})
