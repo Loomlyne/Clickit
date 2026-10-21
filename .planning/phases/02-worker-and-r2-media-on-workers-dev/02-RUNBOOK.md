@@ -9,7 +9,7 @@
 2. Every `wrangler` command starts with `HOME=/Users/koss/.clickit-cloudflare`. Never run wrangler without it (that would use the default Vamos login).
 3. Before every wrangler step, run the **whoami check** (Step 3). If it shows any account other than ClickitStory `e329b099b6e4272fc0915a99832e47fe`, or two accounts, stop and report.
 4. Secrets (keys, tokens, passwords) are typed or pasted only into the terminal prompt that wrangler or `read -rs` opens. Never into chat, never into a file in the repo, never into a command line argument.
-5. Nothing in Part A touches DNS, www.clickitstory.ae or the Vercel project. Part A writes only to the ClickitStory Cloudflare account, plus four owner-gated exceptions in live Supabase, each with its own step and trigger word: the redirect allow-list setting (Step 23, dashboard, no SQL), the sign-in rows that measurement and UAT sign-ins create in Supabase Auth (Steps 31 and 34), and the one approved draft-show write with its exact row list (Step 32). Steps 25-27 only read Supabase Storage.
+5. Nothing in Part A touches DNS, www.clickitstory.ae or the Vercel project. Part A writes only to the ClickitStory Cloudflare account, plus four owner-gated exceptions in live Supabase, each with its own step and trigger word: the redirect allow-list setting (Step 23, dashboard, no SQL), the sign-in rows that measurement and UAT sign-ins create in Supabase Auth (Steps 31 and 34), and the one approved draft-show write with its exact row list (Step 32) and its owner-gated revert (Step 32b). Steps 25-27 only read Supabase Storage.
 6. Free tier only. If any screen asks for a payment method or a paid plan, stop and report the screen; do not accept.
 
 `<WORKTREE>` below is the main checkout `/Users/koss/Developer/Clickit` since #29 landed on main (6ebc802, 2026-10-21); before that it was the phase worktree. The `<SUB>` below is the account's workers.dev subdomain found in Step 4 (not a secret). The app Worker is `https://clickit.<SUB>.workers.dev`; the media Worker is `https://clickit-media.<SUB>.workers.dev`.
@@ -187,6 +187,7 @@ Then wait.
 | 30 | controller | the `clickit` Worker on workers.dev | **yes: "flag on workers.dev"** |
 | 31 | Koss, in Hermes | a sign-in row in live Supabase Auth only | no (accepted cost of sign-in UAT) |
 | 32 | Koss, in Hermes | one live `shows` row + one audit row + new R2 objects | **yes: "approve one draft write"** |
+| 32b | controller | reverts that `shows.poster_url`; deletes the test R2 keys | **yes: "approve poster revert", then "approve test poster cleanup"** |
 
 Steps 25-29 run in ONE terminal window that stays open. The values are read with `read -rs` so they never reach the screen, the shell history or a file.
 
@@ -243,24 +244,40 @@ Pre-check: migration 20261021120000 is live and read back (done 2026-10-21 14:45
 Command (main checkout): `npm run cf:deploy:workersdev -- --media-flag verified --media-origin <MEDIA_ORIGIN> --verify-report .tmp/r2-media-reports/verify-<timestamp>.json`
 Expected: the guard checks the verify report (same manifest, equal object count, 0 failures) before building; the build sets `NEXT_PUBLIC_MEDIA_CUTOVER_READY=verified` and `NEXT_PUBLIC_MEDIA_ORIGIN` for this target only. Images on `https://clickit.clickitstory.workers.dev/en` load from `<MEDIA_ORIGIN>`. No Vercel build ever gets this flag. Rollback: `npm run cf:deploy:workersdev -- --media-flag off`.
 Note: the media-origin rule accepts `clickit-media[-r2].<sub>.workers.dev` or `media.clickitstory.ae` (option A, `phase-02-finish`).
-Note (Step 32 with option A): the draft show's new `poster_url` points at `clickit-media-r2.clickitstory.workers.dev`; the Phase 3 cutover's media-URL rewrite must include that host.
+Note (Step 32 with option A): the draft show's new `poster_url` points at `clickit-media-r2.clickitstory.workers.dev` until Step 32b reverts it; Step 32b is required, so no live row keeps that test host.
 Then wait.
 
 ### Approvals during UAT (plan 02-22)
 
 **Step 31 [KOSS] - name the draft test show (read only)**
-Where: https://clickit.<SUB>.workers.dev/en/admin, signed in as admin (in Hermes). Pick one show whose status is draft (not visible to viewers) and tell the controller its title. Nothing is changed by this step apart from what any sign-in does in live Supabase Auth (a session row in auth.sessions and auth.users.last_sign_in_at); that is the accepted cost of sign-in UAT on workers.dev.
-Expected: a draft show title. The controller records the show id (read-only lookup) and the current poster URL.
+Where: https://clickit.<SUB>.workers.dev/en/admin, signed in as admin (in Hermes). Pick one show whose status is draft (not visible to viewers) **and whose current poster is a Supabase Storage URL or empty** (not an R2 key: replacing an R2 poster deletes the old R2 object, and Step 32b could not bring it back). Tell the controller its title. Nothing is changed by this step apart from what any sign-in does in live Supabase Auth (a session row in auth.sessions and auth.users.last_sign_in_at); that is the accepted cost of sign-in UAT on workers.dev.
+Expected: a draft show title. The controller records, read-only by id: the show id, the current `poster_url` (exact string, or NULL) and `updated_at`. Step 32b restores that exact `poster_url`.
 Then wait.
 
 **Step 32 [KOSS] - approve the single live write of Phase 2**
 Trigger word: "approve one draft write". Then, in Hermes on workers.dev, open that draft show in the admin and upload a new poster image (a test PNG the controller gives you). This one action is the real presigned upload round trip (browser -> R2 -> finalize) AND the only database write of Phase 2.
 Exactly what changes:
-- one row in `public.shows` (the named draft show, by id): `poster_url` becomes `https://clickit-media.<SUB>.workers.dev/show-artwork/<new key>` (plus the existing `?v=` cache-bust if the column uses it); no other column and no other row;
+- one row in `public.shows` (the named draft show, by id): `poster_url` becomes `https://clickit-media-r2.<SUB>.workers.dev/show-artwork/shows/<show id>/poster-<ts>-<rand>.<png|jpg|webp>` (plus the existing `?v=` cache-bust if the column uses it); no other column and no other row;
 - one new row in `public.admin_audit_log` for that upload;
-- new objects in R2 bucket `clickit-media`: the poster original and its `_v/` WebP variants (if the browser can make them);
+- new objects in R2 bucket `clickit-media` (key shapes from `src/server/upload-kinds.ts` `mintUploadKey` / `variantKeyFor`):
+  - original: `show-artwork/shows/<show id>/poster-<ts>-<rand>.<ext>` (the path of the new `poster_url`);
+  - WebP variants, only the widths the browser made (smaller than the image): `_v/640/webp/<original key>`, `_v/1280/webp/<original key>`, `_v/1920/webp/<original key>`;
 - the previous poster: if it is a Supabase Storage URL it is NOT deleted (Supabase is emptied only after Koss approves, MEDIA-07); if it were an R2 key it would be deleted from R2 only.
-Expected: the progress bar completes, the new poster shows in the admin within 10 seconds, and it loads from `clickit-media.<SUB>.workers.dev`. The controller then reads back, read-only by id: the show row (only `poster_url` and `updated_at` differ from the values recorded at Step 31) and `admin_audit_log` rows created after the trigger time (exactly one). The show stays a draft, invisible to viewers.
+Expected: the progress bar completes, the new poster shows in the admin within 10 seconds, and it loads from `clickit-media-r2.<SUB>.workers.dev`. The controller records the new `poster_url` exactly (it gives the original key) and then reads back, read-only by id: the show row (only `poster_url` and `updated_at` differ from the values recorded at Step 31) and `admin_audit_log` rows created after the trigger time (exactly one). The show stays a draft, invisible to viewers.
+Then wait.
+
+**Step 32b [CONTROL] - revert the test poster (owner-gated) and clean up its R2 objects**
+Chosen: **revert** (not a dedicated test show). A new never-publish show would itself be a live insert to create and a live delete to remove, and it would sit in the admin show list; restoring one column on an existing draft is a smaller, fully reversible write.
+Trigger word: "approve poster revert". Runs right after Step 32's read-back, before Phase 2 closes; the `clickit-media-r2` host is a test host and must not stay in a live row.
+1. Write (controller, live project, one statement, guarded by the Step 32 value so it changes nothing if the row moved on):
+   `update public.shows set poster_url = <Step 31 poster_url, or NULL> where id = '<show id>' and poster_url = '<Step 32 poster_url>' returning id, poster_url;`
+   Expected: exactly 1 row, `poster_url` equal to the Step 31 value. 0 rows: stop and report (someone changed the show). `updated_at` changes through the `set_updated_at` trigger; that is expected. The `admin_audit_log` row from Step 32 stays (the log is append-only); this SQL revert writes no audit row, so the controller notes it in the hand-over.
+2. Read back (read-only, by id): `poster_url` equals the Step 31 value; no other column differs from Step 31 except `updated_at`.
+3. R2 cleanup, trigger word "approve test poster cleanup" (writes R2 only; the keys are those listed in Step 32, derived from the recorded `poster_url`):
+   `HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 r2 object delete "clickit-media/<original key>" --remote`
+   then the same command for `clickit-media/_v/640/webp/<original key>`, `clickit-media/_v/1280/webp/<original key>`, `clickit-media/_v/1920/webp/<original key>` (a variant the browser did not make returns not found; that is fine).
+   Check: `curl -sI https://clickit-media-r2.<SUB>.workers.dev/<original key>` returns 404.
+Expected: the show is exactly as it was at Step 31 (apart from `updated_at`), the four test keys are gone from R2, and no live row points at `clickit-media-r2`.
 Then wait.
 
 **Step 33 [KOSS] - Workers plan decision (only if the CPU report fails)** — **DECIDED 2026-10-21: "Stay Free, do the rebuild".** The signed-out pass of 02-21 failed on every route (02-CPU-REPORT.md); the caching rebuild is its own PR after #29. Steps 34 onward wait until it lands.

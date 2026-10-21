@@ -86,6 +86,7 @@ Item 12 (Koss 2026-10-21, question form):
 | 30 | workers.dev build with media on R2 ("flag on workers.dev") | controller, Koss's word | open, after 29; migration pre-check already passed (run 39609825509) |
 | 31 | name the draft test show (read only) | Koss | open |
 | 32 | approve the single live write of Phase 2 (draft show poster) | Koss | open |
+| 32b | revert the test poster to the Step 31 value, then delete its R2 keys (review of #30) | controller, Koss's words "approve poster revert" / "approve test poster cleanup" | open, right after 32 |
 | 33 | Workers plan decision (priced question) | Koss | DECIDED 2026-10-21: "Stay Free, do the rebuild" (signed-out 02-21 pass failed every route, 02-CPU-REPORT.md). The caching rebuild belongs to session "Clickit /en CPU" on its own branch, PR to main after #29 |
 | 34 | approve the measurement sign-ins (before 31-32) | Koss | WAITS for the rebuild to land (measuring now would measure code about to change) |
 | 02-21 rest | signed-in rows, media Worker rows, local cron estimate | C or the rebuild session | WAITS for the rebuild to land |
