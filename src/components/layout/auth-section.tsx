@@ -57,13 +57,15 @@ export function AuthSection({
     const supabase = createClient()
 
     async function loadUser(userId: string, email: string) {
-      const [profileRes, configRes] = await Promise.all([
+      // am_i_admin() is a UI hint for the Admin link only (T-05-15-04); every
+      // admin page and action re-checks with requireAdmin() on the server.
+      const [profileRes, adminRes] = await Promise.all([
         supabase
           .from('profiles')
           .select('display_name, avatar_url')
           .eq('id', userId)
           .single(),
-        supabase.from('app_config').select('admin_user_id').single(),
+        supabase.rpc('am_i_admin'),
       ])
 
       setUser({
@@ -75,7 +77,7 @@ export function AuthSection({
           profileRes.data?.avatar_url ??
           null,
       })
-      setIsAdmin(configRes.data?.admin_user_id === userId)
+      setIsAdmin(adminRes.data === true)
     }
 
     supabase.auth.getUser().then(({ data: { user: u } }) => {

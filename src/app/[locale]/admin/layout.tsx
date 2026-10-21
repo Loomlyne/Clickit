@@ -1,6 +1,6 @@
 import { getLocale } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { AdminAccessError, requireAdmin } from '@/server/auth-guards'
 import { AdminHeader } from '@/components/admin/admin-header'
 import '@/styles/admin.css'
 
@@ -9,25 +9,15 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
+  // One admin gate (D-17): admins row + fresh TOTP. Not signed in or not an
+  // admin -> /watch; an admin who still needs to enrol or enter a code -> /auth/mfa.
+  try {
+    await requireAdmin()
+  } catch (e) {
     const locale = await getLocale()
-    return redirect({ href: '/watch', locale })
-  }
-
-  // Check if user is admin via app_config table lookup
-  const { data: config } = await supabase
-    .from('app_config')
-    .select('admin_user_id')
-    .eq('id', 1)
-    .single()
-
-  if (config?.admin_user_id !== user.id) {
-    const locale = await getLocale()
+    if (e instanceof AdminAccessError && (e.code === 'needs_enrol' || e.code === 'needs_code')) {
+      return redirect({ href: { pathname: '/auth/mfa', query: { next: '/admin' } }, locale })
+    }
     return redirect({ href: '/watch', locale })
   }
 

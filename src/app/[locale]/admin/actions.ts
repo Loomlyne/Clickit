@@ -4,6 +4,7 @@ import { revalidatePath, updateTag } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/server/auth-guards'
 import { validateYouTubeUrl } from '@/lib/youtube'
 import { logAudit, logAuditStrict } from '@/lib/audit'
 import { runAdminAction, type AdminActionEnv } from '@/lib/admin/action-runner'
@@ -150,23 +151,11 @@ export type {
 // Auth helper: defense-in-depth (D-12) — every action verifies admin
 // ---------------------------------------------------------------------------
 
+// One admin gate (D-17; Phase 6 contract items 1 and 7): signed in, a public.admins
+// row and a fresh TOTP (src/server/auth-guards.ts). Returns { id, email, displayName };
+// callers pass .id to logAuditStrict as the acting admin.
 async function assertAdmin() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) throw new Error('Unauthorized')
-
-  // Always scope to id=1. Without .eq('id', 1) a hypothetical second row in
-  // app_config would make .single() throw, locking every admin action.
-  const { data: config } = await supabase
-    .from('app_config')
-    .select('admin_user_id')
-    .eq('id', 1)
-    .single()
-
-  if (config?.admin_user_id !== user.id) throw new Error('Unauthorized')
-  return user
+  return requireAdmin()
 }
 
 const adminEnv: AdminActionEnv = {
@@ -176,8 +165,8 @@ const adminEnv: AdminActionEnv = {
   logError: (label, err) => console.error(label, err),
 }
 
-// TODO(phase-5): swap this for requireAdmin() (admins table + TOTP at /{locale}/auth/mfa; accepts both admins, so Nejib can import); every YouTube action uses only this function
-const requireAdminForYouTube = (): Promise<{ id: string }> => assertAdmin()
+// Every YouTube action uses only this function (contract item 7): both admins can import.
+const requireAdminForYouTube = (): Promise<{ id: string }> => requireAdmin()
 
 const youtubeAdminEnv: AdminActionEnv = { ...adminEnv, assertAdmin: requireAdminForYouTube }
 

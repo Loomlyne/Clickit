@@ -228,8 +228,11 @@ test('DS-04: no other design-system route directory exists under src/app', () =>
 
 test('DS-04: the admin layout still redirects signed-out and non-admin users', () => {
   const layout = read('src/app/[locale]/admin/layout.tsx')
-  assert.ok(layout.includes('if (!user)'))
-  assert.ok(layout.includes('admin_user_id !== user.id'))
+  // 05-15 (D-17): one gate, requireAdmin(); failures go to /watch or /auth/mfa.
+  assert.ok(layout.includes('await requireAdmin()'))
+  assert.ok(layout.includes("redirect({ href: '/watch', locale })"))
+  assert.ok(layout.includes("pathname: '/auth/mfa'"))
+  assert.ok(!layout.includes('admin_user_id'))
 })
 
 test('DS-04: the page and the view read no data', () => {
