@@ -13,6 +13,11 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { mapAuthError } from '@/lib/auth-errors'
 import { signUpAction } from '@/app/[locale]/(viewer)/auth/actions'
+import {
+  TurnstileField,
+  useTurnstileToken,
+} from '@/components/security/turnstile-field'
+import { isCaptchaFailure } from '@/lib/turnstile-widget'
 import { AuthAlert } from './auth-alert'
 import { PasswordField } from './password-field'
 import { NAME_MIN, PASSWORD_MIN, errorParams } from './password-rules'
@@ -37,6 +42,9 @@ export function SignupForm() {
   const tErrors = useTranslations('errors')
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
+  // Turnstile (PLAT-05): single-use token, submit disabled until one exists.
+  const captcha = useTurnstileToken()
+  const { needsToken, awaitingToken } = captcha
 
   const {
     register,
@@ -61,16 +69,30 @@ export function SignupForm() {
     key ? tErrors(key as never, errorParams(key) as never) : undefined
 
   async function onSubmit(data: SignupFormData) {
+    if (awaitingToken) return
     setServerError(null)
+    captcha.setFailed(false)
 
-    // BotID-gated Server Action sets the auth cookies server-side.
-    const result = await signUpAction(data.email, data.password, data.name)
+    // The Server Action sets the auth cookies server-side and hands the
+    // Turnstile token to Supabase as captchaToken.
+    const result = await signUpAction(
+      data.email,
+      data.password,
+      data.name,
+      captcha.token ?? undefined
+    )
 
     if (!result.ok) {
+      // The token is single-use: a fresh one is needed after any failure.
+      const refused = isCaptchaFailure(result.error)
+      captcha.consume(refused)
+      // With the widget drawn, a captcha refusal shows under it (signed).
       setServerError(
-        result.error === 'passwordMin'
-          ? fieldError('passwordMin')!
-          : mapAuthError(result.error)
+        needsToken && refused
+          ? null
+          : result.error === 'passwordMin'
+            ? fieldError('passwordMin')!
+            : mapAuthError(result.error)
       )
       return
     }
@@ -187,10 +209,18 @@ export function SignupForm() {
         )}
       </div>
 
-      {/* Job C mounts the Cloudflare Turnstile widget here. */}
-      <div data-turnstile-slot className="empty:hidden" />
+      <TurnstileField
+        key={captcha.widgetKey}
+        form="sign-up"
+        onToken={captcha.setToken}
+        failed={captcha.failed}
+      />
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isSubmitting || awaitingToken}
+      >
         {isSubmitting ? t('signUpButton') + '…' : t('signUpButton')}
       </Button>
     </form>

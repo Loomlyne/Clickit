@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getLegalPageBySlug } from '@/lib/queries'
-import { pickLocalized } from '@/lib/locale'
+import { legalPageForLocale } from '@/lib/legal-arabic'
 import { getLocale } from '@/lib/locale-server'
 import { LegalPageContent } from '@/components/legal/legal-page-content'
 import {
@@ -27,9 +27,8 @@ export default async function PrivacyPage() {
     getLocale(),
   ])
 
-  // Localize for the active locale (Arabic when set, English fallback).
-  const title = page ? pickLocalized(locale, page.title, page.title_ar) : ''
-  const content = page ? pickLocalized(locale, page.content, page.content_ar) : ''
+  // Arabic only after an admin ticked "Arabic reviewed"; otherwise the English legal text.
+  const { title, content } = page ? legalPageForLocale(page, locale) : { title: '', content: '' }
 
   // If admin has entered content for this slug + locale, render it directly.
   if (content.trim()) {

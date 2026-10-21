@@ -407,3 +407,123 @@ export async function reorderEpisodeCore(
   const wroteData = !(result.failedStep === 'swap' && swapMissing)
   return { success: false, error, wrote: wroteData, data }
 }
+
+// ---- Renumber (Phase 6, D-14, D-19) ----
+
+type RenumberRow = { episode_id: string; old_number: number; new_number: number }
+type RenumberRpcClient = {
+  rpc: (
+    name: string,
+    args: Record<string, unknown>
+  ) => Promise<{
+    data: RenumberRow[] | null
+    error: { code?: string; message?: string } | null
+  }>
+}
+
+function mapRenumberRpcError(err: { code?: string; message?: string }): RpcError {
+  const message = err.message ?? ''
+  if (err.code === 'P0002') return { message: 'Season not found.', refusal: true }
+  if (err.code === 'P0001' && message.startsWith('Already numbered'))
+    return { message: 'Already numbered 1 to N.', refusal: true }
+  if (err.code === 'PGRST202' || err.code === '42883')
+    return {
+      message:
+        'Renumbering needs the Phase 6 database migration (function public.renumber_season is missing).',
+      refusal: false,
+      missing: true,
+    }
+  return { message: message || 'Renumber failed.', refusal: false }
+}
+
+/** The one place that calls public.renumber_season; the cast is needed only when
+ *  database.types.ts lags the migration. */
+export async function callRenumberSeasonRpc(
+  db: AdminDb,
+  seasonId: string
+): Promise<{ rows: RenumberRow[] | null; error: RpcError | null }> {
+  const client = db as unknown as RenumberRpcClient
+  const { data, error } = await client.rpc('renumber_season', { p_season_id: seasonId })
+  if (error) return { rows: null, error: mapRenumberRpcError(error) }
+  return { rows: data ?? [], error: null }
+}
+
+type RenumberData = { showId: string; map: RenumberRow[] }
+
+export async function renumberSeasonCore(
+  db: AdminDb,
+  deps: Deps,
+  showIdRaw: unknown,
+  seasonIdRaw: unknown
+): Promise<CoreResult<RenumberData>> {
+  const pshow = parseId(showIdRaw, 'show')
+  if (!pshow.ok) return { success: false, error: pshow.error }
+  const pseason = parseId(seasonIdRaw, 'season')
+  if (!pseason.ok) return { success: false, error: pseason.error }
+  const showId = pshow.value
+  const seasonId = pseason.value
+
+  const { data: season, error: readError } = await db
+    .from('seasons')
+    .select('id, show_id')
+    .eq('id', seasonId)
+    .maybeSingle()
+  if (readError) return { success: false, error: readError.message }
+  if (!season) return { success: false, error: 'Season not found.' }
+  if (season.show_id !== showId)
+    return { success: false, error: 'Season does not belong to this show.' }
+
+  let map: RenumberRow[] = []
+  let rpcRefusal = false
+
+  const result = await runWithCompensation([
+    {
+      // No undo: the database function is all-or-nothing (D-19), so a failed
+      // call changes nothing and a successful one is not reversed by app code.
+      name: 'renumber',
+      run: async () => {
+        const res = await callRenumberSeasonRpc(db, seasonId)
+        if (res.error) {
+          rpcRefusal = res.error.refusal
+          return { error: res.error.message }
+        }
+        map = res.rows ?? []
+        return { error: null }
+      },
+    },
+    {
+      name: 'audit',
+      run: async () =>
+        writeAudit(deps, {
+          action: 'update',
+          entity: 'season',
+          entityId: seasonId,
+          diff: { kind: 'renumber', map },
+        }),
+    },
+  ])
+
+  const data = { showId, map }
+  if (result.ok) return { success: true, wrote: true, data }
+
+  // The function raised before writing: nothing to record or revalidate.
+  if (result.failedStep === 'renumber' && rpcRefusal)
+    return { success: false, error: result.error, wrote: false, data }
+
+  const failedAudit = await writeAudit(deps, {
+    action: 'update',
+    entity: 'season',
+    entityId: seasonId,
+    diff: compensationAuditDiff(result, { kind: 'renumber', map }),
+  })
+
+  let error = result.error
+  if (result.failedStep === 'audit') {
+    error = `The renumber audit record could not be written and the new numbers were left in place (${failMessage(result)}).`
+  }
+  if (failedAudit.error)
+    error += ` (the failure audit row also failed: ${failedAudit.error})`
+  // A failed function call changed no episode data (all-or-nothing).
+  const wroteData = result.failedStep !== 'renumber'
+  return { success: false, error, wrote: wroteData, data }
+}

@@ -4,7 +4,6 @@ import { getTranslations } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
 import { AuthPanel } from '@/components/auth/auth-panel'
-import { BotIdInit } from '@/components/auth/botid-init'
 import { getFeaturedShows } from '@/lib/queries'
 import { getAppConfig } from '@/lib/config'
 import { createClient } from '@/lib/supabase/server'
@@ -73,8 +72,6 @@ export default async function AuthPage({
         !config.flags.comingSoonMode && '-mt-16'
       )}
     >
-      <BotIdInit />
-
       {/* LEFT — editorial hero. The scrim keeps the quote at 4.5:1+ on any
           admin-uploaded image. */}
       <div className="relative hidden w-1/2 overflow-hidden bg-[var(--bg-1)] lg:block">

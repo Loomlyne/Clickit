@@ -50,7 +50,7 @@ export function LandingHeroAnimations({ logo }: { logo: React.ReactNode }) {
       >
         <Link
           href="/watch"
-          className="bg-primary text-primary-foreground inline-flex items-center rounded-full px-7 py-3 text-sm font-semibold shadow-[0_16px_40px_rgba(96,115,255,0.28)] transition-colors hover:bg-[#7082ff]"
+          className="bg-primary text-primary-foreground inline-flex items-center rounded-full px-7 py-3 text-sm font-semibold shadow-cta-glow transition-colors hover:bg-[var(--uis-primary-hover)]"
         >
           {tCommon('browseShows')}
         </Link>

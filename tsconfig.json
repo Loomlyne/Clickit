@@ -40,6 +40,11 @@
     "_claude 2",
     "_planning",
     "_planning 2",
-    "tests/unit"
+    "tests/unit",
+    "workers",
+    "custom-worker.ts",
+    "open-next.config.ts",
+    ".open-next",
+    ".wrangler"
   ]
 }

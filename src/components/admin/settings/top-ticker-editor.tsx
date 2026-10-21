@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { updateTopTicker } from '@/app/[locale]/admin/actions'
 import type { TopTickerConfig, TopTickerItem } from '@/lib/config'
 import { SettingsCard, SettingsField } from './settings-card'
+import { useSharedRowVersion } from '@/components/admin/row-version'
 
 const emptyRow = (): TopTickerItem => ({
   tag: '',
@@ -29,6 +30,7 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
   )
   const [saving, setSaving] = useState(false)
   const t = useTranslations('admin.settings')
+  const version = useSharedRowVersion()
 
   const normalizedInitial = {
     enabled: initial.enabled,
@@ -69,9 +71,11 @@ export function TopTickerEditor({ initial }: { initial: TopTickerConfig }) {
           r.text.length > 0 ||
           (r.tag2?.trim() ?? '').length > 0
       )
-    const result = await updateTopTicker({ enabled, items })
+    const expected = version.expected()
+    const result = await updateTopTicker({ enabled, items }, expected)
     setSaving(false)
     if (result.success) {
+      version.saved(expected, result.updatedAt)
       const data: unknown = result.data
       const untranslated =
         data && typeof data === 'object' && 'untranslated' in data

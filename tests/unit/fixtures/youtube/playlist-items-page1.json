@@ -1,0 +1,1007 @@
+{
+  "_source": "documented shape, not recorded",
+  "kind": "youtube#playlistItemListResponse",
+  "nextPageToken": "CDIQAA",
+  "pageInfo": {
+    "totalResults": 70,
+    "resultsPerPage": 50
+  },
+  "items": [
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV80",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 1",
+        "position": 0,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000000"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000000",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV81",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 2",
+        "position": 1,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000001"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000001",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV82",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 3",
+        "position": 2,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000002"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000002",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV83",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 4",
+        "position": 3,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000003"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000003",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV84",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 5",
+        "position": 4,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000004"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000004",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV85",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 6",
+        "position": 5,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000005"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000005",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV86",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 7",
+        "position": 6,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000006"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000006",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV87",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 8",
+        "position": 7,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000007"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000007",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV88",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 9",
+        "position": 8,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000008"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000008",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV89",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 10",
+        "position": 9,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000009"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000009",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV810",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 11",
+        "position": 10,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000010"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000010",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV811",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 12",
+        "position": 11,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000011"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000011",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV812",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 13",
+        "position": 12,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000012"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000012",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV813",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 14",
+        "position": 13,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000013"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000013",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV814",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 15",
+        "position": 14,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000014"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000014",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV815",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 16",
+        "position": 15,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000015"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000015",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV816",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 17",
+        "position": 16,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000016"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000016",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV817",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 18",
+        "position": 17,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000017"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000017",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV818",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 19",
+        "position": 18,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000018"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000018",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV819",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 20",
+        "position": 19,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000019"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000019",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV820",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 21",
+        "position": 20,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000020"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000020",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV821",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 22",
+        "position": 21,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000021"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000021",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV822",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 23",
+        "position": 22,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000022"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000022",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV823",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 24",
+        "position": 23,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000023"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000023",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV824",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 25",
+        "position": 24,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000024"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000024",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV825",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 26",
+        "position": 25,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000025"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000025",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV826",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 27",
+        "position": 26,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000026"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000026",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV827",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 28",
+        "position": 27,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000027"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000027",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV828",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 29",
+        "position": 28,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000028"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000028",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV829",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 30",
+        "position": 29,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000029"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000029",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV830",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 31",
+        "position": 30,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000030"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000030",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV831",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 32",
+        "position": 31,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000031"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000031",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV832",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 33",
+        "position": 32,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000032"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000032",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV833",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 34",
+        "position": 33,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000033"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000033",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV834",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 35",
+        "position": 34,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000034"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000034",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV835",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 36",
+        "position": 35,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000035"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000035",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV836",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 37",
+        "position": 36,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000036"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000036",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV837",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 38",
+        "position": 37,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000037"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000037",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV838",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 39",
+        "position": 38,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000038"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000038",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV839",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 40",
+        "position": 39,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000039"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000039",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV840",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 41",
+        "position": 40,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000040"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000040",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV841",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 42",
+        "position": 41,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000041"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000041",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV842",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 43",
+        "position": 42,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000042"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000042",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV843",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 44",
+        "position": 43,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000043"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000043",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV844",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 45",
+        "position": 44,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000044"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000044",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV845",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 46",
+        "position": 45,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000045"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000045",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV846",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 47",
+        "position": 46,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000046"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000046",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV847",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 48",
+        "position": 47,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000047"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000047",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV848",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 49",
+        "position": 48,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid00000048"
+        }
+      },
+      "contentDetails": {
+        "videoId": "vid00000048",
+        "videoPublishedAt": "2026-09-01T10:00:00Z"
+      },
+      "status": {
+        "privacyStatus": "public"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "id": "UExfaXRlbV849",
+      "snippet": {
+        "publishedAt": "2026-09-01T10:00:00Z",
+        "title": "Episode 50",
+        "position": 49,
+        "resourceId": {
+          "kind": "youtube#video"
+        }
+      },
+      "contentDetails": {},
+      "status": {
+        "privacyStatus": "private"
+      }
+    }
+  ]
+}

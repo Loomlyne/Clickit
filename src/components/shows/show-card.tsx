@@ -18,7 +18,7 @@ export function ShowCard({ show }: ShowCardProps) {
   return (
     <Link
       href={`/series/${show.slug}`}
-      className="poster group relative block flex-shrink-0 cursor-pointer overflow-hidden rounded-[12px] bg-[var(--bg-2)] transition-transform duration-[250ms] ease-[var(--ease)] hover:z-[2] hover:-translate-y-1"
+      className="poster group relative block flex-shrink-0 cursor-pointer overflow-hidden rounded-card bg-[var(--bg-2)] transition-transform duration-[250ms] ease-[var(--ease)] hover:z-[2] hover:-translate-y-1"
       style={{ width: 'var(--landscape-w)', aspectRatio: '16 / 9' }}
     >
       {imgSrc ? (

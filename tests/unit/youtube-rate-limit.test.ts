@@ -1,0 +1,184 @@
+// Rate-limit seam for admin writes and viewer reports (Phase 6), on the shared
+// rate_limits ledger: decideRateLimit (src/server/rate-limit-policy.ts) over
+// supabaseRateLimitStore (src/server/rate-limit-store.ts), fail closed.
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { test } from 'node:test'
+
+import {
+  YOUTUBE_ACTION_LIMITS,
+  withinRateLimitCore,
+  withinYouTubeActionLimit,
+} from '../../src/server/youtube/rate-limit.ts'
+import { createFakeSupabase } from './helpers/fake-supabase.ts'
+
+// The fake stamps inserts from 2026-01-01T00:00:00.001Z upward.
+const NOW = new Date('2026-01-01T00:00:30.000Z')
+const opts = (over: Partial<Parameters<typeof withinRateLimitCore>[1]> = {}) => ({
+  key: 'report:user-1:episode-1',
+  max: 2,
+  windowSec: 60,
+  now: NOW,
+  failOpen: false as const,
+  ...over,
+})
+
+test('allows the first two calls, refuses the third, one row per allowed call', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  assert.equal(await withinRateLimitCore(fake.client, opts()), true)
+  assert.equal(await withinRateLimitCore(fake.client, opts()), true)
+  assert.equal(await withinRateLimitCore(fake.client, opts()), false)
+  const rows = fake.tables.rate_limits.filter(
+    (r) => r.key === 'report:user-1:episode-1'
+  )
+  assert.equal(rows.length, 2)
+  const inserts = fake.calls.filter(
+    (c) => c.table === 'rate_limits' && c.op === 'insert'
+  )
+  assert.equal(inserts.length, 2)
+  assert.deepEqual(inserts[0].patch, [{ key: 'report:user-1:episode-1' }])
+})
+
+test('counts only rows of this key inside the window', async () => {
+  const fake = createFakeSupabase({
+    rate_limits: [
+      { id: 'old-1', key: 'report:user-1:episode-1', created_at: '2025-12-31T23:59:00.000Z' },
+      { id: 'old-2', key: 'report:user-1:episode-1', created_at: '2025-12-31T23:59:29.999Z' },
+      { id: 'other', key: 'report:user-2:episode-1', created_at: '2026-01-01T00:00:20.000Z' },
+      { id: 'other-2', key: 'report:user-2:episode-1', created_at: '2026-01-01T00:00:21.000Z' },
+    ],
+  })
+  assert.equal(await withinRateLimitCore(fake.client, opts()), true)
+  assert.equal(await withinRateLimitCore(fake.client, opts()), true)
+  assert.equal(await withinRateLimitCore(fake.client, opts()), false)
+
+  const select = fake.calls.find(
+    (c) => c.table === 'rate_limits' && c.op === 'select'
+  )
+  assert.ok(select)
+  assert.deepEqual(select.filters, [
+    { kind: 'eq', col: 'key', value: 'report:user-1:episode-1' },
+    { kind: 'gte', col: 'created_at', value: '2025-12-31T23:59:30.000Z' },
+  ])
+})
+
+test('a row exactly at the window start still counts', async () => {
+  const fake = createFakeSupabase({
+    rate_limits: [
+      { id: 'edge', key: 'scope:k', created_at: '2025-12-31T23:59:30.000Z' },
+    ],
+  })
+  assert.equal(
+    await withinRateLimitCore(fake.client, opts({ key: 'scope:k', max: 1 })),
+    false
+  )
+})
+
+test('the ledger row key is the caller key unchanged (scope and subject split at the last colon)', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  assert.equal(await withinRateLimitCore(fake.client, opts({ key: 'player-error:ep-1:user-9' })), true)
+  assert.deepEqual(fake.tables.rate_limits.map((r) => r.key), ['player-error:ep-1:user-9'])
+})
+
+test('a key with no subject after its last colon refuses without touching the ledger', async () => {
+  for (const key of ['nocolon', 'player-error:ep-1:', ':']) {
+    const fake = createFakeSupabase({ rate_limits: [] })
+    assert.equal(await withinRateLimitCore(fake.client, opts({ key })), false, key)
+    assert.equal(fake.calls.filter((c) => c.table === 'rate_limits').length, 0, key)
+  }
+})
+
+// Fail closed on every ledger failure (decideRateLimit): a count error, a thrown
+// count or an insert error all refuse.
+test('count error refuses and writes nothing', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  fake.failOn({ table: 'rate_limits', op: 'select', nth: 1 })
+  assert.equal(await withinRateLimitCore(fake.client, opts()), false)
+  assert.equal(fake.tables.rate_limits.length, 0)
+})
+
+test('thrown count refuses and writes nothing', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  fake.throwOn({ table: 'rate_limits', op: 'select', nth: 1 })
+  assert.equal(await withinRateLimitCore(fake.client, opts()), false)
+  assert.equal(fake.tables.rate_limits.length, 0)
+})
+
+test('insert error refuses', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  fake.failOn({ table: 'rate_limits', op: 'insert', nth: 1 })
+  assert.equal(await withinRateLimitCore(fake.client, opts()), false)
+})
+
+test('an empty key part refuses without touching the ledger', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  assert.equal(await withinYouTubeActionLimit(fake.client, 'import', '', NOW), false)
+  assert.equal(fake.calls.filter((c) => c.table === 'rate_limits').length, 0)
+})
+
+test('max 0 refuses without writing', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  assert.equal(await withinRateLimitCore(fake.client, opts({ max: 0 })), false)
+  assert.equal(fake.tables.rate_limits.length, 0)
+})
+
+// --- Per-admin limits on the admin YouTube actions (PR #27 review, finding 2) ---
+
+test('admin YouTube limits: preview and meta 60, import and key test 10, all per 10 minutes', () => {
+  assert.deepEqual(YOUTUBE_ACTION_LIMITS, {
+    preview: { prefix: 'yt-preview', max: 60, windowSec: 600 },
+    meta: { prefix: 'yt-meta', max: 60, windowSec: 600 },
+    import: { prefix: 'yt-import', max: 10, windowSec: 600 },
+    keyTest: { prefix: 'yt-key-test', max: 10, windowSec: 600 },
+  })
+})
+
+test('withinYouTubeActionLimit keys per admin and action and refuses at the max', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  for (let i = 0; i < 10; i++) {
+    assert.equal(await withinYouTubeActionLimit(fake.client, 'import', 'admin-1', NOW), true)
+  }
+  assert.equal(await withinYouTubeActionLimit(fake.client, 'import', 'admin-1', NOW), false)
+  // Another admin and another action have their own budgets.
+  assert.equal(await withinYouTubeActionLimit(fake.client, 'import', 'admin-2', NOW), true)
+  assert.equal(await withinYouTubeActionLimit(fake.client, 'keyTest', 'admin-1', NOW), true)
+  const keys = new Set(fake.tables.rate_limits.map((r) => r.key))
+  assert.deepEqual([...keys].sort(), ['yt-import:admin-1', 'yt-import:admin-2', 'yt-key-test:admin-1'])
+  assert.equal(fake.tables.rate_limits.filter((r) => r.key === 'yt-import:admin-1').length, 10)
+
+  const select = fake.calls.find((c) => c.table === 'rate_limits' && c.op === 'select')
+  assert.deepEqual(select?.filters, [
+    { kind: 'eq', col: 'key', value: 'yt-import:admin-1' },
+    { kind: 'gte', col: 'created_at', value: '2025-12-31T23:50:30.000Z' },
+  ])
+})
+
+test('withinYouTubeActionLimit: preview allows 60, the 61st is refused', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  for (let i = 0; i < 60; i++) {
+    assert.equal(await withinYouTubeActionLimit(fake.client, 'preview', 'admin-1', NOW), true)
+  }
+  assert.equal(await withinYouTubeActionLimit(fake.client, 'preview', 'admin-1', NOW), false)
+})
+
+test('withinYouTubeActionLimit fails closed when the ledger fails', async () => {
+  const fake = createFakeSupabase({ rate_limits: [] })
+  fake.failOn({ table: 'rate_limits', op: 'select', nth: 1 })
+  assert.equal(await withinYouTubeActionLimit(fake.client, 'meta', 'admin-1', NOW), false)
+  const thrown = createFakeSupabase({ rate_limits: [] })
+  thrown.throwOn({ table: 'rate_limits', op: 'select', nth: 1 })
+  assert.equal(await withinYouTubeActionLimit(thrown.client, 'meta', 'admin-1', NOW), false)
+  const insertFail = createFakeSupabase({ rate_limits: [] })
+  insertFail.failOn({ table: 'rate_limits', op: 'insert', nth: 1 })
+  assert.equal(await withinYouTubeActionLimit(insertFail.client, 'meta', 'admin-1', NOW), false)
+})
+
+test('the seam is decideRateLimit over the shared store, with no own ledger code and no TODO', () => {
+  const src = readFileSync(new URL('../../src/server/youtube/rate-limit.ts', import.meta.url), 'utf8')
+  assert.match(src, /import \{ decideRateLimit \} from '\.\.\/rate-limit-policy\.ts'/)
+  assert.match(src, /import \{ supabaseRateLimitStore \} from '\.\.\/rate-limit-store\.ts'/)
+  assert.equal(src.split('decideRateLimit(').length - 1, 1, 'one decideRateLimit call')
+  assert.doesNotMatch(src, /from\(\s*'rate_limits'/, 'no direct rate_limits reads or writes')
+  assert.doesNotMatch(src, /TODO/)
+  assert.doesNotMatch(src, /failOpen:\s*true/)
+})

@@ -4,7 +4,9 @@ import { useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Camera } from 'lucide-react'
 import { toast } from 'sonner'
-import { uploadAvatar } from '@/app/[locale]/(viewer)/profile/actions'
+import { finalizeAvatarUpload } from '@/app/[locale]/(viewer)/profile/actions'
+import { uploadImageDirect } from '@/lib/browser-upload'
+import { notifyUploadError, notifyUploaded } from '@/components/admin/upload-status'
 import { stripStorageCacheBust } from '@/lib/supabase-media'
 
 interface AvatarUploadProps {
@@ -23,12 +25,9 @@ export function AvatarUpload({
   const [uploading, setUploading] = useState(false)
   const t = useTranslations('profile')
 
+  // Browser -> R2 directly (requestMediaUpload, PUT, finalize). The avatar is a small
+  // round control with no zone, so the existing spinner stays and messages are toasts.
   async function handleFile(file: File) {
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error(t('avatarTooLarge'))
-      return
-    }
-
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
 
     const objectUrl = URL.createObjectURL(file)
@@ -36,15 +35,31 @@ export function AvatarUpload({
     setPreview(objectUrl)
     setUploading(true)
 
-    try {
-      const formData = new FormData()
-      formData.append('avatar', file)
-      const result = await uploadAvatar(formData)
+    const dropPreview = () => {
       URL.revokeObjectURL(objectUrl)
-      objectUrlRef.current = null
-      setPreview(stripStorageCacheBust(result.avatarUrl) ?? result.avatarUrl)
-      toast.success(t('avatarUpdated'))
+      if (objectUrlRef.current === objectUrl) objectUrlRef.current = null
+    }
+
+    try {
+      const result = await uploadImageDirect({
+        file,
+        kind: 'avatar',
+        finalize: ({ key, variantKeys }) => finalizeAvatarUpload({ key, variantKeys }),
+      })
+      if (!result.ok) {
+        dropPreview()
+        setPreview(resolvedCurrentUrl)
+        notifyUploadError(result.error, {
+          retry: () => void handleFile(file),
+          tooLargeMessage: t('avatarTooLarge'),
+        })
+        return
+      }
+      dropPreview()
+      setPreview(stripStorageCacheBust(result.url) ?? result.url)
+      notifyUploaded({ message: t('avatarUpdated'), safariFallback: result.safariFallback })
     } catch (err) {
+      dropPreview()
       setPreview(resolvedCurrentUrl)
       console.error(
         '[avatar-upload] upload failed:',

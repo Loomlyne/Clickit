@@ -2,7 +2,7 @@ export default function SupportLoading() {
   return (
     <div className="px-4 pt-6 pb-16 sm:px-6 sm:pt-8 sm:pb-20 md:px-12">
       {/* 2-col grid: info panel + contact form */}
-      <div className="grid gap-px overflow-hidden rounded-[12px] border border-white/[0.08] bg-white/[0.08] lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid gap-px overflow-hidden rounded-card border border-white/[0.08] bg-white/[0.08] lg:grid-cols-[1.05fr_0.95fr]">
         {/* Left — info panel */}
         <div className="space-y-4 bg-[var(--bg-1)] p-6 sm:p-8 lg:p-10">
           <div className="h-3 w-20 animate-pulse rounded-full bg-white/[0.06]" />
@@ -22,7 +22,7 @@ export default function SupportLoading() {
             ].map((color) => (
               <div
                 key={color}
-                className={`h-[3px] w-6 rounded-[1px] opacity-40 sm:w-8 ${color}`}
+                className={`h-[3px] w-6 rounded-hairline opacity-40 sm:w-8 ${color}`}
               />
             ))}
           </div>

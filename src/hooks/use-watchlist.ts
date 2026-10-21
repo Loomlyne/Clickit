@@ -15,7 +15,8 @@ interface UseWatchlistReturn {
 export function useWatchlist(
   showId: string,
   initialSaved: boolean,
-  userId: string | null
+  userId: string | null,
+  opts?: { onError?: (message: string) => void }
 ): UseWatchlistReturn {
   const [isInList, setIsInList] = useState(initialSaved)
   const [isLoading, setIsLoading] = useState(false)
@@ -23,6 +24,17 @@ export function useWatchlist(
   const router = useRouter()
   const locale = useLocale()
   const isArabic = locale === 'ar'
+  const onError = opts?.onError
+
+  // Watch-page callers pass onError so nothing toasts over the video; every
+  // other page keeps the toast.
+  const reportError = useCallback(
+    (message: string) => {
+      if (onError) onError(message)
+      else toast.error(message)
+    },
+    [onError]
+  )
 
   const toggle = useCallback(async () => {
     if (!userId || busyRef.current) {
@@ -56,19 +68,19 @@ export function useWatchlist(
           router.push(`/auth?next=${encodeURIComponent(window.location.pathname)}`)
           return
         }
-        toast.error(prev
+        reportError(prev
           ? (isArabic ? 'تعذّرت الإزالة من القائمة' : 'Failed to remove from list')
           : (isArabic ? 'تعذّرت الإضافة إلى القائمة' : 'Failed to add to list'))
       }
     } catch (err) {
       console.error('Watchlist network error:', err)
       setIsInList(prev)
-      toast.error(isArabic ? 'خطأ في الشبكة — حاول مجدداً' : 'Network error — please try again')
+      reportError(isArabic ? 'خطأ في الشبكة — حاول مجدداً' : 'Network error — please try again')
     } finally {
       setIsLoading(false)
       busyRef.current = false
     }
-  }, [showId, userId, isInList, router, isArabic])
+  }, [showId, userId, isInList, router, isArabic, reportError])
 
   return { isInList, toggle, isLoading }
 }

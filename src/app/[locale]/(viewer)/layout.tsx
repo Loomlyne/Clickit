@@ -4,7 +4,6 @@ import { pickLocalized } from '@/lib/locale'
 import { getLocale } from '@/lib/locale-server'
 import { Footer } from '@/components/layout/footer'
 import { ViewerShell } from '@/components/layout/viewer-shell'
-import { SmoothScroll } from '@/components/providers/smooth-scroll'
 import { ViewerScrollPersistence } from '@/components/providers/viewer-scroll-persistence'
 import { EntryPreload } from '@/components/layout/entry-preload'
 
@@ -38,24 +37,22 @@ export default async function ViewerLayout({
       <div
         id="preload-cover"
         aria-hidden="true"
-        style={{ position: 'fixed', inset: 0, background: '#0a0a0a', zIndex: 997 }}
+        style={{ position: 'fixed', inset: 0, background: 'var(--bg-0)', zIndex: 997 }}
       />
       <EntryPreload videoUrl={config.preloaderVideoUrl} />
-      <SmoothScroll>
-        <ViewerScrollPersistence />
-        <ViewerShell
-          footer={<Footer />}
-          comingSoonGate={config.flags.comingSoonMode}
-          ticker={localizedTicker}
-          initialUser={user}
-          liveStreamUrl={config.liveStreamUrl}
-          liveStreamLabel={config.liveStreamLabel}
-          liveStreamLabelAr={config.liveStreamLabelAr}
-          logoUrl={config.faviconUrl}
-        >
-          {children}
-        </ViewerShell>
-      </SmoothScroll>
+      <ViewerScrollPersistence />
+      <ViewerShell
+        footer={<Footer />}
+        comingSoonGate={config.flags.comingSoonMode}
+        ticker={localizedTicker}
+        initialUser={user}
+        liveStreamUrl={config.liveStreamUrl}
+        liveStreamLabel={config.liveStreamLabel}
+        liveStreamLabelAr={config.liveStreamLabelAr}
+        logoUrl={config.faviconUrl}
+      >
+        {children}
+      </ViewerShell>
     </>
   )
 }

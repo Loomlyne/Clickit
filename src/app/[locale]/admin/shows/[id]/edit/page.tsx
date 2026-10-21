@@ -10,18 +10,12 @@ import { Button } from '@/components/ui/button'
 import { Link } from '@/i18n/navigation'
 import type { Database } from '@/lib/database.types'
 import { stripStorageCacheBust } from '@/lib/supabase-media'
+import { BRAND_COLOR_HEX, NEUTRAL_ACCENT_HEX } from '@/lib/brand-colors'
 
 type Show = Database['public']['Tables']['shows']['Row']
-const brandAccentByColor: Record<string, string> = {
-  'brand-blue': '#2C3569',
-  'brand-purple': '#9F54A0',
-  'brand-green': '#50A258',
-  'brand-red': '#DB3F34',
-  'brand-orange': '#EA8C2E',
-}
 
 function getBrandAccent(show: Show) {
-  return brandAccentByColor[show.brand_color] ?? '#A1A1A1'
+  return BRAND_COLOR_HEX[show.brand_color as keyof typeof BRAND_COLOR_HEX] ?? NEUTRAL_ACCENT_HEX
 }
 
 function EditMediaPreview({ show, accent }: { show: Show; accent: string }) {

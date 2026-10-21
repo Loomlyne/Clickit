@@ -4,56 +4,32 @@ import test from 'node:test'
 import { runAdminAction, type AdminActionEnv } from '../../src/lib/admin/action-runner.ts'
 import {
   removeHeroVideoCore,
-  saveHeroVideoCore,
+  saveVideoCore,
   setHeroVideoUrlCore,
   type HeroVideoPorts,
 } from '../../src/lib/admin/hero-video.ts'
-import { createFakeSupabase } from './helpers/fake-supabase.ts'
+import { NEW_KEY, videoWorld } from './helpers/video-world.ts'
 
 const MB = 1024 * 1024
-const NEW_PATH = 'hero/video-2000.mp4'
-const OLD_URL = 'https://cdn.test/site-assets/hero/video-1000.mp4?v=1'
+const NEW_PATH = NEW_KEY
 
 function world(opts: { infoSize?: number } = {}) {
-  const fake = createFakeSupabase({
-    app_config: [
-      {
-        id: 1,
-        hero_video_url: OLD_URL,
-        hero_video_type: 'mp4',
-        hero_video_mobile_url: null,
-        hero_video_mobile_type: null,
-      },
-    ],
-  })
+  const w = videoWorld({ headSize: opts.infoSize ?? 10 * MB })
   const touched = { ports: 0 }
-  const ports: HeroVideoPorts = {
-    db: fake.client,
-    storage: {
-      info: async () => ((touched.ports += 1), { data: { size: opts.infoSize ?? 10 * MB }, error: null }),
-      download: async () => (
-        (touched.ports += 1),
-        {
-          data: { size: 10 * MB, arrayBuffer: async () => new ArrayBuffer(0) } as unknown as Blob,
-          error: null,
-        }
-      ),
-      remove: async () => ((touched.ports += 1), { error: null }),
-      publicUrl: (p) => `https://cdn.test/site-assets/${p}`,
-    },
-    media: {
-      mirrorUpload: async () => void (touched.ports += 1),
-      cleanup: async () => void (touched.ports += 1),
-      stageDeletion: async () => ({
-        commit: async () => true,
-        rollback: async () => true,
-      }),
-    },
-    hasAudioTrack: () => true,
-    storagePathFromUrl: (u) => (u ? u.split('/site-assets/')[1]!.split('?')[0]! : null),
-    now: () => 1,
+  // count every R2 port call so the not-admin test can prove none was made
+  const p = w.ports
+  const wrap = <A extends unknown[], R>(fn: (...a: A) => R) => (...a: A): R => {
+    touched.ports += 1
+    return fn(...a)
   }
-  return { fake, ports, touched }
+  const ports: HeroVideoPorts = {
+    ...p,
+    finalize: wrap(p.finalize),
+    head: wrap(p.head),
+    readHead: wrap(p.readHead),
+    media: { delete: wrap(p.media.delete), stageDeletion: wrap(p.media.stageDeletion) },
+  }
+  return { fake: w.fake, ports, touched }
 }
 
 function env(f: ReturnType<typeof createFakeSupabase>, admin = true): AdminActionEnv {
@@ -73,7 +49,7 @@ const spyReval = () => {
   return { calls, revalidate: (r: unknown) => void calls.push(r) }
 }
 
-test('saveHeroVideoUpload path, forced audit failure: failed, revalidated once, config restored', async () => {
+test('finalizeHeroVideoUpload path, forced audit failure: failed, revalidated once, config restored', async () => {
   const w = world()
   const before = w.fake.snapshot({ exclude: ['admin_audit_log'] })
   w.fake.failOn({ table: 'admin_audit_log', op: 'insert', nth: 1 })
@@ -81,7 +57,7 @@ test('saveHeroVideoUpload path, forced audit failure: failed, revalidated once, 
   const res = await runAdminAction(
     env(w.fake),
     (ctx) =>
-      saveHeroVideoCore(w.ports, { audit: ctx.audit, adminUserId: ctx.adminUserId }, { path: NEW_PATH, variant: 'desktop' }),
+      saveVideoCore(w.ports, { audit: ctx.audit, adminUserId: ctx.adminUserId }, { key: NEW_PATH, target: 'hero-desktop' }),
     { fallbackError: 'Upload failed', revalidate: spy.revalidate }
   )
   assert.equal(res.success, false)
@@ -121,13 +97,13 @@ test('removeHeroVideo path success: revalidated once, one audit row', async () =
   assert.equal(w.fake.auditRows().length, 1)
 })
 
-test('saveHeroVideoUpload path, forged size: refused, not revalidated', async () => {
+test('finalizeHeroVideoUpload path, forged size (server 50 MB check): refused, not revalidated', async () => {
   const w = world({ infoSize: 60 * MB })
   const spy = spyReval()
   const res = await runAdminAction(
     env(w.fake),
     (ctx) =>
-      saveHeroVideoCore(w.ports, { audit: ctx.audit, adminUserId: ctx.adminUserId }, { path: NEW_PATH, variant: 'desktop' }),
+      saveVideoCore(w.ports, { audit: ctx.audit, adminUserId: ctx.adminUserId }, { key: NEW_PATH, target: 'hero-desktop' }),
     { fallbackError: 'Upload failed', revalidate: spy.revalidate }
   )
   assert.equal(res.success, false)
@@ -144,7 +120,9 @@ function bodyOf(name: string): string {
 
 test('source scan: hero actions go through the runner and their core', () => {
   for (const [name, core] of [
-    ['saveHeroVideoUpload', 'saveHeroVideoCore('],
+    ['finalizeHeroVideoUpload', 'saveVideoCore('],
+    ['finalizePreloaderVideoUpload', 'saveVideoCore('],
+    ['finalizeShowVideoUpload', 'saveVideoCore('],
     ['setHeroVideoUrl', 'setHeroVideoUrlCore('],
     ['removeHeroVideo', 'removeHeroVideoCore('],
   ] as const) {
@@ -152,17 +130,32 @@ test('source scan: hero actions go through the runner and their core', () => {
     assert.ok(b.includes('runAdminAction('), `${name} lacks runAdminAction(`)
     assert.ok(b.includes(core), `${name} lacks ${core}`)
   }
-  const create = bodyOf('createHeroVideoUpload')
-  assert.ok(create.includes('parseHeroVariant('))
-  assert.ok(create.includes('checkHeroVideoSize('))
 })
 
-test('source scan: image uploads use checkImageUpload and the ticker is strict', () => {
-  assert.ok(bodyOf('uploadSiteImage').includes('checkImageUpload('))
-  assert.ok(bodyOf('uploadSocialIcon').includes('checkImageUpload('))
+test('source scan: image finalizers run through the runner and the strict audit writer; the ticker is strict', () => {
+  for (const name of [
+    'finalizeArtworkUpload',
+    'finalizeSiteImageUpload',
+    'finalizeSocialIconUpload',
+    'finalizeCastImageUpload',
+  ]) {
+    const b = bodyOf(name)
+    assert.ok(b.includes('runAdminAction('), `${name} lacks runAdminAction(`)
+    assert.ok(b.includes('finalizeImageUploadCore('), `${name} lacks the core`)
+  }
+  assert.ok(src.includes('audit: logAuditStrict'), 'image ports must audit with logAuditStrict')
   const ticker = bodyOf('updateTopTicker')
   assert.ok(ticker.includes('fillTickerArabic('))
-  assert.ok(ticker.includes('translateBatchToArabicStrict'))
+  assert.ok(ticker.includes('arabic.fillBatch'))
+})
+
+test('source scan: no admin media action takes a Supabase original or the old FormData path', () => {
+  for (const name of ['removePreloaderVideo', 'removeSiteImage', 'deleteCastMember', 'deleteShowPermanently']) {
+    const b = bodyOf(name)
+    assert.ok(!b.includes('storage.from('), `${name} must not touch Supabase Storage`)
+    assert.ok(!b.includes('stageMirroredPublicMediaDeletion'), `${name} still uses the old mirror`)
+  }
+  assert.ok(!src.includes('storage.from('), 'admin actions make no Supabase Storage call (MEDIA-07)')
 })
 
 test('source scan: removed code is gone', () => {
@@ -182,23 +175,28 @@ test('source scan: setHeroVideoUrl checks admin (runner) before it validates the
 })
 
 test('source scan: preloader and show video saves prove size server-side through their cores', () => {
-  for (const [name, core] of [
-    ['savePreloaderVideoUpload', 'savePreloaderVideoCore('],
-    ['saveShowVideoUpload', 'saveShowVideoCore('],
-  ] as const) {
+  // Phase 2 (02-16/02-19): the old Supabase create*/save*VideoUpload actions are gone; the
+  // finalize actions prove size from the R2 object (head) inside saveVideoCore.
+  for (const name of ['finalizePreloaderVideoUpload', 'finalizeShowVideoUpload']) {
     const b = bodyOf(name)
     assert.ok(b.includes('runAdminAction('), `${name} lacks runAdminAction(`)
-    assert.ok(b.includes(core), `${name} lacks ${core}`)
+    assert.ok(b.includes('saveVideoCore('), `${name} lacks saveVideoCore(`)
   }
-  assert.ok(bodyOf('createPreloaderVideoUpload').includes('PRELOADER_VIDEO_LIMIT'))
-  assert.ok(bodyOf('createShowVideoUpload').includes('SHOW_VIDEO_LIMIT'))
+  for (const gone of ['savePreloaderVideoUpload', 'saveShowVideoUpload', 'createPreloaderVideoUpload', 'createShowVideoUpload']) {
+    assert.ok(!src.includes(`export async function ${gone}(`), `${gone} must stay removed`)
+  }
+  const core = readFileSync('src/lib/admin/hero-video.ts', 'utf8')
+  assert.ok(core.includes('await ports.head(key)'), 'saveVideoCore must read the size from R2')
+  assert.ok(core.includes('if (size > maxBytes) return refuseAndRemove(tooLarge)'))
 })
 
 test('source scan: SITE_IMAGE_COLUMN lookups use own keys only', () => {
   assert.ok(!src.includes('in SITE_IMAGE_COLUMN'))
   assert.ok(src.includes('Object.prototype.hasOwnProperty.call(SITE_IMAGE_COLUMN, kind)'))
-  assert.ok(bodyOf('uploadSiteImage').includes('isSiteImageKind('))
   assert.ok(bodyOf('removeSiteImage').includes('isSiteImageKind('))
+  // finalizeSiteImageUpload takes the kind through a closed z.enum, never a raw lookup.
+  assert.ok(bodyOf('finalizeSiteImageUpload').includes('finalizeSiteImageSchema.safeParse('))
+  assert.match(src, /const finalizeSiteImageSchema = finalizeKeySchema\.extend\(\{\s*kind: z\.enum\(/)
 })
 
 test('source scan: legal page, FAQ, review and short deletes are audited through deleteRowAuditedCore', () => {

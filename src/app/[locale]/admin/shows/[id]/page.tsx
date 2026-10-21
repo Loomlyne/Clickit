@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { SeasonTabs } from '@/components/admin/season-tabs'
 import { EditShowButton } from '@/components/admin/edit-show-button'
+import { ImportPlaylistSheet } from '@/components/admin/import-playlist-sheet'
 import { ScheduleEpisodesButton } from '@/components/admin/schedule-episodes-button'
 import { CastEditor } from '@/components/admin/cast-editor'
 import {
@@ -20,7 +21,7 @@ export default async function ShowDetailPage({
 }: {
   params: Promise<{ locale: string; id: string }>
 }) {
-  const { id } = await params
+  const { locale, id } = await params
   const supabase = await createClient()
   const admin = createAdminClient()
   const tDash = await getTranslations('admin.dashboard')
@@ -88,6 +89,16 @@ export default async function ShowDetailPage({
     }
   }
 
+  // Props for the import side sheet: the seasons it can append to, and the number a new one gets.
+  const importSeasons = seasons.map((season) => ({
+    id: season.id,
+    seasonNumber: season.season_number,
+    title: locale === 'ar' && season.title_ar ? season.title_ar : season.title,
+    lastEpisodeNumber: maxEpisodeNumberBySeason[season.id] ?? 0,
+  }))
+  const nextSeasonNumber =
+    seasons.reduce((max, season) => Math.max(max, season.season_number), 0) + 1
+
   return (
     <div className="space-y-5">
       <AdminPageHeader
@@ -95,6 +106,11 @@ export default async function ShowDetailPage({
         crumb={<AdminBackLink href="/admin">{tDash('allShows')}</AdminBackLink>}
         action={
           <>
+            <ImportPlaylistSheet
+              showId={id}
+              seasons={importSeasons}
+              nextSeasonNumber={nextSeasonNumber}
+            />
             <ScheduleEpisodesButton showId={id} />
             <EditShowButton show={show} />
           </>

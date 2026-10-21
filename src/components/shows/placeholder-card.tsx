@@ -7,7 +7,7 @@ export function PlaceholderCard() {
     <div
       aria-hidden="true"
       className={cn(
-        'flex-shrink-0 overflow-hidden rounded-[12px] bg-[var(--bg-2)] opacity-50'
+        'flex-shrink-0 overflow-hidden rounded-card bg-[var(--bg-2)] opacity-50'
       )}
       style={{ width: 'var(--landscape-w)', aspectRatio: '16 / 9' }}
     >

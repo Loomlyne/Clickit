@@ -40,6 +40,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# cloudflare / opennext
+.open-next
+.wrangler
+.dev.vars
+clickit-build-stamp.json
+
 # supabase
 .supabase/
 
@@ -72,6 +78,7 @@ _planning*
 .vercel/.cron-secret
 .gstack/
 .env*
+!.env.example
 CLAUDE.local.md
 
 # wrangler

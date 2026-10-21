@@ -6,11 +6,14 @@ import { Loader2, Save } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { updateContactRecipient } from '@/app/[locale]/admin/actions'
+import { useRowVersion } from '@/components/admin/row-version'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 type InboxRecipientFormProps = {
   initialEmail: string
+  /** app_config.updated_at read with initialEmail; the save is checked against it. */
+  updatedAt: string
   title: string
   description: string
   label: string
@@ -22,6 +25,7 @@ type InboxRecipientFormProps = {
 
 export function InboxRecipientForm({
   initialEmail,
+  updatedAt,
   title,
   description,
   label,
@@ -32,15 +36,22 @@ export function InboxRecipientForm({
 }: InboxRecipientFormProps) {
   const [email, setEmail] = useState(initialEmail)
   const [saving, setSaving] = useState(false)
+  const version = useRowVersion(updatedAt)
 
   async function onSave(event: React.FormEvent) {
     event.preventDefault()
     setSaving(true)
-    const result = await updateContactRecipient({ contactEmail: email })
+    const expected = version.expected()
+    const result = await updateContactRecipient(
+      { contactEmail: email },
+      expected
+    )
     setSaving(false)
 
-    if (result.success) toast.success(savedMessage)
-    else toast.error(result.error ?? failedMessage)
+    if (result.success) {
+      version.saved(expected, result.updatedAt)
+      toast.success(savedMessage)
+    } else toast.error(result.error ?? failedMessage)
   }
 
   return (

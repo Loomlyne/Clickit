@@ -7,11 +7,17 @@ export type TickerItem = {
   tag2_ar?: string
 }
 
-type Slot = { index: number; field: 'tag_ar' | 'text_ar' | 'tag2_ar'; source: string }
+type ArField = 'tag_ar' | 'text_ar' | 'tag2_ar'
+type Slot = { index: number; field: ArField; source: string }
 
+/**
+ * `maxLengths`: each Arabic field's schema max (review item 7, PR #29), sent per slot so the
+ * filler drops an over-long translation.
+ */
 export async function fillTickerArabic(
   items: TickerItem[],
-  translateBatch: (texts: string[]) => Promise<(string | null)[]>
+  translateBatch: (texts: string[], maxLengths?: Array<number | undefined>) => Promise<(string | null)[]>,
+  maxLengths: Partial<Record<ArField, number>> = {}
 ): Promise<{ items: TickerItem[]; untranslated: number }> {
   const out = items.map((it) => ({ ...it }))
   const slots: Slot[] = []
@@ -22,7 +28,10 @@ export async function fillTickerArabic(
   })
   if (slots.length === 0) return { items: out, untranslated: 0 }
 
-  const results = await translateBatch(slots.map((s) => s.source))
+  const results = await translateBatch(
+    slots.map((s) => s.source),
+    slots.map((s) => maxLengths[s.field])
+  )
   let untranslated = 0
   slots.forEach((slot, i) => {
     const tr = results[i]

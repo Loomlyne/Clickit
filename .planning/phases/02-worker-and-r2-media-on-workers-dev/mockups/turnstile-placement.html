@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Turnstile placement options</title>
+<style>
+  /* Live tokens from src/styles/globals.css (LBC, #ffcc00, #0a0a0a, 8px radius) */
+  @font-face { font-family: "LBC"; src: url("../../../../src/fonts/lbc-regular.woff2") format("woff2"); font-weight: 400; }
+  @font-face { font-family: "LBC"; src: url("../../../../src/fonts/lbc-bold.woff2") format("woff2"); font-weight: 700; }
+  :root {
+    --background: #0a0a0a; --card: #121212; --bg-2: #1a1a1a;
+    --text: #f5f5f4; --text-dim: #a8a8a6; --text-mute: #6e6e6b;
+    --line: rgba(255,255,255,0.08); --line-2: rgba(255,255,255,0.14);
+    --primary: #ffcc00; --primary-foreground: #0a0a0a; --radius: 8px;
+    --red: #DB3F34;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--background); color: var(--text); font-family: "LBC", ui-sans-serif, system-ui, sans-serif; }
+  .option { padding: 40px 32px 56px; border-bottom: 1px solid var(--line-2); }
+  .option h1 { font-size: 22px; margin: 0 0 4px; }
+  .option .sub { color: var(--text-dim); font-size: 14px; margin: 0 0 24px; max-width: 900px; }
+  .tag { display: inline-block; background: var(--primary); color: var(--primary-foreground); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-left: 8px; vertical-align: middle; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+  .card h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 14px; font-weight: 700; }
+  .field { margin-bottom: 14px; }
+  label { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 700; }
+  label small { font-weight: 400; color: rgba(255,255,255,.4); font-size: 12px; }
+  .input { margin-top: 6px; height: 44px; width: 100%; border: 1px solid var(--line); background: var(--bg-2); border-radius: var(--radius); padding: 0 16px; color: var(--text-mute); font-size: 14px; display: flex; align-items: center; position: relative; }
+  .input.area { height: 88px; align-items: flex-start; padding-top: 12px; }
+  .eye { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: rgba(255,255,255,.4); }
+  .btn { width: 100%; border-radius: 999px; background: var(--primary); color: var(--primary-foreground); font-weight: 700; font-size: 14px; padding: 12px 28px; text-align: center; border: 0; }
+  .btn.disabled { opacity: .5; }
+  .ts { width: 100%; max-width: 300px; height: 65px; border: 1px dashed var(--line-2); border-radius: 6px; background: #1c1c1c; display: flex; align-items: center; gap: 10px; padding: 0 12px; margin-bottom: 14px; font-size: 12px; color: var(--text-dim); }
+  .ts .box { width: 24px; height: 24px; border: 2px solid #3a3a3a; border-radius: 4px; flex: none; }
+  .ts .spin { width: 22px; height: 22px; border: 3px solid #333; border-top-color: #f38020; border-radius: 50%; flex: none; }
+  .ts .ok { width: 24px; height: 24px; border-radius: 50%; background: #2f7d43; flex: none; color: #fff; text-align: center; line-height: 24px; font-size: 14px; }
+  .ts b { color: var(--text); font-weight: 700; }
+  .ts .cf { margin-left: auto; text-align: right; font-size: 10px; color: var(--text-mute); line-height: 1.2; }
+  .err { font-size: 12px; color: #ff8a80; margin: -6px 0 12px; }
+  .note { font-size: 11px; color: var(--text-mute); text-align: center; margin-top: 10px; }
+  .state { font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: .08em; margin: 18px 0 8px; }
+  footer.foot { background: #070707; border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+  .news { display: flex; align-items: center; border-bottom: 1px solid var(--line-2); }
+  .news .ph { flex: 1; padding: 12px 0; font-size: 14px; color: var(--text-mute); }
+  .news .arrow { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--text-dim); }
+  .legend { font-size: 12px; color: var(--text-dim); margin-top: 8px; }
+  @media (max-width: 500px) { .option { padding: 24px 16px 40px; } .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const eye = '<svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const arrow = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+const f = (lbl, ph, extra='') => `<div class="field"><label>${lbl}${extra}</label><div class="input">${ph}</div></div>`;
+const pw = (lbl, extra='') => `<div class="field"><label>${lbl}${extra}</label><div class="input">••••••••${eye}</div></div>`;
+const area = (lbl, ph) => `<div class="field"><label>${lbl}</label><div class="input area">${ph}</div></div>`;
+const widget = (state='ready') => {
+  if (state === 'checking') return `<div class="ts"><div class="spin"></div><span><b>Verifying…</b></span><div class="cf">Cloudflare Turnstile<br>(rendered by Cloudflare)</div></div>`;
+  if (state === 'ok') return `<div class="ts"><div class="ok">✓</div><span><b>Success!</b></span><div class="cf">Cloudflare Turnstile<br>(rendered by Cloudflare)</div></div>`;
+  return `<div class="ts"><div class="box"></div><span><b>Verify you are human</b></span><div class="cf">Cloudflare Turnstile<br>(rendered by Cloudflare)</div></div>`;
+};
+const errLine = '<p class="err">Security check failed. Please try again.</p>';
+const protectedLine = '<p class="note">Protected by Cloudflare</p>';
+
+function forms(opt) {
+  const W = opt === 'C' ? '' : widget('ok');
+  const after = opt === 'C' ? protectedLine : '';
+  const signIn = `<div class="card"><h2>Sign in</h2>${f('Email','you@example.com')}${pw('Password','<small>Forgot password?</small>')}${W}<div class="btn">Sign in</div>${after}</div>`;
+  const signUp = `<div class="card"><h2>Create account</h2>${f('Display name','Your name')}${f('Email','you@example.com')}${pw('Password')}${pw('Confirm password')}<p style="font-size:12px;color:var(--text-dim);margin:0 0 14px">☐ I agree to the terms</p>${W}<div class="btn">Create account</div>${after}</div>`;
+  const reset = `<div class="card"><h2>Forgot password (request)</h2><p style="font-size:14px;color:rgba(255,255,255,.52);margin:0 0 14px">We will email you a reset link.</p>${f('Email','you@example.com')}${W}<div class="btn">Reset password</div>${after}</div>`;
+  const contact = `<div class="card"><h2>Contact</h2>${f('Your name','Your name')}${f('Email','you@example.com')}${f('Phone (optional)','')}${f('Subject','')}${area('Message','How can we help?')}<p style="font-size:12px;color:var(--text-dim);margin:0 0 14px">☐ I agree to the terms</p>${W}<div class="btn">Send message</div>${after}</div>`;
+  let news;
+  if (opt === 'A') {
+    news = `<footer class="foot"><h2 style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin:0 0 10px">Footer newsletter</h2>
+      <div class="state">Normal (almost every visitor): row unchanged, check runs hidden</div>
+      <div class="news"><div class="ph">your@email.com</div><div class="arrow">${arrow}</div></div>
+      <div class="state">Rare: Cloudflare needs a click, the box appears under the row</div>
+      <div class="news"><div class="ph">you@example.com</div><div class="arrow">${arrow}</div></div><div style="margin-top:10px">${widget('ready')}</div></footer>`;
+  } else if (opt === 'B') {
+    news = `<footer class="foot"><h2 style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin:0 0 10px">Footer newsletter</h2>
+      <div class="state">Every visitor: row grows to two lines</div>
+      <div class="news"><div class="ph">your@email.com</div><div class="arrow">${arrow}</div></div><div style="margin-top:10px">${widget('ok')}</div></footer>`;
+  } else {
+    news = `<footer class="foot"><h2 style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin:0 0 10px">Footer newsletter</h2>
+      <div class="state">Every visitor: no box</div>
+      <div class="news"><div class="ph">your@email.com</div><div class="arrow">${arrow}</div></div>${protectedLine.replace('center','left')}</footer>`;
+  }
+  const states = `<div class="card"><h2>States (sign-in shown)</h2>
+      <div class="state">While the check runs: button disabled</div>${opt==='C'?'':widget('checking')}<div class="btn disabled">Sign in</div>${after}
+      <div class="state">Check failed</div>${opt==='C'?'':widget('ready')}${errLine}<div class="btn">Sign in</div>${after}</div>`;
+  return `<div class="grid">${signIn}${signUp}${reset}${contact}${news}${states}</div>`;
+}
+
+const options = [
+  ['A', 'Option A — visible box above the button; footer newsletter only shows it when Cloudflare needs a click', 'Managed widget, dark theme, between the last field and the submit button on sign-in, sign-up, reset request and contact. Footer newsletter uses "interaction-only": the row stays as it is today for almost every visitor.', true],
+  ['B', 'Option B — visible box on every form, footer included', 'Managed widget on all five forms. The footer newsletter grows to two lines for every visitor.', false],
+  ['C', 'Option C — invisible everywhere', 'No box anywhere. One line "Protected by Cloudflare" under each button. A blocked visitor only sees the error line.', false],
+];
+const only = new URLSearchParams(location.search).get('only');
+document.getElementById('root').innerHTML = options.filter(o => !only || o[0] === only).map(([id, title, sub, rec]) =>
+  `<section class="option" id="opt-${id}"><h1>${title}${rec ? '<span class="tag">Recommended</span>' : ''}</h1><p class="sub">${sub} The grey dashed box stands in for the widget Cloudflare draws (real size about 300×65).</p>${forms(id)}</section>`
+).join('');
+</script>
+</body>
+</html>

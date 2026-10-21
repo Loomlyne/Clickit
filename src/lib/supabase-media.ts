@@ -11,6 +11,10 @@ const PUBLIC_BUCKETS = new Set(['show-artwork', 'site-assets', 'avatars'])
 
 const PUBLIC_MEDIA_CUTOVER_READY = 'verified'
 
+/** Local preview only: the single http media origin ever accepted. */
+const LOOPBACK_MEDIA_HOSTNAME = '127.0.0.1'
+const LOOPBACK_ENABLED = '1'
+
 type SupabasePublicObject = {
   bucket: string
   key: string
@@ -18,22 +22,26 @@ type SupabasePublicObject = {
 /**
  * Returns a safe public R2 origin. This is intentionally an origin, not a
  * path prefix, so the migration keeps each object at `bucket/key`.
+ *
+ * https origins need the verified cutover flag. The one exception is local
+ * preview: `http://127.0.0.1[:port]` is accepted when
+ * NEXT_PUBLIC_MEDIA_ALLOW_LOOPBACK=1, without the verified flag. Loopback mode
+ * only serves new R2 URLs; it never rewrites Supabase URLs (see
+ * `toPublicR2MediaUrl`). The deploy guard refuses any stamp with these values.
  */
 export function getPublicMediaOrigin(
   configuredOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN,
-  configuredReady = process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
+  configuredReady = process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY,
+  configuredAllowLoopback = process.env.NEXT_PUBLIC_MEDIA_ALLOW_LOOPBACK
 ): string | null {
-  if (
-    !configuredOrigin ||
-    configuredReady?.trim() !== PUBLIC_MEDIA_CUTOVER_READY
-  ) {
-    return null
-  }
+  if (!configuredOrigin) return null
+
+  const verified = configuredReady?.trim() === PUBLIC_MEDIA_CUTOVER_READY
+  const loopbackAllowed = configuredAllowLoopback?.trim() === LOOPBACK_ENABLED
 
   try {
     const origin = new URL(configuredOrigin.trim())
     if (
-      origin.protocol !== 'https:' ||
       origin.username ||
       origin.password ||
       origin.pathname !== '/' ||
@@ -43,7 +51,17 @@ export function getPublicMediaOrigin(
       return null
     }
 
-    return origin.origin
+    if (origin.protocol === 'https:') return verified ? origin.origin : null
+
+    if (
+      origin.protocol === 'http:' &&
+      origin.hostname === LOOPBACK_MEDIA_HOSTNAME &&
+      loopbackAllowed
+    ) {
+      return origin.origin
+    }
+
+    return null
   } catch {
     return null
   }
@@ -87,11 +105,18 @@ export function toPublicR2MediaUrl(
   rawUrl: string,
   supabaseHost = getSupabaseProjectHost(),
   configuredOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN,
-  configuredReady = process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
+  configuredReady = process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY,
+  configuredAllowLoopback = process.env.NEXT_PUBLIC_MEDIA_ALLOW_LOOPBACK
 ): string | null {
-  const mediaOrigin = getPublicMediaOrigin(configuredOrigin, configuredReady)
+  const mediaOrigin = getPublicMediaOrigin(
+    configuredOrigin,
+    configuredReady,
+    configuredAllowLoopback
+  )
   const object = getSupabasePublicObject(rawUrl, supabaseHost)
   if (!mediaOrigin || !object || !PUBLIC_BUCKETS.has(object.bucket)) return null
+  // Loopback (local preview) never rewrites Supabase URLs.
+  if (!mediaOrigin.startsWith('https://')) return null
 
   try {
     const source = new URL(rawUrl)
@@ -107,9 +132,14 @@ export function toPublicR2MediaUrl(
 export function isPublicR2MediaUrl(
   rawUrl: string | null | undefined,
   configuredOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN,
-  configuredReady = process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY
+  configuredReady = process.env.NEXT_PUBLIC_MEDIA_CUTOVER_READY,
+  configuredAllowLoopback = process.env.NEXT_PUBLIC_MEDIA_ALLOW_LOOPBACK
 ): boolean {
-  const mediaOrigin = getPublicMediaOrigin(configuredOrigin, configuredReady)
+  const mediaOrigin = getPublicMediaOrigin(
+    configuredOrigin,
+    configuredReady,
+    configuredAllowLoopback
+  )
   if (!rawUrl || !mediaOrigin) return false
 
   try {

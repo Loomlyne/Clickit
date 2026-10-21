@@ -40,7 +40,7 @@ export default function ProfileLoading() {
             <div className="flex gap-3 overflow-hidden">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="w-32 flex-shrink-0 space-y-2">
-                  <div className="aspect-[2/3] w-full animate-pulse rounded-[11px] bg-white/[0.06]" />
+                  <div className="aspect-[2/3] w-full animate-pulse rounded-media bg-white/[0.06]" />
                   <div className="h-3 w-3/4 animate-pulse rounded-lg bg-white/[0.06]" />
                 </div>
               ))}
