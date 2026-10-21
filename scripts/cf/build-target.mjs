@@ -17,6 +17,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   NEXT_ENV_MODULE_PATH,
+  PRODUCTION_MEDIA_ORIGIN,
   checkEnvFiles,
   checkNextEnvModule,
   checkVerifyReport,
@@ -25,8 +26,12 @@ import {
 } from './deploy-guard.mjs'
 import { CLICKIT_HOME, checkEnv } from './wrangler-guard.mjs'
 
+export { PRODUCTION_MEDIA_ORIGIN }
 export const PREVIEW_ENV_FILE = '.env.preview.local'
 export const WORKERSDEV_ENV_FILE = `${CLICKIT_HOME}/clickit.workersdev.env`
+// Production (www) build env file: outside the repo, next to the wrangler login (D-07).
+export const PRODUCTION_ENV_FILE = `${CLICKIT_HOME}/clickit.production.env`
+export const PRODUCTION_SITE_URL = 'https://www.clickitstory.ae'
 export const STAMP_PATH = '.open-next/clickit-build-stamp.json'
 export const DEFAULT_MANIFEST_PATH = '.tmp/r2-media-manifest.json'
 export const PREVIEW_MEDIA_ORIGIN = 'http://127.0.0.1:8789'
@@ -56,6 +61,33 @@ export function classifyTurnstileSiteKey(value) {
   const key = String(value ?? '').trim()
   if (key === '') return 'missing'
   return TURNSTILE_TEST_SITE_KEY.test(key) ? 'test' : 'real'
+}
+
+const JWT_SHAPE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/
+
+/**
+ * Classify a Supabase API key without storing it (D-02). 'secret' is never allowed in
+ * a build (NEXT_PUBLIC values are inlined into public JavaScript); production needs
+ * 'publishable'.
+ * @param {string | undefined} value
+ * @returns {'missing' | 'publishable' | 'secret' | 'legacy-jwt' | 'other'}
+ */
+export function classifySupabaseKey(value) {
+  const key = String(value ?? '').trim()
+  if (key === '') return 'missing'
+  if (key.startsWith('sb_publishable_')) return 'publishable'
+  if (key.startsWith('sb_secret_')) return 'secret'
+  if (JWT_SHAPE.test(key)) return 'legacy-jwt'
+  return 'other'
+}
+
+// T-03-06: no NEXT_PUBLIC value may carry a Supabase secret key, for any target.
+function refuseSecretKeys(publicEnv) {
+  for (const [name, value] of Object.entries(publicEnv)) {
+    if (classifySupabaseKey(value) === 'secret') {
+      throw new Error(`${name} carries a Supabase secret (sb_secret_) key: it would be public in the bundle`)
+    }
+  }
 }
 
 /**
@@ -99,7 +131,7 @@ function requireHttpsSite(value) {
 /**
  * Compute the build env for a target. Returns only the variables the build
  * script passes on top of a minimal process env.
- * @param {'preview' | 'workersdev'} target
+ * @param {'preview' | 'workersdev' | 'production'} target
  * @param {Record<string, string>} fileEnv
  * @param {{ mediaFlag?: 'off' | 'verified', mediaOrigin?: string, verifyReport?: any, manifest?: any }} [options]
  * @param {Record<string, string | undefined>} [processEnv]
@@ -109,7 +141,7 @@ export function buildEnvFor(target, fileEnv, options = {}, processEnv = process.
   if (processEnv.VERCEL || processEnv.VERCEL_ENV) {
     throw new Error('refused: VERCEL or VERCEL_ENV is set; no Vercel build gets a Cloudflare target')
   }
-  if (target !== 'preview' && target !== 'workersdev') {
+  if (target !== 'preview' && target !== 'workersdev' && target !== 'production') {
     throw new Error(`unknown build target ${String(target)}`)
   }
 
@@ -117,6 +149,9 @@ export function buildEnvFor(target, fileEnv, options = {}, processEnv = process.
   for (const [name, value] of Object.entries(fileEnv ?? {})) {
     if (name.startsWith('NEXT_PUBLIC_')) publicFromFile[name] = value
   }
+  refuseSecretKeys(publicFromFile)
+
+  if (target === 'production') return productionEnv(publicFromFile, options)
 
   if (target === 'preview') {
     const env = { ...publicFromFile }
@@ -164,13 +199,68 @@ export function buildEnvFor(target, fileEnv, options = {}, processEnv = process.
   return env
 }
 
+// Production (www): every rule of D-02, D-07, D-08 and PLAT-05 holds by construction.
+function productionEnv(publicFromFile, options) {
+  if (publicFromFile.NEXT_PUBLIC_SITE_URL !== PRODUCTION_SITE_URL) {
+    throw new Error(`NEXT_PUBLIC_SITE_URL must be exactly ${PRODUCTION_SITE_URL} for the production target`)
+  }
+  const supabaseUrl = String(publicFromFile.NEXT_PUBLIC_SUPABASE_URL ?? '')
+  let parsedSupabase = null
+  try {
+    parsedSupabase = new URL(supabaseUrl)
+  } catch {
+    parsedSupabase = null
+  }
+  if (!parsedSupabase || parsedSupabase.protocol !== 'https:' || !parsedSupabase.hostname.endsWith('.supabase.co')) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL must be an https supabase.co URL in the production env file')
+  }
+  const keyKind = classifySupabaseKey(publicFromFile.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  if (keyKind !== 'publishable') {
+    throw new Error(`NEXT_PUBLIC_SUPABASE_ANON_KEY is ${keyKind}: production needs the publishable (sb_publishable_) key`)
+  }
+  if (String(publicFromFile.NEXT_PUBLIC_CF_BEACON_TOKEN ?? '').trim() === '') {
+    throw new Error('NEXT_PUBLIC_CF_BEACON_TOKEN (Web Analytics) is empty in the production env file')
+  }
+  const turnstile = classifyTurnstileSiteKey(publicFromFile.NEXT_PUBLIC_TURNSTILE_SITE_KEY)
+  if (turnstile !== 'real') {
+    throw new Error(`NEXT_PUBLIC_TURNSTILE_SITE_KEY is ${turnstile}: production needs the real site key`)
+  }
+  if (options.mediaFlag !== 'verified') {
+    throw new Error('the production target needs --media-flag verified')
+  }
+  let origin = null
+  try {
+    origin = new URL(String(options.mediaOrigin)).origin
+  } catch {
+    origin = null
+  }
+  if (origin !== PRODUCTION_MEDIA_ORIGIN || !isAllowedMediaOrigin(options.mediaOrigin)) {
+    throw new Error(`media origin must be ${PRODUCTION_MEDIA_ORIGIN} for the production target`)
+  }
+  const res = checkVerifyReport(options.verifyReport, options.manifest ?? null, { mediaOrigin: PRODUCTION_MEDIA_ORIGIN })
+  if (!res.ok) throw new Error(`media flag refused: ${res.reasons.join('; ')}`)
+
+  // Every known public name is set explicitly so no stray .env.local value leaks in.
+  const env = {}
+  for (const name of KNOWN_PUBLIC) env[name] = ''
+  Object.assign(env, publicFromFile)
+  env.NEXT_PUBLIC_SITE_URL = PRODUCTION_SITE_URL
+  env.NEXT_PUBLIC_MEDIA_ALLOW_LOOPBACK = ''
+  env.NEXT_PUBLIC_MEDIA_CUTOVER_READY = 'verified'
+  env.NEXT_PUBLIC_MEDIA_ORIGIN = PRODUCTION_MEDIA_ORIGIN
+  env.LOCAL_DEV = ''
+  env.NEXTJS_ENV = 'production'
+  return env
+}
+
 const sha256 = (value) => createHash('sha256').update(String(value)).digest('hex')
 
 /**
- * Build the stamp. Hashes only; never the values.
- * @param {{ target: string, gitSha: string, createdAt: string, env: Record<string, string> }} input
+ * Build the stamp. Hashes and classes only; never the values. `verifyReportSha256`
+ * (production) is the sha256 of the verify report file bytes the build used.
+ * @param {{ target: string, gitSha: string, createdAt: string, env: Record<string, string>, verifyReportSha256?: string }} input
  */
-export function makeStamp({ target, gitSha, createdAt, env }) {
+export function makeStamp({ target, gitSha, createdAt, env, verifyReportSha256 }) {
   const publicHashes = {}
   for (const name of Object.keys(env).filter((n) => n.startsWith('NEXT_PUBLIC_')).sort()) {
     publicHashes[name] = sha256(env[name])
@@ -189,6 +279,9 @@ export function makeStamp({ target, gitSha, createdAt, env }) {
     localDev: Boolean(env.LOCAL_DEV),
     // Classification only, never the key itself (PLAT-05, T-02-61).
     turnstileSiteKey: classifyTurnstileSiteKey(env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
+    supabaseKeyKind: classifySupabaseKey(env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+    beaconToken: String(env.NEXT_PUBLIC_CF_BEACON_TOKEN ?? '').trim() === '' ? 'missing' : 'set',
+    ...(verifyReportSha256 ? { verifyReportSha256 } : {}),
   }
 }
 

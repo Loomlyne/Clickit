@@ -21,6 +21,20 @@ export const MEDIA_WORKERSDEV_NAME = 'clickit-media-r2'
 const ALL_ZERO_ID = /^[0-]+$/
 const MEDIA_HOST = /^clickit-media(?:-r2)?\.[a-z0-9-]+\.workers\.dev$/
 const MEDIA_CUSTOM_HOST = 'media.clickitstory.ae'
+// envs `supabase-only` and `r2` serve the production media host as a custom domain.
+export const MEDIA_CUSTOM_ROUTE = Object.freeze({ pattern: MEDIA_CUSTOM_HOST, custom_domain: true })
+
+// Production target (Phase 3, D-07, D-12 amended by A-3): the same Worker as workers.dev.
+export const PRODUCTION_WORKER_NAME = 'clickit'
+export const PRODUCTION_ZONE_ID = 'd8fa01b24f24653a29a0a56431072dc2'
+export const PRODUCTION_ROUTE = 'www.clickitstory.ae/*'
+export const PRODUCTION_MEDIA_ORIGIN = `https://${MEDIA_CUSTOM_HOST}`
+// Literal on purpose: tests/unit/production-target.test.ts asserts it equals
+// CRON_EXPRESSIONS_FOR_PHASE_3 (src/server/scheduled.ts), sorted.
+export const PRODUCTION_CRONS = Object.freeze(['0 1 * * *', '0 4 * * 1', '30 1 * * *'])
+// D-18: a workers.dev deploy after a production deploy needs a written reason this long.
+export const OVERRIDE_MIN_LENGTH = 15
+export const OFFLINE_ACCOUNT_NOTE = 'account check: skipped (offline)'
 const BINDING_KEYS = [
   'kv_namespaces',
   'd1_databases',
@@ -253,9 +267,15 @@ export function checkVerifyReport(report, manifest, options = {}) {
   return { ok: reasons.length === 0, reasons }
 }
 
-function accountReasons(whoami, processEnv, reasons) {
-  const who = checkWhoamiOutput(whoami, 'remote')
-  if (!who.ok) reasons.push(who.reason)
+// `offline` (only reachable through `--dry-run --offline`) skips the wrangler whoami
+// check alone and records it in `notes`; the shell env checks always run.
+function accountReasons(whoami, processEnv, reasons, { offline = false, notes = [] } = {}) {
+  if (offline === true) {
+    notes.push(OFFLINE_ACCOUNT_NOTE)
+  } else {
+    const who = checkWhoamiOutput(whoami, 'remote')
+    if (!who.ok) reasons.push(who.reason)
+  }
   const env = checkEnv(processEnv ?? {}, 'remote')
   if (!env.ok) reasons.push(env.reason)
   if (processEnv?.VERCEL || processEnv?.VERCEL_ENV) {
@@ -310,9 +330,28 @@ function emptyCrons(triggers) {
  * }} input
  * @returns {{ ok: boolean, reasons: string[] }}
  */
+function stampSafetyReasons(stamp, reasons) {
+  if (stamp.hasLoopback) reasons.push('stamp shows a loopback URL (127.0.0.1, localhost, 0.0.0.0 or ::1) in a NEXT_PUBLIC value')
+  if (stamp.hasLocalSupabase) reasons.push('stamp shows the local Supabase URL (port 55321) in a NEXT_PUBLIC value')
+  if (stamp.localDev) reasons.push('stamp shows LOCAL_DEV was set in the build')
+  if (stamp.turnstileSiteKey === 'test') {
+    reasons.push('stamp carries a Cloudflare Turnstile TEST site key: set the real NEXT_PUBLIC_TURNSTILE_SITE_KEY and rebuild')
+  } else if (stamp.turnstileSiteKey !== 'real') {
+    reasons.push('stamp has no NEXT_PUBLIC_TURNSTILE_SITE_KEY: the forms would have no Turnstile widget; set it and rebuild')
+  }
+}
+
+function originLines(originBranches) {
+  return String(originBranches ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !line.includes('->'))
+}
+
 export function checkDeploy(input) {
   const reasons = []
-  accountReasons(input.whoami, input.processEnv, reasons)
+  const notes = []
+  accountReasons(input.whoami, input.processEnv, reasons, { offline: input.offline, notes })
   reasons.push(...checkEnvFiles(input.envFilesPresent).reasons)
   reasons.push(...checkNextEnvModule(input.nextEnvText).reasons)
 
@@ -321,14 +360,7 @@ export function checkDeploy(input) {
     reasons.push('build stamp missing: run the workersdev build first (.open-next/clickit-build-stamp.json)')
   } else {
     if (stamp.target !== 'workersdev') reasons.push(`stamp target is ${String(stamp.target)}, expected workersdev`)
-    if (stamp.hasLoopback) reasons.push('stamp shows a loopback URL (127.0.0.1, localhost, 0.0.0.0 or ::1) in a NEXT_PUBLIC value')
-    if (stamp.hasLocalSupabase) reasons.push('stamp shows the local Supabase URL (port 55321) in a NEXT_PUBLIC value')
-    if (stamp.localDev) reasons.push('stamp shows LOCAL_DEV was set in the build')
-    if (stamp.turnstileSiteKey === 'test') {
-      reasons.push('stamp carries a Cloudflare Turnstile TEST site key: set the real NEXT_PUBLIC_TURNSTILE_SITE_KEY and rebuild')
-    } else if (stamp.turnstileSiteKey !== 'real') {
-      reasons.push('stamp has no NEXT_PUBLIC_TURNSTILE_SITE_KEY: the forms would have no Turnstile widget; set it and rebuild')
-    }
+    stampSafetyReasons(stamp, reasons)
     if (!stamp.gitSha || stamp.gitSha !== input.headSha) {
       reasons.push('stamp commit differs from HEAD: rebuild at the current commit')
     }
@@ -342,10 +374,7 @@ export function checkDeploy(input) {
 
   if (String(input.gitStatus ?? '').trim() !== '') reasons.push('working tree is dirty: commit or remove changes first')
 
-  const onOrigin = String(input.originBranches ?? '')
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line && !line.includes('->'))
+  const onOrigin = originLines(input.originBranches)
   if (onOrigin.length === 0) reasons.push('HEAD is not contained in any origin branch: push the commit first')
 
   const config = input.wranglerConfig
@@ -365,7 +394,153 @@ export function checkDeploy(input) {
     }
     reasons.push(...uploadSweepFlagReasons(config.vars, input.allowUploadSweepDelete))
   }
-  return { ok: reasons.length === 0, reasons }
+  return { ok: reasons.length === 0, reasons, notes }
+}
+
+function sameRoute(actual, expected) {
+  if (!actual || typeof actual !== 'object' || Array.isArray(actual)) return false
+  const keys = Object.keys(actual).sort()
+  const want = Object.keys(expected).sort()
+  return keys.length === want.length && keys.every((k, i) => k === want[i] && actual[k] === expected[k])
+}
+
+/**
+ * Production deploy of the `clickit` Worker with `--env production` (D-07, D-12 / A-3,
+ * D-02, P3-8b). Deploy-only: the stamp must come from `cf:build:production` at HEAD.
+ * Same input as checkDeploy plus `verifyReportSha256`, the sha256 of the verify report
+ * file passed now; it must equal the one the build recorded in the stamp.
+ * @param {{
+ *   whoami: string | null,
+ *   processEnv: Record<string, string | undefined>,
+ *   stamp: any,
+ *   headSha: string,
+ *   gitStatus: string,
+ *   originBranches: string,
+ *   wranglerConfig: any,
+ *   verifyReport?: any,
+ *   verifyReportSha256?: string | null,
+ *   manifest?: any,
+ *   envFilesPresent: string[],
+ *   nextEnvText: string | null,
+ *   allowUploadSweepDelete?: boolean,
+ *   offline?: boolean,
+ * }} input
+ * @returns {{ ok: boolean, reasons: string[], notes: string[] }}
+ */
+export function checkProductionDeploy(input) {
+  const reasons = []
+  const notes = []
+  accountReasons(input.whoami, input.processEnv, reasons, { offline: input.offline, notes })
+  reasons.push(...checkEnvFiles(input.envFilesPresent).reasons)
+  reasons.push(...checkNextEnvModule(input.nextEnvText).reasons)
+
+  const stamp = input.stamp
+  if (!stamp || typeof stamp !== 'object') {
+    reasons.push('no production build: run cf:build:production first (.open-next/clickit-build-stamp.json missing)')
+  } else {
+    if (stamp.target !== 'production') reasons.push(`stamp target is ${String(stamp.target)}, expected production`)
+    stampSafetyReasons(stamp, reasons)
+    if (stamp.mediaFlag !== 'verified') {
+      reasons.push(`stamp media flag is ${String(stamp.mediaFlag)}, production needs verified`)
+    }
+    if (stamp.mediaOrigin !== PRODUCTION_MEDIA_ORIGIN) {
+      reasons.push(`stamp media origin is not ${PRODUCTION_MEDIA_ORIGIN}`)
+    }
+    if (stamp.supabaseKeyKind !== 'publishable') {
+      reasons.push(`stamp Supabase key is ${String(stamp.supabaseKeyKind)}, production needs the publishable (sb_publishable_) key`)
+    }
+    if (stamp.beaconToken !== 'set') {
+      reasons.push('stamp has no NEXT_PUBLIC_CF_BEACON_TOKEN (Web Analytics): set it and rebuild')
+    }
+    if (!stamp.gitSha || stamp.gitSha !== input.headSha) {
+      reasons.push('stamp commit differs from HEAD: rebuild with cf:build:production at the current commit')
+    }
+    if (!stamp.verifyReportSha256 || stamp.verifyReportSha256 !== input.verifyReportSha256) {
+      reasons.push('verify report passed now is not the one recorded by cf:build:production (sha256 differs)')
+    }
+  }
+  const report = checkVerifyReport(input.verifyReport, input.manifest ?? null, { mediaOrigin: PRODUCTION_MEDIA_ORIGIN })
+  if (!report.ok) reasons.push(...report.reasons.map((r) => `production media: ${r}`))
+
+  if (String(input.gitStatus ?? '').trim() !== '') reasons.push('working tree is dirty: commit or remove changes first')
+  if (!originLines(input.originBranches).includes('origin/main')) {
+    reasons.push('HEAD is not contained in origin/main: production deploys only from main (PR + Ship)')
+  }
+
+  const config = input.wranglerConfig
+  if (!config || typeof config !== 'object') {
+    reasons.push('wrangler.jsonc could not be read')
+    return { ok: false, reasons, notes }
+  }
+  if (config.account_id !== CLICKIT_ACCOUNT_ID) reasons.push('wrangler.jsonc account_id is not the ClickitStory account')
+  if (!emptyCrons(config.triggers)) {
+    reasons.push('wrangler.jsonc top-level triggers.crons must stay an explicit empty array (workers.dev target)')
+  }
+  const env = config.env?.production
+  if (!env || typeof env !== 'object') {
+    reasons.push('wrangler.jsonc env.production is missing')
+    return { ok: false, reasons, notes }
+  }
+  if (env.name !== PRODUCTION_WORKER_NAME) {
+    reasons.push(`env.production name must be ${PRODUCTION_WORKER_NAME} (the same Worker as workers.dev)`)
+  }
+  const routes = env.routes
+  const routeOk =
+    Array.isArray(routes) &&
+    routes.length === 1 &&
+    sameRoute(routes[0], { pattern: PRODUCTION_ROUTE, zone_id: PRODUCTION_ZONE_ID })
+  if (!routeOk) {
+    reasons.push(`env.production routes must be exactly [{ pattern: ${PRODUCTION_ROUTE}, zone_id: ${PRODUCTION_ZONE_ID} }]`)
+  }
+  if (env.route !== undefined) reasons.push('env.production route must not be set (use routes)')
+  const crons = env.triggers?.crons
+  const cronsOk =
+    Array.isArray(crons) &&
+    crons.length === PRODUCTION_CRONS.length &&
+    [...crons].sort().every((c, i) => c === [...PRODUCTION_CRONS].sort()[i])
+  if (!cronsOk) {
+    reasons.push(`env.production triggers.crons must be exactly ${PRODUCTION_CRONS.join(', ')} (CRON_EXPRESSIONS_FOR_PHASE_3)`)
+  }
+  const d1 = Array.isArray(env.d1_databases) ? env.d1_databases : []
+  if (d1.length === 0) reasons.push('env.production has no d1 database')
+  for (const db of d1) {
+    const id = String(db?.database_id ?? '')
+    if (!id || ALL_ZERO_ID.test(id)) reasons.push('env.production d1 database_id is the all-zero placeholder')
+  }
+  const vars = env.vars ?? {}
+  for (const name of ['LOCAL_DEV', 'CLEANUP_SUPABASE_ORIGINALS']) {
+    if (Object.prototype.hasOwnProperty.call(vars, name)) reasons.push(`env.production vars contain ${name}`)
+  }
+  reasons.push(...uploadSweepFlagReasons(vars, input.allowUploadSweepDelete).map((r) => `env.production: ${r}`))
+  return { ok: reasons.length === 0, reasons, notes }
+}
+
+/**
+ * D-18 one Worker, two targets: after a production deploy, a workers.dev deploy of
+ * `clickit` would drop the production build and its crons. It is refused unless the
+ * deploy names a reason (--override-production-reason, 15+ characters).
+ * @param {{ lastDeploy: { target?: string } | null, target: string, overrideReason?: string }} input
+ * @returns {{ ok: boolean, reasons: string[], overridden: boolean }}
+ */
+export function checkTargetSwitch(input) {
+  const target = input?.target
+  const last = input?.lastDeploy ?? null
+  if (target === 'production') return { ok: true, reasons: [], overridden: false }
+  if (target !== 'workersdev') {
+    return { ok: false, reasons: [`unknown deploy target ${String(target)}`], overridden: false }
+  }
+  if (last === null || last?.target === 'workersdev') return { ok: true, reasons: [], overridden: false }
+  const reason = String(input?.overrideReason ?? '').trim()
+  if (reason.length >= OVERRIDE_MIN_LENGTH) return { ok: true, reasons: [], overridden: true }
+  const what = last?.target === 'production' ? 'the last deploy of clickit was production' : `the last deploy record says ${String(last?.target)}`
+  return {
+    ok: false,
+    reasons: [
+      `${what}: a workers.dev deploy would replace the www build and remove its crons (D-18); ` +
+        `pass --override-production-reason "<why, ${OVERRIDE_MIN_LENGTH}+ characters>" only on Koss's word`,
+    ],
+    overridden: false,
+  }
 }
 
 function bindingReasons(level, label, reasons, { expectR2 }) {
@@ -423,7 +598,8 @@ function varsReasons(vars, label, reasons) {
  */
 export function checkMediaDeploy(input) {
   const reasons = []
-  accountReasons(input.whoami, input.processEnv, reasons)
+  const notes = []
+  accountReasons(input.whoami, input.processEnv, reasons, { offline: input.offline, notes })
   if (String(input.gitStatus ?? '').trim() !== '') reasons.push('working tree is dirty: commit or remove changes first')
 
   const config = input.wranglerConfig
@@ -432,7 +608,7 @@ export function checkMediaDeploy(input) {
   }
   if (!config || typeof config !== 'object') {
     reasons.push('workers/media/wrangler.jsonc could not be read')
-    return { ok: false, reasons }
+    return { ok: false, reasons, notes }
   }
   if (config.account_id !== CLICKIT_ACCOUNT_ID) reasons.push('media wrangler account_id is not the ClickitStory account')
   if (config.name !== 'clickit-media') reasons.push('media wrangler name is not clickit-media')
@@ -461,8 +637,20 @@ export function checkMediaDeploy(input) {
         }
         if (envConfig.route !== undefined) reasons.push(`${envName}: route must not be set`)
         if (envConfig.workers_dev !== true) reasons.push(`${envName}: workers_dev must be true`)
-      } else if (envConfig.name !== undefined && envConfig.name !== 'clickit-media') {
-        reasons.push(`${envName}: name must be clickit-media`)
+      } else {
+        if (envConfig.name !== undefined && envConfig.name !== 'clickit-media') {
+          reasons.push(`${envName}: name must be clickit-media`)
+        }
+        // supabase-only and r2 serve the production host: routes (own, or inherited from
+        // the top level as wrangler does) must be exactly the media custom domain.
+        const routes = envConfig.routes !== undefined ? envConfig.routes : config.routes
+        const routeOk = Array.isArray(routes) && routes.length === 1 && sameRoute(routes[0], MEDIA_CUSTOM_ROUTE)
+        if (!routeOk) {
+          reasons.push(`${envName}: routes must be exactly [{ pattern: ${MEDIA_CUSTOM_HOST}, custom_domain: true }]`)
+        }
+        if (envConfig.route !== undefined || config.route !== undefined) {
+          reasons.push(`${envName}: route must not be set (use routes)`)
+        }
       }
       varsReasons(envConfig.vars, envName, reasons)
       if (envConfig.triggers !== undefined && !emptyCrons(envConfig.triggers)) {
@@ -470,5 +658,5 @@ export function checkMediaDeploy(input) {
       }
     }
   }
-  return { ok: reasons.length === 0, reasons }
+  return { ok: reasons.length === 0, reasons, notes }
 }
