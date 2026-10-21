@@ -27,6 +27,31 @@ test('acceptArabicTranslation', () => {
   assert.equal(acceptArabicTranslation('Hello', '  '), null)
 })
 
+test('acceptArabicTranslation: minimum Arabic share (review item 7, PR #29)', () => {
+  // Live examples: brand, @handle and URL kept as written still pass; a stray letter does not.
+  const follow = 'Follow us on Instagram @clickitstory or visit https://www.clickitstory.ae'
+  const followAr = 'تابعونا على Instagram @clickitstory أو زوروا https://www.clickitstory.ae'
+  assert.equal(acceptArabicTranslation(follow, followAr), followAr)
+  assert.equal(acceptArabicTranslation('Season 2', 'Season 2 ي'), null)
+  assert.equal(acceptArabicTranslation('Season 2', 'الموسم 2'), 'الموسم 2')
+  // Names kept verbatim do not count against the share; untranslated English does.
+  assert.equal(acceptArabicTranslation('Majlis with Ahmed', 'مجلس مع Ahmed'), 'مجلس مع Ahmed')
+  assert.equal(acceptArabicTranslation('Watch the new season now', 'شاهد the new season now'), null)
+  // Words the source never had count as foreign.
+  assert.equal(acceptArabicTranslation('Hello', 'مرحبا Hello there friend'), null)
+  // Nothing translated: every source word is still there, whatever Arabic was added.
+  assert.equal(acceptArabicTranslation('Clickit Story', 'Clickit Story قصة'), null)
+  assert.equal(acceptArabicTranslation('Clickit Story Originals', 'Clickit Story الأصلية'), 'Clickit Story الأصلية')
+  // Digits, punctuation and Arabic-Indic digits are ignored; one Arabic letter is not a translation.
+  assert.equal(acceptArabicTranslation('Episode 3', 'ح 3'), null)
+  assert.equal(acceptArabicTranslation('Episode 3', 'الحلقة ٣!'), 'الحلقة ٣!')
+  // Emails are ignored like URLs and handles.
+  assert.equal(
+    acceptArabicTranslation('Write to info@clickitstory.ae', 'راسلونا على info@clickitstory.ae'),
+    'راسلونا على info@clickitstory.ae'
+  )
+})
+
 // ---- fake Workers AI binding ----------------------------------------------
 
 const openAi = (content: unknown, finish = 'stop') => ({

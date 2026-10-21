@@ -184,3 +184,30 @@ test('an admin save reports how many Arabic fields could not be filled (createSe
   assert.equal(out.arabicMissing, 1)
   assert.equal(arabicMissingOf(out), 1)
 })
+
+// ---- schema max length (review item 7, PR #29) ------------------------------
+
+test('fill: a translation longer than the field max is null and counted missing', async () => {
+  const ai = fakeAi(() => openAi('نص عربي طويل جدا'))
+  const f = filler({ ai: ai.ai })
+  assert.equal(await f.fill('Long text', null, 5), null)
+  assert.equal(f.missing(), 1)
+  assert.equal(await f.fill('Long text', null, 200), 'نص عربي طويل جدا')
+  assert.equal(await f.fill('Long text', null), 'نص عربي طويل جدا')
+  assert.equal(f.missing(), 1)
+})
+
+test('fill: an Arabic value the admin typed is kept as is (the schema already checked it)', async () => {
+  const ai = fakeAi()
+  const f = filler({ ai: ai.ai })
+  assert.equal(await f.fill('Hi', 'مرحبا بكم', 3), 'مرحبا بكم')
+  assert.equal(ai.calls(), 0)
+  assert.equal(f.missing(), 0)
+})
+
+test('fillBatch: per-slot max lengths; an over-long slot is null and counted', async () => {
+  const ai = fakeAi((text) => openAi(text === 'Tag' ? 'وسم طويل جدا جدا' : 'نص'))
+  const f = filler({ ai: ai.ai })
+  assert.deepEqual(await f.fillBatch(['Tag', 'Text'], [4, 240]), [null, 'نص'])
+  assert.equal(f.missing(), 1)
+})
