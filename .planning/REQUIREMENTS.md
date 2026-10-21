@@ -59,8 +59,8 @@
 - [ ] **AUTH-02**: Viewer can sign in or create an account with a 6-digit email code (no password needed)
 - [ ] **AUTH-03**: Viewer can still sign up and sign in with email + password, and add a password later from profile
 - [ ] **AUTH-04**: Password reset, email confirmation and email change work when the link is opened on another device
-- [ ] **AUTH-05**: Issam and Nejib each have their own admin account; both see all admin functions
-- [ ] **AUTH-06**: Admins must pass an authenticator-app code (TOTP) to enter the admin area
+- [x] **AUTH-05**: Issam and Nejib each have their own admin account; both see all admin functions
+- [x] **AUTH-06**: Admins must pass an authenticator-app code (TOTP) to enter the admin area
 - [ ] **AUTH-07**: The audit log shows which admin made each change
 - [ ] **AUTH-08**: Leaked-password protection is on; the anon-callable YouTube-ID function is closed
 
@@ -179,8 +179,8 @@
 | AUTH-02 | Phase 5 | Pending |
 | AUTH-03 | Phase 5 | Pending |
 | AUTH-04 | Phase 5 | Pending |
-| AUTH-05 | Phase 5 | Pending |
-| AUTH-06 | Phase 5 | Pending |
+| AUTH-05 | Phase 5 | Complete |
+| AUTH-06 | Phase 5 | Complete |
 | AUTH-07 | Phase 5 | Pending |
 | AUTH-08 | Phase 5 | Pending |
 | MAIL-01 | Phase 5 | Pending |

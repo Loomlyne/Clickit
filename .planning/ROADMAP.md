@@ -260,7 +260,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | 2. Worker and R2 Media on workers.dev | 18/22 | In Progress|  |
 | 3. Production Cutover | 0/TBD | Not started | - |
 | 4. Design System Truth | 14/14 | UAT pending (PR) |  |
-| 5. Accounts and Email | 1/42 | In Progress|  |
+| 5. Accounts and Email | 2/42 | In Progress|  |
 | 6. YouTube Import and Player | 0/25 | Planned | - |
 | 7. Product Completeness, Search and Arabic | 0/TBD | Not started | - |
 | 8. Hardening and Contract Cleanup | 0/TBD | Not started | - |
