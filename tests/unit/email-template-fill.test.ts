@@ -282,7 +282,7 @@ test('a pre slot reproduces react-email Preview: escaped text cut at 200 plus th
 
 test('the Preview padding is written with \\u escapes in the source, not as invisible characters', () => {
   const src = readFileSync(new URL('../../src/emails/app/template-fill.ts', import.meta.url), 'utf8')
-  assert.ok(!/[​-‏﻿ ]/.test(src))
+  assert.ok(!/[\u200B-\u200F\uFEFF\u00A0]/.test(src))
   assert.ok(src.includes('react-email 6.11.0'))
 })
 
