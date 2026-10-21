@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import type { ViewShort } from '@/lib/queries'
+import { markProgrammaticScroll } from '@/lib/nav-scroll'
 
 interface ShortsOverlayProps {
   shorts: ViewShort[]
@@ -99,6 +100,8 @@ export function ShortsOverlay({
       body.style.position = prevBodyPosition
       body.style.top = prevBodyTop
       body.style.width = prevBodyWidth
+      // Back to where the page was; not a user scroll, so the navbar stays put.
+      markProgrammaticScroll()
       window.scrollTo(0, scrollY)
     }
   }, [])
@@ -120,7 +123,6 @@ export function ShortsOverlay({
   const shell = (
     <div
       className="fixed inset-0 z-[600] flex items-center justify-center"
-      data-lenis-prevent
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
@@ -228,7 +230,7 @@ export function ShortsOverlay({
       {/* Main card — YouTube Short embed */}
       <div className="flex w-full max-w-[380px] flex-col items-center gap-3 px-4 lg:px-0">
         <div
-          className="relative w-full overflow-hidden rounded-[10px] shadow-[0_40px_120px_rgba(0,0,0,0.6)]"
+          className="relative w-full overflow-hidden rounded-xl shadow-modal"
           style={{ aspectRatio: '9/16' }}
         >
           <iframe

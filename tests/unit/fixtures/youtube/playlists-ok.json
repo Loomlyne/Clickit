@@ -1,0 +1,24 @@
+{
+  "_source": "documented shape, not recorded",
+  "kind": "youtube#playlistListResponse",
+  "pageInfo": {
+    "totalResults": 1,
+    "resultsPerPage": 5
+  },
+  "items": [
+    {
+      "kind": "youtube#playlist",
+      "id": "PL1",
+      "snippet": {
+        "title": "Season One",
+        "channelTitle": "Clickit Story"
+      },
+      "status": {
+        "privacyStatus": "unlisted"
+      },
+      "contentDetails": {
+        "itemCount": 70
+      }
+    }
+  ]
+}

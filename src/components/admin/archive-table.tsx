@@ -44,6 +44,7 @@ import type {
   ShowRestoreConflict,
 } from '@/app/[locale]/admin/actions'
 import { toast } from 'sonner'
+import { useArabicMissingToast } from '@/components/admin/arabic-missing-toast'
 import type { Database } from '@/lib/database.types'
 
 type Show = Database['public']['Tables']['shows']['Row']
@@ -69,6 +70,7 @@ function formatDate(dateString: string, locale: string): string {
 
 export function ArchiveTable({ shows }: ArchiveTableProps) {
   const t = useTranslations('admin.archive')
+  const warnArabicMissing = useArabicMissingToast()
   const tCommon = useTranslations('common')
   const locale = useLocale()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -169,7 +171,7 @@ export function ArchiveTable({ shows }: ArchiveTableProps) {
       setSelectedIds((current) =>
         current.filter((id) => id !== conflictShow.id)
       )
-      toast.success(t('restoredToast'))
+      if (!warnArabicMissing(result)) toast.success(t('restoredToast'))
     } else if (
       result.showConflict ||
       (result.conflicts && result.conflicts.length > 0)

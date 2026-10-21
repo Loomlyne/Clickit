@@ -1,0 +1,58 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "clickit",
+  // ClickitStory account, pinned (D-04). Not a secret.
+  "account_id": "e329b099b6e4272fc0915a99832e47fe",
+  "main": "./custom-worker.ts",
+  "compatibility_date": "2026-10-19",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "observability": { "enabled": true },
+  "workers_dev": true,
+  "preview_urls": false,
+  "triggers": {
+    // Explicit empty array: only an empty array removes existing triggers;
+    // commenting the key out would leave them in place. Crons go on at the
+    // Phase 3 cutover (P3-8, after P3-6). The three schedules are
+    // CRON_EXPRESSIONS_FOR_PHASE_3 in src/server/scheduled.ts: "0 1 * * *"
+    // (publish-scheduled), "30 1 * * *" (youtube-recheck) and "0 4 * * 1"
+    // (cleanup-media), all UTC.
+    "crons": []
+  },
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "clickit" }],
+  // Workers AI: admin English -> Arabic auto-fill and the public Arabic fallback
+  // (src/lib/arabic-text.ts, model @cf/google/gemma-4-26b-a4b-it). No secret.
+  // Free plan: 10,000 neurons/day (resets 00:00 UTC); over it, calls fail and the
+  // Arabic field stays empty.
+  "ai": { "binding": "AI" },
+  "r2_buckets": [
+    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "clickit-next-cache" },
+    { "binding": "MEDIA", "bucket_name": "clickit-media" }
+  ],
+  "d1_databases": [
+    {
+      "binding": "NEXT_TAG_CACHE_D1",
+      "database_name": "clickit-tag-cache",
+      // Created 2026-10-20 by the control session (RUNBOOK step 10, region EEUR).
+      // Not a secret. The deploy guard (plan 02-06) refuses the all-zero id.
+      "database_id": "7319d21d-eda3-4fed-aefd-6cbcc545f515"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }],
+  "vars": {
+    "CLOUDFLARE_ACCOUNT_ID": "e329b099b6e4272fc0915a99832e47fe",
+    "CLOUDFLARE_R2_BUCKET": "clickit-media",
+    // Declares the Worker runtime. cleanup-media refuses to delete Supabase
+    // originals here unless CLEANUP_SUPABASE_ORIGINALS=on (never set in Phase 2).
+    "CLICKIT_RUNTIME": "workers",
+    // Weekly cleanup-media cron: sweep of R2 uploads never finalised (minted upload keys
+    // older than 24 h with no live reference; src/server/r2-upload-sweep.ts). "off" = dry
+    // run: it only reports what it would delete. Real deletes only for exactly "on", and
+    // only on Koss's word after he has read a dry-run report (02-RUNBOOK.md). The deploy
+    // guard refuses "on" unless the deploy passes --allow-upload-sweep-delete.
+    "R2_UPLOAD_SWEEP_DELETE": "off"
+  }
+}

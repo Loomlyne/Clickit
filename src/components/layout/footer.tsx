@@ -111,7 +111,6 @@ function SocialIcon({ item }: { item: SocialLinkItem }) {
           alt={label}
           width={32}
           height={32}
-          unoptimized
           className="size-8 object-contain"
         />
       </a>

@@ -264,6 +264,27 @@ test('reorder: audit failure and failed undo report the swap as left in place', 
   assert.equal(rows[0]!.diff.left_in_place[0].step, 'swap')
 })
 
+test('reorder: swaps with the nearest active episode whatever the gap (1, 2, 4)', async () => {
+  const G1 = id('f', 1)
+  const G2 = id('f', 2)
+  const G4 = id('f', 4)
+  const f = world([ep(G1, 1), ep(G2, 2), ep(G4, 4)])
+  const r = await reorderEpisodeCore(db(f), deps(f), G4, 'up')
+  assert.equal(r.success, true)
+  assert.equal(num(f, G4), 2)
+  assert.equal(num(f, G2), 4)
+  assert.equal(num(f, G1), 1)
+  const rows = f.auditRows()
+  assert.equal(rows.length, 1)
+  assert.deepEqual(rows[0]!.diff, {
+    kind: 'reorder',
+    direction: 'up',
+    swapped_with: G2,
+    from: 4,
+    to: 2,
+  })
+})
+
 // ---- archiveEpisodeCore / restoreEpisodeCore ----
 
 test('archive: a showId that does not own the episode is refused', async () => {

@@ -32,7 +32,7 @@ export function ReviewsSection({ reviews }: ReviewsSectionProps) {
         {reviews.map((review) => (
           <Card
             key={review.id}
-            className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)]"
+            className="rounded-card border border-[var(--line)] bg-[var(--bg-1)]"
           >
             <CardContent className="p-4">
               <div className="flex items-center gap-1">

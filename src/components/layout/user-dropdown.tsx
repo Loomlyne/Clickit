@@ -40,7 +40,6 @@ export function UserDropdown({
         align="end"
         sideOffset={8}
         className="z-[200] w-[200px]"
-        data-lenis-prevent
       >
         <DropdownMenuLabel className="text-muted-foreground font-normal">
           {email ?? tNav('profile')}

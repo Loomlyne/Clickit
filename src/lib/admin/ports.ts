@@ -12,6 +12,8 @@ export type ActionResult<T = unknown> = {
   success: boolean
   error?: string
   data?: T
+  /** Saved, but this many Arabic fields could not be auto-filled and stay empty. */
+  arabicMissing?: number
 }
 
 /** `wrote` is true when at least one write step ran, so the wrapper must revalidate even on failure. */
@@ -39,7 +41,9 @@ export type RestoreResult = ActionResult & {
   showConflict?: ShowRestoreConflict
 }
 
+/** `maxLength`: the field's schema max; a longer translation is null (review item 7, PR #29). */
 export type ArabicFill = (
   en: string | null | undefined,
-  ar: string | null | undefined
+  ar: string | null | undefined,
+  maxLength?: number
 ) => Promise<string | null>

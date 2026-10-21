@@ -46,7 +46,7 @@ export function MobileNav({ initialUser, logoUrl }: MobileNavProps = {}) {
 
       <SheetContent
         side="top"
-        className="flex w-full flex-col rounded-b-[4px] border-x-0 border-t-0 p-0"
+        className="flex w-full flex-col rounded-b-sm border-x-0 border-t-0 p-0"
       >
         <SheetHeader className="border-b border-white/[0.06] px-6 py-5">
           <SheetTitle className="sr-only">{t('navLabel')}</SheetTitle>

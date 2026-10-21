@@ -1,0 +1,9 @@
+# Names only. Copy to .dev.vars (gitignored) and fill local values; never commit values.
+NEXTJS_ENV=
+LOCAL_DEV=
+CRON_SECRET=
+TURNSTILE_SECRET_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+LOCAL_UPLOAD_SHIM_SECRET=

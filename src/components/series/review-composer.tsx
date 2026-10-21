@@ -137,7 +137,7 @@ export function ReviewComposer({
 
       {/* Composer (auth'd users only) */}
       {userId && (
-        <div className="mb-8 rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] p-5">
+        <div className="mb-8 rounded-card border border-[var(--line)] bg-[var(--bg-1)] p-5">
           <div className="mb-4 flex items-center gap-3">
             <div className="flex size-9 items-center justify-center rounded-full bg-[var(--primary)] font-[family-name:var(--font-mono)] text-xs font-medium text-[var(--primary-foreground)]">
               {myInitials ?? <User className="size-4" aria-hidden />}
@@ -183,7 +183,7 @@ export function ReviewComposer({
           </div>
 
           <textarea
-            className="w-full resize-none rounded-[8px] border border-[var(--line)] bg-[var(--bg-0)] px-3 py-2.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--primary)]"
+            className="w-full resize-none rounded-field border border-[var(--line)] bg-[var(--bg-0)] px-3 py-2.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-mute)] focus:border-[var(--primary)]"
             placeholder={t('composerPlaceholder')}
             value={draftText}
             onChange={(e) => setDraftText(e.target.value)}
@@ -249,7 +249,7 @@ export function ReviewComposer({
           return (
             <div
               key={r.id}
-              className={`border-t border-[var(--line)] py-5 ${isMine ? 'rounded-[12px] border-transparent bg-[var(--bg-1)] px-4' : ''}`}
+              className={`border-t border-[var(--line)] py-5 ${isMine ? 'rounded-card border-transparent bg-[var(--bg-1)] px-4' : ''}`}
             >
               <div className="mb-2 flex items-start justify-between">
                 <div className="flex items-center gap-3">

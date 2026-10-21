@@ -15,6 +15,11 @@ import { createClient } from '@/lib/supabase/client'
 import { mapAuthError } from '@/lib/auth-errors'
 import { getSafeAuthNextPath } from '@/lib/auth-navigation'
 import { signInAction } from '@/app/[locale]/(viewer)/auth/actions'
+import {
+  TurnstileField,
+  useTurnstileToken,
+} from '@/components/security/turnstile-field'
+import { isCaptchaFailure } from '@/lib/turnstile-widget'
 import { AuthAlert } from './auth-alert'
 import { PasswordField } from './password-field'
 import { errorParams } from './password-rules'
@@ -42,6 +47,10 @@ export function LoginForm() {
   const [serverError, setServerError] = useState<string | null>(null)
   const [mode, setMode] = useState<'login' | 'forgot'>('login')
   const [resetSent, setResetSent] = useState(false)
+  // Turnstile (PLAT-05): the token is single-use, so every submit consumes it
+  // and the widget is remounted. Submit stays disabled until a token exists.
+  const captcha = useTurnstileToken()
+  const { needsToken, awaitingToken } = captcha
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -55,12 +64,24 @@ export function LoginForm() {
     key ? tErrors(key as never, errorParams(key) as never) : undefined
 
   async function onLogin(data: LoginFormData) {
+    if (awaitingToken) return
     setServerError(null)
+    captcha.setFailed(false)
 
-    const result = await signInAction(data.email, data.password)
+    const result = await signInAction(
+      data.email,
+      data.password,
+      captcha.token ?? undefined
+    )
 
     if (!result.ok) {
-      setServerError(mapAuthError(result.error))
+      captcha.consume(isCaptchaFailure(result.error))
+      // With the widget drawn, a captcha refusal shows under it (signed), not twice.
+      setServerError(
+        needsToken && isCaptchaFailure(result.error)
+          ? null
+          : mapAuthError(result.error)
+      )
       return
     }
 
@@ -76,15 +97,24 @@ export function LoginForm() {
   }
 
   async function onForgot(data: ForgotFormData) {
+    if (awaitingToken) return
     setServerError(null)
+    captcha.setFailed(false)
     const supabase = createClient()
 
     const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
       redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+      captchaToken: captcha.token ?? undefined,
     })
+    // The token is single-use: whatever the outcome, a fresh one is needed.
+    captcha.consume(Boolean(error) && isCaptchaFailure(error?.message))
 
     if (error) {
-      setServerError(mapAuthError(error.message))
+      setServerError(
+        needsToken && isCaptchaFailure(error.message)
+          ? null
+          : mapAuthError(error.message)
+      )
       return
     }
 
@@ -100,6 +130,7 @@ export function LoginForm() {
             setMode('login')
             setServerError(null)
             setResetSent(false)
+            captcha.clear()
           }}
           className="flex min-h-11 items-center gap-1.5 self-start text-sm text-[var(--text-dim)] transition-colors hover:text-[var(--text)]"
         >
@@ -149,13 +180,17 @@ export function LoginForm() {
               )}
             </div>
 
-            {/* Job C mounts the Cloudflare Turnstile widget here. */}
-            <div data-turnstile-slot className="empty:hidden" />
+            <TurnstileField
+              key={captcha.widgetKey}
+              form="reset"
+              onToken={captcha.setToken}
+              failed={captcha.failed}
+            />
 
             <Button
               type="submit"
               className="w-full"
-              disabled={forgotForm.formState.isSubmitting}
+              disabled={forgotForm.formState.isSubmitting || awaitingToken}
             >
               {forgotForm.formState.isSubmitting
                 ? t('resetButton') + '…'
@@ -209,6 +244,7 @@ export function LoginForm() {
             onClick={() => {
               setMode('forgot')
               setServerError(null)
+              captcha.clear()
             }}
             className="inline-flex min-h-11 items-center text-[13px] text-[var(--text-dim)] underline underline-offset-[3px] transition-colors hover:text-[var(--text)]"
           >
@@ -217,13 +253,17 @@ export function LoginForm() {
         </div>
       </div>
 
-      {/* Job C mounts the Cloudflare Turnstile widget here. */}
-      <div data-turnstile-slot className="empty:hidden" />
+      <TurnstileField
+        key={captcha.widgetKey}
+        form="sign-in"
+        onToken={captcha.setToken}
+        failed={captcha.failed}
+      />
 
       <Button
         type="submit"
         className="w-full"
-        disabled={loginForm.formState.isSubmitting}
+        disabled={loginForm.formState.isSubmitting || awaitingToken}
       >
         {loginForm.formState.isSubmitting
           ? t('signInButton') + '…'

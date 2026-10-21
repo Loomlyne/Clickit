@@ -4,6 +4,7 @@
 // No next/* imports: revalidation stays in the actions.ts wrapper.
 import { z } from 'zod'
 import { nextBroadcastSlots } from '../scheduling.ts'
+import { needsEnglishTitle } from '../../server/youtube/script.ts'
 import {
   compensationAuditDiff,
   runWithCompensation,
@@ -22,7 +23,13 @@ export type PlannedEpisodeSlot = {
   publishAt: string
   /** False when the episode has no YouTube id: it would air with no video. */
   hasVideo: boolean
+  /** Arabic-dominant title (or a mirror of title_ar): the admin should add an English one. */
+  needsEnglishTitle: boolean
+  /** Stored YouTube check result, or null when never checked. */
+  youtubeStatus: string | null
 }
+
+const SELECTION_REFUSED = 'Some selected episodes cannot be scheduled.'
 
 type Deps = {
   audit: AuditWriter
@@ -34,10 +41,23 @@ type Deps = {
 export async function planShowScheduleCore(
   db: AdminDb,
   showId: string,
-  now: Date
+  now: Date,
+  /** Limits the plan to these episodes (the import success state, D-07). Each must
+   *  be an unarchived, unpublished episode of this show, else the plan is refused. */
+  episodeIds?: string[]
 ): Promise<
   { ok: false; error: string } | { ok: true; plan: PlannedEpisodeSlot[] }
 > {
+  let wanted: string[] | undefined
+  if (episodeIds !== undefined) {
+    wanted = []
+    for (const raw of episodeIds) {
+      const parsed = parseId(raw, 'episode')
+      if (!parsed.ok) return { ok: false, error: SELECTION_REFUSED }
+      if (!wanted.includes(parsed.value)) wanted.push(parsed.value)
+    }
+  }
+
   const { data: show, error: showError } = await db
     .from('shows')
     .select('broadcast_day, broadcast_time')
@@ -56,15 +76,22 @@ export async function planShowScheduleCore(
 
   const [{ data: episodes, error: epError }, { data: seasons }] =
     await Promise.all([
-      db
-        .from('episodes')
-        .select('id, title, episode_number, season_id, youtube_video_id')
-        .eq('show_id', showId)
-        .eq('archived', false)
-        .neq('status', 'published'),
+      (() => {
+        const q = db
+          .from('episodes')
+          .select(
+            'id, title, title_ar, episode_number, season_id, youtube_video_id, youtube_status'
+          )
+          .eq('show_id', showId)
+          .eq('archived', false)
+          .neq('status', 'published')
+        return wanted ? q.in('id', wanted) : q
+      })(),
       db.from('seasons').select('id, season_number').eq('show_id', showId),
     ])
   if (epError) return { ok: false, error: epError.message }
+  if (wanted && (episodes ?? []).length !== wanted.length)
+    return { ok: false, error: SELECTION_REFUSED }
 
   const seasonNumberById = new Map(
     (seasons ?? []).map((s) => [s.id, s.season_number])
@@ -86,6 +113,8 @@ export async function planShowScheduleCore(
       title: ep.title,
       publishAt: slots[i],
       hasVideo: Boolean(ep.youtube_video_id),
+      needsEnglishTitle: needsEnglishTitle({ title: ep.title, title_ar: ep.title_ar }),
+      youtubeStatus: ep.youtube_status ?? null,
     })),
   }
 }

@@ -7,7 +7,9 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { updateGenreConfig } from '@/app/[locale]/admin/actions'
 import type { GenreConfig } from '@/lib/config'
+import { BRAND_PALETTE } from '@/lib/brand-colors'
 import { SettingsCard } from './settings-card'
+import { useSharedRowVersion } from '@/components/admin/row-version'
 
 /**
  * Genre color overrides — maps genre name to a brand-palette color.
@@ -19,14 +21,19 @@ import { SettingsCard } from './settings-card'
  * palette to six colors.
  */
 
-const PRESETS: Array<{ label: string; value: string }> = [
-  { label: 'Blue', value: '#2C3569' },
-  { label: 'Purple', value: '#9F54A0' },
-  { label: 'Green', value: '#50A258' },
-  { label: 'Red', value: '#DB3F34' },
-  { label: 'Orange', value: '#EA8C2E' },
-  { label: 'Yellow', value: '#F8C623' },
-]
+const PRESET_LABELS: Record<string, string> = {
+  'brand-blue': 'Blue',
+  'brand-purple': 'Purple',
+  'brand-green': 'Green',
+  'brand-red': 'Red',
+  'brand-orange': 'Orange',
+  'brand-yellow': 'Yellow',
+}
+
+const PRESETS: Array<{ label: string; value: string }> = BRAND_PALETTE.map((p) => ({
+  label: PRESET_LABELS[p.key],
+  value: p.hex,
+}))
 
 // Every genre surfaced in the landing page today.
 // If the admin adds a new genre to a show, it'll appear in the UI automatically
@@ -55,15 +62,19 @@ export function GenreColorEditor({ initial }: { initial: GenreConfig }) {
   const [config, setConfig] = useState<GenreConfig>(initial)
   const [saving, setSaving] = useState(false)
   const t = useTranslations('admin.settings')
+  const version = useSharedRowVersion()
 
   const dirty = JSON.stringify(config) !== JSON.stringify(initial)
 
   async function onSave() {
     setSaving(true)
-    const result = await updateGenreConfig(config)
+    const expected = version.expected()
+    const result = await updateGenreConfig(config, expected)
     setSaving(false)
-    if (result.success) toast.success(t('genreColorsSaved'))
-    else toast.error(result.error ?? t('saveFailed'))
+    if (result.success) {
+      version.saved(expected, result.updatedAt)
+      toast.success(t('genreColorsSaved'))
+    } else toast.error(result.error ?? t('saveFailed'))
   }
 
   function setColor(genre: string, color: string | undefined) {

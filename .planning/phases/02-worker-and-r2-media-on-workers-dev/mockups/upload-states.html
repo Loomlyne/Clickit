@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Upload states options</title>
+<style>
+  @font-face { font-family: "LBC"; src: url("../../../../src/fonts/lbc-regular.woff2") format("woff2"); font-weight: 400; }
+  @font-face { font-family: "LBC"; src: url("../../../../src/fonts/lbc-bold.woff2") format("woff2"); font-weight: 700; }
+  :root {
+    --background: #0a0a0a; --card: #121212; --bg-2: #1a1a1a;
+    --text: #f5f5f4; --text-dim: #a8a8a6; --text-mute: #6e6e6b;
+    --line: rgba(255,255,255,0.08); --line-2: rgba(255,255,255,0.14);
+    --primary: #ffcc00; --primary-foreground: #0a0a0a; --radius: 8px; --destructive: #ff3b30;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--background); color: var(--text); font-family: "LBC", ui-sans-serif, system-ui, sans-serif; }
+  .option { padding: 40px 32px 56px; border-bottom: 1px solid var(--line-2); }
+  .option h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--text-dim); font-size: 14px; margin: 0 0 24px; max-width: 900px; }
+  .tag { display: inline-block; background: var(--primary); color: var(--primary-foreground); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-left: 8px; vertical-align: middle; }
+  .row-title { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); margin: 24px 0 10px; font-weight: 700; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .cell { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; position: relative; min-height: 230px; }
+  .state { font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+  .label { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+  .zone { border: 1px dashed rgba(255,255,255,.12); background: rgba(255,255,255,.02); border-radius: var(--radius); padding: 22px 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+  .zone.err { border-color: rgba(255,59,48,.45); background: rgba(255,59,48,.05); }
+  .muted { color: var(--text-dim); font-size: 13px; }
+  .hint { color: var(--text-dim); font-size: 12px; margin-top: 6px; }
+  .grey { color: var(--text-mute); font-size: 12px; margin-top: 6px; }
+  .icon { width: 24px; height: 24px; color: var(--text-dim); }
+  .bar { width: 100%; height: 6px; background: var(--bg-2); border-radius: 999px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--primary); border-radius: 999px; }
+  .file { display: flex; justify-content: space-between; width: 100%; font-size: 12px; color: var(--text-dim); }
+  .msg { font-size: 13px; color: #ff8a80; }
+  .retry { border: 1px solid var(--line-2); background: transparent; color: var(--text); border-radius: 999px; padding: 6px 16px; font-size: 13px; font-family: inherit; }
+  .spin { width: 24px; height: 24px; border: 3px solid #333; border-top-color: var(--text-dim); border-radius: 50%; }
+  .toast { position: absolute; left: 12px; right: 12px; bottom: 12px; background: #1b1b1b; border: 1px solid var(--line-2); border-radius: 10px; padding: 10px 12px; font-size: 12px; display: flex; gap: 8px; align-items: flex-start; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+  .toast .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex: none; }
+  .toast.e .dot { background: var(--destructive); } .toast.i .dot { background: var(--primary); }
+  .toast small { display: block; color: var(--text-mute); margin-top: 2px; }
+  .bar.anim > i { position: relative; overflow: hidden; background: linear-gradient(90deg, #e6b800, #ffcc00 40%, #ffe066 50%, #ffcc00 60%, #e6b800); background-size: 200% 100%; animation: flow 1.4s linear infinite; box-shadow: 0 0 12px rgba(255,204,0,.45); transition: width .4s ease; }
+  .bar.anim > i::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(45deg, rgba(10,10,10,.18) 0 8px, transparent 8px 16px); background-size: 22px 22px; animation: stripes .8s linear infinite; }
+  .zone.active { border-color: rgba(255,204,0,.35); animation: pulse 1.6s ease-in-out infinite; }
+  .pct { color: var(--primary); font-weight: 700; }
+  @keyframes flow { from { background-position: 200% 0; } to { background-position: 0 0; } }
+  @keyframes stripes { from { background-position: 0 0; } to { background-position: 22px 0; } }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,204,0,0); } 50% { box-shadow: 0 0 0 4px rgba(255,204,0,.08); } }
+  @media (prefers-reduced-motion: reduce) { .bar.anim > i, .bar.anim > i::after, .zone.active { animation: none; } }
+  .toast .act { margin-left: auto; border: 1px solid var(--line-2); border-radius: 999px; padding: 2px 10px; font-size: 11px; color: var(--text); flex: none; }
+  @media (max-width: 500px) { .option { padding: 24px 16px 40px; } .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const up = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>';
+const alert = '<svg class="icon" style="color:#ff8a80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>';
+
+const items = {
+  image: { label: 'Poster', hint: 'Recommended 2:3, e.g. 1000×1500', file: 'poster-ramadan.jpg', size: '3.4 MB', tooLarge: 'File too large, max 10MB for poster.', click: 'Click to upload image' },
+  video: { label: 'Hero video (desktop)', hint: 'MP4, fast-start, under 50MB', file: 'hero-desktop.mp4', size: '38 MB', tooLarge: 'Video must be under 50MB', click: 'Click to upload MP4' },
+};
+const SVG_MSG = 'SVG uploads are not accepted. Upload a raster image (PNG, JPEG, WebP or AVIF; ICO for the favicon).';
+const MP4_TYPE = 'Upload an MP4 video.';
+const REFUSED = 'The file did not match its type and was removed. Nothing was saved.';
+const NOT_FAST = 'This video is not fast-start. Re-export it with "fast start" (web optimised) on, then upload again. Nothing was saved.';
+const NET = 'Upload stopped: the connection dropped or the upload link expired. Nothing was saved.';
+const SAFARI = 'This browser cannot make WebP copies; the original will be used.';
+
+function A(kind, st) {
+  const it = items[kind];
+  const head = `<div class="label">${it.label}</div>`;
+  const z = (inner, err=false) => `${head}<div class="zone${err?' err':''}">${inner}</div>`;
+  switch (st) {
+    case 'progress': return z(`<div class="file"><span>${it.file}</span><span>62%</span></div><div class="bar"><i style="width:62%"></i></div><div class="muted">Uploading to storage… ${kind==='image'?'(then 3 smaller copies)':''}</div>`) + `<div class="hint">${it.hint}</div>`;
+    case 'tooLarge': return z(`${alert}<div class="msg">${it.tooLarge}</div><div class="muted">${it.click}</div>`, true);
+    case 'wrongType': return z(`${alert}<div class="msg">${kind==='image'?SVG_MSG:MP4_TYPE}</div><div class="muted">${it.click}</div>`, true);
+    case 'network': return z(`${alert}<div class="msg">${NET}</div><button class="retry">Retry</button>`, true);
+    case 'refused': return z(`${alert}<div class="msg">${kind==='image'?REFUSED:NOT_FAST}</div><div class="muted">${it.click}</div>`, true);
+    case 'safari': return kind==='image'
+      ? z(`<div class="file"><span>${it.file}</span><span>100%</span></div><div class="bar"><i style="width:100%"></i></div><div class="muted">Uploaded</div>`) + `<div class="grey">${SAFARI}</div>`
+      : z(`<div class="file"><span>${it.file}</span><span>100%</span></div><div class="bar"><i style="width:100%"></i></div><div class="muted">Uploaded. Checking fast-start…</div>`);
+  }
+}
+function B(kind, st) {
+  const it = items[kind];
+  const head = `<div class="label">${it.label}</div>`;
+  const empty = `${head}<div class="zone">${up}<div class="muted">${it.click}</div></div><div class="hint">${it.hint}</div>`;
+  const toast = (cls, t, sm='') => `<div class="toast ${cls}"><span class="dot"></span><span>${t}${sm?`<small>${sm}</small>`:''}</span></div>`;
+  switch (st) {
+    case 'progress': return `${head}<div class="zone"><div class="spin"></div><div class="muted">Uploading…</div></div><div class="hint">${it.hint}</div>`;
+    case 'tooLarge': return empty + toast('e', it.tooLarge);
+    case 'wrongType': return empty + toast('e', kind==='image'?SVG_MSG:MP4_TYPE);
+    case 'network': return empty + toast('e', NET, 'Pick the file again to retry.');
+    case 'refused': return empty + toast('e', kind==='image'?REFUSED:NOT_FAST);
+    case 'safari': return empty + toast('i', 'Uploaded', kind==='image'?SAFARI:'');
+  }
+}
+function M(kind, st) {
+  const it = items[kind];
+  const head = `<div class="label">${it.label}</div>`;
+  const empty = `${head}<div class="zone">${up}<div class="muted">${it.click}</div></div><div class="hint">${it.hint}</div>`;
+  const toast = (cls, t, sm='', act='') => `<div class="toast ${cls}"><span class="dot"></span><span>${t}${sm?`<small>${sm}</small>`:''}</span>${act?`<span class="act">${act}</span>`:''}</div>`;
+  const prog = (pct, line) => `${head}<div class="zone active"><div class="file"><span>${it.file} · ${it.size}</span><span class="pct">${pct}%</span></div><div class="bar anim"><i style="width:${pct}%"></i></div><div class="muted">${line}</div></div><div class="hint">${it.hint}</div>`;
+  switch (st) {
+    case 'progress': return prog(62, kind==='image' ? 'Uploading… then 3 smaller copies' : 'Uploading…');
+    case 'tooLarge': return empty + toast('e', it.tooLarge);
+    case 'wrongType': return empty + toast('e', kind==='image'?SVG_MSG:MP4_TYPE);
+    case 'network': return empty + toast('e', NET, '', 'Retry');
+    case 'refused': return empty + toast('e', kind==='image'?REFUSED:NOT_FAST);
+    case 'safari': return prog(100, kind==='image' ? 'Saving…' : 'Checking fast-start…') + toast('i', 'Uploaded', kind==='image'?SAFARI:'');
+  }
+}
+const states = [['progress','Uploading'],['tooLarge','Too large'],['wrongType','Wrong type'],['network','Link expired / network'],['refused','Refused after upload'],['safari', 'Done (Safari note for images)']];
+const opts = [
+  ['M', 'Signed direction — progress bar animated inside the zone, messages as toasts', 'Koss 2026-10-20: merge A and B. The zone shows the file name, size and percent with a moving bar while uploading (still image here; the bar flows and the stripes move live). Errors and \'Uploaded\' are toasts; the zone itself never turns red. Network errors get a Retry button in the toast. Animation stops for visitors who ask for reduced motion.', M, true],
+  ['A', 'Option A — progress bar and errors inside the upload zone', 'The message stays next to the file until the admin acts. Network errors get a Retry button in place.', A, false],
+  ['B', 'Option B — spinner in the zone, everything else as toasts', 'No layout change in the zone. Messages appear as toasts (bottom of screen) and disappear after a few seconds.', B, false],
+];
+const only = new URLSearchParams(location.search).get('only');
+document.getElementById('root').innerHTML = opts.filter(o => !only || o[0] === only).map(([id, t, sub, fn, rec]) => `<section class="option" id="opt-${id}"><h1>${t}${rec?'<span class="tag">Recommended</span>':''}</h1><p class="sub">${sub} Size caps are today's caps; no new limit is added.</p>
+  ${['image','video'].map(k => `<div class="row-title">${k==='image'?'Image (artwork poster)':'Hero video'}</div><div class="grid">${states.map(([s,n]) => `<div class="cell"><div class="state">${n}</div>${fn(k,s)}</div>`).join('')}</div>`).join('')}</section>`).join('');
+</script>
+</body>
+</html>

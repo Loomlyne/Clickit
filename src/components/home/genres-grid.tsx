@@ -2,10 +2,11 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getCategories } from '@/lib/queries'
 import { getAppConfig } from '@/lib/config'
+import { DEFAULT_GENRE_HEX } from '@/lib/brand-colors'
 import { SectionHeader } from '@/components/primitives/section-header'
 import { ScrollReveal } from '@/components/primitives/scroll-reveal'
 
-const DEFAULT_COLOR = '#2C3569'
+const DEFAULT_COLOR = DEFAULT_GENRE_HEX
 
 export async function GenresGrid() {
   const [categories, config, locale, t] = await Promise.all([

@@ -10,9 +10,14 @@ buckets `show-artwork`, `site-assets` and `avatars`.
   serve Supabase only.
 - Range requests (206), conditional requests (304), `X-Media-Source: r2|supabase`.
 - `Cache-Control` is decided from the URL only (stored R2 values are ignored): one year
-  immutable when the URL carries `?v=`, one day plus a week stale-while-revalidate without it.
+  immutable only when the URL carries a non-empty `?v=` stamp (variants included), else `public, max-age=3600`.
+- `?w=640|1280|1920` serves the AVIF or WebP variant from R2 key
+  `_v/<w>/<avif|webp>/<bucket>/<key>` chosen from `Accept` (avif, then webp), falls back
+  to the original, and adds `Vary: Accept`. Variants are never read from Supabase.
+  `/_v/...` cannot be requested directly (404). If-Match / If-Unmodified-Since
+  failures answer 412; cache validators answer 304.
 - Only the `v` query param is forwarded to Supabase. Edge cache of the Supabase fetch:
-  2xx one day, 404 one minute, other errors not cached. 412 for failed If-Match/If-Unmodified-Since.
+  2xx one day, 404 one minute, other errors not cached.
 - `X-Content-Type-Options: nosniff` and `Content-Security-Policy: default-src 'none';
   style-src 'unsafe-inline'; sandbox` on every response (SVG cannot run script).
 - `/healthz` answers `ok`.

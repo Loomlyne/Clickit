@@ -40,7 +40,6 @@ function loadEnvFile(path) {
 
 const envCandidates = [
   resolve(root, '.env.local'),
-  resolve(root, '.env.vercel.production'),
 ]
 let env = {}
 for (const path of envCandidates) {

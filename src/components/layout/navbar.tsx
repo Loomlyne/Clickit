@@ -4,12 +4,17 @@ import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { Link, usePathname } from '@/i18n/navigation'
-import { useLenis } from 'lenis/react'
 import { cn } from '@/lib/utils'
 import { AuthSection } from './auth-section'
 import { MobileNav } from './mobile-nav'
 import { liveNavHref, liveNavIsExternal } from './nav-links'
 import { pickLocalized, type Locale } from '@/lib/locale'
+import {
+  NAV_SCROLLED_Y,
+  isProgrammaticScroll,
+  nextNavHidden,
+  subscribeNavScroll,
+} from '@/lib/nav-scroll'
 
 interface NavbarProps {
   initialUser?: { id: string; email: string } | null
@@ -39,31 +44,34 @@ export function Navbar({
     !isMinimal &&
     (pathname === '/portfolio' || pathname === '' || pathname.startsWith('/auth'))
 
-  // Direction-aware show/hide via Lenis. Hide on scroll down, show on scroll up.
-  // Landing pages keep the nav pinned — hiding it reveals body bg behind the hero.
-  useLenis(({ scroll }) => {
-    const y = scroll
-    const delta = y - lastScrollY.current
-    setScrolled(y > 24)
-    if (isLanding) {
-      setHidden(false)
-    } else if (y < 80) {
-      setHidden(false)
-    } else if (delta > 4) {
-      setHidden(true)
-    } else if (delta < -4) {
-      setHidden(false)
-    }
-    lastScrollY.current = y
-  })
-
-  // Sync once on mount (Lenis only fires on real scroll events)
+  // Direction-aware show/hide on native scroll (rules in nextNavHidden).
+  // Landing pages keep the nav pinned — hiding it reveals body bg behind the
+  // hero. One passive listener, at most one update per frame.
   useEffect(() => {
+    const unsubscribe = subscribeNavScroll(window, (y) => {
+      const lastY = lastScrollY.current
+      const programmatic = isProgrammaticScroll()
+      lastScrollY.current = y
+      setScrolled(y > NAV_SCROLLED_Y)
+      setHidden((hidden) =>
+        nextNavHidden({
+          y,
+          lastY,
+          hidden,
+          isLanding,
+          viewportHeight: window.innerHeight,
+          programmatic,
+        })
+      )
+    })
+    // Sync once on mount (restored or mid-page loads fire no scroll event);
+    // only the position, so a mid-page reload does not start hidden.
     // Browser-only read after hydration (SSR must render unscrolled), so it cannot be derived in render.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setScrolled(window.scrollY > 24)
+    setScrolled(window.scrollY > NAV_SCROLLED_Y)
     lastScrollY.current = window.scrollY
-  }, [])
+    return unsubscribe
+  }, [isLanding])
 
   const navLinkClass = (active: boolean) =>
     cn(
@@ -87,7 +95,7 @@ export function Navbar({
         'transition-[transform,background-color,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform',
         hidden ? '-translate-y-full' : 'translate-y-0',
         isMinimal &&
-          'border-[var(--line)] bg-[rgba(10,10,10,0.96)] backdrop-blur-[18px]',
+          'border-[var(--line)] bg-[var(--scrim-nav)] backdrop-blur-[18px]',
         !isMinimal &&
           isLanding &&
           !scrolled &&
@@ -95,11 +103,11 @@ export function Navbar({
         !isMinimal &&
           isLanding &&
           scrolled &&
-          'border-[var(--line)] bg-[rgba(10,10,10,0.96)]',
+          'border-[var(--line)] bg-[var(--scrim-nav)]',
         !isMinimal &&
           !isLanding &&
-          'border-[var(--line)] bg-[linear-gradient(180deg,rgba(10,10,10,0.95),rgba(10,10,10,0.65))]',
-        !isMinimal && !isLanding && scrolled && 'bg-[rgba(10,10,10,0.96)]'
+          'border-[var(--line)] bg-[image:var(--gradient-nav-fade)]',
+        !isMinimal && !isLanding && scrolled && 'bg-[var(--scrim-nav)]'
       )}
       style={{
         WebkitBackdropFilter:
@@ -146,8 +154,8 @@ export function Navbar({
           const inner = (
             <>
               <span className="relative flex size-2 shrink-0" aria-hidden>
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" />
-                <span className="relative inline-flex size-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-live-dot opacity-75 motion-reduce:animate-none" />
+                <span className="relative inline-flex size-2 rounded-full bg-live-dot shadow-live-dot" />
               </span>
               {liveLabel}
             </>
@@ -180,8 +188,8 @@ export function Navbar({
             const inner = (
               <>
                 <span className="relative flex size-2 shrink-0" aria-hidden>
-                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75 motion-reduce:animate-none" />
-                  <span className="relative inline-flex size-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-live-dot opacity-75 motion-reduce:animate-none" />
+                  <span className="relative inline-flex size-2 rounded-full bg-live-dot shadow-live-dot" />
                 </span>
                 {liveLabel}
               </>

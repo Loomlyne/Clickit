@@ -17,6 +17,8 @@ interface HeroSlideProps {
   hasWatched?: boolean
   isMobile?: boolean
   reducedMotion?: boolean
+  /** Only the first slide's backdrop is fetched at high priority (LCP). */
+  priority?: boolean
   onContentHoverChange?: (isHovering: boolean) => void
 }
 
@@ -27,6 +29,7 @@ export function HeroSlide({
   hasWatched = false,
   isMobile,
   reducedMotion,
+  priority = false,
   onContentHoverChange,
 }: HeroSlideProps) {
   const t = useTranslations('home')
@@ -49,6 +52,7 @@ export function HeroSlide({
         isMobile={isMobile}
         reducedMotion={reducedMotion}
         isActive={isActive}
+        priority={priority}
       />
 
       {/* Scrim — matches handoff: left vignette + bottom fade */}
@@ -56,7 +60,7 @@ export function HeroSlide({
         className="pointer-events-none absolute inset-0"
         style={{
           background: `
-            linear-gradient(90deg, rgba(10,10,10,0.9) 0%, rgba(10,10,10,0.5) 40%, transparent 70%),
+            linear-gradient(90deg, rgb(var(--ink-legacy-rgb) / 0.9) 0%, rgb(var(--ink-legacy-rgb) / 0.5) 40%, transparent 70%),
             linear-gradient(180deg, transparent 40%, var(--bg-0) 98%)
           `,
         }}

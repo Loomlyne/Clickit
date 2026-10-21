@@ -31,17 +31,15 @@ export default async function WatchPage({
   const categorySlug = params?.category?.trim() || null
   const locale = (await getLocale()) as Locale
 
+  // One wave: nothing below needs the user, so the auth round trip no longer
+  // holds back the catalog queries. Only the first-episode map needs the
+  // featured ids, so it chains off that one promise inside the wave.
+  const featuredPromise = getFeaturedShows(locale)
   const [
     {
       data: { user },
     },
     featured,
-  ] = await Promise.all([supabase.auth.getUser(), getFeaturedShows(locale)])
-  const userId = user?.id ?? null
-
-  // Stage 2: everything else in parallel, including first-episode map which
-  // now runs alongside the heavy catalog queries instead of after them
-  const [
     streaming,
     comingSoon,
     shorts,
@@ -51,6 +49,8 @@ export default async function WatchPage({
     firstEpisodeMap,
     t,
   ] = await Promise.all([
+    supabase.auth.getUser(),
+    featuredPromise,
     getStreamingShows(locale),
     getComingSoonShows(locale),
     getShortsForBrowse(),
@@ -59,9 +59,12 @@ export default async function WatchPage({
     categorySlug
       ? getCategoryRailBySlug(categorySlug, locale)
       : Promise.resolve(null),
-    getFirstEpisodesForShows(featured.map((s) => s.id)),
+    featuredPromise.then((shows) =>
+      getFirstEpisodesForShows(shows.map((s) => s.id))
+    ),
     getTranslations('watch'),
   ])
+  const userId = user?.id ?? null
 
   if (streaming.length === 0 && comingSoon.length === 0) {
     redirect({ href: '/portfolio', locale })
@@ -127,7 +130,7 @@ export default async function WatchPage({
 
       {activeCategory && (
         <section className="px-4 pt-6 sm:px-10">
-          <div className="flex flex-col gap-3 rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 rounded-card border border-[var(--line)] bg-[var(--bg-1)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               {activeCategory.color && (
                 <span
@@ -166,7 +169,7 @@ export default async function WatchPage({
 
       {categorySlug && !activeCategory && (
         <section className="px-4 pt-8 sm:px-10">
-          <div className="rounded-[12px] border border-[var(--line)] bg-[var(--bg-1)] px-5 py-6 text-center">
+          <div className="rounded-card border border-[var(--line)] bg-[var(--bg-1)] px-5 py-6 text-center">
             <div className="mono mb-2 text-[var(--text-mute)]">
               {t('categoryNotFound')}
             </div>

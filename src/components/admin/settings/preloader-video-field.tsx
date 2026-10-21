@@ -5,13 +5,11 @@ import { useTranslations } from 'next-intl'
 import { Upload, Loader2, Trash2, Film } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import {
-  createPreloaderVideoUpload,
-  removePreloaderVideo,
-  savePreloaderVideoUpload,
-} from '@/app/[locale]/admin/actions'
-import { createClient as createBrowserSupabaseClient } from '@/lib/supabase/client'
+import { finalizePreloaderVideoUpload, removePreloaderVideo } from '@/app/[locale]/admin/actions'
+import { UPLOAD_MESSAGES, uploadVideoDirect, type UploadProgress } from '@/lib/browser-upload'
+import { UploadStatus, notifyUploadError } from '@/components/admin/upload-status'
 import { resolveSupabaseVideoUrl } from '@/lib/supabase-media'
+import { useSharedRowVersion } from '@/components/admin/row-version'
 
 const DEFAULT_PRELOADER_SRC = '/brand/clickit-preloader.mp4'
 
@@ -25,7 +23,9 @@ export function PreloaderVideoField({
   const resolvedCurrentUrl = resolveSupabaseVideoUrl(currentUrl) ?? currentUrl
   const [url, setUrl] = useState<string | null>(resolvedCurrentUrl)
   const [busy, setBusy] = useState(false)
+  const [progress, setProgress] = useState<UploadProgress | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const version = useSharedRowVersion()
 
   const previewSrc = url ?? DEFAULT_PRELOADER_SRC
 
@@ -40,43 +40,38 @@ export function PreloaderVideoField({
       toast.warning(t('preloaderVideoSizeWarning'))
     }
 
+    void uploadFile(file)
+  }
+
+  // Browser -> R2 directly (02-18), then finalize checks size, fast-start and the type.
+  async function uploadFile(file: File) {
     setBusy(true)
+    setProgress({ fileName: file.name, fileSize: file.size, percent: 0, phase: 'uploading', variantCount: 0 })
     try {
-      const uploadTarget = await createPreloaderVideoUpload({
-        name: file.name,
-        size: file.size,
-        type: file.type,
+      const result = await uploadVideoDirect({
+        file,
+        kind: 'preloader-video',
+        finalize: async ({ key }) => {
+          const expected = version.expected()
+          const r = await finalizePreloaderVideoUpload({ key, expectedUpdatedAt: expected })
+          if (r.success) version.saved(expected, r.updatedAt)
+          return r
+        },
+        onProgress: setProgress,
       })
-      if (!uploadTarget.success || !uploadTarget.data) {
-        toast.error(uploadTarget.error ?? t('uploadFailed'))
+      if (!result.ok) {
+        notifyUploadError(result.error, {
+          retry: () => void uploadFile(file),
+          tooLargeMessage: t('preloaderVideoTooLarge'),
+        })
         return
       }
-
-      const supabase = createBrowserSupabaseClient()
-      const { error: uploadError } = await supabase.storage
-        .from('site-assets')
-        .uploadToSignedUrl(
-          uploadTarget.data.path,
-          uploadTarget.data.token,
-          file,
-          { contentType: 'video/mp4', cacheControl: '31536000', upsert: true }
-        )
-      if (uploadError) {
-        toast.error(uploadError.message)
-        return
-      }
-
-      const result = await savePreloaderVideoUpload(uploadTarget.data.path)
-      if (!result.success || !result.data) {
-        toast.error(result.error ?? t('uploadFailed'))
-        return
-      }
-
-      setUrl(resolveSupabaseVideoUrl(result.data) ?? result.data)
+      setUrl(resolveSupabaseVideoUrl(result.url) ?? result.url)
       toast.success(t('preloaderVideoUploaded'))
     } catch {
       toast.error(t('uploadFailed'))
     } finally {
+      setProgress(null)
       setBusy(false)
       if (inputRef.current) inputRef.current.value = ''
     }
@@ -85,11 +80,13 @@ export function PreloaderVideoField({
   async function onRemove() {
     setBusy(true)
     try {
-      const result = await removePreloaderVideo()
+      const expected = version.expected()
+      const result = await removePreloaderVideo(expected)
       if (!result.success) {
         toast.error(result.error ?? t('removeFailed'))
         return
       }
+      version.saved(expected, result.updatedAt)
       setUrl(null)
       toast.success(t('preloaderVideoRemoved'))
     } catch {
@@ -130,7 +127,9 @@ export function PreloaderVideoField({
         </Button>
       ) : null}
 
-      {busy ? (
+      {progress ? (
+        <UploadStatus progress={progress} kind="video" />
+      ) : busy ? (
         <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] p-6">
           <Loader2 className="text-muted-foreground size-5 animate-spin" />
           <p className="text-muted-foreground text-xs">
@@ -146,6 +145,7 @@ export function PreloaderVideoField({
           <p className="text-muted-foreground text-center text-[11px]">
             {t('preloaderVideoHint')}
           </p>
+          <p className="text-muted-foreground text-center text-[11px]">{UPLOAD_MESSAGES.videoHint}</p>
           <input
             ref={inputRef}
             type="file"

@@ -89,7 +89,34 @@ Plans:
   5. CPU per page is measured on Workers Free and recorded. Deploys run with local wrangler from the control session after `npm run gate:local` passes and Koss says Ship; `wrangler whoami` shows the ClickitStory account first. No Vercel artefact remains in the repo.
 **Owner-gated**: [OWNER] create the R2 and D1 resources in the ClickitStory account (never the default wrangler login); [OWNER] set the Worker secrets and the Turnstile keys; [OWNER] run the media copy; [OWNER] if pages fail on Free, decide on Workers Paid ($5/mo); [OWNER] UAT on workers.dev. (Media custom domain and Supabase CAPTCHA moved to Phase 3; Queue to Phase 5; no GitHub Environment; Image Transformations not used. Signed by Koss 2026-10-20.)
 **Research flag**: done (02-RESEARCH.md, 2026-10-20).
-**Plans**: TBD
+**Phase 6 hand-off**: `src/server/youtube/rate-limit.ts` — replace the `withinRateLimitCore` stand-in with `decideRateLimit` from `src/server/rate-limit-policy.ts` (used by the viewer error report and the YouTube key save).
+**Phase 6 hand-off**: `src/app/api/cron/youtube-recheck/route.ts` — swap the inline `Bearer <CRON_SECRET>` check for `cronAuthOk(header, secret)` from `src/server/cron-auth.ts` (constant time).
+**Phase 6 hand-off**: `src/app/api/cron/youtube-recheck/route.ts` — register the `30 1 * * *` trigger for `/api/cron/youtube-recheck` in `CRON_ROUTES` (`src/server/cron-schedule.ts`) and in `wrangler.jsonc` `triggers.crons` (deployed switched off like the other crons).
+**Plans**: 22 plans (11 waves; run one plan at a time, never two builds at once). Proposed roadmap/requirement edits 1-9 are in 02-CONTEXT.md, not applied until Koss signs them (plan 02-05).
+
+Plans:
+- [x] 02-01-PLAN.md — W1: Local spike: 01.1 precondition, [OWNER] package check, Next 16.4.2 + OpenNext 1.20.12 upgrade, base wrangler/OpenNext config, account guard, proxy.ts preview check, bundle/startup, cron URL
+- [x] 02-02-PLAN.md — W2: Runbook upkeep and the R2 CORS rule builder
+- [x] 02-03-PLAN.md — W2: Media Worker clickit-media (Range/206, 304, ETag, AVIF/WebP negotiation, original fallback, allowlist, SVG CSP)
+- [x] 02-04-PLAN.md — W2: Pure security helpers: constant-time cron auth, cron map, CF-Connecting-IP, fail-closed rate limit, Turnstile siteverify
+- [x] 02-05-PLAN.md — W1: [OWNER] Mockups signed (Turnstile placement, upload states) + roadmap edits 1-9 signed and applied as a planning note
+- [x] 02-06-PLAN.md — W3: Build targets, stamp and deploy guard, cf:* scripts, .env.example
+- [x] 02-07-PLAN.md — W3: Worker port: scheduled() to cron routes, bindings accessor, _headers, site-url without Vercel fallbacks, check scripts
+- [x] 02-08-PLAN.md — W3: Copy script: dry-run report, sharp WebP/AVIF variants, faststart remux, idempotency, checksum reports, verify-every-object script
+- [x] 02-09-PLAN.md — W3: Custom next/image loader and media-origin rules, next.config images
+- [ ] 02-10-PLAN.md — W4: Remote spike: [OWNER] account resources, [CONTROL] first workers.dev deploy, secrets and dashboards, early CPU sample
+- [x] 02-11-PLAN.md — W3: Turnstile server side, fail-closed limiter, captchaToken on auth actions, BotID removed from server and proxy
+- [x] 02-12-PLAN.md — W4: Upload infrastructure: kinds, magic bytes, aws4fetch presign, finalize with delete-on-failure
+- [x] 02-13-PLAN.md — W4: Turnstile widget on sign-in, sign-up, reset, contact, newsletter as signed; BotID client removed
+- [x] 02-14-PLAN.md — W5: Vercel code removal, CSP builder, Cloudflare Web Analytics beacon, no-vercel test
+- [x] 02-15-PLAN.md — W5: Image finalize core and actions (artwork, site image, social icon, cast, avatar)
+- [x] 02-16-PLAN.md — W6: Video finalize on R2 (hero, preloader, show) with fast-start and audio checks
+- [x] 02-17-PLAN.md — W6: Browser image uploads direct to R2 with WebP variants and the signed UI
+- [x] 02-18-PLAN.md — W7: Browser video uploads direct to R2 with the signed UI
+- [x] 02-19-PLAN.md — W8: Old upload actions, sharp, S3 SDK and r2-media removed from request paths; bodySizeLimit 2mb
+- [ ] 02-20-PLAN.md — W9: [OWNER+CONTROL] Code-complete deploy, media Worker deploy, copy, verify, flag-on workers.dev build
+- [ ] 02-21-PLAN.md — W10: [OWNER] Per-route CPU on Workers Free, 02-CPU-REPORT.md, stop rule with priced question
+- [ ] 02-22-PLAN.md — W11: Gate and coverage, [OWNER] UAT (local preview write paths; workers.dev reads, sign-in, one approved draft write), teardown
 **UI hint**: yes
 
 ### Phase 3: Production Cutover
@@ -122,17 +149,35 @@ Plans:
 - [ ] 03-13-PLAN.md — W13 [ops]: retarget www in place, Vercel deletion or branch B, signed rewording applied, final evidence (Steps 53-56)
 
 ### Phase 4: Design System Truth
-**Goal**: One signed design truth (LBC, #ffcc00, #0a0a0a, 8px radius) exists in tokens, docs and a Claude Design canvas before any new viewer, admin or email screen is coded.
+**Goal**: One signed design truth (LBC, #ffcc00, #090909, 8px field/base radius, pill controls) exists in tokens, docs and a Claude Design canvas before any new viewer, admin or email screen is coded.
 **Depends on**: Phase 3 (the design work itself can start in parallel with Phases 2-3; code ships after the cutover)
 **Requirements**: DS-01, DS-02, DS-03, DS-04
 **Success Criteria** (what must be TRUE):
-  1. DESIGN.md and `/design-system` show the live look: LBC, #ffcc00 accent, #0a0a0a surfaces and an 8px base radius. No indigo-era values remain.
+  1. DESIGN.md and `/admin/design-system` show the live look: LBC, #ffcc00 accent, #090909 surfaces, an 8px field/base radius and pill controls. No indigo-era values remain.
   2. A search of `src/` finds no hard-coded hex colours or arbitrary radii outside the token files, and one brand-colour map serves the whole app. The live site looks unchanged.
   3. The Claude Design canvas shows foundations, viewer screens (including the OTP sign-in, the RTL treatment and an RMF-compliant player), admin screens (playlist import preview, inbox) and the email templates. Koss has signed it.
-  4. A signed-out visitor or a non-admin viewer opening `/design-system` is refused.
+  4. A signed-out visitor or a non-admin viewer opening `/admin/design-system` is refused.
 **Owner-gated**: [OWNER] sign the canvas (it blocks UI build in Phases 5-7); [OWNER] Ship.
-**Plans**: TBD
+**Plans**: 14 plans (10 waves). Owner-visible and codemod plans open with a 04-GATE.md answer check (stop on any B; Q7 must read C); 04-09 and 04-13 carry the codemod answer check and 04-10 to 04-12 inherit it through depends_on. Same-wave plans run one after another in this one branch. Every wave closes with a heavy-locked gate:local.
 **UI hint**: yes
+
+Plans:
+- [x] 04-01-PLAN.md — W1: [Q1/Q2/Q3] merge main; named radius/shadow/status + exact-value tokens; design-truth.ts; email-tokens.ts (Q7 = C); cn(); pin tests
+- [x] 04-02-PLAN.md — W2: ESLint rule clickit/no-raw-design-values (warn) + fixtures + baseline inventory
+- [x] 04-03-PLAN.md — W3: [Q4] one brand map (D-04); consumers; parity test; gate (W1-W3)
+- [x] 04-04-PLAN.md — W4: [Q1/Q2/Q5] admin-only /admin/design-system page, sidebar link, EN+AR copy, access pins
+- [x] 04-05-PLAN.md — W4: [Q1/Q3] D-03 snaps (select at /98, toaster, /portfolio CTA) + D-01 literals
+- [x] 04-07-PLAN.md — W4: [Q1/Q2/Q6/Q8, Q7=C, Q9=yes; orchestrator] canvas spike + Foundations + Viewer boards
+- [x] 04-06-PLAN.md — W5: [Q1/Q2/Q4/Q5, Q7=C] DESIGN.md (+ two-scheme email tokens) + parity test; wording; 04-P6-ADDENDUM.md; gate (W4)
+- [x] 04-08-PLAN.md — W5: [orchestrator] canvas Admin boards + Email boards from Phase 5's signed picture (both schemes)
+- [x] 04-09-PLAN.md — W6: [Q1/Q2] merge main; codemod 1/5 (UI primitives, chrome); gate (W5-W6)
+- [x] 04-10-PLAN.md — W7: codemod 2/5 (show cards, home, browse, series)
+- [x] 04-11-PLAN.md — W7: codemod 3/5 (watch, shorts, landing, support, coming-soon, lib gradients)
+- [x] 04-12-PLAN.md — W8: codemod 4/5 (viewer routes, loading skeletons); gate (W7-W8)
+- [x] 04-13-PLAN.md — W9: [Q1/Q2/Q3] codemod 5/5 (admin + admin.css), rule to error, banned-literal tests, ledger; gate
+- [x] 04-14-PLAN.md — W10: [orchestrator] reviewer pass on board legends, [OWNER] four signatures (D-08); final gate
+
+Deferred (not a Phase 4 plan): After Phases 5–6 ship, a separate job moves the proven Clickit patterns into Loomlyne/ui-system as general components, its own repo PR (Koss, 2026-10-20 18:45 CET): playlist import preview, 6-digit code boxes, up-next bar, key field with the right-side eye, status chips, skeletons, the admin TOTP page. Not a Phase 4 plan; the UI System repo is not changed in Phase 4.
 
 ### Phase 5: Accounts and Email
 **Goal**: Only signed-in viewers get past the landing and legal pages. Viewers can join or sign in with a 6-digit email code or a password. Both admins work under their own TOTP-protected accounts, and every auth and app email arrives branded from `Clickit Story <no-reply@clickitstory.ae>`, once, in the viewer's language.
@@ -145,21 +190,50 @@ Plans:
   4. A new viewer gets exactly one welcome email. A support message produces an auto-reply to the sender and an admin copy they can reply to. A newsletter sign-up is active only after the confirmation link is clicked.
   5. A viewer with a show on My List gets one Dubai-evening digest when new episodes publish, can turn it off in the profile, and can unsubscribe with one click from the email. A retried or failed send never duplicates and is retried from the queue.
 **Owner-gated**: [OWNER] set Supabase custom SMTP to Resend, the email templates (Confirm signup and Magic Link included), the OTP expiry and the auth email rate limit; [OWNER] turn on leaked-password protection; [OWNER] insert Nejib's admin row and enrol both TOTP devices; [OWNER] approve each live migration; [OWNER] approve the first emails to real users; [OWNER] Ship.
+**Phase 6 hand-off**: `src/app/[locale]/admin/actions.ts` — swap `requireAdminForYouTube` for `requireAdmin()` (admins table + TOTP at `/{locale}/auth/mfa`; it accepts both admins, so Nejib can import); every YouTube action goes through that one function.
+**Phase 6 hand-off**: `/Users/koss/.clickit-checks/phase06-uat-admin.cjs` (outside the repo) — replaced by `npm run seed:local-admin` (Phase 5), which also applies M2 locally; after Phase 5 lands, local admin pages ask for the TOTP code first.
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 6: YouTube Import and Player
 **Goal**: An admin puts a whole YouTube season on the platform from one playlist link, or adds one episode from one video link. Viewers switching episodes resume where they left off, in a player that follows YouTube's embed rules.
-**Depends on**: Phase 5 (it needs `requireAdmin` and the two-admin audit)
+**Depends on**: Phase 1 and Phase 1.1 only, for execution. Plan gate G8 (Koss, 2026-10-20): Phase 6 runs in parallel with Phases 2-5, with `TODO(phase-N)` seams for the Phase 2 cron/rate-limit pieces, the Phase 4 tokens and the Phase 5 `requireAdmin` (table in 06-00). The live deploy (06-21 on) still waits for the Phase 2-3 Worker, because Vercel is frozen
 **Requirements**: YT-01, YT-02, YT-03, YT-04, YT-05, YT-06, YT-07
 **Success Criteria** (what must be TRUE):
   1. An admin pastes a playlist link and sees every video with its title, thumbnail, duration and status before importing. Private, deleted, non-embeddable and UAE-blocked videos are flagged and excluded. Imported episodes land as drafts. Importing the same playlist again adds nothing.
-  2. An admin adds a single episode from a YouTube link, and an invalid or fake ID is refused by the server. The YouTube API key exists only as a Worker secret, and the old database copy is gone.
+  2. An admin adds a single episode from a YouTube link, and an invalid or fake ID is refused by the server. The YouTube API key is stored only in Supabase Vault (service-role read), an admin can paste or change it in Settings and it works on the next request, and the old plaintext column is gone.
   3. A viewer watches part of episode A, switches to B, then back to A, and each resumes at its own saved position.
   4. Nothing is drawn over the playing video (the autoplay-next card sits off the player). Player chrome and captions follow the site language. A removed or blocked video shows a branded error state.
   5. Reordering episodes never leaves a gap or a duplicate, and a failed reorder shows an error.
-**Owner-gated**: [OWNER] create the restricted YouTube API key and set it as a Worker secret; [OWNER] rotate the old key; [OWNER] approve the migration that removes the DB key column copy; [OWNER] Ship.
-**Plans**: TBD
+**Owner-gated**: [OWNER] create the restricted YouTube API key and paste it in Admin › Settings on live, then Test key; [OWNER] rotate the old key; [OWNER] approve the migration that removes the DB key column copy; [OWNER] Ship.
+**Plans**: 25 plans (11 waves, W0-W10)
+
+Plans:
+- [ ] 06-00-PLAN.md — W0: [BLOCKING] merge origin/main; Phase 1/1.1 present; no workflow applies migrations on push; record Phase 2-5 presence, admin mechanism, waiver; TODO(phase-N) table
+- [ ] 06-01-PLAN.md — W1: migration 1 (expand + Vault key functions); Vault key resolver; rate-limit seam; controller local apply, Vault round trip + types under the lock
+- [ ] 06-02-PLAN.md — W1: pure classifiers (error codes, urls, duration, status, script / needsEnglishTitle)
+- [ ] 06-03-PLAN.md — W1: YouTube API client (header-only key, paging, batching, error mapping) with documented-shape fixtures
+- [ ] 06-04-PLAN.md — W1: pure watch logic (resume, progress gate, ENDED_MODE 'bar' default, player errors, hidden-iframe predicate) and quota/clock helpers
+- [ ] 06-05-PLAN.md — W1: every EN/AR string and the shared YouTubeStatusChip
+- [ ] 06-06-PLAN.md — W2: playlist preview, import commit and single-video verify cores
+- [ ] 06-07-PLAN.md — W2: renumber core and scheduler episode filter
+- [ ] 06-08-PLAN.md — W2: re-check core, Can't-play rule, cron route on main's secret check (schedule: TODO(phase-2))
+- [ ] 06-09-PLAN.md — W2: player plumbing (React-owned hidden wrapper, tracker gated on video id, status map read, viewer error report)
+- [ ] 06-10-PLAN.md — W2: up-next bar (shipped default) and card alternative; branded error card
+- [ ] 06-11-PLAN.md — W2: watch actions without toasts (revert + live region) and static episode list
+- [ ] 06-12-PLAN.md — W2: import preview table and its pure row view
+- [ ] 06-13-PLAN.md — W3: admin Server Action wrappers behind the requireAdminForYouTube seam (import, meta, verify on save, renumber, filtered schedule)
+- [ ] 06-14-PLAN.md — W3: stacked watch shell, resume on switch, up-next bar / error wiring, no Toaster on /watch
+- [ ] 06-15-PLAN.md — W4: single-link add via server action; shorts switch; delete /api/youtube-meta
+- [ ] 06-16-PLAN.md — W4: editable Vault key field (save, •••• last4, Test key); remove the youtube_api_key write path
+- [ ] 06-17-PLAN.md — W4: import side sheet (core, states, success), show-page entry, scheduler for the new drafts
+- [ ] 06-18-PLAN.md — W5: admin arrows, Renumber 1 to N dialog, Can't play / Needs English marks, dashboard panel
+- [ ] 06-19-PLAN.md — W5: remove old key reader and unused strings; ROADMAP Phase 8 drift
+- [ ] 06-20-PLAN.md — W6: gate, hand-over, PR; [OWNER] create key; [OWNER] UAT on the local stack (key pasted in local Settings)
+- [ ] 06-21-PLAN.md — W7: [OWNER] Ship; controller duplicate clear (D-22) then [OWNER] migration 1 on live; [OWNER] approve deploy after the Worker cutover
+- [ ] 06-22-PLAN.md — W8: [OWNER] paste the key in live Settings + Test key; [OWNER] go for one real re-check
+- [ ] 06-23-PLAN.md — W9: contract migration (drop youtube_api_key) in its own branch and PR
+- [ ] 06-24-PLAN.md — W10: [OWNER] Ship the contract PR; [OWNER] approve the live apply; [OWNER] delete the old key
 **UI hint**: yes
 
 ### Phase 7: Product Completeness, Search and Arabic
@@ -186,7 +260,7 @@ Plans:
   2. The repo has no unrendered components, unused queries, duplicate files, starter SVGs or stale Playwright specs. It also has no Vercel artefact: no `vercel.json`, `@vercel/*`, `botid`, `VERCEL_*` fallbacks, `.vercelignore` or `check-cron.sh`. CLAUDE.md, AGENTS.md, MEMORY.md and .hermes.md describe Cloudflare + Supabase.
   3. The live CSP has no wildcard image source, no `supabase.co`, `picsum` or `unsplash` hosts, and no script `unsafe-inline` where it can be avoided. The site still renders and plays.
   4. After Koss approves, Supabase Storage is empty. The live site keeps working, with every media URL on R2.
-**Owner-gated**: [OWNER] close the proof window; [OWNER] approve the contract migrations (drop `admin_user_id` and `youtube_api_key`); [OWNER] empty Supabase Storage; [OWNER] Ship.
+**Owner-gated**: [OWNER] close the proof window; [OWNER] approve the contract migration (drop `admin_user_id`; `youtube_api_key` is dropped in Phase 6); [OWNER] empty Supabase Storage; [OWNER] Ship.
 **Plans**: TBD
 
 ## Progress
@@ -198,10 +272,10 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 |-------|----------------|--------|-----------|
 | 1. Safe Ground | 0/TBD | Not started | - |
 | 1.1. Admin Actions Hardening (INSERTED) | 13/13 | UAT passed, PR open | - |
-| 2. Worker and R2 Media on workers.dev | 0/TBD | Not started | - |
+| 2. Worker and R2 Media on workers.dev | 18/22 | In Progress|  |
 | 3. Production Cutover | 0/13 | Planned | - |
-| 4. Design System Truth | 0/TBD | Not started | - |
+| 4. Design System Truth | 14/14 | UAT pending (PR) |  |
 | 5. Accounts and Email | 0/TBD | Not started | - |
-| 6. YouTube Import and Player | 0/TBD | Not started | - |
+| 6. YouTube Import and Player | 0/25 | Planned | - |
 | 7. Product Completeness, Search and Arabic | 0/TBD | Not started | - |
 | 8. Hardening and Contract Cleanup | 0/TBD | Not started | - |
