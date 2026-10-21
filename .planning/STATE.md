@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-21T14:39:40.293Z"
+last_updated: "2026-10-21T14:44:31.347Z"
 last_activity: 2026-10-21
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 123
-  completed_plans: 81
+  completed_plans: 82
   percent: 33
 ---
 
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 05 (accounts-and-email) — EXECUTING
-Plan: 11 of 42 (05-10 and 05-12 done; 05-11 still open)
+Plan: 12 of 42 (05-10, 05-12 and 05-14 done; 05-11 still open)
 Status: Ready to execute
 Last activity: 2026-10-21
 Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
@@ -89,6 +89,7 @@ Progress: [███████░░░] 68%
 | Phase 05 P09 | 8min | 2 tasks | 7 files |
 | Phase 05 P12 | 35min | 3 tasks | 13 files |
 | Phase 05 P10 | 25min | 2 tasks | 16 files |
+| Phase 05 P14 | 5min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -138,6 +139,7 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-09: db-proof.sh runs supabase/tests/pre_*.sql once just before the first _phase5_ migration
 - [Phase 05]: 05-12: CodeField emits normalised value and clears/refocuses when error changes; password eye is right-0 inside a dir=ltr box (pinned by password-field.test.ts); auth.hidePassword added (Arabic wording for Koss to confirm); formatCountdown re-exports formatClock; ui/switch hand-written on radix-ui
 - [Phase 05]: 05-10: auth templates are sentinels swapped for Go actions after render, locale branch wraps whole documents; production and local sets differ only in the logo URL; MAIL-01/AUTH-02/AUTH-04 stay Pending until 05-35/05-38
+- [Phase 05]: 05-14: M2 and M3 staged in supabase/pending and proven by db-proof (pending_applied=2); 05-41 copies them byte for byte, 05-37 applies both in one approval
 
 ### Pending Todos
 
@@ -177,8 +179,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-21T14:39:36.338Z
-Stopped at: Completed 05-10-PLAN.md
+Last session: 2026-10-21T14:44:26.130Z
+Stopped at: Completed 05-14-PLAN.md
 Phase 2 last session: 2026-10-20T10:45:11.285Z
 Phase 2 stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above is the controller's)
 Resume file: None
