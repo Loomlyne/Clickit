@@ -96,6 +96,21 @@ test('malformed lines are counted and skipped, not fatal', () => {
   assert.equal(groups[0].cpuP50, 5)
 })
 
+test('pretty-printed multi-line events (wrangler prints JSON with a 4-space indent) are read', () => {
+  const pretty = (ev: Ev) => JSON.stringify(JSON.parse(line(ev)), null, 4)
+  const text = [
+    pretty({ url: 'https://x.dev/en/about', cpuTime: 3 }),
+    '{broken',
+    pretty({ url: 'https://x.dev/en/about', cpuTime: 9, outcome: 'exceededCpu' }),
+  ].join('\n')
+  const { groups, malformed, total } = summarizeTail(text)
+  assert.equal(total, 2)
+  assert.equal(malformed, 1)
+  assert.equal(groups[0].ok, 1)
+  assert.equal(groups[0].exceededCpu, 1)
+  assert.equal(groups[0].cpuP50, 3)
+})
+
 test('filters: version and since/until window', () => {
   const t0 = Date.parse('2026-10-21T15:00:00Z')
   const lines = [
