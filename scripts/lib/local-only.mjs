@@ -6,6 +6,8 @@
 //   resolveM2Source(repoRoot)          landed M2 migration, else supabase/pending
 //   localDbExecArgs(sqlPath)           docker exec argv for psql in supabase_db_Clickit
 //   migrationVersionOf(sqlPath)        { version, name } for a migrations file, else null
+//   runSupabaseCli(args, opts)         `supabase <args>` with the first CLI on PATH that runs
+import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -126,4 +128,56 @@ export function migrationVersionOf(sqlPath) {
   if (path.basename(path.dirname(sqlPath)) !== 'migrations') return null
   const m = /^(\d{14})_([a-z0-9_]+)\.sql$/.exec(path.basename(sqlPath))
   return m ? { version: m[1], name: m[2] } : null
+}
+
+/**
+ * Every executable `supabase` on PATH, in PATH order. `npm run` puts
+ * node_modules/.bin first; on some macOS versions the OS kills that npm-installed
+ * binary (SIGKILL, exit 137), so callers fall through to the next one (Homebrew).
+ */
+export function supabaseCliCandidates(pathEnv = process.env.PATH ?? '', { isExecutable = isExecutableFile } = {}) {
+  const seen = new Set()
+  const out = []
+  for (const dir of pathEnv.split(path.delimiter)) {
+    if (!dir) continue
+    const bin = path.join(dir, 'supabase')
+    if (seen.has(bin)) continue
+    seen.add(bin)
+    if (isExecutable(bin)) out.push(bin)
+  }
+  return out
+}
+
+function isExecutableFile(p) {
+  try {
+    fs.accessSync(p, fs.constants.X_OK)
+    return fs.statSync(p).isFile()
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Runs `supabase <args>` with the first CLI on PATH whose `--version` probe
+ * succeeds. The npm shim in node_modules/.bin exits 1 when the OS kills the
+ * binary it wraps, so a failed probe (any exit) moves on to the next CLI; the
+ * real command then runs once, and its own error (stack not running) is thrown.
+ */
+export function runSupabaseCli(args, opts = {}, { exec = execFileSync, candidates = supabaseCliCandidates() } = {}) {
+  const usable = candidates.find((bin) => {
+    try {
+      exec(bin, ['--version'], { stdio: 'ignore', timeout: 20000 })
+      return true
+    } catch {
+      return false
+    }
+  })
+  if (!usable) {
+    throw new Error(
+      candidates.length === 0
+        ? 'supabase CLI not found on PATH'
+        : `no working supabase CLI on PATH (tried ${candidates.join(', ')}); install it with: brew install supabase/tap/supabase`
+    )
+  }
+  return exec(usable, args, opts)
 }

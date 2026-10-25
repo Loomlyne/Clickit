@@ -50,6 +50,7 @@ import {
   localDbExecArgs,
   migrationVersionOf,
   resolveM2Source,
+  runSupabaseCli,
   writePrivateEnvFile,
 } from './lib/local-only.mjs'
 import { totp } from './lib/totp.mjs'
@@ -73,7 +74,7 @@ function check(result, what) {
 function readLocalStatus() {
   let raw
   try {
-    raw = execFileSync('supabase', ['status', '-o', 'env'], {
+    raw = runSupabaseCli(['status', '-o', 'env'], {
       cwd: REPO_ROOT,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],

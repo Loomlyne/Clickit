@@ -16,6 +16,8 @@ import {
   localDbExecArgs,
   migrationVersionOf,
   resolveM2Source,
+  runSupabaseCli,
+  supabaseCliCandidates,
   writePrivateEnvFile,
 } from '../../scripts/lib/local-only.mjs'
 
@@ -293,5 +295,60 @@ test('a changed subject makes that subject row not ok', () => {
   assert.deepEqual(
     bad.map((r) => r.key),
     ['mailer_subjects_magic_link'],
+  )
+})
+
+// ---------------------------------------------------------------------------
+// supabaseCliCandidates / runSupabaseCli (macOS kills the npm CLI binary, rc 137)
+
+test('supabaseCliCandidates keeps PATH order, drops missing and duplicate dirs', () => {
+  const have = new Set(['/repo/node_modules/.bin/supabase', '/opt/homebrew/bin/supabase'])
+  const got = supabaseCliCandidates('/repo/node_modules/.bin::/usr/bin:/opt/homebrew/bin:/opt/homebrew/bin', {
+    isExecutable: (p: string) => have.has(p),
+  })
+  assert.deepEqual(got, ['/repo/node_modules/.bin/supabase', '/opt/homebrew/bin/supabase'])
+})
+
+const probeExec =
+  (broken: Set<string>, calls: string[], result = 'API_URL=http://127.0.0.1:54321\n') =>
+  (bin: string, args: string[]) => {
+    calls.push(`${bin} ${args.join(' ')}`)
+    if (broken.has(bin)) throw Object.assign(new Error('killed'), { status: 1 })
+    if (args[0] === '--version') return '2.121.0'
+    return result
+  }
+
+test('runSupabaseCli skips a CLI whose --version probe fails (npm shim exits 1 when the OS kills it)', () => {
+  const calls: string[] = []
+  const out = runSupabaseCli(['status', '-o', 'env'], {}, {
+    candidates: ['/npm/supabase', '/brew/supabase'],
+    exec: probeExec(new Set(['/npm/supabase']), calls),
+  })
+  assert.equal(out, 'API_URL=http://127.0.0.1:54321\n')
+  assert.deepEqual(calls, ['/npm/supabase --version', '/brew/supabase --version', '/brew/supabase status -o env'])
+})
+
+test('runSupabaseCli uses the first working CLI and throws its real error once', () => {
+  const calls: string[] = []
+  assert.throws(
+    () =>
+      runSupabaseCli(['status'], {}, {
+        candidates: ['/npm/supabase', '/brew/supabase'],
+        exec: (bin: string, args: string[]) => {
+          calls.push(`${bin} ${args.join(' ')}`)
+          if (args[0] === '--version') return 'ok'
+          throw Object.assign(new Error('not running'), { status: 1 })
+        },
+      }),
+    /not running/
+  )
+  assert.deepEqual(calls, ['/npm/supabase --version', '/npm/supabase status'])
+})
+
+test('runSupabaseCli fails clearly when no CLI is usable', () => {
+  assert.throws(() => runSupabaseCli(['status'], {}, { candidates: [] }), /not found on PATH/)
+  assert.throws(
+    () => runSupabaseCli(['status'], {}, { candidates: ['/a/supabase'], exec: probeExec(new Set(['/a/supabase']), []) }),
+    /no working supabase CLI on PATH \(tried \/a\/supabase\); install it with: brew install/
   )
 })
