@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+/* Planning docs quote class names as examples (04-RESEARCH has `shadow-[var(--shadow-*)]`); scanning them emits invalid CSS. */
+@source not '../../.planning';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 

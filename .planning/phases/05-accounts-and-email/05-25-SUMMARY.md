@@ -113,3 +113,24 @@ None beyond the register. T-05-25-01 (getAdminStatus + enrolAllowed on every act
 
 - FOUND: src/server/auth/mfa-core.ts, tests/unit/mfa-flow.test.ts, src/lib/audit.ts, src/app/[locale]/(viewer)/auth/mfa/page.tsx, src/app/[locale]/(viewer)/auth/mfa/actions.ts, src/components/auth/mfa-enrol.tsx, src/components/auth/mfa-verify.tsx
 - FOUND commits: 96b9ee09, 91481819, 2962e243, 82f85779
+
+## Local browser check (orchestrator, 2026-10-25 ~23:30 CET)
+
+Headless Chromium against `npm run dev` on the shared stack (after the controller-approved stop/start that reloaded Phase 5 auth config). Credentials and the TOTP secret came only from `/Users/koss/.clickit-checks/local-admin.env`; the script printed no secret.
+
+| Step | Result |
+|---|---|
+| Signed out, open `/en/admin` | lands on `/en/auth?next=%2Fadmin` |
+| Sign in as the seeded admin (Turnstile test key) | lands on `/en/auth/mfa?next=%2Fadmin`, title "Enter your authenticator code" |
+| Type the current TOTP code | lands on `/en/admin`; sidebar (Shows … Design system) and "UAT Admin" visible |
+| Reload `/en/admin` | renders, 0 console errors |
+| Signed out, open `/en|ar/auth/mfa` | streaming redirect to `/<locale>/auth?next=%2Fadmin` |
+
+Two fixes found by this check (commit below):
+
+1. **Crash on first arrival after the code.** `router.replace(result.destination)` + `router.refresh()` from `/auth/mfa` into the admin tree, right after the session became aal2, threw React `removeChild` and showed "This page couldn't load" until a reload. `mfa-verify.tsx` (success) and `mfa-enrol.tsx` (`openAdmin`) now do a full load: `window.location.replace(getPathname({ href, locale }))`. A unit test pins it (`mfa-flow.test.ts`, 18 pass).
+2. **Dev server 500 on every page (pre-existing, also on main).** Tailwind v4 scans tracked files, and `.planning/phases/04-design-system-truth/04-RESEARCH.md` quotes `shadow-[var(--shadow-*)]`, which emits invalid CSS in `next dev`. `src/styles/globals.css` now has `@source not '../../.planning';`.
+
+Local setup note for UAT (05-33): `.env.local` (gitignored, mode 600) needs the local stack URL/anon/service keys from `supabase status -o env`, Turnstile test keys `1x00000000000000000000AA` / `1x0000000000000000000000000000000AA`, `LOCAL_DEV=1`, `NEXT_PUBLIC_SITE_URL=http://localhost:3000` and `CSP_UPGRADE_INSECURE=false`. Without the last one the CSP blocks browser calls to `http://127.0.0.1:55321` (profile, `am_i_admin`).
+
+Still not verified: the Arabic code page end to end, a real authenticator app scanning the QR, the second-authenticator path, wrong-code and rate-limit messages.

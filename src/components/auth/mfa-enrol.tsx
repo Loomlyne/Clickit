@@ -1,7 +1,7 @@
 'use client'
 
 import { CheckCircle2 } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { startEnrol, verifyEnrol, type MfaActionError } from '@/app/[locale]/(viewer)/auth/mfa/actions'
@@ -10,7 +10,7 @@ import { AuthCardPage } from '@/components/auth/auth-card-page'
 import { CodeField } from '@/components/auth/code-field'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useRouter } from '@/i18n/navigation'
+import { getPathname } from '@/i18n/navigation'
 import { CODE_LENGTH } from '@/lib/auth-code'
 
 type Step = 'scan' | 'code' | 'second' | 'done'
@@ -26,8 +26,8 @@ const COPIED_MS = 2000
  */
 export function MfaEnrol({ next }: { next: string }) {
   const t = useTranslations('auth')
+  const locale = useLocale()
   const tCommon = useTranslations('common')
-  const router = useRouter()
 
   const [step, setStep] = useState<Step>('scan')
   // 1 = first authenticator, 2 = the optional second one (D-20).
@@ -111,8 +111,8 @@ export function MfaEnrol({ next }: { next: string }) {
   }
 
   function openAdmin() {
-    router.replace(next)
-    router.refresh()
+    // Full load into the admin tree after the aal change (see mfa-verify.tsx).
+    window.location.replace(getPathname({ href: next, locale }))
   }
 
   const enrolTitle = round === 1 ? t('mfaEnrolTitle') : t('mfaSecondTitle')

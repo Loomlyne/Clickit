@@ -1,13 +1,13 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useState } from 'react'
 
 import { verifyAdminCode } from '@/app/[locale]/(viewer)/auth/mfa/actions'
 import { AuthCardPage } from '@/components/auth/auth-card-page'
 import { CodeField } from '@/components/auth/code-field'
 import { Button } from '@/components/ui/button'
-import { useRouter } from '@/i18n/navigation'
+import { getPathname, useRouter } from '@/i18n/navigation'
 import { CODE_LENGTH } from '@/lib/auth-code'
 import { createClient } from '@/lib/supabase/client'
 
@@ -25,6 +25,7 @@ export function MfaVerify({
   staleHours: number
 }) {
   const t = useTranslations('auth')
+  const locale = useLocale()
   const tCommon = useTranslations('common')
   const router = useRouter()
 
@@ -46,8 +47,10 @@ export function MfaVerify({
       return
     }
     setDone(true)
-    router.replace(result.destination)
-    router.refresh()
+    // Full load, not router.replace: the session just became aal2 and the admin
+    // layout is a different tree (admin.css); a soft swap from this page crashed
+    // React (removeChild) on first arrival in local UAT 2026-10-25.
+    window.location.replace(getPathname({ href: result.destination, locale }))
   }
 
   async function signOut() {

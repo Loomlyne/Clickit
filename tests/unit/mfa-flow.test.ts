@@ -191,3 +191,14 @@ test('/auth/mfa page: signed out -> /auth, non-admin -> /watch, ok -> next; noin
     readFileSync(new URL('../../src/app/[locale]/admin/mfa/page.tsx', import.meta.url)),
   )
 })
+
+// Local UAT 2026-10-25: a soft router.replace from /auth/mfa into the admin tree
+// right after the aal2 change crashed React (removeChild) on first arrival.
+test('MFA success leaves /auth/mfa with a full page load into the admin tree', async () => {
+  const { readFileSync } = await import('node:fs')
+  for (const f of ['src/components/auth/mfa-verify.tsx', 'src/components/auth/mfa-enrol.tsx']) {
+    const src = readFileSync(f, 'utf8')
+    assert.match(src, /window\.location\.replace\(getPathname\(\{ href: (result\.destination|next), locale \}\)\)/, f)
+    assert.doesNotMatch(src, /router\.replace\((result\.destination|next)\)/, f)
+  }
+})
