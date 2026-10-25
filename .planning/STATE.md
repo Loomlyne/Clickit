@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-21T15:44:41.498Z"
-last_activity: 2026-10-21
+last_updated: "2026-10-25T21:32:22.622Z"
+last_activity: 2026-10-25
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 123
-  completed_plans: 87
+  completed_plans: 88
   percent: 33
 ---
 
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 05 (accounts-and-email) — EXECUTING
-Plan: 19 of 42 (waves 0-3 done; 05-13, 05-15, 05-16 and 05-38 done)
+Plan: 19 of 42 (waves 0-3 done; 05-13, 05-15, 05-16, 05-38 done; 05-17 code done, seed run waits for controller go)
 Status: Ready to execute
-Last activity: 2026-10-21
+Last activity: 2026-10-25
 Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
 
 Progress: [███████░░░] 73%
@@ -94,6 +94,7 @@ Progress: [███████░░░] 73%
 | Phase 05 P15 | 4min | 2 tasks | 8 files |
 | Phase 05 P16 | 25min | 2 tasks | 7 files |
 | Phase 05 P38 | 20min | 2 tasks | 0 files |
+| Phase 05 P17 | 25min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -150,6 +151,7 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-15: requireAdmin() in src/server/auth-guards.ts is the one admin gate (getClaims+getUser, admins row every call, aal2 TOTP <= 12 h, fail closed); assertAdmin and requireAdminForYouTube call it; navbar uses am_i_admin()
 - [Phase 05]: 05-16: enqueueEmail target { userId } | { adminAll: true } | { email } with optional locale en|ar; adminAll with zero admins returns queued with no ids and logs no_recipients; esbuild accepts the JSON template import, so no controller stop
 - [Phase 05]: 05-38: local GoTrue renders English for a user with no locale (eq on missing .Data.locale is false, A6); local From is Clickit Story <no-reply@clickitstory.ae> (A9); a new user's sign-in code mail uses the confirmation template, magic_link only for confirmed users; read the code from the user-select:all cell; MAIL-01/AUTH-02 stay Pending until 05-35
+- [Phase 05]: 05-17: seed:local-admin applies M2 locally via resolveM2Source (landed migration first, else pending) in one psql transaction through docker exec; first shared-stack run waits for the controller's go
 
 ### Pending Todos
 
@@ -162,6 +164,7 @@ None yet.
 - Owner decisions pending (pricing, not assumed): Workers Paid $5/mo if Free CPU fails (Phase 2); Image Transformations stays on the free tier only.
 - Stray Cloudflare NS pair (ignat/nataly) must be resolved before any NS change (Phase 1).
 - Live migration state and `private.is_admin()` presence unverified — read-only audit in Phase 1 before any schema ship.
+- 05-17 NEEDS CONTROLLER: go for npm run seed:local-admin applying supabase/pending/m2_admin_aal2.sql to the shared local stack (local admin pages then need TOTP)
 
 ### Quick Tasks Completed
 
@@ -190,8 +193,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-21T15:44:37.501Z
-Stopped at: Completed 05-38-PLAN.md (local-stack spike); resume file .planning/phases/05-accounts-and-email/05-38-SUMMARY.md
+Last session: 2026-10-25T21:32:17.697Z
+Stopped at: 05-17-PLAN.md code and tests done; seed:local-admin run on the shared stack waits for the controller's go; resume file .planning/phases/05-accounts-and-email/05-17-SUMMARY.md
 Phase 2 last session: 2026-10-20T10:45:11.285Z
 Phase 2 stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above is the controller's)
 Resume file: None
