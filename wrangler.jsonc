@@ -54,5 +54,48 @@
     // only on Koss's word after he has read a dry-run report (02-RUNBOOK.md). The deploy
     // guard refuses "on" unless the deploy passes --allow-upload-sweep-delete.
     "R2_UPLOAD_SWEEP_DELETE": "off"
+  },
+  // Production target (Phase 3, D-07): the same Worker as workers.dev ("clickit"), so
+  // secrets, R2/D1 and the DOQueueHandler namespace stay. Last deploy wins: never deploy
+  // the workers.dev target during the proof window (D-18). Wrangler does not inherit
+  // bindings or vars into an environment, so every one is repeated here; the drift test
+  // tests/unit/cutover-config.test.ts compares them with the top level. Crons are
+  // CRON_EXPRESSIONS_FOR_PHASE_3 (src/server/scheduled.ts). RESEND_FROM_EMAIL is only
+  // correct once Resend shows clickitstory.ae verified (runbook Step 7), so the
+  // production deploy waits for it. RESEND_API_KEY stays a secret.
+  "env": {
+    "production": {
+      "name": "clickit",
+      "workers_dev": true,
+      "preview_urls": false,
+      "routes": [
+        { "pattern": "www.clickitstory.ae/*", "zone_id": "d8fa01b24f24653a29a0a56431072dc2" }
+      ],
+      "triggers": { "crons": ["0 1 * * *", "0 4 * * 1", "30 1 * * *"] },
+      "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "clickit" }],
+      "ai": { "binding": "AI" },
+      "r2_buckets": [
+        { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "clickit-next-cache" },
+        { "binding": "MEDIA", "bucket_name": "clickit-media" }
+      ],
+      "d1_databases": [
+        {
+          "binding": "NEXT_TAG_CACHE_D1",
+          "database_name": "clickit-tag-cache",
+          "database_id": "7319d21d-eda3-4fed-aefd-6cbcc545f515"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }]
+      },
+      "vars": {
+        "CLOUDFLARE_ACCOUNT_ID": "e329b099b6e4272fc0915a99832e47fe",
+        "CLOUDFLARE_R2_BUCKET": "clickit-media",
+        "CLICKIT_RUNTIME": "workers",
+        // Dry run while "off"; Step 52a sets both this and the top level to "on" only on Koss's word.
+        "R2_UPLOAD_SWEEP_DELETE": "off",
+        "RESEND_FROM_EMAIL": "Clickit Story <no-reply@clickitstory.ae>"
+      }
+    }
   }
 }

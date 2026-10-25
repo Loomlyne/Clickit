@@ -284,7 +284,12 @@ const MIGRATION = 'supabase/migrations/20261021120000_legal_pages_arabic_review.
 test('migration: additive draft columns + ar_reviewed, existing Arabic stays published, date kept', () => {
   assert.ok(existsSync(MIGRATION))
   const names = readdirSync('supabase/migrations').filter((n) => n.endsWith('.sql')).sort()
-  assert.equal(names.at(-1), '20261021120000_legal_pages_arabic_review.sql', 'newest migration')
+  // Newest migration, bar a later phase's own: Phase 3 MEDIA-08 backup table (plan 03-05).
+  assert.deepEqual(
+    names.filter((n) => n > '20261021120000_legal_pages_arabic_review.sql'),
+    ['20261021143410_media_url_rewrite_backup.sql'],
+    'newest migration'
+  )
   const sql = read(MIGRATION)
   assert.deepEqual(scanSql(sql).findings, [], 'no destructive SQL (guard D-04)')
   assert.deepEqual(scanSql(sql).unterminated ?? [], [])

@@ -8,7 +8,8 @@
 //        [--admin-cookie-file <path>] [--viewer-cookie-file <path>] [--expect-coming-soon]
 //
 // Checks (one PASS/FAIL line each, exit 1 on any FAIL):
-//   /en and /ar answer 200 (or redirect to /<locale>/coming-soon with --expect-coming-soon)
+//   /en and /ar redirect (3xx) to /<locale>/portfolio (src/server/locale-root.ts, plan 02-21) and
+//     /<locale>/portfolio answers 200 (or /<locale> redirects to /<locale>/coming-soon with --expect-coming-soon)
 //   / redirects to a locale
 //   signed out: /en/profile, /en/my-list, /en/design-system redirect to /en/auth
 //               (to /en/coming-soon with --expect-coming-soon), /en/admin redirects to /en/auth
@@ -114,7 +115,13 @@ export async function run(opts, log = console.log) {
     if (opts.expectComingSoon) {
       report(redirectPath(r.status, r.location, base) === `/${loc}/coming-soon`, `GET /${loc} redirects to coming-soon`, `status ${r.status}`)
     } else {
-      report(r.status === 200, `GET /${loc} answers 200`, `status ${r.status}`)
+      // Mirrors localeRootTarget in src/server/locale-root.ts (plan 02-21): the proxy answers a real
+      // redirect from /<locale> to /<locale>/portfolio. Hardcoded because this .mjs cannot import the .ts.
+      const target = `/${loc}/portfolio`
+      const p = redirectPath(r.status, r.location, base)
+      report(p === target, `GET /${loc} redirects to ${target}`, `status ${r.status}, to ${p ?? 'none'}`)
+      const landing = await get(base, target)
+      report(landing.status === 200, `GET ${target} answers 200`, `status ${landing.status}`)
     }
   }
 
