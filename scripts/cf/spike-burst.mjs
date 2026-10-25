@@ -57,6 +57,7 @@ export const USAGE = `spike-burst: read-only request bursts (GET only; pageview 
   --burn <n>             cache: SpikeProbe burn iterations (default 4000000)
   --gwburn <n>           cache: gateway burn iterations on the 30 A3 samples (default 4000000)
   --media-origins <list> pageview: origins counted as media (default ${DEFAULT_MEDIA_ORIGINS.join(',')})
+  --timeout-ms <ms>      per-request timeout (default 60000; a hung request is logged as an error)
   --out <file>           request log (default ${DEFAULT_LOG_DIR}/burst-<mode>-<time>.json)
   --help`
 
@@ -81,6 +82,7 @@ export function parseArgs(argv) {
     gwburn: 4_000_000,
     mediaOrigins: [...DEFAULT_MEDIA_ORIGINS],
     out: null,
+    timeoutMs: 60_000,
     help: false,
   }
   for (let i = 0; i < argv.length; i++) {
@@ -105,6 +107,7 @@ export function parseArgs(argv) {
     else if (a === '--burn') out.burn = positiveInt(a, next(), { max: 200_000_000 })
     else if (a === '--gwburn') out.gwburn = positiveInt(a, next(), { max: 200_000_000 })
     else if (a === '--media-origins') out.mediaOrigins = next().split(',').map((s) => new URL(s.trim()).origin)
+    else if (a === '--timeout-ms') out.timeoutMs = positiveInt(a, next(), { min: 1000, max: 600_000 })
     else if (a === '--out') out.out = next()
     else throw new Error(`unknown argument ${a}`)
   }
@@ -202,11 +205,14 @@ export function classifyRequest({ url, resourceType, isRsc }, base, mediaOrigins
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
+let requestTimeoutMs = 60_000
+
 async function timedGet(base, entry, { keepBody = false } = {}) {
   const url = new URL(entry.path, base).toString()
   const start = new Date().toISOString()
   try {
-    const res = await fetch(url, { method: 'GET', redirect: 'manual' })
+    const signal = AbortSignal.timeout(requestTimeoutMs)
+    const res = await fetch(url, { method: 'GET', redirect: 'manual', signal })
     const body = await res.text()
     return {
       label: entry.label,
@@ -357,6 +363,7 @@ async function main(argv) {
     process.stderr.write(`--url (or --routes) is required for ${args.mode}\n${USAGE}\n`)
     return 2
   }
+  requestTimeoutMs = args.timeoutMs
   const tag = runTag()
   const outFile = args.out ?? `${DEFAULT_LOG_DIR}/burst-${args.mode}-${new Date().toISOString().replace(/[:.]/g, '-')}.json`
   const summary = { script: 'spike-burst', mode: args.mode, base: args.base, runTag: tag, out: outFile }
