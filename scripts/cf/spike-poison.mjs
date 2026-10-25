@@ -16,11 +16,13 @@
 //   node scripts/cf/spike-poison.mjs --mode probe --base http://127.0.0.1:8787 \
 //        --routes /spike-probe/a,/en/portfolio,/ar/portfolio \
 //        [--session-cookie-file <path>] [--cookie-name sb-127-auth-token] \
-//        [--gateway-config .open-next/clickit-gateway-config.json] [--session-route /spike-probe/a]
+//        [--gateway-config .open-next/clickit-gateway-config.json] [--session-route /spike-probe/a] \
+//        [--warmup 2] [--dump-dir <dir outside the repo>]
 // Prints one JSON summary. Exit 1 when any assertion fails.
 
 import { createHash, webcrypto } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const subtle = webcrypto.subtle
@@ -33,6 +35,10 @@ export const USAGE = `spike-poison: cache-poisoning and session-class probe thro
   --cookie-name <name>         auth cookie name (default: authCookieName from --gateway-config)
   --gateway-config <path>      default .open-next/clickit-gateway-config.json
   --session-route <path>       route used for the session cases (default /spike-probe/a)
+  --warmup <n>                 GETs per route before its baseline (default 1; a cold first render
+                               after a preview start is not what a cache would store)
+  --dump-dir <dir>             write the anon baseline and every differing variant body there
+                               (anon HTML only, for naming a cause; keep it outside the repo)
   --help`
 
 export function parseArgs(argv) {
@@ -44,6 +50,8 @@ export function parseArgs(argv) {
     cookieName: null,
     gatewayConfig: '.open-next/clickit-gateway-config.json',
     sessionRoute: '/spike-probe/a',
+    warmup: 1,
+    dumpDir: null,
     help: false,
   }
   for (let i = 0; i < argv.length; i++) {
@@ -61,6 +69,11 @@ export function parseArgs(argv) {
     else if (a === '--cookie-name') out.cookieName = next()
     else if (a === '--gateway-config') out.gatewayConfig = next()
     else if (a === '--session-route') out.sessionRoute = next()
+    else if (a === '--warmup') {
+      const v = next()
+      if (!/^\d{1,2}$/.test(v)) throw new Error('--warmup must be 0..99')
+      out.warmup = Number(v)
+    } else if (a === '--dump-dir') out.dumpDir = next()
     else throw new Error(`unknown argument ${a}`)
   }
   return out
@@ -157,13 +170,23 @@ async function get(base, path, headers) {
 
 const gw = (route) => `/spike-probe/gw${route.startsWith('/') ? route : `/${route}`}`
 
-async function headerVariants(base, route) {
+const safeName = (s) => s.replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+/, '')
+
+async function headerVariants(base, route, { warmup = 1, dumpDir = null } = {}) {
+  for (let i = 0; i < warmup; i++) await get(base, gw(route), {})
   const baseline = await get(base, gw(route), {})
+  const dump = (variant, body) => {
+    if (!dumpDir) return
+    mkdirSync(dumpDir, { recursive: true })
+    writeFileSync(join(dumpDir, `${safeName(route)}__${safeName(variant)}.html`), body, { mode: 0o600 })
+  }
+  dump('baseline', baseline.body)
   const variants = []
   for (const v of HEADER_VARIANTS) {
     const r = await get(base, gw(route), v.headers)
     const offset = firstDiff(baseline.body, r.body)
     const same = offset === -1 && r.status === baseline.status
+    if (!same) dump(v.name, r.body)
     variants.push({
       variant: v.name,
       identical: same,
@@ -255,7 +278,7 @@ async function main(argv) {
 
   const routes = []
   for (const route of args.routes) {
-    const { baseline, variants } = await headerVariants(args.base, route)
+    const { baseline, variants } = await headerVariants(args.base, route, { warmup: args.warmup, dumpDir: args.dumpDir })
     const text = baseline.body.toString('utf8')
     const langDir = htmlLangDir(text)
     const want = route.startsWith('/ar') ? { lang: 'ar', dir: 'rtl' } : route.startsWith('/en') ? { lang: 'en', dir: 'ltr' } : null
@@ -285,6 +308,7 @@ async function main(argv) {
     startedAt,
     endedAt: new Date().toISOString(),
     cookieName,
+    warmup: args.warmup,
     failures,
     differencesToAttribute: otherDiffs,
     session,
