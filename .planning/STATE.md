@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-25T21:58:00.000Z"
+last_updated: "2026-10-25T22:12:00.000Z"
 last_activity: 2026-10-25
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 123
-  completed_plans: 91
+  completed_plans: 92
   percent: 33
 ---
 
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 05 (accounts-and-email) — EXECUTING
-Plan: 22 of 42 (waves 0-3 done; 05-13, 05-15, 05-16, 05-18, 05-38 done; 05-17 code done, seed run waits for controller go; 05-19 code done, CPU gate NEEDS CONTROLLER: cold batch max 14.44 ms > 10 ms)
+Plan: 23 of 42 (waves 0-3 done; 05-13, 05-15, 05-16, 05-18, 05-25, 05-38 done; 05-17 code done, seed run waits for controller go; 05-19 code done, CPU gate NEEDS CONTROLLER: cold batch max 14.44 ms > 10 ms)
 Status: Ready to execute
 Last activity: 2026-10-25
 Phase 3 (work branch claude/phase-03-production-cutover-689a87): 6 of 13 plans complete (03-01 … 03-06 done 2026-10-21; code half ready for the PR, gate:local exit=0; ops plans 03-07 … 03-13 run after Ship)
@@ -99,6 +99,7 @@ Progress: [████████░░] 76%
 | Phase 05 P18 | 4min | 2 tasks | 4 files |
 | Phase 05 P29 | 25min | 2 tasks | 11 files |
 | Phase 05 P19 | 15min | 3 tasks | 7 files |
+| Phase 05 P25 | 15min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -159,6 +160,7 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-18: proxy Step 5 is decideRoute (src/server/auth/gate.ts): admin path first (auth/watch/mfa/pass), then isPublicPath, then signed out -> auth; isAdmin = rpc am_i_admin only on /admin, fails closed
 - [Phase 05]: 05-29: public email pages read state on GET and never write; core adds an 'error' result; MAIL-04 and MAIL-06 stay Pending until digest and newsletter sign-up land
 - [Phase 05]: 05-19: queue() awaits processBatch (errors redeliver the batch); clickit-email queues and email vars mirrored into env.production (03-01 drift test); admin layout catch calls unstable_rethrow first; Worker 2,949.63 KiB gzip (122 KiB under 3 MiB)
+- [Phase 05]: 05-25: /{locale}/auth/mfa built (enrol: scan, code, optional second, done; code page with stale note); actions re-check getAdminStatus and enrolAllowed (no factor add while a code is owed, max 2 TOTP), challenge + verify on the server, newest factor first; admin_auth audit rows (mfa_enrol, mfa_unenrol, mfa_failed), never a secret/QR/code; signed out -> /auth?next=<safe next>
 
 ### Pending Todos
 
@@ -201,8 +203,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-25T21:58:00.000Z
-Stopped at: 05-19-PLAN.md code complete (queue consumer wired, bundle 2,949.63 KiB gzip); CPU gate NEEDS CONTROLLER (cold max 14.44 ms); 05-17 seed:local-admin run still waits for the controller's go; resume file .planning/phases/05-accounts-and-email/05-19-SUMMARY.md
+Last session: 2026-10-25T22:12:00.000Z
+Stopped at: 05-25-PLAN.md complete (/auth/mfa enrol and code pages, actions, audit types); browser check with the seeded local admin left for UAT; resume file .planning/phases/05-accounts-and-email/05-25-SUMMARY.md
 Phase 2 last session: 2026-10-20T10:45:11.285Z
 Phase 2 stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above is the controller's)
 Resume file: None
