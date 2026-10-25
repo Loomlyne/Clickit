@@ -233,6 +233,11 @@ test('DS-04: the admin layout still redirects signed-out and non-admin users', (
   assert.ok(layout.includes("redirect({ href: '/watch', locale })"))
   assert.ok(layout.includes("pathname: '/auth/mfa'"))
   assert.ok(!layout.includes('admin_user_id'))
+  // 05-19 fix: the catch rethrows Next's own signals first, or the cookies() bailout is
+  // swallowed and /admin pages prerender at build time (createAdminClient throws there).
+  const catchBody = layout.slice(layout.indexOf('} catch (e) {'))
+  assert.match(catchBody, /^\} catch \(e\) \{\s*(\/\/[^\n]*\s*)*unstable_rethrow\(e\)/)
+  assert.ok(layout.includes("import { unstable_rethrow } from 'next/navigation'"))
 })
 
 test('DS-04: the page and the view read no data', () => {

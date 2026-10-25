@@ -1,3 +1,4 @@
+import { unstable_rethrow } from 'next/navigation'
 import { getLocale } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { AdminAccessError, requireAdmin } from '@/server/auth-guards'
@@ -14,6 +15,9 @@ export default async function AdminLayout({
   try {
     await requireAdmin()
   } catch (e) {
+    // Next's own signals (dynamic-rendering bailout from cookies(), redirect) must
+    // pass through: swallowing the bailout made /admin pages prerender at build time.
+    unstable_rethrow(e)
     const locale = await getLocale()
     if (e instanceof AdminAccessError && (e.code === 'needs_enrol' || e.code === 'needs_code')) {
       return redirect({ href: { pathname: '/auth/mfa', query: { next: '/admin' } }, locale })
