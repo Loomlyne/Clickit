@@ -114,6 +114,10 @@ async function get(base, path, headers, withRsc) {
     status: res.status,
     location: res.headers.get('location'),
     contentType: res.headers.get('content-type'),
+    // Evidence of which path served it: OpenNext's interception marks its
+    // answers with x-opennext-cache; a Next render carries x-nextjs-cache.
+    opennextCache: res.headers.get('x-opennext-cache'),
+    nextjsCache: res.headers.get('x-nextjs-cache'),
     body,
   }
 }
@@ -158,6 +162,8 @@ export async function diffRoute(base, route, nextDir) {
       identical: diffs.length === 0,
       status: [...new Set(samples.map((s) => s.status))],
       contentType: ref.contentType,
+      opennextCache: [...new Set(samples.map((s) => s.opennextCache))],
+      nextjsCache: [...new Set(samples.map((s) => s.nextjsCache))],
       len: ref.body.length,
       sha: sha(ref.body),
       ok2xx,
