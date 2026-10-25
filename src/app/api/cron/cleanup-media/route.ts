@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server'
 import { cronAuthOk } from '@/server/cron-auth'
 import { getWorkerEnv } from '@/server/cloudflare'
 import { stageR2Deletion, type MediaDeleteGuard } from '@/server/r2-delete'
-import { findLiveReferences, readMediaReferenceUrls, type ReferenceDb } from '@/server/media-references'
+import {
+  findLiveReferences,
+  readMediaReferenceUrls,
+  referencedPathsByBucket,
+  type ReferenceDb,
+} from '@/server/media-references'
 import { getPublicMediaOrigin } from '@/lib/supabase-media'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { supabaseCleanupEnabled } from '@/server/scheduled'
@@ -45,30 +50,6 @@ import { runUploadSweep } from '@/server/r2-upload-sweep'
 const MIN_AGE_MS = 24 * 60 * 60 * 1000 // 24 hours
 const SITE_ASSETS_BUCKET = 'site-assets'
 const SHOW_ARTWORK_BUCKET = 'show-artwork'
-
-/**
- * Extracts the storage path from a Supabase public URL. Returns null for
- * anything that doesn't look like our own storage (external URLs, malformed
- * entries). We intentionally return null on parse failure rather than throwing
- * so one malformed row doesn't abort the whole sweep.
- */
-function extractStoragePath(
-  publicUrl: string | null,
-  bucket: string
-): string | null {
-  if (!publicUrl) return null
-  try {
-    const parsed = new URL(publicUrl)
-    const marker = `/storage/v1/object/public/${bucket}/`
-    if (!parsed.pathname.startsWith(marker)) return null
-    const path = decodeURIComponent(parsed.pathname.slice(marker.length))
-    return path && !path.startsWith('/') && !path.split('/').includes('..')
-      ? path
-      : null
-  } catch {
-    return null
-  }
-}
 
 export async function GET(req: Request) {
   // --- Auth guard ----------------------------------------------------------
@@ -154,44 +135,27 @@ async function runCleanup() {
     )
   }
 
-  const referencedArtwork = new Set<string>()
-  const referencedVideos = new Set<string>()
-
+  // Every url form counts (the helper the R2 sweep uses): a Supabase public url, our
+  // media origin, media.clickitstory.ae or a workers.dev media host. After the media-url
+  // rewrite rows hold media-host urls; a Supabase-only parser would call those objects
+  // orphans (PR #31 review 5). Each key lands in its own bucket's set.
+  const urls: Array<string | null> = []
   for (const show of shows ?? []) {
-    // Artwork bucket: hero + hero-mobile + poster + logo all live here
-    const heroPath = extractStoragePath(show.hero_url, SHOW_ARTWORK_BUCKET)
-    const mobileHeroPath = extractStoragePath(
+    urls.push(
+      show.hero_url,
       show.hero_image_mobile_url,
-      SHOW_ARTWORK_BUCKET
-    )
-    const posterPath = extractStoragePath(show.poster_url, SHOW_ARTWORK_BUCKET)
-    const cardPath = extractStoragePath(
+      show.poster_url,
       show.card_image_url,
-      SHOW_ARTWORK_BUCKET
-    )
-    const logoPath = extractStoragePath(show.logo_url, SHOW_ARTWORK_BUCKET)
-    if (heroPath) referencedArtwork.add(heroPath)
-    if (mobileHeroPath) referencedArtwork.add(mobileHeroPath)
-    if (posterPath) referencedArtwork.add(posterPath)
-    if (cardPath) referencedArtwork.add(cardPath)
-    if (logoPath) referencedArtwork.add(logoPath)
-    // Video bucket: hero videos only
-    const videoPath = extractStoragePath(
+      show.logo_url,
       show.hero_video_url,
-      SITE_ASSETS_BUCKET
+      show.hero_video_mobile_url
     )
-    const mobileVideoPath = extractStoragePath(
-      show.hero_video_mobile_url,
-      SITE_ASSETS_BUCKET
-    )
-    if (videoPath) referencedVideos.add(videoPath)
-    if (mobileVideoPath) referencedVideos.add(mobileVideoPath)
   }
+  for (const member of cast ?? []) urls.push(member.image_url)
 
-  for (const member of cast ?? []) {
-    const imagePath = extractStoragePath(member.image_url, SHOW_ARTWORK_BUCKET)
-    if (imagePath) referencedArtwork.add(imagePath)
-  }
+  const referencedPaths = referencedPathsByBucket(urls, getPublicMediaOrigin())
+  const referencedArtwork = referencedPaths.get(SHOW_ARTWORK_BUCKET) ?? new Set<string>()
+  const referencedVideos = referencedPaths.get(SITE_ASSETS_BUCKET) ?? new Set<string>()
 
   // --- Step 2: walk storage and compute orphans ----------------------------
   // Supabase's list() returns one level at a time, so walk every nested path.

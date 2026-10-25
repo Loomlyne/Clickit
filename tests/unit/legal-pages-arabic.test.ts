@@ -284,15 +284,12 @@ const MIGRATION = 'supabase/migrations/20261021120000_legal_pages_arabic_review.
 test('migration: additive draft columns + ar_reviewed, existing Arabic stays published, date kept', () => {
   assert.ok(existsSync(MIGRATION))
   const names = readdirSync('supabase/migrations').filter((n) => n.endsWith('.sql')).sort()
-  // Newest migration bar later phases' own files, which carry `_phaseN_` in the name (Phase 5 M1a onward).
-  assert.equal(
-    names.filter((n) => !/_phase\d+_/.test(n)).at(-1),
-    '20261021120000_legal_pages_arabic_review.sql',
+  // Newest migration, bar a later phase's own: Phase 3 MEDIA-08 backup table (plan 03-05);
+  // Phase 5 onward names its migrations `_phaseN_` (M1a, M1b).
+  assert.deepEqual(
+    names.filter((n) => n > '20261021120000_legal_pages_arabic_review.sql' && !/_phase\d+_/.test(n)),
+    ['20261021143410_media_url_rewrite_backup.sql'],
     'newest migration (bar later phases)'
-  )
-  assert.ok(
-    names.filter((n) => n > '20261021120000_legal_pages_arabic_review.sql').every((n) => /_phase\d+_/.test(n)),
-    'only later-phase migrations sort after it'
   )
   const sql = read(MIGRATION)
   assert.deepEqual(scanSql(sql).findings, [], 'no destructive SQL (guard D-04)')

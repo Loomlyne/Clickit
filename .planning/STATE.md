@@ -28,6 +28,7 @@ Phase: 05 (accounts-and-email) — EXECUTING
 Plan: 21 of 42 (waves 0-3 done; 05-13, 05-15, 05-16, 05-18, 05-38 done; 05-17 code done, seed run waits for controller go)
 Status: Ready to execute
 Last activity: 2026-10-25
+Phase 3 (work branch claude/phase-03-production-cutover-689a87): 6 of 13 plans complete (03-01 … 03-06 done 2026-10-21; code half ready for the PR, gate:local exit=0; ops plans 03-07 … 03-13 run after Ship)
 Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
 
 Progress: [████████░░] 75%

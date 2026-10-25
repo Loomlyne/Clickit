@@ -9,6 +9,10 @@
 //   node scripts/cf/build-target.mjs --target workersdev --media-flag verified \
 //        --media-origin https://clickit-media.<SUB>.workers.dev \
 //        --verify-report .tmp/r2-media-reports/verify-<timestamp>.json
+//   node scripts/cf/build-target.mjs --target production --media-flag verified \
+//        --verify-report <report made against https://media.clickitstory.ae> [--manifest <path>]
+//   (production reads /Users/koss/.clickit-cloudflare/clickit.production.env; the stamp
+//   records the sha256 of the report file, and cf:deploy:production deploys only that build)
 
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -17,6 +21,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   NEXT_ENV_MODULE_PATH,
+  PRODUCTION_MEDIA_ORIGIN,
   checkEnvFiles,
   checkNextEnvModule,
   checkVerifyReport,
@@ -25,8 +30,15 @@ import {
 } from './deploy-guard.mjs'
 import { CLICKIT_HOME, checkEnv } from './wrangler-guard.mjs'
 
+export { PRODUCTION_MEDIA_ORIGIN }
 export const PREVIEW_ENV_FILE = '.env.preview.local'
 export const WORKERSDEV_ENV_FILE = `${CLICKIT_HOME}/clickit.workersdev.env`
+// Production (www) build env file: outside the repo, next to the wrangler login (D-07).
+export const PRODUCTION_ENV_FILE = `${CLICKIT_HOME}/clickit.production.env`
+export const PRODUCTION_SITE_URL = 'https://www.clickitstory.ae'
+// The live project's API URL. Public (it ships in every client bundle), so pinned here:
+// a production build against any other project, the placeholder or a typo is refused.
+export const PRODUCTION_SUPABASE_URL = 'https://lajguozmtissnnfccmej.supabase.co'
 export const STAMP_PATH = '.open-next/clickit-build-stamp.json'
 export const DEFAULT_MANIFEST_PATH = '.tmp/r2-media-manifest.json'
 export const PREVIEW_MEDIA_ORIGIN = 'http://127.0.0.1:8789'
@@ -56,6 +68,33 @@ export function classifyTurnstileSiteKey(value) {
   const key = String(value ?? '').trim()
   if (key === '') return 'missing'
   return TURNSTILE_TEST_SITE_KEY.test(key) ? 'test' : 'real'
+}
+
+const JWT_SHAPE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/
+
+/**
+ * Classify a Supabase API key without storing it (D-02). 'secret' is never allowed in
+ * a build (NEXT_PUBLIC values are inlined into public JavaScript); production needs
+ * 'publishable'.
+ * @param {string | undefined} value
+ * @returns {'missing' | 'publishable' | 'secret' | 'legacy-jwt' | 'other'}
+ */
+export function classifySupabaseKey(value) {
+  const key = String(value ?? '').trim()
+  if (key === '') return 'missing'
+  if (key.startsWith('sb_publishable_')) return 'publishable'
+  if (key.startsWith('sb_secret_')) return 'secret'
+  if (JWT_SHAPE.test(key)) return 'legacy-jwt'
+  return 'other'
+}
+
+// T-03-06: no NEXT_PUBLIC value may carry a Supabase secret key, for any target.
+function refuseSecretKeys(publicEnv) {
+  for (const [name, value] of Object.entries(publicEnv)) {
+    if (classifySupabaseKey(value) === 'secret') {
+      throw new Error(`${name} carries a Supabase secret (sb_secret_) key: it would be public in the bundle`)
+    }
+  }
 }
 
 /**
@@ -99,7 +138,7 @@ function requireHttpsSite(value) {
 /**
  * Compute the build env for a target. Returns only the variables the build
  * script passes on top of a minimal process env.
- * @param {'preview' | 'workersdev'} target
+ * @param {'preview' | 'workersdev' | 'production'} target
  * @param {Record<string, string>} fileEnv
  * @param {{ mediaFlag?: 'off' | 'verified', mediaOrigin?: string, verifyReport?: any, manifest?: any }} [options]
  * @param {Record<string, string | undefined>} [processEnv]
@@ -109,7 +148,7 @@ export function buildEnvFor(target, fileEnv, options = {}, processEnv = process.
   if (processEnv.VERCEL || processEnv.VERCEL_ENV) {
     throw new Error('refused: VERCEL or VERCEL_ENV is set; no Vercel build gets a Cloudflare target')
   }
-  if (target !== 'preview' && target !== 'workersdev') {
+  if (target !== 'preview' && target !== 'workersdev' && target !== 'production') {
     throw new Error(`unknown build target ${String(target)}`)
   }
 
@@ -117,6 +156,9 @@ export function buildEnvFor(target, fileEnv, options = {}, processEnv = process.
   for (const [name, value] of Object.entries(fileEnv ?? {})) {
     if (name.startsWith('NEXT_PUBLIC_')) publicFromFile[name] = value
   }
+  refuseSecretKeys(publicFromFile)
+
+  if (target === 'production') return productionEnv(publicFromFile, options)
 
   if (target === 'preview') {
     const env = { ...publicFromFile }
@@ -152,7 +194,7 @@ export function buildEnvFor(target, fileEnv, options = {}, processEnv = process.
 
   if (flag === 'verified') {
     if (!isAllowedMediaOrigin(options.mediaOrigin)) {
-      throw new Error('media origin must be an https clickit-media.<sub>.workers.dev origin')
+      throw new Error('media origin must be an https clickit-media[-r2].<sub>.workers.dev origin')
     }
     const res = checkVerifyReport(options.verifyReport, options.manifest ?? null, {
       mediaOrigin: options.mediaOrigin,
@@ -164,13 +206,65 @@ export function buildEnvFor(target, fileEnv, options = {}, processEnv = process.
   return env
 }
 
+// Production (www): every rule of D-02, D-07, D-08 and PLAT-05 holds by construction.
+function productionEnv(publicFromFile, options) {
+  if (publicFromFile.NEXT_PUBLIC_SITE_URL !== PRODUCTION_SITE_URL) {
+    throw new Error(`NEXT_PUBLIC_SITE_URL must be exactly ${PRODUCTION_SITE_URL} for the production target`)
+  }
+  // Exact match, no trailing slash: the value itself is never printed (PR #31 review 3).
+  if (publicFromFile.NEXT_PUBLIC_SUPABASE_URL !== PRODUCTION_SUPABASE_URL) {
+    const state = String(publicFromFile.NEXT_PUBLIC_SUPABASE_URL ?? '') === '' ? 'is missing' : 'is a different value'
+    throw new Error(
+      `NEXT_PUBLIC_SUPABASE_URL ${state} in the production env file: it must be exactly ${PRODUCTION_SUPABASE_URL} (no trailing slash)`
+    )
+  }
+  const keyKind = classifySupabaseKey(publicFromFile.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  if (keyKind !== 'publishable') {
+    throw new Error(`NEXT_PUBLIC_SUPABASE_ANON_KEY is ${keyKind}: production needs the publishable (sb_publishable_) key`)
+  }
+  if (String(publicFromFile.NEXT_PUBLIC_CF_BEACON_TOKEN ?? '').trim() === '') {
+    throw new Error('NEXT_PUBLIC_CF_BEACON_TOKEN (Web Analytics) is empty in the production env file')
+  }
+  const turnstile = classifyTurnstileSiteKey(publicFromFile.NEXT_PUBLIC_TURNSTILE_SITE_KEY)
+  if (turnstile !== 'real') {
+    throw new Error(`NEXT_PUBLIC_TURNSTILE_SITE_KEY is ${turnstile}: production needs the real site key`)
+  }
+  if (options.mediaFlag !== 'verified') {
+    throw new Error('the production target needs --media-flag verified')
+  }
+  let origin = null
+  try {
+    origin = new URL(String(options.mediaOrigin)).origin
+  } catch {
+    origin = null
+  }
+  if (origin !== PRODUCTION_MEDIA_ORIGIN || !isAllowedMediaOrigin(options.mediaOrigin)) {
+    throw new Error(`media origin must be ${PRODUCTION_MEDIA_ORIGIN} for the production target`)
+  }
+  const res = checkVerifyReport(options.verifyReport, options.manifest ?? null, { mediaOrigin: PRODUCTION_MEDIA_ORIGIN })
+  if (!res.ok) throw new Error(`media flag refused: ${res.reasons.join('; ')}`)
+
+  // Every known public name is set explicitly so no stray .env.local value leaks in.
+  const env = {}
+  for (const name of KNOWN_PUBLIC) env[name] = ''
+  Object.assign(env, publicFromFile)
+  env.NEXT_PUBLIC_SITE_URL = PRODUCTION_SITE_URL
+  env.NEXT_PUBLIC_MEDIA_ALLOW_LOOPBACK = ''
+  env.NEXT_PUBLIC_MEDIA_CUTOVER_READY = 'verified'
+  env.NEXT_PUBLIC_MEDIA_ORIGIN = PRODUCTION_MEDIA_ORIGIN
+  env.LOCAL_DEV = ''
+  env.NEXTJS_ENV = 'production'
+  return env
+}
+
 const sha256 = (value) => createHash('sha256').update(String(value)).digest('hex')
 
 /**
- * Build the stamp. Hashes only; never the values.
- * @param {{ target: string, gitSha: string, createdAt: string, env: Record<string, string> }} input
+ * Build the stamp. Hashes and classes only; never the values. `verifyReportSha256`
+ * (production) is the sha256 of the verify report file bytes the build used.
+ * @param {{ target: string, gitSha: string, createdAt: string, env: Record<string, string>, verifyReportSha256?: string }} input
  */
-export function makeStamp({ target, gitSha, createdAt, env }) {
+export function makeStamp({ target, gitSha, createdAt, env, verifyReportSha256 }) {
   const publicHashes = {}
   for (const name of Object.keys(env).filter((n) => n.startsWith('NEXT_PUBLIC_')).sort()) {
     publicHashes[name] = sha256(env[name])
@@ -189,6 +283,9 @@ export function makeStamp({ target, gitSha, createdAt, env }) {
     localDev: Boolean(env.LOCAL_DEV),
     // Classification only, never the key itself (PLAT-05, T-02-61).
     turnstileSiteKey: classifyTurnstileSiteKey(env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
+    supabaseKeyKind: classifySupabaseKey(env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+    beaconToken: String(env.NEXT_PUBLIC_CF_BEACON_TOKEN ?? '').trim() === '' ? 'missing' : 'set',
+    ...(verifyReportSha256 ? { verifyReportSha256 } : {}),
   }
 }
 
@@ -203,6 +300,34 @@ export function loadManifestInfo(path) {
 
 function sha256Buffer(text) {
   return createHash('sha256').update(text).digest('hex')
+}
+
+/** sha256 of a file's bytes (the verify report identity recorded in the production stamp). */
+export function fileSha256(path) {
+  return createHash('sha256').update(readFileSync(path)).digest('hex')
+}
+
+/**
+ * The production build needs both `--media-flag verified` and `--verify-report <path>`
+ * spelled out; `--media-origin`, when given, must be the production media host.
+ * @param {string[]} argv
+ * @returns {{ ok: boolean, reasons: string[] }}
+ */
+export function checkProductionBuildArgs(argv) {
+  const list = Array.isArray(argv) ? argv : []
+  const reasons = []
+  if (readOption(list, '--media-flag') !== 'verified') {
+    reasons.push('the production target needs --media-flag verified')
+  }
+  const report = readOption(list, '--verify-report')
+  if (!report || report.startsWith('--')) {
+    reasons.push('the production target needs --verify-report <path> (a report made against https://media.clickitstory.ae)')
+  }
+  const origin = readOption(list, '--media-origin')
+  if (origin !== undefined && origin !== PRODUCTION_MEDIA_ORIGIN) {
+    reasons.push(`--media-origin must be ${PRODUCTION_MEDIA_ORIGIN} for the production target`)
+  }
+  return { ok: reasons.length === 0, reasons }
 }
 
 function readOption(argv, name) {
@@ -221,10 +346,24 @@ function main(argv) {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
   process.chdir(root)
 
-  const envFile = target === 'preview' ? PREVIEW_ENV_FILE : target === 'workersdev' ? WORKERSDEV_ENV_FILE : null
+  const envFile =
+    target === 'preview'
+      ? PREVIEW_ENV_FILE
+      : target === 'workersdev'
+        ? WORKERSDEV_ENV_FILE
+        : target === 'production'
+          ? PRODUCTION_ENV_FILE
+          : null
   if (!envFile) {
-    console.error('usage: build-target.mjs --target preview|workersdev [--media-flag off|verified ...]')
+    console.error('usage: build-target.mjs --target preview|workersdev|production [--media-flag off|verified ...]')
     return 1
+  }
+  if (target === 'production') {
+    const args = checkProductionBuildArgs(argv)
+    if (!args.ok) {
+      for (const reason of args.reasons) console.error(`refused: ${reason}`)
+      return 1
+    }
   }
   // The preview target may run without its gitignored file (gate:local in a
   // clean clone): public values then come from the shell env, if any.
@@ -240,7 +379,8 @@ function main(argv) {
   }
   // A deployable build must not fold .env values into the bundle. The local
   // preview build is never deployed, so it keeps working with a dev .env.local.
-  if (target === 'workersdev') {
+  const deployable = target === 'workersdev' || target === 'production'
+  if (deployable) {
     const files = checkEnvFiles(findFoldedEnvFiles(root))
     if (!files.ok) {
       for (const reason of files.reasons) console.error(`refused: ${reason}`)
@@ -249,6 +389,7 @@ function main(argv) {
   }
 
   let buildEnv
+  let verifyReportSha256
   try {
     const fileEnv = existsSync(envFile) ? parseEnvFile(readFileSync(envFile, 'utf8')) : {}
     if (target === 'preview') {
@@ -258,11 +399,14 @@ function main(argv) {
     }
     const mediaFlag = readOption(argv, '--media-flag') ?? 'off'
     const options = { mediaFlag, mediaOrigin: readOption(argv, '--media-origin') }
-    if (target === 'workersdev' && mediaFlag === 'verified') {
+    if (target === 'production') options.mediaOrigin = options.mediaOrigin ?? PRODUCTION_MEDIA_ORIGIN
+    if (deployable && mediaFlag === 'verified') {
       const reportPath = readOption(argv, '--verify-report')
       if (!reportPath) throw new Error('--verify-report is required with --media-flag verified')
+      if (!existsSync(reportPath)) throw new Error('verify report file not found')
       options.verifyReport = JSON.parse(readFileSync(reportPath, 'utf8'))
       options.manifest = loadManifestInfo(readOption(argv, '--manifest') ?? DEFAULT_MANIFEST_PATH)
+      if (target === 'production') verifyReportSha256 = fileSha256(reportPath)
     }
     buildEnv = buildEnvFor(target, fileEnv, options, process.env)
   } catch (error) {
@@ -283,7 +427,7 @@ function main(argv) {
     return res.status ?? 1
   }
 
-  if (target === 'workersdev') {
+  if (deployable) {
     const text = existsSync(NEXT_ENV_MODULE_PATH) ? readFileSync(NEXT_ENV_MODULE_PATH, 'utf8') : null
     const folded = checkNextEnvModule(text)
     if (!folded.ok) {
@@ -298,6 +442,7 @@ function main(argv) {
     gitSha: git(['rev-parse', 'HEAD']),
     createdAt: new Date().toISOString(),
     env: buildEnv,
+    verifyReportSha256: target === 'production' ? verifyReportSha256 : undefined,
   })
   mkdirSync(dirname(STAMP_PATH), { recursive: true })
   writeFileSync(STAMP_PATH, `${JSON.stringify(stamp, null, 2)}\n`)
