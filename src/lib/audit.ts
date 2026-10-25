@@ -25,6 +25,10 @@ export type AuditAction =
   | 'config_update'
   | 'upload'
   | 'remove_media'
+  // admin_auth (D-23); free text in the DB (20260419000002 comment), types only here.
+  | 'mfa_enrol'
+  | 'mfa_unenrol'
+  | 'mfa_failed'
 
 export type AuditEntity =
   | 'show'
@@ -39,6 +43,7 @@ export type AuditEntity =
   | 'feature_flags'
   | 'legal_page'
   | 'faq'
+  | 'admin_auth'
 
 export interface AuditArgs {
   adminUserId: string
@@ -52,6 +57,9 @@ export interface AuditArgs {
    *   archive/restore/delete → { id, title } (enough to recognize on the dashboard)
    *   config_update → { keys: [...] } (which columns were touched)
    *   upload → { slot, path, mime, sizeMB }
+   *   admin_auth -> { factor_friendly_name } for mfa_enrol; { count } for
+   *     mfa_unenrol; { reason } for mfa_failed. Never a TOTP secret, QR, URI
+   *     or code. entityId = the admin's own user id.
    */
   diff?: Record<string, unknown>
 }
