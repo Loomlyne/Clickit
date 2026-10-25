@@ -6,6 +6,7 @@ import { withRuntimeHeader } from './src/server/runtime-header.ts'
 import { runCron } from './src/server/scheduled.ts'
 import { processBatch } from './src/server/email/consumer.ts'
 import { buildEmailDeps } from './src/server/email/deps.ts'
+import { takeEmailCpuProbe } from './src/server/email/cpu-probe.ts'
 
 // @ts-ignore generated at build time (npm run cf:build)
 export { DOQueueHandler } from './.open-next/worker.js'
@@ -23,7 +24,7 @@ type MessageLike = {
   retry(options?: { delaySeconds?: number }): void
 }
 type MessageBatchLike = { queue?: string; messages: MessageLike[] }
-type EmailEnv = Parameters<typeof buildEmailDeps>[0]
+type EmailEnv = Parameters<typeof buildEmailDeps>[0] & { EMAIL_CPU_PROBE?: string }
 
 export default {
   // Every response carries x-clickit-runtime: workers (DNS-02 proof: tells a
@@ -37,8 +38,13 @@ export default {
   // templates (05-11, no React), sends through Resend and writes every outcome
   // before acking. Errors propagate on purpose: a throw from claim or finish fails
   // the invocation, nothing is acked, and the queue redelivers the batch.
+  // Messages tagged as CPU probes (05-19 workers.dev measurement) are taken out first:
+  // acked and dropped unless EMAIL_CPU_PROBE holds a short until: window, and even
+  // then answered in-process (no DB, no network, no email). See cpu-probe.ts.
   async queue(batch: MessageBatchLike, env: EmailEnv) {
-    await processBatch(batch, buildEmailDeps({ ...env, CLICKIT_RUNTIME: 'workers' }))
+    const rest = await takeEmailCpuProbe(batch, env.EMAIL_CPU_PROBE)
+    if (rest.messages.length === 0) return
+    await processBatch(rest, buildEmailDeps({ ...env, CLICKIT_RUNTIME: 'workers' }))
   },
 
   // Cron Triggers are OFF until the Phase 3 cutover (wrangler.jsonc keeps

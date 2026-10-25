@@ -26,7 +26,9 @@ test('custom-worker.ts has a queue() handler over processBatch and buildEmailDep
   assert.match(workerSrc, /async queue\(/)
   assert.match(workerSrc, /from '\.\/src\/server\/email\/consumer\.ts'/)
   assert.match(workerSrc, /from '\.\/src\/server\/email\/deps\.ts'/)
-  assert.match(workerSrc, /processBatch\(batch, buildEmailDeps\(/)
+  assert.match(workerSrc, /takeEmailCpuProbe\(batch, env\.EMAIL_CPU_PROBE\)/)
+  assert.match(workerSrc, /processBatch\(rest, buildEmailDeps\(/)
+  assert.match(workerSrc, /from '\.\/src\/server\/email\/cpu-probe\.ts'/)
   assert.match(workerSrc, /CLICKIT_RUNTIME: 'workers'/)
 })
 
@@ -89,6 +91,12 @@ test('vars hold the public email settings and no secret', () => {
   }
 })
 
+test('the CPU probe flag is never declared in wrangler.jsonc (set per run by the controller only)', () => {
+  for (const vars of [wrangler.vars, production.vars] as Array<Record<string, string>>) {
+    assert.equal('EMAIL_CPU_PROBE' in vars, false)
+  }
+})
+
 test('triggers.crons is untouched by this plan (top level stays empty; 05-20 owns the cron)', () => {
   assert.deepEqual((wrangler.triggers as { crons: string[] }).crons, [])
 })
@@ -119,6 +127,9 @@ const ALLOWED_FILES = new Set([
   'src/server/email/deps.ts',
   'src/server/email/transport.ts',
   'src/server/email/links.ts',
+  // 05-19 controller condition 2: test-only CPU probe, off by default, fixtures and an
+  // in-process fetch stub only (no new imports beyond consumer.ts and deps.ts).
+  'src/server/email/cpu-probe.ts',
   'src/emails/render-app.ts',
   'src/emails/app/model.ts',
   'src/emails/app/template-fill.ts',
@@ -170,7 +181,11 @@ function walk(entries: string[]): Set<string> {
 
 test('consumer entries come from custom-worker.ts', () => {
   const fromWorker = specifiers(workerSrc).filter((s) => s.startsWith('./src/server/email/'))
-  assert.deepEqual([...fromWorker].sort(), ['./src/server/email/consumer.ts', './src/server/email/deps.ts'])
+  assert.deepEqual([...fromWorker].sort(), [
+    './src/server/email/consumer.ts',
+    './src/server/email/cpu-probe.ts',
+    './src/server/email/deps.ts',
+  ])
 })
 
 test('import allow-list: the consumer path stays on Worker-safe, React-free files', () => {
