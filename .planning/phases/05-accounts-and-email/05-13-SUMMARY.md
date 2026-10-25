@@ -18,7 +18,7 @@ key-files:
   modified:
     - src/lib/database.types.ts
 key-decisions:
-  - "M1b = supabase/migrations/20261021151843_phase5_m1b_email_outbox.sql (sorts after M1a 20261021142458)"
+  - "M1b = supabase/migrations/20261021151843_phase5_m1b_email_outbox.sql (sorts after M1a 20261021150000)"
   - "enqueue_email returns id null for duplicate and capped; admin_all returns one row per admin (queued or duplicate), zero rows when admins is empty"
   - "sweep_outbox also returns 'sending' rows whose lease expired (consumer crash with a lost queue message), besides pending > 15 min and retrying past next_attempt_at"
   - "finish_outbox mirror: any sent support_admin copy makes the message 'sent' and is never downgraded; failed or skipped copies make it 'failed' with notification_error = the reason code"

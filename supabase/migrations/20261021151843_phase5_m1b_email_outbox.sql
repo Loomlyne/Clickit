@@ -1,7 +1,7 @@
 -- ============================================================
 -- Phase 5 M1b: email outbox, digest ledger and their RPCs (expand-only)
 --
--- Second half of the additive M1 step (D-40). M1a (20261021142458) added the
+-- Second half of the additive M1 step (D-40). M1a (20261021150000) added the
 -- account columns, public.admins and episodes.live_at. Both are applied on
 -- live together, through apply-live-migrations.yml with Koss's approval,
 -- BEFORE the Phase 5 code deploy. The current production code ignores

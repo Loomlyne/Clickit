@@ -4,14 +4,14 @@ plan: 09
 subsystem: database
 tags: [supabase, migration, m1a, rls, admins, profiles, live_at, newsletter, db-proof]
 requires: ["05-01"]
-provides: [M1a migration 20261021142458_phase5_m1a_accounts.sql, public.admins, public.am_i_admin, public.list_admins, profiles account columns, episodes.live_at, newsletter opt-in columns, pre_* fixture ordering in db-proof]
+provides: [M1a migration 20261021150000_phase5_m1a_accounts.sql, public.admins, public.am_i_admin, public.list_admins, profiles account columns, episodes.live_at, newsletter opt-in columns, pre_* fixture ordering in db-proof]
 affects: [05-13, 05-14, 05-35, 05-36]
 tech-stack:
   added: []
   patterns: ["service-role-only table with RLS on and no policies", "security-invoker BEFORE UPDATE trigger that pins system columns for API roles", "updated_at trigger paused (if present) around a backfill so optimistic-concurrency versions do not move"]
 key-files:
   created:
-    - supabase/migrations/20261021142458_phase5_m1a_accounts.sql
+    - supabase/migrations/20261021150000_phase5_m1a_accounts.sql
     - supabase/tests/pre_phase5_app_config.sql
     - supabase/tests/m1a_admins.sql
     - supabase/tests/m1a_profiles.sql
@@ -20,7 +20,7 @@ key-files:
     - scripts/db-proof.sh
     - supabase/tests/README.md
 key-decisions:
-  - "M1a = supabase/migrations/20261021142458_phase5_m1a_accounts.sql (later plans refer to it as M1a); sorts after 20261021120000 (main) and 20261020150526 (Phase 6)"
+  - "M1a = supabase/migrations/20261021150000_phase5_m1a_accounts.sql (later plans refer to it as M1a); sorts after 20261021120000 (main) and 20261020150526 (Phase 6)"
   - "public.admins is created empty; the migration never mentions app_config (D-16)"
   - "Backfills of profiles and episodes do not bump updated_at: the set_updated_at trigger is disabled and re-enabled around each backfill inside the migration transaction, only if it exists (admin saves use updated_at as a version; the sitemap uses it as lastmod)"
   - "db-proof.sh runs pre_*.sql fixtures once, just before the first *_phase5_* migration; without one they still run before supabase/pending"
@@ -32,11 +32,11 @@ completed: 2026-10-21
 
 # Phase 5 Plan 09: Migration M1a (additive) Summary
 
-**M1a `20261021142458_phase5_m1a_accounts.sql`: empty service-role-only `public.admins` with `am_i_admin()`/`list_admins()`, five profile account columns backfilled so no existing person is mailed or asked for a password, a trigger-maintained server-only `episodes.live_at`, and newsletter `pending` status plus confirm columns, all proven in a scratch database (exit=0).**
+**M1a `20261021150000_phase5_m1a_accounts.sql`: empty service-role-only `public.admins` with `am_i_admin()`/`list_admins()`, five profile account columns backfilled so no existing person is mailed or asked for a password, a trigger-maintained server-only `episodes.live_at`, and newsletter `pending` status plus confirm columns, all proven in a scratch database (exit=0).**
 
 ## Final migration filename (M1a)
 
-`supabase/migrations/20261021142458_phase5_m1a_accounts.sql`
+`supabase/migrations/20261021150000_phase5_m1a_accounts.sql`
 
 ## Tasks
 
@@ -83,3 +83,7 @@ None.
 None beyond the plan's threat model (T-05-09-01..07 mitigated and tested).
 
 ## Self-Check: PASSED
+
+## Later change (2026-10-25)
+
+M1a was renamed from `20261021142458_phase5_m1a_accounts.sql` to `20261021150000_phase5_m1a_accounts.sql` after the merge of main 4dd5ad6. Main's Phase 3 migration `20261021143410_media_url_rewrite_backup.sql` sorts after the old name, and `apply-live-migrations.yml` runs `db push` without `--include-all`, so it would refuse an older pending file. The SQL is unchanged. The shared local stack's `schema_migrations` row was re-versioned in place (no re-run, no reset). `tests/unit/phase5-migration-order.test.ts` now guards the order. Log lines in 05-13, 05-14, 05-17 and 05-38 keep the old name as written at the time.

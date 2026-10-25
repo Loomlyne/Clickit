@@ -143,7 +143,7 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-07: react-email 6.11.0 and @react-email/render 2.1.0 installed (planned 6.11.3/2.1.1 are under 14 days old); bump allowed from 2026-10-30
 - [Phase 05]: 05-07: spike says pre-render (cold batch 29-41 ms vs 10 ms Free CPU, warm mean ~4.3 ms, gzip 266.56 KiB); controller to revise 05-11/05-19
 - [Phase 05]: 05-08: processBatch is pure with ports claimOutbox/finishOutbox/render/mailer/now/log/unsubscribeUrl; DB write before ack; digest without a working unsubscribe link is never sent; not_configured retries are capped by MAX_ATTEMPTS (5) like any transient error
-- [Phase 05]: 05-09: M1a = supabase/migrations/20261021142458_phase5_m1a_accounts.sql; admins created empty; backfills pause set_updated_at (if present) so updated_at versions do not move
+- [Phase 05]: 05-09: M1a = supabase/migrations/20261021150000_phase5_m1a_accounts.sql; admins created empty; backfills pause set_updated_at (if present) so updated_at versions do not move
 - [Phase 05]: 05-09: db-proof.sh runs supabase/tests/pre_*.sql once just before the first _phase5_ migration
 - [Phase 05]: 05-12: CodeField emits normalised value and clears/refocuses when error changes; password eye is right-0 inside a dir=ltr box (pinned by password-field.test.ts); auth.hidePassword added (Arabic wording for Koss to confirm); formatCountdown re-exports formatClock; ui/switch hand-written on radix-ui
 - [Phase 05]: 05-10: auth templates are sentinels swapped for Go actions after render, locale branch wraps whole documents; production and local sets differ only in the logo URL; MAIL-01/AUTH-02/AUTH-04 stay Pending until 05-35/05-38
