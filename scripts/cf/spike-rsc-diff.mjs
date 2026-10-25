@@ -48,12 +48,17 @@ export function parseArgs(argv) {
   return out
 }
 
-/** Flight router state for a path, as the client strips it before sending. */
+/**
+ * Flight router state for a path, as the client strips it before sending
+ * (prepareFlightRouterStateForRequest keeps [segment, parallelRoutes] and adds
+ * [2]/[3] only for a refresh marker and [4] only as a number of prefetch hints).
+ * Next 16's flightRouterStateSchema rejects a boolean at [4], so none is sent.
+ */
 export function stateTreeFor(path) {
   const segments = path.split('/').filter(Boolean)
   let node = ['__PAGE__', {}]
   for (let i = segments.length - 1; i >= 0; i--) node = [segments[i], { children: node }]
-  const tree = ['', { children: node }, null, null, true]
+  const tree = ['', { children: node }]
   return encodeURIComponent(JSON.stringify(tree))
 }
 
