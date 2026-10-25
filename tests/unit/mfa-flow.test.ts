@@ -138,3 +138,56 @@ test('enrolAllowed: first factor only while enrolment is due; second only after 
   assert.equal(enrolAllowed({ mfa: 'needs_enrol', verifiedTotp: 1 }), false)
   assert.equal(enrolAllowed({ mfa: null, verifiedTotp: 0 }), false)
 })
+
+// Source invariants for the server wiring (actions and page are not importable
+// under node:test: server-only, Next and Supabase imports).
+const ACTIONS = new URL('../../src/app/[locale]/(viewer)/auth/mfa/actions.ts', import.meta.url)
+const PAGE = new URL('../../src/app/[locale]/(viewer)/auth/mfa/page.tsx', import.meta.url)
+
+function exportedBody(src: string, name: string): string {
+  const start = src.indexOf(`export async function ${name}(`)
+  assert.ok(start >= 0, `${name} is exported`)
+  const nextExport = src.indexOf('\nexport ', start + 1)
+  return src.slice(start, nextExport === -1 ? undefined : nextExport)
+}
+
+test('every MFA action re-checks the admin first and uses challenge + verify on the server', () => {
+  const src = readFileSync(ACTIONS, 'utf8')
+  assert.match(src, /^'use server'/)
+  for (const name of ['startEnrol', 'verifyEnrol', 'verifyAdminCode']) {
+    const body = exportedBody(src, name)
+    assert.match(body, /await getAdminStatus\(\)/, `${name} calls getAdminStatus`)
+    assert.match(body, /return \{ ok: false, error: 'unauthorized' \}/, `${name} refuses non-admins`)
+  }
+  assert.match(src, /mfa\.enroll\(/)
+  assert.match(src, /mfa\.challenge\(/)
+  assert.match(src, /mfa\.verify\(/)
+  assert.match(exportedBody(src, 'startEnrol'), /enrolAllowed\(/)
+  assert.match(exportedBody(src, 'startEnrol'), /mfa\.unenroll\(/)
+})
+
+test('MFA actions never log or audit a secret, QR, URI or code', () => {
+  const src = readFileSync(ACTIONS, 'utf8')
+  for (const line of src.split('\n').filter((l) => /console\.(log|warn|error|info|debug)\(/.test(l))) {
+    assert.doesNotMatch(line, /secret|qr|uri|code/i, line)
+  }
+  // Audit diffs: only the friendly name, a count or a reason.
+  const diffs = src.match(/diff: \{[^}]*\}/g) ?? []
+  assert.ok(diffs.length >= 3)
+  for (const d of diffs) assert.doesNotMatch(d, /secret|qr|uri|code\b/i, d)
+  for (const a of ["'mfa_enrol'", "'mfa_unenrol'", "'mfa_failed'"]) assert.ok(src.includes(a), a)
+  assert.match(src, /entity: 'admin_auth'/)
+})
+
+test('/auth/mfa page: signed out -> /auth, non-admin -> /watch, ok -> next; noindex; not under /admin', () => {
+  const src = readFileSync(PAGE, 'utf8')
+  assert.match(src, /getAdminStatus\(\)/)
+  assert.match(src, /getSafeAuthNextPath\(rawNext, '\/admin'\)/)
+  assert.match(src, /!status\.signedIn[\s\S]*pathname: '\/auth'/)
+  assert.match(src, /!status\.isAdmin\) return redirect\(\{ href: '\/watch'/)
+  assert.match(src, /status\.mfa === 'ok'\) return redirect\(\{ href: next/)
+  assert.match(src, /robots: \{ index: false/)
+  assert.throws(() =>
+    readFileSync(new URL('../../src/app/[locale]/admin/mfa/page.tsx', import.meta.url)),
+  )
+})

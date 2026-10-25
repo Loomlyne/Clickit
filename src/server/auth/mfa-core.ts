@@ -11,6 +11,27 @@ export function mfaStep({ verifiedTotp }: { verifiedTotp: number }): MfaStep {
   return Number.isFinite(verifiedTotp) && verifiedTotp > 0 ? 'verify' : 'enrol'
 }
 
+/** D-20: a first authenticator plus at most one second one. */
+export const MAX_ADMIN_TOTP = 2
+
+/**
+ * May this admin session start an enrolment? The first factor only while
+ * enrolment is due (no verified factor); a second one only right after a fresh
+ * code (aal2, MFA ok) and below MAX_ADMIN_TOTP. A session that still owes a
+ * code (needs_code) never adds a factor: that would sidestep the code.
+ */
+export function enrolAllowed({
+  mfa,
+  verifiedTotp,
+}: {
+  mfa: 'ok' | 'needs_enrol' | 'needs_code' | null
+  verifiedTotp: number
+}): boolean {
+  if (mfa === 'needs_enrol') return verifiedTotp === 0
+  if (mfa === 'ok') return verifiedTotp >= 1 && verifiedTotp < MAX_ADMIN_TOTP
+  return false
+}
+
 /** 'JBSWY3DPEHPK3PXP' -> 'JBSW Y3DP EHPK 3PXP' (display only; copy the ungrouped key). */
 export function formatManualKey(secret: string): string {
   const compact = secret.replace(/\s+/g, '').toUpperCase()
