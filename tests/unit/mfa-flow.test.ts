@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
 import {
+  enrolAllowed,
+  MAX_ADMIN_TOTP,
   formatManualKey,
   friendlyNameFor,
   mfaStep,
@@ -122,4 +124,17 @@ test('audit.ts names the admin_auth entity and the three MFA actions', () => {
     assert.match(src, new RegExp(`'${a}'`))
   }
   assert.match(src, /admin_auth\s*->\s*\{ factor_friendly_name/)
+})
+
+test('enrolAllowed: first factor only while enrolment is due; second only after a fresh code', () => {
+  assert.equal(MAX_ADMIN_TOTP, 2)
+  assert.equal(enrolAllowed({ mfa: 'needs_enrol', verifiedTotp: 0 }), true)
+  assert.equal(enrolAllowed({ mfa: 'ok', verifiedTotp: 1 }), true)
+  // A session that still owes a code must never add a factor (it would bypass the code).
+  assert.equal(enrolAllowed({ mfa: 'needs_code', verifiedTotp: 1 }), false)
+  assert.equal(enrolAllowed({ mfa: 'needs_code', verifiedTotp: 0 }), false)
+  assert.equal(enrolAllowed({ mfa: 'ok', verifiedTotp: 2 }), false)
+  assert.equal(enrolAllowed({ mfa: 'ok', verifiedTotp: 0 }), false)
+  assert.equal(enrolAllowed({ mfa: 'needs_enrol', verifiedTotp: 1 }), false)
+  assert.equal(enrolAllowed({ mfa: null, verifiedTotp: 0 }), false)
 })
