@@ -42,6 +42,30 @@
     "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }],
+  // App email queue (D-28, D-38). Koss creates both queues before the first deploy
+  // (05-35): `wrangler queues create clickit-email` and `clickit-email-dlq`.
+  "queues": {
+    // EMAIL_QUEUE is the doorbell: messages carry only { outboxId }; the outbox row
+    // in Postgres is the record (src/server/email/outbox.ts, queue.ts).
+    "producers": [{ "binding": "EMAIL_QUEUE", "queue": "clickit-email" }],
+    "consumers": [
+      {
+        "queue": "clickit-email",
+        // 5 per batch because one invocation on Workers Free has 50 subrequests and
+        // 10 ms CPU (F9): 1 claim + up to 5 sends + 1 finish per batch.
+        "max_batch_size": 5,
+        // Seconds to wait for a fuller batch before delivering a partial one.
+        "max_batch_timeout": 5,
+        // A batch that throws (claim or finish failed) is redelivered up to 5 times.
+        "max_retries": 5,
+        // Seconds before a redelivered batch; per-row backoff comes from retry({ delaySeconds }).
+        "retry_delay": 60,
+        // Catches messages of batches that kept crashing; the DB row stays the record
+        // and the sweep re-enqueues it (F8).
+        "dead_letter_queue": "clickit-email-dlq"
+      }
+    ]
+  },
   "vars": {
     "CLOUDFLARE_ACCOUNT_ID": "e329b099b6e4272fc0915a99832e47fe",
     "CLOUDFLARE_R2_BUCKET": "clickit-media",
@@ -53,7 +77,18 @@
     // run: it only reports what it would delete. Real deletes only for exactly "on", and
     // only on Koss's word after he has read a dry-run report (02-RUNBOOK.md). The deploy
     // guard refuses "on" unless the deploy passes --allow-upload-sweep-delete.
-    "R2_UPLOAD_SWEEP_DELETE": "off"
+    "R2_UPLOAD_SWEEP_DELETE": "off",
+    // Sender of the app emails (D-25, D-36). Public.
+    "EMAIL_FROM": "Clickit Story <no-reply@clickitstory.ae>",
+    // Public Supabase project URL (already in every client bundle as
+    // NEXT_PUBLIC_SUPABASE_URL); the consumer calls claim_outbox / finish_outbox here.
+    // RESEND_API_KEY, EMAIL_LINK_SECRET and SUPABASE_SERVICE_ROLE_KEY are Worker
+    // secrets set by Koss with `wrangler secret put` (05-35), never in this file.
+    "SUPABASE_URL": "https://lajguozmtissnnfccmej.supabase.co",
+    // Origin of the links inside emails (unsubscribe, newsletter confirm, buttons).
+    "SITE_ORIGIN": "https://www.clickitstory.ae",
+    // My List digest kill switch (D-34): "off" until Koss turns it on.
+    "EMAIL_DIGEST_ENABLED": "off"
   },
   // Production target (Phase 3, D-07): the same Worker as workers.dev ("clickit"), so
   // secrets, R2/D1 and the DOQueueHandler namespace stay. Last deploy wins: never deploy
@@ -88,12 +123,30 @@
       "durable_objects": {
         "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }]
       },
+      // Same queues as the top level (same Worker; not inherited).
+      "queues": {
+        "producers": [{ "binding": "EMAIL_QUEUE", "queue": "clickit-email" }],
+        "consumers": [
+          {
+            "queue": "clickit-email",
+            "max_batch_size": 5,
+            "max_batch_timeout": 5,
+            "max_retries": 5,
+            "retry_delay": 60,
+            "dead_letter_queue": "clickit-email-dlq"
+          }
+        ]
+      },
       "vars": {
         "CLOUDFLARE_ACCOUNT_ID": "e329b099b6e4272fc0915a99832e47fe",
         "CLOUDFLARE_R2_BUCKET": "clickit-media",
         "CLICKIT_RUNTIME": "workers",
         // Dry run while "off"; Step 52a sets both this and the top level to "on" only on Koss's word.
         "R2_UPLOAD_SWEEP_DELETE": "off",
+        "EMAIL_FROM": "Clickit Story <no-reply@clickitstory.ae>",
+        "SUPABASE_URL": "https://lajguozmtissnnfccmej.supabase.co",
+        "SITE_ORIGIN": "https://www.clickitstory.ae",
+        "EMAIL_DIGEST_ENABLED": "off",
         "RESEND_FROM_EMAIL": "Clickit Story <no-reply@clickitstory.ae>"
       }
     }

@@ -7,3 +7,6 @@ SUPABASE_SERVICE_ROLE_KEY=
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
 LOCAL_UPLOAD_SHIM_SECRET=
+# Email (local preview only; real values never committed). Live: Worker secrets set by Koss.
+RESEND_API_KEY=
+EMAIL_LINK_SECRET=

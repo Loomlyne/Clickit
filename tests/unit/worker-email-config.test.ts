@@ -39,7 +39,10 @@ test('queue() lets errors propagate (no catch, no waitUntil), so the queue retri
   const start = workerSrc.indexOf('async queue(')
   assert.ok(start >= 0)
   const next = workerSrc.indexOf('async scheduled(', start)
-  const body = workerSrc.slice(start, next > start ? next : undefined)
+  // Comments stripped: the scheduled() comment above its handler mentions waitUntil.
+  const body = workerSrc
+    .slice(start, next > start ? next : undefined)
+    .replace(/^\s*\/\/.*$/gm, '')
   assert.match(body, /await processBatch\(/)
   assert.equal(/catch\s*\(/.test(body), false)
   assert.equal(/waitUntil/.test(body), false)
