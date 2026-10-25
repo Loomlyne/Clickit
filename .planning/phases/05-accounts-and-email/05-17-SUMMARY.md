@@ -21,11 +21,11 @@ key-files:
 key-decisions:
   - "seed:local-admin applies M2 locally (resolveM2Source: landed supabase/migrations/*_phase5_m2_admin_aal2.sql first, else supabase/pending/m2_admin_aal2.sql) instead of pointing app_config.admin_user_id at the seed user; psql --single-transaction via docker exec; a landed migration is also recorded in schema_migrations so migration up does not re-run it"
   - "auth-config-check also checks smtp_user = resend, smtp_pass and security_captcha_secret present, security_captcha_provider = turnstile (D-37); smtp_port compares as text (the API returns a string)"
-  - "The seed run on the shared stack was not done: 05-13-SUMMARY records a general go for applying this phase's migrations, not one for applying M2 locally; the plan says to stop for the controller in that case"
+  - "Controller go (2026-10-25, option A): seed run on the shared stack; M2 applied from supabase/pending in one transaction and left UNRECORDED in schema_migrations until 05-41 lands it as a migration (a version with no file would break migration up --local for every worktree)"
 requirements-completed: []
 duration: 25min (two sittings, 2026-10-21 and 2026-10-25)
 completed: 2026-10-25
-status: partial (Task 1 acceptance run of npm run seed:local-admin waits for the controller's go)
+status: complete (seed run 2026-10-25 21:49Z on the shared stack; UI check of the admin page after a code waits for 05-25 /auth/mfa)
 ---
 
 # Phase 5 Plan 17: Owner and test scripts Summary
@@ -36,7 +36,7 @@ status: partial (Task 1 acceptance run of npm run seed:local-admin waits for the
 
 | # | Task | Commits | Status |
 |---|------|---------|--------|
-| 1 | Local-only helper and seed:local-admin | `6a0d06fe` (RED), `1ba769ef` (GREEN) | code and tests done; acceptance run **waiting: NEEDS CONTROLLER** |
+| 1 | Local-only helper and seed:local-admin | `6a0d06fe` (RED), `1ba769ef` (GREEN) | done; acceptance run passed 2026-10-25 21:49Z |
 | 2 | admin-remove-factor and auth-config-check | `94e62447` (RED), `b8784670` (GREEN) | done |
 
 ## What was built
@@ -104,7 +104,18 @@ The Management API OpenAPI spec (`https://api.supabase.com/api/v1-json`, `AuthCo
 - `eslint` on the five files is clean. `tsc --noEmit` returns rc=0.
 - Shared stack (read-only checks, 2026-10-25 22:29 CET): migrations end `20261021151843, 20261021143410, 20261021142458, 20261021120000`. `private.is_admin()` still reads `app_config`, so M2 is not applied locally. The heavy lock was free.
 
-## NEEDS CONTROLLER
+## Seed run (2026-10-25, after the controller go)
+
+Controller answer: A. Run `seed:local-admin` now under the heavy lock, no reset, M2 in one idempotent transaction, left unrecorded until 05-41, TOTP secret only in the mode-600 env file.
+
+- Log `/Users/koss/.clickit-checks/p5-seed.log` (21:49:11Z to 21:49:30Z) ends `exit=0`. It contains `local M2 source: supabase/pending/m2_admin_aal2.sql`, `local M2 applied` and `local admin ready: /Users/koss/.clickit-checks/local-admin.env`. No `RLS check failed`, so the aal1 session read 0 rows and the aal2 session read 1.
+- `stat -f %Lp` on the env file prints 600. It has 3 `KEY=value` lines (email, password, TOTP secret); no values were printed.
+- Read back: `private.is_admin()` now checks aal2; `public.admins` has 1 row; `schema_migrations` still ends at 20261021151843.
+- **The shared stack carries an unrecorded M2 until 05-41.** When 05-41 lands `<ts>_phase5_m2_admin_aal2.sql`, the next seed run records that version (`on conflict do nothing`). Every other branch on the shared stack now needs an admins row and aal2 for local admin reads.
+- The UI check (sign in, enter a code, the admin page opens) waits for 05-25, which builds `/auth/mfa`. Until then the admin layout sends the seeded admin to a page that does not exist yet.
+- Deviation: `npm run seed:local-admin` failed first (`supabase status failed`), because macOS kills the npm-installed CLI binary `node_modules/@supabase/cli-darwin-arm64/bin/supabase` (SIGKILL, rc 137). The run used `node scripts/seed-local-admin.mjs` under heavy-run, which resolves the Homebrew CLI 2.121.0 from PATH. No code change.
+
+## NEEDS CONTROLLER (answered)
 
 `NEEDS CONTROLLER: seed:local-admin will apply supabase/pending/m2_admin_aal2.sql to the shared local stack (local admin pages then require TOTP; Phase 6 must use npm run seed:local-admin). Reply go.`
 
@@ -152,7 +163,8 @@ AUTH-05, AUTH-06 and MAIL-01 stay Pending. This plan delivers local tooling only
 
 ## Not verified
 
-- The `npm run seed:local-admin` acceptance run (NEEDS CONTROLLER above): the env file, mode 600, the aal1 0 / aal2 1 RLS self-check, the `--second-factor` path and the TOTP replay wait.
+- The `--second-factor` path and the TOTP replay wait (the first run did not need either).
+- The admin page opening after a code in the browser: waits for 05-25.
 - `admin-remove-factor.mjs` against a real user. It is meant for Koss's terminal; it was only run here with no env variables, to check that it refuses.
 - `auth-config-check.mjs` against live. That needs Koss's token, in 05-35.
 
