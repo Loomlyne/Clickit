@@ -4,7 +4,7 @@ plan: 19
 subsystem: email-queue-worker
 tags: [cloudflare-queues, worker, wrangler, consumer, cpu, bundle, workers-free]
 requires: ["05-08", "05-11", "05-16"]
-provides: [custom-worker queue() handler, clickit-email producer/consumer/DLQ config, email vars, worker-email-config test, email-batch-cpu harness]
+provides: [custom-worker queue() handler, clickit-email producer/consumer/DLQ config, email vars, worker-email-config test, email-batch-cpu harness, takeEmailCpuProbe (test-only, off by default), email-cpu-probe-send, cf:bundle-budget in gate:local, handover 05-19-workersdev-cpu]
 affects: [05-20, 05-35, 05-36, 05-39]
 tech-stack:
   added: []
@@ -13,7 +13,15 @@ key-files:
   created:
     - tests/unit/worker-email-config.test.ts
     - scripts/email-batch-cpu.mjs
+    - src/server/email/cpu-probe.ts
+    - scripts/email-cpu-probe-send.mjs
+    - scripts/cf/bundle-budget.mjs
+    - tests/unit/email-cpu-probe.test.ts
+    - tests/unit/email-cpu-probe-send.test.ts
+    - tests/unit/bundle-budget.test.ts
+    - .planning/handovers/05-19-workersdev-cpu.md
   modified:
+    - package.json
     - custom-worker.ts
     - wrangler.jsonc
     - .dev.vars.example
@@ -23,16 +31,19 @@ key-decisions:
   - "queues block and the four email vars are repeated in env.production: wrangler does not inherit queues or vars, and main's cutover drift test (03-01) requires every non-inheritable key and every top-level var to be copied"
   - "queue() takes (batch, env) only; the ctx argument is unused, and dropping it avoids a new no-unused-vars warning"
   - "Admin layout calls unstable_rethrow(e) first in its requireAdmin() catch; without it next build prerendered /en/admin/settings and failed"
-  - "CPU gate result: set B (set A loadavg 4.01 > 4) cold max 14.44 ms, over 10 ms -> NEEDS CONTROLLER; warm mean max 0.58 ms"
+  - "First CPU run: set B cold max 14.44 ms (no warm-up) -> NEEDS CONTROLLER; controller chose option A with three conditions (2026-10-25)"
+  - "Controller condition 1: the harness warms up only Worker built-ins (Response, Headers, fetch via data: URL) before the timed cold batch and gates on that; no-warm-up figures kept. Set B cold max 5.09 ms, mean max 0.58 ms: PASS"
+  - "Controller condition 2: the real gate is a workers.dev queue batch measured by the controller (handover 05-19-workersdev-cpu.md); test-only probe in queue(), off by default (EMAIL_CPU_PROBE=until:<UTC>, max 24 h), in-process fetch, no DB, no network, no email"
+  - "Controller condition 3: gate:local fails above 3,000 KiB gzip (cf:bundle-budget, local wrangler dry run, works with network denied); branch 2,952.21 KiB vs main bd86953f 2,932.33 KiB"
 requirements-completed: []
-duration: 15min
+duration: 45min
 completed: 2026-10-25
-status: code complete; CPU gate open (NEEDS CONTROLLER)
+status: code complete; Mac CPU gate PASS with built-in warm-up; workers.dev CPU gate pending (controller runbook)
 ---
 
 # Phase 5 Plan 19: Queue consumer on the Worker Summary
 
-**`custom-worker.ts` now has `queue()` running `processBatch(batch, buildEmailDeps({ ...env, CLICKIT_RUNTIME: 'workers' }))`. `wrangler.jsonc` declares the `clickit-email` producer, the consumer (batch 5, timeout 5, retries 5, delay 60) and the DLQ `clickit-email-dlq`, plus the public email vars, on both targets. The Worker builds at 2,949.63 KiB gzip, under the 3 MiB Free limit. The consumer's import graph is React-free. The per-batch CPU gate fails on the cold batch: 14.44 ms max against 10 ms. About 9 ms of that is Node lazy-loading its `Response` implementation in the harness, not the fill.**
+**`custom-worker.ts` now has `queue()` running `processBatch(batch, buildEmailDeps({ ...env, CLICKIT_RUNTIME: 'workers' }))`. `wrangler.jsonc` declares the `clickit-email` producer, the consumer (batch 5, timeout 5, retries 5, delay 60) and the DLQ `clickit-email-dlq`, plus the public email vars, on both targets. The Worker builds at 2,949.63 KiB gzip, under the 3 MiB Free limit. The consumer's import graph is React-free. With only the Worker built-ins warmed up (Response, Headers, fetch), the Mac cold batch is at most 5.09 ms (14.44 to 15.01 ms without warm-up: Node lazy-loads undici). The real gate is a workers.dev batch the controller measures with a test-only probe that is off by default. gate:local now fails when the bundle is above 3,000 KiB gzip.**
 
 ## Tasks
 
@@ -42,6 +53,12 @@ status: code complete; CPU gate open (NEEDS CONTROLLER)
 | 1 (GREEN) | queue() handler, queues, vars, `.dev.vars.example` | `78acf53c` |
 | 2 | Build and bundle measure (+ blocking fix in the admin layout) | `56379b92` |
 | 3 | CPU harness and measurement | `cef589a1` |
+| C2 | Test-only CPU probe in queue(), off by default | `d0209476` |
+| C1 | Harness warms Worker built-ins, logs both cold figures | `ec1d0e65` |
+| C2 | Probe batch sender (refuses without the confirm flag) | `2cf2e6a7` |
+| C3 | gate:local bundle budget (3,000 KiB gzip) | `122c141e` |
+
+C1 to C3 are the controller's three conditions on option A (2026-10-25).
 
 ## What was built
 
@@ -65,9 +82,19 @@ status: code complete; CPU gate open (NEEDS CONTROLLER)
   - a walker self-test that covers multi-line imports, `export from`, side-effect imports, dynamic imports, `with { type: 'json' }` and commented-out react imports
 - `scripts/email-batch-cpu.mjs`: the CPU harness (Task 3, below).
 
+- `src/server/email/cpu-probe.ts` (C2): `takeEmailCpuProbe(batch, env.EMAIL_CPU_PROBE)` runs first in `queue()`.
+  - It takes only messages tagged `{ probe: 'email-cpu-v1' }`. Other messages go on to `processBatch(rest, buildEmailDeps(...))` unchanged, and when a batch has no probe messages the same batch object is returned.
+  - Flag off (the default): probe messages are acked and dropped.
+  - Flag on (`until:<UTC>`, in the future, at most 24 h ahead): they run through the real `processBatch` and `buildEmailDeps`, on fixed fake env values and an in-process fetch. Claim, finish and Resend are answered there and anything else throws, so a probe makes no subrequest, no DB call and no email.
+  - It also holds the shared fixtures, used by the Mac harness too.
+- `scripts/email-cpu-probe-send.mjs` (C2): pushes one batch of 5 probe messages through the Queues HTTP push API. It uses the pinned OAuth login, and the token stays in memory. It refuses without `--confirm-workersdev-probe`, without the pinned HOME, or with a token env set.
+- `scripts/cf/bundle-budget.mjs` and `npm run cf:bundle-budget` (C3): run in `gate:local` after `cf:build`.
+
 ## Import allow-list result
 
-Walked from custom-worker.ts's two email imports. Visited, all inside the plan's list: `src/server/email/consumer.ts`, `deps.ts`, `transport.ts`, `links.ts`, `src/emails/render-app.ts`, `src/emails/app/model.ts`, `src/emails/app/template-fill.ts`, `src/emails/brand.ts`, `src/lib/email-tokens.ts`, `src/lib/email-constants.ts`, `src/generated/app-email-templates.json`. There are no bare specifiers (`ALLOWED_BARE` is empty) and the list was not extended.
+Walked from custom-worker.ts's email imports. Visited, all inside the list: `src/server/email/consumer.ts`, `deps.ts`, `transport.ts`, `links.ts`, `cpu-probe.ts`, `src/emails/render-app.ts`, `src/emails/app/model.ts`, `src/emails/app/template-fill.ts`, `src/emails/brand.ts`, `src/lib/email-tokens.ts`, `src/lib/email-constants.ts`, `src/generated/app-email-templates.json`. There are no bare specifiers (`ALLOWED_BARE` is empty).
+
+The list was extended by one file, with this reason (also in the test): `src/server/email/cpu-probe.ts`, controller condition 2. It is a test-only CPU probe, off by default, and holds only fixtures and an in-process fetch stub, with no imports beyond `consumer.ts` and `deps.ts`.
 
 ## Bundle (Task 2)
 
@@ -88,83 +115,148 @@ Wrangler lists `env.EMAIL_QUEUE (clickit-email) Queue` and the four new vars amo
 
 The headroom is 122 KiB. Phase 02-01 once measured 3,079 KiB (over the limit), so later plans that add app code to the Worker should watch this number.
 
+### Bundle budget (controller condition 3)
+
+`gate:local` is now `... && npm run build && npm run cf:build && npm run cf:bundle-budget`.
+
+How `cf:bundle-budget` works:
+- It runs the repo's own `node_modules/.bin/wrangler deploy --dry-run --outdir <tmp>`. That is never npx, so there is no registry fetch. It uses the pinned HOME and metrics off.
+- It parses the last `Total Upload: <n> <unit> / gzip: <n> <unit>` line.
+- It fails when gzip is above `BUDGET_GZIP_KIB = 3000` (the Free limit is 3,072 KiB).
+- It refuses when `.open-next/worker.js` is missing.
+- Unit tests in `tests/unit/bundle-budget.test.ts` cover the parser (KiB and MiB, last line wins, no line), the inclusive threshold, the gate:local wiring, and the use of the repo binary.
+
+Result:
+
+```
+bundle-budget ok gzip=2952.21 KiB total=14441.42 KiB budget=3000 KiB headroom=47.79 KiB
+```
+
+It ran under `sandbox-exec` with all outbound network denied, so it works offline. It ran on the current sources: the wrangler step rebundles custom-worker.ts, so the probe is included, over the `.open-next` from the Task 2 build.
+
+**The budget headroom is now 47.79 KiB.** Phase 5's remaining app plans (05-21/05-28 importing `outbox.ts` into the Next server) will eat into it.
+
+### Largest additions vs main (controller condition 3)
+
+Method:
+- Main is `origin/main` `bd86953f`, which is an ancestor of this branch. It was built in a clean clone (`git clone --reference`, `npm ci`, `cf:build` with the same placeholder env), then put through a local `wrangler deploy --dry-run --metafile`. Script `/Users/koss/.clickit-checks/p5-main-bundle.sh`, log `/Users/koss/.clickit-checks/p5-main-bundle.log`, which ends `exit=0`. The clone was removed.
+- The branch is the `cf:bundle-budget` run above, with `--metafile /Users/koss/.clickit-checks/p5-branch-meta.json`.
+- `bytesInOutput` was summed per input for both wrangler metafiles, and also for OpenNext's `handler.mjs.meta.json`.
+
+Totals: main 2,932.33 KiB gzip and branch 2,952.21 KiB gzip, so **+19.88 KiB gzip** (+224,509 bytes raw).
+
+| # | Addition (raw bytes in the uploaded bundle) | Raw | gzip (approx.) |
+|---|---|---|---|
+| 1 | `src/generated/app-email-templates.json`, the pre-rendered templates. esbuild inlines them for the consumer path; the 98,022-byte file grows to 136,773 bytes once re-serialized. | +136,773 | about 5 to 8 KiB (the file alone gzips to 4,786 B) |
+| 2 | The Next server, `.open-next/server-functions/default/handler.mjs`. Inside it: AR messages +23,479 and EN messages +7,249 (Phase 5 auth/account strings), and the Next runtime +18,978 (newly used APIs). Turbopack chunk renames account for the rest. | +44,639 | message catalogs about +5.0 KiB (en +2,319 B, ar +2,726 B) |
+| 3 | Consumer-path code: `cpu-probe.ts` 7,926, `app/model.ts` 6,627, `consumer.ts` 5,992, `template-fill.ts` 4,871, `transport.ts` 4,814, `deps.ts` 3,216, `links.ts` 1,773, `brand.ts` 1,547, `render-app.ts` 1,430 | +38,196 | about 8 to 10 KiB (sources with comments gzip to 19,320 B, an upper bound) |
+
+The gzip column is an estimate: wrangler reports gzip for the whole upload only. The per-input raw numbers come from the metafiles. The total gzip delta (+19.88 KiB) is measured.
+
 ## CPU measurement (Task 3)
 
-Harness: `scripts/email-batch-cpu.mjs`, run in a fresh Node 26 process for each run.
+Harness: `scripts/email-batch-cpu.mjs`. Each run is two fresh Node 26 processes.
 
-- It uses the real `processBatch` and the real `buildEmailDeps`, so the claim and finish RPC requests, the Resend request, `renderAppEmail` on the pre-rendered templates with signed links, and the HMAC unsubscribe URL all run. Only `log` is replaced, with a no-op.
-- `fetchStub` answers the three known URLs and throws `unexpected fetch <url>` on any other.
-- Each batch has 5 rows:
-  - digest EN: 5 shows, 3 rows x 3 episodes, one show without `image_url`, See all
-  - digest AR
-  - support_admin AR with the hostile name
-  - welcome EN
-  - newsletter_confirm AR
-- Each run is 1 cold batch plus the mean of 50 warm batches. `buildEmailDeps` is inside each timed batch, as in queue().
-- Every batch made exactly 5 Resend calls, acked 5 messages and retried none.
+- **Gating process.** It first warms up only the platform built-ins a Worker already has: `new Headers`, `new Response(...).json()` and `fetch('data:...')`, which never touches the network. None of our own modules, templates or deps are warmed. workerd ships these natively and preloaded, while Node lazy-loads undici on first touch (`warmup_ms` is about 11 ms on the Mac). Then it times the import of `consumer.ts` + `deps.ts` (`module_load_ms`), one cold batch, and the mean of 50 warm batches.
+- **Record process.** A `--no-warmup` child does the same without the warm-up (`*_nowarm`).
 
-Rerun rule: every set-A run printed loadavg 4.01 (> 4), so set B ran and is the gating set. Logs: `/Users/koss/.clickit-checks/p5-email-batch-cpu.log` (set A) and `/Users/koss/.clickit-checks/p5-email-batch-cpu-b.log` (set B). Both end `exit=0` with five runs.
+The batch runs the real `processBatch` and the real `buildEmailDeps`, on the fixtures and in-process fetch of `src/server/email/cpu-probe.ts`, which are the same ones the workers.dev probe uses:
+- digest EN: 5 shows, 3 rows x 3 episodes, one show without `image_url`, See all
+- digest AR
+- support_admin AR with the hostile name
+- welcome EN
+- newsletter_confirm AR
+
+Every batch made exactly 5 Resend calls, acked 5 messages and retried none. `buildEmailDeps` is inside each timed batch.
+
+Rerun rule: set A ran at loadavg 5.34 (> 4), so set B ran and gates. Set B's own loadavg was 6.01: another executor was working on the machine. Logs: `/Users/koss/.clickit-checks/p5-email-batch-cpu.log` (set A) and `/Users/koss/.clickit-checks/p5-email-batch-cpu-b.log` (set B). Both end `exit=0` with five runs. The first run (no warm-up, 21:55Z) was replaced by these logs; its figures are kept in the comparison lines.
 
 ```
 cpu_set: B
-batch_fill_ms_cold_max: 14.44
+cpu_warmup: builtins
+batch_fill_ms_cold_max: 5.09
 batch_fill_ms_mean_max: 0.58
-batch_fill_ms_cold: 13.48
-batch_fill_ms_mean: 0.56
-module_load_ms: 40.99
-module_load_ms_max: 42.71
-loadavg_median: 3.50
-other_set_cold_max: 14.01
-other_set_mean_max: 0.58
-other_set_loadavg_median: 4.01
+batch_fill_ms_cold: 4.35
+batch_fill_ms_mean: 0.58
+module_load_ms: 40.21
+module_load_ms_max: 41.58
+loadavg_median: 6.01
+warmup_ms_median: 11.44
+nowarm_cold_max: 15.01
+nowarm_cold_median: 14.46
+nowarm_mean_max: 0.64
+nowarm_module_load_ms_median: 40.41
+other_set_cold_max: 5.22
+other_set_mean_max: 0.62
+other_set_nowarm_cold_max: 13.93
+other_set_nowarm_mean_max: 0.60
+other_set_loadavg_median: 5.34
+first_run_nowarm_cold_max: 14.44 (set B, 21:55Z, before condition 1)
 compare_05_07: batch_render_ms_cold: 29.45, batch_render_ms_mean: 4.28 (React render path)
-gate: FAIL (cold max 14.44 >= 10; mean max 0.58 < 10)
+gate: PASS (built-in warm-up: cold max 5.09 < 10, mean max 0.58 < 10)
 ```
 
-Gate: `batch_fill_ms_cold_max` 14.44 ms is not under 10, so the plan ends with NEEDS CONTROLLER (below). The warm mean, 0.58 ms, is far under the limit. Compared with 05-07's React path, cold is 2.0x lower and warm is 7.4x lower.
+| Set | cold max (warm-up) | mean max (warm-up) | cold max (no warm-up) | mean max (no warm-up) | loadavg |
+|---|---|---|---|---|---|
+| A | 5.22 | 0.62 | 13.93 | 0.60 | 5.34 |
+| B (gates) | 5.09 | 0.58 | 15.01 | 0.64 | 6.01 |
 
-Diagnostic (not part of the gate; uncommitted copy of the harness in the session scratchpad, run without the lock, 3 runs each). It pre-warms one thing before the cold batch:
+Plan gate, updated for condition 1 (the gating lines are the warm-up figures; the `nowarm_` and `other_set_` lines never repeat the `batch_fill_ms_` prefix):
 
-| Pre-warm before the cold batch | Pre-warm cost | Cold batch |
-|---|---|---|
-| none | - | 12.85-13.35 ms |
-| one WebCrypto HMAC importKey + sign | 1.6 ms | 11.96-12.42 ms |
-| one `new Response(JSON.stringify(..)).json()` | 8.4-9.3 ms | 4.21-4.28 ms |
-| both | - | 3.60-3.66 ms |
+```
+awk '/^cpu_warmup:/{w=$2} /^batch_fill_ms_cold_max:/{c=$2} /^batch_fill_ms_mean_max:/{m=$2} /^module_load_ms:/{l=$2} END{exit !(w=="builtins" && c!="" && m!="" && l!="" && c<10 && m<10)}' .planning/phases/05-accounts-and-email/05-19-SUMMARY.md
+```
 
-About 9 ms of the cold batch is Node lazy-loading its fetch/`Response` implementation (undici) the first time the stub builds a `Response`. The fill itself costs about 3.6 ms cold. In workerd, `Response`, `fetch` and WebCrypto are native and already loaded. My reading, which is not measured in workerd: the real cold batch is closer to 4 ms than to 14 ms.
+Node on the Mac is not Worker CPU. `module_load_ms` includes Node's TypeScript stripping and JSON parse; in the Worker that is bundled JS run at isolate startup, not per-invocation CPU. **The real gate is the workers.dev cold batch below (condition 2). After cutover, 05-36's consumer metrics watch it.**
 
-`module_load_ms` (about 40 ms) includes Node's TypeScript stripping and the JSON parse. In the Worker this is bundled JS that runs at isolate startup, which has its own startup limit and is not part of per-invocation CPU.
+## Workers.dev CPU gate (controller condition 2, pending)
 
-Node on the Mac is not Worker CPU. The live check stays 05-36's consumer metrics.
+The runbook is in `.planning/handovers/05-19-workersdev-cpu.md`. In short:
 
-NEEDS CONTROLLER: pre-rendered consumer batch over the Free 10 ms CPU limit (cold max 14.44 ms, mean max 0.58 ms, loadavg 3.50, set B); options: lower max_batch_size, profile the fill, or Workers Paid (Koss's pricing call)
+1. Queues `clickit-email` and `clickit-email-dlq` must exist (05-35). No separate test queue is needed: probe messages are tagged and handled in-process.
+2. The controller deploys `122c141e` (or any later commit with `d0209476`; it must be on GitHub) to workers.dev through `deploy-workersdev.sh` with the sha edited.
+3. `wrangler tail clickit --format json > /Users/koss/.clickit-checks/p5-probe-tail.jsonl`
+4. `printf 'until:%s' "$(date -u -v+2H +%Y-%m-%dT%H:%M:%SZ)" | HOME=/Users/koss/.clickit-cloudflare npx wrangler@4 secret put EMAIL_CPU_PROBE --name clickit` (a new version, so the next batch is cold).
+5. `node --experimental-strip-types ... scripts/email-cpu-probe-send.mjs --confirm-workersdev-probe --run cold-1`
+6. Filter: `jq -c 'select(.event.queue == "clickit-email") | {at: (.eventTimestamp/1000 | todate), outcome, cpuTime, wallTime, batchSize: .event.batchSize, logs: [.logs[]?.message[]?]}'`
+7. Take three cold samples. Then `wrangler secret delete EMAIL_CPU_PROBE --name clickit`.
 
-Data for the decision, from the diagnostic above:
-- The fill measures about 3.6 ms cold once Node's `Response` load is pre-warmed.
-- Two more possible moves:
-  - define the harness gate with a one-time `Response` pre-warm (Worker parity), then re-run sets A and B
-  - accept 05-36's live consumer CPU metrics as the gate
-- The design was not changed.
+Gate: `outcome` `ok`, `batchSize` 5, `sends=5`, and the largest `cpuTime` < 10 ms.
+
+Results go here once the controller has run it (none yet):
+
+```
+workersdev_commit:
+workersdev_cold_cpu_ms:
+workersdev_cold_cpu_ms_max:
+workersdev_warm_cpu_ms:
+workersdev_gate:
+```
+
+Not verified:
+- That wrangler 4.151.2's tail JSON prints `cpuTime`. It is a `TraceItem` field in `@cloudflare/workers-types`; the fallback is the dashboard invocation CPU time.
+- That the pinned OAuth login can push messages. Its scope list includes `queues:write`; the fallback is the dashboard Send message.
 
 ## Verification
 
 Verified:
-- Task 1 verify: `worker-email-config.test.ts` passes 11/11, and the no-secret grep on `wrangler.jsonc` prints nothing.
-- Neighbouring tests: `cutover-config`, `scheduled`, `runtime-header` and `worker-request-paths` all pass (51 in total with the new file). `design-system-page` passes 17/17.
-- `npm run test:unit`: 2548 pass, 0 fail. This run was after GREEN and before the layout fix. The layout fix touched one test file, which passes on its own.
+- Task 1 verify: `worker-email-config.test.ts` passes (13 tests, now including the probe flag check), and the no-secret grep on `wrangler.jsonc` prints nothing.
+- New tests pass: `email-cpu-probe` (7) for the flag window, the tag, refusal with the flag off, 5 inert sends with no network when on, malformed bodies, and the stub URLs. `email-cpu-probe-send` (4) and `bundle-budget` (4) pass too.
+- `npm run test:unit` at the end: 2585 pass, 0 fail.
 - `npx tsc --noEmit` is clean.
-- eslint on `custom-worker.ts`, the new test, the harness and the admin layout: 0 errors. One warning remains, `import/no-anonymous-default-export` on custom-worker.ts's default export, which was already there before this plan.
-- Task 2 verify passes (`exit=0`, gzip line present).
-- Task 3 acceptance greps: no react / react-email / @react-email import in the harness, and `unexpected fetch` appears on one line.
+- eslint on every touched file: 0 errors. One warning remains, `import/no-anonymous-default-export` on custom-worker.ts's default export, which was already there before this plan.
+- The sender refuses as designed: run without the flag and with the wrong HOME, it printed both reasons and exited 1.
+- Task 2 verify passes. `cf:bundle-budget` passes at 2,952.21 KiB gzip with network denied.
+- Task 3 verify, gating on the warm-up lines, passes: the set-A log ends `exit=0` with five `runA[1-5] batch_fill_ms_cold:` lines, and the updated awk gate above exits 0. No react / react-email / @react-email import in the harness or probe. `unexpected fetch` now sits in `src/server/email/cpu-probe.ts` (one line), because the harness imports the shared stub.
 
 Not verified:
+- The workers.dev CPU gate (controller runbook, pending)
 - A real queue in `wrangler dev` (05-39)
-- Live queues: they do not exist yet; Koss creates them in 05-35
-- workerd CPU
+- Live queues: they do not exist yet (05-35)
+- That the tail JSON has `cpuTime`
+- That the OAuth token can push messages
 
-Failed:
-- Task 3 automated verify: the awk gate exits 1 because `batch_fill_ms_cold_max` is 14.44.
+Failed: none.
 
 ## Deviations from Plan
 
@@ -176,7 +268,13 @@ Failed:
 
 **4. [Minor] `.dev.vars.example`.** `SUPABASE_SERVICE_ROLE_KEY=` was already listed, so only `RESEND_API_KEY=` and `EMAIL_LINK_SECRET=` were added.
 
-**5. [Environment] Concurrent commits on the branch.** During this plan another session committed `ad2e7fdf` and `84c248f8` (05-17) on the same branch. Only 05-19 paths were staged here.
+**5. [Environment] Concurrent commits on the branch.** During this plan another session committed `ad2e7fdf` and `84c248f8` (05-17) on the same branch, and 05-25 ran alongside the controller conditions. Only 05-19 paths were staged here. STATE.md and ROADMAP.md were left to the coordinator for the condition round.
+
+**6. [Controller condition 1] The harness gates on a built-in warm-up.** The plan's cold batch had no warm-up. The controller (option A) set the gate to cold-with-built-ins-warmed (Response, Headers, fetch), with the no-warm-up figures kept. The harness now imports fixtures and the stub from `cpu-probe.ts`, so the plan's acceptance grep for `unexpected fetch` matches that file instead of the script.
+
+**7. [Controller condition 2] Test-only probe in the production consumer path.** `queue()` now runs `takeEmailCpuProbe` before `processBatch`, so the plan's key-link pattern `processBatch(batch, buildEmailDeps(env` became `processBatch(rest, buildEmailDeps({ ...env, ... }))`. The consumer allow-list gained `cpu-probe.ts`, with its reason in the test and above. The probe is off unless `EMAIL_CPU_PROBE` holds a future window of 24 h or less. With the flag off it acks probe messages without touching anything; with the flag on it never leaves the Worker. It never touches untagged messages.
+
+**8. [Controller condition 3] `gate:local` gained `cf:bundle-budget`.** It changes `package.json`, which was not in the plan's file list.
 
 ## Known Stubs
 
@@ -191,6 +289,11 @@ None beyond the plan's register.
 - T-05-19-04: the allow-list test is in place.
 - T-05-19-05: the harness uses fake strings, the stub throws on unknown URLs, and nothing reads `.dev.vars`.
 
+| Flag | File | Description |
+|------|------|-------------|
+| threat_flag: test-path | src/server/email/cpu-probe.ts | Queue messages tagged `email-cpu-v1` are acked without the outbox. Mitigation: they are acked only, never sent and never written. The flag is off by default and is a self-expiring window of 24 h or less. Untagged messages are untouched. Unit tests cover it. |
+| threat_flag: cloudflare-api | scripts/email-cpu-probe-send.mjs | Pushes to a queue with the pinned OAuth token. Mitigation: it needs an explicit confirm flag and the pinned HOME, refuses token envs, keeps the token in memory only, never echoes output, and pushes one batch of 5 probe messages. |
+
 ## Self-Check: PASSED
 
-The files exist: custom-worker.ts, wrangler.jsonc, .dev.vars.example, tests/unit/worker-email-config.test.ts and scripts/email-batch-cpu.mjs. Commits 22aacc74, 78acf53c, 56379b92 and cef589a1 are in `git log`. The plan-level CPU gate fails by design; see NEEDS CONTROLLER above.
+The files exist: custom-worker.ts, wrangler.jsonc, .dev.vars.example, tests/unit/worker-email-config.test.ts, scripts/email-batch-cpu.mjs, src/server/email/cpu-probe.ts, scripts/email-cpu-probe-send.mjs, scripts/cf/bundle-budget.mjs, the three new tests and .planning/handovers/05-19-workersdev-cpu.md. Commits 22aacc74, 78acf53c, 56379b92, cef589a1, d0209476, ec1d0e65, 2cf2e6a7 and 122c141e are in `git log`. The Mac CPU gate (warm-up lines) passes. The workers.dev CPU gate is pending with the controller.
