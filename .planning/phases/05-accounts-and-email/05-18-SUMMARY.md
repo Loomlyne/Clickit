@@ -42,7 +42,7 @@ completed: 2026-10-25
 
 - `node --test tests/unit/proxy-gate.test.ts tests/unit/wall-policy.test.ts`: 24/24 pass.
 - Task 2 verify command: `tsc --noEmit` clean, the four removed names absent, `decideRoute(`, `/auth/confirm`, `am_i_admin` present, no `admin_user_id` in middleware -> exit 0.
-- `grep -n "encodeURIComponent(next)" src/proxy.ts`: two lines (170, 177).
+- `grep -n "encodeURIComponent(next)" src/proxy.ts`: two lines (171, 178).
 - eslint on the three source files and the test: clean.
 - Full `npm run test:unit`: 2267/2267 pass (includes the locale-root source test that checks the 308 stays before `Step 5: Auth gate`).
 
