@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-25T21:36:34.221Z"
+last_updated: "2026-10-25T21:43:18.955Z"
 last_activity: 2026-10-25
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 123
-  completed_plans: 89
+  completed_plans: 90
   percent: 33
 ---
 
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 05 (accounts-and-email) — EXECUTING
-Plan: 20 of 42 (waves 0-3 done; 05-13, 05-15, 05-16, 05-18, 05-38 done; 05-17 code done, seed run waits for controller go)
+Plan: 21 of 42 (waves 0-3 done; 05-13, 05-15, 05-16, 05-18, 05-38 done; 05-17 code done, seed run waits for controller go)
 Status: Ready to execute
 Last activity: 2026-10-25
 Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
 
-Progress: [███████░░░] 74%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -96,6 +96,7 @@ Progress: [███████░░░] 74%
 | Phase 05 P38 | 20min | 2 tasks | 0 files |
 | Phase 05 P17 | 25min | 2 tasks | 6 files |
 | Phase 05 P18 | 4min | 2 tasks | 4 files |
+| Phase 05 P29 | 25min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -154,6 +155,7 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-38: local GoTrue renders English for a user with no locale (eq on missing .Data.locale is false, A6); local From is Clickit Story <no-reply@clickitstory.ae> (A9); a new user's sign-in code mail uses the confirmation template, magic_link only for confirmed users; read the code from the user-select:all cell; MAIL-01/AUTH-02 stay Pending until 05-35
 - [Phase 05]: 05-17: seed:local-admin applies M2 locally via resolveM2Source (landed migration first, else pending) in one psql transaction through docker exec; first shared-stack run waits for the controller's go
 - [Phase 05]: 05-18: proxy Step 5 is decideRoute (src/server/auth/gate.ts): admin path first (auth/watch/mfa/pass), then isPublicPath, then signed out -> auth; isAdmin = rpc am_i_admin only on /admin, fails closed
+- [Phase 05]: 05-29: public email pages read state on GET and never write; core adds an 'error' result; MAIL-04 and MAIL-06 stay Pending until digest and newsletter sign-up land
 
 ### Pending Todos
 
@@ -195,8 +197,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-25T21:36:29.419Z
-Stopped at: 05-17-PLAN.md code and tests done; seed:local-admin run on the shared stack waits for the controller's go; resume file .planning/phases/05-accounts-and-email/05-17-SUMMARY.md
+Last session: 2026-10-25T21:43:15.551Z
+Stopped at: Completed 05-29-PLAN.md (public unsubscribe and newsletter-confirm endpoints); 05-17 seed:local-admin run on the shared stack still waits for the controller's go; resume file .planning/phases/05-accounts-and-email/05-29-SUMMARY.md
 Phase 2 last session: 2026-10-20T10:45:11.285Z
 Phase 2 stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above is the controller's)
 Resume file: None
