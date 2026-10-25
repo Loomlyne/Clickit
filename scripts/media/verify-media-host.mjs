@@ -175,7 +175,7 @@ export async function runVerify({
   now = () => new Date(),
 }) {
   if (!isAllowedMediaOrigin(origin)) {
-    throw new Error('refused: origin must be https and a clickit-media.<sub>.workers.dev or media.clickitstory.ae host')
+    throw new Error('refused: origin must be https and a clickit-media[-r2].<sub>.workers.dev or media.clickitstory.ae host')
   }
   const rows = (copyReport.rows ?? []).filter(isServedRow)
   const results = new Array(rows.length)
@@ -227,7 +227,7 @@ export async function main(argv = process.argv.slice(2), deps = {}) {
     return 1
   }
   if (!isAllowedMediaOrigin(origin)) {
-    console.error('refused: origin must be https and a clickit-media.<sub>.workers.dev or media.clickitstory.ae host')
+    console.error('refused: origin must be https and a clickit-media[-r2].<sub>.workers.dev or media.clickitstory.ae host')
     return 1
   }
   let copyReport
