@@ -42,6 +42,16 @@ const nextConfig: NextConfig = {
   // so builds are a little slower; components that break Rules of React are
   // safely skipped, not broken. Reversible by deleting this one line.
   reactCompiler: true,
+  // Build-time constant for server code. Only scripts/cf/build-target.mjs sets
+  // CLICKIT_WORKER_BUILD=1 (every cf:build target); src/server/email/queue.ts uses it to
+  // drop the in-process email fallback from the Worker bundle. defineServer is used
+  // because next.config `env` is not inlined into server code in every build mode and
+  // plain process.env is read at runtime. The value is only "1" or "", never a secret.
+  compiler: {
+    defineServer: {
+      'process.env.CLICKIT_WORKER_BUILD': process.env.CLICKIT_WORKER_BUILD === '1' ? '1' : '',
+    },
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
