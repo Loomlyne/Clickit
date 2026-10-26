@@ -20,6 +20,7 @@ import {
   useTurnstileToken,
 } from '@/components/security/turnstile-field'
 import { getPathname, Link } from '@/i18n/navigation'
+import type { AuthInitialMode } from '@/lib/auth-navigation'
 import {
   AUTH_LINK_MINUTES,
   CODE_LENGTH,
@@ -43,7 +44,7 @@ type AuthSignInFormProps = {
   /** Validated same-origin path ('' when none); the server action sends the viewer there. */
   next: string
   locale: string
-  initialMode: Exclude<AuthSignInMode, 'code-sent'>
+  initialMode: AuthInitialMode
 }
 
 // Client hint only; the server re-checks with zod.
