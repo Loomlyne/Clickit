@@ -187,6 +187,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 261020-ej8 | Apply UI System ui.config.json tokens to Clickit | 2026-10-20 | 93e3a68 | [261020-ej8-apply-ui-system-ui-config-json-tokens-to](./quick/261020-ej8-apply-ui-system-ui-config-json-tokens-to/) |
 | 261020-fnn | Media Worker for media.clickitstory.ae + media-health + DNS plan (job D) | 2026-10-20 | branch claude/media-worker-now-ea54d5 | [261020-fnn-media-worker-for-media-clickitstory-ae](./quick/261020-fnn-media-worker-for-media-clickitstory-ae/) |
+| 261026-nad | Phase 5 Worker bundle trim: in-process email fallback out of the Worker build (defineServer flag); gzip 2,984.77 -> 2,974.94 KiB, 1 template copy | 2026-10-26 | 13b252b5 | [261026-nad-phase5-worker-bundle-trim-email-fallback](./quick/261026-nad-phase5-worker-bundle-trim-email-fallback/) |
 
 ## Deferred Items
 
