@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-26T16:10:00.000Z"
+last_updated: "2026-10-26T16:20:00.000Z"
 last_activity: 2026-10-26
 progress:
   total_phases: 9
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 05 (accounts-and-email) — EXECUTING
-Plan: 27 of 42 (waves 0-3 done; 05-13, 05-15, 05-16, 05-18, 05-21, 05-25, 05-27, 05-28, 05-38, 05-40 done; 05-17 code done, seed run waits for controller go; 05-19 code done, CPU gate NEEDS CONTROLLER: cold batch max 14.44 ms > 10 ms)
+Plan: 27 of 42 (waves 0-3 done; 05-13, 05-15, 05-16, 05-18, 05-21, 05-25, 05-27, 05-28, 05-38, 05-40 done; 05-17 code done, seed run waits for controller go; 05-19 code done, CPU gate NEEDS CONTROLLER: cold batch max 14.44 ms > 10 ms; 05-20 partial: cron core + /api/cron/email-digest done, cron map entry NEEDS CONTROLLER)
 Status: Ready to execute
 Last activity: 2026-10-26
 Phase 3 (work branch claude/phase-03-production-cutover-689a87): 6 of 13 plans complete (03-01 … 03-06 done 2026-10-21; code half ready for the PR, gate:local exit=0; ops plans 03-07 … 03-13 run after Ship)
@@ -104,6 +104,7 @@ Progress: [████████░░] 78%
 | Phase 05 P27 | 20min | 2 tasks | 6 files |
 | Phase 05 P28 | 8min | 2 tasks | 8 files |
 | Phase 05 P40 | 10min | 2 tasks | 9 files |
+| Phase 05 P20 | 15min | 2 tasks (partial) | 3 files |
 
 ## Accumulated Context
 
@@ -184,6 +185,7 @@ None yet.
 - 05-17 NEEDS CONTROLLER: go for npm run seed:local-admin applying supabase/pending/m2_admin_aal2.sql to the shared local stack (local admin pages then need TOTP)
 - 05-19 NEEDS CONTROLLER: pre-rendered consumer batch over the Free 10 ms CPU limit (cold max 14.44 ms, mean max 0.58 ms, loadavg 3.50, set B); about 9 ms of the cold batch is Node's first Response load in the harness (fill alone about 3.6 ms cold); options in 05-19-SUMMARY.md
 - 05-28 NEEDS KOSS: Admin Inbox "Notification receiver" panel no longer routes any email (only edits the footer contact address); remove it or reword it (deferred-items.md)
+- 05-20 NEEDS CONTROLLER: adding CRON_ROUTES '0 16 * * *' grows CRON_EXPRESSIONS_FOR_PHASE_3 past Phase 3's signed three production crons (A-3/G8, deploy-guard PRODUCTION_CRONS, cutover-config/production-target tests); option B (recommended: separate CRON_EXPRESSIONS_FOR_PHASE_5, trigger added at Phase 5 go-live) or A (four crons at cutover, needs Koss's signature); details in 05-20-SUMMARY.md
 - 05-21 NEEDS CONTROLLER: Worker bundle 2,984.77 KiB gzip, headroom 15.23 KiB under the 3,000 KiB gate (+32.56 KiB); a second copy of the email templates + consumer reaches the Next server through queue.ts's in-process fallback; options in 05-21-SUMMARY.md
 
 ### Quick Tasks Completed
@@ -214,8 +216,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-26T16:10:00.000Z
-Stopped at: 05-40-PLAN.md complete (page-level requireViewer wall on the six walled viewer pages); resume file .planning/phases/05-accounts-and-email/05-40-SUMMARY.md
+Last session: 2026-10-26T16:20:00.000Z
+Stopped at: 05-20-PLAN.md partial (cron core + route committed; cron map entry and trigger wait for NEEDS CONTROLLER); resume file .planning/phases/05-accounts-and-email/05-20-SUMMARY.md
 Phase 2 last session: 2026-10-20T10:45:11.285Z
 Phase 2 stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above is the controller's)
 Resume file: None
