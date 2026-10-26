@@ -107,6 +107,8 @@ bundle-budget ok gzip=2994.93 KiB total=14710.83 KiB budget=3000 KiB headroom=5.
 
 Option for the controller: move `syncLocale` into its own small `'use server'` module, so the shell references only that module and not the whole profile actions file. I did not do this, because the plan names `actions.ts` and the brief says not to trim.
 
+**Trim attempt, 2026-10-26 (orchestrator): rejected, not committed.** The `syncLocale` split was built in an A/B under the heavy lock, same command and placeholder env: split gzip=3,036.01 KiB (FAIL, +36.01 over the budget) against HEAD gzip=2,995.24 KiB. The split is a net loss of about 41 KiB because Turbopack tree-shakes `zod/v4/classic/external` per route group. On HEAD, every viewer route already loads zod through LocaleSync → profile/actions.ts, so there are 2 copies: viewer (20 routes) and admin (10 routes). Without that link, the auth and profile action routes get their own copies, which makes 3. Each copy is about 31 KiB gzip. Real levers, for the controller to decide: one shared zod copy, or `zod/mini` in the viewer action modules (auth and profile). Logs: `/Users/koss/.clickit-checks/p5-26-trim-build.log`, `p5-26-baseline-build.log`.
+
 ## Deviations from Plan
 
 ### Auto-fixed Issues
