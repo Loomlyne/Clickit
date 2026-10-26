@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 05 (accounts-and-email) — EXECUTING
-Plan: 28 of 42 (waves 0-3 done; 05-13, 05-15, 05-16, 05-18, 05-21, 05-22, 05-25, 05-27, 05-28, 05-38, 05-40 done; 05-17 code done, seed run waits for controller go; 05-19 code done, CPU gate NEEDS CONTROLLER: cold batch max 14.44 ms > 10 ms; 05-20 partial: cron core + /api/cron/email-digest done, cron map entry NEEDS CONTROLLER)
+Plan: 28 of 42 (waves 0-3 done; 05-13, 05-15, 05-16, 05-18, 05-21, 05-22, 05-25, 05-27, 05-28, 05-38, 05-40 done; 05-17 done (seed run 2026-10-25, M2 local unrecorded until 05-41); 05-19 code done, Mac CPU gate 5.09 ms (Worker built-ins warmed), workers.dev CPU run waits for controller (after Phase 2.1 spike + clickit-email queue); 05-20 partial: cron core + /api/cron/email-digest done, cron map entry NEEDS CONTROLLER)
 Status: Ready to execute
 Last activity: 2026-10-26
 Phase 3 (work branch claude/phase-03-production-cutover-689a87): 6 of 13 plans complete (03-01 … 03-06 done 2026-10-21; code half ready for the PR, gate:local exit=0; ops plans 03-07 … 03-13 run after Ship)
@@ -184,11 +184,11 @@ None yet.
 - Owner decisions pending (pricing, not assumed): Workers Paid $5/mo if Free CPU fails (Phase 2); Image Transformations stays on the free tier only.
 - Stray Cloudflare NS pair (ignat/nataly) must be resolved before any NS change (Phase 1).
 - Live migration state and `private.is_admin()` presence unverified — read-only audit in Phase 1 before any schema ship.
-- 05-17 NEEDS CONTROLLER: go for npm run seed:local-admin applying supabase/pending/m2_admin_aal2.sql to the shared local stack (local admin pages then need TOTP)
-- 05-19 NEEDS CONTROLLER: pre-rendered consumer batch over the Free 10 ms CPU limit (cold max 14.44 ms, mean max 0.58 ms, loadavg 3.50, set B); about 9 ms of the cold batch is Node's first Response load in the harness (fill alone about 3.6 ms cold); options in 05-19-SUMMARY.md
+- 05-17 resolved 2026-10-25: controller go (A); seed run done, M2 on shared stack unrecorded until 05-41
+- 05-19 resolved 2026-10-25: controller A with conditions (built-in warm-up gate 5.09 ms, workers.dev cpuTime runbook in .planning/handovers/05-19-workersdev-cpu.md, gate:local bundle budget 3,000 KiB); workers.dev run scheduled by controller
 - 05-28 NEEDS KOSS: Admin Inbox "Notification receiver" panel no longer routes any email (only edits the footer contact address); remove it or reword it (deferred-items.md)
 - 05-20 NEEDS CONTROLLER: adding CRON_ROUTES '0 16 * * *' grows CRON_EXPRESSIONS_FOR_PHASE_3 past Phase 3's signed three production crons (A-3/G8, deploy-guard PRODUCTION_CRONS, cutover-config/production-target tests); option B (recommended: separate CRON_EXPRESSIONS_FOR_PHASE_5, trigger added at Phase 5 go-live) or A (four crons at cutover, needs Koss's signature); details in 05-20-SUMMARY.md
-- 05-21 NEEDS CONTROLLER: Worker bundle 2,984.77 KiB gzip, headroom 15.23 KiB under the 3,000 KiB gate (+32.56 KiB); a second copy of the email templates + consumer reaches the Next server through queue.ts's in-process fallback; options in 05-21-SUMMARY.md
+- 05-21 resolved 2026-10-26: quick task 261026-nad dropped the in-process email fallback from the Worker build (2,984.77 -> 2,974.94 KiB gzip)
 - 05-22 NEEDS KOSS: UAT copy review for reused strings on /auth: sign-up subline "Enter your email and password." (signInPasswordSub) and forgot-password h1 "Account recovery" (resetHeading); Arabic "Hide password" (05-12)
 
 ### Quick Tasks Completed
