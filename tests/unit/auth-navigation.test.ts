@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { getSafeAuthNextPath } from '../../src/lib/auth-navigation.ts'
+import { authInitialMode, getSafeAuthNextPath } from '../../src/lib/auth-navigation.ts'
 
 test('auth success replaces /auth with default viewer route', () => {
   const history = ['/en/portfolio', '/en/auth']
@@ -41,4 +41,29 @@ test('sign-out replace removes protected profile from the immediate back stack',
 
   assert.deepEqual(history, ['/en/watch', '/watch'])
   assert.notEqual(history.at(-1), '/en/profile')
+})
+
+// 05-22: /auth keeps the validated next for every show and episode (D-03, D-04).
+test('safe next keeps show and episode paths', () => {
+  assert.equal(getSafeAuthNextPath('/series/sample-show'), '/series/sample-show')
+  const episode = '/watch/7f9c2a4e-3b1d-4c8e-9a6f-2d5b8e1c0a47'
+  assert.equal(getSafeAuthNextPath(episode), episode)
+  assert.equal(getSafeAuthNextPath('/ar/series/sample-show'), '/series/sample-show')
+})
+
+test('safe next refuses protocol-relative, absolute and backslash tricks', () => {
+  assert.equal(getSafeAuthNextPath('//evil.com/series/x', ''), '')
+  assert.equal(getSafeAuthNextPath('https://evil.com', ''), '')
+  assert.equal(getSafeAuthNextPath('/\\evil.com', ''), '')
+  assert.equal(getSafeAuthNextPath('/\\evil.com'), '/watch')
+})
+
+test('authInitialMode maps the mode search param to the first screen', () => {
+  assert.equal(authInitialMode('forgot'), 'forgot')
+  assert.equal(authInitialMode('password'), 'password')
+  assert.equal(authInitialMode('signup'), 'signup-password')
+  assert.equal(authInitialMode('x'), 'email')
+  assert.equal(authInitialMode(undefined), 'email')
+  assert.equal(authInitialMode(null), 'email')
+  assert.equal(authInitialMode(['forgot']), 'email')
 })
