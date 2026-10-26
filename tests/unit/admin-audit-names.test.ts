@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { auditActorLabel } from '../../src/server/admin-names.ts'
-import { runAdminAction, type AdminActionEnv } from '../../src/lib/admin/action-runner.ts'
+import {
+  runAdminAction,
+  type AdminActionEnv,
+} from '../../src/lib/admin/action-runner.ts'
 import type { AuditArgs } from '../../src/lib/audit.ts'
 
 const names = new Map([['a', 'Issam']])
@@ -21,29 +24,44 @@ test('null, undefined or empty id is System', () => {
 })
 
 test('owner script rows are labelled Owner script, not the affected admin', () => {
-  assert.deepEqual(auditActorLabel('a', names, { count: 2, by: 'owner script' }), {
-    kind: 'owner_script',
-  })
-  assert.deepEqual(auditActorLabel('gone', names, { count: 1, by: 'owner script' }), {
-    kind: 'owner_script',
-  })
+  assert.deepEqual(
+    auditActorLabel('a', names, { count: 2, by: 'owner script' }),
+    {
+      kind: 'owner_script',
+    }
+  )
+  assert.deepEqual(
+    auditActorLabel('gone', names, { count: 1, by: 'owner script' }),
+    {
+      kind: 'owner_script',
+    }
+  )
 })
 
 test('a diff without by, or with an empty by, keeps the normal rules', () => {
-  assert.deepEqual(auditActorLabel('a', names, { count: 2 }), { kind: 'name', text: 'Issam' })
+  assert.deepEqual(auditActorLabel('a', names, { count: 2 }), {
+    kind: 'name',
+    text: 'Issam',
+  })
   assert.deepEqual(auditActorLabel('a', names, { count: 2, by: '' }), {
     kind: 'name',
     text: 'Issam',
   })
-  assert.deepEqual(auditActorLabel('gone', names, { by: '' }), { kind: 'former' })
+  assert.deepEqual(auditActorLabel('gone', names, { by: '' }), {
+    kind: 'former',
+  })
   assert.deepEqual(auditActorLabel(null, names, null), { kind: 'system' })
 })
 
-test('the admin\'s own enrol-restart row stays attributed to that admin', () => {
+test("the admin's own enrol-restart row stays attributed to that admin", () => {
   // 05-25 writes { count, status: 'unverified', by: 'enrol restart' } with the
   // acting admin's own id; only the owner script marks a different actor.
   assert.deepEqual(
-    auditActorLabel('a', names, { count: 1, status: 'unverified', by: 'enrol restart' }),
+    auditActorLabel('a', names, {
+      count: 1,
+      status: 'unverified',
+      by: 'enrol restart',
+    }),
     { kind: 'name', text: 'Issam' }
   )
 })

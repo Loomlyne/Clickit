@@ -6,6 +6,7 @@ import {
   AdminPanel,
   AdminTableShell,
 } from '@/components/admin/admin-shell'
+import { YouTubeStatusChip as StatusChip } from '@/components/admin/youtube-status-chip'
 import {
   Table,
   TableBody,
@@ -15,6 +16,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { adminNameMap } from '@/server/admin-directory'
+import { auditActorLabel } from '@/server/admin-names'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('admin.audit')
@@ -27,7 +30,7 @@ export const dynamic = 'force-dynamic'
 
 interface AuditRow {
   id: string
-  admin_user_id: string
+  admin_user_id: string | null
   action_type: string
   entity_type: string
   entity_id: string | null
@@ -71,6 +74,34 @@ const ACTION_STYLES: Record<string, string> = {
   remove_media: 'bg-brand-orange-safe/12 text-brand-orange-safe',
 }
 
+// Second column (D-23, AUTH-07): who acted. Name in <bdi> (names can be Arabic
+// inside an English page and the reverse); removed admins and system rows in
+// --text-mute. The id stays in the row; only the label is looked up.
+function AdminCell({
+  row,
+  names,
+  labels,
+}: {
+  row: AuditRow
+  names: ReadonlyMap<string, string> | null
+  labels: { former: string; system: string; ownerScript: string }
+}) {
+  if (names === null) {
+    return <span className="text-[var(--text-mute)]">—</span>
+  }
+  const actor = auditActorLabel(row.admin_user_id, names, row.diff)
+  switch (actor.kind) {
+    case 'name':
+      return <bdi className="text-[var(--text)]">{actor.text}</bdi>
+    case 'owner_script':
+      return <span className="text-[var(--text)]">{labels.ownerScript}</span>
+    case 'former':
+      return <span className="text-[var(--text-mute)]">{labels.former}</span>
+    case 'system':
+      return <span className="text-[var(--text-mute)]">{labels.system}</span>
+  }
+}
+
 export default async function AuditLogPage() {
   // Use the service-role client — the audit_log RLS policy only grants SELECT
   // to the admin, but the layout has already verified admin before we get here.
@@ -81,11 +112,19 @@ export default async function AuditLogPage() {
     getLocale(),
   ])
   const isArabic = locale === 'ar'
-  const { data: rows, error } = await admin
-    .from('admin_audit_log')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(200)
+  const [{ data: rows, error }, names] = await Promise.all([
+    admin
+      .from('admin_audit_log')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200),
+    // Names from public.admins, read once (D-23). If the lookup fails the
+    // column shows a dash rather than calling every admin "Former admin".
+    adminNameMap().catch((e: unknown) => {
+      console.error('[admin/audit] admin names failed', e)
+      return null
+    }),
+  ])
 
   const typedRows = (rows ?? []) as AuditRow[]
 
@@ -111,6 +150,7 @@ export default async function AuditLogPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>{t('whenColumn')}</TableHead>
+                <TableHead>{t('adminColumn')}</TableHead>
                 <TableHead>{t('actionColumn')}</TableHead>
                 <TableHead>{t('entityColumn')}</TableHead>
                 <TableHead className="hidden md:table-cell">
@@ -127,15 +167,36 @@ export default async function AuditLogPage() {
                   >
                     {formatRelative(row.created_at, isArabic)}
                   </TableCell>
+                  <TableCell className="text-[14px]">
+                    <AdminCell
+                      row={row}
+                      names={names}
+                      labels={{
+                        former: t('formerAdmin'),
+                        system: t('system'),
+                        ownerScript: t('actorOwnerScript'),
+                      }}
+                    />
+                  </TableCell>
                   <TableCell>
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-[12px] font-medium ${
-                        ACTION_STYLES[row.action_type] ??
-                        'bg-[var(--bg-3)] text-[var(--text-dim)]'
-                      }`}
-                    >
-                      {row.action_type}
-                    </span>
+                    {row.entity_type === 'admin_auth' ? (
+                      <StatusChip
+                        tone={
+                          row.action_type === 'mfa_failed' ? 'bad' : 'neutral'
+                        }
+                      >
+                        {row.action_type}
+                      </StatusChip>
+                    ) : (
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[12px] font-medium ${
+                          ACTION_STYLES[row.action_type] ??
+                          'bg-[var(--bg-3)] text-[var(--text-dim)]'
+                        }`}
+                      >
+                        {row.action_type}
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="text-[var(--text-dim)]">
                     {row.entity_type}
