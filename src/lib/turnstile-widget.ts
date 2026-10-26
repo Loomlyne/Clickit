@@ -3,9 +3,11 @@
 // dark theme, full form width, between the last field and the submit button on
 // sign-in, sign-up, reset request and contact. The footer newsletter uses
 // "interaction-only", so its row is unchanged unless Cloudflare needs a click.
+// "resend" (05-22, UI-SPEC 5.5 item 9) is the second instance on the code and
+// check-your-email screens: interaction-only, so those screens stay uncluttered.
 // Pure on purpose: no React, no env reads.
 
-export type TurnstileForm = 'sign-in' | 'sign-up' | 'reset' | 'contact' | 'newsletter'
+export type TurnstileForm = 'sign-in' | 'sign-up' | 'reset' | 'contact' | 'newsletter' | 'resend'
 
 export type TurnstileWidgetOptions = {
   theme: 'dark'
@@ -23,7 +25,8 @@ export function turnstileWidgetOptions(input: {
 }): TurnstileWidgetOptions {
   return {
     theme: 'dark',
-    appearance: input.form === 'newsletter' ? 'interaction-only' : 'always',
+    appearance:
+      input.form === 'newsletter' || input.form === 'resend' ? 'interaction-only' : 'always',
     size: 'flexible',
     language: input.locale === 'ar' ? 'ar' : 'en',
   }

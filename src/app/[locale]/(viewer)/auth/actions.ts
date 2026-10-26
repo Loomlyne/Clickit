@@ -350,6 +350,46 @@ export async function signUpWithPasswordAction(input: {
 }
 
 /**
+ * "Resend the link" on the check-your-email panel after a password sign-up
+ * (05-22, UI-SPEC 6.1 state 4). Same limits as sign-up; always ok for any
+ * address (T-05-21-03) except a limiter or captcha refusal.
+ */
+export async function resendSignupLink(input: {
+  email: string
+  locale: AuthLocale
+  next?: string | null
+  captchaToken?: CaptchaInput
+}): Promise<ResetRequestResult> {
+  const common = parseCommon(input)
+  if ('error' in common) return { ok: false, error: common.error }
+  const captchaToken = readCaptchaToken(input.captchaToken)
+
+  const { ip, origin } = await requestContext()
+  if (!origin) return { ok: false, error: 'authGeneric' }
+  const refused = await checkSendLimits('signup', ip, await emailSubject(common.email))
+  if (refused) {
+    logAuth('[auth/password]', 'resend refused by limiter')
+    return { ok: false, error: refused }
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: common.email,
+    options: {
+      emailRedirectTo: buildEmailRedirect(origin, common.locale, common.next),
+      captchaToken: captchaToken || undefined,
+    },
+  })
+  if (error) {
+    logAuth('[auth/password]', 'resend failed', error)
+    const key = mapAuthErrorKey(error)
+    if (key === 'tooManyTries' || key === 'captcha') return { ok: false, error: key }
+  }
+  return { ok: true }
+}
+
+/**
  * Reset link (D-12, D-13). Always ok for any address (T-05-21-03), except a
  * limiter or captcha refusal. The link opens the confirm page, which signs the
  * visitor in and sends recovery to /auth/reset-password carrying this next.
