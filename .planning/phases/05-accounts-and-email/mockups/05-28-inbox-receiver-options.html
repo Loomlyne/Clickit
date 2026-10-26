@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inbox receiver options</title>
+<style>
+  :root { --bg-0:#090909; --bg-1:#101010; --bg-2:#191919; --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.14);
+          --text:#F4F4F4; --text-dim:#CCCCCC; --text-mute:#A1A1A1; --accent:#ffcc00; --accent-fg:#090909; }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg-0); color:var(--text); font:14px/1.45 Inter,system-ui,sans-serif; padding:24px 16px }
+  h1 { font-size:18px; margin:0 0 4px } .sub { color:var(--text-mute); margin:0 0 24px; max-width:900px }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:24px; max-width:1240px }
+  .opt { border:1px solid var(--line-2); border-radius:14px; overflow:hidden }
+  .tag { padding:10px 14px; background:var(--bg-2); border-bottom:1px solid var(--line); font-weight:600 }
+  .tag small { color:var(--text-mute); font-weight:400; display:block }
+  .shot { padding:20px; background:var(--bg-0) }
+  .ph { font-size:22px; font-weight:700; margin:0 0 16px }
+  .panel { background:var(--bg-1); border:1px solid var(--line); border-radius:12px; margin-bottom:16px }
+  .panel .hd { padding:12px 16px; border-bottom:1px solid var(--line) } .panel .hd b { font-size:16px }
+  .panel .bd { padding:16px } .mute { color:var(--text-mute); font-size:13px }
+  .row { display:flex; gap:8px; margin-top:10px } .in { flex:1; background:var(--bg-2); border:1px solid var(--line-2); border-radius:8px; padding:9px 12px; color:var(--text-dim) }
+  .btn { background:var(--accent); color:var(--accent-fg); border-radius:8px; padding:9px 14px; font-weight:700; white-space:nowrap }
+  table { width:100%; border-collapse:collapse; font-size:13px } td,th { text-align:start; padding:9px 16px; border-top:1px solid var(--line) } th { color:var(--text-mute); font-weight:500 }
+  .chip { border:1px solid var(--line-2); border-radius:999px; padding:1px 8px; font-size:12px; color:var(--text-dim) }
+  .gone { border:1px dashed var(--line-2); border-radius:12px; padding:10px 14px; color:var(--text-mute); font-size:12px; margin-bottom:16px }
+  .new { outline:2px solid var(--accent); outline-offset:3px }
+</style>
+</head>
+<body>
+<h1>Admin › Inbox: the "Notification receiver" panel after 05-28</h1>
+<p class="sub">Support admin copies now go to each admin's sign-in email, and the newsletter alert email is gone. The panel's email no longer receives anything; it only edits the footer contact address, which Settings › Footer already edits. Pick one.</p>
+<div class="grid">
+
+  <section class="opt">
+    <div class="tag">A — Remove the panel (recommended)<small>Footer contact email stays editable in Settings › Footer. No new wording.</small></div>
+    <div class="shot">
+      <p class="ph">Inbox</p>
+      <div class="gone">"Notification receiver" panel removed</div>
+      <div class="panel"><div class="hd"><b>Support messages</b></div>
+        <table><tr><th>From</th><th>Subject</th><th>Status</th></tr>
+        <tr><td>Sara A.</td><td>Episode 4 won't play</td><td><span class="chip">sent</span></td></tr></table></div>
+      <div class="panel"><div class="hd"><b>Newsletter subscribers</b></div>
+        <table><tr><th>Email</th><th>Source</th><th>Status</th></tr>
+        <tr><td>s***@mail.com</td><td>footer</td><td><span class="chip">pending</span></td></tr></table></div>
+    </div>
+  </section>
+
+  <section class="opt">
+    <div class="tag">B — Keep it as "Footer contact email"<small>Same field, new title and help text (wording below is a draft for you to approve).</small></div>
+    <div class="shot">
+      <p class="ph">Inbox</p>
+      <div class="panel new"><div class="hd"><b>Footer contact email</b></div>
+        <div class="bd"><div class="mute">Shown in the site footer. Admin copies of support messages go to each admin's sign-in email.</div>
+          <div class="row"><div class="in">contact@clickitstory.com</div><div class="btn">Save</div></div></div></div>
+      <div class="panel"><div class="hd"><b>Support messages</b></div>
+        <table><tr><th>From</th><th>Subject</th><th>Status</th></tr>
+        <tr><td>Sara A.</td><td>Episode 4 won't play</td><td><span class="chip">sent</span></td></tr></table></div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
