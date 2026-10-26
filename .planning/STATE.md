@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-26T16:02:21.750Z"
+last_updated: "2026-10-26T16:10:00.000Z"
 last_activity: 2026-10-26
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 123
-  completed_plans: 95
+  completed_plans: 96
   percent: 33
 ---
 
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 05 (accounts-and-email) — EXECUTING
-Plan: 26 of 42 (waves 0-3 done; 05-13, 05-15, 05-16, 05-18, 05-21, 05-25, 05-27, 05-28, 05-38 done; 05-17 code done, seed run waits for controller go; 05-19 code done, CPU gate NEEDS CONTROLLER: cold batch max 14.44 ms > 10 ms)
+Plan: 27 of 42 (waves 0-3 done; 05-13, 05-15, 05-16, 05-18, 05-21, 05-25, 05-27, 05-28, 05-38, 05-40 done; 05-17 code done, seed run waits for controller go; 05-19 code done, CPU gate NEEDS CONTROLLER: cold batch max 14.44 ms > 10 ms)
 Status: Ready to execute
 Last activity: 2026-10-26
 Phase 3 (work branch claude/phase-03-production-cutover-689a87): 6 of 13 plans complete (03-01 … 03-06 done 2026-10-21; code half ready for the PR, gate:local exit=0; ops plans 03-07 … 03-13 run after Ship)
 Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
 
-Progress: [████████░░] 76%
+Progress: [████████░░] 78%
 
 ## Performance Metrics
 
@@ -103,6 +103,7 @@ Progress: [████████░░] 76%
 | Phase 05 P21 | 50min | 2 tasks | 6 files |
 | Phase 05 P27 | 20min | 2 tasks | 6 files |
 | Phase 05 P28 | 8min | 2 tasks | 8 files |
+| Phase 05 P40 | 10min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -167,6 +168,7 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-21: sign-in core + five auth server actions (sendCode, verifyCode, password sign-in/up, reset); captchaToken to Supabase, no siteverify; per-IP/per-email limits on code, sign-up and reset; 5 wrong codes per 15 min lock; afterSignIn finds admins by returned user id (not getAdminStatus cookies); reset link carries the viewer's next (confirm page routes recovery); createRateLimitStore in rate-limit-store-service.ts
 - [Phase 05]: 05-28: support = save, then support_ack (sender, page locale, static) + support_admin (adminAll, Reply-To sender); only a thrown enqueue is saved_email_failed; newsletter = pending row + newsletter_confirm keyed by epoch seconds, confirm_sent_at only when queued, confirmed rows untouched; re-signup of a non-active row clears an old confirmed_at; src/lib/resend.ts removed; Worker 2,974.34 KiB gzip (headroom 25.66 KiB)
 - [Phase 05]: 05-27: read-only /admin/admins (list_admins via service role after requireAdmin, no write control) and audit Admin column via pure auditActorLabel; Owner script only for diff.by === 'owner script' (enrol-restart rows stay the admin's); name lookup failure shows a dash; Phase 6 shared status chip reused (no status-chip.tsx); AUTH-05/AUTH-07 stay Pending until live admins + M2 + UAT
+- [Phase 05]: 05-40: requireViewer(locale, path) on about, series, updates, my-list, watch and the episode page (server getUser, /auth?next=<encoded own path>); viewerAccess is pure on isPublicPath and tested to agree with decideRoute; the check joins each page's first Promise.all wave (no extra round trip); returns { userId, user }; redirect uses the URL locale; Worker 2,975.11 KiB gzip (headroom 24.89 KiB)
 
 ### Pending Todos
 
@@ -212,8 +214,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-26T16:02:21.750Z
-Stopped at: 05-28-PLAN.md complete (support auto-reply + admin copy and newsletter double opt-in through the outbox, form states); resume file .planning/phases/05-accounts-and-email/05-28-SUMMARY.md
+Last session: 2026-10-26T16:10:00.000Z
+Stopped at: 05-40-PLAN.md complete (page-level requireViewer wall on the six walled viewer pages); resume file .planning/phases/05-accounts-and-email/05-40-SUMMARY.md
 Phase 2 last session: 2026-10-20T10:45:11.285Z
 Phase 2 stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above is the controller's)
 Resume file: None
