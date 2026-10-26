@@ -6,6 +6,10 @@ import { useLocale } from 'next-intl'
 import { syncLocale } from '@/app/[locale]/(viewer)/profile/actions'
 import { LOCALE_SYNC_KEY, shouldSyncLocale } from '@/lib/locale-sync-core'
 
+/** Module state shared by every mount in this tab. */
+let inFlight: string | null = null
+let wanted: string | null = null
+
 function readLastSynced(): string | null {
   try {
     return window.sessionStorage.getItem(LOCALE_SYNC_KEY)
@@ -32,20 +36,24 @@ export function LocaleSync() {
   const locale = useLocale()
 
   useEffect(() => {
-    if (!shouldSyncLocale(locale, readLastSynced())) return
-    let cancelled = false
+    wanted = locale
+    // One call per language even when the effect runs twice (StrictMode, remount).
+    if (inFlight === locale || !shouldSyncLocale(locale, readLastSynced())) return
+    inFlight = locale
     syncLocale(locale)
       .then((result) => {
-        if (!cancelled && result.ok) storeLastSynced(locale)
+        // Store only if the viewer is still on this language (a fast en -> ar
+        // switch must not record the older one).
+        if (result.ok && wanted === locale) storeLastSynced(locale)
       })
       .catch((err: unknown) => {
         if (process.env.NODE_ENV === 'development') {
           console.warn('[locale-sync] failed', err instanceof Error ? err.name : 'error')
         }
       })
-    return () => {
-      cancelled = true
-    }
+      .finally(() => {
+        if (inFlight === locale) inFlight = null
+      })
   }, [locale])
 
   return null

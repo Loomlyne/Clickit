@@ -286,7 +286,6 @@ function EmailRow({
   initialSentAt: string | null
 }) {
   const t = useTranslations('profile')
-  const tAuth = useTranslations('auth')
   const tErrors = useTranslations('errors')
   const errorText = useProfileErrorText()
 
@@ -434,25 +433,27 @@ function EmailRow({
               <p className="mt-1 text-sm break-words text-[var(--text-dim)]">
                 {t.rich('emailPendingBody', { email: pending, bdi })}
               </p>
-              {windowState.ready &&
-                (windowState.remaining > 0 ? (
-                  <p className="mt-2 text-sm text-[var(--text-mute)]">
-                    {tAuth.rich('resendIn', {
-                      time: formatCountdown(windowState.remaining, locale),
-                      bdi,
-                    })}
-                  </p>
-                ) : (
+              {/* 60 s window: the button stays visible but disabled with the clock
+                  beside it ("Resend code in" names a code, not links). The clock is
+                  not a live region (UI-SPEC Accessibility). */}
+              {windowState.ready && (
+                <div className="mt-1 flex items-center gap-2">
                   <button
                     type="button"
-                    className={`${LINK_BUTTON} mt-1`}
+                    className={LINK_BUTTON}
                     onClick={() => void resend()}
-                    disabled={resending}
+                    disabled={resending || windowState.remaining > 0}
                   >
                     {resending && <Loader2 className="size-4 animate-spin" aria-hidden />}
                     {t('resendLinks')}
                   </button>
-                ))}
+                  {windowState.remaining > 0 && (
+                    <span className="text-sm text-[var(--text-mute)]">
+                      <bdi dir="ltr">{formatCountdown(windowState.remaining, locale)}</bdi>
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

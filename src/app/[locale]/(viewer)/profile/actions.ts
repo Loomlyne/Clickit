@@ -257,7 +257,7 @@ export async function resendEmailChange(input: { locale: string }): Promise<Rese
 
   const { supabase, user } = await signedInClient()
   if (!user) return { ok: false, error: 'notSignedIn' }
-  if (!user.new_email) return { ok: true, sent: false, sentAt: null }
+  if (!user.new_email || !user.email) return { ok: true, sent: false, sentAt: null }
 
   const origin = await emailOrigin()
   if (!origin) return { ok: false, error: 'authGeneric' }
@@ -267,9 +267,11 @@ export async function resendEmailChange(input: { locale: string }): Promise<Rese
     return { ok: false, error: refused }
   }
 
+  // GoTrue finds the account by its CURRENT address (the email column); passing
+  // new_email finds nobody and answers 200 without sending (checked locally).
   const { error } = await supabase.auth.resend({
     type: 'email_change',
-    email: user.new_email,
+    email: user.email,
     options: { emailRedirectTo: buildEmailRedirect(origin, locale.data, '/profile') },
   })
   if (error) {
