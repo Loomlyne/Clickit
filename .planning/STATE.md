@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-10-26T16:25:00.000Z"
+last_updated: "2026-10-26T16:38:00.000Z"
 last_activity: 2026-10-26
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 123
-  completed_plans: 97
+  completed_plans: 98
   percent: 33
 ---
 
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 05 (accounts-and-email) — EXECUTING
-Plan: 28 of 42 (waves 0-3 done; 05-13, 05-15, 05-16, 05-18, 05-21, 05-22, 05-25, 05-27, 05-28, 05-38, 05-40 done; 05-17 done (seed run 2026-10-25, M2 local unrecorded until 05-41); 05-19 code done, Mac CPU gate 5.09 ms (Worker built-ins warmed), workers.dev CPU run waits for controller (after Phase 2.1 spike + clickit-email queue); 05-20 partial: cron core + /api/cron/email-digest done, cron map entry NEEDS CONTROLLER)
+Plan: 29 of 42 (waves 0-3 done; 05-13, 05-15, 05-16, 05-18, 05-21, 05-22, 05-23, 05-25, 05-27, 05-28, 05-38, 05-40 done; 05-17 done (seed run 2026-10-25, M2 local unrecorded until 05-41); 05-19 code done, Mac CPU gate 5.09 ms (Worker built-ins warmed), workers.dev CPU run waits for controller (after Phase 2.1 spike + clickit-email queue); 05-20 partial: cron core + /api/cron/email-digest done, cron map entry NEEDS CONTROLLER)
 Status: Ready to execute
 Last activity: 2026-10-26
 Phase 3 (work branch claude/phase-03-production-cutover-689a87): 6 of 13 plans complete (03-01 … 03-06 done 2026-10-21; code half ready for the PR, gate:local exit=0; ops plans 03-07 … 03-13 run after Ship)
 Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
 
-Progress: [████████░░] 79%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -106,6 +106,7 @@ Progress: [████████░░] 79%
 | Phase 05 P40 | 10min | 2 tasks | 9 files |
 | Phase 05 P20 | 15min | 2 tasks (partial) | 3 files |
 | Phase 05 P22 | 5min | 2 tasks | 10 files |
+| Phase 05 P23 | 12min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -172,6 +173,7 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-27: read-only /admin/admins (list_admins via service role after requireAdmin, no write control) and audit Admin column via pure auditActorLabel; Owner script only for diff.by === 'owner script' (enrol-restart rows stay the admin's); name lookup failure shows a dash; Phase 6 shared status chip reused (no status-chip.tsx); AUTH-05/AUTH-07 stay Pending until live admins + M2 + UAT
 - [Phase 05]: 05-40: requireViewer(locale, path) on about, series, updates, my-list, watch and the episode page (server getUser, /auth?next=<encoded own path>); viewerAccess is pure on isPublicPath and tested to agree with decideRoute; the check joins each page's first Promise.all wave (no extra round trip); returns { userId, user }; redirect uses the URL locale; Worker 2,975.11 KiB gzip (headroom 24.89 KiB)
 - [Phase 05]: 05-22: /auth is one code-first AuthSignInForm (email, code-sent, password, signup-password, forgot); page passes getSafeAuthNextPath(next, '') so no next still means /admin or /browse; signed-in redirect via getAdminStatus; full load with window.location.replace(getPathname) after sign-in; resendSignupLink action + interaction-only 'resend' Turnstile; AuthPanel/LoginForm/SignupForm and the 05-21 aliases deleted; Worker 2,974.77 KiB gzip (headroom 25.23 KiB)
+- [Phase 05]: 05-23: email links land on /{locale}/auth/confirm (one button; GET never verifies); confirmLink action whitelists type + token_hash and calls verifyOtp; outcomes signed_in/recovery/pending_other/email_changed/expired plus retry (network, 5xx, 429: token not spent); recovery -> /auth/reset-password?next=; root /auth/confirm only 303s to the cookie locale; Referrer-Policy no-referrer as meta and header (next.config path entries after the baseline); Worker 2,985.79 KiB gzip (headroom 14.21 KiB)
 
 ### Pending Todos
 
@@ -190,6 +192,7 @@ None yet.
 - 05-20 NEEDS CONTROLLER: adding CRON_ROUTES '0 16 * * *' grows CRON_EXPRESSIONS_FOR_PHASE_3 past Phase 3's signed three production crons (A-3/G8, deploy-guard PRODUCTION_CRONS, cutover-config/production-target tests); option B (recommended: separate CRON_EXPRESSIONS_FOR_PHASE_5, trigger added at Phase 5 go-live) or A (four crons at cutover, needs Koss's signature); details in 05-20-SUMMARY.md
 - 05-21 resolved 2026-10-26: quick task 261026-nad dropped the in-process email fallback from the Worker build (2,984.77 -> 2,974.94 KiB gzip)
 - 05-22 NEEDS KOSS: UAT copy review for reused strings on /auth: sign-up subline "Enter your email and password." (signInPasswordSub) and forgot-password h1 "Account recovery" (resetHeading); Arabic "Hide password" (05-12)
+- 05-23 NEEDS CONTROLLER: Worker gzip 2,985.79 KiB after 05-23 (+11.02 KiB, headroom 14.21 KiB under 3,000); growth is per-route overhead of the new confirm page + root route, not code; the next Phase 5 page route (e.g. 05-24 /auth/welcome) will likely cross the budget: decide budget or trim first (05-23-SUMMARY.md)
 
 ### Quick Tasks Completed
 
@@ -219,8 +222,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-26T16:25:00.000Z
-Stopped at: Completed 05-22-PLAN.md (unified sign-in screen); 05-20 still partial (cron map entry waits for NEEDS CONTROLLER, see 05-20-SUMMARY.md)
+Last session: 2026-10-26T16:38:00.000Z
+Stopped at: Completed 05-23-PLAN.md (cross-device email links); 05-20 still partial (cron map entry waits for NEEDS CONTROLLER, see 05-20-SUMMARY.md)
 Phase 2 last session: 2026-10-20T10:45:11.285Z
 Phase 2 stopped at: Completed 02-19-PLAN.md (after 02-18) (phase 02 work branch claude/phase-02-execute-19d86a; Current Position above is the controller's)
 Resume file: None
