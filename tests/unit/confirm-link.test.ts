@@ -6,6 +6,7 @@ import {
   confirmOutcome,
   expiredRetryHref,
   parseConfirmParams,
+  recoveryDestination,
 } from '../../src/server/auth/confirm-core.ts'
 
 // 05-23 (AUTH-04; D-12, D-13; UI-SPEC 6.3): the email-link confirm page. GET
@@ -151,4 +152,11 @@ test('other expired links go back to sign-in, carrying a real next', () => {
   assert.equal(expiredRetryHref(null, '/browse'), '/auth')
   assert.equal(expiredRetryHref('email', '/watch/abc?t=1'), '/auth?next=%2Fwatch%2Fabc%3Ft%3D1')
   assert.equal(expiredRetryHref('email_change', '/profile'), '/auth?next=%2Fprofile')
+})
+
+// ---------------------------------------------------------------- recoveryDestination
+
+test('recovery sends the visitor to the reset page with a safe next', () => {
+  assert.equal(recoveryDestination('/series/x'), '/auth/reset-password?next=%2Fseries%2Fx')
+  assert.equal(recoveryDestination('//evil.test'), '/auth/reset-password?next=%2Fbrowse')
 })
