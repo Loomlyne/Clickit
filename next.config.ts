@@ -92,6 +92,16 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Email-link pages carry the token hash in the URL (05-23, T-05-23-02):
+        // no Referer at all. Listed after the baseline so this value wins.
+        source: '/auth/confirm',
+        headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
+      },
+      {
+        source: '/:locale(en|ar)/auth/confirm',
+        headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
+      },
+      {
         source: '/brand/:path*',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
