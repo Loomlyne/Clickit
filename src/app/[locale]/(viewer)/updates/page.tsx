@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 
 import { PageEyebrow, PageTitle } from '@/components/info/page-header'
 import { NewsletterSignupForm } from '@/components/layout/newsletter-signup-form'
-import { createClient } from '@/lib/supabase/server'
+import { requireViewer } from '@/server/auth/require-viewer'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('updates')
@@ -18,16 +18,13 @@ export default async function UpdatesPage({
 }: {
   searchParams?: Promise<{ show?: string }>
 }) {
+  const { user } = await requireViewer(await getLocale(), '/updates')
   const t = await getTranslations('updates')
   const params = await searchParams
   const showSlug = params?.show?.trim() || undefined
   const showTitle = showSlug ? showSlug.replace(/-/g, ' ') : undefined
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  const defaultEmail = user?.email ?? ''
+  const defaultEmail = user.email ?? ''
 
   return (
     <div className="px-4 pt-8 pb-16 sm:px-6 md:px-12">

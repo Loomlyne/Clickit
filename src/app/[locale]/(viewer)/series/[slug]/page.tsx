@@ -28,9 +28,10 @@ import { getIsMobile } from '@/lib/device'
 import { siteUrl } from '@/lib/site-url'
 import { JsonLd } from '@/components/seo/json-ld'
 import { stripStorageCacheBust } from '@/lib/supabase-media'
+import { requireViewer } from '@/server/auth/require-viewer'
 
 interface Props {
-  params: Promise<{ slug: string }>
+  params: Promise<{ locale: string; slug: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -67,15 +68,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function SeriesDetailPage({ params }: Props) {
-  const { slug } = await params
+  const { locale: urlLocale, slug } = await params
   const supabase = await createClient()
-  // The auth check does not need the show, so it starts in the first wave
-  // instead of waiting behind the slug lookup.
-  const userPromise = supabase.auth.getUser()
-  // Started early and awaited later: mark as handled so a failure surfaces at
-  // the await (error boundary) instead of as an unhandled rejection.
-  userPromise.catch(() => {})
-  const [dbShow, locale, isMobile] = await Promise.all([
+  // The wall check (requireViewer, server getUser) does not need the show, so
+  // it runs in the first wave instead of waiting behind the slug lookup. A
+  // signed-out visitor rejects the wave with the redirect, before notFound()
+  // and before any user read or render.
+  const [{ userId, user }, dbShow, locale, isMobile] = await Promise.all([
+    requireViewer(urlLocale, `/series/${slug}`),
     getShowBySlug(slug),
     getLocale(),
     getIsMobile(),
@@ -88,9 +88,6 @@ export default async function SeriesDetailPage({ params }: Props) {
     seasons,
     allEpisodes,
     { data: castMembers },
-    {
-      data: { user },
-    },
     moreLikeThis,
     t,
   ] = await Promise.all([
@@ -101,7 +98,6 @@ export default async function SeriesDetailPage({ params }: Props) {
       .select('*')
       .eq('show_id', dbShow.id)
       .order('sort_order'),
-    userPromise,
     getShowsByGenre(dbShow.genre, dbShow.id, locale),
     getTranslations('show'),
   ])
@@ -144,23 +140,17 @@ export default async function SeriesDetailPage({ params }: Props) {
     ? Promise.resolve(moreLikeThis)
     : getOtherStreamingShows(dbShow.id, locale)
   relatedShowsPromise.catch(() => {})
-  const [inWatchlist, isLiked, episodesProgressMap, profileRow] = user
-    ? await Promise.all([
-        getShowWatchlistState(user.id, dbShow.id),
-        getShowLikeState(user.id, dbShow.id),
-        getEpisodesProgress(user.id, allEpisodeIds),
-        supabase
-          .from('profiles')
-          .select('display_name')
-          .eq('id', user.id)
-          .maybeSingle(),
-      ])
-    : [
-        false,
-        false,
-        {} as Record<string, { progressPercent: number; completed: boolean }>,
-        null,
-      ]
+  const [inWatchlist, isLiked, episodesProgressMap, profileRow] =
+    await Promise.all([
+      getShowWatchlistState(userId, dbShow.id),
+      getShowLikeState(userId, dbShow.id),
+      getEpisodesProgress(userId, allEpisodeIds),
+      supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', userId)
+        .maybeSingle(),
+    ])
 
   // "More Like This" rail: prefer same-genre shows; if this show is the only
   // one in its genre, fall back to other streaming shows so the rail still
@@ -197,7 +187,7 @@ export default async function SeriesDetailPage({ params }: Props) {
         firstEpisodeId={firstEpisodeId}
         initialSaved={inWatchlist}
         initialLiked={isLiked}
-        userId={user?.id ?? null}
+        userId={userId}
         isMobile={isMobile}
       />
 
@@ -277,10 +267,10 @@ export default async function SeriesDetailPage({ params }: Props) {
         <div className="mx-auto max-w-7xl">
           <ReviewComposer
             showId={dbShow.id}
-            userId={user?.id ?? null}
+            userId={userId}
             userName={
-              profileRow?.data?.display_name ||
-              user?.email?.split('@')[0] ||
+              profileRow.data?.display_name ||
+              user.email?.split('@')[0] ||
               null
             }
           />
