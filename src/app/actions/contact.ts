@@ -13,11 +13,23 @@ import {
   type SupportMessageInput,
   type SupportSubmitResult,
 } from '@/lib/contact'
-import { getAppConfig } from '@/lib/config'
 import type { Json } from '@/lib/database.types'
-import { sendTransactionalEmail } from '@/lib/resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { clientIpFrom } from '@/server/client-ip'
+import {
+  isConfirmedSubscriber,
+  newsletterKey,
+  newsletterOutcome,
+  stripHeaderBreaks,
+  supportKeys,
+  supportOutcome,
+  type EnqueueStep,
+} from '@/server/email/contact-core'
+import {
+  enqueueEmail,
+  type EnqueueInput,
+  type EnqueueResult,
+} from '@/server/email/outbox'
 import { guardPublicForm, readCaptchaToken, type GuardError } from '@/server/form-guard'
 import type { RateLimitStore } from '@/server/rate-limit-policy'
 import { supabaseRateLimitStore } from '@/server/rate-limit-store'
@@ -89,9 +101,19 @@ async function guardAction(
   return result.ok ? null : guardRefusal(context, result.error, result.reason)
 }
 
-async function getContactRecipient() {
-  const config = await getAppConfig()
-  return config.footer.contactEmail.trim() || 'contact@clickitstory.com'
+// One enqueue through the outbox (D-28). A throw (RPC down, validation) becomes 'error'
+// so the saved row is never lost; the log carries the kind only, never an address.
+async function enqueueStep(
+  kind: EnqueueInput['kind'],
+  send: () => Promise<EnqueueResult>
+): Promise<EnqueueStep> {
+  try {
+    return (await send()).outcome
+  } catch {
+    // No error text: an RPC message could quote the address.
+    console.error('[contact] enqueue failed kind=' + kind)
+    return 'error'
+  }
 }
 
 // turnstileToken: the widget token (string) or a FormData carrying the
@@ -112,7 +134,9 @@ export async function submitSupportMessage(
   try {
     const admin = createAdminClient()
     const payload = parsed.data
+    const locale = payload.locale ?? 'en'
 
+    // Save first (D-31): a delivery problem below never loses the message.
     const { data: inserted, error: insertError } = await admin
       .from('support_messages')
       .insert({
@@ -129,52 +153,48 @@ export async function submitSupportMessage(
       throw new Error(insertError?.message || 'Failed to save support message')
     }
 
-    const recipient = await getContactRecipient()
-    const mail = await sendTransactionalEmail({
-      to: recipient,
-      subject: `Support request: ${payload.subject}`,
-      html: `
-        <h2>New support message</h2>
-        <p><strong>Name:</strong> ${escapeHtml(payload.name)}</p>
-        <p><strong>Email:</strong> ${escapeHtml(payload.email)}</p>
-        <p><strong>Phone:</strong> ${escapeHtml(payload.phone || 'Not provided')}</p>
-        <p><strong>Subject:</strong> ${escapeHtml(payload.subject)}</p>
-        <p><strong>Message:</strong></p>
-        <p>${escapeHtml(payload.message).replace(/\n/g, '<br />')}</p>
-      `,
-      text: [
-        'New support message',
-        `Name: ${payload.name}`,
-        `Email: ${payload.email}`,
-        `Phone: ${payload.phone || 'Not provided'}`,
-        `Subject: ${payload.subject}`,
-        '',
-        payload.message,
-      ].join('\n'),
-    })
+    const keys = supportKeys(inserted.id)
+    // Static auto-reply to the sender in the page language (D-39: never echoes the
+    // visitor's text; capped at 3 per address per 24 h inside enqueue_email).
+    const ack = await enqueueStep('support_ack', () =>
+      enqueueEmail({
+        kind: 'support_ack',
+        idempotencyKey: keys.ack,
+        to: { email: payload.email, locale },
+        data: {},
+      })
+    )
+    // One admin copy per admins row (the RPC appends ':<admin id>'), Reply-To = sender.
+    const adminCopy = await enqueueStep('support_admin', () =>
+      enqueueEmail({
+        kind: 'support_admin',
+        idempotencyKey: keys.admin,
+        to: { adminAll: true },
+        data: {
+          message_id: inserted.id,
+          name: stripHeaderBreaks(payload.name),
+          email: stripHeaderBreaks(payload.email),
+          subject: stripHeaderBreaks(payload.subject),
+          message: payload.message,
+        },
+        replyTo: stripHeaderBreaks(payload.email),
+      })
+    )
 
-    if (!mail.ok) {
-      await admin
+    if (adminCopy === 'error') {
+      // No outbox row exists, so finish_outbox will never mirror a status here.
+      const { error: markError } = await admin
         .from('support_messages')
         .update({
           notification_status: 'failed',
-          notification_error: mail.error,
+          notification_error: 'enqueue failed',
         })
         .eq('id', inserted.id)
-
-      return { ok: true, status: 'saved_email_failed' }
+      if (markError) console.error('[contact] support mark failed')
     }
 
-    await admin
-      .from('support_messages')
-      .update({
-        notification_status: 'sent',
-        notification_error: null,
-      })
-      .eq('id', inserted.id)
-
     revalidatePath('/admin/inbox')
-    return { ok: true, status: 'sent' }
+    return { ok: true, status: supportOutcome({ ack, admin: adminCopy }) }
   } catch (error) {
     return {
       ok: false,
@@ -203,15 +223,27 @@ export async function subscribeToNewsletter(
   try {
     const admin = createAdminClient()
     const payload = parsed.data
+    const locale = payload.locale ?? 'en'
     const normalizedEmail = normalizeEmail(payload.email)
     const { data: existing, error: existingError } = await admin
       .from('newsletter_subscribers')
-      .select('id, interests, status')
+      .select('id, interests, status, confirmed_at')
       .eq('normalized_email', normalizedEmail)
       .maybeSingle()
 
     if (existingError) {
       throw new Error(existingError.message)
+    }
+
+    // A confirmed subscriber stays active and gets no email (D-32).
+    if (isConfirmedSubscriber(existing)) {
+      return {
+        ok: true,
+        status: newsletterOutcome({
+          existing: existing?.status ?? null,
+          confirmed: true,
+        }),
+      }
     }
 
     const nextInterests = buildNewsletterInterests(existing?.interests, {
@@ -223,8 +255,13 @@ export async function subscribeToNewsletter(
       email: payload.email.trim(),
       normalized_email: normalizedEmail,
       source: payload.source,
-      status: 'active',
+      status: 'pending',
+      locale,
       interests: nextInterests as Json,
+      // A row that is not active but still carries an old confirmed_at (paused or
+      // unsubscribed) must confirm again: the confirm page only writes where
+      // confirmed_at is null. New and pending rows keep confirmed_at null.
+      ...(existing?.confirmed_at ? { confirmed_at: null } : {}),
     }
 
     const { data: saved, error: upsertError } = await admin
@@ -239,62 +276,35 @@ export async function subscribeToNewsletter(
       )
     }
 
-    const shouldNotify =
-      !existing ||
-      existing.status !== 'active' ||
-      JSON.stringify(existing.interests ?? []) !== JSON.stringify(nextInterests)
-
-    if (!shouldNotify) {
-      revalidatePath('/admin/inbox')
-      return { ok: true, status: 'already_subscribed' }
-    }
-
-    const recipient = await getContactRecipient()
-    const interestLabel =
-      nextInterests.length > 0
-        ? nextInterests.map((item) => item.title || item.slug).join(', ')
-        : 'General newsletter'
-
-    const mail = await sendTransactionalEmail({
-      to: recipient,
-      subject: `Newsletter signup: ${payload.email.trim()}`,
-      html: `
-        <h2>New newsletter signup</h2>
-        <p><strong>Email:</strong> ${escapeHtml(payload.email.trim())}</p>
-        <p><strong>Source:</strong> ${escapeHtml(payload.source)}</p>
-        <p><strong>Interests:</strong> ${escapeHtml(interestLabel)}</p>
-      `,
-      text: [
-        'New newsletter signup',
-        `Email: ${payload.email.trim()}`,
-        `Source: ${payload.source}`,
-        `Interests: ${interestLabel}`,
-      ].join('\n'),
-    })
-
-    if (!mail.ok) {
-      await admin
-        .from('newsletter_subscribers')
-        .update({
-          notification_status: 'failed',
-          notification_error: mail.error,
-        })
-        .eq('id', saved.id)
-
-      revalidatePath('/admin/inbox')
-      return { ok: true, status: 'saved_email_failed' }
-    }
-
-    await admin
-      .from('newsletter_subscribers')
-      .update({
-        notification_status: 'sent',
-        notification_error: null,
+    // n = epoch seconds of this send, so every sign-up gets its own key; the RPC caps
+    // confirm emails at 1 per address per 10 minutes (D-39).
+    const sentAt = Math.floor(Date.now() / 1000)
+    const step = await enqueueStep('newsletter_confirm', () =>
+      enqueueEmail({
+        kind: 'newsletter_confirm',
+        idempotencyKey: newsletterKey(saved.id, sentAt),
+        to: { email: payload.email.trim(), locale },
+        data: { subscriber_id: saved.id },
       })
-      .eq('id', saved.id)
+    )
+
+    if (step === 'queued') {
+      const { error: sentError } = await admin
+        .from('newsletter_subscribers')
+        .update({ confirm_sent_at: new Date(sentAt * 1000).toISOString() })
+        .eq('id', saved.id)
+      if (sentError) console.error('[contact] confirm_sent_at update failed')
+    }
 
     revalidatePath('/admin/inbox')
-    return { ok: true, status: existing ? 'updated_preferences' : 'sent' }
+    return {
+      ok: true,
+      status: newsletterOutcome({
+        existing: existing?.status ?? null,
+        confirmed: false,
+        enqueue: step,
+      }),
+    }
   } catch (error) {
     return {
       ok: false,
@@ -305,13 +315,4 @@ export async function subscribeToNewsletter(
           : 'Failed to subscribe to newsletter',
     }
   }
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
 }

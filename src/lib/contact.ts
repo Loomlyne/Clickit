@@ -7,6 +7,8 @@ export const supportMessageSchema = z.object({
   subject: z.string().trim().min(3, 'fieldRequired'),
   message: z.string().trim().min(10, 'messageMin'),
   terms: z.boolean().refine((value) => value === true, 'termsRequired'),
+  // Page language for the auto-reply (D-31); the action defaults to 'en'.
+  locale: z.enum(['en', 'ar']).optional(),
 })
 
 export const newsletterSignupSchema = z.object({
@@ -14,6 +16,8 @@ export const newsletterSignupSchema = z.object({
   source: z.string().trim().min(1).max(64),
   interestSlug: z.string().trim().min(1).max(120).optional(),
   interestTitle: z.string().trim().min(1).max(160).optional(),
+  // Page language for the confirm email (D-32); the action defaults to 'en'.
+  locale: z.enum(['en', 'ar']).optional(),
 })
 
 export type SupportMessageInput = z.infer<typeof supportMessageSchema>
@@ -36,7 +40,12 @@ export type SupportSubmitResult =
 export type NewsletterSignupResult =
   | {
       ok: true
-      status: 'sent' | 'saved_email_failed' | 'already_subscribed' | 'updated_preferences'
+      // Never 'subscribed' before the confirm click (D-32, UI-SPEC 6.12).
+      status:
+        | 'pending_confirmation'
+        | 'pending_recent'
+        | 'already_subscribed'
+        | 'saved_email_failed'
     }
   | ActionErrorResult
 

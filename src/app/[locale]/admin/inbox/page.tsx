@@ -41,7 +41,7 @@ export default async function AdminInboxPage() {
       supabase
         .from('newsletter_subscribers')
         .select(
-          'id, email, source, status, notification_status, interests, created_at'
+          'id, email, source, status, confirmed_at, interests, created_at'
         )
         .order('created_at', { ascending: false })
         .limit(50),
@@ -153,7 +153,8 @@ export default async function AdminInboxPage() {
                     {subscriber.source}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {subscriber.status} / {subscriber.notification_status}
+                    {/* Double opt-in (D-32): confirmed only after the link click. */}
+                    {subscriber.confirmed_at ? 'confirmed' : 'pending'}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {Array.isArray(subscriber.interests) &&

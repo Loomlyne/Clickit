@@ -1,8 +1,8 @@
 'use client'
 
 import { useId, useState } from 'react'
-import { CheckIcon } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { CheckIcon, MailIcon } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
@@ -18,6 +18,9 @@ import {
   useTurnstileToken,
 } from '@/components/security/turnstile-field'
 import { isCaptchaFailure } from '@/lib/turnstile-widget'
+
+// The enqueue_email RPC caps confirm emails at 1 per address per 10 minutes (D-39).
+const CONFIRM_RESEND_MINUTES = 10
 
 type NewsletterSignupFormProps = {
   source: string
@@ -37,8 +40,11 @@ export function NewsletterSignupForm({
   compact = true,
 }: NewsletterSignupFormProps) {
   const t = useTranslations('newsletter')
+  // Page language for the confirm email (D-32).
+  const locale = useLocale() === 'ar' ? 'ar' : 'en'
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
-  const [statusOk, setStatusOk] = useState(false)
+  // UI-SPEC 6.12: Mail for the pending states, accent Check only when already confirmed.
+  const [statusIcon, setStatusIcon] = useState<'mail' | 'check' | null>(null)
   const errorId = useId()
   // Turnstile (PLAT-05): interaction-only, single-use token, submit disabled
   // until one exists.
@@ -63,9 +69,12 @@ export function NewsletterSignupForm({
   async function onSubmit(data: NewsletterSignupInput) {
     if (awaitingToken) return
     setStatusMessage(null)
-    setStatusOk(false)
+    setStatusIcon(null)
     captcha.setFailed(false)
-    const result = await subscribeToNewsletter(data, captcha.token ?? undefined)
+    const result = await subscribeToNewsletter(
+      { ...data, locale },
+      captcha.token ?? undefined
+    )
     // The token is single-use: whatever the outcome, a fresh one is needed.
     const refused = !result.ok && isCaptchaFailure(result.message)
     captcha.consume(refused)
@@ -76,7 +85,7 @@ export function NewsletterSignupForm({
         return
       }
 
-      setStatusOk(false)
+      setStatusIcon(null)
       // With the widget drawn, a captcha refusal shows under it (signed).
       setStatusMessage(
         needsToken && refused ? null : result.message || t('errSubscribe')
@@ -84,14 +93,20 @@ export function NewsletterSignupForm({
       return
     }
 
-    setStatusOk(true)
-    if (result.status === 'sent') {
-      setStatusMessage(t('statusSent'))
-    } else if (result.status === 'updated_preferences') {
-      setStatusMessage(t('statusUpdated'))
+    // Never "subscribed" before the confirm click (D-32).
+    if (result.status === 'pending_confirmation') {
+      setStatusIcon('mail')
+      setStatusMessage(t('statusPending'))
+    } else if (result.status === 'pending_recent') {
+      setStatusIcon('mail')
+      setStatusMessage(
+        t('statusPendingRecent', { minutes: CONFIRM_RESEND_MINUTES })
+      )
     } else if (result.status === 'already_subscribed') {
+      setStatusIcon('check')
       setStatusMessage(t('statusAlreadySubscribed'))
     } else {
+      setStatusIcon(null)
       setStatusMessage(t('statusOfflineSaved'))
     }
 
@@ -146,9 +161,10 @@ export function NewsletterSignupForm({
             type="submit"
             disabled={isSubmitting || awaitingToken}
             className="flex min-h-11 min-w-11 items-center justify-center px-2 py-3 text-[var(--text-dim)] transition-colors hover:text-[var(--accent)] disabled:opacity-60"
-            aria-label={buttonLabel || t('submitAria')}
+            aria-label={t('submitAria')}
           >
             <svg
+              aria-hidden="true"
               width="16"
               height="16"
               viewBox="0 0 24 24"
@@ -184,7 +200,13 @@ export function NewsletterSignupForm({
       <div role="status">
         {statusMessage && (
           <p className="flex items-center gap-2 text-sm text-[var(--text-dim)]">
-            {statusOk && (
+            {statusIcon === 'mail' && (
+              <MailIcon
+                aria-hidden
+                className="size-4 shrink-0 text-[var(--text-dim)]"
+              />
+            )}
+            {statusIcon === 'check' && (
               <CheckIcon
                 aria-hidden
                 className="size-4 shrink-0 text-[var(--primary)]"
