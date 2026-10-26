@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
 import { getLocale as getIntlLocale, getTranslations } from 'next-intl/server'
-import { redirect } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/server'
 import { getAppConfig } from '@/lib/config'
+import { getAdminStatus } from '@/server/auth-guards'
+import { requireViewer } from '@/server/auth/require-viewer'
 import { AccountSettings } from '@/components/profile/account-settings'
 import { ProfileHeader } from '@/components/profile/profile-header'
 import { ProfileHistoryRow } from '@/components/profile/profile-history-row'
@@ -26,36 +27,29 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ProfilePage() {
+  const locale = (await getIntlLocale()) as Locale
+  // Page-level wall (05-40, W12): a signed-out visitor signs in and comes back here.
+  const { userId, user } = await requireViewer(locale, '/profile')
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
 
-  if (!user) {
-    const locale = await getIntlLocale()
-    return redirect({ href: '/auth', locale })
-  }
-
-  const [{ data: profile }, { data: config }, appConfig] = await Promise.all([
+  const [{ data: profile }, adminStatus, appConfig] = await Promise.all([
     supabase
       .from('profiles')
-      .select('display_name, avatar_url')
-      .eq('id', user.id)
+      .select('display_name, avatar_url, password_set_at, notify_new_episodes')
+      .eq('id', userId)
       .single(),
-    supabase.from('app_config').select('admin_user_id').single(),
+    getAdminStatus(),
     getAppConfig(),
   ])
 
-  const isAdmin = config?.admin_user_id === user.id
-
-  const locale = (await getIntlLocale()) as Locale
+  const isAdmin = adminStatus.isAdmin
 
   // Fetch personalization data
   const [watchlistShows, likedShows, recentlyWatched, t, tCommon] =
     await Promise.all([
-      getWatchlistShows(user.id, locale),
-      getLikedShows(user.id, locale),
-      getRecentlyWatched(user.id),
+      getWatchlistShows(userId, locale),
+      getLikedShows(userId, locale),
+      getRecentlyWatched(userId),
       getTranslations('profile'),
       getTranslations('common'),
     ])
@@ -80,7 +74,15 @@ export default async function ProfilePage() {
           }
         />
 
-        <AccountSettings displayName={displayName} email={email} />
+        <AccountSettings
+          displayName={displayName}
+          email={email}
+          locale={locale}
+          hasPassword={Boolean(profile?.password_set_at)}
+          notifyNewEpisodes={profile?.notify_new_episodes ?? true}
+          pendingEmail={user.new_email ?? null}
+          emailChangeSentAt={user.email_change_sent_at ?? null}
+        />
 
         <div className="grid gap-8 lg:grid-cols-2">
           <div className="min-w-0 rounded-xl border border-[var(--line)] bg-[var(--bg-1)] p-5 sm:p-6">

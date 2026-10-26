@@ -2,6 +2,7 @@
 
 import { usePathname } from '@/i18n/navigation'
 import { Navbar } from '@/components/layout/navbar'
+import { LocaleSync } from '@/components/layout/locale-sync'
 import { MarqueeTicker } from '@/components/landing/marquee-ticker'
 import type { TopTickerConfig } from '@/lib/config'
 
@@ -39,6 +40,8 @@ export function ViewerShell({
 
   return (
     <div className="relative min-h-screen bg-black">
+      {/* Silent email-language sync for signed-in viewers (D-15); renders nothing. */}
+      {initialUser && <LocaleSync />}
       {!gateSurface && <MarqueeTicker ticker={ticker} />}
       <Navbar
         initialUser={initialUser}
