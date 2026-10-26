@@ -21,7 +21,7 @@
 //             rsc, static, media, same-origin-other, third-party)
 //
 // Each request is logged (UTC start and end, URL, status, x-spike-*, cf-cache-status,
-// x-opennext-cache, x-nextjs-cache, location) to the --out JSON file (outside the
+// x-opennext-cache, x-nextjs-cache, x-clickit-cache, age, location) to the --out JSON file (outside the
 // repo; default /Users/koss/clickit-phase021-logs/burst-<mode>-<time>.json). No
 // request header is logged. stdout gets one JSON summary with the UTC window
 // (first start, last end) of the whole burst.
@@ -44,7 +44,7 @@ export const MODES = Object.freeze(['render', 'isr', 'cache', 'hits', 'asset', '
 export const DEFAULT_LOG_DIR = '/Users/koss/clickit-phase021-logs'
 export const DEFAULT_MEDIA_ORIGINS = Object.freeze(['https://media.clickitstory.ae'])
 /** Response headers copied into the log (besides every x-spike-*). Values hold no secrets. */
-export const LOGGED_HEADERS = Object.freeze(['cf-cache-status', 'x-opennext-cache', 'x-nextjs-cache', 'location'])
+export const LOGGED_HEADERS = Object.freeze(['cf-cache-status', 'x-opennext-cache', 'x-nextjs-cache', 'x-clickit-cache', 'age', 'location'])
 
 export const USAGE = `spike-burst: read-only request bursts (GET only; pageview aborts any non-GET)
   --mode <mode>          required: ${MODES.join(' | ')}
