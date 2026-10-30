@@ -46,9 +46,17 @@ function rel(path: string): string {
 }
 
 test('Vercel config files are gone', () => {
-  for (const file of ['vercel.json', '.vercelignore', 'scripts/check-cron.sh']) {
+  for (const file of ['.vercelignore', 'scripts/check-cron.sh']) {
     assert.equal(existsSync(join(ROOT, file)), false, `${file} must not exist`)
   }
+})
+
+// Koss, 2026-10-30: www followed main, so vercel.json may exist only as the
+// off-switch for Vercel Git deploys, until it is deleted at the Worker cutover.
+test('vercel.json, if present, only turns Vercel Git deploys off', () => {
+  const file = join(ROOT, 'vercel.json')
+  if (!existsSync(file)) return
+  assert.deepEqual(JSON.parse(readFileSync(file, 'utf8')), { git: { deploymentEnabled: false } })
 })
 
 test('package.json has no botid or @vercel/ dependency', () => {
