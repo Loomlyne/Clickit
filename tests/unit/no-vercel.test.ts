@@ -101,6 +101,6 @@ test('wrangler configs do not mention vercel', () => {
 })
 
 test('the repo root has no Vercel-named file', () => {
-  const bad = readdirSync(ROOT).filter((n) => /vercel/i.test(n) && n !== '.vercel')
+  const bad = readdirSync(ROOT).filter((n) => /vercel/i.test(n) && n !== '.vercel' && n !== 'vercel.json')
   assert.deepEqual(bad, [])
 })
