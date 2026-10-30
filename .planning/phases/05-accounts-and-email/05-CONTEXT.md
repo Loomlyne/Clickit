@@ -1,0 +1,193 @@
+# Phase 5: Accounts and Email - Context
+
+**Gathered:** 2026-10-20
+**Status:** SIGNED 2026-10-20 ~18:05 CET — Koss's answers relayed by the controller (Q1-Q3, Q5-Q11, Q13-Q15, Q17, Q18 = A; Q4 = B; Q12 = C; Q16 n/a; Q19 = B). Q12 picture signed ~19:00 CET. Plan gate SIGNED ~19:45 CET: G20 A (execute after Phase 2 merges), G21 accepted, G23 A (D-40 two-PR order as quoted), G24 A x4 (second authenticator skippable, lost-phone line plain text, name-step password note plain text, /auth heading fixed "Sign in or join"), G25 A (support reply "within 48 hours").
+**Signed:** each D-xx tagged `(Qn)` now records Koss's answer. Changed from the recommended option: D-03 (Q4 = B), D-27 (Q12 = C), D-33 (Q16 n/a), postal line (Q19 = B); D-16 seed changed by a live fact (the current `app_config.admin_user_id` is a test account).
+
+<domain>
+## Phase Boundary
+
+Only signed-in viewers get past the landing and legal pages (plus sign-in and Support, Q2). Viewers join or sign in with a 6-digit email code or with email and password, and can add a password later from Profile. Password reset, email confirmation and email change work when the link is opened on another device. Issam and Nejib each have their own admin account behind an authenticator-app (TOTP) code; the audit log names the admin; leaked passwords are refused; the anon-callable YouTube-ID function is closed. Every auth email (confirm, sign-in code, reset, email change, reauthentication) and every app email (welcome, My List digest, support auto-reply and admin copy, newsletter confirmation) is branded, sent from `Clickit Story <no-reply@clickitstory.ae>` through Resend, in the viewer's language (EN/AR), and app emails go through a queue that never sends twice and retries failures. Requirements AUTH-01..08, MAIL-01, MAIL-03..07.
+
+Built against `main` as it will be after Phases 2, 3 and 4: the app runs on a Cloudflare Worker (OpenNext, `custom-worker.ts` with `scheduled`), Turnstile widget and server guards exist (`src/components/security/turnstile-field.tsx`, `src/server/form-guard.ts`, `src/server/client-ip.ts`, `src/server/auth-guards.ts`), clickitstory.ae is a Cloudflare zone, Resend has the domain verified (MAIL-02, Phase 3), Supabase CAPTCHA is on (Phase 3 cutover), and the Phase 4 canvas has signed the OTP sign-in and email looks.
+
+Not in this phase: sending newsletters (only the confirmed sign-up), SMS/WhatsApp codes, social sign-in, passkeys, an in-app admin manager (Q11), YouTube import (Phase 6), Arabic RTL fixes outside the new screens (Phase 7).
+
+</domain>
+
+<decisions>
+## Implementation Decisions
+
+### The wall (AUTH-01)
+- **D-01 (Q2):** Open without an account: the landing page (`/` forwards to `/portfolio`), `/privacy`, `/terms`, `/legal/*`, every `/auth/*` page and route, `/support`, the public email pages (unsubscribe confirm page and newsletter-confirm page, both button pages, never acting on GET), and `/coming-soon` while coming-soon mode is on. Everything else (Browse, series, watch, My List, Profile, About, updates, design-system, admin) sends a signed-out visitor to `/{locale}/auth?next=<path>`. `/api/*` keeps its own checks (cron secret, signed links).
+- **D-02:** The admin setting "Skip sign-in" (`app_config.auth_allow_skip`, `config.authAllowSkip`, the `/watch` skip branch in `src/proxy.ts`, the skip link on `/auth`) is removed from code and from the Settings screen. The column stays until the Phase 8 contract step (expand/contract; no destructive migration here).
+- **D-03 (Q4 = B, signed):** `/auth` is the plain sign-in page for everyone: no show poster, no show title, no per-show Open Graph on `/auth`. The `next` parameter is kept and validated (same-origin path only), so after signing in the viewer still lands on the show or episode she came from. Link previews of show URLs come from the show page's own metadata only where the wall lets crawlers see it (nothing extra in this phase).
+- **D-04:** `next` stays validated by the existing `getSafeAuthNextPath` / `safeNext`; after any successful sign-in the viewer lands on `next` (admins without `next` land on `/admin`).
+
+### Signing in and joining (AUTH-02, AUTH-03)
+- **D-05 (Q1):** One screen, code first: email → "Send code" → six code boxes on the same screen; "Use a password instead" swaps in the password field (the shared `PasswordField` with its right-side show/hide eye). "Create account" with a password stays available behind the password path. The old two-tab `AuthPanel` goes.
+- **D-06:** Code sign-in uses `signInWithOtp({ email, options: { shouldCreateUser: true, data: { locale }, captchaToken } })` and `verifyOtp({ email, token, type: 'email' })` in server actions. The Magic Link and Confirm-signup templates contain `{{ .Token }}` so the email carries a 6-digit code. Code length stays 6.
+- **D-07:** The code input accepts paste of the whole code, iOS/Android one-time-code auto-fill (`autocomplete="one-time-code"`, `inputmode="numeric"`), and Arabic-Indic (٠-٩) and Extended Arabic-Indic (۰-۹) digits, normalised to 0-9 on client and server. Resend is offered after 60 s with a visible countdown (Supabase's own per-user window).
+- **D-08 (Q3):** A brand-new viewer (no `profiles.display_name` yet, or `onboarded_at` null) gets one step after the first code: "What should we call you?" plus the line "By continuing you agree to the Terms and Privacy Policy" (links). Saving sets `display_name` and `onboarded_at`, then goes to `next` or Browse.
+- **D-09:** "Add a password later": Profile shows "Set a password" when the account has none and "Change password" when it has one. Clickit records `profiles.password_set_at` (set by password sign-up, set, change and reset). Existing accounts are backfilled with `password_set_at = created_at` (all pre-phase accounts were created with a password).
+- **D-10 (Q5):** Codes and email links work for 15 minutes (Supabase "Email OTP expiration" = 900 s, one setting for all of them; owner step). Templates and UI copy say "15 minutes".
+- **D-11 (Q17):** Leaked passwords are refused by Clickit itself: every server action that sets a password (password sign-up, set, change, reset) checks the Have I Been Pwned range API (k-anonymity, SHA-1 prefix of 5 hex chars, `Add-Padding: true`) before calling Supabase, with a 3 s timeout that fails OPEN with a logged warning (an HIBP outage must not block sign-up). Minimum length stays 8 (live setting, Koss 2026-10-20). Supabase's Pro-only check is not assumed.
+
+### Email links that work on another device (AUTH-04)
+- **D-12 (qualified by research F2, F18):** Every auth email link uses the token-hash pattern, built as `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=<signup|recovery|email_change|email>`, where server actions always pass `emailRedirectTo = <site origin>/<locale>/auth/confirm?next=<safe path>` (`{{ .SiteURL }}` is production-only and breaks local/workers.dev). `/{locale}/auth/confirm` is a **page with a "Continue" button**; a server action calls `verifyOtp({ token_hash, type })` (link scanners pre-fetch GET links and would burn the token). A root `src/app/auth/confirm/route.ts` only redirects to the locale page with the same query. No PKCE verifier is needed, so the link works in any browser. `/auth/callback` (PKCE) stays for compatibility only.
+- **D-13:** Recovery: the confirm action signs the visitor in on the device that opened the link and sends them to `/auth/reset-password`. Email change keeps Supabase "Secure email change" (both addresses confirm); the first click returns no error and no session by design, so the page says "Confirmed. Now open the link we sent to the other address"; each link works on its own device.
+- **D-14:** Password sign-up requires email confirmation (owner step: "Confirm email" on). Code sign-up confirms by the code itself.
+
+### Language of emails (MAIL-01)
+- **D-15 (Q6):** An email's language is the language the viewer last used on the site. Clickit stores it as `profiles.locale` ('en'|'ar') and mirrors it to `auth.users.user_metadata.locale` (sign-up/OTP `options.data`, and a server action on every language switch while signed in). Auth templates branch on `{{ .Data.locale }}`; a missing value means English. App emails read `profiles.locale`. `signInWithOtp` applies `options.data` only when it creates the user (research F3), so existing users get `updateUser({ data: { locale } })` after every verified sign-in and on each language switch; a pre-existing Arabic user's very first code email may be English (accepted: 3 accounts exist).
+
+### Admins (AUTH-05, AUTH-06, AUTH-07)
+- **D-16:** New table `public.admins (user_id uuid primary key references auth.users on delete cascade, display_name text not null, added_at timestamptz not null default now(), added_by uuid null references auth.users)`, RLS on, no policies (read only by service role and SECURITY DEFINER functions). NOT seeded from `app_config.admin_user_id`: on live that row is `admin@test.com`, a test account (controller read, 2026-10-20), so M1 creates `admins` empty and never copies it. Issam's and Nejib's accounts are created or invited by an owner step, then two owner-run inserts add them (one numbered step each). Locally `npm run seed:local-admin` inserts a seeded local admin directly. Between M2 (is_admin needs an `admins` row + AAL2) and those inserts there is no live admin, so M2 runs only after both inserts are read back. `private.is_admin()` keeps its name and signature; its body becomes "a row in `admins` for `auth.uid()` AND `(auth.jwt() ->> 'aal') = 'aal2'`". The one storage policy that checks admin inline (`Admin manage site-assets`) is rewritten to call `private.is_admin()`. `app_config.admin_user_id` stays (unused) until the Phase 8 contract.
+- **D-17:** One server-only `requireAdmin()` decides admin everywhere (proxy, admin layout, `assertAdmin` in `src/app/[locale]/admin/actions.ts`, `requireAdminUser` in `src/server/auth-guards.ts`, `/api/youtube-meta`). It returns `{ id, email, displayName }` or throws a typed error: not signed in, not an admin, needs TOTP enrolment, needs TOTP code. `requireAdminUser()` stays as a thin wrapper returning the id.
+- **D-18 (Q7, URL per research F10):** Before any admin screen renders, an admin without a verified TOTP factor goes to a full-page enrol step (QR + manual key, then code); an admin at AAL1 goes to a full-page "Enter your authenticator code" step. The pages live at `/{locale}/auth/mfa` (not under `/admin`, whose layout is the gate and would loop; moving admin into a route group would un-gate pages Phase 6 adds in parallel). Proxy: signed-in AAL1 admin on `/admin/*` → `/{locale}/auth/mfa?next=…`. Uses `supabase.auth.mfa.enroll / challenge / verify` and `getAuthenticatorAssuranceLevel`; enrol first removes leftover unverified factors and uses a unique `friendlyName`.
+- **D-19 (Q8):** The admin re-enters the code at every admin sign-in and again when the session's TOTP verification (`amr` entry `totp`, its timestamp) is older than 12 hours. One constant `ADMIN_MFA_MAX_AGE_HOURS = 12`.
+- **D-20 (Q9):** Each admin is asked to enrol a second authenticator at setup (allowed by Supabase: several TOTP factors). If both are lost, Koss removes the factor with one numbered owner step, `node scripts/admin-remove-factor.mjs <email>` (service-role key from his terminal env; lists, confirms, then `auth.admin.mfa.deleteFactor`; research F4), and the admin enrols again on next sign-in. No in-app recovery codes.
+- **D-21 (Q10):** Exactly two live admins: Issam and Nejib. Koss is not an admin on live.
+- **D-22 (Q11):** Admins are added or removed only through one numbered owner step (a reviewed SQL statement run by Koss; UUIDs never committed to the public repo). `/admin` gets a read-only "Admins" list: name, email, authenticator set up yes/no, last sign-in.
+- **D-23:** The audit log already stores `admin_user_id`; the admin audit screen shows the admin's `display_name` from `admins`. TOTP enrol/unenrol and admin sign-in failures are audited (new entity `admin_auth`).
+
+### Closing the anon YouTube function (AUTH-08)
+- **D-24 (qualified by research F1):** `episodes_view` is `security_invoker` and calls `get_public_youtube_video_id`, and four cached catalog queries in `src/lib/queries.ts` (`getNewEpisodes`, `getEpisodesByShowId`, `getEpisodesBySeasonId`, `getComingSoonEpisodes`) read it with the anon-key `createPublicClient()`. So first a server-only `createCatalogClient()` (service role) replaces the anon client in those four queries and ships; only then a later migration revokes EXECUTE on the function from `public, anon` and SELECT on `episodes_view` from `anon`, keeping `authenticated` and `service_role`.
+
+### Auth emails (MAIL-01)
+- **D-25:** Auth emails go Supabase Auth → custom SMTP `smtp.resend.com:465` (user `resend`, a Resend API key used only by Supabase) → viewer. No Send Email Hook: sign-in keeps working even if the Worker is down. Sender `Clickit Story <no-reply@clickitstory.ae>`. Owner steps: SMTP settings, raise the auth email rate limit from the custom-SMTP default of 30/hour, OTP expiry (D-10), Confirm email on (D-14), Secure email change on.
+- **D-26:** The five templates (Confirm signup, Magic Link/OTP, Reset password, Change email, Reauthentication) and their subjects are authored in the repo with React Email (`src/emails/auth/*`), exported to static HTML with Go placeholders kept as literal text (`{{ .Token }}`, `{{ .TokenHash }}`, `{{ .SiteURL }}`, `{{ if eq .Data.locale "ar" }}…{{ else }}…{{ end }}`), committed under `supabase/templates/`, and wired into `supabase/config.toml` `[auth.email.template.*]` for the local stack. Live: Koss pastes or pushes them (owner step). A unit test fails if a template lacks its required placeholder or the AR branch.
+- **D-27 (Q12 = C, signed; also answers Phase 4 Q7 = C):** Scheme-adaptive emails: one HTML per email, two looks that follow the reader's system colour scheme.
+  - **Light (default in every mail app):** black (#090909) header band with the Clickit Story logo, white body/card, yellow #ffcc00 pill button with #090909 text, code in large spaced digits on a light-grey box, footer text #767676 (or darker) on white — never #777777 (4.48:1, under WCAG AA).
+  - **Dark (`@media (prefers-color-scheme: dark)`):** black like the site: #090909 page, #101010 card, yellow code digits, same yellow button.
+  - `<meta name="color-scheme" content="light dark">` and `<meta name="supported-color-schemes" content="light dark">` in every template; `:root { color-scheme: light dark; }`.
+  - Gmail apps auto-invert and ignore the media query: logo is a PNG with its own solid black plate (so inversion keeps a dark band with readable wordmark), button is a solid table cell with explicit `bgcolor` + inline colours, no transparent PNG text. The Q12 picture (`mockups/05-q12-schemes.png`: light, dark, Gmail-dark) was SIGNED by Koss 2026-10-20 ~19:00 CET (relayed by the controller); 05-07/05-10/05-11 build to it once the plan gate is signed.
+  - **Ownership:** Phase 4 owns the colour values — `src/lib/email-tokens.ts` (literal hex for both schemes, light footer pinned #767676) and DESIGN.md (Phase 4 plan 04-01). Phase 5 owns layout, copy and templates and imports those tokens; no hex is redefined in Phase 5 code. Colour reference: Phase 4 `mockups/04-q7c.png`.
+  - Other rules unchanged: AR version `dir="rtl"`; plain-text part on every email; no tracking links or pixels; table layout, inline styles, 600px max width, system sans fallback (LBC cannot load in mail clients), logo hosted on `media.clickitstory.ae`; footer "Clickit Story · Spacelight Studios FZ LLC, Abu Dhabi, United Arab Emirates" (Q19 = B, no street) with the Support link.
+
+### App emails and the queue (MAIL-03..07)
+- **D-28:** Outbox in Postgres plus a Cloudflare Queue. Every app email is first inserted into `public.email_outbox` with a unique `idempotency_key` (e.g. `welcome:<user>`, `support_ack:<msg>`, `support_admin:<msg>:<admin>`, `newsletter_confirm:<sub>:<n>`, `digest:<user>:<dubai-date>`), status `pending`. The insert wins or the email already exists, so it is never created twice. Then a small message `{ outboxId }` goes to Queue `clickit-email` (binding `EMAIL_QUEUE`, DLQ `clickit-email-dlq`). The consumer (`queue()` in `custom-worker.ts`) loads the row, renders EN/AR, sends through Resend with header `Idempotency-Key = idempotency_key`, marks `sent` with the Resend id, or `retry()`s with backoff on 429/5xx; after max retries the row is `failed` and the message lands in the DLQ. Recipient addresses are read from the database in the consumer, never stored in queue messages.
+- **D-29:** A sweep re-enqueues outbox rows still `pending` after 15 minutes or `retrying` past their next-attempt time, so a lost queue message is retried, not dropped. It runs inside the single Phase 5 cron (D-34).
+- **D-30 (MAIL-03):** Welcome: claimed once with `update profiles set welcome_sent_at = now() where id = $1 and welcome_sent_at is null returning id` on the first verified sign-in (OTP verify, confirm link, or first password sign-in after confirmation), then outboxed. Existing accounts are backfilled `welcome_sent_at = now()` so no real person gets a surprise email.
+- **D-31 (Q13, MAIL-05):** Support: the contact action saves the message, then outboxes an auto-reply to the sender (in the page's language) and one admin copy per row in `admins` to that admin's sign-in email, `Reply-To` = the sender. Replaces the direct `sendTransactionalEmail` call in `src/app/actions/contact.ts`.
+- **D-32 (MAIL-06):** Newsletter double opt-in: a sign-up creates or refreshes the row as `pending` with a confirm link (HMAC-signed, 7-day expiry, secret `EMAIL_LINK_SECRET`); clicking it sets `confirmed_at` and `status = 'active'`. The current "New newsletter signup" admin notification is dropped (the admin list shows sign-ups). Rate limit and Turnstile as today.
+- **D-33 (Q16, not applicable):** live `newsletter_subscribers` has 0 rows (controller read, 2026-10-20), so there are no legacy rows to mark. The `confirmed_at` column still lands; future newsletter sends go only to confirmed rows.
+- **D-34 (Q14, Q15, MAIL-04; qualified by research F5):** Digest: one Cron Trigger `0 16 * * *` (20:00 Dubai) runs the digest and the outbox sweep. New column `episodes.live_at` (trigger-maintained when an episode becomes visible: `published`, or `coming-soon` with `publish_at <= now()`; backfilled) records when it went live, and a ledger `notification_sends(user_id, episode_id, kind)` unique per pair stops any episode being announced twice, even across a failed and retried run. The run selects episodes with `live_at` after the last successful run (`digest_runs`; first run looks back 24 h) not yet in the ledger, groups them per viewer whose `watchlist` holds the show, whose `profiles.notify_new_episodes` is true (default **true**) and whose email is confirmed, and outboxes one email per viewer per Dubai date. No new episodes, no email.
+- **D-35 (MAIL-04; research F6):** Unsubscribe: every digest carries an HMAC-signed link (`/api/email/unsubscribe?u=<user>&k=digest&t=<sig>`, no sign-in) plus `List-Unsubscribe: <https://www.clickitstory.ae/api/email/unsubscribe?…>` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click` (https only, no mailto; Resend passes both). GET shows a confirm page with one button; POST flips `notify_new_episodes = false`. Profile has the same switch.
+- **D-36:** Resend account is Koss's Pro account (MAIL-01); the Worker reads `RESEND_API_KEY` (Worker secret) and `EMAIL_LINK_SECRET` (Worker secret). Supabase gets its own Resend key for SMTP. All keys are owner steps in his terminal; none in files.
+
+### Queue limits, retries and abuse (research F7-F9, F17)
+- **D-38:** Workers Free limits (50 subrequests, 10 ms CPU per invocation) shape the pipeline: consumer `max_batch_size: 5`; one `claim_outbox` RPC (leases rows, joins `auth.users` for the address) and one `finish_outbox` RPC per batch; digest and sweep are single set-based SECURITY DEFINER RPCs. Emails render only in the consumer, never in a request handler (amended 2026-10-21: the React Email render moved to build time; the consumer fills pre-rendered templates with escaped values, still never in a request handler; 05-07 spike, controller decision A, Koss signed "stay on Workers Free" 15:03 CET). A row whose first attempt is older than 23 h is never re-sent (Resend keys live 24 h) and becomes `failed` for a human. A Resend 409 `invalid_idempotent_request` on a retry counts as already sent.
+- **D-39:** The support auto-reply is static (never echoes the visitor's text), capped at 3 per address per 24 h in the enqueue RPC; newsletter confirm at 1 per address per 10 min. CR/LF stripped from any user text used in a subject or `Reply-To`.
+- **D-40 (live order, research F11; order per D-16):** M1 additive (tables, columns, RPCs, `admins` created EMPTY, constraint widened) → deploy code → Issam's and Nejib's accounts exist (their first code sign-in, owner step) → two owner SQL inserts into `admins`, read back (the test account is not an admin) → M2 (`private.is_admin()` requires `admins` + AAL2, storage policy) and M3 (anon revoke; the catalog client is live since the deploy, and M3 does not touch admin access) in ONE approval → Issam and Nejib enrol TOTP. Each migration batch is Koss's approval through `apply-live-migrations.yml` (G23 asks him to sign exactly this order). The second PR (M2+M3) is prepared and reviewed before the first deploy, so the admin outage (deploy → enrolment) is one approval plus two enrolments, not a full PR cycle; the deploy question states that window.
+- **D-41 (research F12, F13):** Local `supabase/config.toml` gets Phase 5 values (OTP 900 s, confirmations on, min length 8, TOTP enrol/verify on, localhost redirect allow-list, the five templates). `supabase config push` is never used (it would overwrite live). A read-only `scripts/auth-config-check.mjs` diffs live Auth settings and templates against the repo using Koss's access token from his terminal.
+
+### Abuse controls
+- **D-37:** Turnstile (Phase 2 widget) guards Send code, password sign-in, password sign-up and reset; the token goes to Supabase as `captchaToken` (Supabase CAPTCHA, enabled at the Phase 3 cutover). Contact and newsletter keep Phase 2's siteverify guard. Supabase rate limits (OTP per-user 60 s, auth emails per hour) are owner steps; Clickit's own rate limiter (`CF-Connecting-IP`, Phase 2) also wraps send-code and newsletter.
+
+### Claude's Discretion
+- Exact table/column names beyond those fixed above, migration split (expand-only migrations; each one passes the Phase 1 guard and goes through `apply-live-migrations.yml` after Koss approves).
+- React Email component structure, copy wording (Koss reviews copy at UAT), plain-text rendering.
+- How the producer reaches `EMAIL_QUEUE` in `next dev`/unit tests (an in-process fake consumer behind the same interface).
+- Whether the Admins list is its own page or a Settings section (read-only either way).
+- Local test harness: local Supabase stack with Mailpit for auth emails, a fake Resend for app emails, a local TOTP helper (`node:crypto`, RFC 6238) for admin tests.
+
+</decisions>
+
+<canonical_refs>
+## Canonical References
+
+**Downstream agents MUST read these before planning or implementing.**
+
+### Scope and requirements
+- `.planning/ROADMAP.md` §Phase 5 — goal, success criteria, owner-gated list
+- `.planning/REQUIREMENTS.md` — AUTH-01..08, MAIL-01, MAIL-03..07 (MAIL-02 is Phase 3)
+- `.planning/phases/05-accounts-and-email/05-DISCUSS-QUESTIONS.md` — the 17 questions; recommended = provisional D-xx
+- `.planning/phases/05-accounts-and-email/mockups/05-mockups.html` and `05-q1/q3/q4/q7/q12.png` — option pictures with real tokens
+
+### Research already done for this milestone
+- `.planning/research/ARCHITECTURE.md` — Pattern 3 (queue → Resend), Pattern 4 (Supabase SMTP auth email), Pattern 5 (`admins` + `private.is_admin()`), bindings table
+- `.planning/research/STACK.md` §5 (auth email: OTP + password, Resend, EN + AR), Turnstile section, Resend/React Email versions
+- `.planning/research/FEATURES.md` §B (email OTP), email section, admin MFA row
+- `.planning/research/PITFALLS.md` — auth and email pitfalls
+
+### Live facts
+- `.planning/phases/01-safe-ground/01-LIVE-AUDIT.md` §2 — `private.is_admin()` body, 35+3 policies, inline storage policy, single `admin_user_id`; counts (3 auth users, 2 profiles)
+- `.planning/phases/01-safe-ground/01-CONTROLLER-RUNBOOK.md` — gated live migrations (`apply-live-migrations.yml`), migration guard
+
+### Upstream phases this builds on
+- Phase 2 branch `claude/phase-02-execute-19d86a` (until merged): `custom-worker.ts`, `wrangler.jsonc`, `src/server/auth-guards.ts`, `src/server/form-guard.ts`, `src/server/client-ip.ts`, `src/components/security/turnstile-field.tsx`, `src/server/cron-schedule.ts`, `.planning/phases/02-worker-and-r2-media-on-workers-dev/02-CONTEXT.md` (Supabase CAPTCHA off until cutover; crons off until cutover)
+- Phase 1.1: `src/lib/admin/action-runner.ts` (`AdminActionEnv.assertAdmin`), `src/lib/audit.ts` (`logAudit`, `logAuditStrict`)
+- Phase 6 branch `phase-06-youtube-import-player`: `06-00-PLAN.md`, `06-20-PLAN.md`, `06-RESEARCH.md` A13 — what Phase 6 expects from Phase 5 (see Phase 6 contract below)
+
+### Official docs (verify at implementation)
+- supabase.com/docs/guides/auth/auth-email-passwordless, /auth-email-templates, /auth-smtp, /sessions/pkce-flow, /auth-mfa, /auth-mfa/totp, /password-security, /rate-limits
+- developers.cloudflare.com/queues (limits, pricing), /workers/platform/limits (5 Cron Triggers on Free)
+- resend.com/docs idempotency keys, batch, custom headers; resend.com/docs/send-with-supabase-smtp
+
+</canonical_refs>
+
+<code_context>
+## Existing Code Insights
+
+### Reusable Assets
+- `src/components/auth/password-field.tsx` — shared password input with show/hide eye and strength meter; `password-rules.ts` (`PASSWORD_MIN`).
+- `src/lib/resend.ts` `sendTransactionalEmail` — hand-rolled fetch; becomes the consumer's sender (or is replaced by the `resend` SDK).
+- `src/lib/audit.ts` `logAudit` / `logAuditStrict`; audit table already stores `admin_user_id`.
+- `src/lib/admin/action-runner.ts` `AdminActionEnv.assertAdmin(): Promise<{ id }>` — the seam `requireAdmin` plugs into.
+- `src/lib/supabase/middleware.ts` `updateSession` (`getClaims`), `src/proxy.ts` (allowlists, `checkIsAdmin`, redirect helpers).
+- `src/lib/scheduling.ts` and `src/app/api/cron/publish-scheduled/route.ts` — publish logic and cron auth pattern.
+- `rate_limits` table and `withinRateLimit` in `src/app/actions/contact.ts`.
+
+### Established Patterns
+- Server actions with zod schemas; service-role client only on the server.
+- `next-intl` with `[locale]`; `/auth/callback` and `/api/*` bypass i18n in `src/proxy.ts:130-142`.
+- Unit tests: `node --test` in `tests/unit/*.test.ts` with `tests/unit/helpers/fake-supabase.ts`; e2e Playwright in `tests/e2e`; `npm run gate:local` = lint, typecheck, unit, migration guard, build.
+- Migrations: expand-only, guarded by `scripts/migration-guard.mjs`; live only via `apply-live-migrations.yml` after Koss approves.
+
+### Integration Points
+- `src/proxy.ts` — wall list and admin gate.
+- `src/app/[locale]/(viewer)/auth/*`, `src/components/auth/*`, `src/app/auth/callback/route.ts` (+ new confirm route).
+- `src/components/profile/account-settings.tsx` — email change, password set/change, notification switch, language sync.
+- `src/app/[locale]/admin/layout.tsx`, `actions.ts` `assertAdmin`, `src/app/api/youtube-meta/route.ts`.
+- `src/app/actions/contact.ts` — support and newsletter.
+- `custom-worker.ts` — add `queue()`; `wrangler.jsonc` — queue producer/consumer, DLQ, one cron.
+- `supabase/config.toml` — `[auth]` OTP, MFA TOTP enroll/verify on, templates, SMTP (local Mailpit), `additional_redirect_urls`.
+
+</code_context>
+
+<specifics>
+## Specific Ideas
+
+- Sign-in copy: "Sign in or join" / "Enter your email. We'll send you a 6-digit code." (Q1 picture A).
+- Admin code page link: "Lost your phone? Contact Koss" (Q7 picture) — final wording at UAT.
+- Code email: neutral subject "Your Clickit Story sign-in code" / "رمز الدخول إلى Clickit Story" (no code in the subject: a locked phone would show a live code; UI checker). Subjects branch on `.Data.locale` (research F16).
+
+## Phase 6 contract (Phase 6 is planned in parallel and codes against this)
+1. `requireAdmin(): Promise<{ id: string; email: string; displayName: string }>` exported from `src/server/auth-guards.ts` (server-only). It enforces: signed in, row in `public.admins`, AAL2 with a TOTP verification younger than 12 h. `adminEnv.assertAdmin` in `src/app/[locale]/admin/actions.ts` delegates to it; `requireAdminUser()` stays (returns the id).
+2. Table `public.admins(user_id uuid pk, display_name text not null, added_at, added_by)`; `private.is_admin()` = admins row AND `aal = 'aal2'`.
+3. TOTP enrol/verify pages at `/{locale}/auth/mfa` (changed from `/admin/mfa`, research F10; Phase 6 plans do not reference the URL) using `supabase.auth.mfa.enroll`, `challenge`, `verify`.
+4. Local admin for UAT: `npm run seed:local-admin` (local stack only; refuses any non-local URL) creates an admin user, its `admins` row and a verified TOTP factor, and writes email, password and TOTP secret to `/Users/koss/.clickit-checks/local-admin.env` (outside the repo). A helper `scripts/lib/totp.mjs` computes the current code.
+5. Cron budget: Phase 5 adds exactly one Cron Trigger (`0 16 * * *`). With Phase 2's two and Phase 6's one, the account uses 4 of 5.
+7. Phase 6 hand-off #4 (controller relay 2026-10-20): `src/app/[locale]/admin/actions.ts` has `requireAdminForYouTube = () => assertAdmin()`. Phase 5 rewrites `assertAdmin` as `async () => requireAdmin()` (returns `{ id, email, displayName }`), so `requireAdminForYouTube` keeps its name and call sites and accepts both admins (row in `admins` + fresh TOTP). If Phase 6 lands first, Phase 5's plan edits that one line to `() => requireAdmin()`; if Phase 5 lands first, Phase 6 merges onto the new `assertAdmin` with no change.
+8. Phase 6 hand-off #5: `/Users/koss/.clickit-checks/phase06-uat-admin.cjs` (outside the repo, creates a local admin without TOTP) is replaced by `npm run seed:local-admin` (item 4). After Phase 5, a local admin without an `admins` row and a verified TOTP factor cannot open `/admin`, so Phase 6 UAT must use the seed and the env file it writes; the old script is retired.
+6. Email queue for later use (e.g. Phase 6's optional "can't play" admin note): `enqueueEmail({ kind, idempotencyKey, to: { userId } | { adminAll: true }, data })` in `src/server/email/outbox.ts` (server-only).
+
+</specifics>
+
+<deferred>
+## Deferred Ideas
+
+- Sending newsletters to confirmed subscribers (a future phase; this phase only collects confirmed sign-ups).
+- Supabase Pro (daily backups, Supabase's own leaked-password check): pricing decision for Koss (Q17 B).
+- In-app admin manager and recovery codes (Q9 B, Q11 B).
+- Jev (proposal only): a support-message triage call (spam / real / urgent) before the auto-reply, logged with its confidence; low confidence goes to the admins unchanged. Not built without Koss's word.
+- Automation (proposal only): a daily "email health" check that reads the outbox and DLQ (stuck, failed, bounce rate) and emails the two admins only when something is wrong.
+- SMS/WhatsApp codes, passkeys, social sign-in.
+
+</deferred>
+
+---
+
+*Phase: 05-accounts-and-email*
+*Context gathered: 2026-10-20 (provisional; awaiting Koss's signature through the controller)*

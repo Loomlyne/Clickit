@@ -3,6 +3,7 @@ import { unstable_cache } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createPublicClient } from '@/lib/supabase/public'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createCatalogClient } from '@/server/catalog-client'
 import { toYouTubeStatusMap, type StoredNonOkStatus } from '@/lib/watch/status-map'
 import type { Database } from '@/lib/database.types'
 import { DEFAULT_LOCALE, localizedField, pickLocalized, type Locale } from '@/lib/locale'
@@ -468,7 +469,8 @@ export type NewEpisodeItem = ViewEpisode & {
 
 export const getNewEpisodes = unstable_cache(
   async (): Promise<NewEpisodeItem[]> => {
-    const supabase = createPublicClient()
+    const supabase = createCatalogClient()
+    if (!supabase) return []
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
@@ -544,7 +546,8 @@ export const getFirstEpisodesForShows = unstable_cache(
  */
 export const getEpisodesByShowId = unstable_cache(
   async (showId: string): Promise<DbEpisode[]> => {
-    const supabase = createPublicClient()
+    const supabase = createCatalogClient()
+    if (!supabase) return []
     // Read the masking view: coming-soon teasers are included, but their
     // youtube_video_id is null until the episode is effectively live.
     const { data } = await supabase
@@ -596,7 +599,8 @@ export const getSeasonsByShowId = unstable_cache(
 
 export const getEpisodesBySeasonId = unstable_cache(
   async (seasonId: string): Promise<DbEpisode[]> => {
-    const supabase = createPublicClient()
+    const supabase = createCatalogClient()
+    if (!supabase) return []
     const { data } = await supabase
       .from('episodes_view')
       .select('*')
@@ -849,7 +853,8 @@ export const getComingSoonEpisodes = unstable_cache(
   ): Promise<
     (ViewEpisode & { showTitle: string; showSlug: string; showBrandColor: ViewShow['brandColor'] })[]
   > => {
-    const supabase = createPublicClient()
+    const supabase = createCatalogClient()
+    if (!supabase) return []
     const nowIso = new Date().toISOString()
     const { data, error } = await supabase
       .from('episodes_view')

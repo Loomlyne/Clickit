@@ -23,3 +23,17 @@ export function getSafeAuthNextPath(
 
   return withoutLocale
 }
+
+/** First screen of the unified sign-in form (05-22, UI-SPEC 6.1). */
+export type AuthInitialMode = 'email' | 'password' | 'signup-password' | 'forgot'
+
+/**
+ * `?mode=` on /auth -> the first screen. Links from the expired-link pages and
+ * Profile use `forgot` and `password`; anything else is the code-first screen.
+ */
+export function authInitialMode(raw: unknown): AuthInitialMode {
+  if (raw === 'forgot') return 'forgot'
+  if (raw === 'password') return 'password'
+  if (raw === 'signup') return 'signup-password'
+  return 'email'
+}

@@ -8,7 +8,6 @@ import { FeaturedHeroWithWatched } from '@/components/home/featured-hero-with-wa
 import { ContentRail } from '@/components/home/content-rail'
 import { ContinueWatchingRail } from '@/components/home/continue-watching-rail'
 import { ShortsRail } from '@/components/browse/shorts-rail'
-import { createClient } from '@/lib/supabase/server'
 import {
   getFeaturedShows,
   getStreamingShows,
@@ -20,25 +19,25 @@ import {
 } from '@/lib/queries'
 import { getIsMobile } from '@/lib/device'
 import type { Locale } from '@/lib/locale'
+import { requireViewer } from '@/server/auth/require-viewer'
 
 export default async function WatchPage({
   searchParams,
 }: {
   searchParams?: Promise<{ category?: string }>
 }) {
-  const supabase = await createClient()
   const params = await searchParams
   const categorySlug = params?.category?.trim() || null
   const locale = (await getLocale()) as Locale
 
-  // One wave: nothing below needs the user, so the auth round trip no longer
-  // holds back the catalog queries. Only the first-episode map needs the
-  // featured ids, so it chains off that one promise inside the wave.
+  // One wave: the wall check (requireViewer, server getUser) runs alongside
+  // the public catalog queries so it adds no round trip; a signed-out visitor
+  // rejects the whole wave with the redirect before anything renders. Only
+  // the first-episode map needs the featured ids, so it chains off that one
+  // promise inside the wave.
   const featuredPromise = getFeaturedShows(locale)
   const [
-    {
-      data: { user },
-    },
+    { userId },
     featured,
     streaming,
     comingSoon,
@@ -49,7 +48,7 @@ export default async function WatchPage({
     firstEpisodeMap,
     t,
   ] = await Promise.all([
-    supabase.auth.getUser(),
+    requireViewer(locale, '/watch'),
     featuredPromise,
     getStreamingShows(locale),
     getComingSoonShows(locale),
@@ -64,7 +63,6 @@ export default async function WatchPage({
     ),
     getTranslations('watch'),
   ])
-  const userId = user?.id ?? null
 
   if (streaming.length === 0 && comingSoon.length === 0) {
     redirect({ href: '/portfolio', locale })
@@ -86,22 +84,18 @@ export default async function WatchPage({
     <div>
       {featured.length > 0 && (
         <div className="-mt-16">
-          {userId ? (
-            <Suspense
-              fallback={
-                <HeroBanner shows={featuredFallbackShows} isMobile={isMobile} />
-              }
-            >
-              <FeaturedHeroWithWatched
-                userId={userId}
-                featured={featured}
-                firstEpisodeMap={firstEpisodeMap}
-                isMobile={isMobile}
-              />
-            </Suspense>
-          ) : (
-            <HeroBanner shows={featuredFallbackShows} isMobile={isMobile} />
-          )}
+          <Suspense
+            fallback={
+              <HeroBanner shows={featuredFallbackShows} isMobile={isMobile} />
+            }
+          >
+            <FeaturedHeroWithWatched
+              userId={userId}
+              featured={featured}
+              firstEpisodeMap={firstEpisodeMap}
+              isMobile={isMobile}
+            />
+          </Suspense>
         </div>
       )}
 

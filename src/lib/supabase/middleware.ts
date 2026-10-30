@@ -1,17 +1,22 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+export type SessionClaims = { sub: string; aal?: unknown; amr?: unknown }
+
 export type SessionResult = {
   response: NextResponse
   userId: string | null
   /**
-   * Lazy admin check. Runs the app_config admin_user_id query only when called.
-   *
-   * Previously the middleware ran this query on EVERY request, including
-   * unauthenticated viewer page loads — adding ~100ms TTFB per page to a
-   * feature that only matters for the coming-soon bypass and /admin routes.
-   * Now callers invoke checkIsAdmin() only when the isAdmin answer is
-   * actually load-bearing (see src/middleware.ts coming-soon gate).
+   * The claims getClaims() already verified locally (JWKS, no network call):
+   * sub, aal, amr. null when signed out or Supabase is not configured. The
+   * proxy feeds aal/amr to decideAdminMfa on /admin paths (05-18, Pitfall 6).
+   */
+  claims: SessionClaims | null
+  /**
+   * Lazy admin routing hint: one `rpc('am_i_admin')` call, made only when the
+   * caller invokes it (the proxy does so only on /admin paths, never on normal
+   * page loads). Errors resolve to false and are logged. Not an authorisation
+   * decision: the admin layout and actions re-check via requireAdmin().
    */
   checkIsAdmin: () => Promise<boolean>
 }
@@ -27,6 +32,7 @@ export async function updateSession(request: NextRequest): Promise<SessionResult
     return {
       response: supabaseResponse,
       userId: null,
+      claims: null,
       checkIsAdmin: async () => false,
     }
   }
@@ -63,17 +69,26 @@ export async function updateSession(request: NextRequest): Promise<SessionResult
   // getSession() would NOT validate and must never be used here). Cookie refresh
   // still happens via the setAll() callback above when the token is rotated.
   const { data: claimsData } = await supabase.auth.getClaims()
-  const userId = claimsData?.claims?.sub ?? null
+  const raw = claimsData?.claims
+  const userId = typeof raw?.sub === 'string' && raw.sub !== '' ? raw.sub : null
+  const claims: SessionClaims | null = userId
+    ? { sub: userId, aal: raw?.aal, amr: raw?.amr }
+    : null
 
   const checkIsAdmin = async (): Promise<boolean> => {
     if (!userId) return false
-    const { data: config } = await supabase
-      .from('app_config')
-      .select('admin_user_id')
-      .eq('id', 1)
-      .single()
-    return config?.admin_user_id === userId
+    try {
+      const { data, error } = await supabase.rpc('am_i_admin')
+      if (error) {
+        console.error('[proxy] am_i_admin failed', error.message)
+        return false
+      }
+      return data === true
+    } catch (err) {
+      console.error('[proxy] am_i_admin failed', err instanceof Error ? err.message : String(err))
+      return false
+    }
   }
 
-  return { response: supabaseResponse, userId, checkIsAdmin }
+  return { response: supabaseResponse, userId, claims, checkIsAdmin }
 }

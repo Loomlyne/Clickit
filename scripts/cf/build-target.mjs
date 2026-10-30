@@ -135,6 +135,21 @@ function requireHttpsSite(value) {
   }
 }
 
+/** Build-time flag next.config.ts inlines (compiler.defineServer) to drop the in-process email fallback. */
+export const WORKER_BUILD_FLAG = 'CLICKIT_WORKER_BUILD'
+
+/**
+ * Env for the opennextjs-cloudflare build spawn. The Worker flag is applied last so no
+ * target env can unset it. It is kept out of buildEnvFor() and makeStamp() on purpose:
+ * the stamp and the deploy guard do not change.
+ * @param {Record<string, string>} minimal
+ * @param {Record<string, string>} buildEnv
+ * @returns {Record<string, string>}
+ */
+export function nextBuildEnv(minimal, buildEnv) {
+  return { ...minimal, ...buildEnv, [WORKER_BUILD_FLAG]: '1' }
+}
+
 /**
  * Compute the build env for a target. Returns only the variables the build
  * script passes on top of a minimal process env.
@@ -419,7 +434,7 @@ function main(argv) {
     if (process.env[name]) minimal[name] = process.env[name]
   }
   const res = spawnSync('npx', ['opennextjs-cloudflare', 'build'], {
-    env: { ...minimal, ...buildEnv },
+    env: nextBuildEnv(minimal, buildEnv),
     stdio: 'inherit',
   })
   if (res.status !== 0) {

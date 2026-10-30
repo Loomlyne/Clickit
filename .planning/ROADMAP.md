@@ -119,6 +119,45 @@ Plans:
 - [ ] 02-22-PLAN.md — W11: Gate and coverage, [OWNER] UAT (local preview write paths; workers.dev reads, sign-in, one approved draft write), teardown
 **UI hint**: yes
 
+### Phase 02.1: Cached public pages on Workers Free (INSERTED)
+
+**Goal:** Every public page answers under 10 ms CPU on Workers Free, signed out and signed in: a gateway entrypoint verifies the visitor class and hands public GETs to Workers Cache, and the public pages no longer depend on who is visiting. Admin, server actions, /auth/callback, /api and crons are out of scope.
+**Requirements**: PLAT-09
+**Depends on:** Phase 2 (merged to main 6ebc802)
+**Source:** `.planning/debug/cpu-en-home.md` "Plan v2" and `.planning/debug/cpu-public-cache-mockup.html`, signed by Koss 2026-10-21 15:03 CET (CPU route "Free + rebuild"; loading look 1A + 2A + 3A). Signed-out `/<locale>/auth` is cached; `/auth*` is hard-denied only for the signed-in class (controller, 2026-10-21).
+**Success Criteria** (what must be TRUE):
+  1. A spike runs first and passes before any other plan executes. It proves five things: RSC and segment payloads are the same across router state; refills succeed often enough on Free; the forged-cookie and poisoning tests pass; ISR revalidation through the DO queue works; Workers Cache works on this Free account.
+  2. On workers.dev, wrangler tail shows every public route under 10 ms CPU on a cache hit, for both classes, measured with interleaved routes, and no hit returns 1102.
+  3. A forged or expired sign-in cookie never gets the signed-in copy. A signed-in copy never shows signed-out UI at first paint (D-60 single HTML; CSS-toggled by data-auth), and a signed-out copy never contains personal data. Redirects are never stored for the signed-in class. Two different signed-out requests get byte-identical HTML apart from the allowed key parts.
+  4. An admin content save reaches visitors after one refill, and the old copy is served until that refill succeeds. A coming-soon toggle takes effect at once. Bare `/` and unprefixed paths answer a 307 from the gateway.
+  5. The signed loading look ships: header 1A, show page 2A, Continue watching 3A, in EN and AR. A long-session test stays signed in, and `npm run gate:local` passes.
+**Plans:** 23 plans
+
+Plans:
+- [ ] 02.1-01-PLAN.md — W1: SPIKE D-03 a-e + D-66 (probes, controller deploy, blocking report; nothing else runs until "spike passed")
+- [ ] 02.1-02-PLAN.md — W2: Gateway request side (routes, locale, classify, key, strip, trusted class header)
+- [ ] 02.1-04-PLAN.md — W2: Public/user query split, tag-only freshness (revalidate: false)
+- [ ] 02.1-03-PLAN.md — W3: Pages and browser response normalisation, route tags
+- [ ] 02.1-05-PLAN.md — W3: Media variant chosen in the browser (no device dimension)
+- [ ] 02.1-07-PLAN.md — W3: Proxy on the cached path; signed-in /auth and browse redirects in the proxy
+- [ ] 02.1-08-PLAN.md — W3: User-independent shell (URL locale, no getClaims), D-60 pre-paint data-auth
+- [ ] 02.1-06-PLAN.md — W4: Worker wiring (gateway + Pages entrypoint + RPC), prototype and probes removed
+- [ ] 02.1-09-PLAN.md — W4: Static landing and about
+- [ ] 02.1-10-PLAN.md — W4: Static legal, support, coming-soon
+- [ ] 02.1-11-PLAN.md — W5: Signed-out /auth cached under both controller conditions
+- [ ] 02.1-12-PLAN.md — W4: Static show page + 2A
+- [ ] 02.1-13-PLAN.md — W4: Static watch home + 3A
+- [ ] 02.1-15-PLAN.md — W4: Static updates and my-list
+- [ ] 02.1-16-PLAN.md — W4: Static profile; profile actions invalidate nothing shared
+- [ ] 02.1-14-PLAN.md — W5: Per-category static route (D-61), browse page removed
+- [ ] 02.1-17-PLAN.md — W5: Header 1A
+- [ ] 02.1-18-PLAN.md — W5: Static episode page + 2A + resume wait
+- [ ] 02.1-19-PLAN.md — W5: Edge invalidate/purge (D-23, D-63, F1) with coverage test
+- [ ] 02.1-20-PLAN.md — W5: Deploy guard F6, seeding, measurement cookie, gate checks
+- [ ] 02.1-21-PLAN.md — W6: Local verification (import graph, prerender, D-40 preview suite, RSC diff, gate:local)
+- [ ] 02.1-22-PLAN.md — W6: Playwright 1A/2A/3A EN/AR + long-session harness
+- [ ] 02.1-23-PLAN.md — W7: Final workers.dev measurement handed to the controller (CPU report, long session)
+
 ### Phase 3: Production Cutover
 **Goal**: clickitstory.ae is a zone in the ClickitStory Cloudflare account that Resend can send from. Viewers at www.clickitstory.ae and the apex are served by the Worker. Every media URL in the database points at R2, the old Vercel deployment can no longer write to live data, rollback stays possible until the proof window ends, and then the Vercel project is deleted.
 **Depends on**: Phase 2
@@ -275,7 +314,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | 2. Worker and R2 Media on workers.dev | 18/22 | In Progress|  |
 | 3. Production Cutover | 6/13 | In Progress|  |
 | 4. Design System Truth | 14/14 | UAT pending (PR) |  |
-| 5. Accounts and Email | 0/TBD | Not started | - |
+| 5. Accounts and Email | 30/42 | In Progress|  |
 | 6. YouTube Import and Player | 0/25 | Planned | - |
 | 7. Product Completeness, Search and Arabic | 0/TBD | Not started | - |
 | 8. Hardening and Contract Cleanup | 0/TBD | Not started | - |

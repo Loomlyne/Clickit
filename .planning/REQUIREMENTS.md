@@ -160,7 +160,7 @@
 | PLAT-06 | Phase 2 | Pending |
 | PLAT-07 | Phase 2 | Pending |
 | PLAT-08 | Phase 2 | Pending |
-| PLAT-09 | Phase 2 | Pending |
+| PLAT-09 | Phase 2, Phase 2.1 | Pending |
 | PLAT-10 | Phase 2 | Pending |
 | PLAT-11 | Phase 3 | Pending |
 | DNS-01 | Phase 3 | Pending |

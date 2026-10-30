@@ -22,8 +22,9 @@ type PasswordFieldProps = Omit<React.ComponentProps<'input'>, 'type'> & {
 
 /**
  * The one password input of the product: label, right-side show/hide eye
- * (44x44, keyboard reachable, logical `end` so it mirrors in Arabic),
- * optional strength meter and inline error. Works uncontrolled through
+ * (44x44, keyboard reachable, on the physical right in both locales because
+ * the input and the eye share a dir="ltr" box), optional strength meter and
+ * inline error. Works uncontrolled through
  * react-hook-form's `register` (ref + onChange come in on ...props) and
  * controlled with value/onChange.
  */
@@ -48,11 +49,14 @@ export function PasswordField({
 
   return (
     <div>
-      <Label htmlFor={inputId}>{label}</Label>
-      <div className="relative mt-1.5">
+      <Label htmlFor={inputId} className="text-sm leading-normal font-normal">
+        {label}
+      </Label>
+      <div dir="ltr" className="relative mt-2">
         <Input
           {...props}
           id={inputId}
+          dir="ltr"
           type={shown ? 'text' : 'password'}
           aria-invalid={error ? true : undefined}
           aria-describedby={
@@ -60,26 +64,26 @@ export function PasswordField({
               .filter(Boolean)
               .join(' ') || undefined
           }
-          className={cn('pe-12', className)}
+          className={cn('pe-11', className)}
         />
         <button
           type="button"
           onClick={() => setShown((v) => !v)}
-          aria-label={t('showPassword')}
+          aria-label={shown ? t('hidePassword') : t('showPassword')}
           aria-pressed={shown}
-          className="absolute end-0 top-0 flex size-11 items-center justify-center rounded-lg text-[var(--text-mute)] transition-colors outline-none hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+          className="absolute right-0 top-0 flex size-11 items-center justify-center rounded-lg text-[var(--text-mute)] transition-colors outline-none hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
         >
           {shown ? (
-            <EyeOff className="size-[18px]" aria-hidden />
+            <EyeOff className="size-4" aria-hidden />
           ) : (
-            <Eye className="size-[18px]" aria-hidden />
+            <Eye className="size-4" aria-hidden />
           )}
         </button>
       </div>
 
       {strengthOf !== undefined && (
         <>
-          <div className="mt-2 grid grid-cols-4 gap-1.5" aria-hidden>
+          <div className="mt-2 grid grid-cols-4 gap-1" aria-hidden>
             {[1, 2, 3, 4].map((step) => (
               <span
                 key={step}
@@ -92,7 +96,7 @@ export function PasswordField({
           </div>
           <p
             id={strengthId}
-            className="mt-1.5 text-xs text-[var(--text-mute)]"
+            className="mt-2 text-[11px] leading-[1.4] text-[var(--text-mute)]"
           >
             {t('strengthLabel', {
               level: t(
@@ -108,7 +112,11 @@ export function PasswordField({
       )}
 
       {error && (
-        <p id={errorId} className="mt-1 text-[13px] text-[var(--color-brand-red-safe)]">
+        <p
+          id={errorId}
+          role="alert"
+          className="mt-2 text-sm text-[var(--color-brand-red-safe)]"
+        >
           {error}
         </p>
       )}

@@ -21,6 +21,15 @@ export type R2BucketLike = {
 }
 
 /**
+ * Minimal structural Queue producer type (only what the app calls). Local for the
+ * same reason as R2BucketLike.
+ */
+export type QueueLike = {
+  send(body: unknown): Promise<void>
+  sendBatch(messages: { body: unknown }[]): Promise<void>
+}
+
+/**
  * Bindings and variables of the `clickit` app Worker (root wrangler.jsonc).
  * This is the app Worker's own `MEDIA` binding, not the media Worker's
  * `MEDIA_BUCKET`. Names only; secrets are optional because they exist only
@@ -42,6 +51,22 @@ export type WorkerEnv = {
   R2_UPLOAD_SWEEP_DELETE?: string
   /** Local preview only (.dev.vars); never a wrangler secret or var. */
   LOCAL_UPLOAD_SHIM_SECRET?: string
+  /** Email outbox doorbell (producer binding; the consumer is added in 05-19). Optional: absent in node tests and `next dev`. */
+  EMAIL_QUEUE?: QueueLike
+  /** Resend API key (wrangler secret, owner step). Absent until the owner sets it. */
+  RESEND_API_KEY?: string
+  /** HMAC secret for unsubscribe and newsletter-confirm links (wrangler secret, owner step). */
+  EMAIL_LINK_SECRET?: string
+  /** From header, e.g. "Clickit Story <no-reply@clickitstory.ae>" (wrangler var). */
+  EMAIL_FROM?: string
+  /** Exactly "on" lets the daily digest cron enqueue (wrangler var); anything else is off. */
+  EMAIL_DIGEST_ENABLED?: string
+  /** Public origin used in email links (wrangler var). */
+  SITE_ORIGIN?: string
+  /** Supabase project URL for the queue consumer's RPC calls (wrangler var). */
+  SUPABASE_URL?: string
+  /** Service-role key for the queue consumer (wrangler secret, owner step). Never logged. */
+  SUPABASE_SERVICE_ROLE_KEY?: string
 }
 
 export async function getWorkerEnv(): Promise<WorkerEnv> {

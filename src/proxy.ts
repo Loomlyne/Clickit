@@ -5,6 +5,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { routing } from '@/i18n/routing'
 import { updateSession } from '@/lib/supabase/middleware'
 import { getAppConfig } from '@/lib/config'
+import { decideRoute } from '@/server/auth/gate'
 
 /**
  * Paths (after any locale prefix) that stay reachable even when coming-soon
@@ -14,70 +15,20 @@ import { getAppConfig } from '@/lib/config'
  * - /coming-soon is the splash target
  * - /admin is the editor — admin manages the site while gated
  * - /auth is the login screen
+ * - /unsubscribe and /newsletter (confirm) are email links; they must work in
+ *   coming-soon mode too (05-18)
  *
  * Everyone (including admin) is redirected to /coming-soon for all other routes.
+ * Who may see a page once past this gate is decided by decideRoute
+ * (src/server/auth/gate.ts) in Step 5.
  */
 const COMING_SOON_ALLOWLIST = [
   '/coming-soon',
   '/admin',
   '/auth',
+  '/unsubscribe',
+  '/newsletter',
 ]
-
-/**
- * Paths (after locale strip) reachable WITHOUT being signed in. Every other
- * route bounces a signed-out visitor to /auth.
- *
- * Kept SEPARATE from COMING_SOON_ALLOWLIST on purpose: coming-soon allows
- * /admin so the admin can log in and toggle the flag, but the auth gate must
- * NOT — /admin requires an authenticated (and admin) user.
- */
-const PUBLIC_ALLOWLIST = [
-  '/', // locale root = portfolio landing
-  '/portfolio',
-  '/auth',
-  '/coming-soon',
-  '/support',
-  '/about',
-  '/privacy',
-  '/terms',
-]
-
-/**
- * Routes that ALWAYS require a signed-in user, even when "skip sign-in" is on
- * (account-specific areas). /watch is only gated when skip-sign-in is off.
- */
-const SKIP_PROTECTED_ALWAYS = [
-  '/my-list',
-  '/profile',
-  '/admin',
-]
-
-function isWatchPath(pathWithoutLocale: string): boolean {
-  return (
-    pathWithoutLocale === '/watch' ||
-    pathWithoutLocale.startsWith('/watch/')
-  )
-}
-
-/** True when anonymous users must sign in even if auth_allow_skip is enabled. */
-function isAuthRequiredDespiteSkip(
-  pathWithoutLocale: string,
-  authAllowSkip: boolean
-): boolean {
-  if (
-    SKIP_PROTECTED_ALWAYS.some(
-      (p) =>
-        pathWithoutLocale === p || pathWithoutLocale.startsWith(`${p}/`)
-    )
-  ) {
-    return true
-  }
-  // Skip mode opens the catalog + player; without it, /watch needs an account.
-  if (!authAllowSkip && isWatchPath(pathWithoutLocale)) {
-    return true
-  }
-  return false
-}
 
 const handleI18nRouting = createMiddleware(routing)
 
@@ -128,8 +79,9 @@ export async function proxy(request: NextRequest) {
   // /auth/callback is the OAuth callback — registered at this exact URL with
   // every OAuth provider. It MUST stay locale-agnostic. Supabase session
   // refresh runs; next-intl skips (would otherwise redirect to /en/auth/callback
-  // and break the OAuth handshake).
-  if (pathname === '/auth/callback') {
+  // and break the OAuth handshake). /auth/confirm is the email-link target
+  // (token_hash verify) and is locale-agnostic for the same reason.
+  if (pathname === '/auth/callback' || pathname === '/auth/confirm') {
     const { response } = await updateSession(request)
     return response
   }
@@ -139,7 +91,7 @@ export async function proxy(request: NextRequest) {
   const intlResponse = handleI18nRouting(request)
 
   // Step 2: Refresh Supabase session cookies on a separate response.
-  const { response: supabaseResponse, userId, checkIsAdmin } = await updateSession(request)
+  const { response: supabaseResponse, userId, claims, checkIsAdmin } = await updateSession(request)
 
   // Step 3: Merge Supabase cookies onto the i18n response. This is the fix
   // for Pitfall #1 (RTE-03): without this merge, the redirect from / → /en/
@@ -201,42 +153,36 @@ export async function proxy(request: NextRequest) {
   }
 
   // Step 5: Auth gate. Runs AFTER the coming-soon gate so coming-soon wins
-  // first. Any route not on the public allowlist requires a signed-in user;
-  // /admin/* additionally requires the admin.
-  const isPublic = PUBLIC_ALLOWLIST.some(
-    (p) => pathWithoutLocale === p || pathWithoutLocale.startsWith(`${p}/`)
-  )
-  const isAdminRoute =
-    pathWithoutLocale === '/admin' || pathWithoutLocale.startsWith('/admin/')
+  // first. decideRoute (AUTH-01 wall, AUTH-06 admin MFA) uses only the claims
+  // updateSession already verified, plus one am_i_admin RPC on /admin paths.
+  // Pages and actions re-check (requireAdmin, page-level getUser).
+  const decision = await decideRoute({
+    pathWithoutLocale,
+    userId,
+    claims,
+    isAdmin: checkIsAdmin,
+    nowSec: Math.floor(Date.now() / 1000),
+  })
 
-  if (!isPublic) {
-    if (!userId) {
-      const { authAllowSkip } = await getAppConfig()
-      const mustAuthDespiteSkip = isAuthRequiredDespiteSkip(
-        pathWithoutLocale,
-        authAllowSkip
-      )
-      let mustAuth = true
-      if (!mustAuthDespiteSkip) {
-        mustAuth = !authAllowSkip
-      }
-      if (mustAuth) {
-        const url = request.nextUrl.clone()
-        url.pathname = `/${locale}/auth`
-        url.search = `?next=${pathWithoutLocale}`
-        return redirectWithCookies(url, intlResponse)
-      }
-    } else if (isAdminRoute) {
-      // Signed in but not the admin → bounce to /watch. checkIsAdmin() (one DB
-      // query) runs only for /admin/* requests, never on normal page loads.
-      const isAdmin = await checkIsAdmin()
-      if (!isAdmin) {
-        const url = request.nextUrl.clone()
-        url.pathname = `/${locale}/watch`
-        url.search = ''
-        return redirectWithCookies(url, intlResponse)
-      }
-    }
+  if (decision.action === 'auth') {
+    const { next } = decision
+    const url = request.nextUrl.clone()
+    url.pathname = `/${locale}/auth`
+    url.search = `?next=${encodeURIComponent(next)}`
+    return redirectWithCookies(url, intlResponse)
+  }
+  if (decision.action === 'mfa') {
+    const { next } = decision
+    const url = request.nextUrl.clone()
+    url.pathname = `/${locale}/auth/mfa`
+    url.search = `?next=${encodeURIComponent(next)}`
+    return redirectWithCookies(url, intlResponse)
+  }
+  if (decision.action === 'watch') {
+    const url = request.nextUrl.clone()
+    url.pathname = `/${locale}/watch`
+    url.search = ''
+    return redirectWithCookies(url, intlResponse)
   }
 
   return intlResponse

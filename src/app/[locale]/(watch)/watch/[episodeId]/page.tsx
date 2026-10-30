@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 
-import { createClient } from '@/lib/supabase/server'
 import { isEpisodeLive } from '@/lib/scheduling'
 import { WatchShell } from '@/components/watch/watch-shell'
 import {
@@ -18,9 +17,10 @@ import { getLocale } from '@/lib/locale-server'
 import { siteUrl } from '@/lib/site-url'
 import { JsonLd } from '@/components/seo/json-ld'
 import { stripStorageCacheBust } from '@/lib/supabase-media'
+import { requireViewer } from '@/server/auth/require-viewer'
 
 interface Props {
-  params: Promise<{ episodeId: string }>
+  params: Promise<{ locale: string; episodeId: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -62,13 +62,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function WatchPage({ params }: Props) {
-  const { episodeId } = await params
+  const { locale: urlLocale, episodeId } = await params
 
-  const supabase = await createClient()
-  const [data, locale, authResult] = await Promise.all([
+  // The wall check (requireViewer, server getUser) runs in the first wave; a
+  // signed-out visitor rejects the wave with the redirect, before notFound(),
+  // the scheduling redirect and any user read or render.
+  const [data, locale, { userId }] = await Promise.all([
     getEpisodeById(episodeId),
     getLocale(),
-    supabase.auth.getUser(),
+    requireViewer(urlLocale, `/watch/${episodeId}`),
   ])
   if (!data) notFound()
 
@@ -80,21 +82,18 @@ export default async function WatchPage({ params }: Props) {
     redirect(`/${locale}/series/${data.show.slug}`)
   }
 
-  const user = authResult.data.user ?? null
-
   // Second wave, show.id is now available from data. Saved positions (with
   // seconds, for resume on every switch) and the stored non-ok YouTube
   // statuses (UAE preflight and precise error reasons) join the same wave.
-  // Statuses are read for signed-in and signed-out viewers alike.
   const episodeIds = Object.values(data.episodesBySeason)
     .flat()
     .map((episode) => episode.id)
 
   const [youtubeStatuses, inWatchlist, isLiked, progressMap] = await Promise.all([
     getEpisodeYouTubeStatuses(episodeIds),
-    user ? getShowWatchlistState(user.id, data.show.id) : false,
-    user ? getShowLikeState(user.id, data.show.id) : false,
-    user ? getEpisodesProgress(user.id, episodeIds) : {},
+    getShowWatchlistState(userId, data.show.id),
+    getShowLikeState(userId, data.show.id),
+    getEpisodesProgress(userId, episodeIds),
   ])
 
   const { episode, show, season, seasons, episodesBySeason } = data
@@ -138,7 +137,7 @@ export default async function WatchPage({ params }: Props) {
         season={viewSeason}
         seasons={viewSeasons}
         episodesBySeason={viewEpisodesBySeason}
-        userId={user?.id ?? null}
+        userId={userId}
         initialSaved={inWatchlist}
         initialLiked={isLiked}
         progressMap={progressMap}

@@ -35,9 +35,11 @@ test('the shim route delegates to checkShimRequest before any write', () => {
   assert.ok(!/export async function (GET|POST|DELETE|PATCH)/.test(route))
 })
 
-test('the admin guard keeps assertAdmin logic: signed in, app_config row 1, admin_user_id', () => {
-  assert.match(guards, /\.eq\('id', 1\)/)
-  assert.match(guards, /config\?\.admin_user_id !== user\.id/)
+// 05-15 (D-17): the admin guard is requireAdmin (admins row + fresh TOTP), not app_config.
+test('the admin guard is requireAdmin: admins row lookup, never app_config', () => {
+  assert.match(guards, /export async function requireAdminUser\(\)[\s\S]*?\(await requireAdmin\(\)\)\.id/)
+  assert.match(guards, /from\('admins'\)/)
+  assert.ok(!guards.includes('admin_user_id'))
   assert.match(guards, /import 'server-only'/)
 })
 

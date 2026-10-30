@@ -1,12 +1,11 @@
 import type { Metadata } from 'next'
 import { getLocale, getTranslations } from 'next-intl/server'
-import { redirect } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { getWatchlistShows } from '@/lib/queries'
 import { Button } from '@/components/ui/button'
 import { PortraitShowCard } from '@/components/shows/portrait-show-card'
 import type { Locale } from '@/lib/locale'
+import { requireViewer } from '@/server/auth/require-viewer'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('myList')
@@ -17,20 +16,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function MyListPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    const locale = await getLocale()
-    return redirect({ href: '/auth?next=/my-list', locale })
-  }
+  const locale = await getLocale()
+  const { userId } = await requireViewer(locale, '/my-list')
 
   const [t, tCommon, shows] = await Promise.all([
     getTranslations('myList'),
     getTranslations('common'),
-    getWatchlistShows(user.id, (await getLocale()) as Locale),
+    getWatchlistShows(userId, locale as Locale),
   ])
 
   return (
@@ -61,7 +53,7 @@ export default async function MyListPage() {
                 key={show.id}
                 show={show}
                 initialSaved={true}
-                userId={user.id}
+                userId={userId}
               />
             ))}
           </div>

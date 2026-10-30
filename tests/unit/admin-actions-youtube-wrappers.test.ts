@@ -40,12 +40,14 @@ function seamRegion(): string {
   return src.slice(start, end)
 }
 
-test('requireAdminForYouTube is defined once, right after the TODO(phase-5) marker', () => {
+// 05-15 (hand-off #4): the TODO(phase-5) marker is gone; the seam calls requireAdmin().
+test('requireAdminForYouTube is defined once and calls requireAdmin()', () => {
   const defs = src.match(/const requireAdminForYouTube\b/g) ?? []
   assert.equal(defs.length, 1)
-  const lines = src.split('\n')
-  const at = lines.findIndex((l) => l.startsWith('const requireAdminForYouTube'))
-  assert.match(lines[at - 1] ?? '', /^\/\/ TODO\(phase-5\): swap this for requireAdmin\(\)/)
+  assert.match(src, /const requireAdminForYouTube = \(\): Promise<\{ id: string \}> => requireAdmin\(\)/)
+  assert.ok(!src.includes('TODO(phase-5)'))
+  assert.match(src, /async function assertAdmin\(\) \{\s*return requireAdmin\(\)\s*\}/)
+  assert.ok(!src.includes('admin_user_id'))
   assert.match(src, /const youtubeAdminEnv: AdminActionEnv = \{ \.\.\.adminEnv, assertAdmin: requireAdminForYouTube \}/)
 })
 

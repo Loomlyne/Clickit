@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useEffect, useRef, useState } from 'react'
+import { CheckCircle2 } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -18,6 +19,8 @@ import {
   useTurnstileToken,
 } from '@/components/security/turnstile-field'
 import { isCaptchaFailure } from '@/lib/turnstile-widget'
+// Dependency-free constant (05-11): client code never imports the email modules.
+import { SUPPORT_REPLY_HOURS } from '@/lib/email-constants'
 
 const contactSchema = z.object({
   name: z.string().min(2, 'nameMin'),
@@ -30,12 +33,30 @@ const contactSchema = z.object({
 
 type ContactFormData = z.infer<typeof contactSchema>
 
+const EMPTY_FORM: ContactFormData = {
+  name: '',
+  email: '',
+  phone: '',
+  subject: '',
+  message: '',
+  terms: false,
+}
+
 export function ContactForm() {
   const t = useTranslations('support')
   const tErrors = useTranslations('errors')
+  // Page language for the static auto-reply (D-31).
+  const locale = useLocale() === 'ar' ? 'ar' : 'en'
   const [submitState, setSubmitState] = useState<'idle' | 'saved_email_failed'>(
     'idle'
   )
+  // UI-SPEC 6.13: on success the form is replaced by a confirmation that stays.
+  const [sentTo, setSentTo] = useState<string | null>(null)
+  const sentHeadingRef = useRef<HTMLHeadingElement>(null)
+
+  useEffect(() => {
+    if (sentTo !== null) sentHeadingRef.current?.focus()
+  }, [sentTo])
   // Turnstile (PLAT-05): single-use token, submit disabled until one exists.
   const captcha = useTurnstileToken()
   const { needsToken, awaitingToken } = captcha
@@ -49,14 +70,7 @@ export function ContactForm() {
     formState: { errors, isSubmitting },
   } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      subject: '',
-      message: '',
-      terms: false,
-    },
+    defaultValues: EMPTY_FORM,
   })
 
   const termsValue = watch('terms')
@@ -64,7 +78,10 @@ export function ContactForm() {
   async function onSubmit(data: ContactFormData) {
     if (awaitingToken) return
     captcha.setFailed(false)
-    const result = await submitSupportMessage(data, captcha.token ?? undefined)
+    const result = await submitSupportMessage(
+      { ...data, locale },
+      captcha.token ?? undefined
+    )
     // The token is single-use: whatever the outcome, a fresh one is needed.
     const refused = !result.ok && isCaptchaFailure(result.message)
     captcha.consume(refused)
@@ -87,29 +104,57 @@ export function ContactForm() {
     }
 
     if (result.status === 'saved_email_failed') {
+      // Saved; the confirmation email is delayed. The inline note says so (no toast).
       setSubmitState('saved_email_failed')
-      toast.success(t('savedEmailFailedToast'))
-      reset({
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        message: '',
-        terms: false,
-      })
+      reset(EMPTY_FORM)
       return
     }
 
     setSubmitState('idle')
-    toast.success(t('messageSent'))
-    reset({
-      name: '',
-      email: '',
-      phone: '',
-      subject: '',
-      message: '',
-      terms: false,
-    })
+    reset(EMPTY_FORM)
+    setSentTo(data.email.trim())
+  }
+
+  function sendAnother() {
+    setSentTo(null)
+    setSubmitState('idle')
+    reset(EMPTY_FORM)
+  }
+
+  if (sentTo !== null) {
+    return (
+      <div
+        role="status"
+        className="rounded-card border border-[var(--color-brand-green-safe)]/35 bg-[var(--color-brand-green-safe)]/12 p-6"
+      >
+        <CheckCircle2
+          aria-hidden
+          className="size-5 text-[var(--color-brand-green-safe)]"
+        />
+        <h2
+          ref={sentHeadingRef}
+          tabIndex={-1}
+          className="mt-3 text-[20px] leading-tight font-semibold text-[var(--text)] outline-none"
+        >
+          {t('sentTitle')}
+        </h2>
+        <p className="mt-2 text-sm text-[var(--text-dim)]">
+          {t.rich('sentBody', {
+            email: sentTo,
+            hours: SUPPORT_REPLY_HOURS,
+            bdi: (chunks) => <bdi>{chunks}</bdi>,
+          })}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-4"
+          onClick={sendAnother}
+        >
+          {t('sendAnother')}
+        </Button>
+      </div>
+    )
   }
 
   return (

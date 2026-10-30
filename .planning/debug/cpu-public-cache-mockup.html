@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cached Pages Mockup</title>
+<style>
+  /* Real product tokens, copied from src/styles/globals.css (2026-10-21). */
+  :root {
+    --bg-0: #090909; --bg-1: #101010; --bg-2: #191919;
+    --line: rgba(255,255,255,0.08); --line-2: rgba(255,255,255,0.14);
+    --text: #F4F4F4; --text-dim: #CCCCCC; --text-mute: #A1A1A1;
+    --primary: #ffcc00; --primary-foreground: #090909;
+    --chart-2: #d97757; --chart-5: #c8a04a;
+    --live-dot: oklch(63.7% 0.237 25.331);
+    --scrim-nav: rgba(9,9,9,0.96);
+    --radius: 8px;
+    --ok: #3ecf8e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-0); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", "Noto Sans Arabic", sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 17px; margin: 36px 0 6px; border-top: 1px solid var(--line); padding-top: 24px; }
+  p.lead, p.note { color: var(--text-dim); margin: 4px 0 12px; max-width: 860px; }
+  p.note { color: var(--text-mute); font-size: 12.5px; }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+  .card { border: 1px solid var(--line); border-radius: 12px; background: var(--bg-1); padding: 12px; }
+  .card h3 { margin: 0 0 8px; font-size: 13px; color: var(--text-dim); font-weight: 600; display: flex; gap: 8px; align-items: center; }
+  .tag { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; border-radius: 999px; padding: 2px 8px; border: 1px solid var(--line-2); color: var(--text-mute); }
+  .tag.rec { border-color: var(--primary); color: var(--primary); }
+  .tag.same { border-color: var(--ok); color: var(--ok); }
+  .frames { display: grid; gap: 8px; }
+  .frame-label { font-size: 11px; color: var(--text-mute); margin: 2px 0 4px; }
+  /* Header replica (navbar.tsx, viewer pages) */
+  .nav { display: flex; align-items: center; gap: 18px; height: 56px; padding: 0 14px; border: 1px solid var(--line); border-radius: 10px; background: linear-gradient(180deg, rgba(9,9,9,.92), rgba(9,9,9,.6)); }
+  .logo { font-weight: 800; letter-spacing: -.02em; font-size: 15px; }
+  .logo b { color: var(--primary); }
+  .links { display: flex; gap: 18px; font-size: 13px; color: var(--text-dim); }
+  .live { display: inline-flex; align-items: center; gap: 7px; color: #fff; font-weight: 600; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--live-dot); box-shadow: 0 0 8px var(--live-dot); }
+  .right { margin-inline-start: auto; display: flex; align-items: center; gap: 12px; }
+  .loc { display: inline-flex; align-items: center; border: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.6); border-radius: 999px; padding: 3px; font-size: 11px; font-weight: 600; letter-spacing: .08em; }
+  .loc span { padding: 4px 9px; border-radius: 999px; color: var(--text-dim); }
+  .loc span.on { background: #fff; color: #000; }
+  .btn-out { height: 34px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line-2); display: inline-flex; align-items: center; font-size: 13px; white-space: nowrap; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line-2); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--primary-foreground); background: linear-gradient(135deg, var(--chart-5), var(--chart-2)); overflow: hidden; }
+  .avatar.photo { background: radial-gradient(circle at 40% 35%, #e9c9a8 0 28%, #6b4a33 29% 52%, #2b2b2b 53%); }
+  .avatar.ring { background: var(--bg-2); }
+  .menu { margin-top: 6px; margin-inline-start: auto; width: 190px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--bg-1); padding: 6px; font-size: 13px; }
+  .menu div { padding: 7px 9px; border-radius: 6px; color: var(--text-dim); }
+  .menu .em { color: var(--text-mute); font-size: 11.5px; border-bottom: 1px solid var(--line); border-radius: 0; margin-bottom: 4px; }
+  .menu .admin { color: var(--text); }
+  .menu .out { color: #ff6b6b; }
+  [dir=rtl] .menu { margin-inline-start: 0; margin-inline-end: auto; }
+  /* Show page action row */
+  .hero { border: 1px solid var(--line); border-radius: 10px; padding: 14px; background: linear-gradient(90deg, rgba(9,9,9,.95) 40%, rgba(60,45,20,.6)); }
+  .title { font-size: 20px; font-weight: 800; margin-bottom: 10px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill { height: 38px; padding: 0 16px; border-radius: 999px; display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; border: 1px solid var(--line-2); }
+  .pill.play { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
+  .pill.on { background: rgba(255,255,255,.1); }
+  .pill.sk, .bar.sk, .tile.sk { background: linear-gradient(90deg, var(--bg-2), #232323, var(--bg-2)); color: transparent; border-color: transparent; }
+  .eps { margin-top: 12px; display: grid; gap: 8px; }
+  .ep { display: grid; grid-template-columns: 84px 1fr; gap: 10px; align-items: center; font-size: 12.5px; color: var(--text-dim); }
+  .thumb { height: 46px; border-radius: 6px; background: #222; position: relative; overflow: hidden; }
+  .bar { position: absolute; inset-inline-start: 0; bottom: 0; height: 3px; background: var(--primary); }
+  /* Continue watching rail */
+  .rail-title { font-size: 14px; font-weight: 700; margin: 2px 0 8px; }
+  .rail { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .tile { height: 64px; border-radius: 8px; background: #262626; position: relative; overflow: hidden; }
+  .below { margin-top: 10px; height: 26px; border-radius: 6px; border: 1px dashed var(--line-2); color: var(--text-mute); font-size: 11.5px; display: flex; align-items: center; padding: 0 8px; }
+  .arrow { color: var(--text-mute); font-size: 11px; margin: 2px 0; }
+  ul.keys { color: var(--text-dim); margin: 6px 0 0; padding-inline-start: 18px; }
+  /* Flow picture */
+  .flow { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); align-items: stretch; }
+  .box { border: 1px solid var(--line-2); border-radius: 10px; padding: 10px; background: var(--bg-1); font-size: 12.5px; color: var(--text-dim); }
+  .box b { display: block; color: var(--text); font-size: 13px; margin-bottom: 4px; }
+  .box.cache { border-color: var(--primary); }
+  .box.cost { border-color: #ff6b6b55; }
+  .hdr { display: inline-block; margin-top: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 11px; padding: 2px 6px; border-radius: 6px; background: var(--bg-2); color: var(--primary); }
+  .cpu { display: inline-block; margin-top: 6px; font-size: 11px; color: var(--text-mute); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Cached public pages: what visitors see change</h1>
+  <p class="lead">To fit Workers Free (10 ms CPU per request), every public page is built once and served from cache, the same for every visitor. Anything personal (who is signed in, My List, likes, progress, Continue watching) is filled in by the browser right after the page appears, usually within 0.1–0.3 s. <b>Signed-out visitors see no change at all.</b> Three choices below. In each, option A is the recommended one. Colours, sizes and copy come from the product (globals.css, en.json, ar.json); the logo and photos are stand-ins.</p>
+
+
+  <!-- ===================== 0. FLOW ===================== -->
+  <h2 style="border-top:0;padding-top:4px">0 · Where the cache sits (prototype e49a219, already on the branch)</h2>
+  <p class="lead">One request, left to right. The yellow box is new. On a hit the request never reaches the two red boxes, which are where all the CPU goes. Every answer carries <code>x-clickit-cache</code> so a hit can be checked from outside.</p>
+  <div class="flow">
+    <div class="box"><b>1 · Visitor</b>GET /en/portfolio<br>phone or desktop<br>signed out (no <code>sb-</code> cookie)</div>
+    <div class="box cache"><b>2 · Worker entry: copy check</b>Allowed page? Signed out? Plain GET?<br>Key = build + phone/desktop + path<br>Look in the edge cache, then in R2<span class="hdr">x-clickit-cache: HIT-EDGE / HIT-R2</span><span class="cpu">~1-3 ms CPU (estimate)</span></div>
+    <div class="box cost"><b>3 · Proxy</b>locale, session, site config, coming-soon and sign-in gates<span class="cpu">~15-20 ms</span></div>
+    <div class="box cost"><b>4 · Next.js render</b>layout + page + Supabase reads<span class="cpu">35-100 ms warm, 300-950 ms on a fresh instance</span></div>
+    <div class="box cache"><b>5 · Store the copy</b>only 200 HTML or the 308, no sign-in cookie, locale matches the URL<span class="hdr">x-clickit-cache: MISS</span><span class="cpu">kept 120 s</span></div>
+  </div>
+  <p class="note">Hit: 1 → 2 → answer. Miss: 1 → 2 → 3 → 4 → 5 → answer. Signed in, sign-in page, watch pages, admin, any other query string: 1 → 3 → 4, no header (bypass), exactly as today.</p>
+  <h3 style="margin:18px 0 6px;font-size:14px">Plan v2 (for signature): gateway + Workers Cache</h3>
+  <div class="flow">
+    <div class="box"><b>1 · Visitor</b>any public page<br>signed out or signed in</div>
+    <div class="box cache"><b>2 · Gateway (always runs)</b>Admin/API/callback/actions? → straight to 5<br>Bare / ? → 307 to /en or /ar<br>Checks the sign-in token itself (signed)<br>Removes cookies, adds class<span class="cpu">~0.5-2 ms (estimate)</span></div>
+    <div class="box cache"><b>3 · Workers Cache</b>Key = class + path (+ RSC kind)<br>Hit: answered here, the page code does not run<span class="cpu">0 ms page CPU on a hit</span></div>
+    <div class="box cost"><b>4 · Fill (miss only, own budget)</b>proxy + prebuilt page from R2, or a render<br>Old copy keeps being served until the new one succeeds<span class="cpu">10-20 ms read, 40-900 ms render</span></div>
+    <div class="box"><b>5 · Not cached</b>/admin, actions, /auth/callback, /api, crons<span class="cpu">unchanged, over 10 ms (out of scope)</span></div>
+  </div>
+  <div class="grid" style="margin-top:10px">
+    <div class="card"><h3>Phone / desktop split</h3><p class="note" style="margin:0">Prototype only (v2 drops this: the hero picks its video in the browser). Each page is kept twice, once for phones and once for desktops, because the landing hero picks one video by device. The detection is the same one the page uses today, so visitors see no difference. It only doubles the stored copies.</p></div>
+    <div class="card"><h3>Admin edits <span class="tag">visible</span></h3><p class="note" style="margin:0">A change saved in Admin (text, ticker, shows, coming-soon switch) reaches signed-out visitors of these pages within <b>120 s</b> instead of at once. In v2 an admin save marks the cached copies stale and the next visitor triggers a refill; the coming-soon switch takes effect at once.</p></div>
+  </div>
+
+  <!-- ===================== 1. HEADER ===================== -->
+  <h2>1 · Header while sign-in state loads (EN and AR)</h2>
+  <p class="lead">Today the server already knows the visitor and paints their initial at once; the photo and the Admin link arrive a moment later from the browser. With cached pages the server no longer knows who is visiting, so the first paint needs a stand-in.</p>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Signed out <span class="tag same">no change</span></h3>
+      <div class="frames">
+        <div class="frame-label">Before and after: first paint, final</div>
+        <div class="nav"><span class="logo">CIT<b>.</b>STORY</span><span class="links"><span>Watch</span><span>Support</span></span><span class="right"><span class="loc"><span class="on">EN</span><span>AR</span></span><span class="btn-out">Sign In</span></span></div>
+        <div dir="rtl" class="nav"><span class="logo">CIT<b>.</b>STORY</span><span class="links"><span>شاهد</span><span>الدعم</span></span><span class="right"><span class="loc"><span>EN</span><span class="on">AR</span></span><span class="btn-out">تسجيل الدخول</span></span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Signed in · BEFORE (today)</h3>
+      <div class="frames">
+        <div class="frame-label">First paint: initial from the server</div>
+        <div class="nav"><span class="logo">CIT<b>.</b>STORY</span><span class="links"><span>Watch</span><span>Support</span></span><span class="right"><span class="loc"><span class="on">EN</span><span>AR</span></span><span class="avatar">K</span></span></div>
+        <div class="arrow">↓ ~0.2 s</div>
+        <div class="nav"><span class="logo">CIT<b>.</b>STORY</span><span class="links"><span>Watch</span><span>Support</span></span><span class="right"><span class="loc"><span class="on">EN</span><span>AR</span></span><span class="avatar photo"></span></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:14px">
+    <div class="card">
+      <h3>Signed in · AFTER, option A <span class="tag rec">recommended</span></h3>
+      <div class="frames">
+        <div class="frame-label">First paint: an empty avatar circle of the same size (nothing moves)</div>
+        <div class="nav"><span class="logo">CIT<b>.</b>STORY</span><span class="links"><span>Watch</span><span>Support</span></span><span class="right"><span class="loc"><span class="on">EN</span><span>AR</span></span><span class="avatar ring"></span></span></div>
+        <div class="arrow">↓ ~0.1–0.3 s</div>
+        <div class="nav"><span class="logo">CIT<b>.</b>STORY</span><span class="links"><span>Watch</span><span>Support</span></span><span class="right"><span class="loc"><span class="on">EN</span><span>AR</span></span><span class="avatar photo"></span></span></div>
+        <div dir="rtl" class="nav"><span class="logo">CIT<b>.</b>STORY</span><span class="links"><span>شاهد</span><span>الدعم</span></span><span class="right"><span class="loc"><span>EN</span><span class="on">AR</span></span><span class="avatar ring"></span></span></div>
+        <div class="arrow" dir="rtl">↓ ~0.1–0.3 s</div>
+        <div dir="rtl" class="nav"><span class="logo">CIT<b>.</b>STORY</span><span class="links"><span>شاهد</span><span>الدعم</span></span><span class="right"><span class="loc"><span>EN</span><span class="on">AR</span></span><span class="avatar">ك</span></span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Signed in · AFTER, option B <span class="tag">not recommended</span></h3>
+      <div class="frames">
+        <div class="frame-label">First paint: "Sign In" button, then it swaps to the avatar</div>
+        <div class="nav"><span class="logo">CIT<b>.</b>STORY</span><span class="links"><span>Watch</span><span>Support</span></span><span class="right"><span class="loc"><span class="on">EN</span><span>AR</span></span><span class="btn-out">Sign In</span></span></div>
+        <div class="arrow">↓ ~0.1–0.3 s (the button flashes; a fast tap opens the sign-in page)</div>
+        <div class="nav"><span class="logo">CIT<b>.</b>STORY</span><span class="links"><span>Watch</span><span>Support</span></span><span class="right"><span class="loc"><span class="on">EN</span><span>AR</span></span><span class="avatar photo"></span></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:14px">
+    <div class="card">
+      <h3>Admin menu (EN) <span class="tag same">no change</span></h3>
+      <p class="note">The Admin entry already comes from the browser today. Before and after are the same once the avatar is in.</p>
+      <div class="nav"><span class="logo">CIT<b>.</b>STORY</span><span class="links"><span>Watch</span><span>Support</span></span><span class="right"><span class="loc"><span class="on">EN</span><span>AR</span></span><span class="avatar photo"></span></span></div>
+      <div class="menu"><div class="em">issam@clickitstory.ae</div><div>Profile</div><div class="admin">Admin</div><div class="out">Sign out</div></div>
+    </div>
+    <div class="card" dir="rtl">
+      <h3>قائمة المشرف (AR) <span class="tag same">no change</span></h3>
+      <p class="note">Same as today, in Arabic.</p>
+      <div class="nav"><span class="logo">CIT<b>.</b>STORY</span><span class="links"><span>شاهد</span><span>الدعم</span></span><span class="right"><span class="loc"><span>EN</span><span class="on">AR</span></span><span class="avatar photo"></span></span></div>
+      <div class="menu"><div class="em" dir="ltr">issam@clickitstory.ae</div><div>الملف الشخصي</div><div class="admin">لوحة الإدارة</div><div class="out">تسجيل الخروج</div></div>
+    </div>
+  </div>
+
+  <!-- ===================== 2. SHOW PAGE ===================== -->
+  <h2>2 · Show page: My List, Like and episode progress (signed in)</h2>
+  <p class="lead">Today these are painted in their final state. With cached pages they arrive from the browser a moment later. Signed-out visitors see no change (no progress, "Add to List" opens sign-in as today).</p>
+  <div class="grid">
+    <div class="card">
+      <h3>BEFORE (today)</h3>
+      <div class="hero"><div class="title">Show title</div>
+        <div class="actions"><span class="pill play">▶ Play</span><span class="pill on">✓ In your list</span><span class="pill on">♥ Like</span></div>
+        <div class="eps"><div class="ep"><div class="thumb"><div class="bar" style="width:100%"></div></div>Episode 1 · watched</div><div class="ep"><div class="thumb"><div class="bar" style="width:45%"></div></div>Episode 2 · 45%</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>AFTER, option A <span class="tag rec">recommended</span></h3>
+      <div class="frame-label">First paint: Play is live; My List and Like are grey placeholders of the same size; no bars</div>
+      <div class="hero"><div class="title">Show title</div>
+        <div class="actions"><span class="pill play">▶ Play</span><span class="pill sk">✓ In your list</span><span class="pill sk">♥ Like</span></div>
+        <div class="eps"><div class="ep"><div class="thumb"></div>Episode 1</div><div class="ep"><div class="thumb"></div>Episode 2</div></div>
+      </div>
+      <div class="arrow">↓ ~0.2 s: buttons show the real state, bars fade in</div>
+      <div class="hero" dir="rtl"><div class="title">عنوان البرنامج</div>
+        <div class="actions"><span class="pill play">▶ تشغيل</span><span class="pill on">✓ في قائمتك</span><span class="pill on">♥ إعجاب</span></div>
+        <div class="eps"><div class="ep"><div class="thumb"><div class="bar" style="width:100%"></div></div>الحلقة 1</div><div class="ep"><div class="thumb"><div class="bar" style="width:45%"></div></div>الحلقة 2 · 45%</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>AFTER, option B <span class="tag">not recommended</span></h3>
+      <div class="frame-label">First paint: "Add to List" in its empty state, then it flips to "In your list"</div>
+      <div class="hero"><div class="title">Show title</div>
+        <div class="actions"><span class="pill play">▶ Play</span><span class="pill">+ Add to List</span><span class="pill">♡ Like</span></div>
+        <div class="eps"><div class="ep"><div class="thumb"></div>Episode 1</div><div class="ep"><div class="thumb"></div>Episode 2</div></div>
+      </div>
+      <div class="arrow">↓ ~0.2 s: flips. A tap during that moment could remove the show from the list.</div>
+      <div class="hero"><div class="title">Show title</div>
+        <div class="actions"><span class="pill play">▶ Play</span><span class="pill on">✓ In your list</span><span class="pill on">♥ Like</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== 3. CONTINUE WATCHING ===================== -->
+  <h2>3 · Watch home: "Continue watching" rail (signed in)</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>BEFORE (today)</h3>
+      <div class="rail-title">Continue watching</div>
+      <div class="rail"><div class="tile"><div class="bar" style="width:60%"></div></div><div class="tile"><div class="bar" style="width:20%"></div></div><div class="tile"><div class="bar" style="width:85%"></div></div></div>
+      <div class="below">Next rail (Shows)</div>
+    </div>
+    <div class="card">
+      <h3>AFTER, option A <span class="tag rec">recommended</span></h3>
+      <div class="frame-label">First paint: a placeholder row of the same height (signed-in visitors only)</div>
+      <div class="rail-title">Continue watching</div>
+      <div class="rail"><div class="tile sk"></div><div class="tile sk"></div><div class="tile sk"></div></div>
+      <div class="below">Next rail (Shows): does not move</div>
+      <div class="arrow">↓ ~0.2 s</div>
+      <div class="rail-title" dir="rtl">تابع المشاهدة</div>
+      <div class="rail" dir="rtl"><div class="tile"><div class="bar" style="width:60%"></div></div><div class="tile"><div class="bar" style="width:20%"></div></div><div class="tile"><div class="bar" style="width:85%"></div></div></div>
+    </div>
+    <div class="card">
+      <h3>AFTER, option B <span class="tag">not recommended</span></h3>
+      <div class="frame-label">First paint: no rail; it appears and pushes the page down</div>
+      <div class="below">Next rail (Shows)</div>
+      <div class="arrow">↓ ~0.2 s: page jumps by one rail</div>
+      <div class="rail-title">Continue watching</div>
+      <div class="rail"><div class="tile"><div class="bar" style="width:60%"></div></div><div class="tile"><div class="bar" style="width:20%"></div></div><div class="tile"><div class="bar" style="width:85%"></div></div></div>
+      <div class="below">Next rail (Shows)</div>
+    </div>
+  </div>
+
+  <h2>Also changing (no picture needed)</h2>
+  <ul class="keys">
+    <li><b>Episode resume:</b> the player waits ~0.1–0.3 s for the saved position before it starts, so it still resumes at the right second.</li>
+    <li><b>Arabic pages:</b> footer, FAQ and legal text follow the URL (/ar) instead of a cookie. This fixes a case where a first-time Arabic visitor could get English footer or FAQ text.</li>
+    <li><b>Admin edits</b> (content, ticker, coming-soon switch) reach visitors within about 10 s instead of at once.</li>
+    <li><b>Hero video</b> picks the phone or desktop file in the browser. A phone may show the poster image for a moment before the video starts.</li>
+  </ul>
+</div>
+</body>
+</html>

@@ -90,6 +90,7 @@ test('exactly one backup-table migration, newest version in supabase/migrations'
   assert.ok(version > '20261021120000', 'version must sort after 20261021120000')
   for (const other of migrationNames) {
     if (other === backupMigrations[0]) continue
+    if (/_phase\d+_/.test(other)) continue // later phases name their own migrations `_phaseN_` (Phase 5 M1a onward)
     assert.ok(other.slice(0, 14) < version, `${other} sorts after the backup migration`)
   }
 })

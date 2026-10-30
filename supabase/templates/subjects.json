@@ -1,0 +1,7 @@
+{
+  "confirmation": "{{ if eq .Data.locale \"ar\" }}أكّد بريدك في Clickit Story{{ else }}Confirm your Clickit Story email{{ end }}",
+  "magic_link": "{{ if eq .Data.locale \"ar\" }}رمز الدخول إلى Clickit Story{{ else }}Your Clickit Story sign-in code{{ end }}",
+  "recovery": "{{ if eq .Data.locale \"ar\" }}إعادة تعيين كلمة مرور Clickit Story{{ else }}Reset your Clickit Story password{{ end }}",
+  "email_change": "{{ if eq .Data.locale \"ar\" }}أكّد بريدك الجديد في Clickit Story{{ else }}Confirm your new Clickit Story email{{ end }}",
+  "reauthentication": "{{ if eq .Data.locale \"ar\" }}رمز الأمان في Clickit Story: {{ .Token }}{{ else }}Your Clickit Story security code: {{ .Token }}{{ end }}"
+}

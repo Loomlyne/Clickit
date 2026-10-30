@@ -27,7 +27,13 @@ test('sign-in shows the box always, dark, full width', () => {
   assert.equal(options.language, 'en')
 })
 
-test('every form except the newsletter shows the box always', () => {
+test('resend (second instance on the code screen) is interaction-only', () => {
+  const options = turnstileWidgetOptions({ form: 'resend', locale: 'en' })
+  assert.equal(options.appearance, 'interaction-only')
+  assert.equal(options.theme, 'dark')
+})
+
+test('every form except the newsletter and resend shows the box always', () => {
   const forms: TurnstileForm[] = ['sign-in', 'sign-up', 'reset', 'contact']
   for (const form of forms) {
     assert.equal(turnstileWidgetOptions({ form, locale: 'en' }).appearance, 'always', form)
