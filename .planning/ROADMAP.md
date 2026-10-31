@@ -131,6 +131,7 @@ Plans:
   3. A forged or expired sign-in cookie never gets the signed-in copy. A signed-in copy never shows signed-out UI at first paint (D-60 single HTML; CSS-toggled by data-auth), and a signed-out copy never contains personal data. Redirects are never stored for the signed-in class. Two different signed-out requests get byte-identical HTML apart from the allowed key parts.
   4. An admin content save reaches visitors after one refill, and the old copy is served until that refill succeeds. A coming-soon toggle takes effect at once. Bare `/` and unprefixed paths answer a 307 from the gateway.
   5. The signed loading look ships: header 1A, show page 2A, Continue watching 3A, in EN and AR. A long-session test stays signed in, and `npm run gate:local` passes.
+**Route change (Koss, 2026-10-31):** stay on Free with every public page built ahead of time and an automatic rebuild after admin saves (02.1-CONTEXT.md D-70 to D-77). This replaces criterion 4's refill and criterion 1's refill check. The plans below predate it and must be re-planned before any run.
 **Plans:** 23 plans
 
 Plans:
