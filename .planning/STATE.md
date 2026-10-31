@@ -29,7 +29,7 @@ Plan: 30 of 42 (waves 0-3 done; 05-13, 05-15, 05-16, 05-18, 05-21, 05-22, 05-23,
 Status: Ready to execute
 Last activity: 2026-10-26
 Phase 3 (work branch claude/phase-03-production-cutover-689a87): 6 of 13 plans complete (03-01 … 03-06 done 2026-10-21; code half ready for the PR, gate:local exit=0; ops plans 03-07 … 03-13 run after Ship)
-Phase 2.1 spike: FAILED on Workers Free as measured (02.1-SPIKE.md, 2026-10-26); Koss chose on 2026-10-31: stay on Free, prerender every public page, new content appears only after a rebuild (Workers Paid declined). The 23 plans assume viewer-triggered refills and need re-planning before any run. Spike code and probes were not landed: branch claude/phase-02-cpu-en-f3ef3f, tag archive/phase-02-1-spike-at-f24c5ea.
+Phase 2.1 spike: FAILED on Workers Free as measured (02.1-SPIKE.md, 2026-10-26); Koss chose on 2026-10-31: stay on Free, prerender every public page, new content appears only after a rebuild (Workers Paid declined). The rebuild starts automatically a few minutes after the admins' last save and may only use the code already live, never newer main. The 23 plans assume viewer-triggered refills and need re-planning before any run. Spike code and probes were not landed: branch claude/phase-02-cpu-en-f3ef3f, tag archive/phase-02-1-spike-at-f24c5ea.
 Phase 2 (work branch claude/phase-02-execute-19d86a): 18 of 22 plans complete (02-10, 02-20, 02-21, 02-22 open); origin/main 4271179 (Phase 4 #28, Phase 6 #27) merged in 2026-10-21
 
 Progress: [████████░░] 80%
