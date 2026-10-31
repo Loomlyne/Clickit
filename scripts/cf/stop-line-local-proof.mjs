@@ -9,12 +9,16 @@
 // Keys come from the environment (SB_URL, SB_ANON, SB_SERVICE) and are never printed.
 // Exit: 0 written; 1 the proof is invalid or a step failed; 2 refused.
 //
-// Usage: node scripts/cf/stop-line-local-proof.mjs --base http://127.0.0.1:8796 --env-file <f>
-//          --preview-log <f> --manifest <.next/server/server-reference-manifest.json>
+// The preview answers on http://localhost:<port> and builds its redirects from that host, so that
+// is the base to call. It keeps worker logs in its local observability store rather than printing
+// them, so log evidence is read from there, per try, by each request's sl tag.
+//
+// Usage: node scripts/cf/stop-line-local-proof.mjs --base http://localhost:8796 --env-file <f>
+//          --manifest <.next/server/server-reference-manifest.json>
 //          --work-dir <dir outside the repo> --out <local-proof.json>
 
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { randomBytes } from 'node:crypto'
@@ -53,6 +57,7 @@ export const ROW_TABLES = Object.freeze([
 export const FLOW_STATE_TERM = /flow[_ ]state/i
 export const LOCAL_GAPS = Object.freeze([
   "The local stack's schema is newer than live (Phase 5 migrations).",
+  'Local log forms come from the preview log store; the live tail form is compared at the canary.',
   'The save path stops at the conflict.',
   'The local GoTrue version and limits may differ from live.',
 ])
@@ -102,7 +107,7 @@ export function intersectMoves(first, second) {
   return first.filter((d) => tables.has(d.table))
 }
 
-/** The part of the preview log a sign-in link failure wrote, cut to a short line. */
+/** The part of a request's logs a sign-in link failure wrote, cut to a short line. */
 export function signinLinkFormFrom(logText) {
   const at = logText.indexOf('exchangeCodeForSession failed')
   if (at === -1) return null
@@ -111,9 +116,16 @@ export function signinLinkFormFrom(logText) {
   return { form, term: match ? match[0] : null }
 }
 
-export function replyFixture(kind, reply) {
+/** A same-origin redirect is stored relative; any other host stays absolute and fails the check. */
+export function relativeLocation(location, base) {
+  if (typeof location !== 'string') return null
+  const origin = new URL(base).origin
+  return location.startsWith(`${origin}/`) ? location.slice(origin.length) : location
+}
+
+export function replyFixture(kind, reply, base) {
   if (KIND_INFO[kind].action) return { status: reply.status, result: parseFlightResult(reply.body).value ?? null }
-  if (kind === 'signin-link') return { status: reply.status, location: reply.location ?? null }
+  if (kind === 'signin-link') return { status: reply.status, location: relativeLocation(reply.location, base) }
   return { status: reply.status, contentType: reply.contentType ?? null, rsc: reply.rsc === true }
 }
 
@@ -144,7 +156,7 @@ function progress(line) {
 }
 
 function parseArgs(argv) {
-  const map = { '--base': 'base', '--env-file': 'envFile', '--preview-log': 'previewLog', '--manifest': 'manifest', '--work-dir': 'workDir', '--out': 'out', '--settle-ms': 'settleMs' }
+  const map = { '--base': 'base', '--env-file': 'envFile', '--manifest': 'manifest', '--work-dir': 'workDir', '--out': 'out', '--settle-ms': 'settleMs' }
   const out = {}
   for (let i = 0; i < argv.length; i += 2) {
     const key = map[argv[i]]
@@ -157,6 +169,20 @@ function parseArgs(argv) {
 function cookieScript(args, { password } = {}) {
   const res = spawnSync(process.execPath, [COOKIE_SCRIPT, ...args], { encoding: 'utf8', input: password === undefined ? undefined : `${password}\n` })
   return { code: res.status, stdout: res.stdout.trim(), stderr: res.stderr.trim() }
+}
+
+/** Every log message of the invocation that carried this sl tag. */
+async function logsForTag(base, tag) {
+  if (!/^[a-z0-9-]+$/.test(tag)) throw new Error('bad tag')
+  const sql = `select message from logs where trace_id in (select trace_id from logs where message like '%sl=${tag}"%') order by ts_ms, seq`
+  const res = await fetch(`${base}/cdn-cgi/local/explorer/api/local/observability/query`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ sql }),
+  })
+  if (!res.ok) throw new Error(`log store read failed: ${res.status}`)
+  const { result } = await res.json()
+  return result.rows.map((row) => row[0]).join('\n')
 }
 
 async function restJson(url, serviceKey) {
@@ -175,8 +201,6 @@ export async function runProof(opts, env) {
   const run = 'lp'
   let tagN = 0
   const nextTag = (code) => makeTag(run, code, ++tagN)
-  const logOffset = () => (existsSync(opts.previewLog) ? statSync(opts.previewLog).size : 0)
-  const logSince = (offset) => readFileSync(opts.previewLog).subarray(offset).toString('utf8')
 
   const measure = async (action) => {
     const before = snapshot()
@@ -203,12 +227,15 @@ export async function runProof(opts, env) {
     psql(`update public.app_config set admin_user_id = '${userId}' where id = 1`)
     progress('throwaway admin ready')
 
-    // Control: what moves when nothing is sent.
+    // Control: what moves when nothing is sent. Table stats arrive late, so the setup writes above
+    // settle first; otherwise they land in this window.
+    await sleep(settleMs)
     const idle = await measure(async () => null)
     proof.idleControl = { tables: idle.tables, rows: idle.rows }
     progress(`idle control: ${idle.tables.length} tables moved`)
     const appTable = (table) => table.startsWith('public.') || table.startsWith('auth.')
-    if (idle.tables.some((d) => appTable(d.table))) throw new Error('the stack is not quiet: an app table moved with nothing sent')
+    const movedApp = idle.tables.filter((d) => appTable(d.table))
+    if (movedApp.length > 0) throw new Error(`the stack is not quiet: ${JSON.stringify(movedApp)} moved with nothing sent`)
     const noise = new Set(idle.tables.map((d) => d.table))
     const withoutNoise = (tables) => tables.filter((d) => !noise.has(d.table))
 
@@ -276,19 +303,23 @@ export async function runProof(opts, env) {
     for (const kind of KINDS) {
       const tries = kind === 'admin-page' ? adminPageList(showId).length : 5
       const once = async () => {
-        const offset = logOffset()
+        const tags = []
         const measured = await measure(async () => {
           const fixtures = []
           let allExpected = true
           for (let i = 0; i < tries; i++) {
-            const request = buildRequest(kind, { ...base, tag: nextTag(KIND_INFO[kind].code), adminIndex: i })
+            const tag = nextTag(KIND_INFO[kind].code)
+            tags.push(tag)
+            const request = buildRequest(kind, { ...base, tag, adminIndex: i })
             const reply = await sendHttp(request)
-            fixtures.push(replyFixture(kind, reply))
+            fixtures.push(replyFixture(kind, reply, opts.base))
             if (classifyReply(kind, reply, opts.base).outcome !== 'pass') allExpected = false
           }
           return { fixtures, allExpected }
         })
-        return { ...measured, log: logSince(offset) }
+        const logs = []
+        for (const tag of tags) logs.push(await logsForTag(opts.base, tag))
+        return { ...measured, logs }
       }
       let attempt = await once()
       let tables = withoutNoise(attempt.tables)
@@ -299,7 +330,7 @@ export async function runProof(opts, env) {
         const second = await once()
         tables = intersectMoves(tables, withoutNoise(second.tables))
         rows = Object.fromEntries(Object.entries(rows).filter(([table]) => table in second.rows))
-        attempt = { ...second, log: second.log }
+        attempt = second
       }
       const entry = { kind, tries, repeated, deltas: { tables, rows }, replies: attempt.result.fixtures }
       const reasons = []
@@ -307,14 +338,18 @@ export async function runProof(opts, env) {
       if (!attempt.result.allExpected) reasons.push('a reply was not the expected one')
       if (!attempt.result.fixtures.every((fixture) => fixtureMatches(kind, fixture, opts.base))) reasons.push('a recorded reply differs')
       if (kind === 'contact') {
-        const count = attempt.log.split('missing-token').length - 1
-        entry.missingTokenLogLines = count
-        if (count < tries) reasons.push('the log does not show missing-token for every try')
+        entry.triesWithMissingToken = attempt.logs.filter((log) => log.includes('missing-token')).length
+        if (entry.triesWithMissingToken < tries) reasons.push('the log does not show missing-token for every try')
+      }
+      if (kind === 'signin-action') {
+        entry.triesWithInvalidCredentials = attempt.logs.filter((log) => log.includes('Invalid login credentials')).length
+        if (entry.triesWithInvalidCredentials < tries) reasons.push('the log does not show Invalid login credentials for every try')
       }
       if (kind === 'signin-link') {
-        const form = signinLinkFormFrom(attempt.log)
-        proof.signinLinkForm = form
-        if (!form?.term) reasons.push('the log form is not the flow-state family')
+        const forms = attempt.logs.map(signinLinkFormFrom)
+        entry.triesWithFlowState = forms.filter((form) => form?.term).length
+        proof.signinLinkForm = forms.find((form) => form) ?? null
+        if (entry.triesWithFlowState < tries) reasons.push('the log form is not the flow-state family on every try')
       }
       entry.verdict = reasons.length === 0 ? 'write-free' : 'dropped'
       if (reasons.length > 0) entry.dropReasons = reasons
@@ -371,7 +406,7 @@ async function main(argv) {
     process.stderr.write('refused: this proof runs on loopback only\n')
     return 2
   }
-  if (!env.SB_SERVICE || !opts.envFile || !opts.previewLog || !opts.manifest || !opts.workDir || !opts.out) {
+  if (!env.SB_SERVICE || !opts.envFile || !opts.manifest || !opts.workDir || !opts.out) {
     process.stderr.write('refused: missing an argument or SB_SERVICE\n')
     return 2
   }

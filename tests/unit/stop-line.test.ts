@@ -24,6 +24,7 @@ import {
   countTokenShapes,
   countUnredactedHeaders,
   countsSql,
+  fixtureMatches,
   joinCheck,
   leakCount,
   main,
@@ -42,6 +43,7 @@ import {
   intersectMoves,
   isLoopback,
   parseStatLines,
+  relativeLocation,
   replyFixture,
   signinLinkFormFrom,
 } from '../../scripts/cf/stop-line-local-proof.mjs'
@@ -858,7 +860,20 @@ test('the sign-in link log form names the flow-state family, not a missing verif
 })
 
 test('reply fixtures hold no body', () => {
-  assert.deepEqual(replyFixture('contact', { status: 200, body: flight(EXPECTED_RESULT.contact) }), { status: 200, result: EXPECTED_RESULT.contact })
-  assert.deepEqual(replyFixture('signin-link', { status: 307, location: '/x', body: 'html' }), { status: 307, location: '/x' })
-  assert.deepEqual(replyFixture('admin-page', { status: 200, contentType: 'text/html', body: 'secret page', rsc: false }), { status: 200, contentType: 'text/html', rsc: false })
+  const local = 'http://localhost:8796'
+  assert.deepEqual(replyFixture('contact', { status: 200, body: flight(EXPECTED_RESULT.contact) }, local), { status: 200, result: EXPECTED_RESULT.contact })
+  assert.deepEqual(replyFixture('signin-link', { status: 307, location: '/x', body: 'html' }, local), { status: 307, location: '/x' })
+  assert.deepEqual(replyFixture('admin-page', { status: 200, contentType: 'text/html', body: 'secret page', rsc: false }, local), { status: 200, contentType: 'text/html', rsc: false })
+})
+
+test('a recorded redirect is relative only when same-origin; another host stays absolute and fails the proof', () => {
+  const local = 'http://localhost:8796'
+  const good = relativeLocation(`${local}/en/auth?error=Could%20not%20verify%20your%20identity`, local)
+  assert.equal(good, '/en/auth?error=Could%20not%20verify%20your%20identity')
+  assert.equal(fixtureMatches('signin-link', { status: 307, location: good }), true)
+  const foreign = relativeLocation('https://evil.test/en/auth?error=Could%20not%20verify%20your%20identity', local)
+  assert.equal(foreign, 'https://evil.test/en/auth?error=Could%20not%20verify%20your%20identity')
+  assert.equal(fixtureMatches('signin-link', { status: 307, location: foreign }), false)
+  const lookalike = relativeLocation(`${local}.evil.test/en/auth?error=Could%20not%20verify%20your%20identity`, local)
+  assert.equal(fixtureMatches('signin-link', { status: 307, location: lookalike }), false)
 })
