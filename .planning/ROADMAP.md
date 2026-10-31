@@ -131,33 +131,12 @@ Plans:
   3. A forged or expired sign-in cookie never gets the signed-in copy. A signed-in copy never shows signed-out UI at first paint (D-60 single HTML; CSS-toggled by data-auth), and a signed-out copy never contains personal data. Redirects are never stored for the signed-in class. Two different signed-out requests get byte-identical HTML apart from the allowed key parts.
   4. An admin content save reaches visitors after one refill, and the old copy is served until that refill succeeds. A coming-soon toggle takes effect at once. Bare `/` and unprefixed paths answer a 307 from the gateway.
   5. The signed loading look ships: header 1A, show page 2A, Continue watching 3A, in EN and AR. A long-session test stays signed in, and `npm run gate:local` passes.
-**Route change (Koss, 2026-10-31):** stay on Free with every public page built ahead of time and an automatic rebuild after admin saves (02.1-CONTEXT.md D-70 to D-77). This replaces criterion 4's refill and criterion 1's refill check. The plans below predate it and must be re-planned before any run.
-**Plans:** 23 plans
+**Route change (Koss, 2026-10-31):** stay on Free with every public page built ahead of time and an automatic rebuild after admin saves (02.1-CONTEXT.md D-70 to D-77). This replaces criterion 4's refill and criterion 1's refill check. The 23 older plans are retired (git `c8b9f43e`); see D-78 for the two written now.
+**Plans:** 2 plans (D-78 test first; later plans wait until both pass)
 
 Plans:
-- [ ] 02.1-01-PLAN.md — W1: SPIKE D-03 a-e + D-66 (probes, controller deploy, blocking report; nothing else runs until "spike passed")
-- [ ] 02.1-02-PLAN.md — W2: Gateway request side (routes, locale, classify, key, strip, trusted class header)
-- [ ] 02.1-04-PLAN.md — W2: Public/user query split, tag-only freshness (revalidate: false)
-- [ ] 02.1-03-PLAN.md — W3: Pages and browser response normalisation, route tags
-- [ ] 02.1-05-PLAN.md — W3: Media variant chosen in the browser (no device dimension)
-- [ ] 02.1-07-PLAN.md — W3: Proxy on the cached path; signed-in /auth and browse redirects in the proxy
-- [ ] 02.1-08-PLAN.md — W3: User-independent shell (URL locale, no getClaims), D-60 pre-paint data-auth
-- [ ] 02.1-06-PLAN.md — W4: Worker wiring (gateway + Pages entrypoint + RPC), prototype and probes removed
-- [ ] 02.1-09-PLAN.md — W4: Static landing and about
-- [ ] 02.1-10-PLAN.md — W4: Static legal, support, coming-soon
-- [ ] 02.1-11-PLAN.md — W5: Signed-out /auth cached under both controller conditions
-- [ ] 02.1-12-PLAN.md — W4: Static show page + 2A
-- [ ] 02.1-13-PLAN.md — W4: Static watch home + 3A
-- [ ] 02.1-15-PLAN.md — W4: Static updates and my-list
-- [ ] 02.1-16-PLAN.md — W4: Static profile; profile actions invalidate nothing shared
-- [ ] 02.1-14-PLAN.md — W5: Per-category static route (D-61), browse page removed
-- [ ] 02.1-17-PLAN.md — W5: Header 1A
-- [ ] 02.1-18-PLAN.md — W5: Static episode page + 2A + resume wait
-- [ ] 02.1-19-PLAN.md — W5: Edge invalidate/purge (D-23, D-63, F1) with coverage test
-- [ ] 02.1-20-PLAN.md — W5: Deploy guard F6, seeding, measurement cookie, gate checks
-- [ ] 02.1-21-PLAN.md — W6: Local verification (import graph, prerender, D-40 preview suite, RSC diff, gate:local)
-- [ ] 02.1-22-PLAN.md — W6: Playwright 1A/2A/3A EN/AR + long-session harness
-- [ ] 02.1-23-PLAN.md — W7: Final workers.dev measurement handed to the controller (CPU report, long session)
+- [ ] 02.1-01-PLAN.md — W1: D-75 + D-79 stop-line test on workers.dev version 7222dcee (harness, local write-free proof, [OWNER] measurement sign-in, controller run, report)
+- [ ] 02.1-02-PLAN.md — W2: D-73 + D-76 gateway trial on throwaway Worker clickit-gw-probe (CPU, at-once, request count, cold isolates, minify; [OWNER] word; report; teardown)
 
 ### Phase 3: Production Cutover
 **Goal**: clickitstory.ae is a zone in the ClickitStory Cloudflare account that Resend can send from. Viewers at www.clickitstory.ae and the apex are served by the Worker. Every media URL in the database points at R2, the old Vercel deployment can no longer write to live data, rollback stays possible until the proof window ends, and then the Vercel project is deleted.
